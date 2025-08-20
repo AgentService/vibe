@@ -6,7 +6,9 @@
 
 
 combat log
-
+dongerslider
+brusthaarslider
+gigachad
 
 ### Immediate — Architecture Assessment Priority Order
 

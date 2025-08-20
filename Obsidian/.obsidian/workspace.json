@@ -6,7 +6,7 @@
       {
         "id": "1068b0a9b6da268d",
         "type": "tabs",
-        "dimension": 62.8158844765343,
+        "dimension": 50.647948164146875,
         "children": [
           {
             "id": "5fede105bac1c7f8",
@@ -66,7 +66,7 @@
       {
         "id": "f0303efdfb740ff1",
         "type": "tabs",
-        "dimension": 37.18411552346571,
+        "dimension": 49.35205183585313,
         "children": [
           {
             "id": "8e85a6f5e4fdf43c",
@@ -257,11 +257,13 @@
   "active": "c6a69ad9e0d5bb08",
   "lastOpenFiles": [
     "systems/EventBus-System.md",
-    "03-tasks/TODO.md",
     "systems/Data-Systems-Architecture.md",
-    "Logger.md",
+    "systems/Component-Structure-Reference.md",
     "systems/Canvas-Layer-Structure.md",
     "systems/ARENA_USAGE.md",
+    "03-tasks/TODO.md",
+    "systems/Scene-Management-System.md",
+    "Logger.md",
     "systems/README.md",
     "README.md",
     "changelogs/features.md",
@@ -272,9 +274,7 @@
     "vibe",
     "systems/UI-Architecture-Overview.md",
     "03-tasks/TODO_UPDATED.md",
-    "systems/Scene-Management-System.md",
     "systems/Modal-Overlay-System.md",
-    "systems/Component-Structure-Reference.md",
     "systems",
     "01-game-design/Untitled"
   ]

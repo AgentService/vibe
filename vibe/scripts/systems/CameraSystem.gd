@@ -54,6 +54,10 @@ func _physics_process(delta: float) -> void:
 	if not camera:
 		return
 	
+	# Don't update camera during pause to prevent glitches
+	if RunManager.paused:
+		return
+	
 	_update_camera_position(delta)
 	_update_zoom(delta)
 	_update_shake(delta)

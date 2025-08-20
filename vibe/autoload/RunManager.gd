@@ -42,7 +42,9 @@ func _load_player_stats() -> void:
 	Logger.info("Reloaded player stats - projectile_count_add: " + str(stats.projectile_count_add), "player")
 
 func _process(delta: float) -> void:
-	_accumulator += delta
+	# Don't accumulate time during pause to prevent lag bursts
+	if not paused:
+		_accumulator += delta
 	
 	while _accumulator >= COMBAT_DT:
 		if not paused:

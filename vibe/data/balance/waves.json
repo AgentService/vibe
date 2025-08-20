@@ -1,11 +1,11 @@
 {
-  "max_enemies": 800,
-  "spawn_interval": 0.8,
+  "max_enemies": 5500,
+  "spawn_interval": 0.1,
   "arena_center": {
     "x": 0.0,
     "y": 0.0
   },
-  "spawn_radius": 800.0,
+  "spawn_radius": 1800.0,
   "spawn_radius_large": 1200.0,
   "spawn_radius_mega": 1800.0,
   "enemy_hp": 3.0,

@@ -35,6 +35,9 @@ var card_picker: CardPicker
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
 
+# Cached Transform2D objects for enemy MultiMesh rendering
+var _enemy_transforms: Array[Transform2D] = []
+
 func _ready() -> void:
 	add_child(ability_system)
 	add_child(wave_director)
@@ -68,6 +71,7 @@ func _ready() -> void:
 	
 	_setup_projectile_multimesh()
 	_setup_enemy_multimesh()
+	_setup_enemy_transforms()
 	_setup_wall_multimesh()
 	_setup_terrain_multimesh()
 	_setup_obstacle_multimesh()
@@ -109,6 +113,13 @@ func _setup_enemy_multimesh() -> void:
 	mm_enemies.texture = tex
 
 	mm_enemies.multimesh = multimesh
+
+func _setup_enemy_transforms() -> void:
+	var max_enemies: int = BalanceDB.get_waves_value("max_enemies")
+	_enemy_transforms.resize(max_enemies)
+	for i in range(max_enemies):
+		_enemy_transforms[i] = Transform2D()
+	Logger.debug("Enemy transform cache initialized with " + str(max_enemies) + " transforms", "performance")
 
 func _setup_wall_multimesh() -> void:
 	var multimesh := MultiMesh.new()
@@ -248,6 +259,10 @@ func _update_multimesh_textures() -> void:
 	Logger.debug("MultiMesh textures updated for theme", "ui")
 
 func _handle_debug_spawning(delta: float) -> void:
+	# Don't spawn during pause to prevent attack stacking
+	if RunManager.paused:
+		return
+		
 	spawn_timer += delta
 	var current_interval: float = base_spawn_interval / RunManager.stats.fire_rate_mult
 	
@@ -291,9 +306,8 @@ func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
 
 	for i in range(count):
 		var enemy := alive_enemies[i]
-		var transform := Transform2D()
-		transform.origin = enemy["pos"]
-		mm_enemies.multimesh.set_instance_transform_2d(i, transform)
+		_enemy_transforms[i].origin = enemy["pos"]
+		mm_enemies.multimesh.set_instance_transform_2d(i, _enemy_transforms[i])
 
 func _update_wall_multimesh(wall_transforms: Array[Transform2D]) -> void:
 	var count := wall_transforms.size()
@@ -354,6 +368,19 @@ func _on_arena_loaded(arena_data: Dictionary) -> void:
 		# Manually trigger initial wall update
 		if arena_system.wall_system.wall_transforms.size() > 0:
 			_update_wall_multimesh(arena_system.wall_system.wall_transforms)
+
+func get_debug_stats() -> Dictionary:
+	var stats: Dictionary = {}
+	
+	if wave_director:
+		var alive_enemies: Array[Dictionary] = wave_director.get_alive_enemies()
+		stats["enemy_count"] = alive_enemies.size()
+	
+	if ability_system:
+		var alive_projectiles: Array[Dictionary] = ability_system.get_alive_projectiles()
+		stats["projectile_count"] = alive_projectiles.size()
+	
+	return stats
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
