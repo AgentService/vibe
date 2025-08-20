@@ -75,6 +75,12 @@
   - **Abilities category**: Added to log config for projectile and ability system logging
 
 ### Fixed
+- **Pre-commit Hook Execution Error**: Fixed git pre-commit hook failing with "No such file or directory" 
+  - **Root cause**: Hook was changing to `vibe/` directory but using relative paths to Godot executable
+  - **Path resolution fix**: Updated hook to use absolute paths from project root instead of relative paths
+  - **Manual execution fix**: Updated help text to show correct command paths for manual architecture validation
+  - **Developer experience**: Pre-commit hooks now execute reliably without path-related failures
+  
 - **Godot Headless Console Output**: Resolved issue preventing console output from appearing in headless test execution
   - **Root cause**: Test scripts extending `Node` instead of `SceneTree` when run with `--script` flag
   - **Script lifecycle fix**: Changed from `_ready()` to `_initialize()` method for proper SceneTree execution
