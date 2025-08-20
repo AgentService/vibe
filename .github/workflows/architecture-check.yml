@@ -1,0 +1,110 @@
+name: Architecture Boundary Check
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+
+jobs:
+  architecture-validation:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download Godot
+      run: |
+        wget https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+        unzip Godot_v4.4.1-stable_linux.x86_64.zip
+        chmod +x Godot_v4.4.1-stable_linux.x86_64
+        mv Godot_v4.4.1-stable_linux.x86_64 godot
+    
+    - name: Run Architecture Boundary Tests
+      working-directory: ./vibe
+      run: |
+        echo "🔍 Running architecture boundary validation..."
+        ../godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15
+      
+    - name: Run Full Test Suite (including architecture)
+      working-directory: ./vibe
+      run: |
+        echo "🧪 Running full test suite..."
+        ../godot --headless tests/run_tests.tscn --quit-after 30
+      
+    - name: Generate Architecture Report
+      if: always()
+      working-directory: ./vibe
+      run: |
+        echo "📊 Generating architecture dependency report..."
+        # Note: This would need to be a headless version of the tool
+        # For now, we'll just run the boundary test which outputs violations
+        ../godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15 || echo "Violations detected"
+      
+    - name: Comment on PR (if violations found)
+      if: failure() && github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `## ❌ Architecture Boundary Violations Detected
+            
+            This PR contains violations of the project's layered architecture. Please review the failed checks above and fix the following issues:
+            
+            ### Common Violations:
+            - **Systems using \`get_node()\`**: Systems should communicate via signals, not direct node access
+            - **Domain importing systems/scenes**: Domain models must be pure data - no system or UI dependencies  
+            - **Scenes bypassing systems**: UI should access domain models through systems, not directly
+            
+            ### How to Fix:
+            1. Review the specific violations in the CI logs above
+            2. Refer to \`ARCHITECTURE.md\` for guidance on proper layer boundaries
+            3. Run locally: \`cd vibe && ../godot --headless --script tests/test_architecture_boundaries.gd\`
+            4. Use the static analysis tool: \`Tools > Execute Script > check_boundaries.gd\` in Godot Editor
+            
+            ### Architecture Layers:
+            - **Autoload** → Can use Domain
+            - **Systems** → Can use Domain + Autoload  
+            - **Scenes** → Can use Systems + Autoload
+            - **Domain** → Pure data only
+            
+            Once fixed, the checks should pass automatically.`
+          })
+
+  architecture-report:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download Godot
+      run: |
+        wget https://github.com/godotengine/godot/releases/download/4.4.1-stable/Godot_v4.4.1-stable_linux.x86_64.zip
+        unzip Godot_v4.4.1-stable_linux.x86_64.zip
+        chmod +x Godot_v4.4.1-stable_linux.x86_64
+        mv Godot_v4.4.1-stable_linux.x86_64 godot
+    
+    - name: Generate Architecture Metrics
+      working-directory: ./vibe
+      run: |
+        echo "📈 Generating architecture metrics..."
+        echo "Files by layer:" > architecture_report.txt
+        echo "- Autoload: $(find autoload -name "*.gd" | wc -l)" >> architecture_report.txt
+        echo "- Systems: $(find scripts/systems -name "*.gd" | wc -l)" >> architecture_report.txt  
+        echo "- Scenes: $(find scenes -name "*.gd" | wc -l)" >> architecture_report.txt
+        echo "- Domain: $(find scripts/domain -name "*.gd" | wc -l)" >> architecture_report.txt
+        echo "" >> architecture_report.txt
+        echo "Total GDScript files: $(find . -name "*.gd" | wc -l)" >> architecture_report.txt
+        cat architecture_report.txt
+        
+    - name: Upload Architecture Report
+      uses: actions/upload-artifact@v4
+      with:
+        name: architecture-report
+        path: vibe/architecture_report.txt

@@ -1,0 +1,17 @@
+{
+  "id": "basic_arena",
+  "name": "Basic Combat Arena",
+  "description": "Simple rectangular arena for combat encounters",
+  "start_room": "combat_room_001",
+  "bounds": {
+    "x": -400,
+    "y": -300,
+    "width": 800,
+    "height": 600
+  },
+  "rooms": [
+    "combat_room_001"
+  ],
+  "_schema_version": "1.0.0",
+  "_description": "Basic arena configuration with single combat room"
+}

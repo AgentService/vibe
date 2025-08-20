@@ -1,0 +1,11 @@
+{
+  "title": "rng-streams",
+  "about": "Seeded RNG singleton with named streams.",
+  "files_to_edit": ["godot/autoload/RNG.gd", "docs/ARCHITECTURE.md"],
+  "acceptance_criteria": [
+    "RNG.seed_run(seed) sets master seed",
+    "RNG.stream(name) returns stable substream",
+    "All randomness uses named streams"
+  ],
+  "prompt": "Implement RNG singleton with `seed_run(int)` and `stream(String)`; replace ad-hoc random calls."
+}

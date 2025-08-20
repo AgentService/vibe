@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3 uid="uid://be5pxsrjpj2na"]
+
+[ext_resource type="Script" uid="uid://dnjlp7lyhcqge" path="res://scenes/arena/XPOrb.gd" id="1_5w8jd"]
+
+[node name="XPOrb" type="Node2D" groups=["xp_orbs"]]
+script = ExtResource("1_5w8jd")
+
+[node name="ColorRect" type="ColorRect" parent="."]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -4.0
+offset_top = -4.0
+offset_right = 4.0
+offset_bottom = 4.0
+color = Color(0, 0.8, 1, 1)

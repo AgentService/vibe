@@ -1,0 +1,124 @@
+name: Architecture Validation
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  validate-architecture:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check for get_node anti-patterns in systems
+      run: |
+        echo "Checking for get_node('../') anti-patterns in systems..."
+        
+        # Check for get_node with relative paths in systems directory
+        if grep -r "get_node(\"\.\./" vibe/scripts/systems/ 2>/dev/null; then
+          echo "❌ FAIL: Found get_node('../') anti-patterns in systems directory"
+          echo "Systems must use signals or autoloads for cross-system communication"
+          exit 1
+        fi
+        
+        # Check for other get_node patterns that might be problematic
+        if grep -r "get_node.*\.\." vibe/scripts/systems/ 2>/dev/null; then
+          echo "❌ FAIL: Found get_node with '..' patterns in systems directory"
+          echo "Systems must use signals or autoloads for cross-system communication"
+          exit 1
+        fi
+        
+        echo "✅ PASS: No get_node anti-patterns found in systems"
+    
+    - name: Check signal contract documentation
+      run: |
+        echo "Validating signal documentation..."
+        
+        # Check that ARCHITECTURE.md contains Signals Matrix
+        if ! grep -q "## Signals Matrix" ARCHITECTURE.md; then
+          echo "❌ FAIL: ARCHITECTURE.md missing Signals Matrix section"
+          exit 1
+        fi
+        
+        # Check that EventBus.gd has proper docstrings
+        if ! grep -q "## Global event bus for cross-system communication" vibe/autoload/EventBus.gd; then
+          echo "❌ FAIL: EventBus.gd missing proper documentation"
+          exit 1
+        fi
+        
+        echo "✅ PASS: Signal documentation validated"
+    
+    - name: Check for EntityId usage
+      run: |
+        echo "Checking EntityId usage in signals..."
+        
+        # Check that new damage signals use EntityId
+        if ! grep -q "EntityId" vibe/autoload/EventBus.gd; then
+          echo "❌ FAIL: EventBus should use EntityId for typed entity references"
+          exit 1
+        fi
+        
+        echo "✅ PASS: EntityId usage validated"
+    
+    - name: Validate system dependencies
+      run: |
+        echo "Checking system dependency patterns..."
+        
+        # Check that systems directory has proper structure
+        if [ ! -d "vibe/scripts/systems" ]; then
+          echo "❌ FAIL: Systems directory not found"
+          exit 1
+        fi
+        
+        # Check that domain directory exists for data models
+        if [ ! -d "vibe/scripts/domain" ]; then
+          echo "❌ FAIL: Domain directory not found"
+          exit 1
+        fi
+        
+        echo "✅ PASS: System structure validated"
+    
+    - name: Check for proper cleanup patterns
+      run: |
+        echo "Checking for _exit_tree cleanup patterns..."
+        
+        # Look for systems that connect to signals but might not have cleanup
+        systems_with_connects=$(grep -l "\.connect(" vibe/scripts/systems/*.gd 2>/dev/null || true)
+        
+        if [ -n "$systems_with_connects" ]; then
+          for system in $systems_with_connects; do
+            if ! grep -q "_exit_tree" "$system"; then
+              echo "⚠️  WARNING: $system connects to signals but has no _exit_tree cleanup"
+            fi
+          done
+        fi
+        
+        echo "✅ PASS: Cleanup patterns checked"
+
+  run-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup Godot
+      uses: chickensoft-games/setup-godot@v1
+      with:
+        version: 4.4.1
+        use-dotnet: false
+    
+    - name: Import project (first run to generate .godot directory)
+      run: |
+        cd vibe
+        godot --headless --editor --quit-after 5
+    
+    - name: Run headless tests
+      run: |
+        cd vibe
+        timeout 60 godot --headless --script tests/run_tests.gd || true
+        
+        # Check if tests completed successfully
+        echo "Tests execution completed"

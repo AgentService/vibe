@@ -1,0 +1,17 @@
+{
+  "id": "dungeon_crawler",
+  "name": "Dungeon Crawler Arena",
+  "description": "Vertical dungeon-style arena with narrow corridors and rooms",
+  "start_room": "dungeon_main_hall",
+  "bounds": {
+    "x": -800,
+    "y": -1200,
+    "width": 1600,
+    "height": 2400
+  },
+  "rooms": [
+    "dungeon_main_hall"
+  ],
+  "_schema_version": "1.0.0",
+  "_description": "Dungeon-style vertical arena for corridor combat"
+}

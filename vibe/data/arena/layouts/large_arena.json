@@ -1,0 +1,17 @@
+{
+  "id": "large_arena",
+  "name": "Large Combat Arena",
+  "description": "Spacious arena for extended combat with camera following - 3x larger than basic",
+  "start_room": "large_combat_room",
+  "bounds": {
+    "x": -1200,
+    "y": -900,
+    "width": 2400,
+    "height": 1800
+  },
+  "rooms": [
+    "large_combat_room"
+  ],
+  "_schema_version": "1.0.0",
+  "_description": "Large arena configuration for camera-following gameplay"
+}

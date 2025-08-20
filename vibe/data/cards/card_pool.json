@@ -1,0 +1,29 @@
+{
+  "pool": [
+    {
+      "id": "card_proj_plus2",
+      "desc": "+2 projectiles (−15% dmg)",
+      "stat_mods": {
+        "projectile_count_add": 2,
+        "damage_mult": 0.85
+      },
+      "weight": 10
+    },
+    {
+      "id": "card_speed_30",
+      "desc": "+30% projectile speed",
+      "stat_mods": {
+        "projectile_speed_mult": 1.3
+      },
+      "weight": 10
+    },
+    {
+      "id": "card_fire_rate_20",
+      "desc": "+20% fire rate",
+      "stat_mods": {
+        "fire_rate_mult": 1.2
+      },
+      "weight": 10
+    }
+  ]
+}

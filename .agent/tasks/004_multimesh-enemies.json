@@ -1,0 +1,11 @@
+{
+  "title": "multimesh-enemies",
+  "about": "Render grunt enemies with MultiMeshInstance2D.",
+  "files_to_edit": ["godot/scenes/arena/Arena.tscn", "godot/scripts/systems/WaveDirector.gd"],
+  "acceptance_criteria": [
+    "Enemy logic remains pooled",
+    "Grunt visuals batched via MultiMesh2D",
+    "Per-variant MultiMesh; static frame for MVP"
+  ],
+  "prompt": "Introduce a MultiMeshInstance2D for `enemy_grunt_default`; feed transforms from active grunt pool."
+}

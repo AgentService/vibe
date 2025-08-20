@@ -1,0 +1,167 @@
+{
+  "id": "dungeon_main_hall",
+  "name": "Dungeon Main Hall",
+  "size": {
+    "width": 1600,
+    "height": 2400
+  },
+  "boundaries": {
+    "arena_size": {
+      "x": 1600,
+      "y": 2400
+    },
+    "wall_thickness": 32,
+    "wall_segment_size": {
+      "x": 64,
+      "y": 32
+    }
+  },
+  "terrain": {
+    "tiles": [
+      {"x": -600, "y": -1000, "type": "stone_floor", "rotation": 0.0},
+      {"x": -300, "y": -700, "type": "stone_floor", "rotation": 0.0},
+      {"x": 0, "y": -400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 0, "y": 0, "type": "stone_floor", "rotation": 0.0},
+      {"x": 0, "y": 400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 300, "y": 700, "type": "stone_floor", "rotation": 0.0},
+      {"x": 600, "y": 1000, "type": "stone_floor", "rotation": 0.0}
+    ]
+  },
+  "obstacles": {
+    "objects": [
+      {
+        "id": "wall_corridor_left_1",
+        "type": "pillar",
+        "x": -400,
+        "y": -800,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_right_1",
+        "type": "pillar",
+        "x": 400,
+        "y": -800,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_left_2",
+        "type": "pillar",
+        "x": -400,
+        "y": -600,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_right_2",
+        "type": "pillar",
+        "x": 400,
+        "y": -600,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_hall_center",
+        "type": "pillar",
+        "x": 0,
+        "y": 0,
+        "size": {"width": 48, "height": 48},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_left_3",
+        "type": "pillar",
+        "x": -400,
+        "y": 600,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_right_3",
+        "type": "pillar",
+        "x": 400,
+        "y": 600,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_left_4",
+        "type": "pillar",
+        "x": -400,
+        "y": 800,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "wall_corridor_right_4",
+        "type": "pillar",
+        "x": 400,
+        "y": 800,
+        "size": {"width": 64, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "crate_upper",
+        "type": "crate",
+        "x": -200,
+        "y": -400,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      },
+      {
+        "id": "crate_lower",
+        "type": "crate",
+        "x": 200,
+        "y": 400,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      }
+    ]
+  },
+  "interactables": {
+    "objects": [
+      {
+        "id": "chest_north_chamber",
+        "type": "chest",
+        "x": 0,
+        "y": -1000,
+        "interaction_radius": 40.0,
+        "loot_table": "basic_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "chest_south_chamber",
+        "type": "chest",
+        "x": 0,
+        "y": 1000,
+        "interaction_radius": 40.0,
+        "loot_table": "basic_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "altar_main_hall",
+        "type": "altar",
+        "x": -200,
+        "y": 0,
+        "interaction_radius": 50.0,
+        "altar_type": "healing",
+        "can_reactivate": true
+      }
+    ]
+  },
+  "transitions": [],
+  "_schema_version": "1.0.0",
+  "_description": "Vertical dungeon hall with corridor choke points and chamber rewards"
+}

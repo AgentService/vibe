@@ -1,0 +1,212 @@
+{
+  "id": "mega_combat_room",
+  "name": "Mega Combat Room",
+  "size": {
+    "width": 4000,
+    "height": 3000
+  },
+  "boundaries": {
+    "arena_size": {
+      "x": 4000,
+      "y": 3000
+    },
+    "wall_thickness": 48,
+    "wall_segment_size": {
+      "x": 64,
+      "y": 32
+    }
+  },
+  "terrain": {
+    "tiles": [
+      {"x": -1800, "y": -1300, "type": "stone_floor", "rotation": 0.0},
+      {"x": -1200, "y": -800, "type": "stone_floor", "rotation": 0.0},
+      {"x": -600, "y": -400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 0, "y": 0, "type": "stone_floor", "rotation": 0.0},
+      {"x": 600, "y": 400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 1200, "y": 800, "type": "stone_floor", "rotation": 0.0},
+      {"x": 1800, "y": 1300, "type": "stone_floor", "rotation": 0.0}
+    ]
+  },
+  "obstacles": {
+    "objects": [
+      {
+        "id": "pillar_center_massive",
+        "type": "pillar",
+        "x": 0,
+        "y": 0,
+        "size": {"width": 48, "height": 48},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_ring_n",
+        "type": "pillar",
+        "x": 0,
+        "y": -800,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_ring_s",
+        "type": "pillar",
+        "x": 0,
+        "y": 800,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_ring_e",
+        "type": "pillar",
+        "x": 800,
+        "y": 0,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_ring_w",
+        "type": "pillar",
+        "x": -800,
+        "y": 0,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_outer_nw",
+        "type": "pillar",
+        "x": -1200,
+        "y": -900,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_outer_ne",
+        "type": "pillar",
+        "x": 1200,
+        "y": -900,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_outer_sw",
+        "type": "pillar",
+        "x": -1200,
+        "y": 900,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_outer_se",
+        "type": "pillar",
+        "x": 1200,
+        "y": 900,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "crate_cluster_1",
+        "type": "crate",
+        "x": -600,
+        "y": -400,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      },
+      {
+        "id": "crate_cluster_2",
+        "type": "crate",
+        "x": -550,
+        "y": -350,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      },
+      {
+        "id": "crate_cluster_3",
+        "type": "crate",
+        "x": 600,
+        "y": 400,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      },
+      {
+        "id": "crate_cluster_4",
+        "type": "crate",
+        "x": 550,
+        "y": 350,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      }
+    ]
+  },
+  "interactables": {
+    "objects": [
+      {
+        "id": "chest_far_nw",
+        "type": "chest",
+        "x": -1600,
+        "y": -1200,
+        "interaction_radius": 40.0,
+        "loot_table": "rare_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "chest_far_ne",
+        "type": "chest",
+        "x": 1600,
+        "y": -1200,
+        "interaction_radius": 40.0,
+        "loot_table": "rare_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "chest_far_sw",
+        "type": "chest",
+        "x": -1600,
+        "y": 1200,
+        "interaction_radius": 40.0,
+        "loot_table": "rare_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "chest_far_se",
+        "type": "chest",
+        "x": 1600,
+        "y": 1200,
+        "interaction_radius": 40.0,
+        "loot_table": "rare_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "altar_north",
+        "type": "altar",
+        "x": 0,
+        "y": -1200,
+        "interaction_radius": 50.0,
+        "altar_type": "healing",
+        "can_reactivate": true
+      },
+      {
+        "id": "altar_south",
+        "type": "altar",
+        "x": 0,
+        "y": 1200,
+        "interaction_radius": 50.0,
+        "altar_type": "healing",
+        "can_reactivate": true
+      }
+    ]
+  },
+  "transitions": [],
+  "_schema_version": "1.0.0",
+  "_description": "Massive combat room with central fortress design and multiple healing stations"
+}

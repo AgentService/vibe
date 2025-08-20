@@ -1,0 +1,11 @@
+{
+  "title": "signals-audit",
+  "about": "Ensure systems talk via EventBus, not node paths.",
+  "files_to_edit": ["godot/autoload/EventBus.gd", "ARCHITECTURE.md"],
+  "acceptance_criteria": [
+    "All cross-system calls replaced by signals",
+    "EventBus lists exported signals with docstrings",
+    "No `get_node(\"../../..\")` in systems"
+  ],
+  "prompt": "Define EventBus signals and refactor cross-system interactions to emit/subscribe."
+}

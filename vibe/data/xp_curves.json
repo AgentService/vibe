@@ -1,0 +1,11 @@
+{
+  "curves": {
+    "default": {
+      "base_multiplier": 2.0,
+      "exponent": 1,
+      "min_first_level": 1,
+      "description": "Default XP curve: floor(50 * pow(level, 1.5)) with minimum 30 for first level"
+    }
+  },
+  "active_curve": "default"
+}

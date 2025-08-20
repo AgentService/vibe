@@ -1,0 +1,130 @@
+{
+  "id": "combat_room_001",
+  "name": "Basic Combat Room",
+  "size": {
+    "width": 800,
+    "height": 600
+  },
+  "boundaries": {
+    "arena_size": {
+      "x": 800,
+      "y": 600
+    },
+    "wall_thickness": 32,
+    "wall_segment_size": {
+      "x": 64,
+      "y": 32
+    }
+  },
+  "terrain": {
+    "tiles": [
+      {
+        "x": -384,
+        "y": -284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": -320,
+        "y": -284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": -256,
+        "y": -284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": 0,
+        "y": 0,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": 256,
+        "y": 284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": 320,
+        "y": 284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      },
+      {
+        "x": 384,
+        "y": 284,
+        "type": "stone_floor",
+        "rotation": 0.0
+      }
+    ]
+  },
+  "obstacles": {
+    "objects": [
+      {
+        "id": "pillar_1",
+        "type": "pillar",
+        "x": -200,
+        "y": -100,
+        "size": {
+          "width": 24,
+          "height": 24
+        },
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_2",
+        "type": "pillar",
+        "x": 200,
+        "y": 100,
+        "size": {
+          "width": 24,
+          "height": 24
+        },
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "crate_1",
+        "type": "crate",
+        "x": 0,
+        "y": -150,
+        "size": {
+          "width": 32,
+          "height": 32
+        },
+        "rotation": 0.0,
+        "destructible": true
+      }
+    ]
+  },
+  "interactables": {
+    "objects": [
+      {
+        "id": "chest_1",
+        "type": "chest",
+        "x": 150,
+        "y": -200,
+        "interaction_radius": 40.0,
+        "loot_table": "basic_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "altar_1",
+        "type": "altar",
+        "x": -150,
+        "y": 200,
+        "interaction_radius": 50.0,
+        "altar_type": "healing",
+        "can_reactivate": true
+      }
+    ]
+  },
+  "transitions": [],
+  "_schema_version": "1.0.0",
+  "_description": "Basic combat room with pillars, crate, chest, and healing altar"
+}

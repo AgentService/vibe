@@ -1,0 +1,12 @@
+{
+    "title": "setup-fixed-step",
+    "about": "Implement 30 Hz fixed-step combat loop.",
+    "files_to_edit": ["godot/autoload/RunManager.gd"],
+    "acceptance_criteria": [
+      "RunManager emits EventBus 'combat_step(dt)' at ~30 Hz",
+      "Damage/DoT updates move to step callback",
+      "Frame rate changes do not alter DPS in sims"
+    ],
+    "prompt": "Add an accumulator-based fixed-step (30 Hz) in RunManager and emit `combat_step(dt)`; refactor systems to subscribe."
+  }
+  

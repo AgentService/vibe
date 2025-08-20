@@ -1,0 +1,17 @@
+{
+  "id": "hazard_arena",
+  "name": "Hazardous Combat Arena",
+  "description": "Arena with environmental hazards like lava pools and spike traps",
+  "start_room": "hazard_combat_room",
+  "bounds": {
+    "x": -1000,
+    "y": -750,
+    "width": 2000,
+    "height": 1500
+  },
+  "rooms": [
+    "hazard_combat_room"
+  ],
+  "_schema_version": "1.0.0",
+  "_description": "Arena with environmental hazards for advanced gameplay"
+}

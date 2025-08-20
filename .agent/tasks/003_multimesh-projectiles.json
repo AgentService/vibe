@@ -1,0 +1,11 @@
+{
+  "title": "multimesh-projectiles",
+  "about": "Render projectiles via MultiMeshInstance2D.",
+  "files_to_edit": ["godot/scenes/arena/Arena.tscn", "godot/scripts/systems/AbilitySystem.gd"],
+  "acceptance_criteria": [
+    "Projectiles logic remains pooled",
+    "A MultiMeshInstance2D renders projectile visuals",
+    "No per-projectile Sprite nodes at scale"
+  ],
+  "prompt": "Add a MultiMeshInstance2D for `proj_firebolt_basic`; update transforms from pooled projectile list each frame."
+}

@@ -1,0 +1,11 @@
+{
+  "title": "data-mixed-formats",
+  "about": "Adopt JSON for gameplay, .tres for engine config.",
+  "files_to_edit": ["godot/data/README.md", "CLAUDE.md"],
+  "acceptance_criteria": [
+    "README documents fields and examples",
+    "At least one .tres config committed (e.g., theme)",
+    "No gameplay values hardcoded in scenes"
+  ],
+  "prompt": "Document schemas in data/README.md; add one .tres config; ensure systems load gameplay JSON."
+}

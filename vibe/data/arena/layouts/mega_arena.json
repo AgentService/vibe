@@ -1,0 +1,17 @@
+{
+  "id": "mega_arena",
+  "name": "Mega Combat Arena", 
+  "description": "Massive arena for epic battles - 5x larger than basic with diverse obstacles",
+  "start_room": "mega_combat_room",
+  "bounds": {
+    "x": -2000,
+    "y": -1500,
+    "width": 4000,
+    "height": 3000
+  },
+  "rooms": [
+    "mega_combat_room"
+  ],
+  "_schema_version": "1.0.0",
+  "_description": "Mega arena for large-scale combat encounters"
+}

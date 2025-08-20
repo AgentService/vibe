@@ -1,0 +1,16 @@
+{
+  "log_level": "DEBUG",
+  "categories": {
+    "balance": true,
+    "combat": true,
+    "waves": true,
+    "player": true,
+    "ui": true,
+    "abilities": true,
+    "signals": true,
+    "performance": false,
+    "debug": true
+  },
+  "_schema_version": "1.0.0",
+  "_description": "Logger configuration with log levels and category filtering. Set category to false to disable logging for that category."
+}

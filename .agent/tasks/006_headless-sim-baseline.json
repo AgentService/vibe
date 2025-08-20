@@ -1,0 +1,11 @@
+{
+  "title": "headless-sim-baseline",
+  "about": "Monte-Carlo DPS/TTK baseline with seeds.",
+  "files_to_edit": ["godot/tests/balance_sims.gd"],
+  "acceptance_criteria": [
+    "Headless sim runs 10k trials with seed",
+    "Prints DPS/TTK mean, p50/p95, outlier count",
+    "CI ready command documented"
+  ],
+  "prompt": "Create `balance_sims.gd` to simulate 10k standard encounters; use RNG streams and fixed step."
+}

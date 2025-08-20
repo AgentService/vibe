@@ -1,0 +1,11 @@
+{
+  "title": "docs-sync",
+  "about": "Sync docs to accepted decisions.",
+  "files_to_edit": ["CLAUDE.md", "CURSOR.md", "ARCHITECTURE.md", "DECISIONS.md"],
+  "acceptance_criteria": [
+    "Docs reflect 4A/5A/6A and others",
+    "Checklists present; examples included",
+    "No contradictions across files"
+  ],
+  "prompt": "Review and align all docs with the latest decisions; ensure consistency and brevity."
+}

@@ -1,0 +1,131 @@
+{
+  "id": "large_combat_room",
+  "name": "Large Combat Room",
+  "size": {
+    "width": 2400,
+    "height": 1800
+  },
+  "boundaries": {
+    "arena_size": {
+      "x": 2400,
+      "y": 1800
+    },
+    "wall_thickness": 32,
+    "wall_segment_size": {
+      "x": 64,
+      "y": 32
+    }
+  },
+  "terrain": {
+    "tiles": [
+      {"x": -1100, "y": -800, "type": "stone_floor", "rotation": 0.0},
+      {"x": -800, "y": -600, "type": "stone_floor", "rotation": 0.0},
+      {"x": -400, "y": -400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 0, "y": 0, "type": "stone_floor", "rotation": 0.0},
+      {"x": 400, "y": 400, "type": "stone_floor", "rotation": 0.0},
+      {"x": 800, "y": 600, "type": "stone_floor", "rotation": 0.0},
+      {"x": 1100, "y": 800, "type": "stone_floor", "rotation": 0.0}
+    ]
+  },
+  "obstacles": {
+    "objects": [
+      {
+        "id": "pillar_center",
+        "type": "pillar",
+        "x": 0,
+        "y": 0,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_nw",
+        "type": "pillar",
+        "x": -600,
+        "y": -400,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_ne",
+        "type": "pillar",
+        "x": 600,
+        "y": -400,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_sw",
+        "type": "pillar",
+        "x": -600,
+        "y": 400,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "pillar_se",
+        "type": "pillar",
+        "x": 600,
+        "y": 400,
+        "size": {"width": 24, "height": 24},
+        "rotation": 0.0,
+        "destructible": false
+      },
+      {
+        "id": "crate_1",
+        "type": "crate",
+        "x": -300,
+        "y": -200,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      },
+      {
+        "id": "crate_2",
+        "type": "crate",
+        "x": 300,
+        "y": 200,
+        "size": {"width": 32, "height": 32},
+        "rotation": 0.0,
+        "destructible": true
+      }
+    ]
+  },
+  "interactables": {
+    "objects": [
+      {
+        "id": "chest_nw",
+        "type": "chest",
+        "x": -800,
+        "y": -600,
+        "interaction_radius": 40.0,
+        "loot_table": "basic_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "chest_se",
+        "type": "chest",
+        "x": 800,
+        "y": 600,
+        "interaction_radius": 40.0,
+        "loot_table": "basic_chest",
+        "can_reactivate": false
+      },
+      {
+        "id": "altar_center",
+        "type": "altar",
+        "x": 0,
+        "y": -600,
+        "interaction_radius": 50.0,
+        "altar_type": "healing",
+        "can_reactivate": true
+      }
+    ]
+  },
+  "transitions": [],
+  "_schema_version": "1.0.0",
+  "_description": "Large combat room with strategic pillar placement and multiple chests"
+}
