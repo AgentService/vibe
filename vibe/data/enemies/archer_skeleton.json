@@ -1,0 +1,18 @@
+{
+  "id": "archer_skeleton",
+  "display_name": "Skeleton Archer",
+  "health": 5.0,
+  "speed": 120.0,
+  "size": {"x": 20, "y": 20},
+  "collision_radius": 10.0,
+  "xp_value": 3,
+  "spawn_weight": 0.2,
+  "visual": {
+    "color": {"r": 0.8, "g": 0.8, "b": 0.9, "a": 1.0},
+    "shape": "square"
+  },
+  "behavior": {
+    "ai_type": "flee_player",
+    "aggro_range": 400.0
+  }
+}

@@ -28,6 +28,7 @@ const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
 @onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
 @onready var camera_system: CameraSystem = CameraSystem.new()
+@onready var enemy_behavior_system: EnemyBehaviorSystem = EnemyBehaviorSystem.new()
 
 var player: Player
 var xp_system: XpSystem
@@ -52,6 +53,7 @@ func _ready() -> void:
 	texture_theme_system.process_mode = Node.PROCESS_MODE_ALWAYS
 	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	enemy_behavior_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	
 	add_child(ability_system)
 	add_child(melee_system)
@@ -60,9 +62,13 @@ func _ready() -> void:
 	add_child(texture_theme_system)
 	add_child(arena_system)
 	add_child(camera_system)
+	add_child(enemy_behavior_system)
 	
 	# Set references for damage system (legitimate dependency injection)
 	damage_system.set_references(ability_system, wave_director)
+	
+	# Set reference for enemy behavior system
+	enemy_behavior_system.set_wave_director(wave_director)
 	
 	# Create and add new systems
 	_setup_player()
@@ -121,15 +127,16 @@ func _setup_projectile_multimesh() -> void:
 func _setup_enemy_multimesh() -> void:
 	var multimesh := MultiMesh.new()
 	multimesh.transform_format = MultiMesh.TRANSFORM_2D
+	multimesh.use_colors = true  # Enable per-instance colors
 	multimesh.instance_count = 0
 
 	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(12, 12)
+	quad_mesh.size = Vector2(24, 24)  # Base size, will be scaled per instance
 	multimesh.mesh = quad_mesh
 
-	# 12x12 roter Punkt als Texture bauen
-	var img := Image.create(12, 12, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 0.0, 0.0, 1.0))
+	# White texture for color modulation
+	var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+	img.fill(Color(1.0, 1.0, 1.0, 1.0))
 	var tex := ImageTexture.create_from_image(img)
 	mm_enemies.texture = tex
 
@@ -430,8 +437,20 @@ func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
 	for i in range(count):
 		var enemy := visible_enemies[i]
 		if i < _enemy_transforms.size():
+			# Set position and size based on enemy type
+			var enemy_size: Vector2 = enemy.get("size", Vector2(24, 24))
+			var scale_factor := enemy_size / Vector2(24, 24)  # Scale relative to base size
+			
+			# Reset transform and apply new values
+			_enemy_transforms[i] = Transform2D()
 			_enemy_transforms[i].origin = enemy["pos"]
+			_enemy_transforms[i] = _enemy_transforms[i].scaled(scale_factor)
 			mm_enemies.multimesh.set_instance_transform_2d(i, _enemy_transforms[i])
+			
+			# Set color based on enemy type
+			var type_id: String = enemy.get("type_id", "grunt_basic")
+			var enemy_color := _get_enemy_color_for_type(type_id)
+			mm_enemies.multimesh.set_instance_color(i, enemy_color)
 		else:
 			Logger.warn("Enemy transform cache overflow: " + str(i) + "/" + str(_enemy_transforms.size()), "performance")
 
@@ -506,6 +525,18 @@ func _get_visible_world_rect() -> Rect2:
 
 func _is_enemy_visible(enemy_pos: Vector2, visible_rect: Rect2) -> bool:
 	return visible_rect.has_point(enemy_pos)
+
+func _get_enemy_color_for_type(type_id: String) -> Color:
+	# Fallback colors based on type_id
+	match type_id:
+		"grunt_basic":
+			return Color(1.0, 0.0, 0.0, 1.0)  # Red
+		"slime_green":
+			return Color(0.2, 0.8, 0.2, 1.0)  # Green
+		"archer_skeleton":
+			return Color(0.8, 0.8, 0.9, 1.0)  # Light Gray
+		_:
+			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 
 func _spawn_stress_test_enemies() -> void:
 	if not wave_director:

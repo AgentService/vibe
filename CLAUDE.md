@@ -1,12 +1,12 @@
 # CLAUDE.md
-> Guidance for Claude Code when working in this repository. Keep it concise, practical, and mechanics-first.
+> Guidance for Claude Code when working in this repository.
 
 **Quick Links:** [CURSOR.md](CURSOR.md) | [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ## Project Overview
 - **Engine:** Godot 4.2+ (2D top-down).
 - **Focus:** PoE-style buildcraft (skills + supports, items/affixes, small skill tree), wave/survivor arena.
-- **Philosophy:** Art-light, **data-driven**, deterministic, testable. Mechanics > visuals.
+
 
 ## IMPORTANT – Working Rules
 - **YOU MUST** use **typed GDScript**; keep functions small (<40 lines); avoid God objects.

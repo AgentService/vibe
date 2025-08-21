@@ -266,3 +266,44 @@ Enemy radar UI configuration including visual appearance, range, and dot sizing 
   - `player`: Player indicator dot size
   - `enemy_max`: Maximum enemy dot size (close enemies)
   - `enemy_min`: Minimum enemy dot size (distant enemies)
+
+### enemies/*.json
+
+Enemy type definitions for the data-driven spawning system. Each file defines a unique enemy variant with visual, behavioral, and balance properties.
+
+```json
+{
+  "id": "slime_green",
+  "display_name": "Green Slime",
+  "health": 10.0,
+  "speed": 50.0,
+  "size": {"x": 28, "y": 28},
+  "collision_radius": 14.0,
+  "xp_value": 2,
+  "spawn_weight": 0.3,
+  "visual": {
+    "color": {"r": 0.2, "g": 0.8, "b": 0.2, "a": 1.0},
+    "shape": "circle"
+  },
+  "behavior": {
+    "ai_type": "chase_player",
+    "aggro_range": 250.0
+  }
+}
+```
+
+**Fields:**
+- `id` (string): Unique enemy type identifier
+- `display_name` (string): Human-readable enemy name
+- `health` (float): Enemy health points
+- `speed` (float): Movement speed in pixels/second
+- `size` (object): Enemy size with x,y dimensions in pixels
+- `collision_radius` (float): Collision detection radius in pixels
+- `xp_value` (int): Experience points awarded when killed
+- `spawn_weight` (float): Relative spawn probability (0.0-1.0)
+- `visual` (object): Visual appearance configuration
+  - `color` (object): RGBA color values (0.0-1.0)
+  - `shape` (string): Visual shape ("square", "circle")
+- `behavior` (object): AI behavior configuration
+  - `ai_type` (string): AI pattern ("chase_player", "flee_player")
+  - `aggro_range` (float): Detection range in pixels

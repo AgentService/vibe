@@ -69,6 +69,15 @@ Core gameplay balance values loaded by [[BalanceDB]]:
 | `waves.json` | Enemy spawning, health, arena bounds | ✅ Validated | ✅ |
 | `player.json` | Base stats and multipliers | ✅ Validated | ✅ |
 
+### Enemy Data (`/data/enemies/`)
+Enemy type definitions for data-driven spawning system:
+
+| File | Purpose | Schema Status | Hot-Reload |
+|------|---------|---------------|------------|
+| `grunt_basic.json` | Basic melee enemy type | ✅ Validated | ✅ |
+| `slime_green.json` | Medium health chase enemy | ✅ Validated | ✅ |
+| `archer_skeleton.json` | Fast flee-behavior enemy | ✅ Validated | ✅ |
+
 ### UI Configuration (`/data/ui/`)
 User interface configuration with gameplay impact:
 
@@ -145,6 +154,8 @@ func _load_balance_values() -> void:
 | DamageSystem | ✅ Combat values | Direct BalanceDB |
 | AbilitySystem | ✅ Projectile settings | Direct BalanceDB |
 | WaveDirector | ✅ Enemy spawn values | Direct BalanceDB |
+| EnemyRegistry | ✅ Enemy type definitions | BalanceDB signal integration |
+| EnemyBehaviorSystem | ✅ AI behavior patterns | EnemyRegistry dependency |
 | RunManager | ✅ Player stats | Direct BalanceDB |
 | UI Systems | ✅ Radar configuration | Direct BalanceDB |
 | Logger | ✅ Log config & levels | BalanceDB signal integration |

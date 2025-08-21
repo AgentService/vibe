@@ -105,16 +105,19 @@ Arena (Node2D)
 └── MM_Interactables (MultiMeshInstance2D)
 ```
 
-**System Dependencies** (9 systems):
+**System Dependencies** (12 systems):
 - `AbilitySystem` - Combat abilities
 - `WaveDirector` - Enemy spawning  
 - `DamageSystem` - Combat damage
+- `EnemyRegistry` - Enemy type loading and selection
+- `EnemyBehaviorSystem` - AI pattern management
 - `ArenaSystem` - Level loading
 - `TextureThemeSystem` - Visual themes
 - `CameraSystem` - Camera control
 - `XpSystem` - Experience management
 - `TerrainSystem` - Ground rendering
 - `ObstacleSystem` - Environment objects
+- `MeleeSystem` - Melee combat system
 
 **UI Management**:
 - Creates `UILayer` (CanvasLayer)

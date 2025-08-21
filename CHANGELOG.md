@@ -28,6 +28,15 @@
   - **Core focus**: Melee is now baseline capability, cards focus on projectile unlocks
 - **Documentation Updates**: Updated Obsidian architecture docs for KeybindingsDisplay integration
   - **UI Architecture**: Updated component hierarchy and implementation status
+- **Enemy System MVP**: Complete data-driven enemy variety system with JSON configuration
+  - **EnemyType domain model**: Load enemy definitions from JSON with validation and schema support
+  - **EnemyEntity wrapper**: Extends dictionary structure with typed access while maintaining compatibility
+  - **EnemyRegistry system**: Loads all enemy JSONs with hot-reload (F5) and weighted random selection
+  - **Enemy JSON files**: Three enemy types (grunt_basic, slime_green, archer_skeleton) with different stats, colors, and AI
+  - **Enhanced WaveDirector**: Type-aware spawning using EnemyRegistry for weighted selection
+  - **MultiMesh rendering**: Per-instance colors and sizes based on enemy type for visual variety
+  - **EnemyBehaviorSystem**: Dedicated AI system with chase, flee, patrol, and guard patterns
+  - **Data schema**: Complete enemy configuration in vibe/data/README.md with example
   - **Canvas Layer Structure**: Documented new HUD layout with keybindings panel  
   - **Component Reference**: Added detailed KeybindingsDisplay component documentation
   - **System README**: Added keybindings component to key implementation files

@@ -112,7 +112,7 @@ func _check_enemy_player_collisions() -> void:
 		if distance <= collision_distance:
 			# Enemy hits player - deal 1 damage
 			EventBus.damage_taken.emit(1)
-			break  # Only one damage per frame
+			break  # Only one damage per framewww
 
 func _on_damage_requested(payload) -> void:
 	if payload.target_id.type != EntityId.Type.ENEMY:

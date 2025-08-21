@@ -413,6 +413,58 @@ EventBus.damage_taken.emit(1)
 **Related Concepts**: Signal contracts, autoload loading order, event-driven architecture
 **RULE LOOKED UP**: 0 times
 
+### MultiMesh Per-Instance Data
+**Problem/Context**: Setting colors and sizes for individual MultiMesh instances requires specific setup and approach
+**Solution/Pattern**: Enable `use_colors = true` on MultiMesh and use white base texture for color modulation, then set per-instance colors with `set_instance_color()`
+**Code Example**:
+```gdscript
+# Setup MultiMesh for per-instance colors
+var multimesh := MultiMesh.new()
+multimesh.use_colors = true  # Enable per-instance colors
+multimesh.transform_format = MultiMesh.TRANSFORM_2D
+
+# Use white base texture for color modulation
+var img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
+img.fill(Color(1.0, 1.0, 1.0, 1.0))  # White base
+var tex := ImageTexture.create_from_image(img)
+mm_enemies.texture = tex
+
+# Set per-instance colors in update loop
+mm_enemies.multimesh.set_instance_color(i, enemy_color)
+```
+**Why It Works**: White base texture allows color modulation; `use_colors = true` enables per-instance color data
+**Related Concepts**: MultiMesh rendering, per-instance data, visual variety systems
+**RULE LOOKED UP**: 0 times
+
+### Domain Model JSON Loading Patterns
+**Problem/Context**: Loading typed game objects from JSON data with validation and fallback handling
+**Solution/Pattern**: Use static factory methods with comprehensive validation and graceful fallback for missing or malformed data
+**Code Example**:
+```gdscript
+# Static factory method with validation
+static func from_json(data: Dictionary) -> EnemyType:
+    var type := EnemyType.new()
+    type.id = data.get("id", "unknown")  # Fallback defaults
+    type.health = data.get("health", 10.0)
+    
+    # Handle nested data structures
+    var size_data = data.get("size", {"x": 24, "y": 24})
+    if size_data is Dictionary:
+        type.size = Vector2(size_data.get("x", 24.0), size_data.get("y", 24.0))
+    
+    return type
+
+# Validation method for data integrity
+func validate() -> Array[String]:
+    var errors: Array[String] = []
+    if health <= 0.0:
+        errors.append("Enemy health must be greater than 0")
+    return errors
+```
+**Why It Works**: Static factory isolates creation logic; validation catches data issues early; fallback defaults prevent crashes
+**Related Concepts**: Data loading patterns, JSON validation, domain model integrity
+**RULE LOOKED UP**: 0 times
+
 
 ## Performance Insights
 

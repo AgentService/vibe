@@ -3,6 +3,7 @@ extends Node
 ## Wave director managing pooled enemies and spawning mechanics.
 ## Spawns enemies from outside the arena moving toward center.
 ## Updates on fixed combat step (30 Hz) for deterministic behavior.
+## Supports typed enemy spawning via EnemyRegistry.
 
 class_name WaveDirector
 
@@ -20,6 +21,9 @@ var spawn_count_max: int
 var arena_bounds: float
 var target_distance: float
 
+# Enemy typing system
+var enemy_registry: EnemyRegistry
+
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[Dictionary] = []
 var _cache_dirty: bool = true
@@ -29,9 +33,15 @@ signal enemies_updated(alive_enemies: Array[Dictionary])
 func _ready() -> void:
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
+	_setup_enemy_registry()
 	_initialize_pool()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
+
+func _setup_enemy_registry() -> void:
+	enemy_registry = EnemyRegistry.new()
+	add_child(enemy_registry)
+	Logger.info("Enemy registry initialized", "waves")
 
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
@@ -59,7 +69,11 @@ func _initialize_pool() -> void:
 			"pos": Vector2.ZERO,
 			"vel": Vector2.ZERO,
 			"hp": enemy_hp,
-			"alive": false
+			"max_hp": enemy_hp,
+			"alive": false,
+			"type_id": "grunt_basic",
+			"speed": 60.0,
+			"size": Vector2(24, 24)
 		}
 
 func _on_combat_step(payload) -> void:
@@ -82,36 +96,39 @@ func _spawn_enemy() -> void:
 		Logger.warn("No free enemy slots available", "waves")
 		return
 	
+	# Select enemy type from registry
+	var enemy_type := enemy_registry.get_random_enemy_type("waves")
+	if enemy_type == null:
+		Logger.warn("No enemy types available for spawning", "waves")
+		return
+	
 	# Use cached player position from PlayerState autoload
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	
 	var angle := RNG.randf_range("waves", 0.0, TAU)
 	var spawn_pos := target_pos + Vector2.from_angle(angle) * spawn_radius
 	var direction := (target_pos - spawn_pos).normalized()
-	var speed := RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
 	var enemy := enemies[free_idx]
-	enemy["pos"] = spawn_pos
-	enemy["vel"] = direction * speed
-	enemy["hp"] = enemy_hp
-	enemy["alive"] = true
+	EnemyEntity.setup_dictionary_with_type(enemy, enemy_type, spawn_pos, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 
 ## Public method for manual enemy spawning (debug/testing)
-func spawn_enemy_at(position: Vector2, enemy_type: String = "grunt") -> bool:
+func spawn_enemy_at(position: Vector2, enemy_type_id: String = "grunt_basic") -> bool:
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
 		return false
 	
+	var enemy_type := enemy_registry.get_enemy_type(enemy_type_id)
+	if enemy_type == null:
+		Logger.warn("Unknown enemy type: " + enemy_type_id, "waves")
+		return false
+	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	var direction := (target_pos - position).normalized()
-	var speed := RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
 	var enemy := enemies[free_idx]
-	enemy["pos"] = position
-	enemy["vel"] = direction * speed
-	enemy["hp"] = enemy_hp
-	enemy["alive"] = true
+	EnemyEntity.setup_dictionary_with_type(enemy, enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	return true
 
@@ -134,10 +151,8 @@ func _update_enemies(dt: float) -> void:
 		
 		# Only update enemies within update distance for performance
 		if dist_to_target <= update_distance:
-			# Update enemy direction to always move toward player/center
-			var direction: Vector2 = (target_pos - enemy["pos"]).normalized()
-			var speed: float = enemy["vel"].length()
-			enemy["vel"] = direction * speed
+			# Update enemy position based on current velocity
+			# (Velocity is set by EnemyBehaviorSystem)
 			enemy["pos"] += enemy["vel"] * dt
 		
 		# Kill enemy if it reaches target or goes out of bounds
