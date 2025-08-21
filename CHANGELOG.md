@@ -5,6 +5,11 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Arena and Balance Improvements**: Enhanced default game settings for better experience
+  - **Mega Arena default**: Game now starts with the largest arena (mega_arena) instead of basic_arena
+  - **Projectile gating**: Auto-projectile shooting only activates after obtaining projectile boons
+  - **Closer enemy spawns**: Reduced spawn radius from 1800 to 600 units for more immediate action
+  - **Optimized enemy count**: Reduced max enemies from 5500 to 800 for better performance
 - **Keybindings Display HUD**: Always-visible control reference panel with table-style formatting
   - **Table layout**: GridContainer with left-aligned actions and right-aligned key bindings
   - **Radar styling**: Matches enemy radar with dark background, gray borders, rounded corners

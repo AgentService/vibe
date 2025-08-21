@@ -1,11 +1,11 @@
 {
-  "max_enemies": 5500,
+  "max_enemies": 800,
   "spawn_interval": 0.1,
   "arena_center": {
     "x": 0.0,
     "y": 0.0
   },
-  "spawn_radius": 1800.0,
+  "spawn_radius": 600.0,
   "spawn_radius_large": 1200.0,
   "spawn_radius_mega": 1800.0,
   "enemy_hp": 3.0,
@@ -16,7 +16,7 @@
   "arena_bounds": 2500.0,
   "target_distance": 20.0,
   "enemy_culling_distance": 2000.0,
-  "enemy_transform_cache_size": 5500,
+  "enemy_transform_cache_size": 800,
   "enemy_viewport_cull_margin": 200.0,
   "enemy_update_distance": 2500.0,
   "camera_min_zoom": 0.6,

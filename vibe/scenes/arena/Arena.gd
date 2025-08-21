@@ -95,8 +95,8 @@ func _ready() -> void:
 	_setup_obstacle_multimesh()
 	_setup_interactable_multimesh()
 	
-	# Load the basic arena
-	arena_system.load_arena("basic_arena")
+	# Load the mega arena
+	arena_system.load_arena("mega_arena")
 	
 	# Print debug help
 	_print_debug_help()
@@ -374,6 +374,10 @@ func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	tween.tween_callback(cone_polygon.queue_free)
 
 func _handle_debug_spawning(delta: float) -> void:
+	# Only auto-shoot projectiles if player has projectile abilities
+	if not RunManager.stats.get("has_projectiles", false):
+		return
+		
 	spawn_timer += delta
 	var current_interval: float = base_spawn_interval / RunManager.stats.fire_rate_mult
 	
