@@ -5,7 +5,7 @@
 Build on MVP foundation to create a flexible, scalable enemy system supporting animations, bosses, and advanced behaviors.
 
 ## Prerequisites
-- ✅ [ENEMY_SYSTEM_MVP.md](ENEMY_SYSTEM_MVP.md) completed
+- ✅ [ENEMY_SYSTEM_MVP.md](DONE_ENEMY_SYSTEM_MVP.md) completed
 - ✅ Basic enemy types working
 - ✅ JSON-driven spawning functional
 

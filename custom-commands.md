@@ -1,6 +1,7 @@
 # Custom Commands
 
 ## Current Commands
+# claude --dangerously-skip-permissions
 
 ### `/doc-create` - Feature Implementation Documentation
 Creates feature implementation file in changelogs/features folder with format: `DD_MM_YYYY-FEATURE_NAME.md`
