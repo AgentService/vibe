@@ -203,9 +203,15 @@ func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
 	if not get_tree().paused:
 		_handle_debug_spawning(delta)
+		_handle_auto_attack()
 	
 
 func _input(event: InputEvent) -> void:
+	# Handle mouse position updates for auto-attack
+	if event is InputEventMouseMotion:
+		var world_pos = get_global_mouse_position()
+		melee_system.set_auto_attack_target(world_pos)
+	
 	# Handle mouse clicks for attacks
 	if event is InputEventMouseButton and event.pressed:
 		# Convert screen coordinates to world coordinates
@@ -314,6 +320,17 @@ func _handle_projectile_attack(target_pos: Vector2) -> void:
 	
 	_spawn_debug_projectile()
 
+func _handle_auto_attack() -> void:
+	if not melee_system.auto_attack_enabled or not player:
+		return
+	
+	var player_pos = player.global_position
+	var alive_enemies = wave_director.get_alive_enemies()
+	
+	# Only attack if there are enemies nearby
+	if alive_enemies.size() > 0:
+		melee_system.perform_attack(player_pos, melee_system.auto_attack_target, alive_enemies)
+
 func _on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:
 	_show_melee_cone_effect(player_pos, target_pos)
 
@@ -321,10 +338,9 @@ func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	if not melee_effects:
 		return
 	
-	# Get melee stats for visual effect
-	var melee_stats = melee_system.get_attack_stats()
-	var cone_angle = melee_stats.get("cone_angle", 45.0)
-	var attack_range = melee_stats.get("range", 100.0)
+	# Get effective melee stats for visual effect (including card modifiers)
+	var effective_cone_angle = melee_system._get_effective_cone_angle()
+	var effective_range = melee_system._get_effective_range()
 	
 	# Create cone visual effect
 	var cone_polygon = Polygon2D.new()
@@ -338,13 +354,13 @@ func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	cone_points.append(Vector2.ZERO)
 	
 	# Calculate cone edges  
-	var half_angle = deg_to_rad(cone_angle / 2.0)
+	var half_angle = deg_to_rad(effective_cone_angle / 2.0)
 	var left_dir = attack_dir.rotated(-half_angle)
 	var right_dir = attack_dir.rotated(half_angle)
 	
 	# Add cone edge points (spread from tip towards target direction)
-	cone_points.append(left_dir * attack_range)
-	cone_points.append(right_dir * attack_range)
+	cone_points.append(left_dir * effective_range)
+	cone_points.append(right_dir * effective_range)
 	
 	cone_polygon.polygon = cone_points
 	cone_polygon.position = player_pos

@@ -9,12 +9,15 @@ var attack_cooldown: float = 0.0
 var is_attacking: bool = false
 var attack_duration: float = 0.2  # Visual attack duration
 
+# Auto-attack system
+var auto_attack_enabled: bool = true  # Enabled by default
+var auto_attack_target: Vector2 = Vector2.ZERO
+
 # Balance values loaded from JSON
 var damage: float
 var range: float
 var cone_angle: float  # In degrees
 var attack_speed: float  # Attacks per second
-var lifesteal: float
 
 # Attack effects tracking
 var attack_effects: Array[Dictionary] = []
@@ -35,7 +38,6 @@ func _load_balance_values() -> void:
 	range = BalanceDB.get_melee_value("range")
 	cone_angle = BalanceDB.get_melee_value("cone_angle")
 	attack_speed = BalanceDB.get_melee_value("attack_speed")
-	lifesteal = BalanceDB.get_melee_value("lifesteal")
 
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
@@ -54,6 +56,7 @@ func _initialize_attack_effects_pool() -> void:
 func _on_combat_step(payload) -> void:
 	_update_cooldown(payload.dt)
 	_update_attack_effects(payload.dt)
+	_handle_auto_attack()
 
 func _update_cooldown(dt: float) -> void:
 	if attack_cooldown > 0.0:
@@ -84,7 +87,6 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 	# Get effective values for this attack
 	var effective_range = _get_effective_range()
 	var effective_cone = _get_effective_cone_angle()
-	var effective_lifesteal = _get_effective_lifesteal()
 	
 	# Find enemies in cone
 	var hit_enemies: Array[Dictionary] = []
@@ -117,11 +119,6 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
 	
-	# Apply lifesteal if any
-	if effective_lifesteal > 0.0 and hit_enemies.size() > 0:
-		var heal_amount = hit_enemies.size() * _calculate_damage() * effective_lifesteal
-		var heal_payload = EventBus.PlayerHealthChangedPayload.new(heal_amount)
-		EventBus.player_health_changed.emit(heal_payload)
 	
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
 	return hit_enemies
@@ -141,35 +138,17 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	return dot_product >= min_dot
 
 func _calculate_damage() -> float:
-	# Apply RunManager stat multipliers
-	var final_damage = damage
-	if RunManager.stats.has("melee_damage_mult"):
-		final_damage *= RunManager.stats["melee_damage_mult"]
-	return final_damage
+	return damage
 
 func _get_effective_attack_speed() -> float:
-	var effective_speed = attack_speed
-	if RunManager.stats.has("melee_attack_speed_mult"):
-		effective_speed *= RunManager.stats["melee_attack_speed_mult"]
-	return effective_speed
+	return attack_speed
 
 func _get_effective_range() -> float:
-	var effective_range = range
-	if RunManager.stats.has("melee_range_mult"):
-		effective_range *= RunManager.stats["melee_range_mult"]
-	return effective_range
+	return range
 
 func _get_effective_cone_angle() -> float:
-	var effective_angle = cone_angle
-	if RunManager.stats.has("melee_cone_angle_mult"):
-		effective_angle *= RunManager.stats["melee_cone_angle_mult"]
-	return effective_angle
+	return cone_angle
 
-func _get_effective_lifesteal() -> float:
-	var effective_lifesteal = lifesteal
-	if RunManager.stats.has("lifesteal"):
-		effective_lifesteal += RunManager.stats["lifesteal"]
-	return effective_lifesteal
 
 func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	var free_idx = _find_free_attack_effect()
@@ -201,6 +180,20 @@ func get_attack_stats() -> Dictionary:
 		"range": range,
 		"cone_angle": cone_angle,
 		"attack_speed": attack_speed,
-		"lifesteal": lifesteal,
-		"cooldown_remaining": attack_cooldown
+		"cooldown_remaining": attack_cooldown,
+		"auto_attack_enabled": auto_attack_enabled
 	}
+
+func _handle_auto_attack() -> void:
+	if not auto_attack_enabled or not can_attack():
+		return
+	
+	# Auto-attack will be triggered from Arena with proper enemy data
+	# This method is called from combat step but Arena manages the actual attack calls
+
+func set_auto_attack_enabled(enabled: bool) -> void:
+	auto_attack_enabled = enabled
+	Logger.info("Auto-attack " + ("enabled" if enabled else "disabled"), "abilities")
+
+func set_auto_attack_target(target_pos: Vector2) -> void:
+	auto_attack_target = target_pos

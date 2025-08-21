@@ -138,7 +138,7 @@
             "state": {
               "type": "search",
               "state": {
-                "query": "",
+                "query": "tag:#rendering",
                 "matchingCase": false,
                 "explainSearch": false,
                 "collapseAll": false,
@@ -159,7 +159,8 @@
               "title": "Bookmarks"
             }
           }
-        ]
+        ],
+        "currentTab": 1
       }
     ],
     "direction": "horizontal",
@@ -254,7 +255,7 @@
       "bases:Create new base": false
     }
   },
-  "active": "c6a69ad9e0d5bb08",
+  "active": "18dd7a761059bd34",
   "lastOpenFiles": [
     "README.md",
     "03-tasks/TODO.md",

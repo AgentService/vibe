@@ -40,14 +40,9 @@ func _load_player_stats() -> void:
 		"projectile_speed_mult": BalanceDB.get_player_value("projectile_speed_mult"),
 		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
 		"damage_mult": BalanceDB.get_player_value("damage_mult"),
-		"melee_damage_mult": 1.0,
-		"melee_attack_speed_mult": 1.0,
-		"melee_range_mult": 1.0,
-		"melee_cone_angle_mult": 1.0,
-		"lifesteal": 0.0,
 		"has_projectiles": false
 	}
-	Logger.info("Reloaded player stats - melee_damage_mult: " + str(stats.melee_damage_mult), "player")
+	Logger.info("Reloaded player stats", "player")
 
 func _process(delta: float) -> void:
 	# Don't accumulate time when game is paused

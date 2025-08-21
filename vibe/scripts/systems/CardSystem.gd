@@ -88,8 +88,11 @@ func apply(card: Dictionary) -> void:
 			RunManager.stats[stat_name] += mod_value
 		elif stat_name.ends_with("_mult"):
 			RunManager.stats[stat_name] *= mod_value
+		elif typeof(mod_value) == TYPE_BOOL:
+			# Boolean values should be set directly, not added
+			RunManager.stats[stat_name] = mod_value
 		else:
-			# Default to additive
+			# Default to additive for numeric values
 			RunManager.stats[stat_name] += mod_value
 	
 	Logger.info("Applied card: " + str(card.get("desc", "Unknown")) + " | Stats: " + str(RunManager.stats), "player")
