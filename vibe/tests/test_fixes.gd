@@ -37,8 +37,8 @@ func _test_theme_cycling() -> void:
 func _test_movement_pause() -> void:
 	print("\nTesting movement pause system...")
 	
-	# Test RunManager pause functionality
-	var initial_paused := RunManager.paused
+	# Test PauseManager pause functionality
+	var initial_paused := PauseManager.is_paused()
 	print("Initial pause state: ", initial_paused)
 	
 	# Test pause_game emits signal
@@ -50,14 +50,14 @@ func _test_movement_pause() -> void:
 		received_value = payload.is_paused
 	)
 	
-	RunManager.pause_game(true)
-	assert(RunManager.paused == true, "RunManager should be paused")
+	PauseManager.pause_game(true)
+	assert(PauseManager.is_paused() == true, "PauseManager should be paused")
 	assert(signal_received == true, "Should emit game_paused_changed signal")
 	assert(received_value == true, "Signal should carry correct paused value")
 	
 	# Test unpause
-	RunManager.pause_game(false)
-	assert(RunManager.paused == false, "RunManager should be unpaused")
+	PauseManager.pause_game(false)
+	assert(PauseManager.is_paused() == false, "PauseManager should be unpaused")
 	assert(received_value == false, "Signal should carry correct unpaused value")
 	
 	print("✅ Movement pause system fixed")
@@ -69,5 +69,5 @@ func _cleanup() -> void:
 	
 	print("\n✅ All fixes verified successfully!")
 	print("✅ Theme cycling: get_available_themes() returns proper Array[String]")
-	print("✅ Movement pause: Player movement disabled when RunManager.paused = true")
+	print("✅ Movement pause: Player movement disabled when PauseManager.is_paused() = true")
 	print("✅ Pause signals: game_paused_changed emitted on pause state changes")

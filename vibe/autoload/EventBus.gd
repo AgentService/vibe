@@ -34,6 +34,13 @@ signal damage_applied(payload)
 ## Batch damage applied - emitted by DamageSystem for AoE/multi-target abilities
 signal damage_batch_applied(payload)
 
+# MELEE ATTACK SIGNALS
+## Melee attack performed - emitted by MeleeSystem when attack starts
+signal melee_attack_started(payload)
+
+## Melee attack hit enemies - emitted by MeleeSystem when enemies are hit
+signal melee_enemies_hit(payload)
+
 # ENTITY LIFECYCLE SIGNALS  
 ## Entity killed - emitted when HP reaches 0
 signal entity_killed(payload)

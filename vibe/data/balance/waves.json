@@ -16,6 +16,10 @@
   "arena_bounds": 2500.0,
   "target_distance": 20.0,
   "enemy_culling_distance": 2000.0,
+  "enemy_transform_cache_size": 5500,
+  "enemy_viewport_cull_margin": 200.0,
+  "enemy_update_distance": 2500.0,
+  "camera_min_zoom": 0.6,
   "_schema_version": "1.0.0",
-  "_description": "Wave director balance values including enemy spawning, movement, health, and arena constraints. Updated for larger arena support with dynamic spawn radii."
+  "_description": "Wave director balance values including enemy spawning, movement, health, and arena constraints. Updated for larger arena support with dynamic spawn radii and performance optimization settings."
 }

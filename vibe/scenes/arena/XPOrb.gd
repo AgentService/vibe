@@ -14,6 +14,8 @@ var _player: Node2D
 var _moving_to_player: bool = false
 
 func _ready() -> void:
+	# XP orbs should pause with the game
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	_player = get_tree().get_first_node_in_group("player")
 
 func _process(delta: float) -> void:

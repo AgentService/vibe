@@ -38,6 +38,18 @@ gigachad
 
 ### Short-term
 
+- [ ] **MELEE AUTO-ATTACK:** Implement continuous melee attacking at cursor position without requiring clicks
+
+  - Status: Melee system complete but requires manual clicking
+  - Files: vibe/scripts/systems/MeleeSystem.gd, vibe/scenes/arena/Arena.gd
+  - Implementation: Add timer-based auto-attack cycle following cursor position
+
+- [ ] **CONE SIZE SCALING:** Expand base cone size and ensure cone angle card scaling works properly 
+
+  - Status: Cone angle multiplier exists but may need base size adjustment
+  - Files: vibe/data/balance/melee.json, vibe/scripts/systems/MeleeSystem.gd, vibe/data/cards/card_pool.json
+  - Implementation: Increase default cone_angle from 45° to 60°+, verify card scaling affects visual cone
+
 - [ ] #enemy-behavior interface + baseline behaviors (#rusher, #shooter, #tank)
 
   - Files: vibe/scripts/systems/AbilitySystem.gd, vibe/scripts/systems/DamageSystem.gd

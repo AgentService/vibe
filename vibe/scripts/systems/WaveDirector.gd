@@ -20,6 +20,10 @@ var spawn_count_max: int
 var arena_bounds: float
 var target_distance: float
 
+# Cached alive enemies list for performance
+var _alive_enemies_cache: Array[Dictionary] = []
+var _cache_dirty: bool = true
+
 signal enemies_updated(alive_enemies: Array[Dictionary])
 
 func _ready() -> void:
@@ -91,6 +95,25 @@ func _spawn_enemy() -> void:
 	enemy["vel"] = direction * speed
 	enemy["hp"] = enemy_hp
 	enemy["alive"] = true
+	_cache_dirty = true  # Mark cache as dirty when spawning
+
+## Public method for manual enemy spawning (debug/testing)
+func spawn_enemy_at(position: Vector2, enemy_type: String = "grunt") -> bool:
+	var free_idx := _find_free_enemy()
+	if free_idx == -1:
+		return false
+	
+	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var direction := (target_pos - position).normalized()
+	var speed := RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
+	
+	var enemy := enemies[free_idx]
+	enemy["pos"] = position
+	enemy["vel"] = direction * speed
+	enemy["hp"] = enemy_hp
+	enemy["alive"] = true
+	_cache_dirty = true  # Mark cache as dirty when spawning
+	return true
 
 func _find_free_enemy() -> int:
 	for i in range(max_enemies):
@@ -101,31 +124,43 @@ func _find_free_enemy() -> int:
 func _update_enemies(dt: float) -> void:
 	# Use cached player position from PlayerState autoload
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	
 	for enemy in enemies:
 		if not enemy["alive"]:
 			continue
 		
-		# Update enemy direction to always move toward player/center
-		var direction: Vector2 = (target_pos - enemy["pos"]).normalized()
-		var speed: float = enemy["vel"].length()
-		enemy["vel"] = direction * speed
-		enemy["pos"] += enemy["vel"] * dt
+		var dist_to_target: float = enemy["pos"].distance_to(target_pos)
+		
+		# Only update enemies within update distance for performance
+		if dist_to_target <= update_distance:
+			# Update enemy direction to always move toward player/center
+			var direction: Vector2 = (target_pos - enemy["pos"]).normalized()
+			var speed: float = enemy["vel"].length()
+			enemy["vel"] = direction * speed
+			enemy["pos"] += enemy["vel"] * dt
 		
 		# Kill enemy if it reaches target or goes out of bounds
-		var dist_to_target: float = enemy["pos"].distance_to(target_pos)
 		if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
 			enemy["alive"] = false
+			_cache_dirty = true  # Mark cache as dirty when enemy dies
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
 
 func get_alive_enemies() -> Array[Dictionary]:
-	var alive: Array[Dictionary] = []
+	# Use cached list if available and not dirty
+	if not _cache_dirty and _alive_enemies_cache.size() > 0:
+		return _alive_enemies_cache
+	
+	# Rebuild cache
+	_alive_enemies_cache.clear()
 	for enemy in enemies:
 		if enemy["alive"]:
-			alive.append(enemy)
-	return alive
+			_alive_enemies_cache.append(enemy)
+	
+	_cache_dirty = false
+	return _alive_enemies_cache
 
 # Player reference no longer needed - using PlayerState autoload for position
 
@@ -141,5 +176,6 @@ func damage_enemy(enemy_index: int, damage: float) -> void:
 	if enemy["hp"] <= 0.0:
 		var death_pos: Vector2 = enemy["pos"]
 		enemy["alive"] = false
+		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
 		var payload := EventBus.EnemyKilledPayload.new(death_pos, 1)
 		EventBus.enemy_killed.emit(payload)

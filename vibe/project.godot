@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 Logger="*res://autoload/Logger.gd"
 EventBus="*res://autoload/EventBus.gd"
+PauseManager="*res://autoload/PauseManager.gd"
 RunManager="*res://autoload/RunManager.gd"
 RNG="*res://autoload/RNG.gd"
 BalanceDB="*res://autoload/BalanceDB.gd"

@@ -8,6 +8,8 @@ class_name Player
 @export var pickup_radius: float = 12.0
 
 func _ready() -> void:
+	# Player should pause with the game
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
 	_setup_collision()
 
@@ -21,11 +23,6 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 
 func _handle_movement(delta: float) -> void:
-	# Don't move if game is paused
-	if RunManager.paused:
-		velocity = Vector2.ZERO
-		return
-	
 	var input_vector: Vector2 = Vector2.ZERO
 	
 	if Input.is_action_pressed("move_left"):

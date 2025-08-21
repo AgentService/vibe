@@ -9,8 +9,8 @@ signal camera_shake_requested(intensity: float, duration: float)
 
 @export var follow_speed: float = 8.0
 @export var zoom_speed: float = 5.0
-@export var min_zoom: float = 0.5
 @export var max_zoom: float = 2.0
+var min_zoom: float  # Will be loaded from balance data
 @export var default_zoom: float = 1.0
 @export var deadzone_radius: float = 20.0
 @export var shake_intensity: float = 0.0
@@ -24,6 +24,11 @@ var shake_duration: float = 0.0
 var original_position: Vector2
 
 func _ready() -> void:
+	# Camera should pause with the game
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+	
+	# Load min zoom from balance data
+	min_zoom = BalanceDB.get_waves_value("camera_min_zoom")
 	target_zoom = default_zoom
 	_connect_signals()
 
@@ -52,10 +57,6 @@ func setup_camera(player_node: Node2D) -> void:
 
 func _physics_process(delta: float) -> void:
 	if not camera:
-		return
-	
-	# Don't update camera during pause to prevent glitches
-	if RunManager.paused:
 		return
 	
 	_update_camera_position(delta)

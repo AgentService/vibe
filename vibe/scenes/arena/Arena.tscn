@@ -16,3 +16,5 @@ script = ExtResource("1_0lc8k")
 [node name="MM_Obstacles" type="MultiMeshInstance2D" parent="."]
 
 [node name="MM_Interactables" type="MultiMeshInstance2D" parent="."]
+
+[node name="MeleeEffects" type="Node2D" parent="."]

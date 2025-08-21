@@ -10,16 +10,21 @@ class_name HUD
 
 var fps_update_timer: float = 0.0
 const FPS_UPDATE_INTERVAL: float = 0.5
-var debug_overlay_visible: bool = false
+var debug_overlay_visible: bool = true
 
 func _ready() -> void:
+	# HUD should always process (including FPS counter during pause)
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	
 	EventBus.xp_changed.connect(_on_xp_changed)
 	EventBus.level_up.connect(_on_level_up)
+	
 	
 	# Initialize display
 	_update_level_display(1)
 	_update_xp_display(0, 30)
 	_update_fps_display()
+	
 
 func _process(delta: float) -> void:
 	fps_update_timer += delta
@@ -27,10 +32,6 @@ func _process(delta: float) -> void:
 		fps_update_timer = 0.0
 		_update_fps_display()
 
-func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed:
-		if event.keycode == KEY_F9:
-			_toggle_debug_overlay()
 
 func _on_xp_changed(payload) -> void:
 	_update_xp_display(payload.current_xp, payload.next_level_xp)
@@ -59,10 +60,6 @@ func _update_fps_display() -> void:
 		else:
 			fps_label.text = base_text
 
-func _toggle_debug_overlay() -> void:
-	debug_overlay_visible = !debug_overlay_visible
-	Logger.info("Debug overlay toggled: " + str(debug_overlay_visible), "ui")
-	_update_fps_display()  # Update immediately
 
 func _get_render_stats() -> String:
 	# Get performance statistics from the rendering server
@@ -87,8 +84,16 @@ func _get_render_stats() -> String:
 	if arena and arena.has_method("get_debug_stats"):
 		var debug_stats: Dictionary = arena.get_debug_stats()
 		if debug_stats.has("enemy_count"):
-			stats.append("Enemies: " + str(debug_stats["enemy_count"]))
+			var enemy_text: String = "Enemies: " + str(debug_stats["enemy_count"])
+			if debug_stats.has("visible_enemies"):
+				enemy_text += " (visible: " + str(debug_stats["visible_enemies"]) + ")"
+			stats.append(enemy_text)
 		if debug_stats.has("projectile_count"):
 			stats.append("Projectiles: " + str(debug_stats["projectile_count"]))
 	
 	return "\n".join(stats)
+
+
+func _toggle_debug_overlay() -> void:
+	debug_overlay_visible = !debug_overlay_visible
+	Logger.info("Debug overlay toggled: " + str(debug_overlay_visible), "ui")

@@ -10,12 +10,14 @@ const COMBAT_DT: float = 1.0 / 30.0  # 30 Hz fixed step
 		seed = value
 		_seed_rng()
 
-var paused: bool = false
 var stats: Dictionary = {}
 
 var _accumulator: float = 0.0
 
 func _ready() -> void:
+	# RunManager should pause with the game
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+	
 	if seed == 0:
 		seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
@@ -37,25 +39,31 @@ func _load_player_stats() -> void:
 		"projectile_count_add": BalanceDB.get_player_value("projectile_count_add"),
 		"projectile_speed_mult": BalanceDB.get_player_value("projectile_speed_mult"),
 		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
-		"damage_mult": BalanceDB.get_player_value("damage_mult")
+		"damage_mult": BalanceDB.get_player_value("damage_mult"),
+		"melee_damage_mult": 1.0,
+		"melee_attack_speed_mult": 1.0,
+		"melee_range_mult": 1.0,
+		"melee_cone_angle_mult": 1.0,
+		"lifesteal": 0.0,
+		"has_projectiles": false
 	}
-	Logger.info("Reloaded player stats - projectile_count_add: " + str(stats.projectile_count_add), "player")
+	Logger.info("Reloaded player stats - melee_damage_mult: " + str(stats.melee_damage_mult), "player")
 
 func _process(delta: float) -> void:
-	# Don't accumulate time during pause to prevent lag bursts
-	if not paused:
-		_accumulator += delta
+	# Don't accumulate time when game is paused
+	if get_tree().paused:
+		return
+		
+	_accumulator += delta
 	
 	while _accumulator >= COMBAT_DT:
-		if not paused:
-			var payload := EventBus.CombatStepPayload.new(COMBAT_DT)
-			EventBus.combat_step.emit(payload)
+		var payload := EventBus.CombatStepPayload.new(COMBAT_DT)
+		EventBus.combat_step.emit(payload)
 		_accumulator -= COMBAT_DT
 
+## Legacy method for compatibility - use PauseManager instead
 func pause_game(v: bool) -> void:
-	paused = v
-	var payload := EventBus.GamePausedChangedPayload.new(paused)
-	EventBus.game_paused_changed.emit(payload)
+	PauseManager.pause_game(v)
 
 func _seed_rng() -> void:
 	if RNG:

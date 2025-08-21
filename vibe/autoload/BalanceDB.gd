@@ -16,9 +16,9 @@ func _ready() -> void:
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F5:
-		print("F5 pressed - Hot-reloading balance data...")
+		Logger.info("F5 pressed - Hot-reloading balance data...", "balance")
 		reload_balance_data()
-		print("Balance data reloaded successfully!")
+		Logger.info("Balance data reloaded successfully!", "balance")
 
 func _setup_fallback_data() -> void:
 	_fallback_data = {
@@ -53,6 +53,13 @@ func _setup_fallback_data() -> void:
 			"projectile_speed_mult": 1.0,
 			"fire_rate_mult": 1.0,
 			"damage_mult": 1.0
+		},
+		"melee": {
+			"damage": 25.0,
+			"range": 100.0,
+			"cone_angle": 45.0,
+			"attack_speed": 1.5,
+			"lifesteal": 0.0
 		},
 		"ui": {
 			"radar": {
@@ -133,6 +140,10 @@ func _setup_schemas() -> void:
 				"spawn_radius_large": TYPE_FLOAT,
 				"spawn_radius_mega": TYPE_FLOAT,
 				"enemy_culling_distance": TYPE_FLOAT,
+				"enemy_transform_cache_size": TYPE_INT,
+				"enemy_viewport_cull_margin": TYPE_FLOAT,
+				"enemy_update_distance": TYPE_FLOAT,
+				"camera_min_zoom": TYPE_FLOAT,
 				"_schema_version": TYPE_STRING,
 				"_description": TYPE_STRING
 			},
@@ -149,7 +160,11 @@ func _setup_schemas() -> void:
 				"spawn_count_max": {"min": 1, "max": 100},
 				"arena_bounds": {"min": 100.0, "max": 10000.0},
 				"target_distance": {"min": 1.0, "max": 500.0},
-				"enemy_culling_distance": {"min": 100.0, "max": 10000.0}
+				"enemy_culling_distance": {"min": 100.0, "max": 10000.0},
+				"enemy_transform_cache_size": {"min": 100, "max": 20000},
+				"enemy_viewport_cull_margin": {"min": 0.0, "max": 1000.0},
+				"enemy_update_distance": {"min": 100.0, "max": 10000.0},
+				"camera_min_zoom": {"min": 0.1, "max": 2.0}
 			},
 			"nested": {
 				"arena_center": {
@@ -326,6 +341,7 @@ func load_all_balance_data() -> void:
 	_load_balance_file("abilities") 
 	_load_balance_file("waves")
 	_load_balance_file("player")
+	_load_balance_file("melee")
 	_load_ui_file("radar")
 	balance_reloaded.emit()
 
@@ -370,6 +386,9 @@ func get_waves_value(key: String) -> Variant:
 
 func get_player_value(key: String) -> Variant:
 	return _get_value("player", key)
+
+func get_melee_value(key: String) -> Variant:
+	return _get_value("melee", key)
 
 func get_ui_value(key: String) -> Variant:
 	return _get_value("ui", key)

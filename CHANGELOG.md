@@ -15,6 +15,26 @@
   - **Debug overlay toggle**: F9 key toggles extended performance stats (draw calls, memory usage, entity counts)
   - **Performance test script**: `test_transform_performance.gd` validates transform caching benefits
   - **Arena debug stats**: get_debug_stats() method provides real-time enemy/projectile counts for monitoring
+- **Comprehensive Pause System Overhaul**: Replaced manual pause checks with Godot's built-in pause system
+  - **PauseManager autoload**: Centralized pause state management with proper process_mode configuration
+  - **Process mode assignment**: Game systems (PAUSABLE), UI elements (WHEN_PAUSED), debug systems (ALWAYS)
+  - **Fixed pause issues**: Eliminated attack stacking, lag bursts after resume, and camera glitches during pause
+  - **XP Orb integration**: Orbs now properly pause with game systems
+  - **Legacy compatibility**: RunManager.pause_game() redirects to PauseManager for backwards compatibility
+- **Performance Optimization for 5500 Enemies**: Hybrid culling system for massive enemy counts
+  - **Viewport culling**: Only render enemies visible on screen + 200px margin (5-10x FPS improvement when zoomed in)
+  - **Distance-based updates**: Only update enemy AI/physics within 2500px radius (50% physics reduction)
+  - **Alive enemies caching**: Cache alive enemy lists, only rebuild when enemies spawn/die (eliminates O(n) scans)
+  - **Configurable cache size**: Transform cache size now matches max_enemies (5500) via balance data
+  - **Smart culling stats**: Debug overlay shows total vs visible enemy counts for monitoring
+  - **Camera zoom limit**: Reduced min zoom from 0.5 to 0.6 (configurable via balance data)
+- **Performance Benchmarking System**: Automated performance testing with JSON result tracking
+  - **Comprehensive test scenarios**: Baseline, light/medium/heavy load, maximum load, zoom stress tests
+  - **Detailed metrics**: FPS percentiles, memory usage, culling efficiency, enemy counts
+  - **JSON result storage**: Results saved to `user://benchmarks/` with timestamps for comparison
+  - **Benchmark analyzer**: Compare before/after results, track optimization improvements
+  - **Debug controls**: Quick benchmark (B key), full suite (F8), benchmark UI panel (F7)
+  - **Automated comparisons**: Track performance changes across major updates
 - **Architecture Boundary Enforcement System**: Automated tools to prevent violations of the layered architecture
   - **Automated validation**: test_architecture_boundaries.gd detects forbidden patterns (get_node() in systems, EventBus in domain, etc.)
   - **Static analysis tool**: check_boundaries_standalone.gd provides detailed dependency graphs and violation reports
@@ -74,6 +94,26 @@
   - **Runtime validation**: Advanced test coverage validating payload object structure and property types
   - **Architecture enforcement**: Payload classes accessed via EventBus preloads to avoid dependency issues
 
+### Added  
+- **Melee Combat System**: Complete cone-shaped AOE melee attack system replacing projectile defaults
+  - **Core mechanics**: 25 damage, 100 range, 45° cone, 1.5 attacks/sec baseline with left-click activation
+  - **Visual feedback**: Semi-transparent yellow cone polygon shows attack area and direction
+  - **Mouse targeting**: Cone attacks aimed at cursor position with world coordinate transformation
+  - **Damage integration**: Proper EventBus integration with EntityId.player() and EntityId.enemy(index)
+  - **Balance system**: JSON-configurable damage, range, cone angle, attack speed, lifesteal
+  - **Card system overhaul**: 8 melee-focused upgrade cards with damage, speed, range, angle, lifesteal options
+  - **Dual combat**: Left-click melee (default), right-click projectiles (unlockable via card)
+  - **Cone detection**: Dot product-based algorithm for precise enemy hit calculation
+  - **Effect pooling**: Attack effects with 0.2-second fade animation and memory management
+
+### Removed
+- **Performance Benchmark System**: Removed all benchmark/performance testing files and UI elements
+  - Deleted: BenchmarkAnalyzer.gd, PerformanceBenchmark.gd system files
+  - Removed: Benchmark panel, quick benchmark buttons, full suite functionality
+  - Kept: FPS display and basic performance stats in debug overlay
+  - Cleaned: All F7/B key bindings for benchmark operations removed
+  - Updated: HUD simplified to show only essential controls
+
 ### Changed
 - **Logger Migration**: Completed migration of all print statements to centralized Logger system
   - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, TextureThemeSystem.gd, XpSystem.gd migrated
@@ -85,6 +125,41 @@
   - **Abilities category**: Added to log config for projectile and ability system logging
 
 ### Fixed
+- **Extended Pause Lag Burst**: Fixed lag spikes when resuming after extended pause during level up
+  - **Root cause**: RunManager._accumulator and Arena.spawn_timer continued accumulating time during pause
+  - **Fix**: Added pause state checks to prevent time accumulation in RunManager._process() and Arena._process()
+  - **Result**: Smooth resume regardless of pause duration, no more combat step bursts after card selection
+- **Hotkey Menu Display**: Fixed empty keybinds overlay not showing text entries
+  - **Root cause**: RichTextLabel with BBCode wasn't displaying properly in .tscn format
+  - **Fix**: Changed to programmatic text setting with proper BBCode formatting
+  - **Result**: Keybinds overlay now properly displays colored hotkey text
+- **F8 Key Conflict**: Resolved F8 key causing game to close unexpectedly
+  - **Root cause**: Conflicting F8 handlers between Arena and HUD systems
+  - **Fix**: Removed duplicate F8 handlers, consolidated to F7 for performance menu
+  - **Result**: F7 now consistently opens performance menu without crashes
+- **Performance Results Display**: Fixed benchmark results not appearing after 30s test completion
+  - **Root cause**: Button handlers not awaiting async benchmark completion
+  - **Fix**: Made button handlers async and properly await benchmark results
+  - **Result**: Results now display immediately after benchmark completion
+
+### Added
+- **Melee Combat System**: Replaced projectile-based combat with cone-shaped AOE melee attacks
+  - **MeleeSystem**: New system managing cone-based AOE attacks with cursor targeting
+  - **Balance configuration**: Configurable damage, range, cone angle, attack speed, and lifesteal
+  - **Stat multipliers**: Full integration with card upgrade system for melee-specific buffs
+  - **Visual feedback**: Attack effects pool for cone visualization during attacks
+  - **Smart targeting**: Cone detection using dot product for precise enemy hit detection
+- **Melee-Focused Card System**: Completely redesigned upgrade cards for melee combat
+  - **Damage cards**: +30% damage, +50% damage/-20% speed trade-offs
+  - **Speed cards**: +25% attack speed, +40% speed/-15% damage berserker mode
+  - **Range cards**: +20% attack range for extended reach
+  - **Utility cards**: +15% cone angle, +5% lifesteal for survivability
+  - **Projectile unlock**: "Unlock Projectiles" card enables right-click ranged attacks
+- **Dual Attack System**: Melee primary (left-click) with optional projectiles (right-click)
+  - **Default melee**: Left-click for cone AOE attacks aimed at cursor
+  - **Optional projectiles**: Right-click attacks only available after unlocking via card
+  - **Stat separation**: Independent upgrade paths for melee vs projectile builds
+  - **Control documentation**: Updated all hotkey displays to show new combat controls
 - **Pre-commit Hook Execution Error**: Fixed git pre-commit hook failing with "No such file or directory" 
   - **Root cause**: Hook was changing to `vibe/` directory but using relative paths to Godot executable
   - **Path resolution fix**: Updated hook to use absolute paths from project root instead of relative paths

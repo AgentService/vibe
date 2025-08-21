@@ -50,3 +50,5 @@ offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 170.0
 script = ExtResource("2_radar")
+
+

@@ -11,6 +11,8 @@ var card_system: CardSystem
 var available_cards: Array[Dictionary] = []
 
 func _ready() -> void:
+	# CardPicker should work during pause
+	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	hide()
 	card_system = CardSystem.new()
 	add_child(card_system)
@@ -44,5 +46,5 @@ func _on_card_selected(card_index: int) -> void:
 	var selected_card: Dictionary = available_cards[card_index]
 	card_system.apply(selected_card)
 	
-	RunManager.pause_game(false)
+	PauseManager.pause_game(false)
 	hide()
