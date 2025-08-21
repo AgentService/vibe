@@ -67,6 +67,7 @@ The documentation follows the established patterns:
 ### Key Implementation Files
 - `vibe/scenes/arena/Arena.gd` (main scene, 378 lines)
 - `vibe/scenes/ui/HUD.gd` (game UI, 31 lines)
+- `vibe/scenes/ui/KeybindingsDisplay.gd` (controls reference, 87 lines)
 - `vibe/autoload/EventBus.gd` (communication system)
 - `vibe/autoload/BalanceDB.gd` (data validation + hot-reload)
 - `vibe/autoload/RunManager.gd` (player stats management)

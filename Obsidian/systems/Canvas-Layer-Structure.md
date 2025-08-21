@@ -21,8 +21,10 @@ func _setup_ui() -> void:
 ```
 UILayer (CanvasLayer - layer 0)
 ├── HUD.tscn (Always visible game UI)
-│   ├── VBoxContainer (Level + XP)
-│   └── EnemyRadar (Top-right panel)
+│   ├── FPSLabel (Bottom-left performance)
+│   ├── VBoxContainer (Level + XP, bottom-left)
+│   ├── EnemyRadar (Top-right panel)
+│   └── KeybindingsDisplay (Below radar, top-right)
 └── CardPicker.tscn (Modal overlay)
 ```
 
@@ -65,16 +67,19 @@ UIManager (CanvasLayer structure)
 **Structure**:
 ```
 HUD (Control - fullscreen)
+├── FPSLabel (bottom-left performance display)
 ├── VBoxContainer (bottom-left)
 │   ├── LevelLabel ("Level: 1")
 │   └── XPBar (ProgressBar)
-└── EnemyRadar (top-right panel)
+├── EnemyRadar (top-right panel)
+└── KeybindingsDisplay (below radar, top-right)
 ```
 
 **Responsibilities**:
 - Listen to `EventBus.xp_changed` and `EventBus.level_up`
 - Update level and XP display
 - Contains [[EnemyRadar-Component]]
+- Contains [[KeybindingsDisplay-Component]] for persistent control reference
 
 ### CardPicker Component (Layer 2 equivalent)  
 **File**: `vibe/scenes/ui/CardPicker.tscn`
@@ -118,3 +123,4 @@ class UIManager extends Node:
 - [[Modal-Overlay-System]]: How modals like CardPicker work
 - [[EventBus-System]]: UI communication patterns
 - [[EnemyRadar-Component]]: Specific UI component example
+- [[KeybindingsDisplay-Component]]: Always-visible controls reference panel

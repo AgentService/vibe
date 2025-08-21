@@ -26,6 +26,11 @@
   - **Focused cards**: Only projectile unlock card remains, removed melee damage/speed/range/cone cards
   - **Clean mechanics**: Removed lifesteal system and stat multipliers for simpler gameplay
   - **Core focus**: Melee is now baseline capability, cards focus on projectile unlocks
+- **Documentation Updates**: Updated Obsidian architecture docs for KeybindingsDisplay integration
+  - **UI Architecture**: Updated component hierarchy and implementation status
+  - **Canvas Layer Structure**: Documented new HUD layout with keybindings panel  
+  - **Component Reference**: Added detailed KeybindingsDisplay component documentation
+  - **System README**: Added keybindings component to key implementation files
 
 ### Previously Added
 - **Transform Caching Optimization**: Enemy MultiMesh rendering now caches Transform2D objects instead of creating them every frame

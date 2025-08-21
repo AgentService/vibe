@@ -14,7 +14,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -42,7 +42,7 @@
                 }
               },
               "icon": "lucide-git-fork",
-              "title": "Graph of TODO"
+              "title": "Graph of Canvas-Layer-Structure"
             }
           },
           {
@@ -51,12 +51,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "TODO"
+              "title": "Canvas-Layer-Structure"
             },
             "group": "55ba4204d88fdc89"
           }
@@ -74,7 +74,7 @@
             "state": {
               "type": "localgraph",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "options": {
                   "collapse-filter": true,
                   "search": "",
@@ -102,7 +102,7 @@
                 }
               },
               "icon": "lucide-git-fork",
-              "title": "Graph of TODO"
+              "title": "Graph of Canvas-Layer-Structure"
             },
             "group": "55ba4204d88fdc89"
           }
@@ -159,8 +159,7 @@
               "title": "Bookmarks"
             }
           }
-        ],
-        "currentTab": 1
+        ]
       }
     ],
     "direction": "horizontal",
@@ -180,12 +179,12 @@
             "state": {
               "type": "outgoing-link",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "linksCollapsed": false,
                 "unlinkedCollapsed": true
               },
               "icon": "links-going-out",
-              "title": "Outgoing links from TODO"
+              "title": "Outgoing links from Canvas-Layer-Structure"
             }
           },
           {
@@ -209,13 +208,13 @@
             "state": {
               "type": "outline",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "followCursor": false,
                 "showSearch": false,
                 "searchQuery": ""
               },
               "icon": "lucide-list",
-              "title": "Outline of TODO"
+              "title": "Outline of Canvas-Layer-Structure"
             }
           },
           {
@@ -224,7 +223,7 @@
             "state": {
               "type": "backlink",
               "state": {
-                "file": "03-tasks/TODO.md",
+                "file": "systems/Canvas-Layer-Structure.md",
                 "collapseAll": false,
                 "extraContext": false,
                 "sortOrder": "alphabetical",
@@ -234,7 +233,7 @@
                 "unlinkedCollapsed": true
               },
               "icon": "links-coming-in",
-              "title": "Backlinks for TODO"
+              "title": "Backlinks for Canvas-Layer-Structure"
             }
           }
         ]
@@ -255,19 +254,20 @@
       "bases:Create new base": false
     }
   },
-  "active": "18dd7a761059bd34",
+  "active": "c6a69ad9e0d5bb08",
   "lastOpenFiles": [
+    "systems/ARENA_USAGE.md",
+    "00-meta/vault.md",
     "README.md",
+    "Logger.md",
+    "changelogs/features.md",
     "03-tasks/TODO.md",
     "systems/EventBus-System.md",
     "systems/Data-Systems-Architecture.md",
     "systems/Component-Structure-Reference.md",
     "systems/Canvas-Layer-Structure.md",
-    "systems/ARENA_USAGE.md",
     "systems/Scene-Management-System.md",
-    "Logger.md",
     "systems/README.md",
-    "changelogs/features.md",
     "changelogs",
     "vibe/data/balance.md",
     "DECISIONS.md",

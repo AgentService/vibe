@@ -13,6 +13,10 @@ Main.tscn (Entry Point)
     ├── Player.tscn (Player Logic)
     └── UILayer (CanvasLayer) - **IMPLEMENTED**
         ├── HUD.tscn (Game HUD)
+        │   ├── FPSLabel (Performance display)
+        │   ├── VBoxContainer (Level + XP)
+        │   ├── EnemyRadar (Top-right panel)
+        │   └── KeybindingsDisplay (Controls panel)
         └── CardPicker.tscn (Modal Overlay)
 ```
 
@@ -25,6 +29,7 @@ Main.tscn (Entry Point)
 - **[[Event-Driven UI]]**: Uses `EventBus` for communication between systems
 - **[[Deterministic Architecture]]**: Follows 30Hz combat step pattern
 - **[[MultiMesh Rendering]]**: High-performance rendering for game elements
+- **[[KeybindingsDisplay]]**: Always-visible controls reference panel with radar-style theming
 
 ### ❌ Missing from Original Plan
 
@@ -33,6 +38,7 @@ Main.tscn (Entry Point)
 - **No UI State Management**: No centralized UI visibility control
 - **No Responsive Layout System**: UI positioning is fixed
 - **No UI Layer Prioritization**: Only basic CanvasLayer usage
+- **No Dynamic Control Updates**: KeybindingsDisplay shows static hardcoded values
 
 ## Current Architecture Analysis
 
@@ -41,6 +47,8 @@ Main.tscn (Entry Point)
 2. **UI Separation**: UI exists in its own `CanvasLayer` (line 215 in Arena.gd)
 3. **Modal Implementation**: CardPicker properly pauses game via `RunManager.pause_game(true)` (line 228)
 4. **Performance Conscious**: Uses MultiMesh for high-count rendering
+5. **User Experience**: [[KeybindingsDisplay]] provides persistent control reference
+6. **Consistent UI Theming**: Radar-style panels with unified visual design
 
 ### Areas for Improvement
 1. **Monolithic Arena Scene**: Arena.gd handles too many responsibilities (378 lines)

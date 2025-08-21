@@ -5,9 +5,10 @@
 ### UI Components Location
 ```
 vibe/scenes/ui/
-├── CardPicker.tscn/.gd    - Modal card selection overlay
-├── EnemyRadar.gd          - Radar component (no .tscn, embedded in HUD)
-└── HUD.tscn/.gd          - Main game UI container
+├── CardPicker.tscn/.gd       - Modal card selection overlay
+├── EnemyRadar.gd             - Radar component (no .tscn, embedded in HUD)
+├── KeybindingsDisplay.gd     - Controls reference panel (embedded in HUD)
+└── HUD.tscn/.gd             - Main game UI container
 ```
 
 ### Game Scene Components
@@ -32,15 +33,18 @@ vibe/scenes/main/
 **Node Structure**:
 ```
 HUD (Control - fullscreen anchoring)
+├── FPSLabel (bottom-left performance)
 ├── VBoxContainer (bottom-left positioning)  
 │   ├── LevelLabel (text display)
 │   └── XPBar (ProgressBar widget)
-└── EnemyRadar (Panel - top-right)
+├── EnemyRadar (Panel - top-right)
+└── KeybindingsDisplay (Panel - below radar)
 ```
 
 **Dependencies**:
 - **EventBus**: `xp_changed`, `level_up` signals
 - **EnemyRadar**: Embedded component (script-only)
+- **KeybindingsDisplay**: Static reference panel (no external dependencies)
 
 ### CardPicker Component
 **File**: `CardPicker.tscn` → **Script**: `CardPicker.gd`
@@ -49,6 +53,43 @@ HUD (Control - fullscreen anchoring)
 - Modal card selection on level up
 - Game pause integration via [[RunManager-System]]
 - Triggered by `EventBus.level_up`
+
+### KeybindingsDisplay Component
+**File**: `KeybindingsDisplay.gd` (87 lines) → Embedded in `HUD.tscn`
+
+**Node Structure**:
+```
+KeybindingsDisplay (Panel - styled)
+└── VBoxContainer (margins for content)
+    ├── Title Label ("[Controls]")
+    ├── Spacer (vertical spacing)
+    └── GridContainer (2-column table)
+        ├── Action Labels (left column)
+        └── Key Labels (right column)
+```
+
+**Responsibilities**:
+- Display current control bindings in always-visible format
+- Static reference panel (no signal dependencies)
+- Self-contained styling with radar-theme consistency
+- Table-formatted display using [[GridContainer]]
+
+**Styling Features**:
+- **Radar-Style Theme**: Dark background (0.0, 0.0, 0.0, 0.7) with gray borders
+- **Border Styling**: 2px gray border with 4px corner radius
+- **Typography**: White text for keys, gray for actions
+- **Layout**: Two-column grid with proper spacing (8px h-separation, 2px v-separation)
+
+**Current Bindings Displayed**:
+- Movement: WASD
+- Attack: Left Click  
+- System: F10 (Pause), F12 (FPS), T (Theme)
+- Arena switching: 1-5
+
+**Integration**:
+- Positioned below [[EnemyRadar-Component]] in top-right corner
+- Uses same anchoring strategy (`anchors_preset = 1`)
+- No external dependencies or signal connections
 
 ### Arena Component (Complex)
 **File**: `Arena.tscn` → **Script**: `Arena.gd` (378 lines)
@@ -100,12 +141,19 @@ Level Up → EventBus.level_up → Arena._on_level_up() → CardPicker.open()
 ## Component Sizing & Positioning
 
 ### HUD Positioning Strategy
+- **FPSLabel**: Bottom-left corner above VBoxContainer
+  - `anchors_preset = 2` (bottom-left)
+  - `offset_left = 10, offset_top = -80` (margins)
 - **VBoxContainer**: Bottom-left corner with margins
   - `anchors_preset = 2` (bottom-left)
   - `offset_left = 10, offset_top = -60` (margins)
 - **EnemyRadar**: Top-right corner  
   - `anchors_preset = 1` (top-right)
   - Fixed size `150x150` with margins
+- **KeybindingsDisplay**: Below radar, top-right
+  - `anchors_preset = 1` (top-right)
+  - Position: `offset_top = 180` (below radar)
+  - Fixed size `150x140` with matching margins
 
 ### Responsive Issues
 - **Fixed Offsets**: Hard-coded pixel positions
@@ -132,6 +180,7 @@ Level Up → EventBus.level_up → Arena._on_level_up() → CardPicker.open()
 ### Simple Components (Good)
 - **Main**: 14 lines - minimal coordination
 - **HUD**: 31 lines - focused UI updates
+- **KeybindingsDisplay**: 87 lines - self-contained UI reference panel
 - **Player**: (not analyzed) - likely focused entity
 
 ### Complex Components (Needs Refactoring)
@@ -150,6 +199,9 @@ Level Up → EventBus.level_up → Arena._on_level_up() → CardPicker.open()
 - **Minimap**: Arena overview map
 - **OptionsMenu**: Settings configuration
 - **PauseMenu**: Game pause interface
+
+### ✅ Recently Implemented UI Components
+- **KeybindingsDisplay**: Always-visible controls reference panel (COMPLETED)
 
 ### Scene Controllers
 - **MainMenuController**: Main menu logic
