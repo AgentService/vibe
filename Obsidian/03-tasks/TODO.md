@@ -44,13 +44,13 @@ Card System enhancen
 
 ### Short-term
 
-- [ ] **MELEE AUTO-ATTACK:** Implement continuous melee attacking at cursor position without requiring clicks
+- [x] **MELEE AUTO-ATTACK:** Implement continuous melee attacking at cursor position without requiring clicks
 
   - Status: Melee system complete but requires manual clicking
   - Files: vibe/scripts/systems/MeleeSystem.gd, vibe/scenes/arena/Arena.gd
   - Implementation: Add timer-based auto-attack cycle following cursor position
 
-- [ ] **CONE SIZE SCALING:** Expand base cone size and ensure cone angle card scaling works properly 
+- [x] **CONE SIZE SCALING:** Expand base cone size and ensure cone angle card scaling works properly 
 
   - Status: Cone angle multiplier exists but may need base size adjustment
   - Files: vibe/data/balance/melee.json, vibe/scripts/systems/MeleeSystem.gd, vibe/data/cards/card_pool.json
