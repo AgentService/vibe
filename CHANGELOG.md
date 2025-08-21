@@ -5,6 +5,11 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Keybindings Display HUD**: Always-visible control reference panel with table-style formatting
+  - **Table layout**: GridContainer with left-aligned actions and right-aligned key bindings
+  - **Radar styling**: Matches enemy radar with dark background, gray borders, rounded corners
+  - **Essential controls**: Movement (WASD), Attack (Left Click), Pause (F10), FPS (F12), Theme (T), Arena (1-5)
+  - **Clean presentation**: Semi-transparent panel positioned below enemy radar for easy reference
 - **Melee Auto-Attack System**: Continuous melee attacking enabled by default
   - **Always active**: Auto-attack is enabled by default, no toggle needed
   - **Cursor tracking**: Attacks automatically target cursor position when enemies are nearby
