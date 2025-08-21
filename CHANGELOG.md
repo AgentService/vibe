@@ -5,6 +5,19 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Melee Auto-Attack System**: Continuous melee attacking enabled by default
+  - **Always active**: Auto-attack is enabled by default, no toggle needed
+  - **Cursor tracking**: Attacks automatically target cursor position when enemies are nearby
+  - **Seamless integration**: Works with existing cooldown and balance systems
+- **Enhanced Melee Cone Coverage**: Improved area of effect for better gameplay
+  - **Wider cone angle**: Increased from 45° to 65° for better coverage  
+  - **Longer range**: Increased from 100 to 150 units for better reach
+- **Simplified Card System**: Removed unnecessary melee modifiers and lifesteal
+  - **Focused cards**: Only projectile unlock card remains, removed melee damage/speed/range/cone cards
+  - **Clean mechanics**: Removed lifesteal system and stat multipliers for simpler gameplay
+  - **Core focus**: Melee is now baseline capability, cards focus on projectile unlocks
+
+### Previously Added
 - **Transform Caching Optimization**: Enemy MultiMesh rendering now caches Transform2D objects instead of creating them every frame
   - **Performance improvement**: Eliminates 24,000 Transform2D allocations per second (800 enemies × 30Hz)
   - **Zero-risk optimization**: Same behavior, 67% faster transform updates, eliminates 2.3MB/second allocations

@@ -1,8 +1,7 @@
 {
   "damage": 25.0,
-  "range": 100.0,
-  "cone_angle": 45.0,
+  "range": 150.0,
+  "cone_angle": 65.0,
   "attack_speed": 1.5,
-  "lifesteal": 0.0,
   "visual_effect_duration": 0.2
 }

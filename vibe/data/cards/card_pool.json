@@ -1,64 +1,6 @@
 {
   "pool": [
     {
-      "id": "card_melee_damage_30",
-      "desc": "+30% melee damage",
-      "stat_mods": {
-        "melee_damage_mult": 1.3
-      },
-      "weight": 15
-    },
-    {
-      "id": "card_attack_speed_25",
-      "desc": "+25% attack speed",
-      "stat_mods": {
-        "melee_attack_speed_mult": 1.25
-      },
-      "weight": 15
-    },
-    {
-      "id": "card_melee_range_20",
-      "desc": "+20% attack range",
-      "stat_mods": {
-        "melee_range_mult": 1.2
-      },
-      "weight": 12
-    },
-    {
-      "id": "card_cone_angle_15",
-      "desc": "+15% cone angle",
-      "stat_mods": {
-        "melee_cone_angle_mult": 1.15
-      },
-      "weight": 10
-    },
-    {
-      "id": "card_lifesteal_5",
-      "desc": "+5% lifesteal",
-      "stat_mods": {
-        "lifesteal": 0.05
-      },
-      "weight": 8
-    },
-    {
-      "id": "card_massive_damage",
-      "desc": "+50% damage, -20% attack speed",
-      "stat_mods": {
-        "melee_damage_mult": 1.5,
-        "melee_attack_speed_mult": 0.8
-      },
-      "weight": 6
-    },
-    {
-      "id": "card_berserker",
-      "desc": "+40% attack speed, -15% damage",
-      "stat_mods": {
-        "melee_attack_speed_mult": 1.4,
-        "melee_damage_mult": 0.85
-      },
-      "weight": 6
-    },
-    {
       "id": "card_unlock_projectiles",
       "desc": "Unlock projectile attacks (right-click)",
       "stat_mods": {
