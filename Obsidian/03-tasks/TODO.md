@@ -14,6 +14,8 @@ Hotkey Setup
 Escape Menu
 Performance Testing to compare features
 Card System enhancen
+Menu from Godot or self?
+
 
 
 
