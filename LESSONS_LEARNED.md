@@ -1,7 +1,7 @@
 # LESSONS_LEARNED.md
 
 ## Purpose
-This document tracks Godot coding basics, patterns, concepts, and learnings discovered during task completion. **ALWAYS CHECK THIS FIRST** before starting new tasks to avoid repeating mistakes and leverage previous insights.
+This document tracks **bugs, pitfalls, and common errors** encountered during Godot development. **ALWAYS CHECK THIS FIRST** before starting new tasks to avoid repeating the same mistakes and debugging issues.
 
 ## Basic Rules
 
@@ -9,28 +9,37 @@ This document tracks Godot coding basics, patterns, concepts, and learnings disc
 - Review relevant sections of this document before beginning any coding task
 - Look for existing patterns, solutions, or warnings related to your task
 - If you find relevant learnings, apply them immediately
+- **IMPORTANT**: Update "RULE LOOKED UP:" counter when you reference any learning
 
 ### 2. **ADD LEARNINGS AFTER TASK COMPLETION**
 - After completing any task, reflect on what you learned
 - Add new findings, patterns, or concepts discovered during the task
 - Include code examples, warnings, and best practices
 - Update this document with any "aha moments" or solutions to problems
+- **ALWAYS**: Add "RULE LOOKED UP: 0 times" to new entries for usage tracking
 
 ### 3. **What to Document**
-- **Godot-specific patterns**: Scene structure, signal connections, autoload usage
-- **Performance insights**: What works fast, what causes slowdowns
-- **Common pitfalls**: Errors you encountered and how you solved them
-- **Best practices**: Code organization, naming conventions, architecture decisions
-- **Engine quirks**: Unexpected behavior, workarounds, gotchas
-- **Testing strategies**: How to test specific Godot features effectively
+- **Common compilation errors**: Type inference issues, missing dependencies, syntax problems
+- **Runtime bugs**: Null reference errors, signal connection failures, scene loading issues  
+- **Engine quirks**: Unexpected Godot behavior, workarounds for engine limitations
+- **Debugging pitfalls**: Errors that are hard to diagnose or have misleading messages
+- **Breaking changes**: Godot version differences that cause problems
+- **Performance gotchas**: Code patterns that seem fine but cause slowdowns
 
 ### 4. **Documentation Format**
 Use clear, searchable headings and include:
-- **Problem/Context**: What you were trying to accomplish
-- **Solution/Pattern**: How you solved it or what pattern emerged
-- **Code Example**: Relevant code snippets (if applicable)
-- **Why It Works**: Brief explanation of the underlying principle
-- **Related Concepts**: Links to other learnings or documentation
+- **Problem/Context**: What error or bug you encountered
+- **Solution/Fix**: How you solved the problem or what the fix was
+- **Code Example**: Before/after code showing the error and fix
+- **Why It Happens**: Brief explanation of the root cause
+- **Warning Signs**: How to recognize this problem in the future
+- **RULE LOOKED UP**: Always end with "RULE LOOKED UP: X times" for usage tracking
+
+### 5. **Usage Tracking & Maintenance**
+- When you reference any learning while working, increment its "RULE LOOKED UP" counter
+- High-usage rules (10+ lookups) are core knowledge and should stay prominent
+- Low-usage rules (0-2 lookups after 6 months) can be archived to reduce file size
+- Review quarterly to compact frequently-used vs rarely-used learnings
 
 ## Godot-Specific Learnings
 
@@ -49,6 +58,7 @@ ui_layer.add_child(hud)
 ```
 **Why It Works**: CanvasLayer provides separate rendering context that renders above Node2D elements
 **Related Concepts**: UI hierarchy, rendering layers, scene organization
+**RULE LOOKED UP**: 0 times
 
 ### Signal System
 **Problem/Context**: Implementing event-driven architecture with cross-system communication
@@ -67,6 +77,7 @@ EventBus.level_up.connect(_on_level_up)
 ```
 **Why It Works**: EventBus provides decoupled communication; systems don't need direct references to each other
 **Related Concepts**: Observer pattern, loose coupling, system architecture
+**RULE LOOKED UP**: 1 times
 
 ### Autoloads
 *[Add learnings about autoload usage, when to use them, and best practices]*
@@ -347,6 +358,61 @@ var payload := EventBus.CombatStepPayload.new(delta_time)
 ```
 **Why It Works**: Preloads in autoloads are guaranteed to be available before other scripts compile; avoids circular dependencies
 **Related Concepts**: Godot compilation order; autoload availability; payload class organization
+**RULE LOOKED UP**: 0 times
+
+### AnimatedSprite2D Frame Index Type Errors
+**Problem/Context**: "Invalid operands 'Variant' and 'int'" errors when calculating sprite sheet frame positions
+**Solution/Fix**: Cast frame_index from JSON to int before using in math operations
+**Code Example**:
+```gdscript
+# Wrong - frame_index from JSON is Variant type:
+var col := frame_index % columns  # ERROR: Invalid operands
+
+# Right - explicit cast to int:
+var index: int = int(frame_index)
+var col: int = index % columns
+var row: int = index / columns
+```
+**Why It Happens**: JSON arrays return Variant type values; GDScript can't infer type for math operations
+**Warning Signs**: "Invalid operands" errors when doing math with JSON-loaded data
+**RULE LOOKED UP**: 0 times
+
+### Input Actions Not Working During Pause
+**Problem/Context**: F5 restart functionality not working when game is paused, `Input.is_action_just_pressed()` fails
+**Solution/Fix**: Use `_unhandled_key_input()` with direct key detection instead of input action mapping
+**Code Example**:
+```gdscript
+# Wrong - doesn't work during pause:
+if Input.is_action_just_pressed("ui_cancel"):  # F5 mapped to ui_cancel
+    restart_game()
+
+# Right - works during pause:
+func _unhandled_key_input(event: InputEvent) -> void:
+    if event is InputEventKey and event.pressed:
+        if event.physical_keycode == KEY_F5:
+            restart_game()
+```
+**Why It Happens**: Input actions are processed differently during pause; raw key events still work
+**Warning Signs**: UI controls (restart, menu) not responding when game is paused
+**RULE LOOKED UP**: 0 times
+
+### Missing EventBus Signal Definitions
+**Problem/Context**: "Invalid access to property" errors when trying to emit signals that don't exist in EventBus
+**Solution/Pattern**: Always add signal declarations to EventBus.gd before emitting from other systems
+**Code Example**:
+```gdscript
+# EventBus.gd - Must declare first
+signal player_died()
+signal damage_taken(damage: int)
+
+# Player.gd - Can then safely emit
+EventBus.player_died.emit()
+EventBus.damage_taken.emit(1)
+```
+**Why It Works**: Godot requires explicit signal declarations; autoloads load first so other scripts can reference them
+**Related Concepts**: Signal contracts, autoload loading order, event-driven architecture
+**RULE LOOKED UP**: 0 times
+
 
 ## Performance Insights
 

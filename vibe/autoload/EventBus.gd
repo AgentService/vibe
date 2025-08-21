@@ -34,6 +34,12 @@ signal damage_applied(payload)
 ## Batch damage applied - emitted by DamageSystem for AoE/multi-target abilities
 signal damage_batch_applied(payload)
 
+## Player takes damage - emitted when enemies hit player
+signal damage_taken(damage: int)
+
+## Player died - emitted when HP reaches 0
+signal player_died()
+
 # MELEE ATTACK SIGNALS
 ## Melee attack performed - emitted by MeleeSystem when attack starts
 signal melee_attack_started(payload)

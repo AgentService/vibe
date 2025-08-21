@@ -11,6 +11,7 @@ var wave_director: WaveDirector
 
 var projectile_radius: float
 var enemy_radius: float
+var player_radius: float = 16.0
 
 func _ready() -> void:
 	_load_balance_values()
@@ -29,6 +30,7 @@ func _on_combat_step(payload) -> void:
 		return
 	
 	_check_projectile_enemy_collisions()
+	_check_enemy_player_collisions()
 
 func _check_projectile_enemy_collisions() -> void:
 	var alive_projectiles := ability_system._get_alive_projectiles()
@@ -94,6 +96,23 @@ func _exit_tree() -> void:
 	EventBus.damage_requested.disconnect(_on_damage_requested)
 	if BalanceDB:
 		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
+
+func _check_enemy_player_collisions() -> void:
+	var alive_enemies := wave_director.get_alive_enemies()
+	var player_pos := PlayerState.position
+	
+	if player_pos == Vector2.ZERO:
+		return  # Player position not set
+	
+	for enemy in alive_enemies:
+		var enemy_pos := enemy["pos"] as Vector2
+		var distance := player_pos.distance_to(enemy_pos)
+		var collision_distance := enemy_radius + player_radius
+		
+		if distance <= collision_distance:
+			# Enemy hits player - deal 1 damage
+			EventBus.damage_taken.emit(1)
+			break  # Only one damage per frame
 
 func _on_damage_requested(payload) -> void:
 	if payload.target_id.type != EntityId.Type.ENEMY:

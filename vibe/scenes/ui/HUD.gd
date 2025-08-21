@@ -3,14 +3,17 @@ class_name HUD
 
 ## Heads-up display showing level, XP bar, and other player stats.
 
-@onready var level_label: Label = $VBoxContainer/LevelLabel
+@onready var health_bar: ProgressBar = $HealthBar
+@onready var level_label: Label = $LevelLabel
 @onready var xp_bar: ProgressBar = $VBoxContainer/XPBar
 @onready var enemy_radar: Panel = $EnemyRadar
 @onready var fps_label: Label = $FPSLabel
+@onready var death_screen: Control = $DeathScreen
 
 var fps_update_timer: float = 0.0
 const FPS_UPDATE_INTERVAL: float = 0.5
 var debug_overlay_visible: bool = true
+var is_game_over: bool = false
 
 func _ready() -> void:
 	# HUD should always process (including FPS counter during pause)
@@ -18,11 +21,15 @@ func _ready() -> void:
 	
 	EventBus.xp_changed.connect(_on_xp_changed)
 	EventBus.level_up.connect(_on_level_up)
-	
+	EventBus.damage_taken.connect(_on_player_damage_taken)
+	EventBus.player_died.connect(_on_player_died)
 	
 	# Initialize display
 	_update_level_display(1)
 	_update_xp_display(0, 30)
+	_update_health_display(100, 100)
+	_style_health_bar()
+	_style_level_label()
 	_update_fps_display()
 	
 
@@ -31,6 +38,8 @@ func _process(delta: float) -> void:
 	if fps_update_timer >= FPS_UPDATE_INTERVAL:
 		fps_update_timer = 0.0
 		_update_fps_display()
+	
+	pass
 
 
 func _on_xp_changed(payload) -> void:
@@ -38,6 +47,30 @@ func _on_xp_changed(payload) -> void:
 
 func _on_level_up(payload) -> void:
 	_update_level_display(payload.new_level)
+
+func _on_player_damage_taken(damage: int) -> void:
+	# Get current player health from player node
+	var player: Player = get_tree().get_first_node_in_group("player")
+	if player:
+		_update_health_display(player.get_health(), player.get_max_health())
+
+func _unhandled_key_input(event: InputEvent) -> void:
+	if is_game_over and event is InputEventKey and event.pressed:
+		if event.physical_keycode == KEY_F5:
+			_restart_game()
+
+func _on_player_died() -> void:
+	is_game_over = true
+	death_screen.visible = true
+	get_tree().paused = true
+	Logger.info("Player died - game paused", "ui")
+
+func _restart_game() -> void:
+	is_game_over = false
+	death_screen.visible = false
+	get_tree().paused = false
+	get_tree().reload_current_scene()
+	Logger.info("Game restarted", "ui")
 
 func _update_level_display(level: int) -> void:
 	if level_label:
@@ -47,6 +80,61 @@ func _update_xp_display(current_xp: int, next_level_xp: int) -> void:
 	if xp_bar:
 		xp_bar.max_value = next_level_xp
 		xp_bar.value = current_xp
+
+func _update_health_display(current_hp: int, max_hp: int) -> void:
+	if health_bar:
+		health_bar.max_value = max_hp
+		health_bar.value = current_hp
+
+func _style_health_bar() -> void:
+	if health_bar:
+		# Create a simple theme with red fill and dark background
+		var theme := Theme.new()
+		var style_bg := StyleBoxFlat.new()
+		var style_fill := StyleBoxFlat.new()
+		
+		# Background (empty health)
+		style_bg.bg_color = Color(0.2, 0.2, 0.2, 0.8)  # Dark gray
+		style_bg.border_width_left = 2
+		style_bg.border_width_right = 2
+		style_bg.border_width_top = 2
+		style_bg.border_width_bottom = 2
+		style_bg.border_color = Color(0.5, 0.5, 0.5, 1.0)  # Gray border
+		
+		# Fill (current health)
+		style_fill.bg_color = Color(0.8, 0.2, 0.2, 1.0)  # Red
+		
+		theme.set_stylebox("background", "ProgressBar", style_bg)
+		theme.set_stylebox("fill", "ProgressBar", style_fill)
+		
+		health_bar.theme = theme
+
+func _style_level_label() -> void:
+	if level_label:
+		# Create theme for level label
+		var theme := Theme.new()
+		var style_bg := StyleBoxFlat.new()
+		
+		# Background
+		style_bg.bg_color = Color(0.1, 0.1, 0.1, 0.9)  # Dark background
+		style_bg.border_width_left = 1
+		style_bg.border_width_right = 1
+		style_bg.border_width_top = 1
+		style_bg.border_width_bottom = 1
+		style_bg.border_color = Color(0.6, 0.6, 0.6, 1.0)  # Light gray border
+		style_bg.corner_radius_top_left = 3
+		style_bg.corner_radius_top_right = 3
+		style_bg.corner_radius_bottom_left = 3
+		style_bg.corner_radius_bottom_right = 3
+		style_bg.content_margin_left = 8
+		style_bg.content_margin_right = 8
+		style_bg.content_margin_top = 4
+		style_bg.content_margin_bottom = 4
+		
+		theme.set_stylebox("normal", "Label", style_bg)
+		theme.set_color("font_color", "Label", Color(1.0, 1.0, 1.0, 1.0))  # White text
+		
+		level_label.theme = theme
 
 func _update_fps_display() -> void:
 	if fps_label:

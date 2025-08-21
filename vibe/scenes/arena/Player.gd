@@ -7,11 +7,28 @@ class_name Player
 @export var move_speed: float = 220.0
 @export var pickup_radius: float = 12.0
 
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+var knight_animations: Dictionary = {}
+var current_animation: String = "idle"
+
+var max_health: int = 100
+var current_health: int = 100
+
+var is_rolling: bool = false
+var roll_duration: float = 0.3
+var roll_timer: float = 0.0
+var roll_speed: float = 400.0
+var roll_direction: Vector2 = Vector2.ZERO
+var invulnerable: bool = false
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
 	_setup_collision()
+	_load_knight_animations()
+	_setup_sprite_frames()
+	EventBus.damage_taken.connect(_on_damage_taken)
 
 func _setup_collision() -> void:
 	var collision_shape := $CollisionShape2D
@@ -20,9 +37,17 @@ func _setup_collision() -> void:
 	collision_shape.shape = circle_shape
 
 func _physics_process(delta: float) -> void:
+	_handle_roll_input()
+	_update_roll(delta)
 	_handle_movement(delta)
+	_handle_facing()
 
-func _handle_movement(delta: float) -> void:
+func _handle_roll_input() -> void:
+	if Input.is_action_just_pressed("ui_accept") and not is_rolling:
+		_start_roll()
+
+func _start_roll() -> void:
+	# Capture current movement direction for dash
 	var input_vector: Vector2 = Vector2.ZERO
 	
 	if Input.is_action_pressed("move_left"):
@@ -34,13 +59,148 @@ func _handle_movement(delta: float) -> void:
 	if Input.is_action_pressed("move_down"):
 		input_vector.y += 1.0
 	
+	# Use movement direction, or face direction if not moving
 	if input_vector != Vector2.ZERO:
+		roll_direction = input_vector.normalized()
+	else:
+		# Roll towards mouse cursor if no movement input
+		var mouse_pos := get_global_mouse_position()
+		roll_direction = (mouse_pos - global_position).normalized()
+	
+	is_rolling = true
+	roll_timer = 0.0
+	invulnerable = true
+	_play_animation("roll")
+	
+	# Face the roll direction
+	if roll_direction.x > 0:
+		animated_sprite.flip_h = false  # Face right
+	elif roll_direction.x < 0:
+		animated_sprite.flip_h = true   # Face left
+
+func _update_roll(delta: float) -> void:
+	if is_rolling:
+		roll_timer += delta
+		if roll_timer >= roll_duration:
+			is_rolling = false
+			invulnerable = false
+
+func _handle_movement(delta: float) -> void:
+	var input_vector: Vector2 = Vector2.ZERO
+	
+	if not is_rolling:
+		if Input.is_action_pressed("move_left"):
+			input_vector.x -= 1.0
+		if Input.is_action_pressed("move_right"):
+			input_vector.x += 1.0
+		if Input.is_action_pressed("move_up"):
+			input_vector.y -= 1.0
+		if Input.is_action_pressed("move_down"):
+			input_vector.y += 1.0
+	
+	if is_rolling:
+		# Continue dashing in roll direction
+		velocity = roll_direction * roll_speed
+	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		velocity = input_vector * move_speed
+		_play_animation("run")
 	else:
 		velocity = Vector2.ZERO
+		_play_animation("idle")
 	
 	move_and_slide()
 
 func get_pos() -> Vector2:
 	return global_position
+
+func _load_knight_animations() -> void:
+	var file_path := "res://data/animations/knight_animations.json"
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		Logger.warn("Failed to load knight animations from: " + file_path, "player")
+		return
+	
+	var json_string := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		Logger.warn("Failed to parse knight animations JSON", "player")
+		return
+	
+	knight_animations = json.data
+	Logger.info("Loaded knight animations", "player")
+
+func _setup_sprite_frames() -> void:
+	if knight_animations.is_empty():
+		Logger.warn("No knight animations loaded", "player")
+		return
+	
+	var sprite_frames := SpriteFrames.new()
+	var texture := load(knight_animations.sprite_sheet) as Texture2D
+	
+	if texture == null:
+		Logger.warn("Failed to load knight sprite sheet", "player")
+		return
+	
+	var frame_width: int = knight_animations.frame_size.width
+	var frame_height: int = knight_animations.frame_size.height
+	var columns: int = knight_animations.grid.columns
+	
+	for anim_name in knight_animations.animations:
+		var anim_data: Dictionary = knight_animations.animations[anim_name]
+		sprite_frames.add_animation(anim_name)
+		
+		for frame_index in anim_data.frames:
+			var atlas := AtlasTexture.new()
+			atlas.atlas = texture
+			var index: int = int(frame_index)
+			var col: int = index % columns
+			var row: int = index / columns
+			atlas.region = Rect2(col * frame_width, row * frame_height, frame_width, frame_height)
+			sprite_frames.add_frame(anim_name, atlas)
+		
+		sprite_frames.set_animation_speed(anim_name, 1.0 / anim_data.duration)
+		sprite_frames.set_animation_loop(anim_name, anim_data.loop)
+	
+	animated_sprite.sprite_frames = sprite_frames
+	animated_sprite.play("idle")
+	Logger.info("Knight sprite frames setup complete", "player")
+
+func _handle_facing() -> void:
+	# Don't change facing during roll - let roll direction control it
+	if is_rolling:
+		return
+		
+	var mouse_pos := get_global_mouse_position()
+	var player_pos := global_position
+	
+	if mouse_pos.x > player_pos.x:
+		animated_sprite.flip_h = false
+	else:
+		animated_sprite.flip_h = true
+
+func _on_damage_taken(damage: int) -> void:
+	if invulnerable:
+		return  # No damage during dodge roll
+		
+	current_health = max(0, current_health - damage)
+	
+	if current_health <= 0:
+		_play_animation("death")
+		EventBus.player_died.emit()
+	else:
+		_play_animation("hit")
+
+func get_health() -> int:
+	return current_health
+
+func get_max_health() -> int:
+	return max_health
+
+func _play_animation(anim_name: String) -> void:
+	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
+		current_animation = anim_name
+		animated_sprite.play(anim_name)
