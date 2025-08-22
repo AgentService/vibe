@@ -40,7 +40,7 @@ func _run_test() -> void:
 	
 	# Manually spawn an enemy at known position
 	var enemy_pos = Vector2(100, 100)
-	var spawned = wave_director.spawn_enemy_at(enemy_pos, "grunt_basic")
+	var spawned = wave_director.spawn_enemy_at(enemy_pos, "knight_swarm")
 	
 	if not spawned:
 		print("ERROR: Failed to spawn enemy!")

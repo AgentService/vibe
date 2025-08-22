@@ -21,7 +21,7 @@ func _initialize() -> void:
 	
 	# Manually spawn an enemy at known position
 	var enemy_pos = Vector2(100, 100)
-	wave_director.spawn_enemy_at(enemy_pos, "grunt_basic")
+	wave_director.spawn_enemy_at(enemy_pos, "knight_swarm")
 	
 	# Get the spawned enemy
 	var enemies = wave_director.get_alive_enemies()

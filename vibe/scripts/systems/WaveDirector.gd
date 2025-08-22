@@ -68,7 +68,7 @@ func _load_balance_values() -> void:
 	target_distance = BalanceDB.get_waves_value("target_distance")
 
 func _load_enemy_registry() -> void:
-	var registry_path = "res://data/enemies/enemy_registry.json"
+	var registry_path = "res://data/enemies/config/enemy_registry.json"
 	
 	if not FileAccess.file_exists(registry_path):
 		Logger.warn("Enemy registry not found, using fallback enemy types", "waves")
@@ -189,8 +189,8 @@ func _initialize_pool() -> void:
 			"hp": enemy_hp,
 			"max_hp": enemy_hp,
 			"alive": false,
-			"type_id": "grunt_basic",
-			"type": "grunt",
+			"type_id": "knight_swarm",
+			"type": "knight",
 			"speed": 60.0,
 			"size": Vector2(24, 24)
 		}

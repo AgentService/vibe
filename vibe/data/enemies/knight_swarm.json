@@ -1,0 +1,24 @@
+{
+  "id": "knight_swarm",
+  "display_name": "Swarm Knight",
+  "animation_config": "res://data/animations/swarm_enemy_animations.json",
+  "size": {
+    "x": 20,
+    "y": 20
+  },
+  "health": 3.0,
+  "speed": 80.0,
+  "collision_radius": 10.0,
+  "xp_value": 1,
+  "spawn_weight": 0.4,
+  "visual": {
+    "color": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0},
+    "shape": "square"
+  },
+  "behavior": {
+    "ai_type": "chase_player",
+    "aggro_range": 300.0
+  },
+  "_schema_version": "1.0.0",
+  "_description": "Fast, small knight enemy using SWARM tier animations"
+}

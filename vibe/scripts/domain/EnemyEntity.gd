@@ -24,7 +24,7 @@ static func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null
 	entity.alive = enemy_dict.get("alive", false)
 	
 	# New fields for typed system
-	entity.type_id = enemy_dict.get("type_id", "grunt_basic")
+	entity.type_id = enemy_dict.get("type_id", "knight_swarm")
 	entity.max_hp = enemy_dict.get("max_hp", entity.hp)
 	entity.speed = enemy_dict.get("speed", 60.0)
 	entity.size = enemy_dict.get("size", Vector2(24, 24))

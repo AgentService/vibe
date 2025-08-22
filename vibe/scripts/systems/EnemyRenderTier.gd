@@ -32,7 +32,7 @@ func _on_balance_reloaded() -> void:
 	Logger.info("Reloaded enemy tier configuration", "enemies")
 
 func _load_tier_config() -> void:
-	var config_path: String = "res://vibe/data/enemies/enemy_tiers.json"
+	var config_path: String = "res://data/enemies/config/enemy_tiers.json"
 	var file: FileAccess = FileAccess.open(config_path, FileAccess.READ)
 	
 	if file == null:
@@ -93,13 +93,13 @@ func get_tier_for_enemy(enemy_data: Dictionary) -> Tier:
 	
 	# Assign tier based on enemy type for proper visual distinction
 	match type_id:
-		"grunt_basic":
+		"knight_swarm":
 			return Tier.SWARM
-		"soldier_regular":
+		"knight_regular":
 			return Tier.REGULAR
-		"captain_elite":
+		"knight_elite":
 			return Tier.ELITE
-		"boss_giant":
+		"knight_boss":
 			return Tier.BOSS
 		_:
 			# Fallback to size-based assignment

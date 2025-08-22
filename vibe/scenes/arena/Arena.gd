@@ -748,12 +748,14 @@ func _is_enemy_visible(enemy_pos: Vector2, visible_rect: Rect2) -> bool:
 func _get_enemy_color_for_type(type_id: String) -> Color:
 	# Fallback colors based on type_id
 	match type_id:
-		"grunt_basic":
+		"knight_swarm":
 			return Color(1.0, 0.0, 0.0, 1.0)  # Red
-		"slime_green":
-			return Color(0.2, 0.8, 0.2, 1.0)  # Green
-		"archer_skeleton":
-			return Color(0.8, 0.8, 0.9, 1.0)  # Light Gray
+		"knight_regular":
+			return Color(0.0, 1.0, 0.0, 1.0)  # Green
+		"knight_elite":
+			return Color(0.0, 0.0, 1.0, 1.0)  # Blue
+		"knight_boss":
+			return Color(1.0, 0.0, 1.0, 1.0)  # Magenta
 		_:
 			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 

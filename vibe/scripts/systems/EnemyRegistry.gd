@@ -27,10 +27,6 @@ func load_all_enemy_types() -> void:
 	enemy_types.clear()
 	_wave_pool_dirty = true
 	
-	# Force fallback loading for now since JSON parsing is failing
-	Logger.warn("Using fallback enemy types for debugging", "enemies")
-	_load_fallback_types()
-	return
 	
 	var enemies_dir := "res://data/enemies/"
 	Logger.info("Trying to open directory: " + enemies_dir, "enemies")
@@ -44,8 +40,10 @@ func load_all_enemy_types() -> void:
 	dir.list_dir_begin()
 	var file_name := dir.get_next()
 	var loaded_count := 0
+	var total_files := 0
 	
 	while file_name != "":
+		total_files += 1
 		if file_name.ends_with(".json"):
 			var file_path := enemies_dir + file_name
 			if _load_enemy_type_from_file(file_path):
@@ -54,11 +52,13 @@ func load_all_enemy_types() -> void:
 	
 	dir.list_dir_end()
 	
+	Logger.debug("Found " + str(total_files) + " files, loaded " + str(loaded_count) + " JSON enemies", "enemies")
+	
 	if loaded_count == 0:
 		Logger.warn("No enemy types loaded, using fallback", "enemies")
 		_load_fallback_types()
 	else:
-		Logger.info("Loaded " + str(loaded_count) + " enemy types", "enemies")
+		Logger.info("SUCCESS: Loaded " + str(loaded_count) + " JSON enemy types", "enemies")
 		
 		# Debug: List all loaded enemy types
 		for type_id in enemy_types.keys():
@@ -84,6 +84,7 @@ func _load_enemy_type_from_file(file_path: String) -> bool:
 		return false
 	
 	var data: Dictionary = json.data
+	
 	var enemy_type := EnemyType.from_json(data)
 	
 	# Validate enemy type
@@ -97,100 +98,8 @@ func _load_enemy_type_from_file(file_path: String) -> bool:
 	return true
 
 func _load_fallback_types() -> void:
-	# Create SWARM enemies (≤24px)
-	var grunt_data := {
-		"id": "grunt_basic",
-		"display_name": "Basic Grunt",
-		"health": 3.0,
-		"speed": 80.0,
-		"size": {"x": 20, "y": 20},  # SWARM tier
-		"collision_radius": 10.0,
-		"xp_value": 1,
-		"spawn_weight": 0.4,  # 40% chance
-		"visual": {
-			"color": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0},
-			"shape": "square"
-		},
-		"behavior": {
-			"ai_type": "chase_player",
-			"aggro_range": 300.0
-		}
-	}
-	
-	# Create REGULAR enemies (25-48px)
-	var soldier_data := {
-		"id": "soldier_regular",
-		"display_name": "Regular Soldier",
-		"health": 6.0,
-		"speed": 60.0,
-		"size": {"x": 36, "y": 36},  # REGULAR tier
-		"collision_radius": 18.0,
-		"xp_value": 2,
-		"spawn_weight": 0.3,  # 30% chance
-		"visual": {
-			"color": {"r": 0.0, "g": 1.0, "b": 0.0, "a": 1.0},
-			"shape": "square"
-		},
-		"behavior": {
-			"ai_type": "chase_player",
-			"aggro_range": 400.0
-		}
-	}
-	
-	# Create ELITE enemies (49-64px)
-	var captain_data := {
-		"id": "captain_elite",
-		"display_name": "Elite Captain",
-		"health": 12.0,
-		"speed": 45.0,
-		"size": {"x": 56, "y": 56},  # ELITE tier
-		"collision_radius": 28.0,
-		"xp_value": 5,
-		"spawn_weight": 0.2,  # 20% chance
-		"visual": {
-			"color": {"r": 0.0, "g": 0.0, "b": 1.0, "a": 1.0},
-			"shape": "square"
-		},
-		"behavior": {
-			"ai_type": "chase_player",
-			"aggro_range": 500.0
-		}
-	}
-	
-	# Create BOSS enemies (>64px)
-	var boss_data := {
-		"id": "boss_giant",
-		"display_name": "Giant Boss",
-		"health": 30.0,
-		"speed": 30.0,
-		"size": {"x": 80, "y": 80},  # BOSS tier
-		"collision_radius": 40.0,
-		"xp_value": 20,
-		"spawn_weight": 0.1,  # 10% chance
-		"visual": {
-			"color": {"r": 1.0, "g": 0.0, "b": 1.0, "a": 1.0},
-			"shape": "square"
-		},
-		"behavior": {
-			"ai_type": "chase_player",
-			"aggro_range": 600.0
-		}
-	}
-	
-	# Load all enemy types
-	var grunt_type := EnemyType.from_json(grunt_data)
-	enemy_types[grunt_type.id] = grunt_type
-	
-	var soldier_type := EnemyType.from_json(soldier_data)
-	enemy_types[soldier_type.id] = soldier_type
-	
-	var captain_type := EnemyType.from_json(captain_data)
-	enemy_types[captain_type.id] = captain_type
-	
-	var boss_type := EnemyType.from_json(boss_data)
-	enemy_types[boss_type.id] = boss_type
-	
-	Logger.info("Loaded 4 fallback enemy types for tier testing: SWARM(20px), REGULAR(36px), ELITE(56px), BOSS(80px)", "enemies")
+	Logger.error("JSON enemy loading failed completely - no fallback available", "enemies")
+	Logger.error("Ensure knight JSON files exist in res://data/enemies/", "enemies")
 
 func get_enemy_type(type_id: String) -> EnemyType:
 	return enemy_types.get(type_id, null)
