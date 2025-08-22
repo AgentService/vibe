@@ -46,6 +46,8 @@ var card_picker: CardPicker
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
 
+var _enemy_transforms: Array[Transform2D] = []
+
 
 func _ready() -> void:
 	Logger.info("ARENA READY FUNCTION STARTING", "ui")
