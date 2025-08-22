@@ -3,10 +3,12 @@
 ## Overview
 **Duration:** 2 hours  
 **Priority:** Medium (Animation Foundation)  
-**Dependencies:** Tasks 1.1, 1.2, 1.3 completed  
+**Dependencies:** Task 1.1 ✅ completed, Tasks 1.2 & 1.3 optional  
 
 ## Goal
 Pack animation data into MultiMesh `instance_custom_data` for basic frame cycling without shaders.
+
+**READY TO START**: Core tier-based MultiMesh infrastructure is complete from Task 1.1.
 
 ## What This Task Accomplishes
 - ✅ Pack frame data into instance_custom_data
@@ -44,11 +46,12 @@ static func unpack_animation_data(color: Color) -> Dictionary:
     }
 ```
 
-### 2. Modify EnemyVisualSystem.gd
-**Location:** `vibe/scripts/systems/EnemyVisualSystem.gd`
-- Add animation data packing
-- Set instance custom data for each enemy
-- Handle frame cycling logic
+### 2. Modify Arena.gd (Tier Integration)
+**Location:** `vibe/scenes/arena/Arena.gd`
+- Integrate with existing tier-based MultiMesh system ✅
+- Add animation data packing to `_update_tier_multimesh()`
+- Set instance custom data for each tier's enemies
+- Handle frame cycling logic per tier
 
 ### 3. Create animation_test.json
 **Location:** `vibe/data/enemies/animation_test.json`

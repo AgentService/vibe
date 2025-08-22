@@ -1,0 +1,18 @@
+{
+  "id": "orc_elite",
+  "display_name": "Elite Orc Warrior",
+  "health": 25.0,
+  "speed": 40.0,
+  "size": {"x": 56, "y": 56},
+  "collision_radius": 28.0,
+  "xp_value": 8,
+  "spawn_weight": 0.05,
+  "visual": {
+    "color": {"r": 0.6, "g": 0.3, "b": 0.1, "a": 1.0},
+    "shape": "square"
+  },
+  "behavior": {
+    "ai_type": "chase_player",
+    "aggro_range": 350.0
+  }
+}

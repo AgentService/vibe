@@ -1,0 +1,31 @@
+{
+  "tiers": {
+    "swarm": {
+      "name": "SWARM",
+      "description": "Small, fast enemies rendered in bulk",
+      "max_size": 24,
+      "max_speed": 120,
+      "render_method": "multimesh"
+    },
+    "regular": {
+      "name": "REGULAR", 
+      "description": "Medium enemies with basic animations",
+      "max_size": 48,
+      "max_speed": 80,
+      "render_method": "multimesh"
+    },
+    "elite": {
+      "name": "ELITE",
+      "description": "Large enemies with special effects",
+      "max_size": 64,
+      "max_speed": 60,
+      "render_method": "multimesh"
+    },
+    "boss": {
+      "name": "BOSS",
+      "description": "Unique enemies with individual rendering",
+      "min_size": 80,
+      "render_method": "individual_sprite"
+    }
+  }
+}

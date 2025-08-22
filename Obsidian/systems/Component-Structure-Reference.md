@@ -98,18 +98,21 @@ KeybindingsDisplay (Panel - styled)
 ```
 Arena (Node2D)
 ├── MM_Projectiles (MultiMeshInstance2D)
-├── MM_Enemies (MultiMeshInstance2D)  
+├── MM_Enemies_Swarm (MultiMeshInstance2D)     # Small enemies (≤24px) - Tier system
+├── MM_Enemies_Regular (MultiMeshInstance2D)   # Medium enemies (25-48px)
+├── MM_Enemies_Elite (MultiMeshInstance2D)     # Large enemies (49-64px)
+├── MM_Enemies_Boss (MultiMeshInstance2D)      # Huge enemies (65px+)
 ├── MM_Walls (MultiMeshInstance2D)
 ├── MM_Terrain (MultiMeshInstance2D)
 ├── MM_Obstacles (MultiMeshInstance2D)
 └── MM_Interactables (MultiMeshInstance2D)
 ```
 
-**System Dependencies** (12 systems):
+**System Dependencies** (13 systems):
 - `AbilitySystem` - Combat abilities
-- `WaveDirector` - Enemy spawning  
+- `WaveDirector` - Enemy spawning (includes EnemyRegistry)
 - `DamageSystem` - Combat damage
-- `EnemyRegistry` - Enemy type loading and selection
+- `EnemyRenderTier` - Enemy tier classification and routing ⭐ NEW
 - `EnemyBehaviorSystem` - AI pattern management
 - `ArenaSystem` - Level loading
 - `TextureThemeSystem` - Visual themes

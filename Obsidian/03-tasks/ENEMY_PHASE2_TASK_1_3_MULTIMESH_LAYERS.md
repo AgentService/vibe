@@ -1,38 +1,43 @@
-# Enemy Phase 2 - Task 1.3: MultiMesh Layer Setup
+# Enemy Phase 2 - Task 1.3: MultiMesh Visual Optimization
 
 ## Overview
-**Duration:** 2 hours  
-**Priority:** High (Rendering Foundation)  
-**Dependencies:** Tasks 1.1 & 1.2 completed  
+**Duration:** 1.5 hours (REDUCED - Core infrastructure already complete)  
+**Priority:** Medium (Visual Polish)  
+**Dependencies:** Task 1.1 ✅ completed, Task 1.2 recommended  
 
 ## Goal
-Create 3 MultiMesh layers for different enemy tiers and route enemies to appropriate layers while maintaining performance.
+Optimize and enhance tier-specific MultiMesh visual styling and performance tuning.
+
+**NOTE:** Core MultiMesh layer infrastructure was completed in Task 1.1. This task now focuses on visual enhancement and optimization.
 
 ## What This Task Accomplishes
-- ✅ Create 3 MultiMesh layers (Swarm, Regular, Elite)
-- ✅ Route enemies to appropriate layer based on tier
-- ✅ Maintain single MultiMesh performance
-- ✅ Foundation for visual hierarchy rendering
+- ✅ ~~Create 3 MultiMesh layers~~ **COMPLETED IN TASK 1.1** (4 layers: SWARM, REGULAR, ELITE, BOSS)
+- ✅ ~~Route enemies to appropriate layer~~ **COMPLETED IN TASK 1.1** (tier routing working)
+- ✅ ~~Maintain single MultiMesh performance~~ **COMPLETED IN TASK 1.1** (performance maintained)
+- 🎯 **NEW FOCUS**: Enhance tier-specific visual styling and effects
+- 🎯 **NEW FOCUS**: Optimize rendering performance per tier
+- 🎯 **NEW FOCUS**: Add tier-specific visual distinctions
 
 ## Files to Create/Modify
 
-### 1. Modify Arena.tscn
-**Location:** `vibe/scenes/arena/Arena.tscn`
-- Add new MultiMesh nodes for each tier
-- Keep existing MM_Enemies for backward compatibility
-- Organize nodes in logical hierarchy
-
-### 2. Modify Arena.gd
+### 1. Enhance Arena.gd Visual Styling
 **Location:** `vibe/scenes/arena/Arena.gd`
-- Initialize tier-based MultiMeshes
-- Route enemies to appropriate layer
-- Maintain existing rendering functionality
+- ✅ ~~Initialize tier-based MultiMeshes~~ **COMPLETED**
+- 🎯 **NEW**: Enhance tier-specific visual effects (rotation, scaling, particles)
+- 🎯 **NEW**: Add tier-specific color variations and themes
+- 🎯 **NEW**: Optimize transform caching per tier
 
-### 3. Create EnemyVisualSystem.gd
-**Location:** `vibe/scripts/systems/EnemyVisualSystem.gd`
-- Manage tier-based MultiMesh routing
-- Handle enemy visual updates
-- Optimize rendering performance
+### 2. Create TierVisualEffects.gd
+**Location:** `vibe/scripts/systems/TierVisualEffects.gd`
+- Add tier-specific visual enhancements
+- Handle advanced rendering effects per tier
+- Manage tier-specific animations and particles
+
+### 3. Enhance EnemyRenderTier.gd
+**Location:** `vibe/scripts/systems/EnemyRenderTier.gd`
+- ✅ ~~Manage tier-based routing~~ **COMPLETED**
+- 🎯 **NEW**: Add tier-specific rendering optimizations
+- 🎯 **NEW**: Enhanced visual configuration per tier
 
 ## Implementation Steps
 
@@ -59,16 +64,22 @@ Create 3 MultiMesh layers for different enemy tiers and route enemies to appropr
 2. Check performance (maintain 60 FPS)
 3. Validate existing functionality works
 
-## MultiMesh Layer Structure
+## MultiMesh Layer Structure ✅ COMPLETED
 
 ```
 Arena (Node2D)
-├── MM_Enemies (existing - for backward compatibility)
-├── MM_Enemies_Swarm     # 90% enemies (small, fast)
-├── MM_Enemies_Regular   # 8% enemies (medium)
-├── MM_Enemies_Elite     # 2% enemies (large)
-└── MM_Enemies_Boss      # <1% enemies (individual sprites)
+├── MM_Projectiles (MultiMeshInstance2D)
+├── MM_Enemies_Swarm     # ✅ COMPLETED - Small enemies (≤24px)
+├── MM_Enemies_Regular   # ✅ COMPLETED - Medium enemies (25-48px)  
+├── MM_Enemies_Elite     # ✅ COMPLETED - Large enemies (49-64px)
+├── MM_Enemies_Boss      # ✅ COMPLETED - Huge enemies (65px+)
+├── MM_Walls (MultiMeshInstance2D)
+├── MM_Terrain (MultiMeshInstance2D)
+├── MM_Obstacles (MultiMeshInstance2D)
+└── MM_Interactables (MultiMeshInstance2D)
 ```
+
+**NOTE:** Old `MM_Enemies` node removed completely - no backward compatibility needed.
 
 ## Performance Considerations
 - **Keep single MultiMesh per tier** for batching
