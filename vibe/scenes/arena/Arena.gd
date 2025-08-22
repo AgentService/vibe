@@ -29,11 +29,6 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var ability_system: AbilitySystem = AbilitySystem.new()
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
 
-# Enemy animation textures (16-frame running animation)
-var knight_run_textures: Array[ImageTexture] = []
-var current_frame: int = 0
-var frame_timer: float = 0.0
-const FRAME_DURATION: float = 0.1  # Switch every 0.1 seconds (10 FPS animation)
 
 # SWARM JSON-based animation test
 var swarm_animations: Dictionary = {}
@@ -41,6 +36,27 @@ var swarm_run_textures: Array[ImageTexture] = []
 var swarm_current_frame: int = 0
 var swarm_frame_timer: float = 0.0
 var swarm_frame_duration: float = 0.12  # Will be loaded from JSON
+
+# REGULAR JSON-based animation
+var regular_animations: Dictionary = {}
+var regular_run_textures: Array[ImageTexture] = []
+var regular_current_frame: int = 0
+var regular_frame_timer: float = 0.0
+var regular_frame_duration: float = 0.1
+
+# ELITE JSON-based animation  
+var elite_animations: Dictionary = {}
+var elite_run_textures: Array[ImageTexture] = []
+var elite_current_frame: int = 0
+var elite_frame_timer: float = 0.0
+var elite_frame_duration: float = 0.1
+
+# BOSS JSON-based animation
+var boss_animations: Dictionary = {}
+var boss_run_textures: Array[ImageTexture] = []
+var boss_current_frame: int = 0
+var boss_frame_timer: float = 0.0
+var boss_frame_duration: float = 0.1
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
@@ -192,6 +208,9 @@ func _ready() -> void:
 	Logger.info("Projectile MultiMesh setup complete", "ui")
 	# TIER-BASED ENEMY SYSTEM - optional for performance
 	_load_swarm_animations()  # Load JSON animations for SWARM tier
+	_load_regular_animations()  # Load JSON animations for REGULAR tier
+	_load_elite_animations()    # Load JSON animations for ELITE tier
+	_load_boss_animations()     # Load JSON animations for BOSS tier
 	_setup_tier_multimeshes()
 	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
@@ -268,30 +287,13 @@ func _setup_tier_multimeshes() -> void:
 	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
 	
-	# Create all 16 running animation frames from knight sprite
-	var knight_full := load("res://assets/sprites/knight.png") as Texture2D
-	var knight_image := knight_full.get_image()
 	
-	# Extract frames 16-31 (running animation from rows 3-4 of 8x8 grid)
-	# Row 3: frames 16-23, Row 4: frames 24-31
-	knight_run_textures.clear()
-	for frame_idx in range(16):
-		var frame_number = 16 + frame_idx  # Frames 16-31
-		var col = frame_number % 8
-		var row = frame_number / 8
-		
-		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(col * 32, row * 32, 32, 32), Vector2i(0, 0))
-		var frame_texture := ImageTexture.create_from_image(frame_image)
-		knight_run_textures.append(frame_texture)
-	
-	# Use JSON-loaded textures for SWARM tier, fallback to hardcoded
+	# Use JSON-loaded textures for SWARM tier
 	if not swarm_run_textures.is_empty():
 		mm_enemies_swarm.texture = swarm_run_textures[0]
 		Logger.info("SWARM tier using JSON-based animation (" + str(swarm_run_textures.size()) + " frames)", "enemies")
 	else:
-		mm_enemies_swarm.texture = knight_run_textures[0]
-		Logger.info("SWARM tier using hardcoded animation (fallback)", "enemies")
+		Logger.error("SWARM tier JSON animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
@@ -303,7 +305,12 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	mm_enemies_regular.texture = knight_run_textures[0]  # Start with first running frame
+	# Use JSON-loaded textures for REGULAR tier
+	if not regular_run_textures.is_empty():
+		mm_enemies_regular.texture = regular_run_textures[0]
+		Logger.info("REGULAR tier using JSON-based animation (" + str(regular_run_textures.size()) + " frames)", "enemies")
+	else:
+		Logger.error("REGULAR tier JSON animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
 	mm_enemies_regular.z_index = -1  # Render behind sprites
 	
@@ -315,7 +322,12 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	mm_enemies_elite.texture = knight_run_textures[0]  # Start with first running frame
+	# Use JSON-loaded textures for ELITE tier
+	if not elite_run_textures.is_empty():
+		mm_enemies_elite.texture = elite_run_textures[0]
+		Logger.info("ELITE tier using JSON-based animation (" + str(elite_run_textures.size()) + " frames)", "enemies")
+	else:
+		Logger.error("ELITE tier JSON animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
 	mm_enemies_elite.z_index = -1  # Render behind sprites
 	
@@ -327,7 +339,12 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	mm_enemies_boss.texture = knight_run_textures[0]  # Start with first running frame
+	# Use JSON-loaded textures for BOSS tier
+	if not boss_run_textures.is_empty():
+		mm_enemies_boss.texture = boss_run_textures[0]
+		Logger.info("BOSS tier using JSON-based animation (" + str(boss_run_textures.size()) + " frames)", "enemies")
+	else:
+		Logger.error("BOSS tier JSON animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
 	mm_enemies_boss.z_index = -1  # Render behind sprites
 	
@@ -848,11 +865,11 @@ func _exit_tree() -> void:
 		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
-	# Animate SWARM tier with JSON-based animation
+	# Animate each tier with JSON-based animation (fallback to hardcoded)
 	_animate_swarm_tier(delta)
-	
-	# Animate other tiers with hardcoded animation
-	_animate_other_tiers(delta)
+	_animate_regular_tier(delta)
+	_animate_elite_tier(delta)
+	_animate_boss_tier(delta)
 
 func _animate_swarm_tier(delta: float) -> void:
 	# Only animate if we have JSON-loaded swarm textures
@@ -868,26 +885,44 @@ func _animate_swarm_tier(delta: float) -> void:
 		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
 			mm_enemies_swarm.texture = swarm_run_textures[swarm_current_frame]
 
-func _animate_other_tiers(delta: float) -> void:
-	# Only animate if we have hardcoded running animation textures
-	if knight_run_textures.is_empty():
+func _animate_regular_tier(delta: float) -> void:
+	if regular_run_textures.is_empty():
 		return
 	
-	frame_timer += delta
-	if frame_timer >= FRAME_DURATION:
-		frame_timer = 0.0
-		current_frame = (current_frame + 1) % 16  # Cycle through 0-15
+	regular_frame_timer += delta
+	if regular_frame_timer >= regular_frame_duration:
+		regular_frame_timer = 0.0
+		regular_current_frame = (regular_current_frame + 1) % regular_run_textures.size()
 		
-		# Get the current texture from the running animation
-		var current_texture := knight_run_textures[current_frame]
-		
-		# Update other tier textures (not SWARM)
+		# Update REGULAR tier texture
 		if mm_enemies_regular and mm_enemies_regular.multimesh and mm_enemies_regular.multimesh.instance_count > 0:
-			mm_enemies_regular.texture = current_texture
+			mm_enemies_regular.texture = regular_run_textures[regular_current_frame]
+
+func _animate_elite_tier(delta: float) -> void:
+	if elite_run_textures.is_empty():
+		return
+	
+	elite_frame_timer += delta
+	if elite_frame_timer >= elite_frame_duration:
+		elite_frame_timer = 0.0
+		elite_current_frame = (elite_current_frame + 1) % elite_run_textures.size()
+		
+		# Update ELITE tier texture
 		if mm_enemies_elite and mm_enemies_elite.multimesh and mm_enemies_elite.multimesh.instance_count > 0:
-			mm_enemies_elite.texture = current_texture
+			mm_enemies_elite.texture = elite_run_textures[elite_current_frame]
+
+func _animate_boss_tier(delta: float) -> void:
+	if boss_run_textures.is_empty():
+		return
+	
+	boss_frame_timer += delta
+	if boss_frame_timer >= boss_frame_duration:
+		boss_frame_timer = 0.0
+		boss_current_frame = (boss_current_frame + 1) % boss_run_textures.size()
+		
+		# Update BOSS tier texture
 		if mm_enemies_boss and mm_enemies_boss.multimesh and mm_enemies_boss.multimesh.instance_count > 0:
-			mm_enemies_boss.texture = current_texture
+			mm_enemies_boss.texture = boss_run_textures[boss_current_frame]
 
 func _load_swarm_animations() -> void:
 	var file_path := "res://data/animations/swarm_enemy_animations.json"
@@ -941,3 +976,156 @@ func _create_swarm_textures() -> void:
 		swarm_run_textures.append(frame_texture)
 	
 	Logger.info("Created " + str(swarm_run_textures.size()) + " swarm animation textures", "enemies")
+
+func _load_regular_animations() -> void:
+	var file_path := "res://data/animations/regular_enemy_animations.json"
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		Logger.warn("Failed to load regular animations from: " + file_path, "enemies")
+		return
+	
+	var json_string := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		Logger.warn("Failed to parse regular animations JSON: " + json.get_error_message(), "enemies")
+		return
+	
+	regular_animations = json.data
+	Logger.info("Loaded regular animations from JSON", "enemies")
+	
+	_create_regular_textures()
+
+func _create_regular_textures() -> void:
+	if regular_animations.is_empty():
+		Logger.warn("No regular animations data available", "enemies")
+		return
+	
+	var knight_full := load(regular_animations.sprite_sheet) as Texture2D
+	if knight_full == null:
+		Logger.warn("Failed to load regular sprite sheet", "enemies")
+		return
+	
+	var knight_image := knight_full.get_image()
+	var frame_width: int = regular_animations.frame_size.width
+	var frame_height: int = regular_animations.frame_size.height
+	var columns: int = regular_animations.grid.columns
+	
+	var run_anim: Dictionary = regular_animations.animations.run
+	regular_frame_duration = run_anim.duration
+	
+	regular_run_textures.clear()
+	for frame_idx in run_anim.frames:
+		var col: int = int(frame_idx) % columns
+		var row: int = int(frame_idx) / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		regular_run_textures.append(frame_texture)
+	
+	Logger.info("Created " + str(regular_run_textures.size()) + " regular animation textures", "enemies")
+
+func _load_elite_animations() -> void:
+	var file_path := "res://data/animations/elite_enemy_animations.json"
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		Logger.warn("Failed to load elite animations from: " + file_path, "enemies")
+		return
+	
+	var json_string := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		Logger.warn("Failed to parse elite animations JSON: " + json.get_error_message(), "enemies")
+		return
+	
+	elite_animations = json.data
+	Logger.info("Loaded elite animations from JSON", "enemies")
+	
+	_create_elite_textures()
+
+func _create_elite_textures() -> void:
+	if elite_animations.is_empty():
+		Logger.warn("No elite animations data available", "enemies")
+		return
+	
+	var knight_full := load(elite_animations.sprite_sheet) as Texture2D
+	if knight_full == null:
+		Logger.warn("Failed to load elite sprite sheet", "enemies")
+		return
+	
+	var knight_image := knight_full.get_image()
+	var frame_width: int = elite_animations.frame_size.width
+	var frame_height: int = elite_animations.frame_size.height
+	var columns: int = elite_animations.grid.columns
+	
+	var run_anim: Dictionary = elite_animations.animations.run
+	elite_frame_duration = run_anim.duration
+	
+	elite_run_textures.clear()
+	for frame_idx in run_anim.frames:
+		var col: int = int(frame_idx) % columns
+		var row: int = int(frame_idx) / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		elite_run_textures.append(frame_texture)
+	
+	Logger.info("Created " + str(elite_run_textures.size()) + " elite animation textures", "enemies")
+
+func _load_boss_animations() -> void:
+	var file_path := "res://data/animations/boss_enemy_animations.json"
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		Logger.warn("Failed to load boss animations from: " + file_path, "enemies")
+		return
+	
+	var json_string := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		Logger.warn("Failed to parse boss animations JSON: " + json.get_error_message(), "enemies")
+		return
+	
+	boss_animations = json.data
+	Logger.info("Loaded boss animations from JSON", "enemies")
+	
+	_create_boss_textures()
+
+func _create_boss_textures() -> void:
+	if boss_animations.is_empty():
+		Logger.warn("No boss animations data available", "enemies")
+		return
+	
+	var knight_full := load(boss_animations.sprite_sheet) as Texture2D
+	if knight_full == null:
+		Logger.warn("Failed to load boss sprite sheet", "enemies")
+		return
+	
+	var knight_image := knight_full.get_image()
+	var frame_width: int = boss_animations.frame_size.width
+	var frame_height: int = boss_animations.frame_size.height
+	var columns: int = boss_animations.grid.columns
+	
+	var run_anim: Dictionary = boss_animations.animations.run
+	boss_frame_duration = run_anim.duration
+	
+	boss_run_textures.clear()
+	for frame_idx in run_anim.frames:
+		var col: int = int(frame_idx) % columns
+		var row: int = int(frame_idx) / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		boss_run_textures.append(frame_texture)
+	
+	Logger.info("Created " + str(boss_run_textures.size()) + " boss animation textures", "enemies")
