@@ -8,7 +8,6 @@
   "spawn_radius": 200.0,
   "spawn_radius_large": 600.0,
   "spawn_radius_mega": 800.0,
-  "enemy_hp": 3.0,
   "enemy_speed_min": 10.0,
   "enemy_speed_max": 20.0,
   "spawn_count_min": 3,

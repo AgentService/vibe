@@ -6,7 +6,7 @@
     "x": 80,
     "y": 80
   },
-  "health": 30.0,
+  "health": 330.0,
   "speed": 30.0,
   "collision_radius": 40.0,
   "xp_value": 20,

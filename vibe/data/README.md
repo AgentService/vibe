@@ -87,7 +87,6 @@ Wave director balance values including enemy spawning, movement, health, and are
     "y": 300.0
   },
   "spawn_radius": 600.0,
-  "enemy_hp": 3.0,
   "enemy_speed_min": 60.0,
   "enemy_speed_max": 120.0,
   "spawn_count_min": 3,
@@ -103,8 +102,7 @@ Wave director balance values including enemy spawning, movement, health, and are
 - `max_enemies` (int): Maximum enemies in object pool
 - `spawn_interval` (float): Time between spawn waves in seconds
 - `arena_center` (object): Center point of arena with x,y coordinates
-- `spawn_radius` (float): Distance from center where enemies spawn
-- `enemy_hp` (float): Base enemy health points
+- `spawn_radius` (float): Distance from center where enemies spawn  
 - `enemy_speed_min` (float): Minimum enemy movement speed
 - `enemy_speed_max` (float): Maximum enemy movement speed
 - `spawn_count_min` (int): Minimum enemies spawned per wave
