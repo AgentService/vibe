@@ -13,7 +13,6 @@ var spawn_timer: float = 0.0
 var spawn_interval: float
 var arena_center: Vector2
 var spawn_radius: float
-var enemy_hp: float
 var enemy_speed_min: float
 var enemy_speed_max: float
 var spawn_count_min: int
@@ -59,7 +58,6 @@ func _load_balance_values() -> void:
 	var center_data: Dictionary = BalanceDB.get_waves_value("arena_center")
 	arena_center = Vector2(center_data.get("x", 400.0), center_data.get("y", 300.0))
 	spawn_radius = BalanceDB.get_waves_value("spawn_radius")
-	enemy_hp = BalanceDB.get_waves_value("enemy_hp")
 	enemy_speed_min = BalanceDB.get_waves_value("enemy_speed_min")
 	enemy_speed_max = BalanceDB.get_waves_value("enemy_speed_max")
 	spawn_count_min = BalanceDB.get_waves_value("spawn_count_min")
@@ -171,14 +169,6 @@ func _get_enemy_speed(enemy_type: String) -> float:
 	
 	return RNG.randf_range("waves", speed_min, speed_max)
 
-func _get_enemy_hp(enemy_type: String) -> float:
-	var enemy_config = _enemy_configs.get(enemy_type)
-	if not enemy_config:
-		Logger.warn("No config found for enemy type: " + enemy_type + ", using default HP", "waves")
-		return enemy_hp
-	
-	var stats = enemy_config.get("stats", {})
-	return stats.get("hp", enemy_hp)
 
 func _initialize_pool() -> void:
 	enemies.resize(max_enemies)
@@ -186,8 +176,8 @@ func _initialize_pool() -> void:
 		enemies[i] = {
 			"pos": Vector2.ZERO,
 			"vel": Vector2.ZERO,
-			"hp": enemy_hp,
-			"max_hp": enemy_hp,
+			"hp": 0.0,  # Will be set when enemy is spawned
+			"max_hp": 0.0,  # Will be set when enemy is spawned
 			"alive": false,
 			"type_id": "knight_swarm",
 			"type": "knight",
@@ -239,15 +229,17 @@ func _spawn_enemy() -> void:
 	var enemy := enemies[free_idx]
 	
 	# Setup enemy using available method
-	if enemy_type_obj and has_method("EnemyEntity"):
-		# Use entity setup if available
+	if enemy_type_obj:
+		# Use entity setup if enemy type is available
 		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, spawn_pos, direction * enemy_type_obj.speed)
 	else:
-		# Fallback to manual setup
+		# Fallback to manual setup (should not happen with JSON system)
+		Logger.warn("Using fallback manual enemy setup for: " + enemy_type_str, "waves")
 		var speed := _get_enemy_speed(enemy_type_str)
 		enemy["pos"] = spawn_pos
 		enemy["vel"] = direction * speed
-		enemy["hp"] = _get_enemy_hp(enemy_type_str)
+		enemy["hp"] = 3.0  # Fallback default HP
+		enemy["max_hp"] = 3.0
 		enemy["alive"] = true
 		enemy["type"] = enemy_type_str
 		enemy["type_id"] = enemy_type_str
@@ -275,15 +267,17 @@ func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -
 	var enemy := enemies[free_idx]
 	
 	# Setup enemy using available method
-	if enemy_type_obj and has_method("EnemyEntity"):
-		# Use entity setup if available
+	if enemy_type_obj:
+		# Use entity setup if enemy type is available
 		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, position, direction * enemy_type_obj.speed)
 	else:
-		# Fallback to manual setup
+		# Fallback to manual setup (should not happen with JSON system)
+		Logger.warn("Using fallback manual spawn_enemy_at for: " + enemy_type_str, "waves")
 		var speed := _get_enemy_speed(enemy_type_str)
 		enemy["pos"] = position
 		enemy["vel"] = direction * speed
-		enemy["hp"] = _get_enemy_hp(enemy_type_str)
+		enemy["hp"] = 3.0  # Fallback default HP
+		enemy["max_hp"] = 3.0
 		enemy["alive"] = true
 		enemy["type"] = enemy_type_str
 		enemy["type_id"] = enemy_type_str
