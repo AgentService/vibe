@@ -1,6 +1,6 @@
 {
-  "max_enemies": 800,
-  "spawn_interval": 0.1,
+  "max_enemies": 100,
+  "spawn_interval": 0.5,
   "arena_center": {
     "x": 0.0,
     "y": 0.0

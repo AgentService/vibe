@@ -465,6 +465,48 @@ func validate() -> Array[String]:
 **Related Concepts**: Data loading patterns, JSON validation, domain model integrity
 **RULE LOOKED UP**: 0 times
 
+### Variable Type Inference with Dictionary Access
+**Problem/Context**: "Cannot infer the type of variable because the value doesn't have a set type" errors when using := with dictionary access or method calls
+**Solution/Fix**: Add explicit type annotations when GDScript can't infer types from dictionary access or method returns
+**Code Example**:
+```gdscript
+# Wrong - type inference fails:
+var tiers := some_dictionary.get("tiers")  # Cannot infer type
+var result := some_method_call()  # May fail inference
+
+# Right - explicit type annotation:
+var tiers: Dictionary = some_dictionary.get("tiers")
+var result: Array[String] = some_method_call()
+```
+**Why It Happens**: Dictionary access returns Variant type; some method calls don't provide sufficient type information for inference
+**Warning Signs**: "Cannot infer the type" compile errors with := operator
+**RULE LOOKED UP**: 0 times
+
+### Typed Array Initialization in Dictionaries
+**Problem/Context**: "Array of argument does not match" errors when function expects Array[Type] but receives generic Array from dictionary values
+**Solution/Fix**: Initialize dictionary values with explicitly typed arrays using Array[Type]() constructor
+**Code Example**:
+```gdscript
+# Wrong - creates generic Array, causes type mismatch:
+var grouped: Dictionary = {
+    Tier.SWARM: [],  # This is Array, not Array[Dictionary]
+    Tier.REGULAR: [],
+    Tier.ELITE: [],
+    Tier.BOSS: []
+}
+
+# Right - explicit typed array initialization:
+var grouped: Dictionary = {
+    Tier.SWARM: Array[Dictionary](),
+    Tier.REGULAR: Array[Dictionary](),
+    Tier.ELITE: Array[Dictionary](),
+    Tier.BOSS: Array[Dictionary]()
+}
+```
+**Why It Happens**: Empty [] literal creates generic Array; dictionary values don't inherit expected types from function signatures
+**Warning Signs**: Type mismatch errors when passing dictionary values to functions expecting typed arrays
+**RULE LOOKED UP**: 0 times
+
 
 ## Performance Insights
 

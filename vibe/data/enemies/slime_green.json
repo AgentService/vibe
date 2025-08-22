@@ -3,7 +3,7 @@
   "display_name": "Green Slime",
   "health": 10.0,
   "speed": 50.0,
-  "size": {"x": 28, "y": 28},
+  "size": {"x": 32, "y": 32},
   "collision_radius": 14.0,
   "xp_value": 2,
   "spawn_weight": 0.3,

@@ -28,6 +28,12 @@
   - **Core focus**: Melee is now baseline capability, cards focus on projectile unlocks
 - **Documentation Updates**: Updated Obsidian architecture docs for KeybindingsDisplay integration
   - **UI Architecture**: Updated component hierarchy and implementation status
+- **Enemy Render Tier System (Phase 2)**: Implemented basic render tier foundation for visual hierarchy
+  - **Four render tiers**: SWARM (≤24px), REGULAR (24-48px), ELITE (48-64px), BOSS (>64px)
+  - **Tier-based MultiMesh routing**: Enemies automatically route to appropriate render layers based on size
+  - **JSON configuration**: enemy_tiers.json defines tier properties and thresholds
+  - **Backward compatibility**: Existing mm_enemies continues working alongside new tier system
+  - **Performance optimization foundation**: Sets up for future per-tier rendering optimizations
 - **Enemy System MVP**: Complete data-driven enemy variety system with JSON configuration
   - **EnemyType domain model**: Load enemy definitions from JSON with validation and schema support
   - **EnemyEntity wrapper**: Extends dictionary structure with typed access while maintaining compatibility
@@ -209,6 +215,11 @@
   - **Autoload dependency solution**: Documented scene-based testing (`.tscn`) vs raw script testing patterns
   - **Documentation update**: Added console output patterns and command examples to CLAUDE.md Testing section
   - **Validation patterns**: Clear distinction between simple scripts and tests requiring singleton access
+
+- **Testing Documentation Enhancement**: Updated CLAUDE.md to prevent autoload access errors during test development
+  - **Clear autoload rule**: If test needs EventBus, RNG, ContentDB, or any autoload → use .tscn scene, NOT raw .gd script
+  - **Workflow examples**: Added correct/wrong command patterns with concrete examples in workflow section
+  - **Error prevention**: Documentation now prevents "test script doesn't have access to autoloads" implementation errors
 
 ### Technical
 

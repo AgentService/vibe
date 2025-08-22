@@ -15,7 +15,7 @@ Escape Menu
 Performance Testing to compare features
 Card System enhancen
 Menu from Godot or self?
-
+soundeffect on xp gain, higher pitch closer to lvl up
 
 
 

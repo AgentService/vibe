@@ -3,7 +3,7 @@
   "display_name": "Skeleton Archer",
   "health": 5.0,
   "speed": 120.0,
-  "size": {"x": 20, "y": 20},
+  "size": {"x": 18, "y": 18},
   "collision_radius": 10.0,
   "xp_value": 3,
   "spawn_weight": 0.2,

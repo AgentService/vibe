@@ -53,9 +53,10 @@ get_node("../../UI/HUD").update_health(hp)
 ## Testing
 - Headless **Monte-Carlo sims** in `/godot/tests/` for DPS/TTK; seeds required. ([See ARCHITECTURE.md - Testing](ARCHITECTURE.md#testing-decision-7))
 - Add a minimal sim when adding/altering combat-relevant mechanics.
-- **Console output patterns**:
-  - Simple scripts: `extends SceneTree` + `_initialize()` + `quit()`
-  - Tests with autoloads: Use `.tscn` scenes, not raw `.gd` scripts
+- **Test script patterns**:
+  - **Simple standalone tests**: `extends SceneTree` + `_initialize()` + `quit()` - for pure logic testing without autoloads
+  - **Tests requiring autoloads**: Use `.tscn` scenes with script attached - ensures EventBus, RNG, RunManager are available
+  - **Rule**: If your test needs EventBus, RNG, ContentDB, or any autoload → use `.tscn` scene, NOT raw `.gd` script
 
 ## Workflow (for Claude)
 1) **Update schemas** in `/godot/data/README.md`; add one example JSON.
@@ -77,11 +78,15 @@ get_node("../../UI/HUD").update_health(hp)
    ```
 4) **Add/adjust headless sim**; verify DPS/TTK bands stay within ±10%.
    ```bash
-   # For tests with autoloads (BalanceDB, EventBus, etc.)
+   # For tests with autoloads (EventBus, RNG, ContentDB, etc.) - USE .tscn
    "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_balance.tscn
    
-   # For simple standalone scripts
-   "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_test.gd
+   # For simple standalone scripts (no autoloads needed) - USE .gd
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_math_test.gd
+   
+   # WRONG: Using --script with autoload dependencies will fail
+   # "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
    ```
 5) **Wire minimal UI**; keep it lean; use CanvasLayer for overlays.
 6) **Update Obsidian docs** if system architecture changed; note required updates in commit message.

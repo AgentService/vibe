@@ -80,6 +80,7 @@ func _on_combat_step(payload) -> void:
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
 	var alive_enemies := get_alive_enemies()
+	#Logger.debug("WaveDirector emitting enemies_updated with " + str(alive_enemies.size()) + " enemies", "waves")
 	enemies_updated.emit(alive_enemies)
 
 func _handle_spawning(dt: float) -> void:
@@ -99,7 +100,7 @@ func _spawn_enemy() -> void:
 	# Select enemy type from registry
 	var enemy_type := enemy_registry.get_random_enemy_type("waves")
 	if enemy_type == null:
-		Logger.warn("No enemy types available for spawning", "waves")
+		Logger.warn("No enemy types available for spawning - registry has " + str(enemy_registry.enemy_types.size()) + " types", "waves")
 		return
 	
 	# Use cached player position from PlayerState autoload
@@ -112,6 +113,8 @@ func _spawn_enemy() -> void:
 	var enemy := enemies[free_idx]
 	EnemyEntity.setup_dictionary_with_type(enemy, enemy_type, spawn_pos, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
+	
+	Logger.debug("Spawned enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ")", "enemies")
 
 ## Public method for manual enemy spawning (debug/testing)
 func spawn_enemy_at(position: Vector2, enemy_type_id: String = "grunt_basic") -> bool:
