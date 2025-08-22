@@ -10,8 +10,9 @@ var wave_director: WaveDirector
 signal behavior_processed()
 
 func _ready() -> void:
-	EventBus.combat_step.connect(_on_combat_step)
-	Logger.info("Enemy behavior system initialized", "enemies")
+	# DISABLED - AI logic moved to WaveDirector
+	# EventBus.combat_step.connect(_on_combat_step)
+	Logger.info("Enemy behavior system DISABLED - logic moved to WaveDirector", "enemies")
 
 func set_wave_director(director: WaveDirector) -> void:
 	wave_director = director
@@ -24,6 +25,9 @@ func _on_combat_step(payload) -> void:
 	behavior_processed.emit()
 
 func _process_enemy_behaviors(dt: float) -> void:
+	# Temporarily disabled to test if this causes stuttering
+	return
+	
 	var enemies := wave_director.get_alive_enemies()
 	var player_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else Vector2.ZERO
 	

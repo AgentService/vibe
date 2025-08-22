@@ -3,11 +3,40 @@
     {
       "id": "card_unlock_projectiles",
       "desc": "Unlock projectile attacks (right-click)",
+      "min_level": 10,
       "stat_mods": {
         "has_projectiles": true,
         "projectile_count_add": 1
       },
       "weight": 5
+    },
+    {
+      "id": "card_melee_damage",
+      "desc": "Increased Melee Damage (+15 damage)",
+      "min_level": 1,
+      "stat_mods": {
+        "melee_damage_add": 15
+      },
+      "weight": 8
+    },
+    {
+      "id": "card_melee_attack_speed",
+      "desc": "Faster Attacks (+0.3 attacks per second)",
+      "min_level": 1,
+      "stat_mods": {
+        "melee_attack_speed_add": 0.3
+      },
+      "weight": 7
+    },
+    {
+      "id": "card_melee_range",
+      "desc": "Extended Reach (+40 range, +15° cone)",
+      "min_level": 1,
+      "stat_mods": {
+        "melee_range_add": 40,
+        "melee_cone_angle_add": 15
+      },
+      "weight": 6
     }
   ]
 }

@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Enhanced Melee Combat System**: Improved damage verification and upgrades
+  - **Damage logging**: Added detailed combat logs showing enemy damage and kill events
+  - **Increased base damage**: Melee damage raised from 25 to 50 for better enemy clearing
+  - **Melee upgrade cards**: Added 3 new melee enhancement cards (damage +15, attack speed +0.3, range/cone +40/+15°)
+  - **Level-gated projectiles**: Projectile unlock card now requires level 10, focusing early game on melee
+  - **Card system improvements**: Added min_level filtering to card selection system
+  - **RunManager stats**: Added melee modifier stats integration for card effects
 - **Arena and Balance Improvements**: Enhanced default game settings for better experience
   - **Mega Arena default**: Game now starts with the largest arena (mega_arena) instead of basic_arena
   - **Projectile gating**: Auto-projectile shooting only activates after obtaining projectile boons

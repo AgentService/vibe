@@ -139,16 +139,24 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	return dot_product >= min_dot
 
 func _calculate_damage() -> float:
-	return damage
+	var base_damage = damage
+	var bonus_damage = RunManager.stats.get("melee_damage_add", 0.0)
+	return base_damage + bonus_damage
 
 func _get_effective_attack_speed() -> float:
-	return attack_speed
+	var base_speed = attack_speed
+	var bonus_speed = RunManager.stats.get("melee_attack_speed_add", 0.0)
+	return base_speed + bonus_speed
 
 func _get_effective_range() -> float:
-	return range
+	var base_range = range
+	var bonus_range = RunManager.stats.get("melee_range_add", 0.0)
+	return base_range + bonus_range
 
 func _get_effective_cone_angle() -> float:
-	return cone_angle
+	var base_angle = cone_angle
+	var bonus_angle = RunManager.stats.get("melee_cone_angle_add", 0.0)
+	return base_angle + bonus_angle
 
 
 func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:

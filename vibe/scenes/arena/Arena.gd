@@ -33,7 +33,7 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
 @onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
 @onready var camera_system: CameraSystem = CameraSystem.new()
-@onready var enemy_behavior_system: EnemyBehaviorSystem = EnemyBehaviorSystem.new()
+# enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
 var player: Player
@@ -70,8 +70,7 @@ func _ready() -> void:
 		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if camera_system:
 		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if enemy_behavior_system:
-		enemy_behavior_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# enemy_behavior_system removed
 	Logger.info("System process modes set", "ui")
 	
 	Logger.info("Adding systems as children...", "ui")
@@ -96,9 +95,7 @@ func _ready() -> void:
 	if camera_system:
 		add_child(camera_system)
 		Logger.info("camera_system added", "ui")
-	if enemy_behavior_system:
-		add_child(enemy_behavior_system)
-		Logger.info("enemy_behavior_system added", "ui")
+	# enemy_behavior_system removed
 	Logger.info("All systems added as children", "ui")
 	
 	Logger.info("All systems added as children, continuing setup...", "enemies")
@@ -109,10 +106,7 @@ func _ready() -> void:
 		damage_system.set_references(ability_system, wave_director)
 		Logger.info("Damage system references set", "ui")
 	
-	# Set reference for enemy behavior system
-	if enemy_behavior_system and wave_director:
-		enemy_behavior_system.set_wave_director(wave_director)
-		Logger.info("Enemy behavior system references set", "ui")
+	# Enemy behavior system removed - AI logic moved to WaveDirector
 	
 	Logger.info("About to create enemy render tier...", "ui")
 	

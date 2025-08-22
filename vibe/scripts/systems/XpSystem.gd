@@ -93,6 +93,10 @@ func _level_up() -> void:
 	current_xp -= next_level_xp
 	current_level += 1
 	_update_next_level_xp()
+	
+	# Update RunManager level for card system
+	RunManager.stats["level"] = current_level
+	
 	Logger.info("Level up! New level: " + str(current_level), "player")
 	var level_payload := EventBus.LevelUpPayload.new(current_level)
 	EventBus.level_up.emit(level_payload)

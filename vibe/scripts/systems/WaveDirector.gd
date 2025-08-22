@@ -142,7 +142,7 @@ func _find_free_enemy() -> int:
 	return -1
 
 func _update_enemies(dt: float) -> void:
-	# Use cached player position from PlayerState autoload
+	# Use cached player position from PlayerState autoload  
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	
@@ -154,14 +154,18 @@ func _update_enemies(dt: float) -> void:
 		
 		# Only update enemies within update distance for performance
 		if dist_to_target <= update_distance:
+			# Simple chase behavior - move toward player
+			var direction: Vector2 = (target_pos - enemy["pos"]).normalized()
+			var speed: float = enemy.get("speed", 60.0)
+			enemy["vel"] = direction * speed
+			
 			# Update enemy position based on current velocity
-			# (Velocity is set by EnemyBehaviorSystem)
 			enemy["pos"] += enemy["vel"] * dt
 		
-		# Kill enemy if it reaches target or goes out of bounds
-		if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
-			enemy["alive"] = false
-			_cache_dirty = true  # Mark cache as dirty when enemy dies
+		# Kill enemy if it reaches target or goes out of bounds - DISABLED
+		# if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
+		#	enemy["alive"] = false
+		#	_cache_dirty = true  # Mark cache as dirty when enemy dies
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
@@ -190,10 +194,26 @@ func damage_enemy(enemy_index: int, damage: float) -> void:
 	if not enemy["alive"]:
 		return
 	
+	var old_hp = enemy["hp"]
 	enemy["hp"] -= damage
+	Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.get("type_id", "unknown"), old_hp, enemy["hp"], damage], "combat")
+	
 	if enemy["hp"] <= 0.0:
 		var death_pos: Vector2 = enemy["pos"]
 		enemy["alive"] = false
 		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
+		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.get("type_id", "unknown"), death_pos], "combat")
 		var payload := EventBus.EnemyKilledPayload.new(death_pos, 1)
 		EventBus.enemy_killed.emit(payload)
+
+func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
+	if enemy_index < 0 or enemy_index >= max_enemies:
+		return
+	
+	var enemy := enemies[enemy_index]
+	if not enemy["alive"]:
+		return
+	
+	enemy["vel"] = velocity
+
+# AI methods removed - back to simple chase behavior

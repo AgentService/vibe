@@ -44,22 +44,35 @@ func roll_three() -> Array[Dictionary]:
 	var selected_cards: Array[Dictionary] = []
 	var total_weight: float = 0.0
 	
-	# Calculate total weight
+	# Filter cards based on current level
+	var available_cards: Array = []
+	var current_level: int = RunManager.stats.get("level", 1)
+	
 	for card in pool:
+		var min_level: int = card.get("min_level", 1)
+		if current_level >= min_level:
+			available_cards.append(card)
+	
+	if available_cards.is_empty():
+		push_error("No cards available for level " + str(current_level))
+		return []
+	
+	# Calculate total weight from available cards
+	for card in available_cards:
 		if card.has("weight"):
 			total_weight += card["weight"]
 	
-	# Select 3 unique cards
+	# Select 3 unique cards from available cards
 	var used_indices: Array[int] = []
-	while selected_cards.size() < 3 and used_indices.size() < pool.size():
+	while selected_cards.size() < 3 and used_indices.size() < available_cards.size():
 		var random_value: float = RNG.randf_range("loot", 0.0, total_weight)
 		var current_weight: float = 0.0
 		
-		for i in range(pool.size()):
+		for i in range(available_cards.size()):
 			if i in used_indices:
 				continue
 			
-			var card: Dictionary = pool[i]
+			var card: Dictionary = available_cards[i]
 			current_weight += card.get("weight", 1.0)
 			
 			if random_value <= current_weight:

@@ -1,5 +1,5 @@
 {
-  "damage": 25.0,
+  "damage": 150.0,
   "range": 150.0,
   "cone_angle": 65.0,
   "attack_speed": 1.5,

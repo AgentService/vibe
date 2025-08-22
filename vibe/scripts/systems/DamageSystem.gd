@@ -112,7 +112,7 @@ func _check_enemy_player_collisions() -> void:
 		if distance <= collision_distance:
 			# Enemy hits player - deal 1 damage
 			EventBus.damage_taken.emit(1)
-			break  # Only one damage per framewww
+			break  # Only one damage per frame
 
 func _on_damage_requested(payload) -> void:
 	if payload.target_id.type != EntityId.Type.ENEMY:
@@ -124,6 +124,15 @@ func _on_damage_requested(payload) -> void:
 	
 	# Apply damage to enemy
 	wave_director.damage_enemy(payload.target_id.index, final_damage)
+	
+	# Get enemy info for detailed logging
+	var enemy_info = "unknown"
+	if wave_director and payload.target_id.index < wave_director.enemies.size():
+		var enemy = wave_director.enemies[payload.target_id.index]
+		enemy_info = "%s (hp: %.1f)" % [enemy.get("type_id", "unknown"), enemy.get("hp", 0)]
+	
+	# Log damage for verification
+	Logger.info("DAMAGE APPLIED: Enemy[%d] %s took %.1f damage%s" % [payload.target_id.index, enemy_info, final_damage, " (CRIT!)" if is_crit else ""], "combat")
 	
 	# Emit damage applied signal
 	var applied_payload := EventBus.DamageAppliedPayload.new(payload.target_id, final_damage, is_crit, payload.tags)
