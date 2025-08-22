@@ -596,19 +596,12 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
 func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
-	print("TIER SYSTEM: Processing " + str(alive_enemies.size()) + " enemies")
-	
 	if enemy_render_tier == null:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
 		return
 	
 	# Group enemies by tier
 	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
-	
-	print("TIER GROUPS: SWARM=" + str(tier_groups[EnemyRenderTier.Tier.SWARM].size()) + 
-		  ", REGULAR=" + str(tier_groups[EnemyRenderTier.Tier.REGULAR].size()) + 
-		  ", ELITE=" + str(tier_groups[EnemyRenderTier.Tier.ELITE].size()) + 
-		  ", BOSS=" + str(tier_groups[EnemyRenderTier.Tier.BOSS].size()))
 	
 	# Update each tier's MultiMesh
 	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier.Tier.SWARM)

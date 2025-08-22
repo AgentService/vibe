@@ -12,10 +12,8 @@ var _wave_pool_dirty: bool = true
 signal enemy_types_loaded()
 
 func _ready() -> void:
-	print("ENEMY REGISTRY _ready() called!")
 	Logger.info("EnemyRegistry._ready() starting", "enemies")
 	load_all_enemy_types()
-	print("ENEMY REGISTRY finished load_all_enemy_types, loaded " + str(enemy_types.size()) + " types")
 	Logger.info("EnemyRegistry._ready() finished loading types: " + str(enemy_types.size()), "enemies")
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)

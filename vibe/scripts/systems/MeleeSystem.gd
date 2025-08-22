@@ -118,6 +118,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
+		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.get("type_id", "unknown") + " (hp: " + str(enemy.get("hp", 0)) + ")", "abilities")
 	
 	
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
