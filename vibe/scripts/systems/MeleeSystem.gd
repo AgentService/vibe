@@ -140,13 +140,9 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 
 func _calculate_damage() -> float:
 	var base_damage = damage
-<<<<<<< HEAD
 	var bonus_damage = RunManager.stats.get("melee_damage_add", 0.0)
-	return base_damage + bonus_damage
-=======
 	var damage_mult = RunManager.stats.get("melee_damage_mult", 1.0)
-	return base_damage * damage_mult
->>>>>>> fix-enemy-behavior
+	return (base_damage + bonus_damage) * damage_mult
 
 func _get_effective_attack_speed() -> float:
 	var base_speed = attack_speed

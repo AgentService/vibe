@@ -187,16 +187,12 @@ func _initialize_pool() -> void:
 			"pos": Vector2.ZERO,
 			"vel": Vector2.ZERO,
 			"hp": enemy_hp,
-<<<<<<< HEAD
 			"max_hp": enemy_hp,
 			"alive": false,
 			"type_id": "grunt_basic",
+			"type": "grunt",
 			"speed": 60.0,
 			"size": Vector2(24, 24)
-=======
-			"alive": false,
-			"type": "grunt"
->>>>>>> fix-enemy-behavior
 		}
 
 func _on_combat_step(payload) -> void:
@@ -220,70 +216,77 @@ func _spawn_enemy() -> void:
 		Logger.warn("No free enemy slots available", "waves")
 		return
 	
-	# Select enemy type from registry
-	var enemy_type := enemy_registry.get_random_enemy_type("waves")
-	if enemy_type == null:
-		Logger.warn("No enemy types available for spawning - registry has " + str(enemy_registry.enemy_types.size()) + " types", "waves")
-		return
+	# Try registry first, fallback to legacy system
+	var enemy_type_obj = null
+	var enemy_type_str: String = "grunt"
+	if enemy_registry:
+		enemy_type_obj = enemy_registry.get_random_enemy_type("waves")
+	if enemy_type_obj == null:
+		# Fallback to legacy enemy type selection
+		enemy_type_str = _choose_enemy_type()
+		Logger.debug("Using legacy enemy type: " + enemy_type_str, "waves")
+	else:
+		enemy_type_str = enemy_type_obj.id
+		Logger.debug("Using registry enemy type: " + enemy_type_str, "waves")
 	
 	# Use cached player position from PlayerState autoload
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	
-	# Choose enemy type randomly
-	var enemy_type := _choose_enemy_type()
-	
 	var angle := RNG.randf_range("waves", 0.0, TAU)
 	var spawn_pos := target_pos + Vector2.from_angle(angle) * spawn_radius
 	var direction := (target_pos - spawn_pos).normalized()
-<<<<<<< HEAD
 	
 	var enemy := enemies[free_idx]
-	EnemyEntity.setup_dictionary_with_type(enemy, enemy_type, spawn_pos, direction * enemy_type.speed)
-=======
-	var speed := _get_enemy_speed(enemy_type)
 	
-	var enemy := enemies[free_idx]
-	enemy["pos"] = spawn_pos
-	enemy["vel"] = direction * speed
-	enemy["hp"] = _get_enemy_hp(enemy_type)
-	enemy["alive"] = true
-	enemy["type"] = enemy_type
->>>>>>> fix-enemy-behavior
+	# Setup enemy using available method
+	if enemy_type_obj and has_method("EnemyEntity"):
+		# Use entity setup if available
+		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, spawn_pos, direction * enemy_type_obj.speed)
+	else:
+		# Fallback to manual setup
+		var speed := _get_enemy_speed(enemy_type_str)
+		enemy["pos"] = spawn_pos
+		enemy["vel"] = direction * speed
+		enemy["hp"] = _get_enemy_hp(enemy_type_str)
+		enemy["alive"] = true
+		enemy["type"] = enemy_type_str
+		enemy["type_id"] = enemy_type_str
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
-	Logger.debug("Spawned enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ")", "enemies")
+	if enemy_type_obj:
+		Logger.debug("Spawned enemy: " + enemy_type_obj.id + " (size: " + str(enemy_type_obj.size) + ")", "enemies")
+	else:
+		Logger.debug("Spawned enemy: " + enemy_type_str, "enemies")
 
 ## Public method for manual enemy spawning (debug/testing)
-<<<<<<< HEAD
-func spawn_enemy_at(position: Vector2, enemy_type_id: String = "grunt_basic") -> bool:
-=======
-func spawn_enemy_at(position: Vector2, enemy_type: String = "green_slime") -> bool:
->>>>>>> fix-enemy-behavior
+func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -> bool:
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
 		return false
 	
-	var enemy_type := enemy_registry.get_enemy_type(enemy_type_id)
-	if enemy_type == null:
-		Logger.warn("Unknown enemy type: " + enemy_type_id, "waves")
-		return false
+	# Try registry first, fallback to legacy
+	var enemy_type_obj = null
+	if enemy_registry:
+		enemy_type_obj = enemy_registry.get_enemy_type(enemy_type_str)
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	var direction := (target_pos - position).normalized()
-<<<<<<< HEAD
 	
 	var enemy := enemies[free_idx]
-	EnemyEntity.setup_dictionary_with_type(enemy, enemy_type, position, direction * enemy_type.speed)
-=======
-	var speed := _get_enemy_speed(enemy_type)
 	
-	var enemy := enemies[free_idx]
-	enemy["pos"] = position
-	enemy["vel"] = direction * speed
-	enemy["hp"] = _get_enemy_hp(enemy_type)
-	enemy["alive"] = true
-	enemy["type"] = enemy_type
->>>>>>> fix-enemy-behavior
+	# Setup enemy using available method
+	if enemy_type_obj and has_method("EnemyEntity"):
+		# Use entity setup if available
+		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, position, direction * enemy_type_obj.speed)
+	else:
+		# Fallback to manual setup
+		var speed := _get_enemy_speed(enemy_type_str)
+		enemy["pos"] = position
+		enemy["vel"] = direction * speed
+		enemy["hp"] = _get_enemy_hp(enemy_type_str)
+		enemy["alive"] = true
+		enemy["type"] = enemy_type_str
+		enemy["type_id"] = enemy_type_str
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	return true
 

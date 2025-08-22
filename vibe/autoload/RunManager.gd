@@ -41,15 +41,12 @@ func _load_player_stats() -> void:
 		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
 		"damage_mult": BalanceDB.get_player_value("damage_mult"),
 		"has_projectiles": false,
-<<<<<<< HEAD
 		"level": 1,
 		"melee_damage_add": 0.0,
 		"melee_attack_speed_add": 0.0,
 		"melee_range_add": 0.0,
-		"melee_cone_angle_add": 0.0
-=======
+		"melee_cone_angle_add": 0.0,
 		"melee_damage_mult": 1.0
->>>>>>> fix-enemy-behavior
 	}
 	Logger.info("Reloaded player stats", "player")
 

@@ -13,8 +13,8 @@ const InteractableSystem := preload("res://scripts/systems/InteractableSystem.gd
 const RoomLoader := preload("res://scripts/systems/RoomLoader.gd")
 const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
-<<<<<<< HEAD
 const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -22,11 +22,6 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
-=======
-const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
-
-@onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
->>>>>>> fix-enemy-behavior
 @onready var mm_walls: MultiMeshInstance2D = $MM_Walls
 @onready var mm_terrain: MultiMeshInstance2D = $MM_Terrain
 @onready var mm_obstacles: MultiMeshInstance2D = $MM_Obstacles
@@ -39,12 +34,9 @@ const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
 @onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
 @onready var camera_system: CameraSystem = CameraSystem.new()
-<<<<<<< HEAD
+@onready var enemy_renderer: EnemyRenderer = EnemyRenderer.new()
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
-=======
-@onready var enemy_renderer: EnemyRenderer = EnemyRenderer.new()
->>>>>>> fix-enemy-behavior
 
 var player: Player
 var xp_system: XpSystem
@@ -62,7 +54,6 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	Logger.info("Arena process mode set to ALWAYS", "ui")
 	
-<<<<<<< HEAD
 	# Set proper process modes for systems (with null checks)
 	Logger.info("Setting system process modes...", "ui")
 	if ability_system:
@@ -79,6 +70,8 @@ func _ready() -> void:
 		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if camera_system:
 		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if enemy_renderer:
+		enemy_renderer.process_mode = Node.PROCESS_MODE_PAUSABLE
 	# enemy_behavior_system removed
 	Logger.info("System process modes set", "ui")
 	
@@ -104,30 +97,13 @@ func _ready() -> void:
 	if camera_system:
 		add_child(camera_system)
 		Logger.info("camera_system added", "ui")
+	if enemy_renderer:
+		add_child(enemy_renderer)
+		Logger.info("enemy_renderer added", "ui")
 	# enemy_behavior_system removed
 	Logger.info("All systems added as children", "ui")
 	
 	Logger.info("All systems added as children, continuing setup...", "enemies")
-=======
-	# Set proper process modes for systems
-	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	texture_theme_system.process_mode = Node.PROCESS_MODE_ALWAYS
-	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	enemy_renderer.process_mode = Node.PROCESS_MODE_PAUSABLE
-	
-	add_child(ability_system)
-	add_child(melee_system)
-	add_child(wave_director)
-	add_child(damage_system)
-	add_child(texture_theme_system)
-	add_child(arena_system)
-	add_child(camera_system)
-	add_child(enemy_renderer)
->>>>>>> fix-enemy-behavior
 	
 	# Set references for damage system (legitimate dependency injection)
 	Logger.info("Setting system references...", "ui")
@@ -187,18 +163,19 @@ func _ready() -> void:
 	# Connect signals AFTER systems are added and ready
 	Logger.info("Connecting signals...", "ui")
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
-<<<<<<< HEAD
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
-	Logger.info("Connected wave_director.enemies_updated signal", "ui")
+	wave_director.enemies_updated.connect(_on_enemies_updated)
+	Logger.info("Connected wave_director.enemies_updated signal to both renderers", "ui")
 	
 	# Test if signal connection worked
 	if wave_director.enemies_updated.is_connected(_update_enemy_multimesh):
-		Logger.info("Signal connection verified", "ui")
+		Logger.info("Tier signal connection verified", "ui")
 	else:
-		Logger.error("Signal connection FAILED!", "ui")
-=======
-	wave_director.enemies_updated.connect(_on_enemies_updated)
->>>>>>> fix-enemy-behavior
+		Logger.error("Tier signal connection FAILED!", "ui")
+	if wave_director.enemies_updated.is_connected(_on_enemies_updated):
+		Logger.info("Sprite signal connection verified", "ui")
+	else:
+		Logger.error("Sprite signal connection FAILED!", "ui")
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
 	
@@ -213,15 +190,12 @@ func _ready() -> void:
 	
 	Logger.info("Setting up MultiMesh instances...", "ui")
 	_setup_projectile_multimesh()
-<<<<<<< HEAD
 	Logger.info("Projectile MultiMesh setup complete", "ui")
-	# OLD ENEMY SYSTEM REMOVED - Using tier-based rendering only
+	# TIER-BASED ENEMY SYSTEM - optional for performance
 	_setup_tier_multimeshes()
 	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
 	Logger.info("Enemy transforms setup complete", "ui")
-=======
->>>>>>> fix-enemy-behavior
 	_setup_wall_multimesh()
 	_setup_terrain_multimesh()
 	_setup_obstacle_multimesh()
@@ -282,8 +256,7 @@ func _setup_projectile_multimesh() -> void:
 
 	mm_projectiles.multimesh = multimesh
 
-<<<<<<< HEAD
-# OLD ENEMY SYSTEM COMPLETELY REMOVED - Using tier-based rendering only
+# TIER-BASED ENEMY SYSTEM - optional for performance alongside sprite rendering
 
 func _setup_tier_multimeshes() -> void:
 	# Setup SWARM tier MultiMesh (small squares)
@@ -352,9 +325,6 @@ func _setup_enemy_transforms() -> void:
 	for i in range(cache_size):
 		_enemy_transforms[i] = Transform2D()
 	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
-=======
-
->>>>>>> fix-enemy-behavior
 
 func _setup_wall_multimesh() -> void:
 	var multimesh := MultiMesh.new()
@@ -633,7 +603,6 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		proj_transform.origin = projectile["pos"]
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
-<<<<<<< HEAD
 func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
 	if enemy_render_tier == null:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
@@ -677,8 +646,6 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			# Set color based on tier for visual debugging
 			var tier_color := _get_tier_debug_color(tier)
 			mm_instance.multimesh.set_instance_color(i, tier_color)
-=======
->>>>>>> fix-enemy-behavior
 
 func _update_wall_multimesh(wall_transforms: Array[Transform2D]) -> void:
 	var count := wall_transforms.size()
