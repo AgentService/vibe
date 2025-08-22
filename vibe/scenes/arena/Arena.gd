@@ -34,6 +34,13 @@ var knight_run_textures: Array[ImageTexture] = []
 var current_frame: int = 0
 var frame_timer: float = 0.0
 const FRAME_DURATION: float = 0.1  # Switch every 0.1 seconds (10 FPS animation)
+
+# SWARM JSON-based animation test
+var swarm_animations: Dictionary = {}
+var swarm_run_textures: Array[ImageTexture] = []
+var swarm_current_frame: int = 0
+var swarm_frame_timer: float = 0.0
+var swarm_frame_duration: float = 0.12  # Will be loaded from JSON
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
@@ -184,6 +191,7 @@ func _ready() -> void:
 	_setup_projectile_multimesh()
 	Logger.info("Projectile MultiMesh setup complete", "ui")
 	# TIER-BASED ENEMY SYSTEM - optional for performance
+	_load_swarm_animations()  # Load JSON animations for SWARM tier
 	_setup_tier_multimeshes()
 	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
@@ -277,8 +285,13 @@ func _setup_tier_multimeshes() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		knight_run_textures.append(frame_texture)
 	
-	# Start with first running frame
-	mm_enemies_swarm.texture = knight_run_textures[0]
+	# Use JSON-loaded textures for SWARM tier, fallback to hardcoded
+	if not swarm_run_textures.is_empty():
+		mm_enemies_swarm.texture = swarm_run_textures[0]
+		Logger.info("SWARM tier using JSON-based animation (" + str(swarm_run_textures.size()) + " frames)", "enemies")
+	else:
+		mm_enemies_swarm.texture = knight_run_textures[0]
+		Logger.info("SWARM tier using hardcoded animation (fallback)", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
@@ -835,7 +848,28 @@ func _exit_tree() -> void:
 		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
-	# Only animate if we have running animation textures
+	# Animate SWARM tier with JSON-based animation
+	_animate_swarm_tier(delta)
+	
+	# Animate other tiers with hardcoded animation
+	_animate_other_tiers(delta)
+
+func _animate_swarm_tier(delta: float) -> void:
+	# Only animate if we have JSON-loaded swarm textures
+	if swarm_run_textures.is_empty():
+		return
+	
+	swarm_frame_timer += delta
+	if swarm_frame_timer >= swarm_frame_duration:
+		swarm_frame_timer = 0.0
+		swarm_current_frame = (swarm_current_frame + 1) % swarm_run_textures.size()
+		
+		# Update SWARM tier texture
+		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
+			mm_enemies_swarm.texture = swarm_run_textures[swarm_current_frame]
+
+func _animate_other_tiers(delta: float) -> void:
+	# Only animate if we have hardcoded running animation textures
 	if knight_run_textures.is_empty():
 		return
 	
@@ -847,12 +881,63 @@ func _animate_enemy_frames(delta: float) -> void:
 		# Get the current texture from the running animation
 		var current_texture := knight_run_textures[current_frame]
 		
-		# Update all enemy tier textures
-		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
-			mm_enemies_swarm.texture = current_texture
+		# Update other tier textures (not SWARM)
 		if mm_enemies_regular and mm_enemies_regular.multimesh and mm_enemies_regular.multimesh.instance_count > 0:
 			mm_enemies_regular.texture = current_texture
 		if mm_enemies_elite and mm_enemies_elite.multimesh and mm_enemies_elite.multimesh.instance_count > 0:
 			mm_enemies_elite.texture = current_texture
 		if mm_enemies_boss and mm_enemies_boss.multimesh and mm_enemies_boss.multimesh.instance_count > 0:
 			mm_enemies_boss.texture = current_texture
+
+func _load_swarm_animations() -> void:
+	var file_path := "res://data/animations/swarm_enemy_animations.json"
+	var file := FileAccess.open(file_path, FileAccess.READ)
+	if file == null:
+		Logger.warn("Failed to load swarm animations from: " + file_path, "enemies")
+		return
+	
+	var json_string := file.get_as_text()
+	file.close()
+	
+	var json := JSON.new()
+	var parse_result := json.parse(json_string)
+	if parse_result != OK:
+		Logger.warn("Failed to parse swarm animations JSON: " + json.get_error_message(), "enemies")
+		return
+	
+	swarm_animations = json.data
+	Logger.info("Loaded swarm animations from JSON", "enemies")
+	
+	# Create textures for swarm run animation from JSON
+	_create_swarm_textures()
+
+func _create_swarm_textures() -> void:
+	if swarm_animations.is_empty():
+		Logger.warn("No swarm animations data available", "enemies")
+		return
+	
+	var knight_full := load(swarm_animations.sprite_sheet) as Texture2D
+	if knight_full == null:
+		Logger.warn("Failed to load swarm sprite sheet", "enemies")
+		return
+	
+	var knight_image := knight_full.get_image()
+	var frame_width: int = swarm_animations.frame_size.width
+	var frame_height: int = swarm_animations.frame_size.height
+	var columns: int = swarm_animations.grid.columns
+	
+	# Load run animation frames from JSON
+	var run_anim: Dictionary = swarm_animations.animations.run
+	swarm_frame_duration = run_anim.duration
+	
+	swarm_run_textures.clear()
+	for frame_idx in run_anim.frames:
+		var col: int = int(frame_idx) % columns
+		var row: int = int(frame_idx) / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		swarm_run_textures.append(frame_texture)
+	
+	Logger.info("Created " + str(swarm_run_textures.size()) + " swarm animation textures", "enemies")
