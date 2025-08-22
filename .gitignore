@@ -1,3 +1,44 @@
+# Godot 4 specific files
+.godot/
+*.tmp
+.import/
+
+# Visual Studio Code
+.vscode/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+
+# Logs and debug files
+*.log
+debug.log
+
+# Godot auto-generated export files
+export_presets.cfg
+*.pck
+*.exe
+*.dmg
+*.app
+*.x86_64
+*.x86
+*.arm64
+
+# Build artifacts
+build/
+dist/
+
+# Local development
+.env
+.env.local
+
+# IDE files
+*.swp
+*.swo
+*~
+
 # Claude Code local settings
 .claude/
 

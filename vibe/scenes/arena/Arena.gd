@@ -48,6 +48,15 @@ var base_spawn_interval: float = 0.25
 
 var _enemy_transforms: Array[Transform2D] = []
 
+# Rendering mode control
+enum EnemyRenderMode {
+	SPRITES_ONLY,
+	MULTIMESH_ONLY,
+	BOTH
+}
+
+var current_enemy_render_mode: EnemyRenderMode = EnemyRenderMode.BOTH
+
 
 func _ready() -> void:
 	Logger.info("ARENA READY FUNCTION STARTING", "ui")
@@ -165,19 +174,10 @@ func _ready() -> void:
 	# Connect signals AFTER systems are added and ready
 	Logger.info("Connecting signals...", "ui")
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
-	wave_director.enemies_updated.connect(_update_enemy_multimesh)
-	wave_director.enemies_updated.connect(_on_enemies_updated)
-	Logger.info("Connected wave_director.enemies_updated signal to both renderers", "ui")
+	_connect_enemy_rendering_signals()
+	Logger.info("Connected enemy rendering signals based on mode", "ui")
 	
-	# Test if signal connection worked
-	if wave_director.enemies_updated.is_connected(_update_enemy_multimesh):
-		Logger.info("Tier signal connection verified", "ui")
-	else:
-		Logger.error("Tier signal connection FAILED!", "ui")
-	if wave_director.enemies_updated.is_connected(_on_enemies_updated):
-		Logger.info("Sprite signal connection verified", "ui")
-	else:
-		Logger.error("Sprite signal connection FAILED!", "ui")
+	# Signal connection status will be logged by _connect_enemy_rendering_signals()
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
 	
@@ -274,6 +274,7 @@ func _setup_tier_multimeshes() -> void:
 	var swarm_tex := ImageTexture.create_from_image(swarm_img)
 	mm_enemies_swarm.texture = swarm_tex
 	mm_enemies_swarm.multimesh = swarm_multimesh
+	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
 	# Setup REGULAR tier MultiMesh (medium rectangles)
 	var regular_multimesh := MultiMesh.new()
@@ -288,6 +289,7 @@ func _setup_tier_multimeshes() -> void:
 	var regular_tex := ImageTexture.create_from_image(regular_img)
 	mm_enemies_regular.texture = regular_tex
 	mm_enemies_regular.multimesh = regular_multimesh
+	mm_enemies_regular.z_index = -1  # Render behind sprites
 	
 	# Setup ELITE tier MultiMesh (large diamonds)
 	var elite_multimesh := MultiMesh.new()
@@ -302,6 +304,7 @@ func _setup_tier_multimeshes() -> void:
 	var elite_tex := ImageTexture.create_from_image(elite_img)
 	mm_enemies_elite.texture = elite_tex
 	mm_enemies_elite.multimesh = elite_multimesh
+	mm_enemies_elite.z_index = -1  # Render behind sprites
 	
 	# Setup BOSS tier MultiMesh (large diamonds)
 	var boss_multimesh := MultiMesh.new()
@@ -318,6 +321,7 @@ func _setup_tier_multimeshes() -> void:
 	var boss_tex := ImageTexture.create_from_image(boss_img)
 	mm_enemies_boss.texture = boss_tex
 	mm_enemies_boss.multimesh = boss_multimesh
+	mm_enemies_boss.z_index = -1  # Render behind sprites
 	
 	Logger.info("Tier-specific MultiMesh instances initialized: SWARM (cyan), REGULAR (green), ELITE (blue), BOSS (magenta)", "enemies")
 
@@ -459,6 +463,9 @@ func _setup_ui() -> void:
 	
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
+	
+	# Connect HUD rendering mode signal
+	hud.rendering_mode_changed.connect(_on_rendering_mode_changed)
 	
 	card_picker = CARD_PICKER_SCENE.instantiate()
 	ui_layer.add_child(card_picker)
@@ -737,7 +744,7 @@ func _get_tier_debug_color(tier: EnemyRenderTier.Tier) -> Color:
 	# Distinct colors for each tier for visual debugging
 	match tier:
 		EnemyRenderTier.Tier.SWARM:
-			return Color(1.0, 1.0, 0.0, 1.0)  # Bright Yellow
+			return Color(0.0, 0.0, 0.0, 1.0)  # Black
 		EnemyRenderTier.Tier.REGULAR:
 			return Color(0.0, 1.0, 1.0, 1.0)  # Bright Cyan
 		EnemyRenderTier.Tier.ELITE:
@@ -824,10 +831,36 @@ func get_debug_stats() -> Dictionary:
 	
 	return stats
 
+# Rendering mode management functions
+func _on_rendering_mode_changed(mode: int) -> void:
+	current_enemy_render_mode = mode as EnemyRenderMode
+	_disconnect_enemy_rendering_signals()
+	_connect_enemy_rendering_signals()
+	Logger.info("Rendering mode switched to: " + str(current_enemy_render_mode), "ui")
+
+func _connect_enemy_rendering_signals() -> void:
+	match current_enemy_render_mode:
+		EnemyRenderMode.SPRITES_ONLY:
+			wave_director.enemies_updated.connect(_on_enemies_updated)
+			Logger.info("Connected SPRITES_ONLY mode", "ui")
+		EnemyRenderMode.MULTIMESH_ONLY:
+			wave_director.enemies_updated.connect(_update_enemy_multimesh)
+			Logger.info("Connected MULTIMESH_ONLY mode", "ui")
+		EnemyRenderMode.BOTH:
+			wave_director.enemies_updated.connect(_update_enemy_multimesh)
+			wave_director.enemies_updated.connect(_on_enemies_updated)
+			Logger.info("Connected BOTH modes", "ui")
+
+func _disconnect_enemy_rendering_signals() -> void:
+	if wave_director.enemies_updated.is_connected(_update_enemy_multimesh):
+		wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
+	if wave_director.enemies_updated.is_connected(_on_enemies_updated):
+		wave_director.enemies_updated.disconnect(_on_enemies_updated)
+
 func _exit_tree() -> void:
 	# Cleanup signal connections
 	ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	wave_director.enemies_updated.disconnect(_on_enemies_updated)
+	_disconnect_enemy_rendering_signals()
 	arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
 	
