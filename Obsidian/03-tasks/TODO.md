@@ -16,7 +16,7 @@ Performance Testing to compare features
 Card System enhancen
 Menu from Godot or self?
 
-
+each enemy needs its own (waves.json rules)
 
 
 ### Immediate — Architecture Assessment Priority Order
