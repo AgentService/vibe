@@ -40,7 +40,8 @@ func _load_player_stats() -> void:
 		"projectile_speed_mult": BalanceDB.get_player_value("projectile_speed_mult"),
 		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
 		"damage_mult": BalanceDB.get_player_value("damage_mult"),
-		"has_projectiles": false
+		"has_projectiles": false,
+		"melee_damage_mult": 1.0
 	}
 	Logger.info("Reloaded player stats", "player")
 

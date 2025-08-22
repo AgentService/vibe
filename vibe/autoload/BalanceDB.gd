@@ -55,10 +55,10 @@ func _setup_fallback_data() -> void:
 			"damage_mult": 1.0
 		},
 		"melee": {
-			"damage": 25.0,
+			"damage": 55.0,
 			"range": 100.0,
-			"cone_angle": 45.0,
-			"attack_speed": 1.5,
+			"cone_angle": 90.0,
+			"attack_speed": 2,
 			"lifesteal": 0.0
 		},
 		"ui": {

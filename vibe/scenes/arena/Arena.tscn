@@ -7,7 +7,6 @@ script = ExtResource("1_0lc8k")
 
 [node name="MM_Projectiles" type="MultiMeshInstance2D" parent="."]
 
-[node name="MM_Enemies" type="MultiMeshInstance2D" parent="."]
 
 [node name="MM_Walls" type="MultiMeshInstance2D" parent="."]
 

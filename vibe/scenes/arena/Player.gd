@@ -4,7 +4,7 @@ class_name Player
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
-@export var move_speed: float = 220.0
+@export var move_speed: float = 110.0
 @export var pickup_radius: float = 12.0
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D

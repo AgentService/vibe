@@ -11,7 +11,7 @@ signal camera_shake_requested(intensity: float, duration: float)
 @export var zoom_speed: float = 5.0
 @export var max_zoom: float = 2.0
 var min_zoom: float  # Will be loaded from balance data
-@export var default_zoom: float = 1.0
+@export var default_zoom: float = 2
 @export var deadzone_radius: float = 20.0
 @export var shake_intensity: float = 0.0
 

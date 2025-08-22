@@ -5,6 +5,23 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Data-Driven Enemy System with Purple Slime**: Fully data-driven enemy spawning with new purple slime tank enemy
+  - **Enemy registry**: Central spawn weight system in `enemy_registry.json` eliminates hardcoded enemy types
+  - **Purple slime tank**: New tank enemy (5 HP, 40-80 speed) using purple sprite sheet with 20% spawn rate
+  - **Green slime rename**: Renamed "grunt" to "green_slime" for consistency with sprite-based naming
+  - **Dynamic loading**: EnemyRenderer and WaveDirector load enemy types from JSON automatically
+  - **Weighted spawning**: 50% green slime, 30% scout, 100% purple slime (note: user increased purple weight to 100)
+  - **Sprite consistency fix**: Fixed sprites changing colors between purple/green by adding enemy type metadata tracking
+  - **Future-proof design**: Add new enemies via JSON only, no code changes required
+  - **Fallback system**: Graceful degradation if registry files missing or malformed
+- **AnimatedSprite2D Enemy System**: Complete migration from MultiMesh to animated sprites for enemy rendering
+  - **Enemy types**: Support for multiple enemy types (grunt, scout) with unique animations and stats
+  - **Sprite animation**: Full AnimatedSprite2D pool (200 sprites) with 2-frame walk cycles at 8 FPS like Vampire Survivors
+  - **JSON configuration**: Data-driven enemy types and animation definitions in `/data/enemies/` and `/data/animations/`
+  - **Performance optimization**: Viewport culling and 15Hz animation updates for smooth 100-400 enemy rendering
+  - **Type variety**: Scouts (fast, low health) vs Grunts (normal speed, normal health) with weighted spawning (70/30 split)
+  - **Visual distinction**: Color-coded fallback textures (red grunts, green scouts) and unique sprite configurations
+  - **EnemyRenderer system**: Dedicated rendering system managing sprite pool, animation states, and culling
 - **Arena and Balance Improvements**: Enhanced default game settings for better experience
   - **Mega Arena default**: Game now starts with the largest arena (mega_arena) instead of basic_arena
   - **Projectile gating**: Auto-projectile shooting only activates after obtaining projectile boons
@@ -153,6 +170,11 @@
   - **Abilities category**: Added to log config for projectile and ability system logging
 
 ### Fixed
+- **Enemy Sprite Consistency**: Fixed sprites changing colors between purple and green slimes during gameplay
+  - **Root cause**: Sprite pool reusing AnimatedSprite2D nodes between different enemy types without proper reconfiguration
+  - **Fix**: Added enemy type metadata tracking to sprites, ensuring proper reconfiguration when enemy type changes
+  - **Implementation**: `sprite.set_meta("configured_enemy_type", enemy_type)` tracks which type each sprite is configured for
+  - **Result**: Sprites maintain correct appearance throughout lifetime, no more color bleeding between enemy types
 - **Extended Pause Lag Burst**: Fixed lag spikes when resuming after extended pause during level up
   - **Root cause**: RunManager._accumulator and Arena.spawn_timer continued accumulating time during pause
   - **Fix**: Added pause state checks to prevent time accumulation in RunManager._process() and Arena._process()

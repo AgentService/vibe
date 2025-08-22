@@ -13,9 +13,9 @@ const InteractableSystem := preload("res://scripts/systems/InteractableSystem.gd
 const RoomLoader := preload("res://scripts/systems/RoomLoader.gd")
 const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
+const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
-@onready var mm_enemies: MultiMeshInstance2D = $MM_Enemies
 @onready var mm_walls: MultiMeshInstance2D = $MM_Walls
 @onready var mm_terrain: MultiMeshInstance2D = $MM_Terrain
 @onready var mm_obstacles: MultiMeshInstance2D = $MM_Obstacles
@@ -28,6 +28,7 @@ const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
 @onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
 @onready var camera_system: CameraSystem = CameraSystem.new()
+@onready var enemy_renderer: EnemyRenderer = EnemyRenderer.new()
 
 var player: Player
 var xp_system: XpSystem
@@ -37,8 +38,6 @@ var card_picker: CardPicker
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
 
-# Cached Transform2D objects for enemy MultiMesh rendering
-var _enemy_transforms: Array[Transform2D] = []
 
 func _ready() -> void:
 	# Arena input should work during pause for debug controls
@@ -52,6 +51,7 @@ func _ready() -> void:
 	texture_theme_system.process_mode = Node.PROCESS_MODE_ALWAYS
 	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	enemy_renderer.process_mode = Node.PROCESS_MODE_PAUSABLE
 	
 	add_child(ability_system)
 	add_child(melee_system)
@@ -60,6 +60,7 @@ func _ready() -> void:
 	add_child(texture_theme_system)
 	add_child(arena_system)
 	add_child(camera_system)
+	add_child(enemy_renderer)
 	
 	# Set references for damage system (legitimate dependency injection)
 	damage_system.set_references(ability_system, wave_director)
@@ -74,7 +75,7 @@ func _ready() -> void:
 	
 	# Connect signals AFTER systems are added and ready
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
-	wave_director.enemies_updated.connect(_update_enemy_multimesh)
+	wave_director.enemies_updated.connect(_on_enemies_updated)
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
 	
@@ -88,8 +89,6 @@ func _ready() -> void:
 	
 	
 	_setup_projectile_multimesh()
-	_setup_enemy_multimesh()
-	_setup_enemy_transforms()
 	_setup_wall_multimesh()
 	_setup_terrain_multimesh()
 	_setup_obstacle_multimesh()
@@ -118,29 +117,7 @@ func _setup_projectile_multimesh() -> void:
 
 	mm_projectiles.multimesh = multimesh
 
-func _setup_enemy_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
 
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(12, 12)
-	multimesh.mesh = quad_mesh
-
-	# 12x12 roter Punkt als Texture bauen
-	var img := Image.create(12, 12, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 0.0, 0.0, 1.0))
-	var tex := ImageTexture.create_from_image(img)
-	mm_enemies.texture = tex
-
-	mm_enemies.multimesh = multimesh
-
-func _setup_enemy_transforms() -> void:
-	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
-	_enemy_transforms.resize(cache_size)
-	for i in range(cache_size):
-		_enemy_transforms[i] = Transform2D()
-	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
 func _setup_wall_multimesh() -> void:
 	var multimesh := MultiMesh.new()
@@ -306,6 +283,10 @@ func _update_multimesh_textures() -> void:
 	
 	Logger.debug("MultiMesh textures updated for theme", "ui")
 
+func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
+	if enemy_renderer:
+		enemy_renderer.update_enemies(alive_enemies)
+
 func _handle_melee_attack(target_pos: Vector2) -> void:
 	if not player or not melee_system:
 		return
@@ -415,25 +396,6 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		proj_transform.origin = projectile["pos"]
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
-func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
-	# Apply viewport culling - only render visible enemies
-	var visible_enemies: Array[Dictionary] = []
-	var visible_rect: Rect2 = _get_visible_world_rect()
-	
-	for enemy in alive_enemies:
-		if _is_enemy_visible(enemy["pos"], visible_rect):
-			visible_enemies.append(enemy)
-	
-	var count := visible_enemies.size()
-	mm_enemies.multimesh.instance_count = count
-
-	for i in range(count):
-		var enemy := visible_enemies[i]
-		if i < _enemy_transforms.size():
-			_enemy_transforms[i].origin = enemy["pos"]
-			mm_enemies.multimesh.set_instance_transform_2d(i, _enemy_transforms[i])
-		else:
-			Logger.warn("Enemy transform cache overflow: " + str(i) + "/" + str(_enemy_transforms.size()), "performance")
 
 func _update_wall_multimesh(wall_transforms: Array[Transform2D]) -> void:
 	var count := wall_transforms.size()
@@ -538,6 +500,7 @@ func _toggle_performance_stats() -> void:
 		_print_performance_stats()
 
 
+
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
 	Logger.info("F10: Pause/resume toggle", "ui")
@@ -557,7 +520,7 @@ func _print_performance_stats() -> void:
 	Logger.info("Total enemies: " + str(stats.get("enemy_count", 0)), "performance")
 	Logger.info("Visible enemies: " + str(stats.get("visible_enemies", 0)), "performance")
 	Logger.info("Projectiles: " + str(stats.get("projectile_count", 0)), "performance")
-	Logger.info("Cache size: " + str(_enemy_transforms.size()), "performance")
+	Logger.info("Active sprites: " + str(stats.get("active_sprites", 0)), "performance")
 
 func get_debug_stats() -> Dictionary:
 	var stats: Dictionary = {}
@@ -578,12 +541,15 @@ func get_debug_stats() -> Dictionary:
 		var alive_projectiles: Array[Dictionary] = ability_system.get_alive_projectiles()
 		stats["projectile_count"] = alive_projectiles.size()
 	
+	if enemy_renderer:
+		stats["active_sprites"] = enemy_renderer.get_active_sprite_count()
+	
 	return stats
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
 	ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
+	wave_director.enemies_updated.disconnect(_on_enemies_updated)
 	arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
 	

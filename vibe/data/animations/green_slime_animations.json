@@ -1,0 +1,28 @@
+{
+  "sprite_sheet": "res://assets/sprites/slime_green.png",
+  "frame_size": {
+    "width": 24,
+    "height": 24
+  },
+  "grid": {
+    "columns": 4,
+    "rows": 3
+  },
+  "animations": {
+    "idle": {
+      "frames": [1, 2, 3, 4],
+      "duration": 1,
+      "loop": true
+    },
+    "walk": {
+      "frames": [5, 6, 7, 8],
+      "duration": 0.05,
+      "loop": true
+    },
+    "hit": {
+      "frames": [9, 10, 11, 12],
+      "duration": 1,
+      "loop": false
+    }
+  }
+}
