@@ -5,7 +5,10 @@
 ## [Current Week - In Progress]
 
 ### Added
-<<<<<<< HEAD
+- **Merged Enemy Rendering Systems**: Combined tier-based MultiMesh optimization with AnimatedSprite2D enemy system
+  - **Dual rendering approach**: Both EnemyRenderer (sprite-based) and tier-based MultiMesh systems available
+  - **Performance flexibility**: Can switch between detailed sprite animations and optimized MultiMesh rendering
+  - **Enemy optimization**: Melee damage fixes, enemy rendering improvements, and data-driven enemy spawning
 - **Enhanced Melee Combat System**: Improved damage verification and upgrades
   - **Damage logging**: Added detailed combat logs showing enemy damage and kill events
   - **Increased base damage**: Melee damage raised from 25 to 50 for better enemy clearing
@@ -13,7 +16,6 @@
   - **Level-gated projectiles**: Projectile unlock card now requires level 10, focusing early game on melee
   - **Card system improvements**: Added min_level filtering to card selection system
   - **RunManager stats**: Added melee modifier stats integration for card effects
-=======
 - **Data-Driven Enemy System with Purple Slime**: Fully data-driven enemy spawning with new purple slime tank enemy
   - **Enemy registry**: Central spawn weight system in `enemy_registry.json` eliminates hardcoded enemy types
   - **Purple slime tank**: New tank enemy (5 HP, 40-80 speed) using purple sprite sheet with 20% spawn rate
@@ -31,7 +33,6 @@
   - **Type variety**: Scouts (fast, low health) vs Grunts (normal speed, normal health) with weighted spawning (70/30 split)
   - **Visual distinction**: Color-coded fallback textures (red grunts, green scouts) and unique sprite configurations
   - **EnemyRenderer system**: Dedicated rendering system managing sprite pool, animation states, and culling
->>>>>>> fix-enemy-behavior
 - **Arena and Balance Improvements**: Enhanced default game settings for better experience
   - **Mega Arena default**: Game now starts with the largest arena (mega_arena) instead of basic_arena
   - **Projectile gating**: Auto-projectile shooting only activates after obtaining projectile boons
