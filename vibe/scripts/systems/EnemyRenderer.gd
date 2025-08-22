@@ -34,23 +34,8 @@ func _load_enemy_types() -> void:
 		Logger.warn("No enemy types found in registry, falling back to hardcoded types", "enemies")
 		enemy_types = ["green_slime", "scout"]
 	
-	for enemy_type in enemy_types:
-		var anim_path = "res://data/animations/" + enemy_type + "_animations.json"
-		if FileAccess.file_exists(anim_path):
-			var file = FileAccess.open(anim_path, FileAccess.READ)
-			if file:
-				var json_text = file.get_as_text()
-				file.close()
-				
-				var json = JSON.new()
-				var parse_result = json.parse(json_text)
-				if parse_result == OK:
-					_animation_configs[enemy_type] = json.data
-					Logger.debug("Loaded animation config for " + enemy_type, "enemies")
-				else:
-					Logger.warn("Failed to parse " + enemy_type + " animation config: " + str(parse_result), "enemies")
-		else:
-			Logger.warn(enemy_type + " animation config not found: " + anim_path, "enemies")
+	# Animation data is now hardcoded - no JSON loading needed
+	Logger.info("Using hardcoded animation data for " + str(enemy_types.size()) + " enemy types: " + str(enemy_types), "enemies")
 
 func _get_enemy_types_from_registry() -> Array[String]:
 	var registry_path = "res://data/enemies/enemy_registry.json"
@@ -173,8 +158,11 @@ func _setup_enemy_sprite(sprite: AnimatedSprite2D, enemy: Dictionary) -> void:
 	
 	# Start animation only if not already playing the correct one
 	var animation_name = _get_enemy_animation_state(enemy)
-	if sprite.animation != animation_name or not sprite.is_playing():
-		sprite.play(animation_name)
+	if sprite.sprite_frames != null and (sprite.animation != animation_name or not sprite.is_playing()):
+		if sprite.sprite_frames.has_animation(animation_name):
+			sprite.play(animation_name)
+		else:
+			Logger.warn("Animation '" + animation_name + "' not found for enemy type: " + enemy_type, "enemies")
 
 func _is_sprite_configured(sprite: AnimatedSprite2D, enemy_type: String) -> bool:
 	# Check if sprite has the correct animation setup for this enemy type
@@ -183,54 +171,79 @@ func _is_sprite_configured(sprite: AnimatedSprite2D, enemy_type: String) -> bool
 	
 	# Check if it's configured for the correct enemy type by looking at metadata
 	var configured_type = sprite.get_meta("configured_enemy_type", "")
-	return configured_type == enemy_type and sprite.sprite_frames.has_animation("walk")
+	if configured_type != enemy_type:
+		return false
+	
+	# Check if required animations exist (double-check sprite_frames is still not null)
+	if sprite.sprite_frames == null:
+		return false
+	return sprite.sprite_frames.has_animation("walk")
+
+func _get_hardcoded_animation_data(enemy_type: String) -> Dictionary:
+	# Hardcoded animation data for performance - no JSON loading
+	var base_data = {
+		"frame_size": {"width": 24, "height": 24},
+		"grid": {"columns": 4, "rows": 3}
+	}
+	
+	match enemy_type:
+		"green_slime":
+			base_data["sprite_sheet"] = "res://assets/sprites/slime_green.png"
+			base_data["animations"] = {
+				"idle": {"frames": [0], "duration": 0.2, "loop": true},
+				"walk": {"frames": [0], "duration": 0.15, "loop": true},
+				"hit": {"frames": [0], "duration": 0.1, "loop": false}
+			}
+		"purple_slime":
+			base_data["sprite_sheet"] = "res://assets/sprites/slime_purple.png"
+			base_data["animations"] = {
+				"idle": {"frames": [0], "duration": 0.25, "loop": true},
+				"walk": {"frames": [0], "duration": 0.2, "loop": true},
+				"hit": {"frames": [0], "duration": 0.1, "loop": false}
+			}
+		"scout":
+			base_data["sprite_sheet"] = "res://assets/sprites/slime_green.png"
+			base_data["animations"] = {
+				"idle": {"frames": [0], "duration": 0.15, "loop": true},
+				"walk": {"frames": [0], "duration": 0.1, "loop": true},
+				"hit": {"frames": [0], "duration": 0.08, "loop": false}
+			}
+		_:
+			# Fallback for unknown enemy types
+			base_data["sprite_sheet"] = "res://assets/sprites/slime_green.png"
+			base_data["animations"] = {
+				"idle": {"frames": [0], "duration": 0.2, "loop": true},
+				"walk": {"frames": [0], "duration": 0.15, "loop": true},
+				"hit": {"frames": [0], "duration": 0.1, "loop": false}
+			}
+	
+	return base_data
 
 func _configure_sprite_animation(sprite: AnimatedSprite2D, enemy_type: String) -> void:
-	var anim_config = _animation_configs.get(enemy_type)
-	if not anim_config:
-		Logger.warn("No animation config found for enemy type: " + enemy_type, "enemies")
-		return
-	
-	# Create SpriteFrames resource
+	# Use hardcoded animation data instead of JSON for better performance
+	var anim_data = _get_hardcoded_animation_data(enemy_type)
 	var sprite_frames = SpriteFrames.new()
 	
 	# Load sprite sheet texture
-	var sprite_sheet_path = anim_config.get("sprite_sheet", "")
-	var texture: Texture2D
-	if sprite_sheet_path.begins_with("res://"):
-		texture = load(sprite_sheet_path)
-	else:
-		# Fallback: create simple colored rectangle
-		texture = _create_fallback_texture(enemy_type)
-	
+	var texture: Texture2D = load(anim_data.sprite_sheet)
 	if not texture:
 		texture = _create_fallback_texture(enemy_type)
 		Logger.warn("Failed to load sprite sheet for " + enemy_type + ", using fallback", "enemies")
 	
-	# Setup animations from config
-	var animations = anim_config.get("animations", {})
-	var frame_size = anim_config.get("frame_size", {"width": 16, "height": 16})
-	var grid = anim_config.get("grid", {"columns": 4, "rows": 2})
-	
-	for anim_name in animations.keys():
-		var anim_data = animations[anim_name]
+	# Setup animations from hardcoded data
+	for anim_name in anim_data.animations.keys():
+		var anim_config = anim_data.animations[anim_name]
 		sprite_frames.add_animation(anim_name)
 		
-		var frames = anim_data.get("frames", [0, 1])
-		var duration = anim_data.get("duration", 0.125)
-		var loop = anim_data.get("loop", true)
-		
-		sprite_frames.set_animation_loop(anim_name, loop)
-		sprite_frames.set_animation_speed(anim_name, 1.0 / duration)
+		sprite_frames.set_animation_loop(anim_name, anim_config.loop)
+		sprite_frames.set_animation_speed(anim_name, 1.0 / anim_config.duration)
 		
 		# Add frames from sprite sheet
-		for frame_idx in frames:
-			var frame_texture = _extract_frame_from_sheet(texture, frame_idx, frame_size, grid)
+		for frame_idx in anim_config.frames:
+			var frame_texture = _extract_frame_from_sheet(texture, frame_idx, anim_data.frame_size, anim_data.grid)
 			sprite_frames.add_frame(anim_name, frame_texture)
 	
 	sprite.sprite_frames = sprite_frames
-	
-	# Mark this sprite as configured for this enemy type
 	sprite.set_meta("configured_enemy_type", enemy_type)
 	Logger.debug("Configured sprite for enemy type: " + enemy_type, "enemies")
 

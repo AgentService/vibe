@@ -201,6 +201,10 @@ func get_max_health() -> int:
 	return max_health
 
 func _play_animation(anim_name: String) -> void:
+	if animated_sprite.sprite_frames == null:
+		Logger.warn("Player sprite_frames is null, cannot play animation: " + anim_name, "player")
+		return
+	
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)

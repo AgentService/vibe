@@ -8,10 +8,10 @@
   },
   "stats": {
     "hp": 5.0,
-    "speed_min": 40.0,
-    "speed_max": 80.0
+    "speed_min": 10.0,
+    "speed_max": 10.0
   },
-  "render_tier": 1,
+  "render_tier": 4,
   "_schema_version": "1.0.0",
   "_description": "Tank-type enemy with higher HP but slower movement speed"
 }

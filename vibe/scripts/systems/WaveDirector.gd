@@ -23,6 +23,10 @@ var target_distance: float
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[Dictionary] = []
 var _cache_dirty: bool = true
+var _last_cache_frame: int = -1
+
+# Free enemy slot tracking for faster spawning
+var _last_free_index: int = 0
 
 # Enemy registry data
 var _enemy_registry: Dictionary = {}
@@ -236,9 +240,18 @@ func spawn_enemy_at(position: Vector2, enemy_type: String = "green_slime") -> bo
 	return true
 
 func _find_free_enemy() -> int:
-	for i in range(max_enemies):
+	# Start search from last known free index for better performance
+	for i in range(_last_free_index, max_enemies):
 		if not enemies[i]["alive"]:
+			_last_free_index = i
 			return i
+	
+	# If not found, search from beginning to last free index
+	for i in range(0, _last_free_index):
+		if not enemies[i]["alive"]:
+			_last_free_index = i
+			return i
+	
 	return -1
 
 func _update_enemies(dt: float) -> void:
@@ -246,10 +259,9 @@ func _update_enemies(dt: float) -> void:
 	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	
-	for enemy in enemies:
-		if not enemy["alive"]:
-			continue
-		
+	# Only update alive enemies to improve performance
+	var alive_enemies = get_alive_enemies()
+	for enemy in alive_enemies:
 		var dist_to_target: float = enemy["pos"].distance_to(target_pos)
 		
 		# Only update enemies within update distance for performance
@@ -269,19 +281,24 @@ func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
 
 func get_alive_enemies() -> Array[Dictionary]:
-	# Use cached list if available and not dirty
-	if not _cache_dirty and _alive_enemies_cache.size() > 0:
+	var current_frame = Engine.get_process_frames()
+	
+	# Use cached list if available and not dirty, or if already rebuilt this frame
+	if (not _cache_dirty and not _alive_enemies_cache.is_empty()) or _last_cache_frame == current_frame:
 		return _alive_enemies_cache
 	
-	# Rebuild cache
+	# Rebuild cache - only once per frame maximum
 	_alive_enemies_cache.clear()
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
 		if enemy["alive"]:
-			enemy["_pool_index"] = i  # Add pool index directly to enemy
+			# Only add pool index if not already set to avoid modifying original
+			if not enemy.has("_pool_index"):
+				enemy["_pool_index"] = i
 			_alive_enemies_cache.append(enemy)
 	
 	_cache_dirty = false
+	_last_cache_frame = current_frame
 	return _alive_enemies_cache
 
 # Player reference no longer needed - using PlayerState autoload for position
