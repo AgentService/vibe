@@ -87,19 +87,33 @@ func _use_default_config() -> void:
 		}
 	}
 
-## Determine the render tier for an enemy based on its size
+## Determine the render tier for an enemy based on its type
 func get_tier_for_enemy(enemy_data: Dictionary) -> Tier:
-	var enemy_size: Vector2 = enemy_data.get("size", Vector2(24, 24))
-	var max_dimension: float = max(enemy_size.x, enemy_size.y)
+	var type_id: String = enemy_data.get("type_id", "unknown")
 	
-	if max_dimension <= SWARM_MAX_SIZE:
-		return Tier.SWARM
-	elif max_dimension <= REGULAR_MAX_SIZE:
-		return Tier.REGULAR
-	elif max_dimension <= ELITE_MAX_SIZE:
-		return Tier.ELITE
-	else:
-		return Tier.BOSS
+	# Assign tier based on enemy type for proper visual distinction
+	match type_id:
+		"grunt_basic":
+			return Tier.SWARM
+		"soldier_regular":
+			return Tier.REGULAR
+		"captain_elite":
+			return Tier.ELITE
+		"boss_giant":
+			return Tier.BOSS
+		_:
+			# Fallback to size-based assignment
+			var enemy_size: Vector2 = enemy_data.get("size", Vector2(24, 24))
+			var max_dimension: float = max(enemy_size.x, enemy_size.y)
+			
+			if max_dimension <= SWARM_MAX_SIZE:
+				return Tier.SWARM
+			elif max_dimension <= REGULAR_MAX_SIZE:
+				return Tier.REGULAR
+			elif max_dimension <= ELITE_MAX_SIZE:
+				return Tier.ELITE
+			else:
+				return Tier.BOSS
 
 ## Get the string name for a tier
 func get_tier_name(tier: Tier) -> String:
@@ -158,7 +172,7 @@ func group_enemies_by_tier(enemies: Array[Dictionary]) -> Dictionary:
 		var enemy_size: Vector2 = enemy.get("size", Vector2(24, 24))
 		var type_id: String = enemy.get("type_id", "unknown")
 		
-		Logger.debug("Enemy " + type_id + " (size: " + str(enemy_size) + ") assigned to " + get_tier_name(tier) + " tier", "enemies")
+		Logger.info("Enemy " + type_id + " (size: " + str(enemy_size) + ") assigned to " + get_tier_name(tier) + " tier", "enemies")
 		
 		match tier:
 			Tier.SWARM:

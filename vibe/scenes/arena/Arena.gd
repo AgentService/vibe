@@ -29,12 +29,11 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var ability_system: AbilitySystem = AbilitySystem.new()
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
 
-# Enemy animation textures
-var knight_frame0_texture: ImageTexture
-var knight_frame1_texture: ImageTexture
+# Enemy animation textures (16-frame running animation)
+var knight_run_textures: Array[ImageTexture] = []
 var current_frame: int = 0
 var frame_timer: float = 0.0
-const FRAME_DURATION: float = 0.5  # Switch every 0.5 seconds
+const FRAME_DURATION: float = 0.1  # Switch every 0.1 seconds (10 FPS animation)
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
@@ -261,21 +260,25 @@ func _setup_tier_multimeshes() -> void:
 	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
 	
-	# Create individual textures from knight frames 0 and 1
+	# Create all 16 running animation frames from knight sprite
 	var knight_full := load("res://assets/sprites/knight.png") as Texture2D
 	var knight_image := knight_full.get_image()
 	
-	# Extract frame 0 (position 0,0) and frame 1 (position 32,0) from 8x8 grid
-	var frame0_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-	frame0_image.blit_rect(knight_image, Rect2i(0, 0, 32, 32), Vector2i(0, 0))
-	knight_frame0_texture = ImageTexture.create_from_image(frame0_image)
+	# Extract frames 16-31 (running animation from rows 3-4 of 8x8 grid)
+	# Row 3: frames 16-23, Row 4: frames 24-31
+	knight_run_textures.clear()
+	for frame_idx in range(16):
+		var frame_number = 16 + frame_idx  # Frames 16-31
+		var col = frame_number % 8
+		var row = frame_number / 8
+		
+		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(col * 32, row * 32, 32, 32), Vector2i(0, 0))
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		knight_run_textures.append(frame_texture)
 	
-	var frame1_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-	frame1_image.blit_rect(knight_image, Rect2i(32, 0, 32, 32), Vector2i(0, 0))
-	knight_frame1_texture = ImageTexture.create_from_image(frame1_image)
-	
-	# Start with frame 0
-	mm_enemies_swarm.texture = knight_frame0_texture
+	# Start with first running frame
+	mm_enemies_swarm.texture = knight_run_textures[0]
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
@@ -287,7 +290,7 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	mm_enemies_regular.texture = knight_frame0_texture  # Start with frame 0
+	mm_enemies_regular.texture = knight_run_textures[0]  # Start with first running frame
 	mm_enemies_regular.multimesh = regular_multimesh
 	mm_enemies_regular.z_index = -1  # Render behind sprites
 	
@@ -299,7 +302,7 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	mm_enemies_elite.texture = knight_frame0_texture  # Start with frame 0
+	mm_enemies_elite.texture = knight_run_textures[0]  # Start with first running frame
 	mm_enemies_elite.multimesh = elite_multimesh
 	mm_enemies_elite.z_index = -1  # Render behind sprites
 	
@@ -309,13 +312,13 @@ func _setup_tier_multimeshes() -> void:
 	boss_multimesh.use_colors = true
 	boss_multimesh.instance_count = 0
 	var boss_mesh := QuadMesh.new()
-	boss_mesh.size = Vector2(64, 64)  # Very large squares for bosses
+	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	mm_enemies_boss.texture = knight_frame0_texture  # Start with frame 0
+	mm_enemies_boss.texture = knight_run_textures[0]  # Start with first running frame
 	mm_enemies_boss.multimesh = boss_multimesh
 	mm_enemies_boss.z_index = -1  # Render behind sprites
 	
-	Logger.info("Tier-specific MultiMesh instances initialized with knight sprite frames 0 and 1 (animated)", "enemies")
+	Logger.info("Tier-specific MultiMesh instances initialized with 16-frame knight running animation", "enemies")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -725,16 +728,16 @@ func _get_enemy_color_for_type(type_id: String) -> Color:
 			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 
 func _get_tier_debug_color(tier: EnemyRenderTier.Tier) -> Color:
-	# Distinct colors for each tier for visual debugging
+	# Distinct colors for each tier for visual debugging - more saturated for better visibility
 	match tier:
 		EnemyRenderTier.Tier.SWARM:
-			return Color(0.8, 0.2, 0.2, 1.0)  # Dark Red
+			return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red
 		EnemyRenderTier.Tier.REGULAR:
-			return Color(0.0, 1.0, 1.0, 1.0)  # Bright Cyan
+			return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan
 		EnemyRenderTier.Tier.ELITE:
-			return Color(1.0, 0.0, 1.0, 1.0)  # Bright Magenta
+			return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta
 		EnemyRenderTier.Tier.BOSS:
-			return Color(1.0, 0.5, 0.0, 1.0)  # Bright Orange
+			return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
@@ -832,17 +835,17 @@ func _exit_tree() -> void:
 		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
-	# Only animate if we have both textures
-	if not knight_frame0_texture or not knight_frame1_texture:
+	# Only animate if we have running animation textures
+	if knight_run_textures.is_empty():
 		return
 	
 	frame_timer += delta
 	if frame_timer >= FRAME_DURATION:
 		frame_timer = 0.0
-		current_frame = 1 - current_frame  # Toggle between 0 and 1
+		current_frame = (current_frame + 1) % 16  # Cycle through 0-15
 		
-		# Get the current texture based on frame
-		var current_texture := knight_frame0_texture if current_frame == 0 else knight_frame1_texture
+		# Get the current texture from the running animation
+		var current_texture := knight_run_textures[current_frame]
 		
 		# Update all enemy tier textures
 		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
