@@ -110,9 +110,9 @@ Arena (Node2D)
 
 **System Dependencies** (13 systems):
 - `AbilitySystem` - Combat abilities
-- `WaveDirector` - Enemy spawning (includes EnemyRegistry)
+- `WaveDirector` - JSON-driven enemy spawning (pure JSON, no fallback)
 - `DamageSystem` - Combat damage
-- `EnemyRenderTier` - Enemy tier classification and routing ⭐ NEW
+- `EnemyRenderTier` - Knight enemy tier assignment (size + type-based) ⭐ UPDATED
 - `EnemyBehaviorSystem` - AI pattern management
 - `ArenaSystem` - Level loading
 - `TextureThemeSystem` - Visual themes

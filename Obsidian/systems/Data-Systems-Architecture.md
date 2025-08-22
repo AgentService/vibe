@@ -154,7 +154,7 @@ func _load_balance_values() -> void:
 | DamageSystem | ✅ Combat values | Direct BalanceDB |
 | AbilitySystem | ✅ Projectile settings | Direct BalanceDB |
 | WaveDirector | ✅ Enemy spawn values | Direct BalanceDB |
-| EnemyRegistry | ✅ Enemy type definitions | BalanceDB signal integration |
+| EnemyRegistry | ✅ JSON enemy system (knight_*) | Pure JSON loading from res://data/enemies/ |
 | EnemyBehaviorSystem | ✅ AI behavior patterns | EnemyRegistry dependency |
 | RunManager | ✅ Player stats | Direct BalanceDB |
 | UI Systems | ✅ Radar configuration | Direct BalanceDB |
@@ -293,6 +293,60 @@ Logger (Output Layer)
 4. **RunManager** loads player stats from BalanceDB
 5. **Game Systems** connect to balance_reloaded signal and use Logger
 6. **Scene Systems** access validated data and log via Logger at runtime
+
+## 🏰 Enemy JSON System
+
+### Schema Structure
+The enemy system uses a pure JSON-driven architecture with standardized schema:
+
+#### Required Fields
+```json
+{
+  "id": "knight_swarm",                    // Unique enemy identifier
+  "display_name": "Swarm Knight",          // Human-readable name
+  "health": 3.0,                          // Base HP value
+  "speed": 80.0,                          // Movement speed
+  "size": {"x": 20, "y": 20},            // Pixel dimensions for tier assignment
+  "collision_radius": 10.0,               // Physics collision size
+  "xp_value": 1,                          // Experience reward
+  "spawn_weight": 0.4,                    // Relative spawn probability
+  "visual": {                             // Appearance configuration
+    "color": {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0},
+    "shape": "square"
+  },
+  "behavior": {                           // AI configuration
+    "ai_type": "chase_player",
+    "aggro_range": 300.0
+  }
+}
+```
+
+#### Folder Structure
+```
+/enemies/
+├── config/
+│   ├── enemy_registry.json    # Central registry with spawn weights
+│   └── enemy_tiers.json       # Tier definitions and boundaries
+├── knight_swarm.json          # Individual enemy types
+├── knight_regular.json
+├── knight_elite.json
+└── knight_boss.json
+```
+
+#### Tier Assignment Rules
+| Tier | Size Range | Example | Render Method | Visual |
+|------|------------|---------|---------------|---------|
+| SWARM | ≤24px | knight_swarm (20px) | MultiMesh fast | Red |
+| REGULAR | 25-48px | knight_regular (36px) | MultiMesh normal | Green |
+| ELITE | 49-64px | knight_elite (56px) | MultiMesh enhanced | Blue |
+| BOSS | >64px | knight_boss (80px) | Individual sprite | Magenta |
+
+### Data Flow Pipeline
+1. **Registry Loading**: `enemy_registry.json` lists all enemy types with spawn weights
+2. **Individual Loading**: `EnemyRegistry` loads each `knight_*.json` file
+3. **Tier Assignment**: `EnemyRenderTier` assigns visual tier based on size/type
+4. **Render Routing**: Enemies assigned to appropriate MultiMesh instances
+5. **Visual Distinction**: Different colors/animations per tier for gameplay clarity
 
 ## 🚀 Future Enhancements
 
