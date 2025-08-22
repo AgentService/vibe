@@ -122,6 +122,7 @@ func _on_damage_requested(payload) -> void:
 	var is_crit: bool = RNG.randf("crit") < 0.1  # 10% crit chance
 	var final_damage: float = payload.base_damage * (2.0 if is_crit else 1.0)
 	
+	
 	# Apply damage to enemy
 	wave_director.damage_enemy(payload.target_id.index, final_damage)
 	

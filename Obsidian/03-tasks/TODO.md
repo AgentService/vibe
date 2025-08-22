@@ -17,6 +17,7 @@ Card System enhancen
 Menu from Godot or self?
 soundeffect on xp gain, higher pitch closer to lvl up
 
+<<<<<<< HEAD
 review the abilty system\
   remove proectiles and its cards and all references.\
   review the melee attack.\
@@ -29,6 +30,11 @@ review the abilty system\
   \
   add more some more basic cards for melee only. base damage, attack speed, angle, range(how long      
   is cone)\
+=======
+each enemy needs its own (waves.json rules)
+
+
+>>>>>>> fix-enemy-behavior
 ### Immediate — Architecture Assessment Priority Order
 
 **Architecture State:** EventBus has comprehensive signals, RNG uses proper streams, BalanceDB has hot-reload + schema validation. Missing: enforcement layers for EventBus contracts and dependency boundaries. Core systems are now robust with validation bulletproofing in place.

@@ -1,13 +1,18 @@
 {
   "pool": [
     {
+<<<<<<< HEAD
       "id": "card_unlock_projectiles",
       "desc": "Unlock projectile attacks (right-click)",
       "min_level": 10,
+=======
+      "id": "card_melee_damage_boost",
+      "desc": "Increase cone attack damage by 50%",
+>>>>>>> fix-enemy-behavior
       "stat_mods": {
-        "has_projectiles": true,
-        "projectile_count_add": 1
+        "melee_damage_mult": 1.5
       },
+<<<<<<< HEAD
       "weight": 5
     },
     {
@@ -37,6 +42,9 @@
         "melee_cone_angle_add": 15
       },
       "weight": 6
+=======
+      "weight": 10
+>>>>>>> fix-enemy-behavior
     }
   ]
 }

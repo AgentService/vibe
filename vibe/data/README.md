@@ -12,6 +12,11 @@ This directory contains JSON data files that define game balance and configurati
 │   ├── waves.json    # Wave director and enemy settings
 │   └── player.json   # Player base stats
 ├── cards/            # Card system data
+├── enemies/          # Enemy definitions and spawning
+│   ├── enemy_registry.json  # Central enemy registry with spawn weights
+│   └── *.json        # Individual enemy configurations
+├── animations/       # Animation configurations for enemies
+│   └── *_animations.json  # Frame data and timing for each enemy type
 ├── arena/            # Arena configuration
 │   ├── layouts/      # Arena and room definitions
 │   │   ├── *.json    # Arena configurations
@@ -229,6 +234,139 @@ Each JSON file includes a `_schema_version` field for future compatibility. The 
 3. Add accessor methods if needed (e.g., `get_combat_value()`)
 4. Update this README with the new field documentation
 5. Update consuming systems to use the new balance values
+
+## Adding New Enemy Types
+
+The enemy system is fully data-driven. To add a new enemy type:
+
+1. **Create enemy config**: Add `data/enemies/new_enemy.json` with stats and metadata
+2. **Create animation config**: Add `data/animations/new_enemy_animations.json` with sprite data
+3. **Add to registry**: Update `data/enemies/enemy_registry.json` with spawn weight
+4. **Add sprite sheet**: Place sprite sheet texture in `assets/sprites/`
+5. **Test integration**: Run `vibe/tests/simple_enemy_test.gd` to verify JSON validity
+
+The EnemyRenderer and WaveDirector will automatically pick up new enemy types from the registry without code changes.
+
+## Enemy System Schemas
+
+### enemies/enemy_registry.json
+
+Central registry for all enemy types with spawn weights and metadata. Controls which enemies can spawn and their relative frequency.
+
+```json
+{
+  "_schema_version": "1.0.0",
+  "_description": "Central registry for all enemy types with spawn weights and metadata",
+  "enemy_types": {
+    "green_slime": {
+      "spawn_weight": 50,
+      "config_path": "res://data/enemies/green_slime.json",
+      "tier": "common",
+      "behavior_type": "melee"
+    },
+    "purple_slime": {
+      "spawn_weight": 20,
+      "config_path": "res://data/enemies/purple_slime.json",
+      "tier": "common", 
+      "behavior_type": "tank"
+    }
+  },
+  "wave_progression": {
+    "_description": "Future feature: different enemy mixes per wave level",
+    "enabled": false,
+    "wave_configs": {}
+  }
+}
+```
+
+**Fields:**
+- `enemy_types` (object): Dictionary of enemy type configurations
+  - `spawn_weight` (int): Relative spawn frequency (higher = more common)
+  - `config_path` (string): Path to individual enemy configuration file
+  - `tier` (string): Enemy tier classification (common, rare, elite)
+  - `behavior_type` (string): AI behavior pattern (melee, tank, ranged, etc.)
+- `wave_progression` (object): Future feature for wave-specific enemy mixes
+
+### enemies/*.json
+
+Individual enemy configurations defining stats, appearance, and behavior for each enemy type.
+
+```json
+{
+  "id": "purple_slime",
+  "display_name": "Purple Slime",
+  "animation_config": "res://data/animations/purple_slime_animations.json",
+  "size": {
+    "width": 24,
+    "height": 24
+  },
+  "stats": {
+    "hp": 5.0,
+    "speed_min": 40.0,
+    "speed_max": 80.0
+  },
+  "render_tier": 1,
+  "_schema_version": "1.0.0",
+  "_description": "Tank-type enemy with higher HP but slower movement speed"
+}
+```
+
+**Fields:**
+- `id` (string): Unique enemy type identifier
+- `display_name` (string): Human-readable name for UI/debug
+- `animation_config` (string): Path to animation configuration file
+- `size` (object): Enemy collision and render dimensions
+- `stats` (object): Combat and movement statistics
+  - `hp` (float): Enemy health points
+  - `speed_min` (float): Minimum movement speed in pixels/second
+  - `speed_max` (float): Maximum movement speed in pixels/second
+- `render_tier` (int): Rendering priority tier (1-4, higher = more detailed)
+
+### animations/*_animations.json
+
+Animation configurations linking sprite sheets to frame sequences and timing data.
+
+```json
+{
+  "sprite_sheet": "res://assets/sprites/slime_purple.png",
+  "frame_size": {
+    "width": 24,
+    "height": 24
+  },
+  "grid": {
+    "columns": 4,
+    "rows": 3
+  },
+  "animations": {
+    "idle": {
+      "frames": [1, 2, 3, 4],
+      "duration": 1.2,
+      "loop": true
+    },
+    "walk": {
+      "frames": [5, 6, 7, 8],
+      "duration": 0.08,
+      "loop": true
+    },
+    "hit": {
+      "frames": [9, 10, 11, 12],
+      "duration": 1,
+      "loop": false
+    }
+  }
+}
+```
+
+**Fields:**
+- `sprite_sheet` (string): Path to sprite sheet texture file
+- `frame_size` (object): Individual frame dimensions in pixels
+- `grid` (object): Sprite sheet grid layout
+  - `columns` (int): Number of frames per row
+  - `rows` (int): Number of rows in sprite sheet
+- `animations` (object): Animation state definitions
+  - `frames` (array): Frame indices to use for this animation
+  - `duration` (float): Time per frame in seconds
+  - `loop` (boolean): Whether animation should loop continuously
 
 ### ui/radar.json
 

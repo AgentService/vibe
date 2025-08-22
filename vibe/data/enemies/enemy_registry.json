@@ -1,0 +1,29 @@
+{
+  "_schema_version": "1.0.0",
+  "_description": "Central registry for all enemy types with spawn weights and metadata",
+  "enemy_types": {
+    "green_slime": {
+      "spawn_weight": 50,
+      "config_path": "res://data/enemies/green_slime.json",
+      "tier": "common",
+      "behavior_type": "melee"
+    },
+    "scout": {
+      "spawn_weight": 30,
+      "config_path": "res://data/enemies/scout.json", 
+      "tier": "common",
+      "behavior_type": "fast_melee"
+    },
+    "purple_slime": {
+      "spawn_weight": 100,
+      "config_path": "res://data/enemies/purple_slime.json",
+      "tier": "common", 
+      "behavior_type": "tank"
+    }
+  },
+  "wave_progression": {
+    "_description": "Future feature: different enemy mixes per wave level",
+    "enabled": false,
+    "wave_configs": {}
+  }
+}

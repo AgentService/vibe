@@ -4,7 +4,7 @@ class_name Player
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
-@export var move_speed: float = 220.0
+@export var move_speed: float = 110.0
 @export var pickup_radius: float = 12.0
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
@@ -201,6 +201,10 @@ func get_max_health() -> int:
 	return max_health
 
 func _play_animation(anim_name: String) -> void:
+	if animated_sprite.sprite_frames == null:
+		Logger.warn("Player sprite_frames is null, cannot play animation: " + anim_name, "player")
+		return
+	
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)

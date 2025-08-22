@@ -97,10 +97,9 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 			
 		var enemy_pos = enemy.get("pos", Vector2.ZERO)
 		if _is_enemy_in_cone(enemy_pos, player_pos, attack_dir, effective_cone, effective_range):
-			# Store both enemy data and index for EntityId creation
-			var hit_enemy = enemy.duplicate()
-			hit_enemy["_array_index"] = e_idx  # Store index for EntityId
-			hit_enemies.append(hit_enemy)
+			# Store enemy reference with correct pool index
+			enemy["_array_index"] = enemy.get("_pool_index", e_idx)  # Use pool index if available
+			hit_enemies.append(enemy)
 	
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
@@ -114,7 +113,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 	for enemy in hit_enemies:
 		var final_damage = _calculate_damage()
 		var source_id = EntityId.player()
-		var target_id = EntityId.enemy(enemy["_array_index"])
+		var enemy_index = enemy["_array_index"]
+		var target_id = EntityId.enemy(enemy_index)
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
@@ -140,8 +140,13 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 
 func _calculate_damage() -> float:
 	var base_damage = damage
+<<<<<<< HEAD
 	var bonus_damage = RunManager.stats.get("melee_damage_add", 0.0)
 	return base_damage + bonus_damage
+=======
+	var damage_mult = RunManager.stats.get("melee_damage_mult", 1.0)
+	return base_damage * damage_mult
+>>>>>>> fix-enemy-behavior
 
 func _get_effective_attack_speed() -> float:
 	var base_speed = attack_speed

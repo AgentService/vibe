@@ -1,0 +1,17 @@
+{
+  "id": "purple_slime",
+  "display_name": "Purple Slime",
+  "animation_config": "res://data/animations/purple_slime_animations.json",
+  "size": {
+    "width": 24,
+    "height": 24
+  },
+  "stats": {
+    "hp": 5.0,
+    "speed_min": 10.0,
+    "speed_max": 10.0
+  },
+  "render_tier": 4,
+  "_schema_version": "1.0.0",
+  "_description": "Tank-type enemy with higher HP but slower movement speed"
+}

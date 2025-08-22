@@ -1,25 +1,29 @@
 {
   "max_enemies": 100,
+<<<<<<< HEAD
   "spawn_interval": 0.5,
+=======
+  "spawn_interval": 2,
+>>>>>>> fix-enemy-behavior
   "arena_center": {
     "x": 0.0,
     "y": 0.0
   },
-  "spawn_radius": 600.0,
-  "spawn_radius_large": 1200.0,
-  "spawn_radius_mega": 1800.0,
+  "spawn_radius": 200.0,
+  "spawn_radius_large": 600.0,
+  "spawn_radius_mega": 800.0,
   "enemy_hp": 3.0,
-  "enemy_speed_min": 60.0,
-  "enemy_speed_max": 120.0,
+  "enemy_speed_min": 10.0,
+  "enemy_speed_max": 20.0,
   "spawn_count_min": 3,
   "spawn_count_max": 8,
   "arena_bounds": 2500.0,
-  "target_distance": 20.0,
+  "target_distance": 10.0,
   "enemy_culling_distance": 2000.0,
-  "enemy_transform_cache_size": 800,
-  "enemy_viewport_cull_margin": 200.0,
-  "enemy_update_distance": 2500.0,
-  "camera_min_zoom": 0.6,
+  "enemy_transform_cache_size": 100,
+  "enemy_viewport_cull_margin": 100.0,
+  "enemy_update_distance": 2800.0,
+  "camera_min_zoom": 1,
   "_schema_version": "1.0.0",
   "_description": "Wave director balance values including enemy spawning, movement, health, and arena constraints. Updated for larger arena support with dynamic spawn radii and performance optimization settings."
 }
