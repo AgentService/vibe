@@ -26,6 +26,9 @@ export_presets.cfg
 *.x86
 *.arm64
 
+# Godot engine executables
+Godot_*
+
 # Build artifacts
 build/
 dist/
