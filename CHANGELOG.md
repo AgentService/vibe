@@ -4,11 +4,19 @@
 
 ## [Current Week - In Progress]
 
+### Changed
+- **Simplified to MultiMesh-Only Enemy Rendering**: Removed AnimatedSprite2D implementation, clean MultiMesh foundation
+  - **Removed EnemyRenderer**: Deleted entire AnimatedSprite2D pool system and animation data
+  - **Removed rendering mode switcher**: Eliminated SPRITES_ONLY/MULTIMESH_ONLY/BOTH mode complexity
+  - **Simplified MultiMesh updates**: Basic transform and color only, removed scaling and rotation complexity
+  - **Clean foundation**: Tier-based MultiMesh system (swarm/regular/elite/boss) ready for step-by-step enhancement
+
+### Fixed
+- **Player rendering issue**: Restored missing `knight_animations.json` file to fix black rectangle rendering
+  - **Animation data**: Added proper knight sprite sheet animation definitions for idle, run, roll, hit, and death states
+- **Enemy visibility issue**: Fixed black SWARM enemies by changing debug color from black to dark red for visibility
+
 ### Added
-- **Merged Enemy Rendering Systems**: Combined tier-based MultiMesh optimization with AnimatedSprite2D enemy system
-  - **Dual rendering approach**: Both EnemyRenderer (sprite-based) and tier-based MultiMesh systems available
-  - **Performance flexibility**: Can switch between detailed sprite animations and optimized MultiMesh rendering
-  - **Enemy optimization**: Melee damage fixes, enemy rendering improvements, and data-driven enemy spawning
 - **Enhanced Melee Combat System**: Improved damage verification and upgrades
   - **Damage logging**: Added detailed combat logs showing enemy damage and kill events
   - **Increased base damage**: Melee damage raised from 25 to 50 for better enemy clearing

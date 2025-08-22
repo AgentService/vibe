@@ -14,7 +14,6 @@ const RoomLoader := preload("res://scripts/systems/RoomLoader.gd")
 const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
-const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -29,12 +28,18 @@ const EnemyRenderer := preload("res://scripts/systems/EnemyRenderer.gd")
 @onready var melee_effects: Node2D = $MeleeEffects
 @onready var ability_system: AbilitySystem = AbilitySystem.new()
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
+
+# Enemy animation textures
+var knight_frame0_texture: ImageTexture
+var knight_frame1_texture: ImageTexture
+var current_frame: int = 0
+var frame_timer: float = 0.0
+const FRAME_DURATION: float = 0.5  # Switch every 0.5 seconds
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
 @onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
 @onready var camera_system: CameraSystem = CameraSystem.new()
-@onready var enemy_renderer: EnemyRenderer = EnemyRenderer.new()
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
@@ -48,14 +53,6 @@ var base_spawn_interval: float = 0.25
 
 var _enemy_transforms: Array[Transform2D] = []
 
-# Rendering mode control
-enum EnemyRenderMode {
-	SPRITES_ONLY,
-	MULTIMESH_ONLY,
-	BOTH
-}
-
-var current_enemy_render_mode: EnemyRenderMode = EnemyRenderMode.BOTH
 
 
 func _ready() -> void:
@@ -81,8 +78,6 @@ func _ready() -> void:
 		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if camera_system:
 		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if enemy_renderer:
-		enemy_renderer.process_mode = Node.PROCESS_MODE_PAUSABLE
 	# enemy_behavior_system removed
 	Logger.info("System process modes set", "ui")
 	
@@ -108,9 +103,6 @@ func _ready() -> void:
 	if camera_system:
 		add_child(camera_system)
 		Logger.info("camera_system added", "ui")
-	if enemy_renderer:
-		add_child(enemy_renderer)
-		Logger.info("enemy_renderer added", "ui")
 	# enemy_behavior_system removed
 	Logger.info("All systems added as children", "ui")
 	
@@ -174,10 +166,9 @@ func _ready() -> void:
 	# Connect signals AFTER systems are added and ready
 	Logger.info("Connecting signals...", "ui")
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
-	_connect_enemy_rendering_signals()
-	Logger.info("Connected enemy rendering signals based on mode", "ui")
+	wave_director.enemies_updated.connect(_update_enemy_multimesh)
+	Logger.info("Connected enemy MultiMesh rendering", "ui")
 	
-	# Signal connection status will be logged by _connect_enemy_rendering_signals()
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
 	
@@ -267,12 +258,24 @@ func _setup_tier_multimeshes() -> void:
 	swarm_multimesh.use_colors = true
 	swarm_multimesh.instance_count = 0
 	var swarm_mesh := QuadMesh.new()
-	swarm_mesh.size = Vector2(12, 12)  # Small squares for swarm
+	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
-	var swarm_img := Image.create(16, 16, false, Image.FORMAT_RGBA8)
-	swarm_img.fill(Color(1.0, 1.0, 1.0, 1.0))
-	var swarm_tex := ImageTexture.create_from_image(swarm_img)
-	mm_enemies_swarm.texture = swarm_tex
+	
+	# Create individual textures from knight frames 0 and 1
+	var knight_full := load("res://assets/sprites/knight.png") as Texture2D
+	var knight_image := knight_full.get_image()
+	
+	# Extract frame 0 (position 0,0) and frame 1 (position 32,0) from 8x8 grid
+	var frame0_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	frame0_image.blit_rect(knight_image, Rect2i(0, 0, 32, 32), Vector2i(0, 0))
+	knight_frame0_texture = ImageTexture.create_from_image(frame0_image)
+	
+	var frame1_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+	frame1_image.blit_rect(knight_image, Rect2i(32, 0, 32, 32), Vector2i(0, 0))
+	knight_frame1_texture = ImageTexture.create_from_image(frame1_image)
+	
+	# Start with frame 0
+	mm_enemies_swarm.texture = knight_frame0_texture
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
@@ -282,12 +285,9 @@ func _setup_tier_multimeshes() -> void:
 	regular_multimesh.use_colors = true
 	regular_multimesh.instance_count = 0
 	var regular_mesh := QuadMesh.new()
-	regular_mesh.size = Vector2(20, 28)  # Tall rectangles for regular
+	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	var regular_img := Image.create(24, 24, false, Image.FORMAT_RGBA8)
-	regular_img.fill(Color(1.0, 1.0, 1.0, 1.0))
-	var regular_tex := ImageTexture.create_from_image(regular_img)
-	mm_enemies_regular.texture = regular_tex
+	mm_enemies_regular.texture = knight_frame0_texture  # Start with frame 0
 	mm_enemies_regular.multimesh = regular_multimesh
 	mm_enemies_regular.z_index = -1  # Render behind sprites
 	
@@ -297,12 +297,9 @@ func _setup_tier_multimeshes() -> void:
 	elite_multimesh.use_colors = true
 	elite_multimesh.instance_count = 0
 	var elite_mesh := QuadMesh.new()
-	elite_mesh.size = Vector2(40, 40)  # Large squares for elite (will rotate to make diamond)
+	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	var elite_img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-	elite_img.fill(Color(1.0, 1.0, 1.0, 1.0))
-	var elite_tex := ImageTexture.create_from_image(elite_img)
-	mm_enemies_elite.texture = elite_tex
+	mm_enemies_elite.texture = knight_frame0_texture  # Start with frame 0
 	mm_enemies_elite.multimesh = elite_multimesh
 	mm_enemies_elite.z_index = -1  # Render behind sprites
 	
@@ -314,16 +311,11 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(64, 64)  # Very large squares for bosses
 	boss_multimesh.mesh = boss_mesh
-	
-	# Create boss texture (magenta/purple)
-	var boss_img := Image.create(64, 64, false, Image.FORMAT_RGBA8)
-	boss_img.fill(Color(1.0, 0.0, 1.0, 1.0))  # Magenta
-	var boss_tex := ImageTexture.create_from_image(boss_img)
-	mm_enemies_boss.texture = boss_tex
+	mm_enemies_boss.texture = knight_frame0_texture  # Start with frame 0
 	mm_enemies_boss.multimesh = boss_multimesh
 	mm_enemies_boss.z_index = -1  # Render behind sprites
 	
-	Logger.info("Tier-specific MultiMesh instances initialized: SWARM (cyan), REGULAR (green), ELITE (blue), BOSS (magenta)", "enemies")
+	Logger.info("Tier-specific MultiMesh instances initialized with knight sprite frames 0 and 1 (animated)", "enemies")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -394,6 +386,7 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		_handle_debug_spawning(delta)
 		_handle_auto_attack()
+		_animate_enemy_frames(delta)
 	
 
 func _input(event: InputEvent) -> void:
@@ -464,8 +457,6 @@ func _setup_ui() -> void:
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
 	
-	# Connect HUD rendering mode signal
-	hud.rendering_mode_changed.connect(_on_rendering_mode_changed)
 	
 	card_picker = CARD_PICKER_SCENE.instantiate()
 	ui_layer.add_child(card_picker)
@@ -500,8 +491,7 @@ func _update_multimesh_textures() -> void:
 	Logger.debug("MultiMesh textures updated for theme", "ui")
 
 func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
-	if enemy_renderer:
-		enemy_renderer.update_enemies(alive_enemies)
+	pass
 
 func _handle_melee_attack(target_pos: Vector2) -> void:
 	if not player or not melee_system:
@@ -639,16 +629,10 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 		
 		for i in range(count):
 			var enemy := tier_enemies[i]
-			var enemy_size: Vector2 = enemy.get("size", base_size)
-			var scale_factor := enemy_size / base_size
 			
+			# Basic transform with position only
 			var transform := Transform2D()
 			transform.origin = enemy["pos"]
-			transform = transform.scaled(scale_factor)
-			
-			# Add rotation for elite enemies to make diamond shapes
-			if tier == EnemyRenderTier.Tier.ELITE:
-				transform = transform.rotated(PI / 4.0)  # 45 degree rotation for diamond
 			
 			mm_instance.multimesh.set_instance_transform_2d(i, transform)
 			
@@ -744,7 +728,7 @@ func _get_tier_debug_color(tier: EnemyRenderTier.Tier) -> Color:
 	# Distinct colors for each tier for visual debugging
 	match tier:
 		EnemyRenderTier.Tier.SWARM:
-			return Color(0.0, 0.0, 0.0, 1.0)  # Black
+			return Color(0.8, 0.2, 0.2, 1.0)  # Dark Red
 		EnemyRenderTier.Tier.REGULAR:
 			return Color(0.0, 1.0, 1.0, 1.0)  # Bright Cyan
 		EnemyRenderTier.Tier.ELITE:
@@ -826,41 +810,14 @@ func get_debug_stats() -> Dictionary:
 		var alive_projectiles: Array[Dictionary] = ability_system.get_alive_projectiles()
 		stats["projectile_count"] = alive_projectiles.size()
 	
-	if enemy_renderer:
-		stats["active_sprites"] = enemy_renderer.get_active_sprite_count()
 	
 	return stats
 
-# Rendering mode management functions
-func _on_rendering_mode_changed(mode: int) -> void:
-	current_enemy_render_mode = mode as EnemyRenderMode
-	_disconnect_enemy_rendering_signals()
-	_connect_enemy_rendering_signals()
-	Logger.info("Rendering mode switched to: " + str(current_enemy_render_mode), "ui")
-
-func _connect_enemy_rendering_signals() -> void:
-	match current_enemy_render_mode:
-		EnemyRenderMode.SPRITES_ONLY:
-			wave_director.enemies_updated.connect(_on_enemies_updated)
-			Logger.info("Connected SPRITES_ONLY mode", "ui")
-		EnemyRenderMode.MULTIMESH_ONLY:
-			wave_director.enemies_updated.connect(_update_enemy_multimesh)
-			Logger.info("Connected MULTIMESH_ONLY mode", "ui")
-		EnemyRenderMode.BOTH:
-			wave_director.enemies_updated.connect(_update_enemy_multimesh)
-			wave_director.enemies_updated.connect(_on_enemies_updated)
-			Logger.info("Connected BOTH modes", "ui")
-
-func _disconnect_enemy_rendering_signals() -> void:
-	if wave_director.enemies_updated.is_connected(_update_enemy_multimesh):
-		wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
-	if wave_director.enemies_updated.is_connected(_on_enemies_updated):
-		wave_director.enemies_updated.disconnect(_on_enemies_updated)
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
 	ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	_disconnect_enemy_rendering_signals()
+	wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
 	arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
 	
@@ -873,3 +830,26 @@ func _exit_tree() -> void:
 		arena_system.interactable_system.interactables_updated.disconnect(_update_interactable_multimesh)
 	if arena_system.wall_system and arena_system.wall_system.walls_updated.is_connected(_update_wall_multimesh):
 		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
+
+func _animate_enemy_frames(delta: float) -> void:
+	# Only animate if we have both textures
+	if not knight_frame0_texture or not knight_frame1_texture:
+		return
+	
+	frame_timer += delta
+	if frame_timer >= FRAME_DURATION:
+		frame_timer = 0.0
+		current_frame = 1 - current_frame  # Toggle between 0 and 1
+		
+		# Get the current texture based on frame
+		var current_texture := knight_frame0_texture if current_frame == 0 else knight_frame1_texture
+		
+		# Update all enemy tier textures
+		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
+			mm_enemies_swarm.texture = current_texture
+		if mm_enemies_regular and mm_enemies_regular.multimesh and mm_enemies_regular.multimesh.instance_count > 0:
+			mm_enemies_regular.texture = current_texture
+		if mm_enemies_elite and mm_enemies_elite.multimesh and mm_enemies_elite.multimesh.instance_count > 0:
+			mm_enemies_elite.texture = current_texture
+		if mm_enemies_boss and mm_enemies_boss.multimesh and mm_enemies_boss.multimesh.instance_count > 0:
+			mm_enemies_boss.texture = current_texture

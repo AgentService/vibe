@@ -21,17 +21,17 @@
     },
     "roll": {
       "frames": [40, 41, 42, 43, 44, 45, 46, 47],
-      "duration": 0.08,
+      "duration": 0.05,
       "loop": false
     },
     "hit": {
       "frames": [48, 49, 50, 51],
-      "duration": 0.15,
+      "duration": 0.1,
       "loop": false
     },
     "death": {
       "frames": [56, 57, 58, 59],
-      "duration": 0.25,
+      "duration": 0.2,
       "loop": false
     }
   }

@@ -9,24 +9,12 @@ class_name HUD
 @onready var enemy_radar: Panel = $EnemyRadar
 @onready var fps_label: Label = $FPSLabel
 @onready var death_screen: Control = $DeathScreen
-@onready var sprites_only_button: Button = $RenderModeButtons/VBoxContainer/SpritesOnlyButton
-@onready var multimesh_only_button: Button = $RenderModeButtons/VBoxContainer/MultiMeshOnlyButton
-@onready var both_button: Button = $RenderModeButtons/VBoxContainer/BothButton
 
 var fps_update_timer: float = 0.0
 const FPS_UPDATE_INTERVAL: float = 0.5
 var debug_overlay_visible: bool = true
 var is_game_over: bool = false
 
-enum RenderMode {
-	SPRITES_ONLY,
-	MULTIMESH_ONLY,
-	BOTH
-}
-
-var current_render_mode: RenderMode = RenderMode.BOTH
-
-signal rendering_mode_changed(mode: RenderMode)
 
 func _ready() -> void:
 	# HUD should always process (including FPS counter during pause)
@@ -37,10 +25,6 @@ func _ready() -> void:
 	EventBus.damage_taken.connect(_on_player_damage_taken)
 	EventBus.player_died.connect(_on_player_died)
 	
-	# Connect rendering mode buttons
-	sprites_only_button.pressed.connect(_on_sprites_only_button_pressed)
-	multimesh_only_button.pressed.connect(_on_multimesh_only_button_pressed)
-	both_button.pressed.connect(_on_both_button_pressed)
 	
 	# Initialize display
 	_update_level_display(1)
@@ -49,7 +33,6 @@ func _ready() -> void:
 	_style_health_bar()
 	_style_level_label()
 	_update_fps_display()
-	_update_render_mode_buttons()
 	
 
 func _process(delta: float) -> void:
@@ -204,37 +187,3 @@ func _get_render_stats() -> String:
 func _toggle_debug_overlay() -> void:
 	debug_overlay_visible = !debug_overlay_visible
 	Logger.info("Debug overlay toggled: " + str(debug_overlay_visible), "ui")
-
-# Rendering mode button callbacks
-func _on_sprites_only_button_pressed() -> void:
-	current_render_mode = RenderMode.SPRITES_ONLY
-	_update_render_mode_buttons()
-	rendering_mode_changed.emit(current_render_mode)
-	Logger.info("Rendering mode changed to: SPRITES_ONLY", "ui")
-
-func _on_multimesh_only_button_pressed() -> void:
-	current_render_mode = RenderMode.MULTIMESH_ONLY
-	_update_render_mode_buttons()
-	rendering_mode_changed.emit(current_render_mode)
-	Logger.info("Rendering mode changed to: MULTIMESH_ONLY", "ui")
-
-func _on_both_button_pressed() -> void:
-	current_render_mode = RenderMode.BOTH
-	_update_render_mode_buttons()
-	rendering_mode_changed.emit(current_render_mode)
-	Logger.info("Rendering mode changed to: BOTH", "ui")
-
-func _update_render_mode_buttons() -> void:
-	# Reset all buttons to normal state
-	sprites_only_button.disabled = false
-	multimesh_only_button.disabled = false
-	both_button.disabled = false
-	
-	# Highlight the current mode
-	match current_render_mode:
-		RenderMode.SPRITES_ONLY:
-			sprites_only_button.disabled = true
-		RenderMode.MULTIMESH_ONLY:
-			multimesh_only_button.disabled = true
-		RenderMode.BOTH:
-			both_button.disabled = true
