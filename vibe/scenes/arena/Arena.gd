@@ -9,10 +9,7 @@ const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_PICKER_SCENE: PackedScene = preload("res://scenes/ui/CardPicker.tscn")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-const TerrainSystem := preload("res://scripts/systems/TerrainSystem.gd")
-const ObstacleSystem := preload("res://scripts/systems/ObstacleSystem.gd")
-const InteractableSystem := preload("res://scripts/systems/InteractableSystem.gd")
-const RoomLoader := preload("res://scripts/systems/RoomLoader.gd")
+# Removed non-existent subsystem imports - systems simplified
 const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
@@ -222,9 +219,8 @@ func _ready() -> void:
 	_setup_interactable_multimesh()
 	Logger.info("All MultiMesh setup complete", "ui")
 	
-	# Load the mega arena
-	Logger.info("Loading mega arena...", "ui")
-	arena_system.load_arena("mega_arena")
+	# Arena system now loads default arena automatically
+	Logger.info("Using default arena...", "ui")
 	
 	# Print debug help
 	_print_debug_help()
@@ -441,21 +437,7 @@ func _input(event: InputEvent) -> void:
 	
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
-			KEY_1:
-				Logger.info("Switching to basic arena", "ui")
-				arena_system.load_arena("basic_arena")
-			KEY_2:
-				Logger.info("Switching to large arena", "ui")
-				arena_system.load_arena("large_arena")
-			KEY_3:
-				Logger.info("Switching to mega arena", "ui")
-				arena_system.load_arena("mega_arena")
-			KEY_4:
-				Logger.info("Switching to dungeon crawler", "ui")
-				arena_system.load_arena("dungeon_crawler")
-			KEY_5:
-				Logger.info("Switching to hazard arena", "ui")
-				arena_system.load_arena("hazard_arena")
+			# Arena switching removed - now using single default arena
 			KEY_T:
 				Logger.info("Switching theme", "ui")
 				texture_theme_system.cycle_theme()
@@ -708,31 +690,13 @@ func _update_interactable_multimesh(interactable_transforms: Array[Transform2D])
 		var transform := interactable_transforms[i]
 		mm_interactables.multimesh.set_instance_transform_2d(i, transform)
 
-func _on_arena_loaded(arena_data: Dictionary) -> void:
-	Logger.info("Arena loaded: " + str(arena_data.get("name", "Unknown Arena")), "ui")
+func _on_arena_loaded(arena_bounds: Rect2) -> void:
+	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")
 	
 	# Set camera bounds for the new arena
-	var arena_bounds: Rect2 = arena_system.get_arena_bounds()
 	camera_system.set_arena_bounds(arena_bounds)
 	var payload := EventBus.ArenaBoundsChangedPayload.new(arena_bounds)
 	EventBus.arena_bounds_changed.emit(payload)
-	
-	# Connect subsystem signals after arena is loaded
-	if arena_system and arena_system.terrain_system:
-		arena_system.terrain_system.terrain_updated.connect(_update_terrain_multimesh)
-	
-	if arena_system and arena_system.obstacle_system:
-		arena_system.obstacle_system.obstacles_updated.connect(_update_obstacle_multimesh)
-	
-	if arena_system and arena_system.interactable_system:
-		arena_system.interactable_system.interactables_updated.connect(_update_interactable_multimesh)
-	
-	if arena_system and arena_system.wall_system:
-		arena_system.wall_system.walls_updated.connect(_update_wall_multimesh)
-		
-		# Manually trigger initial wall update
-		if arena_system.wall_system.wall_transforms.size() > 0:
-			_update_wall_multimesh(arena_system.wall_system.wall_transforms)
 
 func _get_visible_world_rect() -> Rect2:
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -852,20 +816,13 @@ func get_debug_stats() -> Dictionary:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
-	ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
-	arena_system.arena_loaded.disconnect(_on_arena_loaded)
+	if ability_system:
+		ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
+	if wave_director:
+		wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
+	if arena_system:
+		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
-	
-	# Cleanup arena subsystem signals
-	if arena_system.terrain_system and arena_system.terrain_system.terrain_updated.is_connected(_update_terrain_multimesh):
-		arena_system.terrain_system.terrain_updated.disconnect(_update_terrain_multimesh)
-	if arena_system.obstacle_system and arena_system.obstacle_system.obstacles_updated.is_connected(_update_obstacle_multimesh):
-		arena_system.obstacle_system.obstacles_updated.disconnect(_update_obstacle_multimesh)
-	if arena_system.interactable_system and arena_system.interactable_system.interactables_updated.is_connected(_update_interactable_multimesh):
-		arena_system.interactable_system.interactables_updated.disconnect(_update_interactable_multimesh)
-	if arena_system.wall_system and arena_system.wall_system.walls_updated.is_connected(_update_wall_multimesh):
-		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
 	# Animate each tier with .tres-based animation

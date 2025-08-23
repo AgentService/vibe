@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArenaConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://vibe/scripts/domain/ArenaConfig.gd" id="1_dej11"]
+
+[resource]
+script = ExtResource("1_dej11")
+arena_id = "basic_arena"
+arena_name = "Basic Combat Arena"
+bounds = Rect2(-400, -300, 800, 600)
+arena_center = Vector2(0, 0)
+spawn_radius = 200.0
