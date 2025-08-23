@@ -53,6 +53,20 @@ move_down={
 ]
 }
 
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/resizable=true
+window/size/mode=2
+window/size/initial_position_type=1
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/vsync/vsync_mode=1
+
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+renderer/rendering_method="forward_plus"
+anti_aliasing/quality/msaa_2d=1
+driver/threads/thread_model=2

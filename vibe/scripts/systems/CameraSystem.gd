@@ -9,9 +9,9 @@ signal camera_shake_requested(intensity: float, duration: float)
 
 @export var follow_speed: float = 8.0
 @export var zoom_speed: float = 5.0
-@export var max_zoom: float = 2.0
-var min_zoom: float  # Will be loaded from balance data
-@export var default_zoom: float = 2
+@export var min_zoom: float = 2.0  # Minimum zoom (can't zoom out beyond this)
+@export var max_zoom: float = 4.0  # Maximum zoom in  
+@export var default_zoom: float = 2.0  # Start at default close zoom
 @export var deadzone_radius: float = 20.0
 @export var shake_intensity: float = 0.0
 
@@ -27,8 +27,11 @@ func _ready() -> void:
 	# Camera should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	
-	# Load min zoom from balance data
-	min_zoom = BalanceDB.get_waves_value("camera_min_zoom")
+	# Keep default zoom as minimum - no zooming out beyond this
+	# Load balance data for reference but maintain our zoom limits
+	var balance_min_zoom = BalanceDB.get_waves_value("camera_min_zoom")
+	if balance_min_zoom and balance_min_zoom > min_zoom:
+		min_zoom = balance_min_zoom  # Use balance data if it's more restrictive
 	target_zoom = default_zoom
 	_connect_signals()
 
@@ -126,14 +129,18 @@ func _input(event: InputEvent) -> void:
 		var mouse_event := event as InputEventMouseButton
 		if mouse_event.pressed:
 			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
-				zoom_in()
+				zoom_in()  # Only allow zooming in (closer)
 			elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-				zoom_out()
+				# Only zoom out if we're not already at default/minimum zoom
+				if target_zoom > min_zoom:
+					zoom_out()
 
 func zoom_in() -> void:
+	# Increase zoom value = zoom in (closer)
 	target_zoom = clamp(target_zoom + 0.2, min_zoom, max_zoom)
 
 func zoom_out() -> void:
+	# Decrease zoom value = zoom out (farther) - but don't allow beyond default
 	target_zoom = clamp(target_zoom - 0.2, min_zoom, max_zoom)
 
 func set_zoom(zoom_level: float) -> void:

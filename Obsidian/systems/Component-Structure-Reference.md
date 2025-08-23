@@ -116,7 +116,7 @@ Arena (Node2D)
 - `EnemyBehaviorSystem` - AI pattern management
 - `ArenaSystem` - Level loading
 - `TextureThemeSystem` - Visual themes
-- `CameraSystem` - Camera control
+- `CameraSystem` - Camera control and zoom management ⭐ UPDATED
 - `XpSystem` - Experience management
 - `TerrainSystem` - Ground rendering
 - `ObstacleSystem` - Environment objects
