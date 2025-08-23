@@ -10,35 +10,47 @@ This directory contains all **game content definitions** - the things you add to
 ## Directory Structure
 
 ### Implemented
-- `enemies/` - Enemy type definitions (moved from `/data/enemies/`)
+- `enemies/` - Enemy type definitions using .tres resources (✅ migrated from JSON)
 
 ### Future Content Types
-- `abilities/` - Skill and ability definitions
-- `items/` - Equipment and loot definitions  
-- `heroes/` - Player class and hero definitions
-- `maps/` - Level and arena layout definitions
+- `abilities/` - Skill and ability definitions (will use .tres)
+- `items/` - Equipment and loot definitions (will use .tres)
+- `heroes/` - Player class and hero definitions (will use .tres)
+- `maps/` - Level and arena layout definitions (will use .tres)
 
 ## How ContentDB Works
 
-1. **Hot-Reload**: Press F5 to reload content changes
-2. **Validation**: Schema validation prevents broken JSON
-3. **Fallbacks**: Invalid content falls back to safe defaults
-4. **Unified Loading**: Same patterns for all content types
+1. **Hot-Reload**: Automatic resource reload when .tres files change
+2. **Type Safety**: Godot's inspector validates property types and ranges
+3. **Validation**: Runtime validation for business logic rules
+4. **Fallbacks**: Invalid content falls back to safe defaults
+5. **Visual Editing**: Edit content in Godot Inspector or text editor
 
 ## Adding New Content Types
 
 When adding a new content type:
-1. Create schema in `/data/schemas/`
-2. Add loading logic to ContentDB autoload
-3. Document in this README
-4. Add validation and fallback rules
+1. **Create Resource class** - Extend Resource with @export properties
+2. **Create .tres files** - Save resources in appropriate content directory
+3. **Add loading logic** - Update or create system to load .tres files
+4. **Document schema** - Update README with property descriptions
+5. **Add validation** - Implement business logic validation if needed
+
+## Content Format: .tres Resources
+
+ContentDB uses Godot's native Resource system (.tres files) providing:
+- **Type safety** through @export annotations
+- **Visual editing** in Godot Inspector  
+- **Automatic hot-reload** when files change
+- **Version control friendly** text format
+- **Performance** optimized loading and memory usage
 
 ## Related Systems
 
-- **ContentDB Autoload**: Loads and manages all content
-- **BalanceDB Autoload**: Handles gameplay tunables
-- **EnemyRegistry**: Currently handles enemy loading (will move to ContentDB)
+- **EnemyRegistry**: Handles enemy .tres loading (✅ implemented)
+- **BalanceDB Autoload**: Handles gameplay tunables (.json format)
+- **Future Systems**: AbilitySystem, ItemSystem, etc. will load .tres content
 
 ---
 
-**Status**: Directory structure established, ContentDB implementation pending
+**Status**: ✅ Enemy system fully migrated to .tres format
+**Next**: Apply .tres pattern to abilities, items, and heroes when implemented

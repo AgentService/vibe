@@ -11,7 +11,7 @@ class_name Player
 var knight_animations: Dictionary = {}
 var current_animation: String = "idle"
 
-var max_health: int = 100
+var max_health: int = 100111
 var current_health: int = 100
 
 var is_rolling: bool = false

@@ -1,20 +1,21 @@
 extends Resource
 
-## Enemy type definition loaded from JSON data.
+## Enemy type definition that can be loaded from JSON or .tres format.
 ## Contains all static properties that define an enemy variant.
+## @export annotations enable inspector editing when saved as .tres
 
 class_name EnemyType
 
-var id: String
-var display_name: String
-var health: float
-var speed: float
-var size: Vector2
-var collision_radius: float
-var xp_value: int
-var spawn_weight: float
-var visual_config: Dictionary
-var behavior_config: Dictionary
+@export var id: String = ""
+@export var display_name: String = ""
+@export var health: float = 10.0
+@export var speed: float = 50.0
+@export var size: Vector2 = Vector2(24, 24)
+@export var collision_radius: float = 12.0
+@export var xp_value: int = 1
+@export var spawn_weight: float = 1.0
+@export var visual_config: Dictionary = {}
+@export var behavior_config: Dictionary = {}
 
 static func from_json(data: Dictionary) -> EnemyType:
 	var type := EnemyType.new()
