@@ -7,7 +7,6 @@ const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
-const CARD_PICKER_SCENE: PackedScene = preload("res://scenes/ui/CardPicker.tscn")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
 # TextureThemeSystem removed - no longer needed after arena simplification
@@ -63,7 +62,6 @@ var enemy_render_tier: EnemyRenderTier
 var player: Player
 var xp_system: XpSystem
 var hud: HUD
-var card_picker: CardPicker
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -406,14 +404,11 @@ func _setup_ui() -> void:
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
 	
-	
-	card_picker = CARD_PICKER_SCENE.instantiate()
-	ui_layer.add_child(card_picker)
 
 
 func _on_level_up(payload) -> void:
-	PauseManager.pause_game(true)
-	card_picker.open()
+	# TODO: Implement new card selection system
+	Logger.info("Level up! (Card selection temporarily disabled)", "player")
 
 # Theme functions removed - no longer needed after arena simplification
 

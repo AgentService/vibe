@@ -49,3 +49,6 @@ func _on_combat_step(payload) -> void:
 		var pos_payload := EventBus.PlayerPositionChangedPayload.new(position)
 		EventBus.player_position_changed.emit(pos_payload)
 		player_position_changed.emit(position)
+
+func has_player_reference() -> bool:
+	return _player_ref != null

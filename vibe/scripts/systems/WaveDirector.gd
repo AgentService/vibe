@@ -219,7 +219,7 @@ func _spawn_enemy() -> void:
 		Logger.debug("Using registry enemy type: " + enemy_type_str, "waves")
 	
 	# Use cached player position from PlayerState autoload
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	
 	var angle := RNG.randf_range("waves", 0.0, TAU)
 	var spawn_pos := target_pos + Vector2.from_angle(angle) * spawn_radius
@@ -260,7 +260,7 @@ func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -
 	if enemy_registry:
 		enemy_type_obj = enemy_registry.get_enemy_type(enemy_type_str)
 	
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var direction := (target_pos - position).normalized()
 	
 	var enemy := enemies[free_idx]
@@ -300,7 +300,7 @@ func _find_free_enemy() -> int:
 
 func _update_enemies(dt: float) -> void:
 	# Use cached player position from PlayerState autoload  
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	
 	# Only update alive enemies to improve performance
