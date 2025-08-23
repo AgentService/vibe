@@ -20,10 +20,7 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
-@onready var mm_walls: MultiMeshInstance2D = $MM_Walls
-@onready var mm_terrain: MultiMeshInstance2D = $MM_Terrain
-@onready var mm_obstacles: MultiMeshInstance2D = $MM_Obstacles
-@onready var mm_interactables: MultiMeshInstance2D = $MM_Interactables
+# Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
 @onready var ability_system: AbilitySystem = AbilitySystem.new()
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
@@ -213,10 +210,6 @@ func _ready() -> void:
 	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
 	Logger.info("Enemy transforms setup complete", "ui")
-	_setup_wall_multimesh()
-	_setup_terrain_multimesh()
-	_setup_obstacle_multimesh()
-	_setup_interactable_multimesh()
 	Logger.info("All MultiMesh setup complete", "ui")
 	
 	# Arena system now loads default arena automatically
@@ -354,62 +347,7 @@ func _setup_enemy_transforms() -> void:
 		_enemy_transforms[i] = Transform2D()
 	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
-func _setup_wall_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(64, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for wall texture
-	var wall_texture := texture_theme_system.get_texture("walls")
-	mm_walls.texture = wall_texture
-
-	mm_walls.multimesh = multimesh
-
-func _setup_terrain_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for terrain texture
-	var terrain_texture := texture_theme_system.get_texture("terrain")
-	mm_terrain.texture = terrain_texture
-	mm_terrain.multimesh = multimesh
-
-func _setup_obstacle_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for obstacle texture
-	var obstacle_texture := texture_theme_system.get_texture("obstacles", "pillar")
-	mm_obstacles.texture = obstacle_texture
-	mm_obstacles.multimesh = multimesh
-
-func _setup_interactable_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for interactable texture
-	var interactable_texture := texture_theme_system.get_texture("interactables", "chest")
-	mm_interactables.texture = interactable_texture
-	mm_interactables.multimesh = multimesh
+# Removed unused MultiMesh setup functions (walls, terrain, obstacles, interactables)
 
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
@@ -488,22 +426,7 @@ func _on_theme_changed(theme_name: String) -> void:
 	_update_multimesh_textures()
 
 func _update_multimesh_textures() -> void:
-	# Update wall textures
-	var wall_texture := texture_theme_system.get_texture("walls")
-	mm_walls.texture = wall_texture
-	
-	# Update terrain textures
-	var terrain_texture := texture_theme_system.get_texture("terrain")
-	mm_terrain.texture = terrain_texture
-	
-	# Update obstacle textures
-	var obstacle_texture := texture_theme_system.get_texture("obstacles", "pillar")
-	mm_obstacles.texture = obstacle_texture
-	
-	# Update interactable textures
-	var interactable_texture := texture_theme_system.get_texture("interactables", "chest")
-	mm_interactables.texture = interactable_texture
-	
+	# Simplified - no unused subsystem textures to update
 	Logger.debug("MultiMesh textures updated for theme", "ui")
 
 func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
@@ -538,43 +461,31 @@ func _on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:
 	_show_melee_cone_effect(player_pos, target_pos)
 
 func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
-	if not melee_effects:
+	# Use manually created polygon from the scene
+	var cone_polygon = $MeleeEffects/MeleeCone
+	if not cone_polygon:
 		return
 	
-	# Get effective melee stats for visual effect (including card modifiers)
-	var effective_cone_angle = melee_system._get_effective_cone_angle()
+	# Get effective melee stats to match the actual damage area
 	var effective_range = melee_system._get_effective_range()
+	var range_scale = effective_range / 100.0  # Assuming your cone is ~100 units long
 	
-	# Create cone visual effect
-	var cone_polygon = Polygon2D.new()
-	cone_polygon.color = Color(1.0, 0.8, 0.2, 0.3)  # Semi-transparent yellow
+	# Position and scale the cone at player position
+	cone_polygon.global_position = player_pos
+	cone_polygon.scale = Vector2(range_scale, range_scale)  # Scale to match damage range
 	
-	# Calculate cone points - cone tip at player, opening towards target
+	# Point the cone toward mouse/target position (where damage occurs)
 	var attack_dir = (target_pos - player_pos).normalized()
-	var cone_points: PackedVector2Array = []
+	cone_polygon.rotation = attack_dir.angle() - PI/2  # Fix 90° offset (cone was 1/4 ahead)
 	
-	# Start at player position (cone tip)
-	cone_points.append(Vector2.ZERO)
+	# Show the cone with transparency
+	cone_polygon.visible = true
+	cone_polygon.modulate.a = 0.3
 	
-	# Calculate cone edges  
-	var half_angle = deg_to_rad(effective_cone_angle / 2.0)
-	var left_dir = attack_dir.rotated(-half_angle)
-	var right_dir = attack_dir.rotated(half_angle)
-	
-	# Add cone edge points (spread from tip towards target direction)
-	cone_points.append(left_dir * effective_range)
-	cone_points.append(right_dir * effective_range)
-	
-	cone_polygon.polygon = cone_points
-	cone_polygon.position = player_pos
-	
-	# Add to scene
-	melee_effects.add_child(cone_polygon)
-	
-	# Remove after short duration
+	# Hide after short duration
 	var tween = create_tween()
 	tween.tween_property(cone_polygon, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(cone_polygon.queue_free)
+	tween.tween_callback(func(): cone_polygon.visible = false)
 
 func _handle_debug_spawning(delta: float) -> void:
 	# Only auto-shoot projectiles if player has projectile abilities
@@ -656,39 +567,7 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var tier_color := _get_tier_debug_color(tier)
 			mm_instance.multimesh.set_instance_color(i, tier_color)
 
-func _update_wall_multimesh(wall_transforms: Array[Transform2D]) -> void:
-	var count := wall_transforms.size()
-	
-	if mm_walls and mm_walls.multimesh:
-		mm_walls.multimesh.instance_count = count
-
-		for i in range(count):
-			var transform := wall_transforms[i]
-			mm_walls.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_terrain_multimesh(terrain_transforms: Array[Transform2D]) -> void:
-	var count := terrain_transforms.size()
-	mm_terrain.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := terrain_transforms[i]
-		mm_terrain.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_obstacle_multimesh(obstacle_transforms: Array[Transform2D]) -> void:
-	var count := obstacle_transforms.size()
-	mm_obstacles.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := obstacle_transforms[i]
-		mm_obstacles.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_interactable_multimesh(interactable_transforms: Array[Transform2D]) -> void:
-	var count := interactable_transforms.size()
-	mm_interactables.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := interactable_transforms[i]
-		mm_interactables.multimesh.set_instance_transform_2d(i, transform)
+# Removed unused MultiMesh update functions (walls, terrain, obstacles, interactables)
 
 func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")

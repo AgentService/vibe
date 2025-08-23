@@ -20,11 +20,11 @@ func load_default_arena() -> bool:
 		if arena_config:
 			_apply_arena_config(arena_config)
 			arena_loaded.emit(arena_bounds)
-			Logger.info("Arena loaded from .tres resource", "arena")
+			print("Arena loaded from .tres resource")
 			return true
 	
 	# Fallback to default values if resource doesn't exist
-	Logger.warn("Arena resource not found, using defaults", "arena")
+	print("Arena resource not found, using defaults")
 	arena_loaded.emit(arena_bounds)
 	return false
 
