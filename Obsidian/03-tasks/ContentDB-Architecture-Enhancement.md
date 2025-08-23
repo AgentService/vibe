@@ -4,25 +4,34 @@
 **Type**: Architecture Improvement  
 **Epic**: Data Systems Consolidation  
 
-> **⚠️ DESIGN RECONSIDERATION NEEDED**
+> **✅ DESIGN APPROVED - SIMPLIFIED APPROACH**
 > 
-> **Current Status**: Paused for architectural review
+> **Current Status**: Structure established, ready for phased implementation
 > 
-> **Key Questions to Resolve:**
-> - Is this complexity worth it for current project scope, or should we prioritize simplicity?
-> - Need to evaluate if unified ContentDB provides sufficient value over current approach
-> - Consider impact on development velocity vs. architectural benefits
+> **Key Decisions Made:**
+> - Proceed with simplified ContentDB that builds on existing BalanceDB patterns
+> - Set up intended directory structure now to clarify architectural intent
+> - Implement incrementally starting with EnemyRegistry extraction
+> - Defer complex features until proven necessary
 > 
-> **Future System Considerations:**
-> - **Base Stats System**: Player and item base stats (PoE-style) - strength, dexterity, intelligence, etc.
-> - **Stat Modification Pipeline**: Build cards, buffs, items should modify base stats through consistent system
-> - **Map Tier System**: Difficulty scaling with map tiers affecting monster stats and effects
-> - **Dynamic Monster Scaling**: Map-dependent stat modifiers and special effects on enemies
-> - **Stat Dependencies**: How abilities scale with stats, damage calculations, defensive mechanics
+> **Implementation Strategy:**
+> - **Phase 1**: Extract existing EnemyRegistry logic to ContentDB (low-risk migration)
+> - **Phase 2**: Add new content types (abilities, items) as features are developed  
+> - **Phase 3**: Advanced features (modding, networking) only when needed
 > 
-> These future requirements may significantly impact whether ContentDB makes sense vs. simpler approaches.
+> **Content Structure Established:**
+> ```
+> /data/content/           # Things you add (ContentDB)
+> ├── enemies/            # ✅ Moved from /data/enemies/
+> ├── abilities/          # 📋 Ready for future implementation
+> ├── items/             # 📋 Ready for future implementation  
+> ├── heroes/            # 📋 Ready for future implementation
+> └── maps/              # 📋 Ready for future implementation
 > 
-> **Decision Required**: Evaluate complexity vs. benefit before implementation
+> /data/balance/          # Numbers you tweak (BalanceDB)
+> ```
+> 
+> **Decision Rationale**: Clear architectural intent + incremental implementation = reduced risk with preserved flexibility
 
 ## 📋 Overview
 
@@ -124,30 +133,43 @@ Phase 3: Advanced features
 
 ## 📁 File Structure Changes
 
-### Current Structure
+### Previous Structure
 ```
 /data/
 ├── balance/          # BalanceDB - gameplay tunables
 │   ├── combat.json   # Damage, rates, speeds
 │   └── waves.json    # Spawn mechanics
-└── enemies/          # Direct file loading
+└── enemies/          # Direct file loading (OLD)
     ├── config/
     └── knight_*.json
 ```
 
-### Proposed Structure  
+### Current Structure (✅ Implemented)
 ```
 /data/
 ├── balance/          # BalanceDB - gameplay tunables
 │   ├── combat.json   # Numbers you tweak for game feel
 │   └── waves.json    # Spawn rates, arena mechanics
 ├── content/          # ContentDB - things you add
-│   ├── enemies/      # Enemy type definitions
-│   ├── abilities/    # Skill definitions (future)
-│   └── items/        # Item definitions (future)
-└── config/
-    ├── content_schemas.json    # Validation rules
-    └── content_registry.json  # Master content index
+│   ├── README.md     # ContentDB documentation
+│   ├── enemies/      # ✅ Enemy type definitions (moved)
+│   │   ├── README.md # Enemy schema documentation
+│   │   ├── config/   # Enemy configuration
+│   │   └── knight_*.json
+│   ├── abilities/    # 📋 Skill definitions (future)
+│   │   ├── README.md # Ability schema documentation
+│   │   └── .gitkeep
+│   ├── items/        # 📋 Item definitions (future)
+│   │   ├── README.md # Item schema documentation
+│   │   └── .gitkeep
+│   ├── heroes/       # 📋 Hero/class definitions (future)
+│   │   ├── README.md # Hero schema documentation
+│   │   └── .gitkeep
+│   └── maps/         # 📋 Map definitions (future)
+│       ├── README.md # Map schema documentation
+│       └── .gitkeep
+└── schemas/          # 📋 Validation schemas (future)
+    └── README.md     # Schema documentation
 ```
 
 ## 💡 Benefits
