@@ -3,6 +3,8 @@ extends Node2D
 ## Arena scene managing MultiMesh rendering and debug projectile spawning.
 ## Renders projectile pool via single MultiMeshInstance2D.
 
+const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_PICKER_SCENE: PackedScene = preload("res://scenes/ui/CardPicker.tscn")
@@ -30,29 +32,28 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
 
 
-# SWARM JSON-based animation test
-var swarm_animations: Dictionary = {}
+# ANIMATION CONFIGS
+var swarm_animation_config: AnimationConfig
+var regular_animation_config: AnimationConfig
+var elite_animation_config: AnimationConfig
+var boss_animation_config: AnimationConfig
+
+# ANIMATION RENDERING STATE
 var swarm_run_textures: Array[ImageTexture] = []
 var swarm_current_frame: int = 0
 var swarm_frame_timer: float = 0.0
-var swarm_frame_duration: float = 0.12  # Will be loaded from JSON
+var swarm_frame_duration: float = 0.12
 
-# REGULAR JSON-based animation
-var regular_animations: Dictionary = {}
 var regular_run_textures: Array[ImageTexture] = []
 var regular_current_frame: int = 0
 var regular_frame_timer: float = 0.0
 var regular_frame_duration: float = 0.1
 
-# ELITE JSON-based animation  
-var elite_animations: Dictionary = {}
 var elite_run_textures: Array[ImageTexture] = []
 var elite_current_frame: int = 0
 var elite_frame_timer: float = 0.0
 var elite_frame_duration: float = 0.1
 
-# BOSS JSON-based animation
-var boss_animations: Dictionary = {}
 var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
@@ -207,10 +208,10 @@ func _ready() -> void:
 	_setup_projectile_multimesh()
 	Logger.info("Projectile MultiMesh setup complete", "ui")
 	# TIER-BASED ENEMY SYSTEM - optional for performance
-	_load_swarm_animations()  # Load JSON animations for SWARM tier
-	_load_regular_animations()  # Load JSON animations for REGULAR tier
-	_load_elite_animations()    # Load JSON animations for ELITE tier
-	_load_boss_animations()     # Load JSON animations for BOSS tier
+	_load_swarm_animations()  # Load .tres animations for SWARM tier
+	_load_regular_animations()  # Load .tres animations for REGULAR tier
+	_load_elite_animations()    # Load .tres animations for ELITE tier
+	_load_boss_animations()     # Load .tres animations for BOSS tier
 	_setup_tier_multimeshes()
 	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
@@ -288,12 +289,12 @@ func _setup_tier_multimeshes() -> void:
 	swarm_multimesh.mesh = swarm_mesh
 	
 	
-	# Use JSON-loaded textures for SWARM tier
+	# Use .tres-loaded textures for SWARM tier
 	if not swarm_run_textures.is_empty():
 		mm_enemies_swarm.texture = swarm_run_textures[0]
-		Logger.info("SWARM tier using JSON-based animation (" + str(swarm_run_textures.size()) + " frames)", "enemies")
+		Logger.info("SWARM tier using .tres-based animation (" + str(swarm_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("SWARM tier JSON animation failed to load", "enemies")
+		Logger.error("SWARM tier .tres animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = -1  # Render behind sprites
 	
@@ -305,12 +306,12 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	# Use JSON-loaded textures for REGULAR tier
+	# Use .tres-loaded textures for REGULAR tier
 	if not regular_run_textures.is_empty():
 		mm_enemies_regular.texture = regular_run_textures[0]
-		Logger.info("REGULAR tier using JSON-based animation (" + str(regular_run_textures.size()) + " frames)", "enemies")
+		Logger.info("REGULAR tier using .tres-based animation (" + str(regular_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("REGULAR tier JSON animation failed to load", "enemies")
+		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
 	mm_enemies_regular.z_index = -1  # Render behind sprites
 	
@@ -322,12 +323,12 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	# Use JSON-loaded textures for ELITE tier
+	# Use .tres-loaded textures for ELITE tier
 	if not elite_run_textures.is_empty():
 		mm_enemies_elite.texture = elite_run_textures[0]
-		Logger.info("ELITE tier using JSON-based animation (" + str(elite_run_textures.size()) + " frames)", "enemies")
+		Logger.info("ELITE tier using .tres-based animation (" + str(elite_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("ELITE tier JSON animation failed to load", "enemies")
+		Logger.error("ELITE tier .tres animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
 	mm_enemies_elite.z_index = -1  # Render behind sprites
 	
@@ -339,12 +340,12 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	# Use JSON-loaded textures for BOSS tier
+	# Use .tres-loaded textures for BOSS tier
 	if not boss_run_textures.is_empty():
 		mm_enemies_boss.texture = boss_run_textures[0]
-		Logger.info("BOSS tier using JSON-based animation (" + str(boss_run_textures.size()) + " frames)", "enemies")
+		Logger.info("BOSS tier using .tres-based animation (" + str(boss_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("BOSS tier JSON animation failed to load", "enemies")
+		Logger.error("BOSS tier .tres animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
 	mm_enemies_boss.z_index = -1  # Render behind sprites
 	
@@ -867,14 +868,14 @@ func _exit_tree() -> void:
 		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
-	# Animate each tier with JSON-based animation (fallback to hardcoded)
+	# Animate each tier with .tres-based animation
 	_animate_swarm_tier(delta)
 	_animate_regular_tier(delta)
 	_animate_elite_tier(delta)
 	_animate_boss_tier(delta)
 
 func _animate_swarm_tier(delta: float) -> void:
-	# Only animate if we have JSON-loaded swarm textures
+	# Only animate if we have .tres-loaded swarm textures
 	if swarm_run_textures.is_empty():
 		return
 	
@@ -927,44 +928,32 @@ func _animate_boss_tier(delta: float) -> void:
 			mm_enemies_boss.texture = boss_run_textures[boss_current_frame]
 
 func _load_swarm_animations() -> void:
-	var file_path := "res://data/animations/swarm_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load swarm animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/swarm_enemy_animations.tres"
+	swarm_animation_config = load(resource_path) as AnimationConfig
+	if swarm_animation_config == null:
+		Logger.warn("Failed to load swarm animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse swarm animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	swarm_animations = json.data
-	Logger.info("Loaded swarm animations from JSON", "enemies")
-	
-	# Create textures for swarm run animation from JSON
+	Logger.info("Loaded swarm animation config from .tres", "enemies")
 	_create_swarm_textures()
 
 func _create_swarm_textures() -> void:
-	if swarm_animations.is_empty():
-		Logger.warn("No swarm animations data available", "enemies")
+	if swarm_animation_config == null:
+		Logger.warn("No swarm animation config available", "enemies")
 		return
 	
-	var knight_full := load(swarm_animations.sprite_sheet) as Texture2D
+	var knight_full := swarm_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load swarm sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = swarm_animations.frame_size.width
-	var frame_height: int = swarm_animations.frame_size.height
-	var columns: int = swarm_animations.grid.columns
+	var frame_width: int = swarm_animation_config.frame_size.x
+	var frame_height: int = swarm_animation_config.frame_size.y
+	var columns: int = swarm_animation_config.grid_columns
 	
-	# Load run animation frames from JSON
-	var run_anim: Dictionary = swarm_animations.animations.run
+	# Load run animation frames from .tres
+	var run_anim: Dictionary = swarm_animation_config.animations.run
 	swarm_frame_duration = run_anim.duration
 	
 	swarm_run_textures.clear()
@@ -980,42 +969,31 @@ func _create_swarm_textures() -> void:
 	Logger.info("Created " + str(swarm_run_textures.size()) + " swarm animation textures", "enemies")
 
 func _load_regular_animations() -> void:
-	var file_path := "res://data/animations/regular_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load regular animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/regular_enemy_animations.tres"
+	regular_animation_config = load(resource_path) as AnimationConfig
+	if regular_animation_config == null:
+		Logger.warn("Failed to load regular animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse regular animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	regular_animations = json.data
-	Logger.info("Loaded regular animations from JSON", "enemies")
-	
+	Logger.info("Loaded regular animation config from .tres", "enemies")
 	_create_regular_textures()
 
 func _create_regular_textures() -> void:
-	if regular_animations.is_empty():
-		Logger.warn("No regular animations data available", "enemies")
+	if regular_animation_config == null:
+		Logger.warn("No regular animation config available", "enemies")
 		return
 	
-	var knight_full := load(regular_animations.sprite_sheet) as Texture2D
+	var knight_full := regular_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load regular sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = regular_animations.frame_size.width
-	var frame_height: int = regular_animations.frame_size.height
-	var columns: int = regular_animations.grid.columns
+	var frame_width: int = regular_animation_config.frame_size.x
+	var frame_height: int = regular_animation_config.frame_size.y
+	var columns: int = regular_animation_config.grid_columns
 	
-	var run_anim: Dictionary = regular_animations.animations.run
+	var run_anim: Dictionary = regular_animation_config.animations.run
 	regular_frame_duration = run_anim.duration
 	
 	regular_run_textures.clear()
@@ -1031,42 +1009,31 @@ func _create_regular_textures() -> void:
 	Logger.info("Created " + str(regular_run_textures.size()) + " regular animation textures", "enemies")
 
 func _load_elite_animations() -> void:
-	var file_path := "res://data/animations/elite_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load elite animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/elite_enemy_animations.tres"
+	elite_animation_config = load(resource_path) as AnimationConfig
+	if elite_animation_config == null:
+		Logger.warn("Failed to load elite animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse elite animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	elite_animations = json.data
-	Logger.info("Loaded elite animations from JSON", "enemies")
-	
+	Logger.info("Loaded elite animation config from .tres", "enemies")
 	_create_elite_textures()
 
 func _create_elite_textures() -> void:
-	if elite_animations.is_empty():
-		Logger.warn("No elite animations data available", "enemies")
+	if elite_animation_config == null:
+		Logger.warn("No elite animation config available", "enemies")
 		return
 	
-	var knight_full := load(elite_animations.sprite_sheet) as Texture2D
+	var knight_full := elite_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load elite sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = elite_animations.frame_size.width
-	var frame_height: int = elite_animations.frame_size.height
-	var columns: int = elite_animations.grid.columns
+	var frame_width: int = elite_animation_config.frame_size.x
+	var frame_height: int = elite_animation_config.frame_size.y
+	var columns: int = elite_animation_config.grid_columns
 	
-	var run_anim: Dictionary = elite_animations.animations.run
+	var run_anim: Dictionary = elite_animation_config.animations.run
 	elite_frame_duration = run_anim.duration
 	
 	elite_run_textures.clear()
@@ -1082,42 +1049,31 @@ func _create_elite_textures() -> void:
 	Logger.info("Created " + str(elite_run_textures.size()) + " elite animation textures", "enemies")
 
 func _load_boss_animations() -> void:
-	var file_path := "res://data/animations/boss_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load boss animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/boss_enemy_animations.tres"
+	boss_animation_config = load(resource_path) as AnimationConfig
+	if boss_animation_config == null:
+		Logger.warn("Failed to load boss animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse boss animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	boss_animations = json.data
-	Logger.info("Loaded boss animations from JSON", "enemies")
-	
+	Logger.info("Loaded boss animation config from .tres", "enemies")
 	_create_boss_textures()
 
 func _create_boss_textures() -> void:
-	if boss_animations.is_empty():
-		Logger.warn("No boss animations data available", "enemies")
+	if boss_animation_config == null:
+		Logger.warn("No boss animation config available", "enemies")
 		return
 	
-	var knight_full := load(boss_animations.sprite_sheet) as Texture2D
+	var knight_full := boss_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load boss sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = boss_animations.frame_size.width
-	var frame_height: int = boss_animations.frame_size.height
-	var columns: int = boss_animations.grid.columns
+	var frame_width: int = boss_animation_config.frame_size.x
+	var frame_height: int = boss_animation_config.frame_size.y
+	var columns: int = boss_animation_config.grid_columns
 	
-	var run_anim: Dictionary = boss_animations.animations.run
+	var run_anim: Dictionary = boss_animation_config.animations.run
 	boss_frame_duration = run_anim.duration
 	
 	boss_run_textures.clear()

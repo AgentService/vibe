@@ -4,6 +4,8 @@
 
 #todo #architecture #vibe-coding #godot4
 
+REMOVE LOGGER!
+
 
 combat log
 dongerslider

@@ -20,6 +20,7 @@ Complete migration from JSON to .tres format for all enemy content, establishing
 
 ### Migration Completed 2025-08-23
 - ✅ All enemy types successfully migrated to .tres format
+- ✅ All animation files successfully migrated to .tres format
 - ✅ JSON loading code removed and simplified
 - ✅ Documentation updated to reflect new system
 - ✅ System tested and validated

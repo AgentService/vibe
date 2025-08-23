@@ -507,6 +507,27 @@ var grouped: Dictionary = {
 **Warning Signs**: Type mismatch errors when passing dictionary values to functions expecting typed arrays
 **RULE LOOKED UP**: 0 times
 
+### .tres Resource Class Registration Issues
+**Problem/Context**: .tres files referencing custom classes fail to load with "Cannot get class 'ClassName'" errors
+**Solution/Fix**: Use `type="Resource"` instead of `type="ClassName"` and remove `script_class` parameter from .tres files
+**Code Example**:
+```tres
+# Wrong - causes "Cannot get class 'AnimationConfig'" and "Unexpected identifier 'preload'" errors:
+[gd_resource type="AnimationConfig" script_class="AnimationConfig" load_steps=2 format=3]
+[resource]
+sprite_sheet = preload("res://assets/sprites/knight.png")
+
+# Right - loads successfully:
+[gd_resource type="Resource" load_steps=3 format=3]
+[ext_resource type="Script" path="res://scripts/domain/AnimationConfig.gd" id="1_0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/knight.png" id="2_0"]
+[resource]
+script = ExtResource("1_0")
+sprite_sheet = ExtResource("2_0")
+```
+**Why It Happens**: Custom class names aren't always available during .tres resource loading; script_class references can fail if the class isn't registered; preload() syntax is invalid in .tres files
+**Warning Signs**: "Cannot get class" errors, "Can't create sub resource" errors, "Unexpected identifier 'preload'" parse errors when loading .tres files
+**RULE LOOKED UP**: 0 times
 
 ## Performance Insights
 

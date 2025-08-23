@@ -9,9 +9,9 @@ signal camera_shake_requested(intensity: float, duration: float)
 
 @export var follow_speed: float = 8.0
 @export var zoom_speed: float = 5.0
-@export var min_zoom: float = 2.0  # Minimum zoom (can't zoom out beyond this)
+@export var min_zoom: float = 2.5  # Minimum zoom (can't zoom out beyond this)
 @export var max_zoom: float = 4.0  # Maximum zoom in  
-@export var default_zoom: float = 2.0  # Start at default close zoom
+@export var default_zoom: float = 2.5  # Start at default close zoom
 @export var deadzone_radius: float = 20.0
 @export var shake_intensity: float = 0.0
 

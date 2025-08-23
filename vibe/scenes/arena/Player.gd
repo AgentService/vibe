@@ -1,6 +1,8 @@
 extends CharacterBody2D
 class_name Player
 
+const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
@@ -8,10 +10,10 @@ class_name Player
 @export var pickup_radius: float = 12.0
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-var knight_animations: Dictionary = {}
+var knight_animation_config: AnimationConfig
 var current_animation: String = "idle"
 
-var max_health: int = 100111
+var max_health: int = 199
 var current_health: int = 100
 
 var is_rolling: bool = false
@@ -19,7 +21,7 @@ var roll_duration: float = 0.3
 var roll_timer: float = 0.0
 var roll_speed: float = 400.0
 var roll_direction: Vector2 = Vector2.ZERO
-var invulnerable: bool = false
+var invulnerable: bool = true
 
 func _ready() -> void:
 	# Player should pause with the game
@@ -51,7 +53,7 @@ func _start_roll() -> void:
 	var input_vector: Vector2 = Vector2.ZERO
 	
 	if Input.is_action_pressed("move_left"):
-		input_vector.x -= 1.0
+		input_vector.x -= 1.05
 	if Input.is_action_pressed("move_right"):
 		input_vector.x += 1.0
 	if Input.is_action_pressed("move_up"):
@@ -115,42 +117,32 @@ func get_pos() -> Vector2:
 	return global_position
 
 func _load_knight_animations() -> void:
-	var file_path := "res://data/animations/knight_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load knight animations from: " + file_path, "player")
+	var resource_path := "res://data/animations/knight_animations.tres"
+	knight_animation_config = load(resource_path) as AnimationConfig
+	if knight_animation_config == null:
+		Logger.warn("Failed to load knight animation config from: " + resource_path, "player")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse knight animations JSON", "player")
-		return
-	
-	knight_animations = json.data
-	Logger.info("Loaded knight animations", "player")
+	Logger.info("Loaded knight animation config", "player")
 
 func _setup_sprite_frames() -> void:
-	if knight_animations.is_empty():
-		Logger.warn("No knight animations loaded", "player")
+	if knight_animation_config == null:
+		Logger.warn("No knight animation config loaded", "player")
 		return
 	
 	var sprite_frames := SpriteFrames.new()
-	var texture := load(knight_animations.sprite_sheet) as Texture2D
+	var texture := knight_animation_config.sprite_sheet
 	
 	if texture == null:
 		Logger.warn("Failed to load knight sprite sheet", "player")
 		return
 	
-	var frame_width: int = knight_animations.frame_size.width
-	var frame_height: int = knight_animations.frame_size.height
-	var columns: int = knight_animations.grid.columns
+	var frame_width: int = knight_animation_config.frame_size.x
+	var frame_height: int = knight_animation_config.frame_size.y
+	var columns: int = knight_animation_config.grid_columns
 	
-	for anim_name in knight_animations.animations:
-		var anim_data: Dictionary = knight_animations.animations[anim_name]
+	for anim_name in knight_animation_config.animations:
+		var anim_data: Dictionary = knight_animation_config.animations[anim_name]
 		sprite_frames.add_animation(anim_name)
 		
 		for frame_index in anim_data.frames:
