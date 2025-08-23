@@ -55,8 +55,7 @@ func _setup_enemy_registry() -> void:
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
 	spawn_interval = BalanceDB.get_waves_value("spawn_interval")
-	var center_data: Dictionary = BalanceDB.get_waves_value("arena_center")
-	arena_center = Vector2(center_data.get("x", 400.0), center_data.get("y", 300.0))
+	arena_center = BalanceDB.get_waves_value("arena_center")
 	spawn_radius = BalanceDB.get_waves_value("spawn_radius")
 	enemy_speed_min = BalanceDB.get_waves_value("enemy_speed_min")
 	enemy_speed_max = BalanceDB.get_waves_value("enemy_speed_max")

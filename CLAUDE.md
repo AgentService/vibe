@@ -57,6 +57,7 @@ get_node("../../UI/HUD").update_health(hp)
   - **Simple standalone tests**: `extends SceneTree` + `_initialize()` + `quit()` - for pure logic testing without autoloads
   - **Tests requiring autoloads**: Use `.tscn` scenes with script attached - ensures EventBus, RNG, RunManager are available
   - **Rule**: If your test needs EventBus, RNG, ContentDB, or any autoload → use `.tscn` scene, NOT raw `.gd` script
+- **Test logging**: Use `print()` directly in tests for output - do NOT use Logger in test files
 
 ## Workflow (for Claude)
 1) **Update schemas** in `/godot/data/README.md`; add one example JSON.

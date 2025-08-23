@@ -43,7 +43,8 @@
       "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --quit-after 10)",
       "Bash(\"../Godot_v4.4.1-stable_win64_console.exe\" --headless --script tests/test_architecture_boundaries.gd --quit-after 10)",
       "Bash(\"../Godot_v4.4.1-stable_win64_console.exe\" --headless --script vibe/test_animation_loading.gd)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --script test_balance_tres.gd)"
     ],
     "deny": [],
     "ask": [],
