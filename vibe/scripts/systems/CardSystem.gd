@@ -2,65 +2,52 @@ extends Node
 class_name CardSystem
 
 ## Manages card selection and stat modification for level-up rewards.
-## Loads weighted card pools from JSON and applies stat modifications to RunManager.
+## Loads weighted card pools from .tres resources and applies stat modifications to RunManager.
 
-var card_pool: Dictionary = {}
+var card_pool: CardPool
 
 func _ready() -> void:
 	_load_card_pool()
 
 func _load_card_pool() -> void:
-	var file_path: String = "res://data/cards/card_pool.json"
+	var file_path: String = "res://data/cards/card_pool.tres"
 	Logger.debug("Loading card pool from: " + file_path, "player")
 	
-	if not FileAccess.file_exists(file_path):
+	if not ResourceLoader.exists(file_path):
 		push_error("Card pool file not found: " + file_path)
 		return
 	
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
-	if not file:
-		push_error("Failed to open card pool file: " + file_path)
+	var loaded_resource = ResourceLoader.load(file_path)
+	if not loaded_resource:
+		push_error("Failed to load card pool resource: " + file_path)
 		return
 	
-	var json_string: String = file.get_as_text()
-	file.close()
-	
-	var json: JSON = JSON.new()
-	var parse_result: Error = json.parse(json_string)
-	
-	if parse_result != OK:
-		push_error("Failed to parse card pool JSON: " + json.get_error_message())
+	card_pool = loaded_resource as CardPool
+	if not card_pool:
+		push_error("Loaded resource is not a CardPool: " + file_path)
 		return
 	
-	card_pool = json.data
-	Logger.info("Card pool loaded with " + str(card_pool.get("pool", []).size()) + " cards", "player")
+	Logger.info("Card pool loaded with " + str(card_pool.get_card_count()) + " cards", "player")
 
-func roll_three() -> Array[Dictionary]:
-	if not card_pool.has("pool") or card_pool["pool"].is_empty():
+func roll_three() -> Array:
+	if not card_pool or card_pool.pool.is_empty():
 		push_error("Card pool is empty or malformed")
 		return []
 	
-	var pool: Array = card_pool["pool"]
-	var selected_cards: Array[Dictionary] = []
-	var total_weight: float = 0.0
-	
-	# Filter cards based on current level
-	var available_cards: Array = []
+	var selected_cards: Array = []
 	var current_level: int = RunManager.stats.get("level", 1)
 	
-	for card in pool:
-		var min_level: int = card.get("min_level", 1)
-		if current_level >= min_level:
-			available_cards.append(card)
+	# Filter cards based on current level
+	var available_cards: Array = card_pool.get_available_cards_at_level(current_level)
 	
 	if available_cards.is_empty():
 		push_error("No cards available for level " + str(current_level))
 		return []
 	
 	# Calculate total weight from available cards
+	var total_weight: float = 0.0
 	for card in available_cards:
-		if card.has("weight"):
-			total_weight += card["weight"]
+		total_weight += card.weight
 	
 	# Select 3 unique cards from available cards
 	var used_indices: Array[int] = []
@@ -72,8 +59,8 @@ func roll_three() -> Array[Dictionary]:
 			if i in used_indices:
 				continue
 			
-			var card: Dictionary = available_cards[i]
-			current_weight += card.get("weight", 1.0)
+			var card = available_cards[i]
+			current_weight += card.weight
 			
 			if random_value <= current_weight:
 				selected_cards.append(card)
@@ -82,12 +69,12 @@ func roll_three() -> Array[Dictionary]:
 	
 	return selected_cards
 
-func apply(card: Dictionary) -> void:
-	if not card.has("stat_mods"):
-		push_warning("Card has no stat_mods: " + str(card))
+func apply(card) -> void:
+	if not card.stat_modifiers:
+		push_warning("Card has no stat_modifiers: " + str(card))
 		return
 	
-	var stat_mods: Dictionary = card["stat_mods"]
+	var stat_mods: Dictionary = card.stat_modifiers
 	
 	for stat_name in stat_mods:
 		if not RunManager.stats.has(stat_name):
@@ -108,4 +95,4 @@ func apply(card: Dictionary) -> void:
 			# Default to additive for numeric values
 			RunManager.stats[stat_name] += mod_value
 	
-	Logger.info("Applied card: " + str(card.get("desc", "Unknown")) + " | Stats: " + str(RunManager.stats), "player")
+	Logger.info("Applied card: " + str(card.description) + " | Stats: " + str(RunManager.stats), "player")

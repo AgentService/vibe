@@ -8,7 +8,7 @@ class_name CardPicker
 @onready var title_label: Label = $PanelContainer/VBoxContainer/TitleLabel
 
 var card_system: CardSystem
-var available_cards: Array[Dictionary] = []
+var available_cards: Array = []
 
 func _ready() -> void:
 	# CardPicker should work during pause
@@ -32,9 +32,9 @@ func _populate_cards() -> void:
 	
 	# Create buttons for each card
 	for i in range(available_cards.size()):
-		var card: Dictionary = available_cards[i]
+		var card = available_cards[i]
 		var button: Button = Button.new()
-		button.text = card.get("desc", "Unknown Card")
+		button.text = card.get_display_text()
 		button.custom_minimum_size = Vector2(150, 80)
 		button.pressed.connect(_on_card_selected.bind(i))
 		card_container.add_child(button)
@@ -43,7 +43,7 @@ func _on_card_selected(card_index: int) -> void:
 	if card_index < 0 or card_index >= available_cards.size():
 		return
 	
-	var selected_card: Dictionary = available_cards[card_index]
+	var selected_card = available_cards[card_index]
 	card_system.apply(selected_card)
 	
 	PauseManager.pause_game(false)

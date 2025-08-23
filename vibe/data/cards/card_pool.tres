@@ -1,0 +1,60 @@
+[gd_resource type="Resource" script_class="CardPool" load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://vibe/scripts/domain/CardDefinition.gd" id="1_a5pew"]
+[ext_resource type="Script" path="res://vibe/scripts/domain/CardPool.gd" id="2_3uhaf"]
+
+[sub_resource type="Resource" id="Resource_ovpox"]
+script = ExtResource("1_a5pew")
+card_id = "card_unlock_projectiles"
+description = "Unlock projectile attacks (right-click)"
+min_level = 10
+weight = 5
+stat_modifiers = {
+"has_projectiles": true,
+"projectile_count_add": 1.0
+}
+
+[sub_resource type="Resource" id="Resource_q4dvw"]
+script = ExtResource("1_a5pew")
+card_id = "card_melee_damage_boost"
+description = "Increase cone attack damage by 50%"
+min_level = 1
+weight = 10
+stat_modifiers = {
+"melee_damage_mult": 1.5
+}
+
+[sub_resource type="Resource" id="Resource_oexjm"]
+script = ExtResource("1_a5pew")
+card_id = "card_melee_damage"
+description = "Increased Melee Damage (+15 damage)"
+min_level = 1
+weight = 8
+stat_modifiers = {
+"melee_damage_add": 15.0
+}
+
+[sub_resource type="Resource" id="Resource_7pkg0"]
+script = ExtResource("1_a5pew")
+card_id = "card_melee_attack_speed"
+description = "Faster Attacks (+0.3 attacks per second)"
+min_level = 1
+weight = 7
+stat_modifiers = {
+"melee_attack_speed_add": 0.3
+}
+
+[sub_resource type="Resource" id="Resource_wjbxh"]
+script = ExtResource("1_a5pew")
+card_id = "card_melee_range"
+description = "Extended Reach (+40 range, +15° cone)"
+min_level = 1
+weight = 6
+stat_modifiers = {
+"melee_cone_angle_add": 15.0,
+"melee_range_add": 40.0
+}
+
+[resource]
+script = ExtResource("2_3uhaf")
+pool = [SubResource("Resource_ovpox"), SubResource("Resource_q4dvw"), SubResource("Resource_oexjm"), SubResource("Resource_7pkg0"), SubResource("Resource_wjbxh")]
