@@ -529,6 +529,27 @@ sprite_sheet = ExtResource("2_0")
 **Warning Signs**: "Cannot get class" errors, "Can't create sub resource" errors, "Unexpected identifier 'preload'" parse errors when loading .tres files
 **RULE LOOKED UP**: 0 times
 
+### Hybrid Editor/.tres Animation Loading
+**Problem/Context**: Need flexibility to use both editor-defined animations and code-driven .tres animations without conflicts
+**Solution/Pattern**: Programmatically detect if editor provided animations and conditionally load .tres as fallback
+**Code Example**:
+```gdscript
+func _setup_animations() -> void:
+    if _has_editor_animations():
+        Logger.info("Using editor-defined animations (skipping .tres)", "player")
+        _setup_editor_animation_fallback()
+    else:
+        Logger.info("Loading .tres animations", "player") 
+        _load_tres_animations()
+
+func _has_editor_animations() -> bool:
+    return animated_sprite.sprite_frames != null and \
+           animated_sprite.sprite_frames.get_animation_names().size() > 0
+```
+**Why It Works**: Provides artist-friendly editor workflow while maintaining programmer-friendly data-driven approach; prevents conflicts between editor and code
+**Related Concepts**: Supports rapid prototyping with editor while maintaining production data-driven architecture
+**RULE LOOKED UP**: 0 times
+
 ## Performance Insights
 
 ### Rendering

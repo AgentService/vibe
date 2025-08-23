@@ -28,8 +28,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
 	_setup_collision()
-	_load_knight_animations()
-	_setup_sprite_frames()
+	_setup_animations()
 	EventBus.damage_taken.connect(_on_damage_taken)
 
 func _setup_collision() -> void:
@@ -37,6 +36,31 @@ func _setup_collision() -> void:
 	var circle_shape := CircleShape2D.new()
 	circle_shape.radius = 8.0
 	collision_shape.shape = circle_shape
+
+func _setup_animations() -> void:
+	# Check if editor already provided SpriteFrames with animations
+	if _has_editor_animations():
+		Logger.info("Player using editor-defined animations (skipping .tres loading)", "player")
+		_setup_editor_animation_fallback()
+	else:
+		Logger.info("Player loading .tres animations", "player")
+		_load_knight_animations()
+		_setup_sprite_frames()
+
+func _has_editor_animations() -> bool:
+	return animated_sprite.sprite_frames != null and \
+		   animated_sprite.sprite_frames.get_animation_names().size() > 0
+
+func _setup_editor_animation_fallback() -> void:
+	# Ensure editor animations are playing
+	var animation_names = animated_sprite.sprite_frames.get_animation_names()
+	if animation_names.size() > 0:
+		# Try to play "idle" if it exists, otherwise play the first animation
+		if animated_sprite.sprite_frames.has_animation("idle"):
+			animated_sprite.play("idle")
+		else:
+			animated_sprite.play(animation_names[0])
+		Logger.info("Started editor animation: " + animated_sprite.animation, "player")
 
 func _physics_process(delta: float) -> void:
 	_handle_roll_input()
@@ -200,3 +224,9 @@ func _play_animation(anim_name: String) -> void:
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)
+	elif not animated_sprite.sprite_frames.has_animation(anim_name):
+		# Fallback: if specific animation doesn't exist, try to stay on current or use "idle"
+		if animated_sprite.sprite_frames.has_animation("idle") and current_animation != "idle":
+			current_animation = "idle"
+			animated_sprite.play("idle")
+		# If no "idle", just keep playing current animation
