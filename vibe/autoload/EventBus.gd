@@ -76,7 +76,7 @@ signal player_position_changed(payload)
 signal damage_dealt(payload)
 
 # INTERACTION SIGNALS
-## Interaction prompt visibility changed - emitted by InteractableSystem
+## Interaction prompt visibility changed - no longer used after arena simplification
 signal interaction_prompt_changed(payload)
 
 ## Loot generated - emitted by arena systems for treasure chests

@@ -10,7 +10,7 @@ const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_PICKER_SCENE: PackedScene = preload("res://scenes/ui/CardPicker.tscn")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
-const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
+# TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 
@@ -55,7 +55,7 @@ var boss_frame_duration: float = 0.1
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
-@onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
+# texture_theme_system removed - no longer needed after arena simplification
 @onready var camera_system: CameraSystem = CameraSystem.new()
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
@@ -89,8 +89,7 @@ func _ready() -> void:
 		wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if damage_system:
 		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if texture_theme_system:
-		texture_theme_system.process_mode = Node.PROCESS_MODE_ALWAYS
+	# texture_theme_system removed
 	if arena_system:
 		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if camera_system:
@@ -111,9 +110,7 @@ func _ready() -> void:
 	if damage_system:
 		add_child(damage_system)
 		Logger.info("damage_system added", "ui")
-	if texture_theme_system:
-		add_child(texture_theme_system)
-		Logger.info("texture_theme_system added", "ui")
+	# texture_theme_system removed
 	if arena_system:
 		add_child(arena_system)
 		Logger.info("arena_system added", "ui")
@@ -192,8 +189,7 @@ func _ready() -> void:
 	# Connect melee system signals for visual effects
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
-	# Connect theme system
-	texture_theme_system.theme_changed.connect(_on_theme_changed)
+	# Theme system removed - no longer needed after arena simplification
 	Logger.info("Signals connected", "ui")
 	
 	# Arena subsystem signals will be connected after arena loads
@@ -377,8 +373,7 @@ func _input(event: InputEvent) -> void:
 		match event.keycode:
 			# Arena switching removed - now using single default arena
 			KEY_T:
-				Logger.info("Switching theme", "ui")
-				texture_theme_system.cycle_theme()
+				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
 				Logger.info("Manual pause toggle", "ui")
 				PauseManager.toggle_pause()
@@ -420,14 +415,7 @@ func _on_level_up(payload) -> void:
 	PauseManager.pause_game(true)
 	card_picker.open()
 
-func _on_theme_changed(theme_name: String) -> void:
-	Logger.info("Theme changed to: " + theme_name, "ui")
-	# Update all MultiMesh textures with new theme
-	_update_multimesh_textures()
-
-func _update_multimesh_textures() -> void:
-	# Simplified - no unused subsystem textures to update
-	Logger.debug("MultiMesh textures updated for theme", "ui")
+# Theme functions removed - no longer needed after arena simplification
 
 func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
 	pass
