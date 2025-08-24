@@ -34,6 +34,16 @@ signal player_position_changed(payload)   # PlayerPositionChangedPayload
 signal damage_dealt(payload)              # DamageDealtPayload
 ```
 
+### Enemy System Signals (UPDATED)
+```gdscript
+# WaveDirector → Arena communication (now uses typed objects)
+signal enemies_updated(alive_enemies: Array[EnemyEntity])  # ✅ UPDATED: Array[EnemyEntity] instead of Array[Dictionary]
+
+# Cross-system enemy references
+signal enemy_spawned(enemy: EnemyEntity)     # Individual spawn events  
+signal enemy_pool_exhausted()                # Pool management alerts
+```
+
 ### Interaction & Loot Signals
 ```gdscript
 # UI and gameplay interactions
@@ -134,6 +144,22 @@ XpSystem → EventBus.xp_changed → HUD._on_xp_changed()
 AbilitySystem → EventBus.level_up → Arena._on_level_up() → CardPicker.open()
 ```
 
+### Enemy System Signal Flow (UPDATED)
+```
+WaveDirector.enemies_updated(Array[EnemyEntity]) → Arena._on_enemies_updated()
+    ↓
+EnemyRenderTier.group_enemies_by_tier() → Dictionary arrays for MultiMesh
+    ↓
+MultiMeshInstance2D.multimesh.set_instance_transform_2d()
+```
+
+### Combat System Integration (UPDATED)
+```
+DamageSystem collision detection → WaveDirector.damage_enemy(pool_index)
+    ↓
+EnemyEntity.hp -= damage → EventBus.enemy_killed → XpSystem._on_enemy_killed()
+```
+
 ### EventBus → Systems → EventBus  
 ```
 Input → EventBus.ability_cast → AbilitySystem → EventBus.damage_requested → DamageSystem
@@ -150,10 +176,12 @@ EventBus.signal_name.connect(_on_signal_name)
 EventBus.signal_name.disconnect(_on_signal_name)
 ```
 
-### Current Connection Locations
-- **Arena.gd**: Lines 61, 367 (main signal hub)
-- **HUD.gd**: Lines 11-12 (UI updates)
-- **Main.gd**: Line 8 (debug combat step)
+### Current Connection Locations (UPDATED)
+- **Arena.gd**: Lines 61, 367 (main signal hub) - now processes enemies_updated with Array[EnemyEntity]
+- **HUD.gd**: Lines 11-12 (UI updates) - unchanged, uses typed payloads
+- **WaveDirector.gd**: Line 35 (enemies_updated signal) - emits typed Array[EnemyEntity]
+- **DamageSystem.gd**: Lines 18-19 (combat_step, damage_requested) - enhanced object identity collision
+- **MeleeSystem.gd**: Line 32 (combat_step) - now references WaveDirector for pool indexing
 
 ## Performance Considerations
 

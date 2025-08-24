@@ -4,8 +4,10 @@
 
 #todo #architecture #vibe-coding #godot4
 
-REMOVE LOGGER!
+doublecheck changelogs\features\24_08_2025-DICTIONARY_TO_ENEMYENTITY_MIGRATION.md
+escpecially dictionary for mesh and enemytypes for rest question?
 
+remove obstactlesystem.gd?!
 
 combat log
 dongerslider

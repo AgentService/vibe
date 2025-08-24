@@ -1,42 +1,49 @@
 # Enemy System Architecture
 
 **Status:** ✅ Implemented (August 2025)  
-**Architecture:** Pure JSON-driven with 4-tier visual classification  
-**Performance:** MultiMesh batch rendering for thousands of enemies
+**Architecture:** Typed EnemyEntity objects with JSON-driven configuration and 4-tier visual classification  
+**Performance:** MultiMesh batch rendering for thousands of enemies with pooled object management
 
 ## 🏗️ System Overview
 
-The enemy system follows a data-driven architecture where all enemy definitions live in JSON files, eliminating hardcoded fallbacks and enabling easy content expansion.
+The enemy system uses typed [[EnemyEntity]] objects backed by data-driven JSON configuration. All enemy definitions live in JSON files, with runtime objects providing type safety and performance optimization through object pooling.
 
 ### Core Principles
-- **JSON-Only**: No hardcoded enemy definitions, pure data-driven
-- **Tier-Based Rendering**: Size-based classification for visual distinction
-- **Weighted Spawning**: Configurable spawn probabilities per enemy type
-- **Visual Clarity**: Color-coded tiers for gameplay and debugging
+- **Typed Objects**: EnemyEntity provides compile-time safety while maintaining Dictionary compatibility
+- **JSON-Driven**: No hardcoded enemy definitions, pure data-driven configuration
+- **Tier-Based Rendering**: [[EnemyRenderTier]] system for visual hierarchy and performance scaling
+- **Object Pooling**: Pre-allocated enemy pools in [[WaveDirector]] for zero-allocation gameplay
+- **Visual Clarity**: Color-coded tiers for gameplay clarity and debugging support
 
 ## 📊 Data Flow Pipeline
 
 ```
-JSON Files → EnemyRegistry → EnemyRenderTier → MultiMesh Rendering
-    ↓              ↓               ↓                 ↓
-Registry     Individual      Tier Assignment    Visual Rendering
-Loading      Enemy Data      (Size + Type)      (Color + Animation)
+JSON Files → EnemyRegistry → WaveDirector → EnemyEntity Pool → EnemyRenderTier → MultiMesh
+    ↓              ↓             ↓              ↓                   ↓               ↓
+Registry     Individual     Pool Mgmt      Typed Objects      Tier Assignment   Rendering
+Loading      Enemy Data     (Spawning)     (Type Safety)      (Visual Routing)  (GPU Batch)
 ```
 
 ### 1. JSON Loading Phase
-- **Registry**: `enemy_registry.json` lists all available enemy types
-- **Individual**: Each `knight_*.json` contains complete enemy definition
-- **Validation**: Schema validation ensures consistent data structure
+- **Registry**: `enemy_registry.json` lists all available enemy types with spawn weights
+- **Individual**: Each `knight_*.json` contains complete enemy definition (health, speed, size, etc.)
+- **Validation**: Schema validation ensures consistent data structure and type safety
 
-### 2. Tier Assignment Phase
-- **Size-Based**: Primary assignment by pixel dimensions
-- **Type-Based**: Override for specific enemy types (knight_swarm, etc.)
-- **Fallback**: Size boundaries when type matching fails
+### 2. Object Pool Initialization
+- **Pool Creation**: [[WaveDirector]] pre-allocates Array[EnemyEntity] with max_enemies capacity
+- **Zero Allocation**: Runtime spawning reuses pooled objects, no garbage collection during gameplay
+- **Type Setup**: EnemyEntity.setup_with_type() configures pooled objects from [[EnemyType]] resources
 
-### 3. Rendering Phase
-- **MultiMesh**: Batch rendering for performance (thousands of enemies)
-- **Tier-Specific**: Different colors/animations per tier
-- **Animation Speed**: Varying frame rates (SWARM fast, others normal)
+### 3. Tier Assignment Phase
+- **[[EnemyRenderTier]]**: Converts Array[EnemyEntity] to Dictionary arrays grouped by visual tier
+- **Type-Based**: Primary assignment using EnemyType.render_tier property
+- **Size Fallback**: Pixel dimension boundaries when type data unavailable
+- **Dictionary Conversion**: EnemyEntity.to_dictionary() provides MultiMesh compatibility
+
+### 4. Rendering Phase
+- **Tier Routing**: Each tier (SWARM/REGULAR/ELITE/BOSS) uses dedicated MultiMeshInstance2D
+- **Batch Updates**: GPU instancing with tier-specific colors and transforms
+- **Performance Scaling**: SWARM enemies optimized for high counts, BOSS for individual detail
 
 ## 🎯 Enemy Type Specifications
 
@@ -66,6 +73,7 @@ match type_id:
 
 ## 🗂️ File Structure
 
+### Data Files
 ```
 /vibe/data/enemies/
 ├── config/
@@ -75,6 +83,19 @@ match type_id:
 ├── knight_regular.json        # Balanced enemies  
 ├── knight_elite.json          # Tank enemies
 └── knight_boss.json           # High-value enemies
+```
+
+### System Files
+```
+/vibe/scripts/
+├── domain/
+│   ├── EnemyType.gd           # JSON enemy definition wrapper
+│   └── EnemyEntity.gd         # Runtime typed enemy object
+└── systems/
+    ├── EnemyRegistry.gd       # JSON loading & weighted selection
+    ├── WaveDirector.gd        # Enemy pool management & spawning
+    ├── EnemyRenderTier.gd     # Visual tier assignment logic
+    └── EnemyBehaviorSystem.gd # AI patterns (chase/flee/patrol)
 ```
 
 ### Registry Configuration
@@ -129,18 +150,30 @@ match type_id:
 ## 🔧 Technical Implementation
 
 ### Key Components
-- **EnemyRegistry.gd**: JSON loading, type management, weighted selection
-- **EnemyRenderTier.gd**: Size/type-based tier assignment logic
-- **Arena.gd**: MultiMesh setup, tier-specific rendering, color assignment
-- **WaveDirector.gd**: Enemy spawning, integration with registry system
+- **[[EnemyEntity]]**: Typed runtime objects with Dictionary compatibility methods
+- **[[EnemyRegistry]]**: JSON loading, type management, weighted selection
+- **[[WaveDirector]]**: Object pool management, spawning logic, Array[EnemyEntity] maintenance
+- **[[EnemyRenderTier]]**: Tier assignment and Dictionary conversion for MultiMesh
+- **[[DamageSystem]]**: Updated collision detection with object identity matching
+- **[[MeleeSystem]]**: Enhanced to reference WaveDirector for proper pool indexing
+- **Arena.gd**: MultiMesh setup, tier-specific rendering, receives grouped Dictionary arrays
 
-### Error Handling
+### Error Handling & Type Safety
 ```gdscript
-# Graceful degradation
+# Entity validation
+func is_valid() -> bool:
+    return not type_id.is_empty() and max_hp > 0.0 and speed >= 0.0
+
+# Pool bounds checking
+func damage_enemy(enemy_index: int, damage: float) -> void:
+    if enemy_index < 0 or enemy_index >= max_enemies:
+        return
+
+# Graceful registry degradation
 if loaded_count == 0:
     Logger.error("JSON enemy loading failed completely", "enemies")
     Logger.error("Ensure knight JSON files exist in res://data/enemies/", "enemies")
-    # No fallback - system fails explicitly
+    # No fallback - system fails explicitly for data-driven purity
 ```
 
 ### Path Resolution
@@ -159,6 +192,41 @@ if loaded_count == 0:
 - **Spawn Distribution**: 40% SWARM, 30% REGULAR, 20% ELITE, 10% BOSS
 - **Risk/Reward**: Higher tiers = more HP + XP but lower frequency
 - **Performance Scaling**: SWARM enemies numerous but fast to kill
+
+## 🔗 Signal Architecture & Communication
+
+### [[EventBus]] Integration
+The enemy system communicates via typed signals for loose coupling:
+
+```gdscript
+# WaveDirector → Arena (rendering updates)
+signal enemies_updated(alive_enemies: Array[EnemyEntity])
+
+# DamageSystem → EventBus → XpSystem (enemy kills)
+EventBus.enemy_killed.emit(EnemyKilledPayload.new(death_pos, xp_value))
+
+# EventBus → All Systems (fixed-step updates)
+EventBus.combat_step.connect(_on_combat_step)
+```
+
+### Signal Flow Changes (August 2025 Update)
+- **enemies_updated**: Now emits Array[EnemyEntity] instead of Array[Dictionary]
+- **Object Identity**: Systems can now track enemies by reference instead of index
+- **Type Safety**: Payload objects provide compile-time guarantees
+- **Performance**: Cached alive enemy arrays reduce per-frame allocations
+
+### Cross-System Dependencies
+```
+WaveDirector (enemies: Array[EnemyEntity])
+    ↓ enemies_updated signal
+Arena.gd (rendering coordination)
+    ↓ EnemyRenderTier grouping
+MultiMeshInstance2D (GPU batch rendering)
+
+DamageSystem ← WaveDirector reference (pool index resolution)
+MeleeSystem ← WaveDirector reference (collision detection)
+EnemyBehaviorSystem ← WaveDirector signal (AI updates)
+```
 
 ## 🚀 Future Enhancements
 

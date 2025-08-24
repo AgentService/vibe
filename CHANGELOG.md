@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
+  - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
+  - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety
+  - **Component-Structure-Reference.md**: Updated system dependencies and communication patterns for typed enemy system
+  - **EventBus-System.md**: Updated signal architecture with Array[EnemyEntity] flows and cross-system integration patterns
+  - **Data-Systems-Architecture.md**: Added typed enemy system section with object pool management and hot-reload support
+  - **systems/README.md**: Updated to include new documentation files and current implementation status
 - **Complete TRES Migration for Configuration Files**: Migrated all configuration files from JSON to .tres resources
   - **LogConfigResource**: Migrated debug/log_config.json to log_config.tres with type-safe enum validation
   - **RadarConfigResource**: Migrated ui/radar.json to radar_config.tres with Color properties and Inspector editing
