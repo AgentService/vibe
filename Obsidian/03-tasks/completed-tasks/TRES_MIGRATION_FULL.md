@@ -196,7 +196,7 @@ Use JSON for:
 **Related Documents:**
 - [[TRES_MIGRATION_TEST_SWARM]] - Prerequisite test phase
 - [[ContentDB-Architecture-Enhancement]] - Overall architecture plan
-- [[CONVERSATION_SUMMARY_CONTEXT_DECISIONS_NEXT_STEPS]] - Project context
+- [[Auto 1]] - Project context
 
 **Status Dependencies:**
 - Can only proceed if swarm test is successful
