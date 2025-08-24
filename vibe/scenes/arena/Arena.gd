@@ -195,6 +195,7 @@ func _setup_projectile_multimesh() -> void:
 	img.fill(Color(1.0, 1.0, 0.0, 1.0))
 	var tex := ImageTexture.create_from_image(img)
 	mm_projectiles.texture = tex
+	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
 
@@ -218,7 +219,7 @@ func _setup_tier_multimeshes() -> void:
 	else:
 		Logger.error("SWARM tier .tres animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
-	mm_enemies_swarm.z_index = -1  # Render behind sprites
+	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
 	# Setup REGULAR tier MultiMesh (medium rectangles)
 	var regular_multimesh := MultiMesh.new()
@@ -235,7 +236,7 @@ func _setup_tier_multimeshes() -> void:
 	else:
 		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
-	mm_enemies_regular.z_index = -1  # Render behind sprites
+	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
 	# Setup ELITE tier MultiMesh (large diamonds)
 	var elite_multimesh := MultiMesh.new()
@@ -252,7 +253,7 @@ func _setup_tier_multimeshes() -> void:
 	else:
 		Logger.error("ELITE tier .tres animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
-	mm_enemies_elite.z_index = -1  # Render behind sprites
+	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
 	# Setup BOSS tier MultiMesh (large diamonds)
 	var boss_multimesh := MultiMesh.new()
@@ -269,7 +270,7 @@ func _setup_tier_multimeshes() -> void:
 	else:
 		Logger.error("BOSS tier .tres animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
-	mm_enemies_boss.z_index = -1  # Render behind sprites
+	mm_enemies_boss.z_index = 0  # Gameplay entities layer
 	
 	Logger.debug("Tier MultiMesh instances initialized", "enemies")
 

@@ -54,7 +54,8 @@
       "Read(/C:\\c\\SAPDevelop\\Godot\\root/**)",
       "Read(/C:\\c\\SAPDevelop\\Godot\\root/**)",
       "Read(/C:\\c\\SAPDevelop\\Godot\\root/**)",
-      "Read(/C:\\c\\SAPDevelop\\Godot/**)"
+      "Read(/C:\\c\\SAPDevelop\\Godot/**)",
+      "WebFetch(domain:docs.godotengine.org)"
     ],
     "deny": [],
     "ask": [],

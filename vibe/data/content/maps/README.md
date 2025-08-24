@@ -1,88 +1,76 @@
-# Map Definitions
+# Maps Structure
 
-Level and arena layout definitions for game environments.
+Map organization for the vibe game. Supports both quick prototyping and systematic map creation.
 
-## Implementation Status
+## Folders
 
-**Status**: 📋 **TODO** - Not yet implemented
+### `/tilesets/`
+- Shared TileSet resources (`.tres`)
+- Physics layers, collision shapes, metadata
+- Examples: `dungeon_tileset.tres`, `outdoor_tileset.tres`
 
-Current arena data exists in `/data/arena/` but will be integrated into this system.
+### `/prototypes/`
+- Quick test maps created directly in Godot editor
+- Fast iteration for gameplay experiments
+- Save as `.tscn` scenes for immediate testing
+- Examples: `test_arena_01.tscn`, `wall_test.tscn`
 
-## Planned Features
+### `/survival/`
+- Wave survival mode maps
+- Focus on enemy spawn zones and player movement
+- Examples: `survival_basic.tscn`, `survival_cramped.tscn`
 
-When implemented, maps will include:
-- **Layout definitions** with tile/object placement
-- **Spawn point configurations** for enemies and players
-- **Environmental hazards** and interactive elements
-- **Navigation mesh** data for AI pathfinding
-- **Visual themes** and asset references
-- **Difficulty scaling** properties
+### `/boss/`
+- Boss encounter arenas
+- Specialized layouts for boss mechanics
+- Examples: `boss_arena_01.tscn`, `boss_circular.tscn`
 
-## Authoring Options
+### `/templates/`
+- Base scenes for inheritance
+- Common setup (lighting, background, etc.)
+- Examples: `base_map.tscn`, `base_arena.tscn`
 
-### Option 1: Tiled Integration
-- Use **Tiled Map Editor** for visual design
-- Import TMX/JSON files into Godot
-- Standardized layer names:
-  - `Collision` - Solid barriers
-  - `Spawns_Enemy` - Enemy spawn points  
-  - `Spawns_Player` - Player start positions
-  - `Navigation` - Pathfinding mesh
-  - `Triggers` - Interactive zones
+## Workflow
 
-### Option 2: Data-Driven Maps
-- Pure JSON definitions for procedural generation
-- Runtime instantiation of map elements
-- More flexible for dynamic content
+1. **Prototype**: Create directly in editor → save to `/prototypes/`
+2. **Iterate**: Test gameplay, adjust collision, spawn zones
+3. **Systematize**: Extract common patterns → create tilesets
+4. **Organize**: Move polished maps to appropriate category folders
 
-### Option 3: Hybrid Approach
-- Base layouts from Tiled
-- Dynamic elements via JSON overlay
-- Best of both worlds
+## TileMapLayer Convention
 
-## Schema (Planned)
+- **Layer 0**: Floor (visual, no collision)
+- **Layer 1**: Walls (collision + visual)
+- **Layer 2**: Obstacles (destructible/interactive)
+- **Layer 3**: Spawn zones (metadata only)
+- **Layer 4**: Special areas (buffs, hazards)
 
-Maps will use Godot Resources (.tres files) following the pattern established by the enemy system:
+## Z-Index Standards (Rendering Order)
 
-```tres
-[gd_resource type="Resource" script_class="MapType" load_steps=2 format=3]
-[ext_resource type="Script" path="res://scripts/domain/MapType.gd" id="1"]
-[resource]
-script = ExtResource("1")
-id = "basic_arena"
-display_name = "Training Arena"
-map_type = "arena"
-width = 800
-height = 600
-player_spawn_x = 400.0
-player_spawn_y = 300.0
-enemy_spawn_zones = [Vector2(100, 100), Vector2(700, 500)]
-spawn_zone_radius = 50.0
-collision_layers = ["walls", "obstacles"]
-theme = "dungeon"
-enemy_spawn_rate_modifier = 1.0
-environmental_hazards_enabled = false
+**Best Practice**: Simple sequential layering
+
+```
+0: Floor tiles, enemies, player (gameplay layer)
+1: Walls, obstacles (collision barriers)
+2: Projectiles, effects
+3: Particles, UI overlays
 ```
 
-## Integration Standards
+**TileMapLayer Z-Index:**
+- FloorLayer: z_index = 0 (same as gameplay)
+- WallLayer: z_index = 1 (above gameplay)
+- ObstacleLayer: z_index = 1 (above gameplay)
+- SpawnZoneLayer: z_index = 0 (invisible anyway)
 
-- **Decouple spawn system** from map assets
-- **Consistent metadata** for spawns, triggers, zones
-- **Modular design** for easy iteration
-- **Hot-reload support** for rapid development
+**MultiMesh Z-Index:**
+- Enemies: z_index = 0 (gameplay layer)
+- Projectiles: z_index = 2 (above walls)
 
-## Related Systems (Future)
+## Integration
 
-- **ContentDB**: Will load map definitions
-- **Arena System**: Current arena management (will integrate)
-- **Wave Director**: Uses spawn configurations
-- **Navigation System**: Pathfinding integration
-- **Map Editor**: Visual editing tools
+Maps load via `ArenaSystem.gd` - currently loads basic bounds from `.tres`, will be extended to load full map scenes.
 
-## Hot-Reload
+## Current Status
 
-Will support **automatic hot-reload** when implemented, using Godot's native resource reloading system.
-
----
-
-**Next Steps**: Choose authoring approach and define map schema
+**✅ Folder structure created**
+**⏳ Next**: Open Arena.tscn → Add TileMap → Start prototyping

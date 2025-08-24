@@ -1,11 +1,11 @@
 extends Node
 
-## Simplified arena management system that loads a single default arena.
-## Follows the project's system architecture with .tres resource configuration.
+## Arena management system - bounds now determined by TileMapLayer walls in editor.
+## Spawn zones and arena center calculated from actual tile geometry.
 
 signal arena_loaded(arena_bounds: Rect2)
 
-var arena_bounds: Rect2 = Rect2(-400, -300, 800, 600)  # Default bounds
+var arena_bounds: Rect2 = Rect2()  # Will be calculated from TileMapLayer
 var arena_center: Vector2 = Vector2.ZERO
 var spawn_radius: float = 200.0
 
@@ -54,7 +54,7 @@ func get_random_spawn_position() -> Vector2:
 	return arena_center + Vector2(cos(angle), sin(angle)) * distance
 
 func cleanup() -> void:
-	# Simple cleanup - reset to defaults
-	arena_bounds = Rect2(-400, -300, 800, 600)
+	# Simple cleanup - reset to empty (bounds will be recalculated from tiles)
+	arena_bounds = Rect2()
 	arena_center = Vector2.ZERO
 	spawn_radius = 200.0
