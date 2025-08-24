@@ -17,6 +17,16 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
   @onready var ability_system: AbilitySystem = AbilitySystem.new()
   EventBus.level_up.connect(_on_level_up)  # UI responses only
   ```
+  
+  **Exception:** Scenes may import pure Resource configuration classes from domain:
+  ```gdscript
+  # ✅ Allowed - Pure Resource config classes
+  const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+  const ArenaConfig = preload("res://scripts/domain/ArenaConfig.gd")
+  
+  # ❌ Not allowed - Business logic classes
+  const EnemyEntity = preload("res://scripts/domain/EnemyEntity.gd")
+  ```
 - **Systems (Rules):** Ability, Damage, Wave, Item, SkillTree. Compute results; emit signals.
   ```gdscript
   # AbilitySystem.gd - system layer  

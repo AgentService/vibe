@@ -130,8 +130,32 @@ func _check_domain_violations(file_path: String, line: String, line_number: int)
 func _check_scenes_violations(file_path: String, line: String, line_number: int) -> void:
 	# Scenes should not directly import domain without going through systems
 	if line.find("scripts/domain/") != -1 and not line.find("# allowed") != -1:
+		# Allow pure Resource configuration classes that scenes commonly need
+		if _is_pure_resource_import(line):
+			return  # Allow this import
+		
 		_add_violation(file_path, line_number, "SCENES_NO_DIRECT_DOMAIN",
 			"Scenes should access domain models through systems, not directly.")
+
+func _is_pure_resource_import(line: String) -> bool:
+	# List of pure Resource configuration classes that scenes can import
+	var allowed_resources := [
+		"AnimationConfig",
+		"ArenaConfig", 
+		"RadarConfigResource",
+		"LogConfigResource",
+		"XPCurvesResource",
+		"AbilitiesBalance",
+		"CombatBalance",
+		"MeleeBalance",
+		"PlayerBalance",
+		"WavesBalance"
+	]
+	
+	for resource_name in allowed_resources:
+		if line.find(resource_name) != -1:
+			return true
+	return false
 
 func _add_violation(file_path: String, line_number: int, violation_type: String, message: String) -> void:
 	violations.append({

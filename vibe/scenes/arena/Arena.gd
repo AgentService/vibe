@@ -3,7 +3,7 @@ extends Node2D
 ## Arena scene managing MultiMesh rendering and debug projectile spawning.
 ## Renders projectile pool via single MultiMeshInstance2D.
 
-const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")

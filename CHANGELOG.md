@@ -5,6 +5,11 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
+  - **Pure Resource Exception**: Scenes can now import configuration Resources (AnimationConfig, ArenaConfig, etc.) directly
+  - **Whitelist System**: Added whitelist of approved Resource classes that scenes commonly need
+  - **Documentation**: Updated ARCHITECTURE.md with clear examples of allowed vs disallowed imports
+  - **Pragmatic Approach**: Balances architectural purity with practical game development needs
 - **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
   - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
   - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety

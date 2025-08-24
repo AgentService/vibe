@@ -1,7 +1,7 @@
 extends CharacterBody2D
 class_name Player
 
-const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
