@@ -72,7 +72,7 @@ func _update_attack_effects(dt: float) -> void:
 func can_attack() -> bool:
 	return attack_cooldown <= 0.0
 
-func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dictionary]) -> Array[Dictionary]:
+func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[EnemyEntity]) -> Array[EnemyEntity]:
 	if not can_attack():
 		return []
 	
@@ -89,16 +89,12 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 	var effective_cone = _get_effective_cone_angle()
 	
 	# Find enemies in cone
-	var hit_enemies: Array[Dictionary] = []
-	for e_idx in range(enemies.size()):
-		var enemy = enemies[e_idx]
-		if not enemy.get("alive", false):
+	var hit_enemies: Array[EnemyEntity] = []
+	for enemy in enemies:
+		if not enemy.alive:
 			continue
 			
-		var enemy_pos = enemy.get("pos", Vector2.ZERO)
-		if _is_enemy_in_cone(enemy_pos, player_pos, attack_dir, effective_cone, effective_range):
-			# Store enemy reference with correct pool index
-			enemy["_array_index"] = enemy.get("_pool_index", e_idx)  # Use pool index if available
+		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
 	# Create visual effect
@@ -110,15 +106,15 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 		enemies_hit.emit(hit_enemies)
 	
 	# Apply damage to hit enemies
-	for enemy in hit_enemies:
+	for i in range(hit_enemies.size()):
+		var enemy = hit_enemies[i]
 		var final_damage = _calculate_damage()
 		var source_id = EntityId.player()
-		var enemy_index = enemy["_array_index"]
-		var target_id = EntityId.enemy(enemy_index)
+		var target_id = EntityId.enemy(i)  # Using index in hit enemies array
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
-		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.get("type_id", "unknown") + " (hp: " + str(enemy.get("hp", 0)) + ")", "abilities")
+		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
 	
 	
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")

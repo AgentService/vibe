@@ -56,7 +56,7 @@ func should_use_multimesh(tier: Tier) -> bool:
 
 
 ## Get all enemy instances grouped by tier (for Arena.gd)
-func group_enemies_by_tier(alive_enemies: Array[Dictionary], enemy_registry: EnemyRegistry) -> Dictionary:
+func group_enemies_by_tier(alive_enemies: Array[EnemyEntity], enemy_registry: EnemyRegistry) -> Dictionary:
 	var swarm_enemies: Array[Dictionary] = []
 	var regular_enemies: Array[Dictionary] = []
 	var elite_enemies: Array[Dictionary] = []
@@ -72,29 +72,29 @@ func group_enemies_by_tier(alive_enemies: Array[Dictionary], enemy_registry: Ene
 		}
 	
 	for enemy in alive_enemies:
-		var type_id: String = enemy.get("type_id", "")
-		if type_id.is_empty():
+		if enemy.type_id.is_empty():
 			Logger.warn("Enemy instance missing type_id, defaulting to REGULAR tier", "enemies")
-			regular_enemies.append(enemy)
+			regular_enemies.append(enemy.to_dictionary())
 			continue
 		
-		var enemy_type: EnemyType = enemy_registry.get_enemy_type(type_id)
+		var enemy_type: EnemyType = enemy_registry.get_enemy_type(enemy.type_id)
 		if not enemy_type:
-			Logger.warn("Enemy type not found for ID: " + type_id + ", defaulting to REGULAR tier", "enemies")
-			regular_enemies.append(enemy)
+			Logger.warn("Enemy type not found for ID: " + enemy.type_id + ", defaulting to REGULAR tier", "enemies")
+			regular_enemies.append(enemy.to_dictionary())
 			continue
 		
 		var tier: Tier = get_tier_for_enemy(enemy_type)
+		var enemy_dict: Dictionary = enemy.to_dictionary()
 		
 		match tier:
 			Tier.SWARM:
-				swarm_enemies.append(enemy)
+				swarm_enemies.append(enemy_dict)
 			Tier.REGULAR:
-				regular_enemies.append(enemy)
+				regular_enemies.append(enemy_dict)
 			Tier.ELITE:
-				elite_enemies.append(enemy)
+				elite_enemies.append(enemy_dict)
 			Tier.BOSS:
-				boss_enemies.append(enemy)
+				boss_enemies.append(enemy_dict)
 	
 	return {
 		Tier.SWARM: swarm_enemies,

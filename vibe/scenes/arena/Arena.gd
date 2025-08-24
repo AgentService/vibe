@@ -384,7 +384,7 @@ func _on_card_selected(card: CardResource) -> void:
 
 # Theme functions removed - no longer needed after arena simplification
 
-func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
+func _on_enemies_updated(alive_enemies: Array[EnemyEntity]) -> void:
 	pass
 
 func _handle_melee_attack(target_pos: Vector2) -> void:
@@ -484,7 +484,7 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		proj_transform.origin = projectile["pos"]
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
-func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
+func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 	if enemy_render_tier == null:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
 		return
@@ -648,14 +648,14 @@ func get_debug_stats() -> Dictionary:
 	var stats: Dictionary = {}
 	
 	if wave_director:
-		var alive_enemies: Array[Dictionary] = wave_director.get_alive_enemies()
+		var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
 		stats["enemy_count"] = alive_enemies.size()
 		
 		# Add culling stats
 		var visible_rect: Rect2 = _get_visible_world_rect()
 		var visible_count: int = 0
 		for enemy in alive_enemies:
-			if _is_enemy_visible(enemy["pos"], visible_rect):
+			if _is_enemy_visible(enemy.pos, visible_rect):
 				visible_count += 1
 		stats["visible_enemies"] = visible_count
 	
