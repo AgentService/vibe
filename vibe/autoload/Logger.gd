@@ -34,7 +34,7 @@ func _log(level: LogLevel, msg: String, category: String) -> void:
 	if level < current_level:
 		return
 	
-	# Category filtering - if no categories defined, all are enabled
+	# Category filtering - if no categorieddddds defined, all are enabled
 	if not enabled_categories.is_empty() and category != "":
 		if not enabled_categories.get(category, false):
 			return
