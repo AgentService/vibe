@@ -7,6 +7,7 @@ const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
+const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
 # TextureThemeSystem removed - no longer needed after arena simplification
@@ -62,6 +63,8 @@ var enemy_render_tier: EnemyRenderTier
 var player: Player
 var xp_system: XpSystem
 var hud: HUD
+var card_system: CardSystem
+var card_selection: CardSelection
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -169,6 +172,8 @@ func _ready() -> void:
 	_setup_xp_system()
 	Logger.info("Starting UI setup...", "ui")
 	_setup_ui()
+	Logger.info("Starting card system setup...", "ui")
+	_setup_card_system()
 	Logger.info("Setup functions completed", "ui")
 	
 	# Set player reference in PlayerState for cached position access
@@ -381,6 +386,9 @@ func _input(event: InputEvent) -> void:
 			KEY_F12:
 				Logger.info("Performance stats toggle", "performance")
 				_toggle_performance_stats()
+			KEY_C:
+				Logger.info("Manual card selection test", "debug")
+				_test_card_selection()
 
 func _setup_player() -> void:
 	player = PLAYER_SCENE.instantiate()
@@ -404,11 +412,46 @@ func _setup_ui() -> void:
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
 	
+	card_selection = CARD_SELECTION_SCENE.instantiate()
+	ui_layer.add_child(card_selection)
 
+func _setup_card_system() -> void:
+	card_system = CardSystem.new()
+	add_child(card_system)
+	
+	# Connect card selection signals
+	card_selection.card_selected.connect(_on_card_selected)
+	card_selection.setup_card_system(card_system)
+	
+	Logger.info("Card system initialized", "cards")
 
 func _on_level_up(payload) -> void:
-	# TODO: Implement new card selection system
-	Logger.info("Level up! (Card selection temporarily disabled)", "player")
+	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
+	
+	if not card_system:
+		Logger.error("Card system not initialized", "cards")
+		return
+	
+	# Get card selection for current level
+	var cards: Array[CardResource] = card_system.get_card_selection(payload.new_level, 3)
+	
+	if cards.is_empty():
+		Logger.warn("No cards available for level " + str(payload.new_level), "cards")
+		return
+	
+	# Pause game and show card selection
+	Logger.debug("About to pause game for card selection", "cards")
+	PauseManager.pause_game(true)
+	Logger.debug("Game paused, opening card selection", "cards")
+	card_selection.open_with_cards(cards)
+
+func _on_card_selected(card: CardResource) -> void:
+	if not card:
+		Logger.error("Null card selected", "cards")
+		return
+	
+	Logger.info("Player selected card: " + card.name, "cards")
+	card_system.apply_card(card)
 
 # Theme functions removed - no longer needed after arena simplification
 
@@ -622,6 +665,26 @@ func _spawn_stress_test_enemies() -> void:
 	
 	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
 
+func _test_card_selection() -> void:
+	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
+	if not card_system:
+		Logger.error("Card system not available for test", "debug")
+		return
+	
+	# Simulate level up with level 1 cards
+	var test_cards: Array[CardResource] = card_system.get_card_selection(1, 3)
+	Logger.info("Got " + str(test_cards.size()) + " test cards", "debug")
+	
+	if test_cards.is_empty():
+		Logger.error("No test cards available", "debug")
+		return
+	
+	Logger.info("Pausing game for manual test", "debug")
+	PauseManager.pause_game(true)
+	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
+	Logger.info("Opening card selection manually", "debug")
+	card_selection.open_with_cards(test_cards)
+
 func _toggle_performance_stats() -> void:
 	# Force HUD debug overlay toggle
 	if hud and hud.has_method("_toggle_debug_overlay"):
@@ -634,7 +697,9 @@ func _toggle_performance_stats() -> void:
 
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
+	Logger.info("C: Test card selection", "ui")
 	Logger.info("F10: Pause/resume toggle", "ui")
+	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
 	Logger.info("F12: Performance stats toggle", "ui")
 	Logger.info("WASD: Move player", "ui")
 	Logger.info("FPS overlay: Always visible", "ui")

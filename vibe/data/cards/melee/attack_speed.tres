@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardResource" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CardResource.gd" id="1_speed"]
+
+[resource]
+script = ExtResource("1_speed")
+card_id = "card_melee_attack_speed"
+name = "Swift Strike"
+description = "Faster Attacks (+0.3 attacks per second)"
+level_requirement = 1
+weight = 7
+modifiers = {
+"melee_attack_speed_add": 0.3
+}

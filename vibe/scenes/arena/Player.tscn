@@ -9,4 +9,3 @@ script = ExtResource("1_dn4kl")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)
-animation = &""

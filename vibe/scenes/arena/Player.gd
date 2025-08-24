@@ -58,8 +58,10 @@ func _setup_editor_animation_fallback() -> void:
 		# Try to play "idle" if it exists, otherwise play the first animation
 		if animated_sprite.sprite_frames.has_animation("idle"):
 			animated_sprite.play("idle")
+			current_animation = "idle"
 		else:
 			animated_sprite.play(animation_names[0])
+			current_animation = animation_names[0]
 		Logger.info("Started editor animation: " + animated_sprite.animation, "player")
 
 func _physics_process(delta: float) -> void:
@@ -182,7 +184,16 @@ func _setup_sprite_frames() -> void:
 		sprite_frames.set_animation_loop(anim_name, anim_data.loop)
 	
 	animated_sprite.sprite_frames = sprite_frames
-	animated_sprite.play("idle")
+	if sprite_frames.has_animation("idle"):
+		animated_sprite.play("idle")
+		current_animation = "idle"
+	else:
+		# If no idle animation, use the first available animation
+		var animation_names = sprite_frames.get_animation_names()
+		if animation_names.size() > 0:
+			animated_sprite.play(animation_names[0])
+			current_animation = animation_names[0]
+			Logger.warn("No 'idle' animation found, using: " + animation_names[0], "player")
 	Logger.info("Knight sprite frames setup complete", "player")
 
 func _handle_facing() -> void:
@@ -217,6 +228,11 @@ func get_max_health() -> int:
 	return max_health
 
 func _play_animation(anim_name: String) -> void:
+	# Guard against empty animation names
+	if anim_name == "":
+		Logger.warn("Attempted to play empty animation name", "player")
+		return
+		
 	if animated_sprite.sprite_frames == null:
 		Logger.warn("Player sprite_frames is null, cannot play animation: " + anim_name, "player")
 		return

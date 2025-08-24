@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardResource" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CardResource.gd" id="1_unlock"]
+
+[resource]
+script = ExtResource("1_unlock")
+card_id = "card_unlock_projectiles"
+name = "Projectile Mastery"
+description = "Unlock projectile attacks (right-click to cast)"
+level_requirement = 10
+weight = 5
+modifiers = {
+"has_projectiles": true,
+"projectile_count_add": 1.0
+}

@@ -46,7 +46,9 @@
       "Bash(git add:*)",
       "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --script test_balance_tres.gd)",
       "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --script test_card_visibility.gd)",
-      "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --script fix_card_tres_paths.gd)"
+      "Bash(\"./Godot_v4.4.1-stable_win64_console.exe\" --headless --script fix_card_tres_paths.gd)",
+      "Bash(\"../Godot_v4.4.1-stable_win64_console.exe\" --headless --script test_resource_loading.gd)",
+      "Bash(/c/SAPDevelop/Godot/Godot_v4.4.1-stable_win64_console.exe --headless --quit-after 5)"
     ],
     "deny": [],
     "ask": [],
