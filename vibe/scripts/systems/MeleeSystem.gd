@@ -5,6 +5,7 @@ extends Node
 
 class_name MeleeSystem
 
+var wave_director: WaveDirector
 var attack_cooldown: float = 0.0
 var is_attacking: bool = false
 var attack_duration: float = 0.2  # Visual attack duration
@@ -106,11 +107,15 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		enemies_hit.emit(hit_enemies)
 	
 	# Apply damage to hit enemies
-	for i in range(hit_enemies.size()):
-		var enemy = hit_enemies[i]
+	for enemy in hit_enemies:
 		var final_damage = _calculate_damage()
 		var source_id = EntityId.player()
-		var target_id = EntityId.enemy(i)  # Using index in hit enemies array
+		# Find the actual enemy pool index
+		var enemy_pool_index = _find_enemy_pool_index(enemy)
+		if enemy_pool_index == -1:
+			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
+			continue
+		var target_id = EntityId.enemy(enemy_pool_index)
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
@@ -203,3 +208,18 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
+
+func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
+	if not wave_director:
+		Logger.error("WaveDirector reference not set in MeleeSystem", "combat")
+		return -1
+		
+	for i in range(wave_director.enemies.size()):
+		var enemy := wave_director.enemies[i]
+		# Use object identity instead of position comparison for reliability
+		if enemy == target_enemy and enemy.alive:
+			return i
+	return -1
+
+func set_wave_director_reference(wd: WaveDirector) -> void:
+	wave_director = wd

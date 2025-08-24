@@ -100,9 +100,9 @@ func _update_enemy_positions() -> void:
 			if "wave_director" in arena:
 				var wave_director = arena.wave_director
 				if wave_director:
-					var alive_enemies: Array[Dictionary] = wave_director.get_alive_enemies()
+					var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
 					for enemy in alive_enemies:
-						enemy_positions.append(enemy["pos"])
+						enemy_positions.append(enemy.pos)
 			break
 		current = current.get_parent()
 

@@ -111,6 +111,10 @@ func _ready() -> void:
 	if damage_system and ability_system and wave_director:
 		damage_system.set_references(ability_system, wave_director)
 	
+	# Set references for melee system
+	if melee_system and wave_director:
+		melee_system.set_wave_director_reference(wave_director)
+	
 	# Create enemy render tier system
 	if EnemyRenderTier == null:
 		Logger.error("EnemyRenderTier class is null!", "ui")
@@ -575,7 +579,7 @@ func _spawn_stress_test_enemies() -> void:
 		return
 	
 	var target_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_count: int = 1000
+	var spawn_count: int = 2000
 	var spawned: int = 0
 	
 	for i in range(spawn_count):
@@ -584,7 +588,7 @@ func _spawn_stress_test_enemies() -> void:
 		var distance: float = 300.0 + (i % 10) * 100.0  # Vary distances
 		var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * distance
 		
-		if wave_director.spawn_enemy_at(spawn_pos, "grunt"):
+		if wave_director.spawn_enemy_at(spawn_pos, "knight_boss"):
 			spawned += 1
 		else:
 			break  # Pool exhausted

@@ -42,7 +42,10 @@ func _check_projectile_enemy_collisions() -> void:
 		
 		for e_idx in range(alive_enemies.size()):
 			var enemy := alive_enemies[e_idx]
-			var enemy_pos := enemy["pos"] as Vector2
+			# Additional safety check - skip if enemy died between getting alive list and now
+			if not enemy.alive:
+				continue
+			var enemy_pos := enemy.pos as Vector2
 			
 			var distance := proj_pos.distance_to(enemy_pos)
 			var collision_distance := projectile_radius + enemy_radius
@@ -50,7 +53,7 @@ func _check_projectile_enemy_collisions() -> void:
 			if distance <= collision_distance:
 				_handle_collision(projectile, enemy, p_idx, e_idx)
 
-func _handle_collision(projectile: Dictionary, enemy: Dictionary, proj_idx: int, enemy_idx: int) -> void:
+func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, proj_idx: int, enemy_idx: int) -> void:
 	# Find the actual pool indices
 	var actual_proj_idx := _find_projectile_pool_index(projectile)
 	var actual_enemy_idx := _find_enemy_pool_index(enemy)
@@ -79,10 +82,11 @@ func _find_projectile_pool_index(target_projectile: Dictionary) -> int:
 			return i
 	return -1
 
-func _find_enemy_pool_index(target_enemy: Dictionary) -> int:
+func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
 	for i in range(wave_director.enemies.size()):
 		var enemy := wave_director.enemies[i]
-		if enemy["alive"] and enemy["pos"] == target_enemy["pos"]:
+		# Use object identity instead of position comparison for reliability
+		if enemy == target_enemy and enemy.alive:
 			return i
 	return -1
 
@@ -118,22 +122,23 @@ func _on_damage_requested(payload) -> void:
 	if payload.target_id.type != EntityId.Type.ENEMY:
 		return
 	
+	# Get enemy info before damage for better logging
+	var enemy_info = "unknown"
+	var pre_damage_hp = 0.0
+	if wave_director and payload.target_id.index < wave_director.enemies.size():
+		var enemy = wave_director.enemies[payload.target_id.index]
+		if not enemy.alive:
+			Logger.warn("Damage requested on already dead enemy[%d] %s" % [payload.target_id.index, enemy.type_id], "combat")
+			return
+		enemy_info = enemy.type_id
+		pre_damage_hp = enemy.hp
+	
 	# Calculate final damage (add crit, modifiers, etc. here)
 	var is_crit: bool = RNG.randf("crit") < 0.1  # 10% crit chance
 	var final_damage: float = payload.base_damage * (2.0 if is_crit else 1.0)
 	
-	
-	# Apply damage to enemy
+	# Apply damage to enemy (this will handle death logic)
 	wave_director.damage_enemy(payload.target_id.index, final_damage)
-	
-	# Get enemy info for detailed logging
-	var enemy_info = "unknown"
-	if wave_director and payload.target_id.index < wave_director.enemies.size():
-		var enemy = wave_director.enemies[payload.target_id.index]
-		enemy_info = "%s (hp: %.1f)" % [enemy.get("type_id", "unknown"), enemy.get("hp", 0)]
-	
-	# Log damage for verification
-	Logger.info("DAMAGE APPLIED: Enemy[%d] %s took %.1f damage%s" % [payload.target_id.index, enemy_info, final_damage, " (CRIT!)" if is_crit else ""], "combat")
 	
 	# Emit damage applied signal
 	var applied_payload := EventBus.DamageAppliedPayload.new(payload.target_id, final_damage, is_crit, payload.tags)
