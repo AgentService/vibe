@@ -133,39 +133,19 @@ func _create_card_button(card: CardResource, index: int) -> Control:
 	top_spacer.custom_minimum_size = Vector2(0, 20)
 	vbox.add_child(top_spacer)
 	
-	# Create visual icon area
+	# Create visual icon area (no background circle)
 	var icon_container: CenterContainer = CenterContainer.new()
 	icon_container.custom_minimum_size = Vector2(0, 80)
 	vbox.add_child(icon_container)
 	
-	# Create icon background circle
-	var icon_bg: Panel = Panel.new()
-	icon_bg.custom_minimum_size = Vector2(64, 64)
-	icon_bg.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	icon_container.add_child(icon_bg)
-	
-	var icon_style: StyleBoxFlat = StyleBoxFlat.new()
-	icon_style.bg_color = Color(1.0, 1.0, 1.0, 0.2)
-	icon_style.corner_radius_top_left = 32
-	icon_style.corner_radius_top_right = 32
-	icon_style.corner_radius_bottom_left = 32
-	icon_style.corner_radius_bottom_right = 32
-	icon_style.border_width_left = 2
-	icon_style.border_width_right = 2
-	icon_style.border_width_top = 2
-	icon_style.border_width_bottom = 2
-	icon_style.border_color = Color(1.0, 1.0, 1.0, 0.4)
-	icon_bg.add_theme_stylebox_override("panel", icon_style)
-	
-	# Add icon symbol (using text for now)
+	# Add icon symbol directly without background - much bigger
 	var icon_label: Label = Label.new()
 	icon_label.text = _get_card_icon_symbol(card)
-	icon_label.add_theme_font_size_override("font_size", 28)
+	icon_label.add_theme_font_size_override("font_size", 48)
 	icon_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 0.9))
 	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	icon_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icon_bg.add_child(icon_label)
+	icon_container.add_child(icon_label)
 	
 	# Card title
 	var title_label: Label = Label.new()
