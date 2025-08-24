@@ -7,7 +7,7 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
 - **ADD LEARNINGS TO LESSONS_LEARNED.md** after task completion if applicable (new patterns, solutions, or insights discovered)
 - **ALWAYS CHECK CLAUDE.md** before starting any task
 
-- *“YOU MUST keep tunables in /godot/data/* (JSON)”
+- *"YOU MUST keep tunables in /vibe/data/* (.tres resources)"
 
 
 ## Layers
@@ -31,7 +31,7 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
   var damage: float
   func get_modified_damage(stats: Dictionary) -> float: ...
   ```
-- **Autoloads (Glue):** RunManager (flow, fixed step), EventBus (global signals), RNG (seeded streams), ContentDB (JSON load), Balance (curves).
+- **Autoloads (Glue):** RunManager (flow, fixed step), EventBus (global signals), RNG (seeded streams), ContentDB (.tres load), BalanceDB (resource loading).
 
 ## Fixed-Step Combat Loop (Decision 5A)
 ```gdscript

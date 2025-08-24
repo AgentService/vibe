@@ -4,6 +4,24 @@
 
 ## [Current Week - In Progress]
 
+### Added
+- **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
+  - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
+  - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety
+  - **Component-Structure-Reference.md**: Updated system dependencies and communication patterns for typed enemy system
+  - **EventBus-System.md**: Updated signal architecture with Array[EnemyEntity] flows and cross-system integration patterns
+  - **Data-Systems-Architecture.md**: Added typed enemy system section with object pool management and hot-reload support
+  - **systems/README.md**: Updated to include new documentation files and current implementation status
+- **Complete TRES Migration for Configuration Files**: Migrated all configuration files from JSON to .tres resources
+  - **LogConfigResource**: Migrated debug/log_config.json to log_config.tres with type-safe enum validation
+  - **RadarConfigResource**: Migrated ui/radar.json to radar_config.tres with Color properties and Inspector editing
+  - **XPCurvesResource**: Migrated xp_curves.json to xp_curves.tres with typed curve definitions
+  - **Type safety**: All config resources now have @export properties with proper type validation
+  - **Inspector editing**: Configuration values can now be edited directly in Godot's Inspector
+  - **Hot-reload support**: F5 hot-reload maintained for all .tres configuration files
+  - **System compatibility**: All existing systems (Logger, EnemyRadar, XpSystem) updated to load .tres resources
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres files fail to load
+
 ### Changed
 - **Simplified to MultiMesh-Only Enemy Rendering**: Removed AnimatedSprite2D implementation, clean MultiMesh foundation
   - **Removed EnemyRenderer**: Deleted entire AnimatedSprite2D pool system and animation data
@@ -195,7 +213,7 @@
 
 ### Changed
 - **Logger Migration**: Completed migration of all print statements to centralized Logger system
-  - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, TextureThemeSystem.gd, XpSystem.gd migrated
+  - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, XpSystem.gd migrated
   - **Strategic logging**: Added warning logs for pool exhaustion in AbilitySystem and WaveDirector
   - **Error tracking**: Added failure logging for damage system pool lookups
   - **Category organization**: UI interactions use "ui" category, player events use "player" category

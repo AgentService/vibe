@@ -1,7 +1,7 @@
 extends Node
 
 ## Enemy registry system managing enemy type definitions.
-## Loads all enemy JSON files and provides weighted random selection.
+## Loads all enemy .tres resources and provides weighted random selection.
 
 class_name EnemyRegistry
 
@@ -44,7 +44,7 @@ func load_all_enemy_types() -> void:
 	
 	while file_name != "":
 		total_files += 1
-		if file_name.ends_with(".json"):
+		if file_name.ends_with(".tres"):
 			var file_path := enemies_dir + file_name
 			if _load_enemy_type_from_file(file_path):
 				loaded_count += 1
@@ -52,13 +52,13 @@ func load_all_enemy_types() -> void:
 	
 	dir.list_dir_end()
 	
-	Logger.debug("Found " + str(total_files) + " files, loaded " + str(loaded_count) + " JSON enemies", "enemies")
+	Logger.debug("Found " + str(total_files) + " files, loaded " + str(loaded_count) + " .tres enemies", "enemies")
 	
 	if loaded_count == 0:
 		Logger.warn("No enemy types loaded, using fallback", "enemies")
 		_load_fallback_types()
 	else:
-		Logger.info("SUCCESS: Loaded " + str(loaded_count) + " JSON enemy types", "enemies")
+		Logger.info("SUCCESS: Loaded " + str(loaded_count) + " .tres enemy types", "enemies")
 		
 		# Debug: List all loaded enemy types
 		for type_id in enemy_types.keys():
@@ -68,24 +68,12 @@ func load_all_enemy_types() -> void:
 	enemy_types_loaded.emit()
 
 func _load_enemy_type_from_file(file_path: String) -> bool:
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Could not open enemy file: " + file_path, "enemies")
+	# Load .tres resource directly
+	var enemy_type: EnemyType = load(file_path) as EnemyType
+	
+	if enemy_type == null:
+		Logger.warn("Failed to load .tres resource: " + file_path, "enemies")
 		return false
-	
-	var json_text := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_text)
-	
-	if parse_result != OK:
-		Logger.warn("Failed to parse enemy JSON: " + file_path + " - " + json.get_error_message(), "enemies")
-		return false
-	
-	var data: Dictionary = json.data
-	
-	var enemy_type := EnemyType.from_json(data)
 	
 	# Validate enemy type
 	var validation_errors := enemy_type.validate()
@@ -94,12 +82,12 @@ func _load_enemy_type_from_file(file_path: String) -> bool:
 		return false
 	
 	enemy_types[enemy_type.id] = enemy_type
-	Logger.debug("Loaded enemy type: " + enemy_type.id, "enemies")
+	Logger.debug("Loaded enemy type: " + enemy_type.id + " (tres)", "enemies")
 	return true
 
 func _load_fallback_types() -> void:
-	Logger.error("JSON enemy loading failed completely - no fallback available", "enemies")
-	Logger.error("Ensure knight JSON files exist in res://data/enemies/", "enemies")
+	Logger.error("Enemy loading failed completely - no fallback available", "enemies")
+	Logger.error("Ensure knight .tres files exist in res://vibe/data/content/enemies/", "enemies")
 
 func get_enemy_type(type_id: String) -> EnemyType:
 	return enemy_types.get(type_id, null)

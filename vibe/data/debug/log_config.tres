@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="LogConfigResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/domain/LogConfigResource.gd" id="1_am23r"]
+
+[resource]
+script = ExtResource("1_am23r")
+log_level = "DEBUG"
+balance = true
+combat = true
+waves = true
+player = true
+ui = true
+abilities = true
+signals = true
+performance = false
+debug = true

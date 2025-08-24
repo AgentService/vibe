@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="CardResource" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CardResource.gd" id="1_reach"]
+
+[resource]
+script = ExtResource("1_reach")
+card_id = "card_melee_range"
+name = "Extended Reach"
+description = "Enhanced reach (+40 range, +15° cone)"
+level_requirement = 1
+weight = 6
+modifiers = {
+"melee_cone_angle_add": 15.0,
+"melee_range_add": 40.0
+}

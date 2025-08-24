@@ -91,17 +91,18 @@ KeybindingsDisplay (Panel - styled)
 - Uses same anchoring strategy (`anchors_preset = 1`)
 - No external dependencies or signal connections
 
-### Arena Component (Complex)
-**File**: `Arena.tscn` → **Script**: `Arena.gd` (378 lines)
+### Arena Component (Complex) - UPDATED Architecture
+**File**: `Arena.tscn` → **Script**: `Arena.gd` (378 lines)  
+**Key Changes**: Now processes typed Array[EnemyEntity] instead of Dictionary arrays
 
-**Node Children**:
+**Node Children** (UPDATED for Typed Enemy System):
 ```
 Arena (Node2D)
 ├── MM_Projectiles (MultiMeshInstance2D)
-├── MM_Enemies_Swarm (MultiMeshInstance2D)     # Small enemies (≤24px) - Tier system
-├── MM_Enemies_Regular (MultiMeshInstance2D)   # Medium enemies (25-48px)
-├── MM_Enemies_Elite (MultiMeshInstance2D)     # Large enemies (49-64px)
-├── MM_Enemies_Boss (MultiMeshInstance2D)      # Huge enemies (65px+)
+├── MM_Enemies_Swarm (MultiMeshInstance2D)     # EnemyEntity → Dict conversion
+├── MM_Enemies_Regular (MultiMeshInstance2D)   # Tier-based routing via EnemyRenderTier
+├── MM_Enemies_Elite (MultiMeshInstance2D)     # Objects grouped by visual tier
+├── MM_Enemies_Boss (MultiMeshInstance2D)      # Dictionary arrays for GPU batching
 ├── MM_Walls (MultiMeshInstance2D)
 ├── MM_Terrain (MultiMeshInstance2D)
 ├── MM_Obstacles (MultiMeshInstance2D)
@@ -109,18 +110,15 @@ Arena (Node2D)
 ```
 
 **System Dependencies** (13 systems):
-- `AbilitySystem` - Combat abilities
-- `WaveDirector` - JSON-driven enemy spawning (pure JSON, no fallback)
-- `DamageSystem` - Combat damage
-- `EnemyRenderTier` - Knight enemy tier assignment (size + type-based) ⭐ UPDATED
-- `EnemyBehaviorSystem` - AI pattern management
-- `ArenaSystem` - Level loading
-- `TextureThemeSystem` - Visual themes
-- `CameraSystem` - Camera control and zoom management ⭐ UPDATED
-- `XpSystem` - Experience management
-- `TerrainSystem` - Ground rendering
-- `ObstacleSystem` - Environment objects
-- `MeleeSystem` - Melee combat system
+- `AbilitySystem` - Combat abilities with projectile pool management
+- `WaveDirector` - Typed enemy pool management with Array[EnemyEntity] ⭐ UPDATED
+- `DamageSystem` - Combat damage with object identity collision detection ⭐ UPDATED  
+- `EnemyRenderTier` - Converts EnemyEntity objects to Dictionary arrays for MultiMesh ⭐ UPDATED
+- `EnemyBehaviorSystem` - AI pattern management for typed enemy objects
+- `ArenaSystem` - Level loading and arena configuration
+- `CameraSystem` - Camera control and zoom management
+- `XpSystem` - Experience management with kill event integration
+- `MeleeSystem` - Melee combat with WaveDirector reference for pool indexing ⭐ UPDATED
 
 **UI Management**:
 - Creates `UILayer` (CanvasLayer)
@@ -132,6 +130,22 @@ Arena (Node2D)
 ### Input Flow
 ```
 User Input → Arena._input() → Arena System Methods → EventBus → UI Updates
+```
+
+### Enemy System Flow (UPDATED)
+```
+WaveDirector (Array[EnemyEntity]) → enemies_updated signal → Arena._on_enemies_updated()
+    ↓
+EnemyRenderTier.group_enemies_by_tier() → Dictionary arrays by tier
+    ↓  
+MultiMeshInstance2D updates (per-tier GPU batching)
+```
+
+### Combat System Flow (UPDATED)
+```
+DamageSystem collision detection → WaveDirector.damage_enemy(index)
+    ↓
+EnemyEntity.hp -= damage → EventBus.enemy_killed → XpSystem
 ```
 
 ### UI Update Flow  

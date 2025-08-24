@@ -2,7 +2,7 @@ extends Node
 class_name XpSystem
 
 ## Manages player experience, levels, and XP orb spawning.
-## Uses configurable level curve loaded from data/xp_curves.json.
+## Uses configurable level curve loaded from data/xp_curves.tres.
 
 const XP_ORB_SCENE: PackedScene = preload("res://scenes/arena/XPOrb.tscn")
 
@@ -31,31 +31,28 @@ func _on_balance_reloaded() -> void:
 	Logger.info("XpSystem: Reloaded XP curve data", "player")
 
 func _load_xp_curve_data() -> void:
-	var file_path: String = "res://data/xp_curves.json"
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
+	var xp_curves_resource: XPCurvesResource = load("res://data/xp_curves.tres")
 	
-	if file == null:
-		push_error("Failed to load XP curve data from: " + file_path + ". Using fallback values.")
+	if xp_curves_resource == null:
+		push_error("Failed to load XP curve resource. Using fallback values.")
 		_use_fallback_curve()
 		return
 	
-	var json_string: String = file.get_as_text()
-	file.close()
-	
-	var json: JSON = JSON.new()
-	var parse_result: Error = json.parse(json_string)
-	
-	if parse_result != OK:
-		push_error("Failed to parse XP curve JSON. Using fallback values.")
+	# Validate active curve
+	if not xp_curves_resource.is_valid_active_curve():
+		push_error("Invalid active curve in XP resource. Using fallback values.")
 		_use_fallback_curve()
 		return
 	
-	_xp_curve_data = json.data
-	var active_curve: String = _xp_curve_data.get("active_curve", "default")
-	_curve_config = _xp_curve_data.get("curves", {}).get(active_curve, {})
+	# Load curve configuration
+	_curve_config = xp_curves_resource.get_active_curve_config()
+	_xp_curve_data = {
+		"active_curve": xp_curves_resource.active_curve,
+		"curves": xp_curves_resource.get_curves()
+	}
 	
 	if _curve_config.is_empty():
-		push_error("No valid curve configuration found. Using fallback values.")
+		push_error("No valid curve configuration found in resource. Using fallback values.")
 		_use_fallback_curve()
 
 func _use_fallback_curve() -> void:

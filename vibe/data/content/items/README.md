@@ -18,23 +18,27 @@ When implemented, items will include:
 
 ## Schema (Planned)
 
-```json
-{
-  "id": "iron_sword",
-  "name": "Iron Sword",
-  "type": "weapon",
-  "subtype": "one_handed_sword",
-  "rarity": "normal",
-  "level_requirement": 5,
-  "base_stats": {
-    "physical_damage": {"min": 8, "max": 12},
-    "attack_speed": 1.2,
-    "critical_chance": 0.05
-  },
-  "affix_pools": ["weapon_physical", "weapon_general"],
-  "sockets": {"max": 3, "links": 2},
-  "tags": ["weapon", "melee", "sword"]
-}
+Items will use Godot Resources (.tres files) following the pattern established by the enemy system:
+
+```tres
+[gd_resource type="Resource" script_class="ItemType" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/domain/ItemType.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "iron_sword"
+display_name = "Iron Sword"
+item_type = "weapon"
+item_subtype = "one_handed_sword"
+rarity = "normal"
+level_requirement = 5
+physical_damage_min = 8
+physical_damage_max = 12
+attack_speed = 1.2
+critical_chance = 0.05
+affix_pools = ["weapon_physical", "weapon_general"]
+socket_max = 3
+socket_links = 2
+tags = ["weapon", "melee", "sword"]
 ```
 
 ## Auction House Preparation
@@ -56,7 +60,7 @@ Items will include properties for future trading:
 
 ## Hot-Reload
 
-Will support **F5** hot-reload when implemented.
+Will support **automatic hot-reload** when implemented, using Godot's native resource reloading system.
 
 ---
 

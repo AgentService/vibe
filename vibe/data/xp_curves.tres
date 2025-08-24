@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="XPCurvesResource" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/domain/XPCurvesResource.gd" id="1_s2in3"]
+
+[resource]
+script = ExtResource("1_s2in3")
+active_curve = "default"
+default_base_multiplier = 6.0
+default_exponent = 1
+default_min_first_level = 10
+default_description = "Tripled XP curve: requires 3x more XP to level up"

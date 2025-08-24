@@ -5,6 +5,7 @@ extends Node
 
 class_name MeleeSystem
 
+var wave_director: WaveDirector
 var attack_cooldown: float = 0.0
 var is_attacking: bool = false
 var attack_duration: float = 0.2  # Visual attack duration
@@ -72,7 +73,7 @@ func _update_attack_effects(dt: float) -> void:
 func can_attack() -> bool:
 	return attack_cooldown <= 0.0
 
-func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dictionary]) -> Array[Dictionary]:
+func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[EnemyEntity]) -> Array[EnemyEntity]:
 	if not can_attack():
 		return []
 	
@@ -89,16 +90,12 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 	var effective_cone = _get_effective_cone_angle()
 	
 	# Find enemies in cone
-	var hit_enemies: Array[Dictionary] = []
-	for e_idx in range(enemies.size()):
-		var enemy = enemies[e_idx]
-		if not enemy.get("alive", false):
+	var hit_enemies: Array[EnemyEntity] = []
+	for enemy in enemies:
+		if not enemy.alive:
 			continue
 			
-		var enemy_pos = enemy.get("pos", Vector2.ZERO)
-		if _is_enemy_in_cone(enemy_pos, player_pos, attack_dir, effective_cone, effective_range):
-			# Store enemy reference with correct pool index
-			enemy["_array_index"] = enemy.get("_pool_index", e_idx)  # Use pool index if available
+		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
 	# Create visual effect
@@ -113,12 +110,16 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Dic
 	for enemy in hit_enemies:
 		var final_damage = _calculate_damage()
 		var source_id = EntityId.player()
-		var enemy_index = enemy["_array_index"]
-		var target_id = EntityId.enemy(enemy_index)
+		# Find the actual enemy pool index
+		var enemy_pool_index = _find_enemy_pool_index(enemy)
+		if enemy_pool_index == -1:
+			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
+			continue
+		var target_id = EntityId.enemy(enemy_pool_index)
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
-		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.get("type_id", "unknown") + " (hp: " + str(enemy.get("hp", 0)) + ")", "abilities")
+		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
 	
 	
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
@@ -207,3 +208,18 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
+
+func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
+	if not wave_director:
+		Logger.error("WaveDirector reference not set in MeleeSystem", "combat")
+		return -1
+		
+	for i in range(wave_director.enemies.size()):
+		var enemy := wave_director.enemies[i]
+		# Use object identity instead of position comparison for reliability
+		if enemy == target_enemy and enemy.alive:
+			return i
+	return -1
+
+func set_wave_director_reference(wd: WaveDirector) -> void:
+	wave_director = wd

@@ -148,14 +148,16 @@ func _load_balance_values() -> void:
     enemy_radius = BalanceDB.get_combat_value("enemy_radius")
 ```
 
-### Current Hot-Reload Support
+### Current Hot-Reload Support (UPDATED)
 | System | Hot-Reload Status | Integration |
 |--------|-------------------|-------------|
-| DamageSystem | ✅ Combat values | Direct BalanceDB |
+| DamageSystem | ✅ Combat values + object identity collision | Direct BalanceDB |
 | AbilitySystem | ✅ Projectile settings | Direct BalanceDB |
-| WaveDirector | ✅ Enemy spawn values | Direct BalanceDB |
+| WaveDirector | ✅ Enemy spawn values + Array[EnemyEntity] pools | Direct BalanceDB + EnemyRegistry |
 | EnemyRegistry | ✅ JSON enemy system (knight_*) | Pure JSON loading from res://data/enemies/ |
+| EnemyRenderTier | ✅ Tier assignment + Dictionary conversion | EnemyRegistry dependency |
 | EnemyBehaviorSystem | ✅ AI behavior patterns | EnemyRegistry dependency |
+| MeleeSystem | ✅ Combat values + WaveDirector references | Direct BalanceDB + pool indexing |
 | RunManager | ✅ Player stats | Direct BalanceDB |
 | UI Systems | ✅ Radar configuration | Direct BalanceDB |
 | Logger | ✅ Log config & levels | BalanceDB signal integration |
@@ -293,6 +295,48 @@ Logger (Output Layer)
 4. **RunManager** loads player stats from BalanceDB
 5. **Game Systems** connect to balance_reloaded signal and use Logger
 6. **Scene Systems** access validated data and log via Logger at runtime
+
+## 🏰 Typed Enemy System Architecture (UPDATED)
+
+### EnemyEntity Object Model
+The system now uses typed [[EnemyEntity]] objects backed by JSON data for compile-time safety:
+
+```gdscript
+# Runtime typed objects with Dictionary compatibility
+class_name EnemyEntity extends Resource
+
+var type_id: String       # Enemy type identifier
+var pos: Vector2          # World position
+var vel: Vector2          # Current velocity  
+var hp: float            # Current health
+var max_hp: float        # Maximum health
+var alive: bool          # Alive state
+var speed: float         # Movement speed
+var size: Vector2        # Collision size
+
+# Conversion methods for MultiMesh compatibility
+func to_dictionary() -> Dictionary
+func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null) -> EnemyEntity
+```
+
+### Object Pool Management
+[[WaveDirector]] maintains pre-allocated pools for zero-allocation gameplay:
+
+```gdscript
+# Pre-allocated enemy pool
+var enemies: Array[EnemyEntity] = []
+
+# Pool initialization with typed objects
+func _initialize_pool() -> void:
+    enemies.resize(max_enemies)
+    for i in range(max_enemies):
+        enemies[i] = EnemyEntity.new()  # Typed objects
+```
+
+### Signal Flow Changes
+- **enemies_updated**: Now emits `Array[EnemyEntity]` instead of `Array[Dictionary]`
+- **Object Identity**: Systems track enemies by reference, not index
+- **Type Safety**: Compile-time guarantees for all enemy data access
 
 ## 🏰 Enemy JSON System
 

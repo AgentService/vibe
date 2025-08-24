@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyType" load_steps=2 format=3 uid="uid://dlvpj0r6hd03n"]
+
+[ext_resource type="Script" uid="uid://h7v7qpqbbs10" path="res://scripts/domain/EnemyType.gd" id="1_n1k8o"]
+
+[resource]
+script = ExtResource("1_n1k8o")
+id = "knight_boss"
+display_name = "Boss Knight"
+health = 1.0
+speed = 30.0
+speed_min = 25.0
+speed_max = 35.0
+size = Vector2(80, 80)
+collision_radius = 40.0
+xp_value = 20
+spawn_weight = 0.1
+render_tier = "boss"
+visual_config = {
+"color": {
+"a": 1.0,
+"b": 1.0,
+"g": 0.0,
+"r": 1.0
+},
+"shape": "square"
+}
+behavior_config = {
+"aggro_range": 600.0,
+"ai_type": "chase_player"
+}

@@ -1,111 +1,93 @@
 extends Node
 class_name CardSystem
 
-## Manages card selection and stat modification for level-up rewards.
-## Loads weighted card pools from JSON and applies stat modifications to RunManager.
+## Modern card system managing multiple themed card pools.
+## Handles card selection, application, and pool management.
 
-var card_pool: Dictionary = {}
+var card_pools: Dictionary = {}
+var current_selection: Array[CardResource] = []
+
+signal card_pools_loaded()
+signal cards_selected(cards: Array[CardResource])
 
 func _ready() -> void:
-	_load_card_pool()
+	_load_card_pools()
 
-func _load_card_pool() -> void:
-	var file_path: String = "res://data/cards/card_pool.json"
-	Logger.debug("Loading card pool from: " + file_path, "player")
+func _load_card_pools() -> void:
+	Logger.info("Loading card pools...", "cards")
 	
-	if not FileAccess.file_exists(file_path):
-		push_error("Card pool file not found: " + file_path)
+	# Load melee pool
+	var melee_pool_path: String = "res://data/cards/pools/melee_pool.tres"
+	if ResourceLoader.exists(melee_pool_path):
+		var melee_pool: CardPoolResource = ResourceLoader.load(melee_pool_path) as CardPoolResource
+		if melee_pool:
+			card_pools["melee"] = melee_pool
+			Logger.info("Loaded melee card pool with " + str(melee_pool.get_card_count()) + " cards", "cards")
+		else:
+			Logger.error("Failed to load melee card pool resource", "cards")
+	else:
+		Logger.warn("Melee card pool not found at: " + melee_pool_path, "cards")
+	
+	# Future: Load other pools (ranged, defensive, etc.)
+	
+	if card_pools.is_empty():
+		Logger.error("No card pools loaded!", "cards")
 		return
 	
-	var file: FileAccess = FileAccess.open(file_path, FileAccess.READ)
-	if not file:
-		push_error("Failed to open card pool file: " + file_path)
-		return
-	
-	var json_string: String = file.get_as_text()
-	file.close()
-	
-	var json: JSON = JSON.new()
-	var parse_result: Error = json.parse(json_string)
-	
-	if parse_result != OK:
-		push_error("Failed to parse card pool JSON: " + json.get_error_message())
-		return
-	
-	card_pool = json.data
-	Logger.info("Card pool loaded with " + str(card_pool.get("pool", []).size()) + " cards", "player")
+	Logger.info("Card system initialized with " + str(card_pools.size()) + " pools", "cards")
+	card_pools_loaded.emit()
 
-func roll_three() -> Array[Dictionary]:
-	if not card_pool.has("pool") or card_pool["pool"].is_empty():
-		push_error("Card pool is empty or malformed")
+func get_card_selection(level: int, count: int = 3) -> Array[CardResource]:
+	if card_pools.is_empty():
+		Logger.error("No card pools available for selection", "cards")
 		return []
 	
-	var pool: Array = card_pool["pool"]
-	var selected_cards: Array[Dictionary] = []
-	var total_weight: float = 0.0
+	# For now, use melee pool. Future: smart pool selection based on player build
+	var pool_name: String = "melee"
+	if not card_pools.has(pool_name):
+		Logger.error("Pool not found: " + pool_name, "cards")
+		return []
 	
-	# Filter cards based on current level
-	var available_cards: Array = []
-	var current_level: int = RunManager.stats.get("level", 1)
-	
-	for card in pool:
-		var min_level: int = card.get("min_level", 1)
-		if current_level >= min_level:
-			available_cards.append(card)
+	var pool: CardPoolResource = card_pools[pool_name]
+	var available_cards: Array[CardResource] = pool.get_available_cards_at_level(level)
 	
 	if available_cards.is_empty():
-		push_error("No cards available for level " + str(current_level))
+		Logger.warn("No cards available at level " + str(level), "cards")
 		return []
 	
-	# Calculate total weight from available cards
-	for card in available_cards:
-		if card.has("weight"):
-			total_weight += card["weight"]
+	Logger.debug("Available cards at level " + str(level) + ": " + str(available_cards.size()), "cards")
 	
-	# Select 3 unique cards from available cards
-	var used_indices: Array[int] = []
-	while selected_cards.size() < 3 and used_indices.size() < available_cards.size():
-		var random_value: float = RNG.randf_range("loot", 0.0, total_weight)
-		var current_weight: float = 0.0
-		
-		for i in range(available_cards.size()):
-			if i in used_indices:
-				continue
-			
-			var card: Dictionary = available_cards[i]
-			current_weight += card.get("weight", 1.0)
-			
-			if random_value <= current_weight:
-				selected_cards.append(card)
-				used_indices.append(i)
-				break
+	# Select cards using the pool's weighted selection
+	current_selection = pool.select_multiple_cards(level, count, "loot")
 	
-	return selected_cards
+	Logger.info("Selected " + str(current_selection.size()) + " cards for level " + str(level), "cards")
+	cards_selected.emit(current_selection)
+	
+	return current_selection
 
-func apply(card: Dictionary) -> void:
-	if not card.has("stat_mods"):
-		push_warning("Card has no stat_mods: " + str(card))
+func apply_card(card: CardResource) -> void:
+	if not card:
+		Logger.error("Attempted to apply null card", "cards")
 		return
 	
-	var stat_mods: Dictionary = card["stat_mods"]
+	Logger.debug("Applying card: " + card.name, "cards")
 	
-	for stat_name in stat_mods:
-		if not RunManager.stats.has(stat_name):
-			push_warning("Unknown stat: " + stat_name)
-			continue
-		
-		var mod_value = stat_mods[stat_name]
-		
-		# Handle different modification types
-		if stat_name.ends_with("_add"):
-			RunManager.stats[stat_name] += mod_value
-		elif stat_name.ends_with("_mult"):
-			RunManager.stats[stat_name] *= mod_value
-		elif typeof(mod_value) == TYPE_BOOL:
-			# Boolean values should be set directly, not added
-			RunManager.stats[stat_name] = mod_value
-		else:
-			# Default to additive for numeric values
-			RunManager.stats[stat_name] += mod_value
+	# Apply card modifiers to RunManager stats
+	card.apply_to_stats(RunManager.stats)
 	
-	Logger.info("Applied card: " + str(card.get("desc", "Unknown")) + " | Stats: " + str(RunManager.stats), "player")
+	Logger.info("Applied card: " + card.name + " to player stats", "cards")
+
+func get_pool_count() -> int:
+	return card_pools.size()
+
+func get_pool_names() -> Array[String]:
+	var names: Array[String] = []
+	for pool_name in card_pools.keys():
+		names.append(pool_name)
+	return names
+
+func has_pool(pool_name: String) -> bool:
+	return card_pools.has(pool_name)
+
+func get_pool(pool_name: String) -> CardPoolResource:
+	return card_pools.get(pool_name, null)

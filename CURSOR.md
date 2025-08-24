@@ -3,7 +3,7 @@
 
 ## Golden Rules
 - **Typed GDScript** everywhere; functions <40 lines.
-- **Data-driven** gameplay: JSON in `/godot/data`; engine config in `.tres`.
+- **Data-driven** gameplay: .tres resources in `/vibe/data`; type-safe configuration.
 - Use **Signals** + `EventBus` for cross-system events; no `get_node("../../..")` spaghetti.
 - **Determinism**:
   - Fixed-step **30 Hz** combat accumulator in `RunManager`.
@@ -28,7 +28,7 @@ scene.directly_modify_domain_data()
 ## Checklists
 
 ### Feature PR Checklist
-- [ ] **Data schema** updated in `/godot/data/README.md` + example JSON added
+- [ ] **Resource class** created in `scripts/domain/` + .tres files created
 - [ ] **System logic** in `scripts/systems/*`; signals wired via `EventBus`
 - [ ] **Headless sim** added/updated; DPS/TTK deltas <±10% noted in commit
 - [ ] **RNG compliance**: No `randi()`; uses `RNG.stream(name)`
@@ -37,8 +37,8 @@ scene.directly_modify_domain_data()
 - [ ] **Fixed-step**: Combat logic subscribes to `combat_step` signal
 
 ### Content Addition Checklist
-- [ ] Add JSON under `/godot/data/<category>/`
-- [ ] Update `/godot/data/README.md` with fields, ranges, and one complete example
+- [ ] Add .tres resource under `/vibe/data/<category>/`
+- [ ] Update `/vibe/data/README.md` with resource class documentation
 - [ ] Test hot-reload with F5 key in-game
 - [ ] Verify schema matches existing content structure
 - [ ] Run headless test: `"../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/run_tests.gd`

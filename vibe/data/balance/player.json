@@ -1,8 +1,0 @@
-{
-  "projectile_count_add": 1,
-  "projectile_speed_mult": 1.0,
-  "fire_rate_mult": 3.0,
-  "damage_mult": 1.0,
-  "_schema_version": "1.0.0",
-  "_description": "Player base stats and multipliers for progression and upgrades"
-}

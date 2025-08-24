@@ -3,15 +3,14 @@ extends Node2D
 ## Arena scene managing MultiMesh rendering and debug projectile spawning.
 ## Renders projectile pool via single MultiMeshInstance2D.
 
+const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")
+
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
-const CARD_PICKER_SCENE: PackedScene = preload("res://scenes/ui/CardPicker.tscn")
+const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-const TerrainSystem := preload("res://scripts/systems/TerrainSystem.gd")
-const ObstacleSystem := preload("res://scripts/systems/ObstacleSystem.gd")
-const InteractableSystem := preload("res://scripts/systems/InteractableSystem.gd")
-const RoomLoader := preload("res://scripts/systems/RoomLoader.gd")
-const TextureThemeSystem := preload("res://scripts/systems/TextureThemeSystem.gd")
+# Removed non-existent subsystem imports - systems simplified
+# TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 
@@ -21,38 +20,34 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
-@onready var mm_walls: MultiMeshInstance2D = $MM_Walls
-@onready var mm_terrain: MultiMeshInstance2D = $MM_Terrain
-@onready var mm_obstacles: MultiMeshInstance2D = $MM_Obstacles
-@onready var mm_interactables: MultiMeshInstance2D = $MM_Interactables
+# Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
 @onready var ability_system: AbilitySystem = AbilitySystem.new()
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
 
 
-# SWARM JSON-based animation test
-var swarm_animations: Dictionary = {}
+# ANIMATION CONFIGS
+var swarm_animation_config: AnimationConfig
+var regular_animation_config: AnimationConfig
+var elite_animation_config: AnimationConfig
+var boss_animation_config: AnimationConfig
+
+# ANIMATION RENDERING STATE
 var swarm_run_textures: Array[ImageTexture] = []
 var swarm_current_frame: int = 0
 var swarm_frame_timer: float = 0.0
-var swarm_frame_duration: float = 0.12  # Will be loaded from JSON
+var swarm_frame_duration: float = 0.12
 
-# REGULAR JSON-based animation
-var regular_animations: Dictionary = {}
 var regular_run_textures: Array[ImageTexture] = []
 var regular_current_frame: int = 0
 var regular_frame_timer: float = 0.0
 var regular_frame_duration: float = 0.1
 
-# ELITE JSON-based animation  
-var elite_animations: Dictionary = {}
 var elite_run_textures: Array[ImageTexture] = []
 var elite_current_frame: int = 0
 var elite_frame_timer: float = 0.0
 var elite_frame_duration: float = 0.1
 
-# BOSS JSON-based animation
-var boss_animations: Dictionary = {}
 var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
@@ -60,7 +55,7 @@ var boss_frame_duration: float = 0.1
 @onready var wave_director: WaveDirector = WaveDirector.new()
 @onready var damage_system: DamageSystem = DamageSystem.new()
 @onready var arena_system: ArenaSystem = ArenaSystem.new()
-@onready var texture_theme_system: TextureThemeSystem = TextureThemeSystem.new()
+# texture_theme_system removed - no longer needed after arena simplification
 @onready var camera_system: CameraSystem = CameraSystem.new()
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
@@ -68,7 +63,8 @@ var enemy_render_tier: EnemyRenderTier
 var player: Player
 var xp_system: XpSystem
 var hud: HUD
-var card_picker: CardPicker
+var card_system: CardSystem
+var card_selection: CardSelection
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -78,14 +74,12 @@ var _enemy_transforms: Array[Transform2D] = []
 
 
 func _ready() -> void:
-	Logger.info("ARENA READY FUNCTION STARTING", "ui")
+	Logger.info("Arena initializing", "ui")
 	
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	Logger.info("Arena process mode set to ALWAYS", "ui")
 	
 	# Set proper process modes for systems (with null checks)
-	Logger.info("Setting system process modes...", "ui")
 	if ability_system:
 		ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if melee_system:
@@ -94,140 +88,77 @@ func _ready() -> void:
 		wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if damage_system:
 		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if texture_theme_system:
-		texture_theme_system.process_mode = Node.PROCESS_MODE_ALWAYS
 	if arena_system:
 		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if camera_system:
 		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	# enemy_behavior_system removed
-	Logger.info("System process modes set", "ui")
 	
-	Logger.info("Adding systems as children...", "ui")
+	# Add systems as children
 	if ability_system:
 		add_child(ability_system)
-		Logger.info("ability_system added", "ui")
 	if melee_system:
 		add_child(melee_system)
-		Logger.info("melee_system added", "ui")
 	if wave_director:
 		add_child(wave_director)
-		Logger.info("wave_director added", "ui")
 	if damage_system:
 		add_child(damage_system)
-		Logger.info("damage_system added", "ui")
-	if texture_theme_system:
-		add_child(texture_theme_system)
-		Logger.info("texture_theme_system added", "ui")
 	if arena_system:
 		add_child(arena_system)
-		Logger.info("arena_system added", "ui")
 	if camera_system:
 		add_child(camera_system)
-		Logger.info("camera_system added", "ui")
-	# enemy_behavior_system removed
-	Logger.info("All systems added as children", "ui")
-	
-	Logger.info("All systems added as children, continuing setup...", "enemies")
 	
 	# Set references for damage system (legitimate dependency injection)
-	Logger.info("Setting system references...", "ui")
 	if damage_system and ability_system and wave_director:
 		damage_system.set_references(ability_system, wave_director)
-		Logger.info("Damage system references set", "ui")
 	
-	# Enemy behavior system removed - AI logic moved to WaveDirector
+	# Set references for melee system
+	if melee_system and wave_director:
+		melee_system.set_wave_director_reference(wave_director)
 	
-	Logger.info("About to create enemy render tier...", "ui")
-	
-	# Test if EnemyRenderTier class exists
+	# Create enemy render tier system
 	if EnemyRenderTier == null:
 		Logger.error("EnemyRenderTier class is null!", "ui")
 		return
 	
-	# Create enemy render tier system manually
 	enemy_render_tier = EnemyRenderTier.new()
-	Logger.info("Enemy render tier created", "ui")
-	
-	# Test if the instance was created
 	if enemy_render_tier == null:
 		Logger.error("EnemyRenderTier instance creation failed!", "ui")
 		return
 	
-	Logger.info("EnemyRenderTier instance verified", "ui")
-	
-	Logger.info("Adding EnemyRenderTier as child...", "ui")
 	add_child(enemy_render_tier)
-	Logger.info("Enemy render tier system added to Arena", "ui")
 	
 	# Force call ready if needed
 	if not enemy_render_tier.is_node_ready():
-		Logger.info("Manually calling enemy_render_tier._ready()", "ui")
 		enemy_render_tier._ready()
-	else:
-		Logger.info("EnemyRenderTier is already ready", "ui")
-	
-	# Test tier system functionality
-	var test_enemy = {"size": Vector2(20, 20), "type_id": "test"}
-	var test_tier = enemy_render_tier.get_tier_for_enemy(test_enemy)
-	Logger.info("Test enemy tier: " + enemy_render_tier.get_tier_name(test_tier), "ui")
 	
 	# Create and add new systems
-	Logger.info("Starting player setup...", "ui")
 	_setup_player()
-	Logger.info("Starting XP system setup...", "ui")
 	_setup_xp_system()
-	Logger.info("Starting UI setup...", "ui")
 	_setup_ui()
-	Logger.info("Setup functions completed", "ui")
+	_setup_card_system()
 	
 	# Set player reference in PlayerState for cached position access
-	Logger.info("Setting player reference...", "ui")
 	PlayerState.set_player_reference(player)
 	
 	# Connect signals AFTER systems are added and ready
-	Logger.info("Connecting signals...", "ui")
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
-	Logger.info("Connected enemy MultiMesh rendering", "ui")
-	
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
-	
-	# Connect melee system signals for visual effects
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
-	# Connect theme system
-	texture_theme_system.theme_changed.connect(_on_theme_changed)
-	Logger.info("Signals connected", "ui")
-	
-	# Arena subsystem signals will be connected after arena loads
-	
-	Logger.info("Setting up MultiMesh instances...", "ui")
+	# Setup MultiMesh instances
 	_setup_projectile_multimesh()
-	Logger.info("Projectile MultiMesh setup complete", "ui")
-	# TIER-BASED ENEMY SYSTEM - optional for performance
-	_load_swarm_animations()  # Load JSON animations for SWARM tier
-	_load_regular_animations()  # Load JSON animations for REGULAR tier
-	_load_elite_animations()    # Load JSON animations for ELITE tier
-	_load_boss_animations()     # Load JSON animations for BOSS tier
+	_load_swarm_animations()  # Load .tres animations for SWARM tier
+	_load_regular_animations()  # Load .tres animations for REGULAR tier
+	_load_elite_animations()    # Load .tres animations for ELITE tier
+	_load_boss_animations()     # Load .tres animations for BOSS tier
 	_setup_tier_multimeshes()
-	Logger.info("Tier MultiMesh setup complete", "ui")
 	_setup_enemy_transforms()
-	Logger.info("Enemy transforms setup complete", "ui")
-	_setup_wall_multimesh()
-	_setup_terrain_multimesh()
-	_setup_obstacle_multimesh()
-	_setup_interactable_multimesh()
-	Logger.info("All MultiMesh setup complete", "ui")
-	
-	# Load the mega arena
-	Logger.info("Loading mega arena...", "ui")
-	arena_system.load_arena("mega_arena")
 	
 	# Print debug help
 	_print_debug_help()
-	Logger.info("ARENA READY FUNCTION COMPLETED", "ui")
+	Logger.info("Arena ready", "ui")
 	
 	# Schedule a test to check if enemies are spawning after a few seconds
 	var timer = Timer.new()
@@ -236,27 +167,19 @@ func _ready() -> void:
 	timer.timeout.connect(_test_enemy_spawning)
 	add_child(timer)
 	timer.start()
-	Logger.info("Scheduled enemy spawning test in 3 seconds", "ui")
 
 func _test_enemy_spawning() -> void:
-	Logger.info("=== ENEMY SPAWNING TEST ===", "ui")
+	Logger.debug("Enemy spawning test", "debug")
 	if wave_director:
 		var alive_enemies = wave_director.get_alive_enemies()
-		Logger.info("Total alive enemies: " + str(alive_enemies.size()), "ui")
+		Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
 		
 		if alive_enemies.size() > 0:
-			var first_enemy = alive_enemies[0]
-			Logger.info("First enemy type: " + str(first_enemy.get("type_id", "unknown")), "ui")
-			Logger.info("First enemy size: " + str(first_enemy.get("size", Vector2.ZERO)), "ui")
-			
-			# Test calling _update_enemy_multimesh directly
-			Logger.info("Testing direct call to _update_enemy_multimesh...", "ui")
 			_update_enemy_multimesh(alive_enemies)
 		else:
-			Logger.warn("No enemies are alive!", "ui")
+			Logger.debug("No enemies spawned yet", "debug")
 	else:
 		Logger.error("WaveDirector is null!", "ui")
-	Logger.info("=== END TEST ===", "ui")
 
 func _setup_projectile_multimesh() -> void:
 	var multimesh := MultiMesh.new()
@@ -272,6 +195,7 @@ func _setup_projectile_multimesh() -> void:
 	img.fill(Color(1.0, 1.0, 0.0, 1.0))
 	var tex := ImageTexture.create_from_image(img)
 	mm_projectiles.texture = tex
+	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
 
@@ -288,14 +212,14 @@ func _setup_tier_multimeshes() -> void:
 	swarm_multimesh.mesh = swarm_mesh
 	
 	
-	# Use JSON-loaded textures for SWARM tier
+	# Use .tres-loaded textures for SWARM tier
 	if not swarm_run_textures.is_empty():
 		mm_enemies_swarm.texture = swarm_run_textures[0]
-		Logger.info("SWARM tier using JSON-based animation (" + str(swarm_run_textures.size()) + " frames)", "enemies")
+		Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("SWARM tier JSON animation failed to load", "enemies")
+		Logger.error("SWARM tier .tres animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
-	mm_enemies_swarm.z_index = -1  # Render behind sprites
+	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
 	# Setup REGULAR tier MultiMesh (medium rectangles)
 	var regular_multimesh := MultiMesh.new()
@@ -305,14 +229,14 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	# Use JSON-loaded textures for REGULAR tier
+	# Use .tres-loaded textures for REGULAR tier
 	if not regular_run_textures.is_empty():
 		mm_enemies_regular.texture = regular_run_textures[0]
-		Logger.info("REGULAR tier using JSON-based animation (" + str(regular_run_textures.size()) + " frames)", "enemies")
+		Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("REGULAR tier JSON animation failed to load", "enemies")
+		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
-	mm_enemies_regular.z_index = -1  # Render behind sprites
+	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
 	# Setup ELITE tier MultiMesh (large diamonds)
 	var elite_multimesh := MultiMesh.new()
@@ -322,14 +246,14 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	# Use JSON-loaded textures for ELITE tier
+	# Use .tres-loaded textures for ELITE tier
 	if not elite_run_textures.is_empty():
 		mm_enemies_elite.texture = elite_run_textures[0]
-		Logger.info("ELITE tier using JSON-based animation (" + str(elite_run_textures.size()) + " frames)", "enemies")
+		Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("ELITE tier JSON animation failed to load", "enemies")
+		Logger.error("ELITE tier .tres animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
-	mm_enemies_elite.z_index = -1  # Render behind sprites
+	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
 	# Setup BOSS tier MultiMesh (large diamonds)
 	var boss_multimesh := MultiMesh.new()
@@ -339,16 +263,16 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	# Use JSON-loaded textures for BOSS tier
+	# Use .tres-loaded textures for BOSS tier
 	if not boss_run_textures.is_empty():
 		mm_enemies_boss.texture = boss_run_textures[0]
-		Logger.info("BOSS tier using JSON-based animation (" + str(boss_run_textures.size()) + " frames)", "enemies")
+		Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
 	else:
-		Logger.error("BOSS tier JSON animation failed to load", "enemies")
+		Logger.error("BOSS tier .tres animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
-	mm_enemies_boss.z_index = -1  # Render behind sprites
+	mm_enemies_boss.z_index = 0  # Gameplay entities layer
 	
-	Logger.info("Tier-specific MultiMesh instances initialized with 16-frame knight running animation", "enemies")
+	Logger.debug("Tier MultiMesh instances initialized", "enemies")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -357,62 +281,7 @@ func _setup_enemy_transforms() -> void:
 		_enemy_transforms[i] = Transform2D()
 	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
-func _setup_wall_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(64, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for wall texture
-	var wall_texture := texture_theme_system.get_texture("walls")
-	mm_walls.texture = wall_texture
-
-	mm_walls.multimesh = multimesh
-
-func _setup_terrain_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for terrain texture
-	var terrain_texture := texture_theme_system.get_texture("terrain")
-	mm_terrain.texture = terrain_texture
-	mm_terrain.multimesh = multimesh
-
-func _setup_obstacle_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for obstacle texture
-	var obstacle_texture := texture_theme_system.get_texture("obstacles", "pillar")
-	mm_obstacles.texture = obstacle_texture
-	mm_obstacles.multimesh = multimesh
-
-func _setup_interactable_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(32, 32)
-	multimesh.mesh = quad_mesh
-
-	# Use TextureThemeSystem for interactable texture
-	var interactable_texture := texture_theme_system.get_texture("interactables", "chest")
-	mm_interactables.texture = interactable_texture
-	mm_interactables.multimesh = multimesh
+# Removed unused MultiMesh setup functions (walls, terrain, obstacles, interactables)
 
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
@@ -440,24 +309,9 @@ func _input(event: InputEvent) -> void:
 	
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
-			KEY_1:
-				Logger.info("Switching to basic arena", "ui")
-				arena_system.load_arena("basic_arena")
-			KEY_2:
-				Logger.info("Switching to large arena", "ui")
-				arena_system.load_arena("large_arena")
-			KEY_3:
-				Logger.info("Switching to mega arena", "ui")
-				arena_system.load_arena("mega_arena")
-			KEY_4:
-				Logger.info("Switching to dungeon crawler", "ui")
-				arena_system.load_arena("dungeon_crawler")
-			KEY_5:
-				Logger.info("Switching to hazard arena", "ui")
-				arena_system.load_arena("hazard_arena")
+			# Arena switching removed - now using single default arena
 			KEY_T:
-				Logger.info("Switching theme", "ui")
-				texture_theme_system.cycle_theme()
+				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
 				Logger.info("Manual pause toggle", "ui")
 				PauseManager.toggle_pause()
@@ -467,6 +321,9 @@ func _input(event: InputEvent) -> void:
 			KEY_F12:
 				Logger.info("Performance stats toggle", "performance")
 				_toggle_performance_stats()
+			KEY_C:
+				Logger.info("Manual card selection test", "debug")
+				_test_card_selection()
 
 func _setup_player() -> void:
 	player = PLAYER_SCENE.instantiate()
@@ -475,7 +332,6 @@ func _setup_player() -> void:
 	
 	# Setup camera to follow player
 	camera_system.setup_camera(player)
-	Logger.debug("Player positioned at arena center: " + str(player.global_position), "player")
 
 func _setup_xp_system() -> void:
 	xp_system = XpSystem.new(self)
@@ -490,40 +346,50 @@ func _setup_ui() -> void:
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
 	
-	
-	card_picker = CARD_PICKER_SCENE.instantiate()
-	ui_layer.add_child(card_picker)
+	card_selection = CARD_SELECTION_SCENE.instantiate()
+	ui_layer.add_child(card_selection)
 
+func _setup_card_system() -> void:
+	card_system = CardSystem.new()
+	add_child(card_system)
+	
+	# Connect card selection signals
+	card_selection.card_selected.connect(_on_card_selected)
+	card_selection.setup_card_system(card_system)
+	
+	Logger.debug("Card system initialized", "cards")
 
 func _on_level_up(payload) -> void:
+	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
+	
+	if not card_system:
+		Logger.error("Card system not initialized", "cards")
+		return
+	
+	# Get card selection for current level
+	var cards: Array[CardResource] = card_system.get_card_selection(payload.new_level, 3)
+	
+	if cards.is_empty():
+		Logger.warn("No cards available for level " + str(payload.new_level), "cards")
+		return
+	
+	# Pause game and show card selection
+	Logger.debug("About to pause game for card selection", "cards")
 	PauseManager.pause_game(true)
-	card_picker.open()
+	Logger.debug("Game paused, opening card selection", "cards")
+	card_selection.open_with_cards(cards)
 
-func _on_theme_changed(theme_name: String) -> void:
-	Logger.info("Theme changed to: " + theme_name, "ui")
-	# Update all MultiMesh textures with new theme
-	_update_multimesh_textures()
+func _on_card_selected(card: CardResource) -> void:
+	if not card:
+		Logger.error("Null card selected", "cards")
+		return
+	
+	Logger.info("Player selected card: " + card.name, "cards")
+	card_system.apply_card(card)
 
-func _update_multimesh_textures() -> void:
-	# Update wall textures
-	var wall_texture := texture_theme_system.get_texture("walls")
-	mm_walls.texture = wall_texture
-	
-	# Update terrain textures
-	var terrain_texture := texture_theme_system.get_texture("terrain")
-	mm_terrain.texture = terrain_texture
-	
-	# Update obstacle textures
-	var obstacle_texture := texture_theme_system.get_texture("obstacles", "pillar")
-	mm_obstacles.texture = obstacle_texture
-	
-	# Update interactable textures
-	var interactable_texture := texture_theme_system.get_texture("interactables", "chest")
-	mm_interactables.texture = interactable_texture
-	
-	Logger.debug("MultiMesh textures updated for theme", "ui")
+# Theme functions removed - no longer needed after arena simplification
 
-func _on_enemies_updated(alive_enemies: Array[Dictionary]) -> void:
+func _on_enemies_updated(alive_enemies: Array[EnemyEntity]) -> void:
 	pass
 
 func _handle_melee_attack(target_pos: Vector2) -> void:
@@ -555,43 +421,31 @@ func _on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:
 	_show_melee_cone_effect(player_pos, target_pos)
 
 func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
-	if not melee_effects:
+	# Use manually created polygon from the scene
+	var cone_polygon = $MeleeEffects/MeleeCone
+	if not cone_polygon:
 		return
 	
-	# Get effective melee stats for visual effect (including card modifiers)
-	var effective_cone_angle = melee_system._get_effective_cone_angle()
+	# Get effective melee stats to match the actual damage area
 	var effective_range = melee_system._get_effective_range()
+	var range_scale = effective_range / 100.0  # Assuming your cone is ~100 units long
 	
-	# Create cone visual effect
-	var cone_polygon = Polygon2D.new()
-	cone_polygon.color = Color(1.0, 0.8, 0.2, 0.3)  # Semi-transparent yellow
+	# Position and scale the cone at player position
+	cone_polygon.global_position = player_pos
+	cone_polygon.scale = Vector2(range_scale, range_scale)  # Scale to match damage range
 	
-	# Calculate cone points - cone tip at player, opening towards target
+	# Point the cone toward mouse/target position (where damage occurs)
 	var attack_dir = (target_pos - player_pos).normalized()
-	var cone_points: PackedVector2Array = []
+	cone_polygon.rotation = attack_dir.angle() - PI/2  # Fix 90° offset (cone was 1/4 ahead)
 	
-	# Start at player position (cone tip)
-	cone_points.append(Vector2.ZERO)
+	# Show the cone with transparency
+	cone_polygon.visible = true
+	cone_polygon.modulate.a = 0.3
 	
-	# Calculate cone edges  
-	var half_angle = deg_to_rad(effective_cone_angle / 2.0)
-	var left_dir = attack_dir.rotated(-half_angle)
-	var right_dir = attack_dir.rotated(half_angle)
-	
-	# Add cone edge points (spread from tip towards target direction)
-	cone_points.append(left_dir * effective_range)
-	cone_points.append(right_dir * effective_range)
-	
-	cone_polygon.polygon = cone_points
-	cone_polygon.position = player_pos
-	
-	# Add to scene
-	melee_effects.add_child(cone_polygon)
-	
-	# Remove after short duration
+	# Hide after short duration
 	var tween = create_tween()
 	tween.tween_property(cone_polygon, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(cone_polygon.queue_free)
+	tween.tween_callback(func(): cone_polygon.visible = false)
 
 func _handle_debug_spawning(delta: float) -> void:
 	# Only auto-shoot projectiles if player has projectile abilities
@@ -635,13 +489,13 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		proj_transform.origin = projectile["pos"]
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
-func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
+func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 	if enemy_render_tier == null:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
 		return
 	
 	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
+	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies, wave_director.enemy_registry)
 	
 	# Update each tier's MultiMesh
 	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier.Tier.SWARM)
@@ -649,16 +503,13 @@ func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
 	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier.Tier.ELITE)
 	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier.Tier.BOSS)
 	
-	Logger.debug("Updated tier rendering - SWARM: " + str(tier_groups[EnemyRenderTier.Tier.SWARM].size()) + 
-				", REGULAR: " + str(tier_groups[EnemyRenderTier.Tier.REGULAR].size()) + 
-				", ELITE: " + str(tier_groups[EnemyRenderTier.Tier.ELITE].size()) + 
-				", BOSS: " + str(tier_groups[EnemyRenderTier.Tier.BOSS].size()), "enemies")
+	# Removed excessive tier rendering debug logs
 
 func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, base_size: Vector2, tier: EnemyRenderTier.Tier) -> void:
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
 		mm_instance.multimesh.instance_count = count
-		Logger.debug("Updated MultiMesh for tier with " + str(count) + " enemies (base_size: " + str(base_size) + ")", "enemies")
+		# Removed per-tier update debug log
 		
 		for i in range(count):
 			var enemy := tier_enemies[i]
@@ -673,65 +524,15 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var tier_color := _get_tier_debug_color(tier)
 			mm_instance.multimesh.set_instance_color(i, tier_color)
 
-func _update_wall_multimesh(wall_transforms: Array[Transform2D]) -> void:
-	var count := wall_transforms.size()
-	
-	if mm_walls and mm_walls.multimesh:
-		mm_walls.multimesh.instance_count = count
+# Removed unused MultiMesh update functions (walls, terrain, obstacles, interactables)
 
-		for i in range(count):
-			var transform := wall_transforms[i]
-			mm_walls.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_terrain_multimesh(terrain_transforms: Array[Transform2D]) -> void:
-	var count := terrain_transforms.size()
-	mm_terrain.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := terrain_transforms[i]
-		mm_terrain.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_obstacle_multimesh(obstacle_transforms: Array[Transform2D]) -> void:
-	var count := obstacle_transforms.size()
-	mm_obstacles.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := obstacle_transforms[i]
-		mm_obstacles.multimesh.set_instance_transform_2d(i, transform)
-
-func _update_interactable_multimesh(interactable_transforms: Array[Transform2D]) -> void:
-	var count := interactable_transforms.size()
-	mm_interactables.multimesh.instance_count = count
-
-	for i in range(count):
-		var transform := interactable_transforms[i]
-		mm_interactables.multimesh.set_instance_transform_2d(i, transform)
-
-func _on_arena_loaded(arena_data: Dictionary) -> void:
-	Logger.info("Arena loaded: " + str(arena_data.get("name", "Unknown Arena")), "ui")
+func _on_arena_loaded(arena_bounds: Rect2) -> void:
+	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")
 	
 	# Set camera bounds for the new arena
-	var arena_bounds: Rect2 = arena_system.get_arena_bounds()
 	camera_system.set_arena_bounds(arena_bounds)
 	var payload := EventBus.ArenaBoundsChangedPayload.new(arena_bounds)
 	EventBus.arena_bounds_changed.emit(payload)
-	
-	# Connect subsystem signals after arena is loaded
-	if arena_system and arena_system.terrain_system:
-		arena_system.terrain_system.terrain_updated.connect(_update_terrain_multimesh)
-	
-	if arena_system and arena_system.obstacle_system:
-		arena_system.obstacle_system.obstacles_updated.connect(_update_obstacle_multimesh)
-	
-	if arena_system and arena_system.interactable_system:
-		arena_system.interactable_system.interactables_updated.connect(_update_interactable_multimesh)
-	
-	if arena_system and arena_system.wall_system:
-		arena_system.wall_system.walls_updated.connect(_update_wall_multimesh)
-		
-		# Manually trigger initial wall update
-		if arena_system.wall_system.wall_transforms.size() > 0:
-			_update_wall_multimesh(arena_system.wall_system.wall_transforms)
 
 func _get_visible_world_rect() -> Rect2:
 	var viewport_size := get_viewport().get_visible_rect().size
@@ -779,7 +580,7 @@ func _spawn_stress_test_enemies() -> void:
 		return
 	
 	var target_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_count: int = 1000
+	var spawn_count: int = 3000
 	var spawned: int = 0
 	
 	for i in range(spawn_count):
@@ -788,12 +589,32 @@ func _spawn_stress_test_enemies() -> void:
 		var distance: float = 300.0 + (i % 10) * 100.0  # Vary distances
 		var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * distance
 		
-		if wave_director.spawn_enemy_at(spawn_pos, "grunt"):
+		if wave_director.spawn_enemy_at(spawn_pos, "knight_boss"):
 			spawned += 1
 		else:
 			break  # Pool exhausted
 	
 	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
+
+func _test_card_selection() -> void:
+	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
+	if not card_system:
+		Logger.error("Card system not available for test", "debug")
+		return
+	
+	# Simulate level up with level 1 cards
+	var test_cards: Array[CardResource] = card_system.get_card_selection(1, 3)
+	Logger.info("Got " + str(test_cards.size()) + " test cards", "debug")
+	
+	if test_cards.is_empty():
+		Logger.error("No test cards available", "debug")
+		return
+	
+	Logger.info("Pausing game for manual test", "debug")
+	PauseManager.pause_game(true)
+	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
+	Logger.info("Opening card selection manually", "debug")
+	card_selection.open_with_cards(test_cards)
 
 func _toggle_performance_stats() -> void:
 	# Force HUD debug overlay toggle
@@ -807,7 +628,9 @@ func _toggle_performance_stats() -> void:
 
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
+	Logger.info("C: Test card selection", "ui")
 	Logger.info("F10: Pause/resume toggle", "ui")
+	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
 	Logger.info("F12: Performance stats toggle", "ui")
 	Logger.info("WASD: Move player", "ui")
 	Logger.info("FPS overlay: Always visible", "ui")
@@ -830,14 +653,14 @@ func get_debug_stats() -> Dictionary:
 	var stats: Dictionary = {}
 	
 	if wave_director:
-		var alive_enemies: Array[Dictionary] = wave_director.get_alive_enemies()
+		var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
 		stats["enemy_count"] = alive_enemies.size()
 		
 		# Add culling stats
 		var visible_rect: Rect2 = _get_visible_world_rect()
 		var visible_count: int = 0
 		for enemy in alive_enemies:
-			if _is_enemy_visible(enemy["pos"], visible_rect):
+			if _is_enemy_visible(enemy.pos, visible_rect):
 				visible_count += 1
 		stats["visible_enemies"] = visible_count
 	
@@ -851,30 +674,23 @@ func get_debug_stats() -> Dictionary:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
-	ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
-	arena_system.arena_loaded.disconnect(_on_arena_loaded)
+	if ability_system:
+		ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
+	if wave_director:
+		wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
+	if arena_system:
+		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
-	
-	# Cleanup arena subsystem signals
-	if arena_system.terrain_system and arena_system.terrain_system.terrain_updated.is_connected(_update_terrain_multimesh):
-		arena_system.terrain_system.terrain_updated.disconnect(_update_terrain_multimesh)
-	if arena_system.obstacle_system and arena_system.obstacle_system.obstacles_updated.is_connected(_update_obstacle_multimesh):
-		arena_system.obstacle_system.obstacles_updated.disconnect(_update_obstacle_multimesh)
-	if arena_system.interactable_system and arena_system.interactable_system.interactables_updated.is_connected(_update_interactable_multimesh):
-		arena_system.interactable_system.interactables_updated.disconnect(_update_interactable_multimesh)
-	if arena_system.wall_system and arena_system.wall_system.walls_updated.is_connected(_update_wall_multimesh):
-		arena_system.wall_system.walls_updated.disconnect(_update_wall_multimesh)
 
 func _animate_enemy_frames(delta: float) -> void:
-	# Animate each tier with JSON-based animation (fallback to hardcoded)
+	# Animate each tier with .tres-based animation
 	_animate_swarm_tier(delta)
 	_animate_regular_tier(delta)
 	_animate_elite_tier(delta)
 	_animate_boss_tier(delta)
 
 func _animate_swarm_tier(delta: float) -> void:
-	# Only animate if we have JSON-loaded swarm textures
+	# Only animate if we have .tres-loaded swarm textures
 	if swarm_run_textures.is_empty():
 		return
 	
@@ -927,44 +743,32 @@ func _animate_boss_tier(delta: float) -> void:
 			mm_enemies_boss.texture = boss_run_textures[boss_current_frame]
 
 func _load_swarm_animations() -> void:
-	var file_path := "res://data/animations/swarm_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load swarm animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/swarm_enemy_animations.tres"
+	swarm_animation_config = load(resource_path) as AnimationConfig
+	if swarm_animation_config == null:
+		Logger.warn("Failed to load swarm animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse swarm animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	swarm_animations = json.data
-	Logger.info("Loaded swarm animations from JSON", "enemies")
-	
-	# Create textures for swarm run animation from JSON
+	Logger.debug("Loaded swarm animation config", "enemies")
 	_create_swarm_textures()
 
 func _create_swarm_textures() -> void:
-	if swarm_animations.is_empty():
-		Logger.warn("No swarm animations data available", "enemies")
+	if swarm_animation_config == null:
+		Logger.warn("No swarm animation config available", "enemies")
 		return
 	
-	var knight_full := load(swarm_animations.sprite_sheet) as Texture2D
+	var knight_full := swarm_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load swarm sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = swarm_animations.frame_size.width
-	var frame_height: int = swarm_animations.frame_size.height
-	var columns: int = swarm_animations.grid.columns
+	var frame_width: int = swarm_animation_config.frame_size.x
+	var frame_height: int = swarm_animation_config.frame_size.y
+	var columns: int = swarm_animation_config.grid_columns
 	
-	# Load run animation frames from JSON
-	var run_anim: Dictionary = swarm_animations.animations.run
+	# Load run animation frames from .tres
+	var run_anim: Dictionary = swarm_animation_config.animations.run
 	swarm_frame_duration = run_anim.duration
 	
 	swarm_run_textures.clear()
@@ -977,45 +781,34 @@ func _create_swarm_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		swarm_run_textures.append(frame_texture)
 	
-	Logger.info("Created " + str(swarm_run_textures.size()) + " swarm animation textures", "enemies")
+	Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
 
 func _load_regular_animations() -> void:
-	var file_path := "res://data/animations/regular_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load regular animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/regular_enemy_animations.tres"
+	regular_animation_config = load(resource_path) as AnimationConfig
+	if regular_animation_config == null:
+		Logger.warn("Failed to load regular animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse regular animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	regular_animations = json.data
-	Logger.info("Loaded regular animations from JSON", "enemies")
-	
+	Logger.debug("Loaded regular animation config", "enemies")
 	_create_regular_textures()
 
 func _create_regular_textures() -> void:
-	if regular_animations.is_empty():
-		Logger.warn("No regular animations data available", "enemies")
+	if regular_animation_config == null:
+		Logger.warn("No regular animation config available", "enemies")
 		return
 	
-	var knight_full := load(regular_animations.sprite_sheet) as Texture2D
+	var knight_full := regular_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load regular sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = regular_animations.frame_size.width
-	var frame_height: int = regular_animations.frame_size.height
-	var columns: int = regular_animations.grid.columns
+	var frame_width: int = regular_animation_config.frame_size.x
+	var frame_height: int = regular_animation_config.frame_size.y
+	var columns: int = regular_animation_config.grid_columns
 	
-	var run_anim: Dictionary = regular_animations.animations.run
+	var run_anim: Dictionary = regular_animation_config.animations.run
 	regular_frame_duration = run_anim.duration
 	
 	regular_run_textures.clear()
@@ -1028,45 +821,34 @@ func _create_regular_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		regular_run_textures.append(frame_texture)
 	
-	Logger.info("Created " + str(regular_run_textures.size()) + " regular animation textures", "enemies")
+	Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
 
 func _load_elite_animations() -> void:
-	var file_path := "res://data/animations/elite_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load elite animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/elite_enemy_animations.tres"
+	elite_animation_config = load(resource_path) as AnimationConfig
+	if elite_animation_config == null:
+		Logger.warn("Failed to load elite animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse elite animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	elite_animations = json.data
-	Logger.info("Loaded elite animations from JSON", "enemies")
-	
+	Logger.debug("Loaded elite animation config", "enemies")
 	_create_elite_textures()
 
 func _create_elite_textures() -> void:
-	if elite_animations.is_empty():
-		Logger.warn("No elite animations data available", "enemies")
+	if elite_animation_config == null:
+		Logger.warn("No elite animation config available", "enemies")
 		return
 	
-	var knight_full := load(elite_animations.sprite_sheet) as Texture2D
+	var knight_full := elite_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load elite sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = elite_animations.frame_size.width
-	var frame_height: int = elite_animations.frame_size.height
-	var columns: int = elite_animations.grid.columns
+	var frame_width: int = elite_animation_config.frame_size.x
+	var frame_height: int = elite_animation_config.frame_size.y
+	var columns: int = elite_animation_config.grid_columns
 	
-	var run_anim: Dictionary = elite_animations.animations.run
+	var run_anim: Dictionary = elite_animation_config.animations.run
 	elite_frame_duration = run_anim.duration
 	
 	elite_run_textures.clear()
@@ -1079,45 +861,34 @@ func _create_elite_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		elite_run_textures.append(frame_texture)
 	
-	Logger.info("Created " + str(elite_run_textures.size()) + " elite animation textures", "enemies")
+	Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
 
 func _load_boss_animations() -> void:
-	var file_path := "res://data/animations/boss_enemy_animations.json"
-	var file := FileAccess.open(file_path, FileAccess.READ)
-	if file == null:
-		Logger.warn("Failed to load boss animations from: " + file_path, "enemies")
+	var resource_path := "res://data/animations/boss_enemy_animations.tres"
+	boss_animation_config = load(resource_path) as AnimationConfig
+	if boss_animation_config == null:
+		Logger.warn("Failed to load boss animation config from: " + resource_path, "enemies")
 		return
 	
-	var json_string := file.get_as_text()
-	file.close()
-	
-	var json := JSON.new()
-	var parse_result := json.parse(json_string)
-	if parse_result != OK:
-		Logger.warn("Failed to parse boss animations JSON: " + json.get_error_message(), "enemies")
-		return
-	
-	boss_animations = json.data
-	Logger.info("Loaded boss animations from JSON", "enemies")
-	
+	Logger.debug("Loaded boss animation config", "enemies")
 	_create_boss_textures()
 
 func _create_boss_textures() -> void:
-	if boss_animations.is_empty():
-		Logger.warn("No boss animations data available", "enemies")
+	if boss_animation_config == null:
+		Logger.warn("No boss animation config available", "enemies")
 		return
 	
-	var knight_full := load(boss_animations.sprite_sheet) as Texture2D
+	var knight_full := boss_animation_config.sprite_sheet
 	if knight_full == null:
 		Logger.warn("Failed to load boss sprite sheet", "enemies")
 		return
 	
 	var knight_image := knight_full.get_image()
-	var frame_width: int = boss_animations.frame_size.width
-	var frame_height: int = boss_animations.frame_size.height
-	var columns: int = boss_animations.grid.columns
+	var frame_width: int = boss_animation_config.frame_size.x
+	var frame_height: int = boss_animation_config.frame_size.y
+	var columns: int = boss_animation_config.grid_columns
 	
-	var run_anim: Dictionary = boss_animations.animations.run
+	var run_anim: Dictionary = boss_animation_config.animations.run
 	boss_frame_duration = run_anim.duration
 	
 	boss_run_textures.clear()
@@ -1130,4 +901,4 @@ func _create_boss_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		boss_run_textures.append(frame_texture)
 	
-	Logger.info("Created " + str(boss_run_textures.size()) + " boss animation textures", "enemies")
+	Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")

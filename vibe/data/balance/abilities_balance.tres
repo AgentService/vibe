@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="AbilitiesBalance" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/domain/AbilitiesBalance.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+max_projectiles = 2000
+projectile_speed = 320.0
+projectile_ttl = 4.5
+arena_bounds = 3000.0
+projectile_culling_distance = 1500.0

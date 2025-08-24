@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="EnemyType" load_steps=2 format=3 uid="uid://cxw8y0n3p6r7s"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyType.gd" id="1_k9i6l"]
+
+[resource]
+script = ExtResource("1_k9i6l")
+id = "knight_regular"
+display_name = "Regular Knight"
+health = 6.0
+speed = 60.0
+speed_min = 55.0
+speed_max = 65.0
+size = Vector2(36, 36)
+collision_radius = 18.0
+xp_value = 2
+spawn_weight = 0.3
+render_tier = "regular"
+visual_config = {
+"color": {
+"a": 1.0,
+"b": 0.0,
+"g": 1.0,
+"r": 0.0
+},
+"shape": "square"
+}
+behavior_config = {
+"aggro_range": 400.0,
+"ai_type": "chase_player"
+}

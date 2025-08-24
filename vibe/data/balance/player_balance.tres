@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PlayerBalance" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/domain/PlayerBalance.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+projectile_count_add = 1
+projectile_speed_mult = 1.0
+fire_rate_mult = 3.0
+damage_mult = 1.0

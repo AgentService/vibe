@@ -71,5 +71,16 @@ static func setup_dictionary_with_type(enemy_dict: Dictionary, enemy_type: Enemy
 	enemy_dict["ai_type"] = enemy_type.get_ai_type()
 	enemy_dict["aggro_range"] = enemy_type.get_aggro_range()
 
+# New method to setup EnemyEntity directly
+func setup_with_type(enemy_type: EnemyType, spawn_pos: Vector2, velocity: Vector2) -> void:
+	pos = spawn_pos
+	vel = velocity
+	hp = enemy_type.health
+	max_hp = enemy_type.health
+	alive = true
+	type_id = enemy_type.id
+	speed = enemy_type.speed
+	size = enemy_type.size
+
 func is_valid() -> bool:
 	return not type_id.is_empty() and max_hp > 0.0 and speed >= 0.0

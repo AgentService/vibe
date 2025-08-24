@@ -4,6 +4,10 @@
 
 #todo #architecture #vibe-coding #godot4
 
+doublecheck changelogs\features\24_08_2025-DICTIONARY_TO_ENEMYENTITY_MIGRATION.md
+escpecially dictionary for mesh and enemytypes for rest question?
+
+remove obstactlesystem.gd?!
 
 combat log
 dongerslider
@@ -105,7 +109,7 @@ each enemy needs its own (waves.json rules)
 
 - [ ] #rendering: Use #multimesh for crowds/decals, verify #culling and batched updates
 
-  - Files: vibe/scripts/systems/WallSystem.gd, vibe/scripts/systems/TerrainSystem.gd
+  - Files: (systems removed - moving to TileMap approach)
 
 - [ ] #scripting micro-opts: cache node refs, #typed-arrays, disable unused #process-callbacks
 

@@ -1,11 +1,15 @@
-[gd_scene load_steps=2 format=3 uid="uid://c2jp4u6jcugam"]
+[gd_scene load_steps=3 format=3 uid="uid://c2jp4u6jcugam"]
 
-[ext_resource type="Script" path="res://scenes/arena/Player.gd" id="1_dn4kl"]
+[ext_resource type="Script" uid="uid://uougsht51b6u" path="res://scenes/arena/Player.gd" id="1_dn4kl"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_etesd"]
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 script = ExtResource("1_dn4kl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CapsuleShape2D_etesd")
+debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)

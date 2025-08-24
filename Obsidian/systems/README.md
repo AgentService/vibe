@@ -25,10 +25,17 @@ Detailed breakdown of scene files, component dependencies, node structures, and 
 ### 📊 [[Data-Systems-Architecture]]
 BalanceDB schema validation, RNG streams, hot-reload mechanisms, centralized Logger system, and data-driven configuration patterns.
 
+### 🏰 [[Enemy-System-Architecture]]
+Complete data-driven enemy system with JSON configuration, 4-tier visual classification, and MultiMesh batch rendering for thousands of enemies.
+
+### 🎯 [[Enemy-Entity-Architecture]]
+Typed EnemyEntity objects providing compile-time safety while maintaining Dictionary compatibility for performance-optimized rendering.
+
 ## Quick Navigation
 
-### Current State Analysis
-- **Working Well**: [[EventBus-System]], [[Canvas-Layer-Structure]] (basic), [[Data-Systems-Architecture]] (validation + hot-reload)
+### Current State Analysis (UPDATED)
+- **Working Well**: [[EventBus-System]], [[Enemy-System-Architecture]] (typed objects), [[Data-Systems-Architecture]] (validation + hot-reload), [[Enemy-Entity-Architecture]] (type safety)
+- **Recently Improved**: [[Component-Structure-Reference]] (typed enemy integration), [[Canvas-Layer-Structure]] (keybindings panel)
 - **Needs Improvement**: [[Scene-Management-System]], [[Modal-Overlay-System]]
 - **Major Refactor Needed**: Arena scene complexity (see [[Component-Structure-Reference]])
 
@@ -42,12 +49,12 @@ BalanceDB schema validation, RNG streams, hot-reload mechanisms, centralized Log
 - **UI properly separated** into CanvasLayer but lacks layer prioritization
 - **EventBus communication works well** - good decoupling pattern
 - **Missing core scenes** - no main menu, pause menu, options screen
-- **Enemy system now JSON-driven** - Pure data-driven approach with 4-tier knight system
+- **Enemy system now .tres resource-driven** - Pure data-driven approach with 4-tier knight system
 
 ### Enemy System Workflow
-**JSON → Registry → Tiers → Rendering Pipeline**
-1. `enemy_registry.json` → Lists knight types with spawn weights
-2. `knight_*.json` → Individual enemy definitions loaded by `EnemyRegistry`
+**.tres Resources → Registry → Tiers → Rendering Pipeline**
+1. `enemy_registry.json` → Lists knight types with spawn weights and .tres paths
+2. `knight_*.tres` → Individual enemy resource definitions loaded by `EnemyRegistry`
 3. `EnemyRenderTier` → Assigns visual tiers based on size (SWARM/REGULAR/ELITE/BOSS)
 4. `MultiMesh` → Batch rendering with tier-specific colors/animations
 5. **Visual Result**: Red/Green/Blue/Magenta enemies with distinct behaviors
@@ -73,15 +80,19 @@ The documentation follows the established patterns:
 
 ## Related Project Files
 
-### Key Implementation Files
-- `vibe/scenes/arena/Arena.gd` (main scene, 378 lines)
+### Key Implementation Files (UPDATED)
+- `vibe/scenes/arena/Arena.gd` (main scene, 378 lines) - processes Array[EnemyEntity] signals
 - `vibe/scenes/ui/HUD.gd` (game UI, 31 lines)
 - `vibe/scenes/ui/KeybindingsDisplay.gd` (controls reference, 87 lines)
-- `vibe/scripts/domain/EnemyType.gd` (enemy definitions)
-- `vibe/scripts/domain/EnemyEntity.gd` (entity wrapper)  
-- `vibe/scripts/systems/EnemyRegistry.gd` (JSON enemy loading, knight types)
-- `vibe/scripts/systems/EnemyBehaviorSystem.gd` (AI patterns)
-- `vibe/autoload/EventBus.gd` (communication system)
+- `vibe/scripts/domain/EnemyType.gd` (enemy definitions from JSON)
+- `vibe/scripts/domain/EnemyEntity.gd` (typed entity wrapper) ⭐ NEW
+- `vibe/scripts/systems/EnemyRegistry.gd` (JSON enemy resource loading, knight types)
+- `vibe/scripts/systems/WaveDirector.gd` (Array[EnemyEntity] pool management) ⭐ UPDATED
+- `vibe/scripts/systems/EnemyRenderTier.gd` (tier assignment + Dictionary conversion) ⭐ UPDATED
+- `vibe/scripts/systems/DamageSystem.gd` (object identity collision detection) ⭐ UPDATED
+- `vibe/scripts/systems/MeleeSystem.gd` (WaveDirector references for pool indexing) ⭐ UPDATED
+- `vibe/scripts/systems/EnemyBehaviorSystem.gd` (AI patterns for typed objects)
+- `vibe/autoload/EventBus.gd` (communication system with Array[EnemyEntity] signals) ⭐ UPDATED
 - `vibe/autoload/BalanceDB.gd` (data validation + hot-reload)
 - `vibe/autoload/RunManager.gd` (player stats management)
 - `vibe/scenes/main/Main.gd` (entry point, 14 lines)

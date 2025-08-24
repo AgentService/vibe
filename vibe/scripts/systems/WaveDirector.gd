@@ -7,7 +7,7 @@ extends Node
 
 class_name WaveDirector
 
-var enemies: Array[Dictionary] = []
+var enemies: Array[EnemyEntity] = []
 var max_enemies: int
 var spawn_timer: float = 0.0
 var spawn_interval: float
@@ -24,23 +24,18 @@ var target_distance: float
 var enemy_registry: EnemyRegistry
 
 # Cached alive enemies list for performance
-var _alive_enemies_cache: Array[Dictionary] = []
+var _alive_enemies_cache: Array[EnemyEntity] = []
 var _cache_dirty: bool = true
 var _last_cache_frame: int = -1
 
 # Free enemy slot tracking for faster spawning
 var _last_free_index: int = 0
 
-# Enemy registry data
-var _enemy_registry: Dictionary = {}
-var _enemy_configs: Dictionary = {}
-var _weighted_enemy_types: Array[String] = []
 
-signal enemies_updated(alive_enemies: Array[Dictionary])
+signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
 func _ready() -> void:
 	_load_balance_values()
-	_load_enemy_registry()
 	EventBus.combat_step.connect(_on_combat_step)
 	_setup_enemy_registry()
 	_initialize_pool()
@@ -55,8 +50,7 @@ func _setup_enemy_registry() -> void:
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
 	spawn_interval = BalanceDB.get_waves_value("spawn_interval")
-	var center_data: Dictionary = BalanceDB.get_waves_value("arena_center")
-	arena_center = Vector2(center_data.get("x", 400.0), center_data.get("y", 300.0))
+	arena_center = BalanceDB.get_waves_value("arena_center")
 	spawn_radius = BalanceDB.get_waves_value("spawn_radius")
 	enemy_speed_min = BalanceDB.get_waves_value("enemy_speed_min")
 	enemy_speed_max = BalanceDB.get_waves_value("enemy_speed_max")
@@ -65,83 +59,6 @@ func _load_balance_values() -> void:
 	arena_bounds = BalanceDB.get_waves_value("arena_bounds")
 	target_distance = BalanceDB.get_waves_value("target_distance")
 
-func _load_enemy_registry() -> void:
-	var registry_path = "res://data/enemies/config/enemy_registry.json"
-	
-	if not FileAccess.file_exists(registry_path):
-		Logger.warn("Enemy registry not found, using fallback enemy types", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	var file = FileAccess.open(registry_path, FileAccess.READ)
-	if not file:
-		Logger.warn("Failed to open enemy registry, using fallback", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	var json_text = file.get_as_text()
-	file.close()
-	
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		Logger.warn("Failed to parse enemy registry, using fallback", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	_enemy_registry = json.data
-	var enemy_types = _enemy_registry.get("enemy_types", {})
-	
-	# Load individual enemy configs and build weighted spawn list
-	_weighted_enemy_types.clear()
-	_enemy_configs.clear()
-	
-	for enemy_type in enemy_types.keys():
-		var enemy_data = enemy_types[enemy_type]
-		var config_path = enemy_data.get("config_path", "")
-		var spawn_weight = enemy_data.get("spawn_weight", 1)
-		
-		# Load enemy config
-		var enemy_config = _load_enemy_config(config_path)
-		if enemy_config:
-			_enemy_configs[enemy_type] = enemy_config
-			
-			# Add to weighted list based on spawn weight
-			for i in range(spawn_weight):
-				_weighted_enemy_types.append(enemy_type)
-	
-	Logger.info("Loaded " + str(_enemy_configs.size()) + " enemy types from registry", "waves")
-	Logger.debug("Weighted spawn distribution: " + str(_weighted_enemy_types), "waves")
-
-func _load_enemy_config(config_path: String) -> Dictionary:
-	if not FileAccess.file_exists(config_path):
-		Logger.warn("Enemy config not found: " + config_path, "waves")
-		return {}
-	
-	var file = FileAccess.open(config_path, FileAccess.READ)
-	if not file:
-		Logger.warn("Failed to open enemy config: " + config_path, "waves")
-		return {}
-	
-	var json_text = file.get_as_text()
-	file.close()
-	
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		Logger.warn("Failed to parse enemy config: " + config_path, "waves")
-		return {}
-	
-	return json.data
-
-func _setup_fallback_enemy_data() -> void:
-	# Fallback to hardcoded enemy data if registry fails
-	_weighted_enemy_types = ["green_slime", "green_slime", "green_slime", "scout"]  # 75% green_slime, 25% scout
-	_enemy_configs = {
-		"green_slime": {"stats": {"hp": 3.0, "speed_min": 60.0, "speed_max": 120.0}},
-		"scout": {"stats": {"hp": 1.5, "speed_min": 90.0, "speed_max": 180.0}}
-	}
-	Logger.info("Using fallback enemy data", "waves")
 
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
@@ -149,41 +66,43 @@ func _on_balance_reloaded() -> void:
 	Logger.info("Reloaded wave balance values", "waves")
 
 func _choose_enemy_type() -> String:
-	# Use weighted selection from registry
-	if _weighted_enemy_types.is_empty():
-		Logger.warn("No weighted enemy types available, defaulting to green_slime", "waves")
-		return "green_slime"
+	# Use EnemyRegistry for weighted selection
+	if not enemy_registry:
+		Logger.warn("EnemyRegistry not available, using fallback", "waves")
+		return "knight_regular"
 	
-	var index = RNG.randi_range("waves", 0, _weighted_enemy_types.size() - 1)
-	return _weighted_enemy_types[index]
+	var enemy_type: EnemyType = enemy_registry.get_random_enemy_type("waves")
+	if not enemy_type:
+		Logger.warn("No enemy types available from registry, using fallback", "waves")
+		return "knight_regular"
+	
+	return enemy_type.id
 
-func _get_enemy_speed(enemy_type: String) -> float:
-	var enemy_config = _enemy_configs.get(enemy_type)
-	if not enemy_config:
-		Logger.warn("No config found for enemy type: " + enemy_type + ", using default speed", "waves")
+func _get_enemy_speed(enemy_type_id: String) -> float:
+	if not enemy_registry:
 		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
-	var stats = enemy_config.get("stats", {})
-	var speed_min = stats.get("speed_min", enemy_speed_min)
-	var speed_max = stats.get("speed_max", enemy_speed_max)
+	var enemy_type: EnemyType = enemy_registry.get_enemy_type(enemy_type_id)
+	if not enemy_type:
+		Logger.warn("No enemy type found for ID: " + enemy_type_id + ", using default speed", "waves")
+		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
-	return RNG.randf_range("waves", speed_min, speed_max)
+	return RNG.randf_range("waves", enemy_type.speed_min, enemy_type.speed_max)
 
 
 func _initialize_pool() -> void:
 	enemies.resize(max_enemies)
 	for i in range(max_enemies):
-		enemies[i] = {
-			"pos": Vector2.ZERO,
-			"vel": Vector2.ZERO,
-			"hp": 0.0,  # Will be set when enemy is spawned
-			"max_hp": 0.0,  # Will be set when enemy is spawned
-			"alive": false,
-			"type_id": "knight_swarm",
-			"type": "knight",
-			"speed": 60.0,
-			"size": Vector2(24, 24)
-		}
+		var entity = EnemyEntity.new()
+		entity.pos = Vector2.ZERO
+		entity.vel = Vector2.ZERO
+		entity.hp = 0.0
+		entity.max_hp = 0.0
+		entity.alive = false
+		entity.type_id = ""
+		entity.speed = 60.0
+		entity.size = Vector2(24, 24)
+		enemies[i] = entity
 
 func _on_combat_step(payload) -> void:
 	_handle_spawning(payload.dt)
@@ -220,7 +139,7 @@ func _spawn_enemy() -> void:
 		Logger.debug("Using registry enemy type: " + enemy_type_str, "waves")
 	
 	# Use cached player position from PlayerState autoload
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	
 	var angle := RNG.randf_range("waves", 0.0, TAU)
 	var spawn_pos := target_pos + Vector2.from_angle(angle) * spawn_radius
@@ -231,18 +150,17 @@ func _spawn_enemy() -> void:
 	# Setup enemy using available method
 	if enemy_type_obj:
 		# Use entity setup if enemy type is available
-		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, spawn_pos, direction * enemy_type_obj.speed)
+		enemy.setup_with_type(enemy_type_obj, spawn_pos, direction * enemy_type_obj.speed)
 	else:
-		# Fallback to manual setup (should not happen with JSON system)
+		# Fallback to manual setup (should not happen with .tres system)
 		Logger.warn("Using fallback manual enemy setup for: " + enemy_type_str, "waves")
 		var speed := _get_enemy_speed(enemy_type_str)
-		enemy["pos"] = spawn_pos
-		enemy["vel"] = direction * speed
-		enemy["hp"] = 3.0  # Fallback default HP
-		enemy["max_hp"] = 3.0
-		enemy["alive"] = true
-		enemy["type"] = enemy_type_str
-		enemy["type_id"] = enemy_type_str
+		enemy.pos = spawn_pos
+		enemy.vel = direction * speed
+		enemy.hp = 3.0  # Fallback default HP
+		enemy.max_hp = 3.0
+		enemy.alive = true
+		enemy.type_id = enemy_type_str
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
 	if enemy_type_obj:
@@ -261,7 +179,7 @@ func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -
 	if enemy_registry:
 		enemy_type_obj = enemy_registry.get_enemy_type(enemy_type_str)
 	
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var direction := (target_pos - position).normalized()
 	
 	var enemy := enemies[free_idx]
@@ -269,31 +187,30 @@ func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -
 	# Setup enemy using available method
 	if enemy_type_obj:
 		# Use entity setup if enemy type is available
-		EnemyEntity.setup_dictionary_with_type(enemy, enemy_type_obj, position, direction * enemy_type_obj.speed)
+		enemy.setup_with_type(enemy_type_obj, position, direction * enemy_type_obj.speed)
 	else:
-		# Fallback to manual setup (should not happen with JSON system)
+		# Fallback to manual setup (should not happen with .tres system)
 		Logger.warn("Using fallback manual spawn_enemy_at for: " + enemy_type_str, "waves")
 		var speed := _get_enemy_speed(enemy_type_str)
-		enemy["pos"] = position
-		enemy["vel"] = direction * speed
-		enemy["hp"] = 3.0  # Fallback default HP
-		enemy["max_hp"] = 3.0
-		enemy["alive"] = true
-		enemy["type"] = enemy_type_str
-		enemy["type_id"] = enemy_type_str
+		enemy.pos = position
+		enemy.vel = direction * speed
+		enemy.hp = 3.0  # Fallback default HP
+		enemy.max_hp = 3.0
+		enemy.alive = true
+		enemy.type_id = enemy_type_str
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	return true
 
 func _find_free_enemy() -> int:
 	# Start search from last known free index for better performance
 	for i in range(_last_free_index, max_enemies):
-		if not enemies[i]["alive"]:
+		if not enemies[i].alive:
 			_last_free_index = i
 			return i
 	
 	# If not found, search from beginning to last free index
 	for i in range(0, _last_free_index):
-		if not enemies[i]["alive"]:
+		if not enemies[i].alive:
 			_last_free_index = i
 			return i
 	
@@ -301,23 +218,22 @@ func _find_free_enemy() -> int:
 
 func _update_enemies(dt: float) -> void:
 	# Use cached player position from PlayerState autoload  
-	var target_pos: Vector2 = PlayerState.position if PlayerState.position != Vector2.ZERO else arena_center
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	
 	# Only update alive enemies to improve performance
 	var alive_enemies = get_alive_enemies()
 	for enemy in alive_enemies:
-		var dist_to_target: float = enemy["pos"].distance_to(target_pos)
+		var dist_to_target: float = enemy.pos.distance_to(target_pos)
 		
 		# Only update enemies within update distance for performance
 		if dist_to_target <= update_distance:
 			# Simple chase behavior - move toward player
-			var direction: Vector2 = (target_pos - enemy["pos"]).normalized()
-			var speed: float = enemy.get("speed", 60.0)
-			enemy["vel"] = direction * speed
+			var direction: Vector2 = (target_pos - enemy.pos).normalized()
+			enemy.vel = direction * enemy.speed
 			
 			# Update enemy position based on current velocity
-			enemy["pos"] += enemy["vel"] * dt
+			enemy.pos += enemy.vel * dt
 		
 		# Kill enemy if it reaches target or goes out of bounds - DISABLED
 		# if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
@@ -327,7 +243,7 @@ func _update_enemies(dt: float) -> void:
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
 
-func get_alive_enemies() -> Array[Dictionary]:
+func get_alive_enemies() -> Array[EnemyEntity]:
 	var current_frame = Engine.get_process_frames()
 	
 	# Use cached list if available and not dirty, or if already rebuilt this frame
@@ -338,10 +254,7 @@ func get_alive_enemies() -> Array[Dictionary]:
 	_alive_enemies_cache.clear()
 	for i in range(enemies.size()):
 		var enemy = enemies[i]
-		if enemy["alive"]:
-			# Only add pool index if not already set to avoid modifying original
-			if not enemy.has("_pool_index"):
-				enemy["_pool_index"] = i
+		if enemy.alive:
 			_alive_enemies_cache.append(enemy)
 	
 	_cache_dirty = false
@@ -355,18 +268,18 @@ func damage_enemy(enemy_index: int, damage: float) -> void:
 		return
 	
 	var enemy := enemies[enemy_index]
-	if not enemy["alive"]:
+	if not enemy.alive:
 		return
 	
-	var old_hp = enemy["hp"]
-	enemy["hp"] -= damage
-	Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.get("type_id", "unknown"), old_hp, enemy["hp"], damage], "combat")
+	var old_hp = enemy.hp
+	enemy.hp -= damage
+	Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.type_id, old_hp, enemy.hp, damage], "combat")
 	
-	if enemy["hp"] <= 0.0:
-		var death_pos: Vector2 = enemy["pos"]
-		enemy["alive"] = false
+	if enemy.hp <= 0.0:
+		var death_pos: Vector2 = enemy.pos
+		enemy.alive = false
 		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
-		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.get("type_id", "unknown"), death_pos], "combat")
+		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
 		var payload := EventBus.EnemyKilledPayload.new(death_pos, 1)
 		EventBus.enemy_killed.emit(payload)
 

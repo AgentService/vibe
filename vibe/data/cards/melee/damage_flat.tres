@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardResource" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CardResource.gd" id="1_flat"]
+
+[resource]
+script = ExtResource("1_flat")
+card_id = "card_melee_damage"
+name = "Sharp Edge"
+description = "Increased Melee Damage (+15 damage)"
+level_requirement = 1
+weight = 8
+modifiers = {
+"melee_damage_add": 15.0
+}
