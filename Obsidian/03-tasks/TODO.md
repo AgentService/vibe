@@ -109,7 +109,7 @@ each enemy needs its own (waves.json rules)
 
 - [ ] #rendering: Use #multimesh for crowds/decals, verify #culling and batched updates
 
-  - Files: vibe/scripts/systems/WallSystem.gd, vibe/scripts/systems/TerrainSystem.gd
+  - Files: (systems removed - moving to TileMap approach)
 
 - [ ] #scripting micro-opts: cache node refs, #typed-arrays, disable unused #process-callbacks
 

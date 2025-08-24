@@ -116,11 +116,8 @@ Arena (Node2D)
 - `EnemyRenderTier` - Converts EnemyEntity objects to Dictionary arrays for MultiMesh ⭐ UPDATED
 - `EnemyBehaviorSystem` - AI pattern management for typed enemy objects
 - `ArenaSystem` - Level loading and arena configuration
-- `TextureThemeSystem` - Visual themes and sprite management
 - `CameraSystem` - Camera control and zoom management
 - `XpSystem` - Experience management with kill event integration
-- `TerrainSystem` - Ground rendering and MultiMesh terrain
-- `ObstacleSystem` - Environment objects and collision
 - `MeleeSystem` - Melee combat with WaveDirector reference for pool indexing ⭐ UPDATED
 
 **UI Management**:

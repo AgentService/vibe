@@ -20,7 +20,6 @@
 - **Performance Optimizations**: Object pooling for projectiles, distance-based culling
 - **Key Files Modified**:
   - `scripts/systems/CameraSystem.gd` - Camera following and control
-  - `scripts/systems/WallSystem.gd` - Arena boundary collision
   - `data/arena/layouts/` - Arena configuration files
   - `scripts/systems/ArenaSystem.gd` - Arena coordination
 

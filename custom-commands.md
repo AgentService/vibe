@@ -30,11 +30,11 @@ Add to `settings.json`:
     },
     "/obs-check": {
       "description": "Check which Obsidian docs need updating",
-      "prompt": "Review recent changes and identify which Obsidian/system/*.md files need updates. List specific sections that are now outdated and explain why they need updating. Check for: new components, changed signal flows, modified architecture patterns, and implementation status changes."
+      "prompt": "Review recent changes and identify which Obsidian/*/*.md files need updates. List specific sections that are now outdated and explain why they need updating. Check for: new components, changed signal flows, modified architecture patterns, and implementation status changes."
     },
     "/obs-update": {
       "description": "Update Obsidian system documentation",
-      "prompt": "Update the relevant Obsidian/system/*.md files based on recent changes. Focus on: current implementation status, new components, signal flows, and architecture changes. Use [[tags]] for cross-references (just for Obsidian Linked View Graph). Maintain the established documentation structure and update any outdated information to reflect the current codebase state."
+      "prompt": "Update the relevant Obsidian/*/*.md files based on recent changes. Focus on: current implementation status, new components, signal flows, and architecture changes. Use [[tags]] for cross-references (just for Obsidian Linked View Graph). Maintain the established documentation structure and update any outdated information to reflect the current codebase state."
     }
   }
 }

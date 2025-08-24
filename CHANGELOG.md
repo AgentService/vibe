@@ -213,7 +213,7 @@
 
 ### Changed
 - **Logger Migration**: Completed migration of all print statements to centralized Logger system
-  - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, TextureThemeSystem.gd, XpSystem.gd migrated
+  - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, XpSystem.gd migrated
   - **Strategic logging**: Added warning logs for pool exhaustion in AbilitySystem and WaveDirector
   - **Error tracking**: Added failure logging for damage system pool lookups
   - **Category organization**: UI interactions use "ui" category, player events use "player" category

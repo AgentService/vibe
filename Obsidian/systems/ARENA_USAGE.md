@@ -6,11 +6,7 @@ The arena system follows vibe's **layered, signal-driven, data-first** architect
 
 ```
 ArenaSystem (Coordinator)
-├── TerrainSystem (Floor tiles)
-├── ObstacleSystem (Pillars, walls, crates)  
-├── InteractableSystem (Chests, doors, altars)
-├── WallSystem (Boundary collision)
-└── TextureThemeSystem (Visual themes)
+└── (Ready for TileMap-based level design)
 ```
 
 ## 📁 Data-Driven Configuration
@@ -90,13 +86,12 @@ texture_theme_system.set_theme("forest")   # Green overgrown
 
 ### New Object Types
 1. **Add to JSON schemas** in room definitions
-2. **Extend system handlers** in ObstacleSystem/InteractableSystem  
-3. **Add texture generation** in TextureThemeSystem
+2. **Extend system handlers** in arena components  
 4. **Update MultiMesh setup** in Arena.gd if needed
 
 ### New Themes
 ```gdscript
-// In TextureThemeSystem.themes
+// For future theme system
 "volcano": {
   "name": "Volcanic Cavern",
   "wall_color": Color(0.8, 0.2, 0.1),
