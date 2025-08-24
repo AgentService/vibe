@@ -12,9 +12,12 @@ This directory contains JSON data files that define game balance and configurati
 │   ├── waves.json    # Wave director and enemy settings
 │   └── player.json   # Player base stats
 ├── cards/            # Card system data
-├── enemies/          # Enemy definitions and spawning
-│   ├── enemy_registry.json  # Central enemy registry with spawn weights
-│   └── *.json        # Individual enemy configurations
+├── content/          # Game content definitions (.tres resources)
+│   ├── enemies/      # Enemy type definitions (.tres files)
+│   ├── abilities/    # Ability definitions (planned .tres)
+│   ├── items/        # Item definitions (planned .tres)
+│   ├── heroes/       # Hero/class definitions (planned .tres)
+│   └── maps/         # Map definitions (planned .tres)
 ├── animations/       # Animation configurations for enemies
 │   └── *_animations.json  # Frame data and timing for each enemy type
 ├── arena/            # Arena configuration
@@ -235,90 +238,26 @@ Each JSON file includes a `_schema_version` field for future compatibility. The 
 
 ## Adding New Enemy Types
 
-The enemy system is fully data-driven. To add a new enemy type:
+The enemy system uses .tres resources with automatic discovery. To add a new enemy type:
 
-1. **Create enemy config**: Add `data/enemies/new_enemy.json` with stats and metadata
-2. **Create animation config**: Add `data/animations/new_enemy_animations.json` with sprite data
-3. **Add to registry**: Update `data/enemies/enemy_registry.json` with spawn weight
-4. **Add sprite sheet**: Place sprite sheet texture in `assets/sprites/`
-5. **Test integration**: Run `vibe/tests/simple_enemy_test.gd` to verify JSON validity
+1. **Create enemy resource**: Add `data/content/enemies/new_enemy.tres` using EnemyType resource class
+2. **Set spawn weight**: Configure `spawn_weight` property in the .tres file
+3. **Add sprite sheet**: Place sprite sheet texture in `assets/sprites/` (if needed)
+4. **Test integration**: Run enemy tests to verify resource validity
 
-The EnemyRenderer and WaveDirector will automatically pick up new enemy types from the registry without code changes.
+The EnemyRegistry automatically discovers all .tres files in the enemies directory without requiring manual registration.
 
 ## Enemy System Schemas
 
-### enemies/enemy_registry.json
+### content/enemies/*.tres
 
-Central registry for all enemy types with spawn weights and metadata. Controls which enemies can spawn and their relative frequency.
+Individual enemy configurations using Godot Resources. See `/data/content/enemies/README.md` for complete schema and editing workflow.
 
-```json
-{
-  "_schema_version": "1.0.0",
-  "_description": "Central registry for all enemy types with spawn weights and metadata",
-  "enemy_types": {
-    "green_slime": {
-      "spawn_weight": 50,
-      "config_path": "res://data/enemies/green_slime.json",
-      "tier": "common",
-      "behavior_type": "melee"
-    },
-    "purple_slime": {
-      "spawn_weight": 20,
-      "config_path": "res://data/enemies/purple_slime.json",
-      "tier": "common", 
-      "behavior_type": "tank"
-    }
-  },
-  "wave_progression": {
-    "_description": "Future feature: different enemy mixes per wave level",
-    "enabled": false,
-    "wave_configs": {}
-  }
-}
-```
-
-**Fields:**
-- `enemy_types` (object): Dictionary of enemy type configurations
-  - `spawn_weight` (int): Relative spawn frequency (higher = more common)
-  - `config_path` (string): Path to individual enemy configuration file
-  - `tier` (string): Enemy tier classification (common, rare, elite)
-  - `behavior_type` (string): AI behavior pattern (melee, tank, ranged, etc.)
-- `wave_progression` (object): Future feature for wave-specific enemy mixes
-
-### enemies/*.json
-
-Individual enemy configurations defining stats, appearance, and behavior for each enemy type.
-
-```json
-{
-  "id": "purple_slime",
-  "display_name": "Purple Slime",
-  "animation_config": "res://data/animations/purple_slime_animations.json",
-  "size": {
-    "width": 24,
-    "height": 24
-  },
-  "stats": {
-    "hp": 5.0,
-    "speed_min": 40.0,
-    "speed_max": 80.0
-  },
-  "render_tier": 1,
-  "_schema_version": "1.0.0",
-  "_description": "Tank-type enemy with higher HP but slower movement speed"
-}
-```
-
-**Fields:**
-- `id` (string): Unique enemy type identifier
-- `display_name` (string): Human-readable name for UI/debug
-- `animation_config` (string): Path to animation configuration file
-- `size` (object): Enemy collision and render dimensions
-- `stats` (object): Combat and movement statistics
-  - `hp` (float): Enemy health points
-  - `speed_min` (float): Minimum movement speed in pixels/second
-  - `speed_max` (float): Maximum movement speed in pixels/second
-- `render_tier` (int): Rendering priority tier (1-4, higher = more detailed)
+**Example**: `knight_regular.tres`
+- Uses `EnemyType` resource class with typed properties
+- Editable in Godot Inspector or as text
+- Automatic hot-reload when files change
+- Type safety and validation built-in
 
 ### animations/*_animations.json
 

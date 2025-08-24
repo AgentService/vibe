@@ -18,25 +18,25 @@ When implemented, abilities will include:
 
 ## Schema (Planned)
 
-```json
-{
-  "id": "fireball",
-  "name": "Fireball",
-  "type": "projectile",
-  "damage": {
-    "base": 25,
-    "scaling": ["spell_damage", "fire_damage"]
-  },
-  "cooldown": 1.5,
-  "projectile": {
-    "speed": 400,
-    "count": 1,
-    "pattern": "straight"
-  },
-  "tags": ["spell", "fire", "projectile"],
-  "vfx": "res://effects/fireball.tscn",
-  "supports": ["multiple_projectiles", "faster_casting"]
-}
+Abilities will use Godot Resources (.tres files) following the pattern established by the enemy system:
+
+```tres
+[gd_resource type="Resource" script_class="AbilityType" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/domain/AbilityType.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "fireball"
+display_name = "Fireball"
+ability_type = "projectile"
+damage_base = 25.0
+damage_scaling = ["spell_damage", "fire_damage"]
+cooldown = 1.5
+projectile_speed = 400.0
+projectile_count = 1
+projectile_pattern = "straight"
+tags = ["spell", "fire", "projectile"]
+vfx_scene = "res://effects/fireball.tscn"
+supported_gems = ["multiple_projectiles", "faster_casting"]
 ```
 
 ## Related Systems (Future)
@@ -48,7 +48,7 @@ When implemented, abilities will include:
 
 ## Hot-Reload
 
-Will support **F5** hot-reload when implemented.
+Will support **automatic hot-reload** when implemented, using Godot's native resource reloading system.
 
 ---
 

@@ -1,7 +1,7 @@
 extends Node
 
 ## Enemy registry system managing enemy type definitions.
-## Loads all enemy JSON files and provides weighted random selection.
+## Loads all enemy .tres resources and provides weighted random selection.
 
 class_name EnemyRegistry
 
@@ -58,7 +58,7 @@ func load_all_enemy_types() -> void:
 		Logger.warn("No enemy types loaded, using fallback", "enemies")
 		_load_fallback_types()
 	else:
-		Logger.info("SUCCESS: Loaded " + str(loaded_count) + " JSON enemy types", "enemies")
+		Logger.info("SUCCESS: Loaded " + str(loaded_count) + " .tres enemy types", "enemies")
 		
 		# Debug: List all loaded enemy types
 		for type_id in enemy_types.keys():
@@ -87,7 +87,7 @@ func _load_enemy_type_from_file(file_path: String) -> bool:
 
 func _load_fallback_types() -> void:
 	Logger.error("Enemy loading failed completely - no fallback available", "enemies")
-	Logger.error("Ensure knight .tres files exist in res://data/content/enemies/", "enemies")
+	Logger.error("Ensure knight .tres files exist in res://vibe/data/content/enemies/", "enemies")
 
 func get_enemy_type(type_id: String) -> EnemyType:
 	return enemy_types.get(type_id, null)

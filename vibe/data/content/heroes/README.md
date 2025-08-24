@@ -18,26 +18,26 @@ When implemented, heroes will include:
 
 ## Schema (Planned)
 
-```json
-{
-  "id": "knight",
-  "name": "Knight",
-  "description": "Melee warrior with defensive abilities",
-  "base_stats": {
-    "strength": 18,
-    "dexterity": 12,
-    "intelligence": 10,
-    "vitality": 15
-  },
-  "starting_abilities": ["melee_strike", "defensive_stance"],
-  "passive_tree_start": "strength_cluster_1",
-  "ascendancies": ["paladin", "berserker"],
-  "equipment_preferences": {
-    "weapon": ["sword", "axe", "mace"],
-    "armor": ["heavy"]
-  },
-  "unlock_requirements": null
-}
+Heroes will use Godot Resources (.tres files) following the pattern established by the enemy system:
+
+```tres
+[gd_resource type="Resource" script_class="HeroType" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/domain/HeroType.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "knight"
+display_name = "Knight"
+description = "Melee warrior with defensive abilities"
+strength_base = 18
+dexterity_base = 12
+intelligence_base = 10
+vitality_base = 15
+starting_abilities = ["melee_strike", "defensive_stance"]
+passive_tree_start = "strength_cluster_1"
+ascendancies = ["paladin", "berserker"]
+weapon_preferences = ["sword", "axe", "mace"]
+armor_preferences = ["heavy"]
+unlock_requirements = ""
 ```
 
 ## Design Philosophy
@@ -63,7 +63,7 @@ When implemented, heroes will include:
 
 ## Hot-Reload
 
-Will support **F5** hot-reload when implemented.
+Will support **automatic hot-reload** when implemented, using Godot's native resource reloading system.
 
 ---
 

@@ -17,75 +17,8 @@ const SWARM_MAX_SIZE: float = 24.0
 const REGULAR_MAX_SIZE: float = 48.0
 const ELITE_MAX_SIZE: float = 64.0
 
-# Cached tier configuration
-var _tier_config: Dictionary = {}
-
 func _ready() -> void:
-	Logger.info("EnemyRenderTier._ready() starting", "enemies")
-	_load_tier_config()
-	if BalanceDB:
-		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 	Logger.info("Enemy render tier system initialized", "enemies")
-
-func _on_balance_reloaded() -> void:
-	_load_tier_config()
-	Logger.info("Reloaded enemy tier configuration", "enemies")
-
-func _load_tier_config() -> void:
-	var config_path: String = "res://data/enemies/config/enemy_tiers.json"
-	var file: FileAccess = FileAccess.open(config_path, FileAccess.READ)
-	
-	if file == null:
-		Logger.warn("Could not load tier config: " + config_path + ", using defaults", "enemies")
-		_use_default_config()
-		return
-	
-	var json_text: String = file.get_as_text()
-	file.close()
-	
-	var json: JSON = JSON.new()
-	var parse_result: Error = json.parse(json_text)
-	
-	if parse_result != OK:
-		Logger.warn("Failed to parse tier config JSON: " + json.get_error_message(), "enemies")
-		_use_default_config()
-		return
-	
-	_tier_config = json.data
-	Logger.info("Loaded enemy tier configuration", "enemies")
-
-func _use_default_config() -> void:
-	_tier_config = {
-		"tiers": {
-			"swarm": {
-				"name": "SWARM",
-				"description": "Small, fast enemies rendered in bulk",
-				"max_size": 24,
-				"max_speed": 120,
-				"render_method": "multimesh"
-			},
-			"regular": {
-				"name": "REGULAR", 
-				"description": "Medium enemies with basic animations",
-				"max_size": 48,
-				"max_speed": 80,
-				"render_method": "multimesh"
-			},
-			"elite": {
-				"name": "ELITE",
-				"description": "Large enemies with special effects",
-				"max_size": 64,
-				"max_speed": 60,
-				"render_method": "multimesh"
-			},
-			"boss": {
-				"name": "BOSS",
-				"description": "Unique enemies with individual rendering",
-				"min_size": 80,
-				"render_method": "individual_sprite"
-			}
-		}
-	}
 
 ## Determine the render tier for an enemy based on its type
 func get_tier_for_enemy(enemy_data: Dictionary) -> Tier:
@@ -133,32 +66,6 @@ func get_tier_name(tier: Tier) -> String:
 func should_use_multimesh(tier: Tier) -> bool:
 	return tier != Tier.BOSS
 
-## Get tier configuration data
-func get_tier_config(tier: Tier) -> Dictionary:
-	var tier_name: String = get_tier_name(tier).to_lower()
-	return _tier_config.get("tiers", {}).get(tier_name, {})
-
-## Validate that the tier system is properly configured
-func validate_configuration() -> Array[String]:
-	var errors: Array[String] = []
-	
-	if not _tier_config.has("tiers"):
-		errors.append("Missing 'tiers' section in configuration")
-		return errors
-	
-	var tiers: Dictionary = _tier_config["tiers"]
-	var required_tiers: Array[String] = ["swarm", "regular", "elite", "boss"]
-	
-	for tier_name in required_tiers:
-		if not tiers.has(tier_name):
-			errors.append("Missing tier configuration: " + tier_name)
-			continue
-		
-		var tier_data: Dictionary = tiers[tier_name]
-		if not tier_data.has("render_method"):
-			errors.append("Missing render_method for tier: " + tier_name)
-	
-	return errors
 
 ## Get all enemies grouped by tier
 func group_enemies_by_tier(enemies: Array[Dictionary]) -> Dictionary:

@@ -42,26 +42,26 @@ When implemented, maps will include:
 
 ## Schema (Planned)
 
-```json
-{
-  "id": "basic_arena",
-  "name": "Training Arena",
-  "type": "arena",
-  "size": {"width": 800, "height": 600},
-  "spawn_zones": {
-    "player": {"x": 400, "y": 300},
-    "enemies": [
-      {"x": 100, "y": 100, "radius": 50},
-      {"x": 700, "y": 500, "radius": 50}
-    ]
-  },
-  "collision_layers": ["walls", "obstacles"],
-  "theme": "dungeon",
-  "difficulty_modifiers": {
-    "enemy_spawn_rate": 1.0,
-    "environmental_hazards": false
-  }
-}
+Maps will use Godot Resources (.tres files) following the pattern established by the enemy system:
+
+```tres
+[gd_resource type="Resource" script_class="MapType" load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/domain/MapType.gd" id="1"]
+[resource]
+script = ExtResource("1")
+id = "basic_arena"
+display_name = "Training Arena"
+map_type = "arena"
+width = 800
+height = 600
+player_spawn_x = 400.0
+player_spawn_y = 300.0
+enemy_spawn_zones = [Vector2(100, 100), Vector2(700, 500)]
+spawn_zone_radius = 50.0
+collision_layers = ["walls", "obstacles"]
+theme = "dungeon"
+enemy_spawn_rate_modifier = 1.0
+environmental_hazards_enabled = false
 ```
 
 ## Integration Standards
@@ -81,7 +81,7 @@ When implemented, maps will include:
 
 ## Hot-Reload
 
-Will support **F5** hot-reload when implemented.
+Will support **automatic hot-reload** when implemented, using Godot's native resource reloading system.
 
 ---
 

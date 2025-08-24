@@ -19,9 +19,6 @@ enemies/
 ├── knight_elite.tres       # Elite variant
 ├── knight_swarm.tres       # Swarm variant  
 ├── knight_boss.tres        # Boss variant
-└── config/
-    ├── enemy_tiers.json    # Tier definitions (simple config)
-    └── enemy_registry.json # Master registry (simple config)
 ```
 
 ## Resource Schema

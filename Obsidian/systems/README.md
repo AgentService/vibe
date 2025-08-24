@@ -42,12 +42,12 @@ BalanceDB schema validation, RNG streams, hot-reload mechanisms, centralized Log
 - **UI properly separated** into CanvasLayer but lacks layer prioritization
 - **EventBus communication works well** - good decoupling pattern
 - **Missing core scenes** - no main menu, pause menu, options screen
-- **Enemy system now JSON-driven** - Pure data-driven approach with 4-tier knight system
+- **Enemy system now .tres resource-driven** - Pure data-driven approach with 4-tier knight system
 
 ### Enemy System Workflow
-**JSON → Registry → Tiers → Rendering Pipeline**
-1. `enemy_registry.json` → Lists knight types with spawn weights
-2. `knight_*.json` → Individual enemy definitions loaded by `EnemyRegistry`
+**.tres Resources → Registry → Tiers → Rendering Pipeline**
+1. `enemy_registry.json` → Lists knight types with spawn weights and .tres paths
+2. `knight_*.tres` → Individual enemy resource definitions loaded by `EnemyRegistry`
 3. `EnemyRenderTier` → Assigns visual tiers based on size (SWARM/REGULAR/ELITE/BOSS)
 4. `MultiMesh` → Batch rendering with tier-specific colors/animations
 5. **Visual Result**: Red/Green/Blue/Magenta enemies with distinct behaviors
@@ -79,7 +79,7 @@ The documentation follows the established patterns:
 - `vibe/scenes/ui/KeybindingsDisplay.gd` (controls reference, 87 lines)
 - `vibe/scripts/domain/EnemyType.gd` (enemy definitions)
 - `vibe/scripts/domain/EnemyEntity.gd` (entity wrapper)  
-- `vibe/scripts/systems/EnemyRegistry.gd` (JSON enemy loading, knight types)
+- `vibe/scripts/systems/EnemyRegistry.gd` (.tres enemy resource loading, knight types)
 - `vibe/scripts/systems/EnemyBehaviorSystem.gd` (AI patterns)
 - `vibe/autoload/EventBus.gd` (communication system)
 - `vibe/autoload/BalanceDB.gd` (data validation + hot-reload)

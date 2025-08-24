@@ -31,16 +31,11 @@ var _last_cache_frame: int = -1
 # Free enemy slot tracking for faster spawning
 var _last_free_index: int = 0
 
-# Enemy registry data
-var _enemy_registry: Dictionary = {}
-var _enemy_configs: Dictionary = {}
-var _weighted_enemy_types: Array[String] = []
 
 signal enemies_updated(alive_enemies: Array[Dictionary])
 
 func _ready() -> void:
 	_load_balance_values()
-	_load_enemy_registry()
 	EventBus.combat_step.connect(_on_combat_step)
 	_setup_enemy_registry()
 	_initialize_pool()
@@ -64,83 +59,6 @@ func _load_balance_values() -> void:
 	arena_bounds = BalanceDB.get_waves_value("arena_bounds")
 	target_distance = BalanceDB.get_waves_value("target_distance")
 
-func _load_enemy_registry() -> void:
-	var registry_path = "res://data/enemies/config/enemy_registry.json"
-	
-	if not FileAccess.file_exists(registry_path):
-		Logger.warn("Enemy registry not found, using fallback enemy types", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	var file = FileAccess.open(registry_path, FileAccess.READ)
-	if not file:
-		Logger.warn("Failed to open enemy registry, using fallback", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	var json_text = file.get_as_text()
-	file.close()
-	
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		Logger.warn("Failed to parse enemy registry, using fallback", "waves")
-		_setup_fallback_enemy_data()
-		return
-	
-	_enemy_registry = json.data
-	var enemy_types = _enemy_registry.get("enemy_types", {})
-	
-	# Load individual enemy configs and build weighted spawn list
-	_weighted_enemy_types.clear()
-	_enemy_configs.clear()
-	
-	for enemy_type in enemy_types.keys():
-		var enemy_data = enemy_types[enemy_type]
-		var config_path = enemy_data.get("config_path", "")
-		var spawn_weight = enemy_data.get("spawn_weight", 1)
-		
-		# Load enemy config
-		var enemy_config = _load_enemy_config(config_path)
-		if enemy_config:
-			_enemy_configs[enemy_type] = enemy_config
-			
-			# Add to weighted list based on spawn weight
-			for i in range(spawn_weight):
-				_weighted_enemy_types.append(enemy_type)
-	
-	Logger.info("Loaded " + str(_enemy_configs.size()) + " enemy types from registry", "waves")
-	Logger.debug("Weighted spawn distribution: " + str(_weighted_enemy_types), "waves")
-
-func _load_enemy_config(config_path: String) -> Dictionary:
-	if not FileAccess.file_exists(config_path):
-		Logger.warn("Enemy config not found: " + config_path, "waves")
-		return {}
-	
-	var file = FileAccess.open(config_path, FileAccess.READ)
-	if not file:
-		Logger.warn("Failed to open enemy config: " + config_path, "waves")
-		return {}
-	
-	var json_text = file.get_as_text()
-	file.close()
-	
-	var json = JSON.new()
-	var parse_result = json.parse(json_text)
-	if parse_result != OK:
-		Logger.warn("Failed to parse enemy config: " + config_path, "waves")
-		return {}
-	
-	return json.data
-
-func _setup_fallback_enemy_data() -> void:
-	# Fallback to hardcoded enemy data if registry fails
-	_weighted_enemy_types = ["green_slime", "green_slime", "green_slime", "scout"]  # 75% green_slime, 25% scout
-	_enemy_configs = {
-		"green_slime": {"stats": {"hp": 3.0, "speed_min": 60.0, "speed_max": 120.0}},
-		"scout": {"stats": {"hp": 1.5, "speed_min": 90.0, "speed_max": 180.0}}
-	}
-	Logger.info("Using fallback enemy data", "waves")
 
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
@@ -148,25 +66,28 @@ func _on_balance_reloaded() -> void:
 	Logger.info("Reloaded wave balance values", "waves")
 
 func _choose_enemy_type() -> String:
-	# Use weighted selection from registry
-	if _weighted_enemy_types.is_empty():
-		Logger.warn("No weighted enemy types available, defaulting to green_slime", "waves")
-		return "green_slime"
+	# Use EnemyRegistry for weighted selection
+	if not enemy_registry:
+		Logger.warn("EnemyRegistry not available, using fallback", "waves")
+		return "knight_regular"
 	
-	var index = RNG.randi_range("waves", 0, _weighted_enemy_types.size() - 1)
-	return _weighted_enemy_types[index]
+	var enemy_type: EnemyType = enemy_registry.get_random_enemy_type("waves")
+	if not enemy_type:
+		Logger.warn("No enemy types available from registry, using fallback", "waves")
+		return "knight_regular"
+	
+	return enemy_type.id
 
-func _get_enemy_speed(enemy_type: String) -> float:
-	var enemy_config = _enemy_configs.get(enemy_type)
-	if not enemy_config:
-		Logger.warn("No config found for enemy type: " + enemy_type + ", using default speed", "waves")
+func _get_enemy_speed(enemy_type_id: String) -> float:
+	if not enemy_registry:
 		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
-	var stats = enemy_config.get("stats", {})
-	var speed_min = stats.get("speed_min", enemy_speed_min)
-	var speed_max = stats.get("speed_max", enemy_speed_max)
+	var enemy_type: EnemyType = enemy_registry.get_enemy_type(enemy_type_id)
+	if not enemy_type:
+		Logger.warn("No enemy type found for ID: " + enemy_type_id + ", using default speed", "waves")
+		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
 	
-	return RNG.randf_range("waves", speed_min, speed_max)
+	return RNG.randf_range("waves", enemy_type.speed_min, enemy_type.speed_max)
 
 
 func _initialize_pool() -> void:
