@@ -8,10 +8,13 @@ id = "knight_regular"
 display_name = "Regular Knight"
 health = 6.0
 speed = 60.0
+speed_min = 55.0
+speed_max = 65.0
 size = Vector2(36, 36)
 collision_radius = 18.0
 xp_value = 2
 spawn_weight = 0.3
+render_tier = "regular"
 visual_config = {
 "color": {
 "a": 1.0,

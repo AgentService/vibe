@@ -12,41 +12,29 @@ enum Tier {
 	BOSS = 3        # <1% of enemies (animated) - Individual sprites
 }
 
-# Tier thresholds based on enemy size
-const SWARM_MAX_SIZE: float = 24.0
-const REGULAR_MAX_SIZE: float = 48.0
-const ELITE_MAX_SIZE: float = 64.0
 
 func _ready() -> void:
 	Logger.info("Enemy render tier system initialized", "enemies")
 
-## Determine the render tier for an enemy based on its type
-func get_tier_for_enemy(enemy_data: Dictionary) -> Tier:
-	var type_id: String = enemy_data.get("type_id", "unknown")
+## Determine the render tier for an enemy based on its EnemyType resource
+func get_tier_for_enemy(enemy_type: EnemyType) -> Tier:
+	if not enemy_type:
+		Logger.error("get_tier_for_enemy called with null enemy_type", "enemies")
+		return Tier.REGULAR
 	
-	# Assign tier based on enemy type for proper visual distinction
-	match type_id:
-		"knight_swarm":
+	# Use the render_tier property from the EnemyType resource
+	match enemy_type.render_tier:
+		"swarm":
 			return Tier.SWARM
-		"knight_regular":
+		"regular":
 			return Tier.REGULAR
-		"knight_elite":
+		"elite":
 			return Tier.ELITE
-		"knight_boss":
+		"boss":
 			return Tier.BOSS
 		_:
-			# Fallback to size-based assignment
-			var enemy_size: Vector2 = enemy_data.get("size", Vector2(24, 24))
-			var max_dimension: float = max(enemy_size.x, enemy_size.y)
-			
-			if max_dimension <= SWARM_MAX_SIZE:
-				return Tier.SWARM
-			elif max_dimension <= REGULAR_MAX_SIZE:
-				return Tier.REGULAR
-			elif max_dimension <= ELITE_MAX_SIZE:
-				return Tier.ELITE
-			else:
-				return Tier.BOSS
+			Logger.warn("Unknown render_tier '" + enemy_type.render_tier + "' for enemy " + enemy_type.id + ", defaulting to REGULAR", "enemies")
+			return Tier.REGULAR
 
 ## Get the string name for a tier
 func get_tier_name(tier: Tier) -> String:
@@ -67,19 +55,36 @@ func should_use_multimesh(tier: Tier) -> bool:
 	return tier != Tier.BOSS
 
 
-## Get all enemies grouped by tier
-func group_enemies_by_tier(enemies: Array[Dictionary]) -> Dictionary:
+## Get all enemy instances grouped by tier (for Arena.gd)
+func group_enemies_by_tier(alive_enemies: Array[Dictionary], enemy_registry: EnemyRegistry) -> Dictionary:
 	var swarm_enemies: Array[Dictionary] = []
 	var regular_enemies: Array[Dictionary] = []
 	var elite_enemies: Array[Dictionary] = []
 	var boss_enemies: Array[Dictionary] = []
 	
-	for enemy in enemies:
-		var tier: Tier = get_tier_for_enemy(enemy)
-		var enemy_size: Vector2 = enemy.get("size", Vector2(24, 24))
-		var type_id: String = enemy.get("type_id", "unknown")
+	if not enemy_registry:
+		Logger.warn("EnemyRegistry not provided, cannot determine tiers", "enemies")
+		return {
+			Tier.SWARM: swarm_enemies,
+			Tier.REGULAR: regular_enemies,
+			Tier.ELITE: elite_enemies,
+			Tier.BOSS: boss_enemies
+		}
+	
+	for enemy in alive_enemies:
+		var type_id: String = enemy.get("type_id", "")
+		if type_id.is_empty():
+			Logger.warn("Enemy instance missing type_id, defaulting to REGULAR tier", "enemies")
+			regular_enemies.append(enemy)
+			continue
 		
-		Logger.info("Enemy " + type_id + " (size: " + str(enemy_size) + ") assigned to " + get_tier_name(tier) + " tier", "enemies")
+		var enemy_type: EnemyType = enemy_registry.get_enemy_type(type_id)
+		if not enemy_type:
+			Logger.warn("Enemy type not found for ID: " + type_id + ", defaulting to REGULAR tier", "enemies")
+			regular_enemies.append(enemy)
+			continue
+		
+		var tier: Tier = get_tier_for_enemy(enemy_type)
 		
 		match tier:
 			Tier.SWARM:
@@ -91,12 +96,41 @@ func group_enemies_by_tier(enemies: Array[Dictionary]) -> Dictionary:
 			Tier.BOSS:
 				boss_enemies.append(enemy)
 	
-	var total_enemies: int = enemies.size()
-	Logger.debug("Tier distribution: SWARM=" + str(swarm_enemies.size()) + ", REGULAR=" + str(regular_enemies.size()) + ", ELITE=" + str(elite_enemies.size()) + ", BOSS=" + str(boss_enemies.size()) + " (total: " + str(total_enemies) + ")", "enemies")
-	
 	return {
 		Tier.SWARM: swarm_enemies,
 		Tier.REGULAR: regular_enemies,
 		Tier.ELITE: elite_enemies,
 		Tier.BOSS: boss_enemies
+	}
+
+## Get all enemy types grouped by tier (for EnemyRegistry)
+func group_enemy_types_by_tier(enemy_types: Array[EnemyType]) -> Dictionary:
+	var swarm_types: Array[EnemyType] = []
+	var regular_types: Array[EnemyType] = []
+	var elite_types: Array[EnemyType] = []
+	var boss_types: Array[EnemyType] = []
+	
+	for enemy_type in enemy_types:
+		var tier: Tier = get_tier_for_enemy(enemy_type)
+		
+		Logger.info("Enemy " + enemy_type.id + " assigned to " + get_tier_name(tier) + " tier", "enemies")
+		
+		match tier:
+			Tier.SWARM:
+				swarm_types.append(enemy_type)
+			Tier.REGULAR:
+				regular_types.append(enemy_type)
+			Tier.ELITE:
+				elite_types.append(enemy_type)
+			Tier.BOSS:
+				boss_types.append(enemy_type)
+	
+	var total_types: int = enemy_types.size()
+	Logger.debug("Tier distribution: SWARM=" + str(swarm_types.size()) + ", REGULAR=" + str(regular_types.size()) + ", ELITE=" + str(elite_types.size()) + ", BOSS=" + str(boss_types.size()) + " (total: " + str(total_types) + ")", "enemies")
+	
+	return {
+		Tier.SWARM: swarm_types,
+		Tier.REGULAR: regular_types,
+		Tier.ELITE: elite_types,
+		Tier.BOSS: boss_types
 	}

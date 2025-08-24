@@ -8,10 +8,13 @@ id = "knight_swarm"
 display_name = "Swarm Knight"
 health = 3.0
 speed = 55.0
+speed_min = 50.0
+speed_max = 60.0
 size = Vector2(20, 20)
 collision_radius = 10.0
 xp_value = 1
 spawn_weight = 0.4
+render_tier = "swarm"
 visual_config = {
 "color": {
 "a": 1.0,

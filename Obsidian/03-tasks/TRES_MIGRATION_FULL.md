@@ -18,9 +18,12 @@ Complete migration from JSON to .tres format for all enemy content, establishing
 - ✅ Developer workflow compatible with vibe-coding style
 - ✅ Type safety provides meaningful value
 
-### Migration Completed 2025-08-23
-- ✅ All enemy types successfully migrated to .tres format
+### Migration Completed 2025-08-24
+- ✅ All enemy types successfully migrated to .tres format (knight_regular, knight_elite, knight_boss, knight_swarm)
 - ✅ All animation files successfully migrated to .tres format
+- ✅ Balance system successfully migrated to .tres format (combat, abilities, melee, player, waves)
+- ✅ Arena system successfully migrated to .tres format (default_arena)
+- ✅ Card system successfully migrated to .tres format (melee cards and pools with modern UI)
 - ✅ JSON loading code removed and simplified
 - ✅ Documentation updated to reflect new system
 - ✅ System tested and validated

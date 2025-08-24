@@ -87,7 +87,7 @@ func _setup_fallback_data() -> void:
 
 func load_all_balance_data() -> void:
 	_load_balance_resources()
-	_load_ui_file("radar")
+	_load_radar_config()
 	balance_reloaded.emit()
 
 func _load_balance_resources() -> void:
@@ -318,6 +318,28 @@ func _load_ui_file(filename: String) -> void:
 	_data["ui"][filename] = data
 	Logger.info("Successfully loaded and validated: ui/" + filename + ".json", "balance")
 
+func _load_radar_config() -> void:
+	var radar_config: RadarConfigResource = load("res://data/ui/radar_config.tres")
+	if radar_config == null:
+		Logger.warn("Failed to load radar config resource. Using fallback values.", "balance")
+		if not _data.has("ui"):
+			_data["ui"] = {}
+		_data["ui"]["radar"] = _fallback_data.get("ui", {}).get("radar", {})
+		return
+	
+	# Convert resource to dictionary format for compatibility
+	var radar_data: Dictionary = {
+		"radar_size": radar_config.get_radar_size(),
+		"radar_range": radar_config.radar_range,
+		"colors": radar_config.get_colors(),
+		"dot_sizes": radar_config.get_dot_sizes()
+	}
+	
+	if not _data.has("ui"):
+		_data["ui"] = {}
+	_data["ui"]["radar"] = radar_data
+	Logger.info("Successfully loaded radar config resource", "balance")
+
 func _get_value(category: String, key: String) -> Variant:
 	var category_data: Dictionary = _data.get(category, {})
 	if category_data.has(key):
@@ -347,5 +369,6 @@ func reload_balance_data() -> void:
 	ResourceLoader.load("res://data/balance/melee_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	ResourceLoader.load("res://data/balance/player_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	ResourceLoader.load("res://data/balance/waves_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/ui/radar_config.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	load_all_balance_data()
 	Logger.info("Balance data reloaded successfully!", "balance")

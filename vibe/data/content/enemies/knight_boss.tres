@@ -8,10 +8,13 @@ id = "knight_boss"
 display_name = "Boss Knight"
 health = 1.0
 speed = 30.0
+speed_min = 25.0
+speed_max = 35.0
 size = Vector2(80, 80)
 collision_radius = 40.0
 xp_value = 20
 spawn_weight = 0.1
+render_tier = "boss"
 visual_config = {
 "color": {
 "a": 1.0,

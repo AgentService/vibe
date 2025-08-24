@@ -4,6 +4,17 @@
 
 ## [Current Week - In Progress]
 
+### Added
+- **Complete TRES Migration for Configuration Files**: Migrated all configuration files from JSON to .tres resources
+  - **LogConfigResource**: Migrated debug/log_config.json to log_config.tres with type-safe enum validation
+  - **RadarConfigResource**: Migrated ui/radar.json to radar_config.tres with Color properties and Inspector editing
+  - **XPCurvesResource**: Migrated xp_curves.json to xp_curves.tres with typed curve definitions
+  - **Type safety**: All config resources now have @export properties with proper type validation
+  - **Inspector editing**: Configuration values can now be edited directly in Godot's Inspector
+  - **Hot-reload support**: F5 hot-reload maintained for all .tres configuration files
+  - **System compatibility**: All existing systems (Logger, EnemyRadar, XpSystem) updated to load .tres resources
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres files fail to load
+
 ### Changed
 - **Simplified to MultiMesh-Only Enemy Rendering**: Removed AnimatedSprite2D implementation, clean MultiMesh foundation
   - **Removed EnemyRenderer**: Deleted entire AnimatedSprite2D pool system and animation data

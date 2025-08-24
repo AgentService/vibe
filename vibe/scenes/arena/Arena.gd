@@ -490,7 +490,7 @@ func _update_enemy_multimesh(alive_enemies: Array[Dictionary]) -> void:
 		return
 	
 	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
+	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies, wave_director.enemy_registry)
 	
 	# Update each tier's MultiMesh
 	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier.Tier.SWARM)

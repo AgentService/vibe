@@ -7,7 +7,7 @@ enum LogLevel { DEBUG, INFO, WARN, ERROR, NONE }
 
 var current_level: LogLevel = LogLevel.DEBUG
 var enabled_categories: Dictionary = {}
-var config_path: String = "res://data/debug/log_config.json"
+var config_path: String = "res://data/debug/log_config.tres"
 
 func _ready() -> void:
 	_load_config()
@@ -73,33 +73,25 @@ func is_debug() -> bool:
 	return current_level <= LogLevel.DEBUG
 
 func _load_config() -> void:
-	var file: FileAccess = FileAccess.open(config_path, FileAccess.READ)
-	if file == null:
+	var config_resource: LogConfigResource = load(config_path)
+	if config_resource == null:
+		warn("Failed to load log config resource: " + config_path)
 		return
 	
-	var json_string: String = file.get_as_text()
-	file.close()
-	
-	var json: JSON = JSON.new()
-	if json.parse(json_string) != OK:
-		warn("Failed to parse log config JSON")
+	# Validate resource
+	if not config_resource.is_valid_log_level():
+		warn("Invalid log level in config: " + config_resource.log_level)
 		return
-	
-	var config: Dictionary = json.data
 	
 	# Load log level
-	var level_str: String = config.get("log_level", "INFO")
 	var old_level: LogLevel = current_level
-	current_level = _parse_level(level_str)
+	current_level = _parse_level(config_resource.log_level)
 	
-	# Load categories (optional)
-	if config.has("categories"):
-		enabled_categories = config["categories"]
-	else:
-		enabled_categories.clear()
+	# Load categories
+	enabled_categories = config_resource.get_categories()
 	
 	if old_level != current_level:
-		info("Log level updated from config: " + level_str)
+		info("Log level updated from config: " + config_resource.log_level)
 
 func _parse_level(level_str: String) -> LogLevel:
 	match level_str.to_upper():
