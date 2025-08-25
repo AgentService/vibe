@@ -210,6 +210,11 @@ func _handle_facing() -> void:
 		animated_sprite.flip_h = true
 
 func _on_damage_taken(damage: int) -> void:
+	# Check for god mode cheat
+	if CheatSystem and CheatSystem.is_god_mode_active():
+		Logger.debug("Damage blocked by god mode", "debug")
+		return
+	
 	if invulnerable:
 		return  # No damage during dodge roll
 		
