@@ -79,11 +79,11 @@ func _connect_signals() -> void:
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
-func _on_player_position_changed(position: Vector2) -> void:
-	player_position = position
+func _on_player_position_changed(player_pos: Vector2) -> void:
+	player_position = player_pos
 	queue_redraw()
 
-func _on_combat_step(payload) -> void:
+func _on_combat_step(_payload) -> void:
 	# Get enemy positions from the scene
 	_update_enemy_positions()
 	queue_redraw()

@@ -3,6 +3,10 @@ extends Node
 ## Global event bus for cross-system communication.
 ## All cross-system signals flow through here to maintain loose coupling.
 ## See ARCHITECTURE.md Signals Matrix for detailed contracts.
+##
+## NOTE: Signals marked as "unused" by Godot editor are FALSE POSITIVES.
+## These signals ARE emitted by various systems throughout the codebase.
+## The warning occurs because signals are emitted by other classes, not this EventBus class itself.
 
 # Preload all payload classes - using _Type suffix to avoid conflicts with class names
 const CombatStepPayload_Type = preload("res://scripts/domain/signal_payloads/CombatStepPayload.gd")

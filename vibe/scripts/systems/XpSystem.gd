@@ -72,7 +72,7 @@ func _use_fallback_curve() -> void:
 		"min_first_level": 30
 	}
 
-func _on_combat_step(payload) -> void:
+func _on_combat_step(_payload) -> void:
 	pass
 
 func _on_enemy_killed(payload) -> void:

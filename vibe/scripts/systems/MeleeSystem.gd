@@ -133,10 +133,10 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
 	return hit_enemies
 
-func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, attack_range: float) -> bool:
+func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> bool:
 	# Check if enemy is within range
 	var distance = player_pos.distance_to(enemy_pos)
-	if distance > attack_range:
+	if distance > range_limit:
 		return false
 	
 	# Check if enemy is within cone angle

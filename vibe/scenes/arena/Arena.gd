@@ -3,18 +3,18 @@ extends Node2D
 ## Arena scene managing MultiMesh rendering and debug projectile spawning.
 ## Renders projectile pool via single MultiMeshInstance2D.
 
-const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
+const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
-const PauseMenu = preload("res://scenes/ui/PauseMenu.gd")
+const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
 # TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
-const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -96,7 +96,7 @@ func _ready() -> void:
 		Logger.error("EnemyRenderTier class is null!", "ui")
 		return
 	
-	enemy_render_tier = EnemyRenderTier.new()
+	enemy_render_tier = EnemyRenderTier_Type.new()
 	if enemy_render_tier == null:
 		Logger.error("EnemyRenderTier instance creation failed!", "ui")
 		return
@@ -438,7 +438,7 @@ func _on_card_selected(card: CardResource) -> void:
 
 # Theme functions removed - no longer needed after arena simplification
 
-func _on_enemies_updated(alive_enemies: Array[EnemyEntity]) -> void:
+func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
 
 func _handle_melee_attack(target_pos: Vector2) -> void:
@@ -449,7 +449,7 @@ func _handle_melee_attack(target_pos: Vector2) -> void:
 	var alive_enemies = wave_director.get_alive_enemies()
 	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
 
-func _handle_projectile_attack(target_pos: Vector2) -> void:
+func _handle_projectile_attack(_target_pos: Vector2) -> void:
 	if not player or not ability_system:
 		return
 	
@@ -547,14 +547,14 @@ func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies, wave_director.enemy_registry)
 	
 	# Update each tier's MultiMesh
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier.Tier.SWARM)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier.Tier.REGULAR) 
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier.Tier.ELITE)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier.Tier.BOSS)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
 	
 	# Removed excessive tier rendering debug logs
 
-func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, base_size: Vector2, tier: EnemyRenderTier.Tier) -> void:
+func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
 		mm_instance.multimesh.instance_count = count
@@ -564,10 +564,10 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var enemy := tier_enemies[i]
 			
 			# Basic transform with position only
-			var transform := Transform2D()
-			transform.origin = enemy["pos"]
+			var instance_transform := Transform2D()
+			instance_transform.origin = enemy["pos"]
 			
-			mm_instance.multimesh.set_instance_transform_2d(i, transform)
+			mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 			
 			# Set color based on tier for visual debugging
 			var tier_color := _get_tier_debug_color(tier)
@@ -609,16 +609,16 @@ func _get_enemy_color_for_type(type_id: String) -> Color:
 		_:
 			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 
-func _get_tier_debug_color(tier: EnemyRenderTier.Tier) -> Color:
+func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
 	# Distinct colors for each tier for visual debugging - more saturated for better visibility
 	match tier:
-		EnemyRenderTier.Tier.SWARM:
+		EnemyRenderTier_Type.Tier.SWARM:
 			return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red
-		EnemyRenderTier.Tier.REGULAR:
+		EnemyRenderTier_Type.Tier.REGULAR:
 			return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan
-		EnemyRenderTier.Tier.ELITE:
+		EnemyRenderTier_Type.Tier.ELITE:
 			return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta
-		EnemyRenderTier.Tier.BOSS:
+		EnemyRenderTier_Type.Tier.BOSS:
 			return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
@@ -688,7 +688,7 @@ func _print_debug_help() -> void:
 func _print_performance_stats() -> void:
 	var stats: Dictionary = get_debug_stats()
 	var fps: int = Engine.get_frames_per_second()
-	var memory: int = OS.get_static_memory_usage() / 1024 / 1024
+	var memory: int = int(OS.get_static_memory_usage() / (1024 * 1024))
 	
 	Logger.info("=== Performance Stats ===", "performance")
 	Logger.info("FPS: " + str(fps), "performance")

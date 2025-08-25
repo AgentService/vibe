@@ -53,7 +53,7 @@ func _check_projectile_enemy_collisions() -> void:
 			if distance <= collision_distance:
 				_handle_collision(projectile, enemy, p_idx, e_idx)
 
-func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, proj_idx: int, enemy_idx: int) -> void:
+func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, _proj_idx: int, _enemy_idx: int) -> void:
 	# Find the actual pool indices
 	var actual_proj_idx := _find_projectile_pool_index(projectile)
 	var actual_enemy_idx := _find_enemy_pool_index(enemy)

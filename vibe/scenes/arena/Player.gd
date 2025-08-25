@@ -1,7 +1,7 @@
 extends CharacterBody2D
 class_name Player
 
-const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
+const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
@@ -10,7 +10,7 @@ const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # al
 @export var pickup_radius: float = 12.0
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-var knight_animation_config: AnimationConfig
+var knight_animation_config: AnimationConfig_Type
 var current_animation: String = "idle"
 
 var max_health: int = 199
@@ -113,7 +113,7 @@ func _update_roll(delta: float) -> void:
 			is_rolling = false
 			invulnerable = false
 
-func _handle_movement(delta: float) -> void:
+func _handle_movement(_delta: float) -> void:
 	var input_vector: Vector2 = Vector2.ZERO
 	
 	if not is_rolling:
@@ -144,7 +144,7 @@ func get_pos() -> Vector2:
 
 func _load_knight_animations() -> void:
 	var resource_path := "res://data/animations/knight_animations.tres"
-	knight_animation_config = load(resource_path) as AnimationConfig
+	knight_animation_config = load(resource_path) as AnimationConfig_Type
 	if knight_animation_config == null:
 		Logger.warn("Failed to load knight animation config from: " + resource_path, "player")
 		return

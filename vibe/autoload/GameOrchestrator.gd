@@ -3,13 +3,13 @@ extends Node
 ## Central game orchestration system managing system initialization and lifecycle.
 ## Handles proper dependency injection and initialization order for all game systems.
 
-# Import system classes
-const CardSystem = preload("res://scripts/systems/CardSystem.gd")
-const EnemyRegistry = preload("res://scripts/systems/EnemyRegistry.gd")
-const WaveDirector = preload("res://scripts/systems/WaveDirector.gd")
-const AbilitySystem = preload("res://scripts/systems/AbilitySystem.gd")
-const MeleeSystem = preload("res://scripts/systems/MeleeSystem.gd")
-const DamageSystem = preload("res://scripts/systems/DamageSystem.gd")
+# Import system classes - using _Type suffix to avoid conflicts with class names
+const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
+const EnemyRegistry_Type = preload("res://scripts/systems/EnemyRegistry.gd")
+const WaveDirector_Type = preload("res://scripts/systems/WaveDirector.gd")
+const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
+const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
+const DamageSystem_Type = preload("res://scripts/systems/DamageSystem.gd")
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem = preload("res://scripts/systems/CameraSystem.gd")
 
@@ -22,12 +22,12 @@ var systems: Dictionary = {}
 var initialization_phase: String = "idle"
 
 # System instances that will be created here and injected to Arena
-var card_system: CardSystem
-var enemy_registry: EnemyRegistry
-var wave_director: WaveDirector
-var ability_system: AbilitySystem
-var melee_system: MeleeSystem
-var damage_system: DamageSystem
+var card_system: CardSystem_Type
+var enemy_registry: EnemyRegistry_Type
+var wave_director: WaveDirector_Type
+var ability_system: AbilitySystem_Type
+var melee_system: MeleeSystem_Type
+var damage_system: DamageSystem_Type
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 
@@ -62,20 +62,20 @@ func _initialize_systems() -> void:
 	
 	# Initialize systems in dependency order (from plan):
 	# Phase B: CardSystem (no dependencies)
-	card_system = CardSystem.new()
+	card_system = CardSystem_Type.new()
 	add_child(card_system)
 	systems["CardSystem"] = card_system
 	Logger.info("CardSystem initialized by GameOrchestrator", "orchestrator")
 	
 	# Phase C: Non-dependent systems
 	# 1. EnemyRegistry (no deps)
-	enemy_registry = EnemyRegistry.new()
+	enemy_registry = EnemyRegistry_Type.new()
 	add_child(enemy_registry)
 	systems["EnemyRegistry"] = enemy_registry
 	Logger.info("EnemyRegistry initialized by GameOrchestrator", "orchestrator")
 	
 	# 4. AbilitySystem (no deps)
-	ability_system = AbilitySystem.new()
+	ability_system = AbilitySystem_Type.new()
 	add_child(ability_system)
 	systems["AbilitySystem"] = ability_system
 	Logger.info("AbilitySystem initialized by GameOrchestrator", "orchestrator")
@@ -93,7 +93,7 @@ func _initialize_systems() -> void:
 	Logger.info("CameraSystem initialized by GameOrchestrator", "orchestrator")
 	
 	# Phase D: WaveDirector (needs EnemyRegistry dependency)
-	wave_director = WaveDirector.new()
+	wave_director = WaveDirector_Type.new()
 	add_child(wave_director)
 	systems["WaveDirector"] = wave_director
 	# Set EnemyRegistry dependency
@@ -105,7 +105,7 @@ func _initialize_systems() -> void:
 	
 	# Phase E: Combat systems with dependencies
 	# 5. MeleeSystem (needs WaveDirector ref)
-	melee_system = MeleeSystem.new()
+	melee_system = MeleeSystem_Type.new()
 	add_child(melee_system)
 	systems["MeleeSystem"] = melee_system
 	if melee_system.has_method("set_wave_director_reference") and wave_director:
@@ -115,7 +115,7 @@ func _initialize_systems() -> void:
 		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
 	
 	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
-	damage_system = DamageSystem.new()
+	damage_system = DamageSystem_Type.new()
 	add_child(damage_system)
 	systems["DamageSystem"] = damage_system
 	if damage_system.has_method("set_references") and ability_system and wave_director:
@@ -124,22 +124,22 @@ func _initialize_systems() -> void:
 	else:
 		Logger.warn("DamageSystem dependency injection failed", "orchestrator")
 
-func get_card_system() -> CardSystem:
+func get_card_system() -> CardSystem_Type:
 	return card_system
 
-func get_enemy_registry() -> EnemyRegistry:
+func get_enemy_registry() -> EnemyRegistry_Type:
 	return enemy_registry
 
-func get_wave_director() -> WaveDirector:
+func get_wave_director() -> WaveDirector_Type:
 	return wave_director
 
-func get_ability_system() -> AbilitySystem:
+func get_ability_system() -> AbilitySystem_Type:
 	return ability_system
 
-func get_melee_system() -> MeleeSystem:
+func get_melee_system() -> MeleeSystem_Type:
 	return melee_system
 
-func get_damage_system() -> DamageSystem:
+func get_damage_system() -> DamageSystem_Type:
 	return damage_system
 
 func get_arena_system() -> ArenaSystem:
