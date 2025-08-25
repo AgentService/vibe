@@ -72,7 +72,7 @@ func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, proj_idx: int
 	ability_system.projectiles[actual_proj_idx]["alive"] = false
 	
 	# Emit damage request
-	var damage_payload := EventBus.DamageRequestPayload.new(source_id, target_id, base_damage, tags)
+	var damage_payload := EventBus.DamageRequestPayload_Type.new(source_id, target_id, base_damage, tags)
 	EventBus.damage_requested.emit(damage_payload)
 
 func _find_projectile_pool_index(target_projectile: Dictionary) -> int:
@@ -141,5 +141,5 @@ func _on_damage_requested(payload) -> void:
 	wave_director.damage_enemy(payload.target_id.index, final_damage)
 	
 	# Emit damage applied signal
-	var applied_payload := EventBus.DamageAppliedPayload.new(payload.target_id, final_damage, is_crit, payload.tags)
+	var applied_payload := EventBus.DamageAppliedPayload_Type.new(payload.target_id, final_damage, is_crit, payload.tags)
 	EventBus.damage_applied.emit(applied_payload)

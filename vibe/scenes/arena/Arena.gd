@@ -580,7 +580,7 @@ func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	
 	# Set camera bounds for the new arena
 	camera_system.set_arena_bounds(arena_bounds)
-	var payload := EventBus.ArenaBoundsChangedPayload.new(arena_bounds)
+	var payload := EventBus.ArenaBoundsChangedPayload_Type.new(arena_bounds)
 	EventBus.arena_bounds_changed.emit(payload)
 
 func _get_visible_world_rect() -> Rect2:
@@ -714,7 +714,7 @@ func get_debug_stats() -> Dictionary:
 		stats["visible_enemies"] = visible_count
 	
 	if ability_system:
-		var alive_projectiles: Array[Dictionary] = ability_system.get_alive_projectiles()
+		var alive_projectiles: Array[Dictionary] = ability_system._get_alive_projectiles()
 		stats["projectile_count"] = alive_projectiles.size()
 	
 	

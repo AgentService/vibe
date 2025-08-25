@@ -90,7 +90,7 @@ func _on_xp_collected(amount: int) -> void:
 
 func add_xp(amount: int) -> void:
 	current_xp += amount
-	var xp_payload := EventBus.XpChangedPayload.new(current_xp, next_level_xp)
+	var xp_payload := EventBus.XpChangedPayload_Type.new(current_xp, next_level_xp)
 	EventBus.xp_changed.emit(xp_payload)
 	
 	while current_xp >= next_level_xp:
@@ -105,9 +105,9 @@ func _level_up() -> void:
 	RunManager.stats["level"] = current_level
 	
 	Logger.info("Level up! New level: " + str(current_level), "player")
-	var level_payload := EventBus.LevelUpPayload.new(current_level)
+	var level_payload := EventBus.LevelUpPayload_Type.new(current_level)
 	EventBus.level_up.emit(level_payload)
-	var xp_payload := EventBus.XpChangedPayload.new(current_xp, next_level_xp)
+	var xp_payload := EventBus.XpChangedPayload_Type.new(current_xp, next_level_xp)
 	EventBus.xp_changed.emit(xp_payload)
 
 func _update_next_level_xp() -> void:

@@ -128,6 +128,10 @@ func _on_combat_step(payload) -> void:
 	enemies_updated.emit(alive_enemies)
 
 func _handle_spawning(dt: float) -> void:
+	# Check for spawn disabled cheat
+	if CheatSystem and CheatSystem.is_spawn_disabled():
+		return
+	
 	spawn_timer += dt
 	if spawn_timer >= spawn_interval:
 		spawn_timer = 0.0
@@ -296,7 +300,7 @@ func damage_enemy(enemy_index: int, damage: float) -> void:
 		enemy.alive = false
 		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
 		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
-		var payload := EventBus.EnemyKilledPayload.new(death_pos, 1)
+		var payload := EventBus.EnemyKilledPayload_Type.new(death_pos, 1)
 		EventBus.enemy_killed.emit(payload)
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:

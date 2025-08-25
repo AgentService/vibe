@@ -272,7 +272,7 @@ func get_melee_value(key: String) -> Variant:
 		"damage":
 			return _melee_balance.damage
 		"range":
-			return _melee_balance.range
+			return _melee_balance.attack_range
 		"cone_angle":
 			return _melee_balance.cone_angle
 		"attack_speed":
