@@ -61,17 +61,20 @@ func _initialize_systems() -> void:
 	Logger.info("Initializing game systems", "orchestrator")
 	
 	# Initialize systems in dependency order (from plan):
+	# Phase B: Initialize CardSystem (no dependencies)
+	card_system = CardSystem.new()
+	add_child(card_system)
+	systems["CardSystem"] = card_system
+	Logger.info("CardSystem initialized by GameOrchestrator", "orchestrator")
+	
+	# Other systems will be moved in later phases:
 	# 1. EnemyRegistry (no deps)
-	# 2. CardSystem (no deps)  
 	# 3. WaveDirector (needs EnemyRegistry)
 	# 4. AbilitySystem (no deps)
 	# 5. MeleeSystem (needs WaveDirector ref)
 	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
 	# 7. ArenaSystem (no deps)
 	# 8. CameraSystem (no deps)
-	
-	# For Phase A, we'll keep the basic structure but not move systems yet
-	# This will be populated in later phases
 
 func get_card_system() -> CardSystem:
 	return card_system
@@ -96,3 +99,18 @@ func get_arena_system() -> ArenaSystem:
 
 func get_camera_system() -> CameraSystem:
 	return camera_system
+
+# Dependency injection method for Arena
+func inject_systems_to_arena(arena) -> void:
+	if not arena:
+		Logger.error("Cannot inject systems: Arena is null", "orchestrator")
+		return
+	
+	Logger.info("Injecting systems to Arena", "orchestrator")
+	
+	# Phase B: Inject CardSystem
+	if card_system and arena.has_method("set_card_system"):
+		arena.set_card_system(card_system)
+		Logger.debug("CardSystem injected to Arena", "orchestrator")
+	else:
+		Logger.warn("Arena doesn't have set_card_system method", "orchestrator")

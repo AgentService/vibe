@@ -138,6 +138,11 @@ func _ready() -> void:
 	_setup_player()
 	_setup_xp_system()
 	_setup_ui()
+	
+	# Initialize GameOrchestrator systems and inject them BEFORE setting up dependent systems
+	GameOrchestrator.initialize_core_loop()
+	GameOrchestrator.inject_systems_to_arena(self)
+	
 	_setup_card_system()
 	
 	# Set player reference in PlayerState for cached position access
@@ -367,14 +372,22 @@ func _setup_ui() -> void:
 	add_child(pause_menu)
 
 func _setup_card_system() -> void:
-	card_system = CardSystem.new()
-	add_child(card_system)
+	# CardSystem is now injected by GameOrchestrator - just verify it's ready
+	if card_system:
+		Logger.debug("Card system setup completed with injected system", "cards")
+	else:
+		Logger.warn("Card system not yet injected during setup", "cards")
+
+# Dependency injection method - called by GameOrchestrator
+func set_card_system(injected_card_system: CardSystem) -> void:
+	card_system = injected_card_system
+	Logger.info("CardSystem injected into Arena", "cards")
 	
-	# Connect card selection signals
-	card_selection.card_selected.connect(_on_card_selected)
-	card_selection.setup_card_system(card_system)
-	
-	Logger.debug("Card system initialized", "cards")
+	# Complete the card system setup now that we have the system
+	if card_selection:
+		card_selection.card_selected.connect(_on_card_selected)
+		card_selection.setup_card_system(card_system)
+		Logger.debug("Card selection connected to injected CardSystem", "cards")
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
