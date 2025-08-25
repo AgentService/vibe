@@ -26,9 +26,6 @@ RNG="*res://autoload/RNG.gd"
 BalanceDB="*res://autoload/BalanceDB.gd"
 PlayerState="*res://autoload/PlayerState.gd"
 
-[editor_plugins]
-
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [display]
 
