@@ -193,7 +193,7 @@ Arena.gd MultiMesh Updates
 ### Immediate Extensions
 - **Animation state**: Add current animation frame tracking
 - **Status effects**: Buffs/debuffs with typed effect arrays
-- **AI state**: Current behavior state for [[EnemyBehaviorSystem]]
+- **AI state**: Current behavior state (now handled by WaveDirector)
 
 ### Advanced Features
 - **Component system**: Modular enemy capabilities
@@ -206,7 +206,6 @@ Arena.gd MultiMesh Updates
 - [[EnemyRenderTier]]: Visual tier assignment and Dictionary conversion  
 - [[DamageSystem]]: Collision detection with object identity
 - [[MeleeSystem]]: Combat integration with pool references
-- [[EnemyBehaviorSystem]]: AI patterns for typed objects
 - [[EventBus-System]]: Signal architecture with Array[EnemyEntity]
 
 ---

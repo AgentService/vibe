@@ -95,7 +95,6 @@ match type_id:
     ├── EnemyRegistry.gd       # JSON loading & weighted selection
     ├── WaveDirector.gd        # Enemy pool management & spawning
     ├── EnemyRenderTier.gd     # Visual tier assignment logic
-    └── EnemyBehaviorSystem.gd # AI patterns (chase/flee/patrol)
 ```
 
 ### Registry Configuration
@@ -225,7 +224,6 @@ MultiMeshInstance2D (GPU batch rendering)
 
 DamageSystem ← WaveDirector reference (pool index resolution)
 MeleeSystem ← WaveDirector reference (collision detection)
-EnemyBehaviorSystem ← WaveDirector signal (AI updates)
 ```
 
 ## 🚀 Future Enhancements

@@ -114,7 +114,6 @@ Arena (Node2D)
 - `WaveDirector` - Typed enemy pool management with Array[EnemyEntity] ⭐ UPDATED
 - `DamageSystem` - Combat damage with object identity collision detection ⭐ UPDATED  
 - `EnemyRenderTier` - Converts EnemyEntity objects to Dictionary arrays for MultiMesh ⭐ UPDATED
-- `EnemyBehaviorSystem` - AI pattern management for typed enemy objects
 - `ArenaSystem` - Level loading and arena configuration
 - `CameraSystem` - Camera control and zoom management
 - `XpSystem` - Experience management with kill event integration

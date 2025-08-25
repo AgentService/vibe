@@ -5,6 +5,11 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **EnemyBehaviorSystem Removal**: Completely removed unused EnemyBehaviorSystem class and all references
+  - **File Deleted**: Removed vibe/scripts/systems/EnemyBehaviorSystem.gd entirely
+  - **Documentation Cleaned**: Removed all references from 6 Obsidian documentation files
+  - **AI Logic**: All enemy AI is now handled directly by WaveDirector
+  - **No Breaking Changes**: System was already unused - no functional impact
 - **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
   - **Pure Resource Exception**: Scenes can now import configuration Resources (AnimationConfig, ArenaConfig, etc.) directly
   - **Whitelist System**: Added whitelist of approved Resource classes that scenes commonly need
@@ -100,7 +105,7 @@
   - **Enemy JSON files**: Three enemy types (grunt_basic, slime_green, archer_skeleton) with different stats, colors, and AI
   - **Enhanced WaveDirector**: Type-aware spawning using EnemyRegistry for weighted selection
   - **MultiMesh rendering**: Per-instance colors and sizes based on enemy type for visual variety
-  - **EnemyBehaviorSystem**: Dedicated AI system with chase, flee, patrol, and guard patterns
+  - **EnemyBehaviorSystem**: ~~Dedicated AI system with chase, flee, patrol, and guard patterns~~ REMOVED - AI moved to WaveDirector
   - **Data schema**: Complete enemy configuration in vibe/data/README.md with example
   - **Canvas Layer Structure**: Documented new HUD layout with keybindings panel  
   - **Component Reference**: Added detailed KeybindingsDisplay component documentation
