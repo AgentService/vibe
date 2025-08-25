@@ -89,6 +89,8 @@ func _populate_bindings() -> void:
 		debug_grid.add_theme_constant_override("v_separation", 2)
 		bindings_container.add_child(debug_grid)
 		
+		_add_binding_row(debug_grid, "Console:", "F1")
+		_add_binding_row(debug_grid, "Cards:", "C")
 		_add_binding_row(debug_grid, "God Mode:", "Ctrl+1")
 		_add_binding_row(debug_grid, "Stop Spawn:", "Ctrl+2")
 		_add_binding_row(debug_grid, "Silent Pause:", "F10")
