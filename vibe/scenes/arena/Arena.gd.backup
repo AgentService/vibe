@@ -8,8 +8,6 @@ const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # al
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
-const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
-const PauseMenu = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
 # TextureThemeSystem removed - no longer needed after arena simplification
@@ -67,7 +65,6 @@ var xp_system: XpSystem
 var hud: HUD
 var card_system: CardSystem
 var card_selection: CardSelection
-var pause_menu: PauseMenu
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -295,17 +292,6 @@ func _process(delta: float) -> void:
 	
 
 func _input(event: InputEvent) -> void:
-	# Handle Escape key for pause menu (priority handling)
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		# Check if card selection is currently visible - if so, let it handle the input
-		if card_selection and card_selection.visible:
-			return  # Let card selection handle the escape key
-		
-		# Toggle pause menu
-		if pause_menu:
-			pause_menu.toggle_pause()
-		return
-	
 	# Handle mouse position updates for auto-attack
 	if event is InputEventMouseMotion:
 		var world_pos = get_global_mouse_position()
@@ -327,7 +313,8 @@ func _input(event: InputEvent) -> void:
 			KEY_T:
 				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
-				Logger.info("F10 debug pause deprecated - use Escape key instead", "ui")
+				Logger.info("Manual pause toggle", "ui")
+				PauseManager.toggle_pause()
 			KEY_F11:
 				Logger.info("Spawning 1000 enemies for stress test", "performance")
 				_spawn_stress_test_enemies()
@@ -361,10 +348,6 @@ func _setup_ui() -> void:
 	
 	card_selection = CARD_SELECTION_SCENE.instantiate()
 	ui_layer.add_child(card_selection)
-	
-	# Add pause menu (it has its own CanvasLayer)
-	pause_menu = PAUSE_MENU_SCENE.instantiate()
-	add_child(pause_menu)
 
 func _setup_card_system() -> void:
 	card_system = CardSystem.new()
@@ -646,7 +629,7 @@ func _toggle_performance_stats() -> void:
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
 	Logger.info("C: Test card selection", "ui")
-	Logger.info("Escape: Pause/resume toggle", "ui")
+	Logger.info("F10: Pause/resume toggle", "ui")
 	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
 	Logger.info("F12: Performance stats toggle", "ui")
 	Logger.info("WASD: Move player", "ui")

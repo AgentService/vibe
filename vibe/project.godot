@@ -19,11 +19,16 @@ config/icon="res://icon.svg"
 
 Logger="*res://autoload/Logger.gd"
 EventBus="*res://autoload/EventBus.gd"
+GameOrchestrator="*res://autoload/GameOrchestrator.gd"
 PauseManager="*res://autoload/PauseManager.gd"
 RunManager="*res://autoload/RunManager.gd"
 RNG="*res://autoload/RNG.gd"
 BalanceDB="*res://autoload/BalanceDB.gd"
 PlayerState="*res://autoload/PlayerState.gd"
+
+[editor_plugins]
+
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg")
 
 [display]
 
@@ -38,6 +43,11 @@ window/stretch/aspect="expand"
 ui_refresh={
 "deadzone": 0.5,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194318,"physical_keycode":4194318,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+]
+}
+ui_cancel={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":4194305,"physical_keycode":4194305,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ]
 }
 move_left={
