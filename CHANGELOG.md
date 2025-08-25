@@ -5,12 +5,34 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Player Stats Migration to .tres**: Migrated hardcoded player stats to PlayerType.gd resource system
+  - **PlayerType.gd resource**: New typed resource class for player statistics (move_speed, max_health, pickup_radius, roll_stats)
+  - **default_player.tres**: Configuration resource with current player values (110 move_speed, 199 max_health, etc.)
+  - **Validation system**: PlayerType.validate() method ensures stat integrity with error reporting
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres loading fails
+  - **Inspector editing**: Player stats now editable through Godot Inspector in default_player.tres
+  - **Architecture consistency**: Follows established EnemyType.gd pattern for data-driven character stats
 - **EnemyBehaviorSystem Removal**: Completely removed unused EnemyBehaviorSystem class and all references
   - **File Deleted**: Removed vibe/scripts/systems/EnemyBehaviorSystem.gd entirely
   - **Documentation Cleaned**: Removed all references from 6 Obsidian documentation files
   - **AI Logic**: All enemy AI is now handled directly by WaveDirector
   - **No Breaking Changes**: System was already unused - no functional impact
 - **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
+- **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
+  - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
+  - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)
+  - **Debug Controls**: Added F1 (Console) and C (Cards) to KeybindingsDisplay debug section  
+  - **Runtime Commands**: Supports custom command registration for balance parameter adjustment
+  - **Development Workflow**: Perfect for live-tuning balance values during playtesting
+  - **MCP Integration**: Can be used with MCP tools for automated testing scenarios
+- **Native Hot-Reload Implementation**: Implemented spawn radius hot-reload using Godot's built-in @export system
+  - **ArenaSystem Refactor**: Changed from ResourceLoader pattern to @export ArenaConfig for native hot-reload support
+  - **Direct Property Access**: ArenaSystem now accesses arena_config.spawn_radius directly, always returning live values
+  - **GameOrchestrator @export**: Added @export var default_arena_config: ArenaConfig for inspector assignment
+  - **Resource Path Fix**: Corrected default_arena.tres script reference to res://vibe/scripts/domain/ArenaConfig.gd
+  - **Native Integration**: Uses Godot's built-in resource system instead of custom file monitoring
+  - **Inspector Setup Required**: User must assign default_arena.tres to GameOrchestrator's @export field in inspector
+  - **Instant Updates**: Changes to .tres files in editor immediately affect running games via Godot's native system
   - **Pure Resource Exception**: Scenes can now import configuration Resources (AnimationConfig, ArenaConfig, etc.) directly
   - **Whitelist System**: Added whitelist of approved Resource classes that scenes commonly need
   - **Documentation**: Updated ARCHITECTURE.md with clear examples of allowed vs disallowed imports

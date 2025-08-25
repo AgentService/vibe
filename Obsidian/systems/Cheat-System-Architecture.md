@@ -80,3 +80,13 @@ if CheatSystem and CheatSystem.is_spawn_disabled():
 - Additional cheats can follow the same pattern: toggle function → emit signal → integrate via getter
 - Consider adding configuration file for custom keybindings if needed
 - Could extend with parameter-based cheats (not just boolean toggles)
+
+## Related Systems
+
+### Limbo Console Integration
+For more flexible runtime debugging, see **Limbo Console** (F1 key):
+- **Command-based**: More flexible than hardcoded hotkeys
+- **Parameter support**: Can pass values to commands (e.g., set damage multiplier)
+- **Runtime registration**: Systems can register their own debug commands
+- **Balance tuning**: Perfect for adjusting balance parameters during gameplay
+- **Complementary**: CheatSystem for simple toggles, Console for complex debugging
