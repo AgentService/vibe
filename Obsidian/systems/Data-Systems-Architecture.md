@@ -156,7 +156,6 @@ func _load_balance_values() -> void:
 | WaveDirector | ✅ Enemy spawn values + Array[EnemyEntity] pools | Direct BalanceDB + EnemyRegistry |
 | EnemyRegistry | ✅ JSON enemy system (knight_*) | Pure JSON loading from res://data/enemies/ |
 | EnemyRenderTier | ✅ Tier assignment + Dictionary conversion | EnemyRegistry dependency |
-| EnemyBehaviorSystem | ✅ AI behavior patterns | EnemyRegistry dependency |
 | MeleeSystem | ✅ Combat values + WaveDirector references | Direct BalanceDB + pool indexing |
 | RunManager | ✅ Player stats | Direct BalanceDB |
 | UI Systems | ✅ Radar configuration | Direct BalanceDB |

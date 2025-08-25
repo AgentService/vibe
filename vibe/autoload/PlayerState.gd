@@ -29,7 +29,7 @@ func set_player_reference(player: Node2D) -> void:
 		_last_emitted_position = position
 		player_position_changed.emit(position)
 
-func _on_combat_step(payload: EventBus.CombatStepPayload) -> void:
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 	if not _player_ref:
 		return
 	
@@ -51,7 +51,7 @@ func _on_combat_step(payload: EventBus.CombatStepPayload) -> void:
 	
 	if should_emit:
 		_last_emitted_position = position
-		var pos_payload := EventBus.PlayerPositionChangedPayload.new(position)
+		var pos_payload := EventBus.PlayerPositionChangedPayload_Type.new(position)
 		EventBus.player_position_changed.emit(pos_payload)
 		player_position_changed.emit(position)
 

@@ -148,13 +148,13 @@ func _create_card_button(card: CardResource, index: int) -> Control:
 	icon_container.add_child(icon_label)
 	
 	# Card title
-	var title_label: Label = Label.new()
-	title_label.text = card.name
-	title_label.add_theme_font_size_override("font_size", 24)
-	title_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
-	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	vbox.add_child(title_label)
+	var card_title_label: Label = Label.new()
+	card_title_label.text = card.name
+	card_title_label.add_theme_font_size_override("font_size", 24)
+	card_title_label.add_theme_color_override("font_color", Color(1.0, 1.0, 1.0, 1.0))
+	card_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	card_title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	vbox.add_child(card_title_label)
 	
 	# Description with proper padding
 	var desc_container: MarginContainer = MarginContainer.new()

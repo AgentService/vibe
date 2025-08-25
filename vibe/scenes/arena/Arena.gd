@@ -3,16 +3,18 @@ extends Node2D
 ## Arena scene managing MultiMesh rendering and debug projectile spawning.
 ## Renders projectile pool via single MultiMeshInstance2D.
 
-const AnimationConfig = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
+const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
+const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
+const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 # Removed non-existent subsystem imports - systems simplified
 # TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
-const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -22,8 +24,9 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
 # Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
-@onready var ability_system: AbilitySystem = AbilitySystem.new()
-@onready var melee_system: MeleeSystem = MeleeSystem.new()
+# Systems now injected by GameOrchestrator
+var ability_system: AbilitySystem
+var melee_system: MeleeSystem
 
 
 # ANIMATION CONFIGS
@@ -52,11 +55,13 @@ var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
 var boss_frame_duration: float = 0.1
-@onready var wave_director: WaveDirector = WaveDirector.new()
-@onready var damage_system: DamageSystem = DamageSystem.new()
-@onready var arena_system: ArenaSystem = ArenaSystem.new()
+# WaveDirector now injected by GameOrchestrator
+var wave_director: WaveDirector
+# Systems now injected by GameOrchestrator  
+var damage_system: DamageSystem
+var arena_system: ArenaSystem
 # texture_theme_system removed - no longer needed after arena simplification
-@onready var camera_system: CameraSystem = CameraSystem.new()
+var camera_system: CameraSystem
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
@@ -65,6 +70,7 @@ var xp_system: XpSystem
 var hud: HUD
 var card_system: CardSystem
 var card_selection: CardSelection
+var pause_menu: PauseMenu
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -79,48 +85,18 @@ func _ready() -> void:
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# Set proper process modes for systems (with null checks)
-	if ability_system:
-		ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if melee_system:
-		melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if wave_director:
-		wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if damage_system:
-		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if arena_system:
-		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if camera_system:
-		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# All system process modes now set in injection methods
 	
-	# Add systems as children
-	if ability_system:
-		add_child(ability_system)
-	if melee_system:
-		add_child(melee_system)
-	if wave_director:
-		add_child(wave_director)
-	if damage_system:
-		add_child(damage_system)
-	if arena_system:
-		add_child(arena_system)
-	if camera_system:
-		add_child(camera_system)
+	# All systems now injected by GameOrchestrator - no manual add_child needed
 	
-	# Set references for damage system (legitimate dependency injection)
-	if damage_system and ability_system and wave_director:
-		damage_system.set_references(ability_system, wave_director)
-	
-	# Set references for melee system
-	if melee_system and wave_director:
-		melee_system.set_wave_director_reference(wave_director)
+	# System references will be set after GameOrchestrator injection
 	
 	# Create enemy render tier system
 	if EnemyRenderTier == null:
 		Logger.error("EnemyRenderTier class is null!", "ui")
 		return
 	
-	enemy_render_tier = EnemyRenderTier.new()
+	enemy_render_tier = EnemyRenderTier_Type.new()
 	if enemy_render_tier == null:
 		Logger.error("EnemyRenderTier instance creation failed!", "ui")
 		return
@@ -135,17 +111,21 @@ func _ready() -> void:
 	_setup_player()
 	_setup_xp_system()
 	_setup_ui()
+	
+	# Initialize GameOrchestrator systems and inject them BEFORE setting up dependent systems
+	GameOrchestrator.initialize_core_loop()
+	GameOrchestrator.inject_systems_to_arena(self)
+	
 	_setup_card_system()
+	
+	# System references now set by GameOrchestrator during initialization
 	
 	# Set player reference in PlayerState for cached position access
 	PlayerState.set_player_reference(player)
 	
 	# Connect signals AFTER systems are added and ready
-	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
-	wave_director.enemies_updated.connect(_update_enemy_multimesh)
-	arena_system.arena_loaded.connect(_on_arena_loaded)
+	# Note: all system signals connected in injection methods
 	EventBus.level_up.connect(_on_level_up)
-	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
 	# Setup MultiMesh instances
 	_setup_projectile_multimesh()
@@ -292,6 +272,17 @@ func _process(delta: float) -> void:
 	
 
 func _input(event: InputEvent) -> void:
+	# Handle Escape key for pause menu (priority handling)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
+		# Check if card selection is currently visible - if so, let it handle the input
+		if card_selection and card_selection.visible:
+			return  # Let card selection handle the escape key
+		
+		# Toggle pause menu
+		if pause_menu:
+			pause_menu.toggle_pause()
+		return
+	
 	# Handle mouse position updates for auto-attack
 	if event is InputEventMouseMotion:
 		var world_pos = get_global_mouse_position()
@@ -313,8 +304,7 @@ func _input(event: InputEvent) -> void:
 			KEY_T:
 				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
-				Logger.info("Manual pause toggle", "ui")
-				PauseManager.toggle_pause()
+				Logger.info("F10 debug pause deprecated - use Escape key instead", "ui")
 			KEY_F11:
 				Logger.info("Spawning 1000 enemies for stress test", "performance")
 				_spawn_stress_test_enemies()
@@ -330,8 +320,7 @@ func _setup_player() -> void:
 	player.global_position = Vector2(0, 0)  # Center of arena
 	add_child(player)
 	
-	# Setup camera to follow player
-	camera_system.setup_camera(player)
+	# Camera setup now handled in injection method
 
 func _setup_xp_system() -> void:
 	xp_system = XpSystem.new(self)
@@ -348,16 +337,76 @@ func _setup_ui() -> void:
 	
 	card_selection = CARD_SELECTION_SCENE.instantiate()
 	ui_layer.add_child(card_selection)
+	
+	# Add pause menu (it has its own CanvasLayer)
+	pause_menu = PAUSE_MENU_SCENE.instantiate()
+	add_child(pause_menu)
 
 func _setup_card_system() -> void:
-	card_system = CardSystem.new()
-	add_child(card_system)
+	# CardSystem is now injected by GameOrchestrator - just verify it's ready
+	if card_system:
+		Logger.debug("Card system setup completed with injected system", "cards")
+	else:
+		Logger.warn("Card system not yet injected during setup", "cards")
+
+# Dependency injection methods - called by GameOrchestrator
+func set_card_system(injected_card_system: CardSystem) -> void:
+	card_system = injected_card_system
+	Logger.info("CardSystem injected into Arena", "cards")
 	
-	# Connect card selection signals
-	card_selection.card_selected.connect(_on_card_selected)
-	card_selection.setup_card_system(card_system)
+	# Complete the card system setup now that we have the system
+	if card_selection:
+		card_selection.card_selected.connect(_on_card_selected)
+		card_selection.setup_card_system(card_system)
+		Logger.debug("Card selection connected to injected CardSystem", "cards")
+
+func set_ability_system(injected_ability_system: AbilitySystem) -> void:
+	ability_system = injected_ability_system
+	Logger.info("AbilitySystem injected into Arena", "systems")
 	
-	Logger.debug("Card system initialized", "cards")
+	# Set process mode and connect signals
+	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
+
+func set_arena_system(injected_arena_system: ArenaSystem) -> void:
+	arena_system = injected_arena_system
+	Logger.info("ArenaSystem injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	arena_system.arena_loaded.connect(_on_arena_loaded)
+
+func set_camera_system(injected_camera_system: CameraSystem) -> void:
+	camera_system = injected_camera_system
+	Logger.info("CameraSystem injected into Arena", "systems")
+	
+	# Set process mode and setup camera
+	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if player:
+		camera_system.setup_camera(player)
+
+func set_wave_director(injected_wave_director: WaveDirector) -> void:
+	wave_director = injected_wave_director
+	Logger.info("WaveDirector injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
+	wave_director.enemies_updated.connect(_update_enemy_multimesh)
+
+func set_melee_system(injected_melee_system: MeleeSystem) -> void:
+	melee_system = injected_melee_system
+	Logger.info("MeleeSystem injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	melee_system.melee_attack_started.connect(_on_melee_attack_started)
+
+func set_damage_system(injected_damage_system: DamageSystem) -> void:
+	damage_system = injected_damage_system
+	Logger.info("DamageSystem injected into Arena", "systems")
+	
+	# Set process mode
+	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
@@ -389,7 +438,7 @@ func _on_card_selected(card: CardResource) -> void:
 
 # Theme functions removed - no longer needed after arena simplification
 
-func _on_enemies_updated(alive_enemies: Array[EnemyEntity]) -> void:
+func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
 
 func _handle_melee_attack(target_pos: Vector2) -> void:
@@ -400,7 +449,7 @@ func _handle_melee_attack(target_pos: Vector2) -> void:
 	var alive_enemies = wave_director.get_alive_enemies()
 	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
 
-func _handle_projectile_attack(target_pos: Vector2) -> void:
+func _handle_projectile_attack(_target_pos: Vector2) -> void:
 	if not player or not ability_system:
 		return
 	
@@ -498,14 +547,14 @@ func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies, wave_director.enemy_registry)
 	
 	# Update each tier's MultiMesh
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier.Tier.SWARM)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier.Tier.REGULAR) 
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier.Tier.ELITE)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier.Tier.BOSS)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
+	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
 	
 	# Removed excessive tier rendering debug logs
 
-func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, base_size: Vector2, tier: EnemyRenderTier.Tier) -> void:
+func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
 		mm_instance.multimesh.instance_count = count
@@ -515,10 +564,10 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var enemy := tier_enemies[i]
 			
 			# Basic transform with position only
-			var transform := Transform2D()
-			transform.origin = enemy["pos"]
+			var instance_transform := Transform2D()
+			instance_transform.origin = enemy["pos"]
 			
-			mm_instance.multimesh.set_instance_transform_2d(i, transform)
+			mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 			
 			# Set color based on tier for visual debugging
 			var tier_color := _get_tier_debug_color(tier)
@@ -531,7 +580,7 @@ func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	
 	# Set camera bounds for the new arena
 	camera_system.set_arena_bounds(arena_bounds)
-	var payload := EventBus.ArenaBoundsChangedPayload.new(arena_bounds)
+	var payload := EventBus.ArenaBoundsChangedPayload_Type.new(arena_bounds)
 	EventBus.arena_bounds_changed.emit(payload)
 
 func _get_visible_world_rect() -> Rect2:
@@ -560,16 +609,16 @@ func _get_enemy_color_for_type(type_id: String) -> Color:
 		_:
 			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 
-func _get_tier_debug_color(tier: EnemyRenderTier.Tier) -> Color:
+func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
 	# Distinct colors for each tier for visual debugging - more saturated for better visibility
 	match tier:
-		EnemyRenderTier.Tier.SWARM:
+		EnemyRenderTier_Type.Tier.SWARM:
 			return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red
-		EnemyRenderTier.Tier.REGULAR:
+		EnemyRenderTier_Type.Tier.REGULAR:
 			return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan
-		EnemyRenderTier.Tier.ELITE:
+		EnemyRenderTier_Type.Tier.ELITE:
 			return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta
-		EnemyRenderTier.Tier.BOSS:
+		EnemyRenderTier_Type.Tier.BOSS:
 			return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
@@ -629,7 +678,7 @@ func _toggle_performance_stats() -> void:
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
 	Logger.info("C: Test card selection", "ui")
-	Logger.info("F10: Pause/resume toggle", "ui")
+	Logger.info("Escape: Pause/resume toggle", "ui")
 	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
 	Logger.info("F12: Performance stats toggle", "ui")
 	Logger.info("WASD: Move player", "ui")
@@ -639,7 +688,7 @@ func _print_debug_help() -> void:
 func _print_performance_stats() -> void:
 	var stats: Dictionary = get_debug_stats()
 	var fps: int = Engine.get_frames_per_second()
-	var memory: int = OS.get_static_memory_usage() / 1024 / 1024
+	var memory: int = int(OS.get_static_memory_usage() / (1024 * 1024))
 	
 	Logger.info("=== Performance Stats ===", "performance")
 	Logger.info("FPS: " + str(fps), "performance")
@@ -665,7 +714,7 @@ func get_debug_stats() -> Dictionary:
 		stats["visible_enemies"] = visible_count
 	
 	if ability_system:
-		var alive_projectiles: Array[Dictionary] = ability_system.get_alive_projectiles()
+		var alive_projectiles: Array[Dictionary] = ability_system._get_alive_projectiles()
 		stats["projectile_count"] = alive_projectiles.size()
 	
 	

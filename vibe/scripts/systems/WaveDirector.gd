@@ -37,15 +37,23 @@ signal enemies_updated(alive_enemies: Array[EnemyEntity])
 func _ready() -> void:
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
-	_setup_enemy_registry()
+	# Only setup enemy registry if not already injected
+	if not enemy_registry:
+		_setup_enemy_registry()
 	_initialize_pool()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
+# Dependency injection method - called by GameOrchestrator
+func set_enemy_registry(injected_registry: EnemyRegistry) -> void:
+	enemy_registry = injected_registry
+	Logger.info("EnemyRegistry injected into WaveDirector", "waves")
+
 func _setup_enemy_registry() -> void:
+	# Fallback - create own registry if none was injected (for backwards compatibility)
 	enemy_registry = EnemyRegistry.new()
 	add_child(enemy_registry)
-	Logger.info("Enemy registry initialized", "waves")
+	Logger.info("Enemy registry initialized (fallback)", "waves")
 
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
@@ -120,6 +128,10 @@ func _on_combat_step(payload) -> void:
 	enemies_updated.emit(alive_enemies)
 
 func _handle_spawning(dt: float) -> void:
+	# Check for spawn disabled cheat
+	if CheatSystem and CheatSystem.is_spawn_disabled():
+		return
+	
 	spawn_timer += dt
 	if spawn_timer >= spawn_interval:
 		spawn_timer = 0.0
@@ -288,7 +300,7 @@ func damage_enemy(enemy_index: int, damage: float) -> void:
 		enemy.alive = false
 		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
 		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
-		var payload := EventBus.EnemyKilledPayload.new(death_pos, 1)
+		var payload := EventBus.EnemyKilledPayload_Type.new(death_pos, 1)
 		EventBus.enemy_killed.emit(payload)
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:

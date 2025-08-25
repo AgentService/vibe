@@ -16,7 +16,7 @@ var auto_attack_target: Vector2 = Vector2.ZERO
 
 # Balance values loaded from JSON
 var damage: float
-var range: float
+var attack_range: float
 var cone_angle: float  # In degrees
 var attack_speed: float  # Attacks per second
 
@@ -36,7 +36,7 @@ func _ready() -> void:
 
 func _load_balance_values() -> void:
 	damage = BalanceDB.get_melee_value("damage")
-	range = BalanceDB.get_melee_value("range")
+	attack_range = BalanceDB.get_melee_value("range")
 	cone_angle = BalanceDB.get_melee_value("cone_angle")
 	attack_speed = BalanceDB.get_melee_value("attack_speed")
 
@@ -125,7 +125,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			continue
 		var target_id = EntityId.enemy(enemy_pool_index)
 		var damage_tags = PackedStringArray(["melee"])
-		var damage_payload = EventBus.DamageRequestPayload.new(source_id, target_id, final_damage, damage_tags)
+		var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
 		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
 	
@@ -133,10 +133,10 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
 	return hit_enemies
 
-func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, attack_range: float) -> bool:
+func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> bool:
 	# Check if enemy is within range
 	var distance = player_pos.distance_to(enemy_pos)
-	if distance > attack_range:
+	if distance > range_limit:
 		return false
 	
 	# Check if enemy is within cone angle
@@ -159,7 +159,7 @@ func _get_effective_attack_speed() -> float:
 	return base_speed + bonus_speed
 
 func _get_effective_range() -> float:
-	var base_range = range
+	var base_range = attack_range
 	var bonus_range = RunManager.stats.get("melee_range_add", 0.0)
 	return base_range + bonus_range
 
@@ -196,7 +196,7 @@ func get_active_attack_effects() -> Array[Dictionary]:
 func get_attack_stats() -> Dictionary:
 	return {
 		"damage": damage,
-		"range": range,
+		"range": attack_range,
 		"cone_angle": cone_angle,
 		"attack_speed": attack_speed,
 		"cooldown_remaining": attack_cooldown,

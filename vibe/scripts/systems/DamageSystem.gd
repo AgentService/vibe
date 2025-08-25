@@ -53,7 +53,7 @@ func _check_projectile_enemy_collisions() -> void:
 			if distance <= collision_distance:
 				_handle_collision(projectile, enemy, p_idx, e_idx)
 
-func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, proj_idx: int, enemy_idx: int) -> void:
+func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, _proj_idx: int, _enemy_idx: int) -> void:
 	# Find the actual pool indices
 	var actual_proj_idx := _find_projectile_pool_index(projectile)
 	var actual_enemy_idx := _find_enemy_pool_index(enemy)
@@ -72,7 +72,7 @@ func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, proj_idx: int
 	ability_system.projectiles[actual_proj_idx]["alive"] = false
 	
 	# Emit damage request
-	var damage_payload := EventBus.DamageRequestPayload.new(source_id, target_id, base_damage, tags)
+	var damage_payload := EventBus.DamageRequestPayload_Type.new(source_id, target_id, base_damage, tags)
 	EventBus.damage_requested.emit(damage_payload)
 
 func _find_projectile_pool_index(target_projectile: Dictionary) -> int:
@@ -109,7 +109,7 @@ func _check_enemy_player_collisions() -> void:
 		return  # Player position not set
 	
 	for enemy in alive_enemies:
-		var enemy_pos := enemy["pos"] as Vector2
+		var enemy_pos := enemy.pos as Vector2
 		var distance := player_pos.distance_to(enemy_pos)
 		var collision_distance := enemy_radius + player_radius
 		
@@ -141,5 +141,5 @@ func _on_damage_requested(payload) -> void:
 	wave_director.damage_enemy(payload.target_id.index, final_damage)
 	
 	# Emit damage applied signal
-	var applied_payload := EventBus.DamageAppliedPayload.new(payload.target_id, final_damage, is_crit, payload.tags)
+	var applied_payload := EventBus.DamageAppliedPayload_Type.new(payload.target_id, final_damage, is_crit, payload.tags)
 	EventBus.damage_applied.emit(applied_payload)

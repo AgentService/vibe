@@ -8,6 +8,6 @@ func _ready() -> void:
 	EventBus.combat_step.connect(_on_combat_step)
 	Logger.info("Main scene ready - Arena loaded with multimesh projectiles")
 
-func _on_combat_step(payload) -> void:
+func _on_combat_step(_payload) -> void:
 	# Main scene just passes through - Arena handles projectile logic
 	pass

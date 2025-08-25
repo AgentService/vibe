@@ -50,7 +50,7 @@ func _on_xp_changed(payload) -> void:
 func _on_level_up(payload) -> void:
 	_update_level_display(payload.new_level)
 
-func _on_player_damage_taken(damage: int) -> void:
+func _on_player_damage_taken(_damage: int) -> void:
 	# Get current player health from player node
 	var player: Player = get_tree().get_first_node_in_group("player")
 	if player:
@@ -91,7 +91,7 @@ func _update_health_display(current_hp: int, max_hp: int) -> void:
 func _style_health_bar() -> void:
 	if health_bar:
 		# Create a simple theme with red fill and dark background
-		var theme := Theme.new()
+		var health_theme := Theme.new()
 		var style_bg := StyleBoxFlat.new()
 		var style_fill := StyleBoxFlat.new()
 		
@@ -106,15 +106,15 @@ func _style_health_bar() -> void:
 		# Fill (current health)
 		style_fill.bg_color = Color(0.8, 0.2, 0.2, 1.0)  # Red
 		
-		theme.set_stylebox("background", "ProgressBar", style_bg)
-		theme.set_stylebox("fill", "ProgressBar", style_fill)
+		health_theme.set_stylebox("background", "ProgressBar", style_bg)
+		health_theme.set_stylebox("fill", "ProgressBar", style_fill)
 		
-		health_bar.theme = theme
+		health_bar.theme = health_theme
 
 func _style_level_label() -> void:
 	if level_label:
 		# Create theme for level label
-		var theme := Theme.new()
+		var label_theme := Theme.new()
 		var style_bg := StyleBoxFlat.new()
 		
 		# Background
@@ -133,10 +133,10 @@ func _style_level_label() -> void:
 		style_bg.content_margin_top = 4
 		style_bg.content_margin_bottom = 4
 		
-		theme.set_stylebox("normal", "Label", style_bg)
-		theme.set_color("font_color", "Label", Color(1.0, 1.0, 1.0, 1.0))  # White text
+		label_theme.set_stylebox("normal", "Label", style_bg)
+		label_theme.set_color("font_color", "Label", Color(1.0, 1.0, 1.0, 1.0))  # White text
 		
-		level_label.theme = theme
+		level_label.theme = label_theme
 
 func _update_fps_display() -> void:
 	if fps_label:
@@ -167,7 +167,7 @@ func _get_render_stats() -> String:
 	
 	# Get memory usage
 	var memory_usage: int = OS.get_static_memory_usage()
-	stats.append("Memory: " + str(memory_usage / 1024 / 1024) + " MB")
+	stats.append("Memory: " + str(int(memory_usage / (1024 * 1024))) + " MB")
 	
 	# Get enemy/projectile counts from Arena if available
 	var arena: Node = get_tree().current_scene

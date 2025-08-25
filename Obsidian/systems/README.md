@@ -91,7 +91,6 @@ The documentation follows the established patterns:
 - `vibe/scripts/systems/EnemyRenderTier.gd` (tier assignment + Dictionary conversion) ⭐ UPDATED
 - `vibe/scripts/systems/DamageSystem.gd` (object identity collision detection) ⭐ UPDATED
 - `vibe/scripts/systems/MeleeSystem.gd` (WaveDirector references for pool indexing) ⭐ UPDATED
-- `vibe/scripts/systems/EnemyBehaviorSystem.gd` (AI patterns for typed objects)
 - `vibe/autoload/EventBus.gd` (communication system with Array[EnemyEntity] signals) ⭐ UPDATED
 - `vibe/autoload/BalanceDB.gd` (data validation + hot-reload)
 - `vibe/autoload/RunManager.gd` (player stats management)

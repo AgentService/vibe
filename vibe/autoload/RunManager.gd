@@ -5,9 +5,9 @@ extends Node
 
 const COMBAT_DT: float = 1.0 / 30.0  # 30 Hz fixed step
 
-@export var seed: int = 0:
+@export var run_seed: int = 0:
 	set(value):
-		seed = value
+		run_seed = value
 		_seed_rng()
 
 var stats: Dictionary = {}
@@ -18,8 +18,8 @@ func _ready() -> void:
 	# RunManager should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	
-	if seed == 0:
-		seed = int(Time.get_unix_time_from_system())
+	if run_seed == 0:
+		run_seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_load_player_stats)
@@ -63,7 +63,7 @@ func _process(delta: float) -> void:
 	_accumulator += delta
 	
 	while _accumulator >= COMBAT_DT:
-		var payload := EventBus.CombatStepPayload.new(COMBAT_DT)
+		var payload := EventBus.CombatStepPayload_Type.new(COMBAT_DT)
 		EventBus.combat_step.emit(payload)
 		_accumulator -= COMBAT_DT
 
@@ -73,4 +73,4 @@ func pause_game(v: bool) -> void:
 
 func _seed_rng() -> void:
 	if RNG:
-		RNG.seed_run(seed)
+		RNG.seed_run(run_seed)

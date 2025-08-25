@@ -3,22 +3,27 @@ extends Node
 ## Global event bus for cross-system communication.
 ## All cross-system signals flow through here to maintain loose coupling.
 ## See ARCHITECTURE.md Signals Matrix for detailed contracts.
+##
+## NOTE: Signals marked as "unused" by Godot editor are FALSE POSITIVES.
+## These signals ARE emitted by various systems throughout the codebase.
+## The warning occurs because signals are emitted by other classes, not this EventBus class itself.
 
-# Preload all payload classes
-const CombatStepPayload = preload("res://scripts/domain/signal_payloads/CombatStepPayload.gd")
-const DamageRequestPayload = preload("res://scripts/domain/signal_payloads/DamageRequestPayload.gd")
-const DamageAppliedPayload = preload("res://scripts/domain/signal_payloads/DamageAppliedPayload.gd")
-const DamageBatchAppliedPayload = preload("res://scripts/domain/signal_payloads/DamageBatchAppliedPayload.gd")
-const EntityKilledPayload = preload("res://scripts/domain/signal_payloads/EntityKilledPayload.gd")
-const EnemyKilledPayload = preload("res://scripts/domain/signal_payloads/EnemyKilledPayload.gd")
-const XpChangedPayload = preload("res://scripts/domain/signal_payloads/XpChangedPayload.gd")
-const LevelUpPayload = preload("res://scripts/domain/signal_payloads/LevelUpPayload.gd")
-const GamePausedChangedPayload = preload("res://scripts/domain/signal_payloads/GamePausedChangedPayload.gd")
-const ArenaBoundsChangedPayload = preload("res://scripts/domain/signal_payloads/ArenaBoundsChangedPayload.gd")
-const PlayerPositionChangedPayload = preload("res://scripts/domain/signal_payloads/PlayerPositionChangedPayload.gd")
-const DamageDealtPayload = preload("res://scripts/domain/signal_payloads/DamageDealtPayload.gd")
-const InteractionPromptChangedPayload = preload("res://scripts/domain/signal_payloads/InteractionPromptChangedPayload.gd")
-const LootGeneratedPayload = preload("res://scripts/domain/signal_payloads/LootGeneratedPayload.gd")
+# Preload all payload classes - using _Type suffix to avoid conflicts with class names
+const CombatStepPayload_Type = preload("res://scripts/domain/signal_payloads/CombatStepPayload.gd")
+const DamageRequestPayload_Type = preload("res://scripts/domain/signal_payloads/DamageRequestPayload.gd")
+const DamageAppliedPayload_Type = preload("res://scripts/domain/signal_payloads/DamageAppliedPayload.gd")
+const DamageBatchAppliedPayload_Type = preload("res://scripts/domain/signal_payloads/DamageBatchAppliedPayload.gd")
+const EntityKilledPayload_Type = preload("res://scripts/domain/signal_payloads/EntityKilledPayload.gd")
+const EnemyKilledPayload_Type = preload("res://scripts/domain/signal_payloads/EnemyKilledPayload.gd")
+const XpChangedPayload_Type = preload("res://scripts/domain/signal_payloads/XpChangedPayload.gd")
+const LevelUpPayload_Type = preload("res://scripts/domain/signal_payloads/LevelUpPayload.gd")
+const GamePausedChangedPayload_Type = preload("res://scripts/domain/signal_payloads/GamePausedChangedPayload.gd")
+const ArenaBoundsChangedPayload_Type = preload("res://scripts/domain/signal_payloads/ArenaBoundsChangedPayload.gd")
+const PlayerPositionChangedPayload_Type = preload("res://scripts/domain/signal_payloads/PlayerPositionChangedPayload.gd")
+const DamageDealtPayload_Type = preload("res://scripts/domain/signal_payloads/DamageDealtPayload.gd")
+const InteractionPromptChangedPayload_Type = preload("res://scripts/domain/signal_payloads/InteractionPromptChangedPayload.gd")
+const LootGeneratedPayload_Type = preload("res://scripts/domain/signal_payloads/LootGeneratedPayload.gd")
+const CheatTogglePayload_Type = preload("res://scripts/domain/signal_payloads/CheatTogglePayload.gd")
 
 # TIMING SIGNALS
 ## Emitted by RunManager at fixed 30Hz for deterministic combat updates
@@ -81,6 +86,10 @@ signal interaction_prompt_changed(payload)
 
 ## Loot generated - emitted by arena systems for treasure chests
 signal loot_generated(payload)
+
+# DEBUG/CHEAT SIGNALS
+## Cheat toggled - emitted when debug cheats are toggled
+signal cheat_toggled(payload)
 
 func _ready() -> void:
 	# Connect debug logging to relevant signals only
