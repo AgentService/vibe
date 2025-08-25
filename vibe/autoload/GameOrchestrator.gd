@@ -61,20 +61,41 @@ func _initialize_systems() -> void:
 	Logger.info("Initializing game systems", "orchestrator")
 	
 	# Initialize systems in dependency order (from plan):
-	# Phase B: Initialize CardSystem (no dependencies)
+	# Phase B: CardSystem (no dependencies)
 	card_system = CardSystem.new()
 	add_child(card_system)
 	systems["CardSystem"] = card_system
 	Logger.info("CardSystem initialized by GameOrchestrator", "orchestrator")
 	
-	# Other systems will be moved in later phases:
+	# Phase C: Non-dependent systems
 	# 1. EnemyRegistry (no deps)
-	# 3. WaveDirector (needs EnemyRegistry)
+	enemy_registry = EnemyRegistry.new()
+	add_child(enemy_registry)
+	systems["EnemyRegistry"] = enemy_registry
+	Logger.info("EnemyRegistry initialized by GameOrchestrator", "orchestrator")
+	
 	# 4. AbilitySystem (no deps)
+	ability_system = AbilitySystem.new()
+	add_child(ability_system)
+	systems["AbilitySystem"] = ability_system
+	Logger.info("AbilitySystem initialized by GameOrchestrator", "orchestrator")
+	
+	# 7. ArenaSystem (no deps)
+	arena_system = ArenaSystem.new()
+	add_child(arena_system)
+	systems["ArenaSystem"] = arena_system
+	Logger.info("ArenaSystem initialized by GameOrchestrator", "orchestrator")
+	
+	# 8. CameraSystem (no deps)
+	camera_system = CameraSystem.new()
+	add_child(camera_system)
+	systems["CameraSystem"] = camera_system
+	Logger.info("CameraSystem initialized by GameOrchestrator", "orchestrator")
+	
+	# Systems to be moved in later phases:
+	# 3. WaveDirector (needs EnemyRegistry)
 	# 5. MeleeSystem (needs WaveDirector ref)
 	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
-	# 7. ArenaSystem (no deps)
-	# 8. CameraSystem (no deps)
 
 func get_card_system() -> CardSystem:
 	return card_system
@@ -114,3 +135,20 @@ func inject_systems_to_arena(arena) -> void:
 		Logger.debug("CardSystem injected to Arena", "orchestrator")
 	else:
 		Logger.warn("Arena doesn't have set_card_system method", "orchestrator")
+	
+	# Phase C: Inject non-dependent systems
+	if enemy_registry and arena.has_method("set_enemy_registry"):
+		arena.set_enemy_registry(enemy_registry)
+		Logger.debug("EnemyRegistry injected to Arena", "orchestrator")
+	
+	if ability_system and arena.has_method("set_ability_system"):
+		arena.set_ability_system(ability_system)
+		Logger.debug("AbilitySystem injected to Arena", "orchestrator")
+	
+	if arena_system and arena.has_method("set_arena_system"):
+		arena.set_arena_system(arena_system)
+		Logger.debug("ArenaSystem injected to Arena", "orchestrator")
+	
+	if camera_system and arena.has_method("set_camera_system"):
+		arena.set_camera_system(camera_system)
+		Logger.debug("CameraSystem injected to Arena", "orchestrator")

@@ -24,7 +24,8 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
 # Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
-@onready var ability_system: AbilitySystem = AbilitySystem.new()
+# Systems now injected by GameOrchestrator
+var ability_system: AbilitySystem
 @onready var melee_system: MeleeSystem = MeleeSystem.new()
 
 
@@ -55,10 +56,11 @@ var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
 var boss_frame_duration: float = 0.1
 @onready var wave_director: WaveDirector = WaveDirector.new()
+# Systems now injected by GameOrchestrator  
 @onready var damage_system: DamageSystem = DamageSystem.new()
-@onready var arena_system: ArenaSystem = ArenaSystem.new()
+var arena_system: ArenaSystem
 # texture_theme_system removed - no longer needed after arena simplification
-@onready var camera_system: CameraSystem = CameraSystem.new()
+var camera_system: CameraSystem
 # enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
@@ -82,41 +84,25 @@ func _ready() -> void:
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# Set proper process modes for systems (with null checks)
-	if ability_system:
-		ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# Set proper process modes for systems that are not injected (with null checks)
 	if melee_system:
 		melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if wave_director:
 		wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if damage_system:
 		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if arena_system:
-		arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if camera_system:
-		camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	# Note: ability_system, arena_system, camera_system process modes set in injection methods
 	
-	# Add systems as children
-	if ability_system:
-		add_child(ability_system)
+	# Add systems as children (only those not injected by GameOrchestrator)
 	if melee_system:
 		add_child(melee_system)
 	if wave_director:
 		add_child(wave_director)
 	if damage_system:
 		add_child(damage_system)
-	if arena_system:
-		add_child(arena_system)
-	if camera_system:
-		add_child(camera_system)
+	# Note: ability_system, arena_system, camera_system now injected by GameOrchestrator
 	
-	# Set references for damage system (legitimate dependency injection)
-	if damage_system and ability_system and wave_director:
-		damage_system.set_references(ability_system, wave_director)
-	
-	# Set references for melee system
-	if melee_system and wave_director:
-		melee_system.set_wave_director_reference(wave_director)
+	# System references will be set after GameOrchestrator injection
 	
 	# Create enemy render tier system
 	if EnemyRenderTier == null:
@@ -145,13 +131,21 @@ func _ready() -> void:
 	
 	_setup_card_system()
 	
+	# Set system references after injection
+	if damage_system and ability_system and wave_director:
+		damage_system.set_references(ability_system, wave_director)
+		Logger.debug("DamageSystem references set after injection", "systems")
+	
+	if melee_system and wave_director:
+		melee_system.set_wave_director_reference(wave_director)
+		Logger.debug("MeleeSystem references set after injection", "systems")
+	
 	# Set player reference in PlayerState for cached position access
 	PlayerState.set_player_reference(player)
 	
 	# Connect signals AFTER systems are added and ready
-	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
+	# Note: ability_system and arena_system signals connected in injection methods
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
-	arena_system.arena_loaded.connect(_on_arena_loaded)
 	EventBus.level_up.connect(_on_level_up)
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
@@ -348,8 +342,7 @@ func _setup_player() -> void:
 	player.global_position = Vector2(0, 0)  # Center of arena
 	add_child(player)
 	
-	# Setup camera to follow player
-	camera_system.setup_camera(player)
+	# Camera setup now handled in injection method
 
 func _setup_xp_system() -> void:
 	xp_system = XpSystem.new(self)
@@ -378,7 +371,7 @@ func _setup_card_system() -> void:
 	else:
 		Logger.warn("Card system not yet injected during setup", "cards")
 
-# Dependency injection method - called by GameOrchestrator
+# Dependency injection methods - called by GameOrchestrator
 func set_card_system(injected_card_system: CardSystem) -> void:
 	card_system = injected_card_system
 	Logger.info("CardSystem injected into Arena", "cards")
@@ -388,6 +381,33 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 		card_selection.card_selected.connect(_on_card_selected)
 		card_selection.setup_card_system(card_system)
 		Logger.debug("Card selection connected to injected CardSystem", "cards")
+
+func set_ability_system(injected_ability_system: AbilitySystem) -> void:
+	ability_system = injected_ability_system
+	Logger.info("AbilitySystem injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
+
+func set_arena_system(injected_arena_system: ArenaSystem) -> void:
+	arena_system = injected_arena_system
+	Logger.info("ArenaSystem injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	arena_system.arena_loaded.connect(_on_arena_loaded)
+
+func set_camera_system(injected_camera_system: CameraSystem) -> void:
+	camera_system = injected_camera_system
+	Logger.info("CameraSystem injected into Arena", "systems")
+	
+	# Set process mode and setup camera
+	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if player:
+		camera_system.setup_camera(player)
+
+# EnemyRegistry will be handled in Phase D when WaveDirector is moved
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
