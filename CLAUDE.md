@@ -6,6 +6,7 @@
 ## Project Overview
 - **Engine:** Godot 4.2+ (2D top-down).
 - **Focus:** PoE-style buildcraft (skills + supports, items/affixes, small skill tree), wave/survivor arena.
+- **MCP Integration:** GDAI MCP Plugin v0.2.4 installed. Provides AI tools for scene creation, script editing, debugging, and visual feedback.
 
 
 ## IMPORTANT – Working Rules
