@@ -30,6 +30,11 @@ func _ready() -> void:
 			# Defer until next frame when BalanceDB is ready
 			call_deferred("_try_load_player_stats")
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_load_player_stats):
+		BalanceDB.balance_reloaded.disconnect(_load_player_stats)
+
 func _try_load_player_stats() -> void:
 	if BalanceDB and BalanceDB._data.has("player"):
 		_load_player_stats()

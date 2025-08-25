@@ -22,6 +22,14 @@ func _load_balance_values() -> void:
 	max_projectiles = BalanceDB.get_abilities_value("max_projectiles")
 	arena_bounds = BalanceDB.get_abilities_value("arena_bounds")
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.combat_step.is_connected(_on_combat_step):
+		EventBus.combat_step.disconnect(_on_combat_step)
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
+		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
+	Logger.debug("AbilitySystem: Cleaned up signal connections", "systems")
+
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	_initialize_pool()

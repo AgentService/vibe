@@ -25,6 +25,16 @@ func _ready() -> void:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 	_update_next_level_xp()
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.combat_step.is_connected(_on_combat_step):
+		EventBus.combat_step.disconnect(_on_combat_step)
+	if EventBus.enemy_killed.is_connected(_on_enemy_killed):
+		EventBus.enemy_killed.disconnect(_on_enemy_killed)
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
+		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
+	Logger.debug("XpSystem: Cleaned up signal connections", "systems")
+
 func _on_balance_reloaded() -> void:
 	_load_xp_curve_data()
 	_update_next_level_xp()

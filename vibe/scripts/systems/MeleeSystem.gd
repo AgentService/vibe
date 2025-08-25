@@ -40,6 +40,14 @@ func _load_balance_values() -> void:
 	cone_angle = BalanceDB.get_melee_value("cone_angle")
 	attack_speed = BalanceDB.get_melee_value("attack_speed")
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.combat_step.is_connected(_on_combat_step):
+		EventBus.combat_step.disconnect(_on_combat_step)
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
+		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
+	Logger.debug("MeleeSystem: Cleaned up signal connections", "systems")
+
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	Logger.info("Reloaded melee balance values", "abilities")

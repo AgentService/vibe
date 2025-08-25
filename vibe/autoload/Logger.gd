@@ -14,6 +14,11 @@ func _ready() -> void:
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_load_config)
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_load_config):
+		BalanceDB.balance_reloaded.disconnect(_load_config)
+
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F6:
 		toggle_debug_mode()

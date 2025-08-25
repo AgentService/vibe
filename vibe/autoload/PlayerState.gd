@@ -17,6 +17,11 @@ func _ready() -> void:
 	# Connect to combat step for regular updates
 	EventBus.combat_step.connect(_on_combat_step)
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.combat_step.is_connected(_on_combat_step):
+		EventBus.combat_step.disconnect(_on_combat_step)
+
 func set_player_reference(player: Node2D) -> void:
 	_player_ref = player
 	if _player_ref:
@@ -24,7 +29,7 @@ func set_player_reference(player: Node2D) -> void:
 		_last_emitted_position = position
 		player_position_changed.emit(position)
 
-func _on_combat_step(payload) -> void:
+func _on_combat_step(payload: EventBus.CombatStepPayload) -> void:
 	if not _player_ref:
 		return
 	

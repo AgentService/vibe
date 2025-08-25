@@ -42,6 +42,20 @@ func _connect_signals() -> void:
 	EventBus.game_paused_changed.connect(_on_game_paused_changed)
 	PlayerState.player_position_changed.connect(_on_player_moved)
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.arena_bounds_changed.is_connected(_on_arena_bounds_changed):
+		EventBus.arena_bounds_changed.disconnect(_on_arena_bounds_changed)
+	if EventBus.player_position_changed.is_connected(_on_player_position_changed):
+		EventBus.player_position_changed.disconnect(_on_player_position_changed)
+	if EventBus.damage_dealt.is_connected(_on_damage_dealt):
+		EventBus.damage_dealt.disconnect(_on_damage_dealt)
+	if EventBus.game_paused_changed.is_connected(_on_game_paused_changed):
+		EventBus.game_paused_changed.disconnect(_on_game_paused_changed)
+	if PlayerState.player_position_changed.is_connected(_on_player_moved):
+		PlayerState.player_position_changed.disconnect(_on_player_moved)
+	Logger.debug("CameraSystem: Cleaned up signal connections", "systems")
+
 func setup_camera(player_node: Node2D) -> void:
 	if not player_node:
 		push_error("CameraSystem: Cannot setup camera - player node is null")

@@ -18,6 +18,12 @@ func _ready() -> void:
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
+		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
+	Logger.debug("EnemyRegistry: Cleaned up signal connections", "systems")
+
 func _on_balance_reloaded() -> void:
 	load_all_enemy_types()
 	Logger.info("Reloaded enemy types", "enemies")
@@ -112,16 +118,25 @@ func get_random_enemy_type(pool_name: String = "waves") -> EnemyType:
 func _rebuild_wave_pool() -> void:
 	_cached_wave_pool.clear()
 	
-	# Build weighted pool based on spawn_weight
+	# Build weighted pool based on spawn_weight with reasonable limits
+	const MAX_POOL_SIZE: int = 500  # Prevent excessive memory usage
+	const MAX_WEIGHT_PER_TYPE: int = 50  # Cap individual type weight
+	
 	for enemy_type in enemy_types.values():
 		var type := enemy_type as EnemyType
-		var weight := int(type.spawn_weight * 10.0)  # Convert to integer for easy pooling
+		var raw_weight := int(type.spawn_weight * 10.0)
+		var weight: int = min(raw_weight, MAX_WEIGHT_PER_TYPE)  # Cap weight per type
+		
+		# Stop adding if we would exceed pool size limit
+		if _cached_wave_pool.size() + weight > MAX_POOL_SIZE:
+			Logger.warn("Wave pool size limit reached (%d). Some enemy types may have reduced spawn rates." % MAX_POOL_SIZE, "enemies")
+			break
 		
 		for i in range(weight):
 			_cached_wave_pool.append(type)
 	
 	_wave_pool_dirty = false
-	Logger.debug("Rebuilt wave pool with " + str(_cached_wave_pool.size()) + " weighted entries", "enemies")
+	Logger.debug("Rebuilt wave pool with " + str(_cached_wave_pool.size()) + " weighted entries (max: %d)" % MAX_POOL_SIZE, "enemies")
 
 func get_available_type_ids() -> Array[String]:
 	var ids: Array[String] = []
