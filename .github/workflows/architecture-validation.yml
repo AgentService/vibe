@@ -55,13 +55,15 @@ jobs:
       run: |
         echo "Checking EntityId usage in signals..."
         
-        # Check that new damage signals use EntityId
-        if ! grep -q "EntityId" vibe/autoload/EventBus.gd; then
-          echo "❌ FAIL: EventBus should use EntityId for typed entity references"
+        # Check that signal payload classes use EntityId for typed entity references
+        entityid_files=$(find vibe/scripts/domain/signal_payloads/ -name "*.gd" -exec grep -l "EntityId" {} \; || true)
+        
+        if [ -z "$entityid_files" ]; then
+          echo "❌ FAIL: Signal payload classes should use EntityId for typed entity references"
           exit 1
         fi
         
-        echo "✅ PASS: EntityId usage validated"
+        echo "✅ PASS: EntityId usage validated in signal payloads"
     
     - name: Validate system dependencies
       run: |
