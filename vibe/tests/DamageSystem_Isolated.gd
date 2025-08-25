@@ -1,7 +1,8 @@
 extends Node2D
 
-## Isolated damage system test - damage calculation and application.
-## Tests damage types, resistance, critical hits, and enemy health management.
+## Isolated damage system test - passive damage monitoring.
+## Shows enemies spawning, moving, and taking automatic damage over time.
+## Tests damage visualization and enemy death handling.
 
 @onready var player: CharacterBody2D = $Player
 @onready var enemy_multimesh: MultiMeshInstance2D = $EnemyMultiMesh
@@ -13,10 +14,13 @@ var damage_system: DamageSystem
 var wave_director: WaveDirector
 var selected_damage_type: String = "physical"
 var damage_amount: float = 25.0
+var auto_damage_timer: float = 0.0
+var auto_damage_interval: float = 2.0  # Damage every 2 seconds
+var target_nearest: bool = true  # Target nearest enemy instead of random
 
 func _ready():
 	print("=== DamageSystem_Isolated Test Started ===")
-	print("Controls: WASD to move, Click to damage, E to spawn enemy, 1-4 damage types")
+	print("Controls: WASD to move, E to spawn enemy, enemies take auto-damage over time")
 	
 	_setup_player()
 	_setup_systems()
@@ -78,11 +82,20 @@ func _setup_enemy_multimesh():
 	enemy_multimesh.multimesh = multimesh
 
 func _spawn_test_enemies():
+	# Set initial player position away from origin
+	player.position = Vector2(400, 300)
+	print("Player position: ", player.position)
+	
 	# Spawn enemies with different health values around the player
 	for i in range(5):
 		var angle = (i / 5.0) * TAU
-		var spawn_pos = player.position + Vector2.from_angle(angle) * 120
+		var spawn_pos = player.position + Vector2.from_angle(angle) * 150
 		_spawn_enemy_at(spawn_pos)
+		print("Spawning enemy ", i+1, " at position: ", spawn_pos)
+	
+	# Initial visual update
+	await get_tree().process_frame
+	_update_enemy_visuals()
 
 func _spawn_enemy_at(pos: Vector2, health: float = 50.0):
 	if wave_director.has_method("spawn_enemy_at"):
@@ -98,10 +111,7 @@ func _spawn_enemy_at(pos: Vector2, health: float = 50.0):
 		print("WaveDirector missing spawn_enemy_at method")
 
 func _unhandled_input(event):
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_deal_damage_to_nearest()
-	elif event is InputEventKey and event.pressed:
+	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			KEY_E:
 				_spawn_enemy_near_mouse()
@@ -127,10 +137,17 @@ func _unhandled_input(event):
 func _physics_process(delta):
 	_handle_player_movement(delta)
 	_update_info_display()
+	_handle_auto_damage(delta)
 	
-	# Emit combat_step for DamageSystem processing
-	# In real game this comes from GameOrchestrator at 30Hz
-	EventBus.combat_step.emit(null)
+	# Update player position in PlayerState for systems that depend on it
+	if PlayerState:
+		PlayerState.position = player.position
+
+func _handle_auto_damage(delta):
+	auto_damage_timer += delta
+	if auto_damage_timer >= auto_damage_interval:
+		auto_damage_timer = 0.0
+		_damage_random_enemy()
 
 func _handle_player_movement(delta):
 	var input_vector = Vector2.ZERO
@@ -152,50 +169,71 @@ func _handle_player_movement(delta):
 	
 	player.move_and_slide()
 
-func _deal_damage_to_nearest():
+func _damage_random_enemy():
 	if not wave_director.has_method("get_alive_enemies"):
-		print("WaveDirector missing get_alive_enemies method")
 		return
 		
 	var enemies = wave_director.get_alive_enemies()
 	if enemies.is_empty():
-		print("No alive enemies found")
 		return
 	
-	# Find nearest enemy
-	var nearest_enemy = null
-	var nearest_distance = INF
-	var player_pos = player.global_position
+	var target_enemy = null
+	var target_idx = -1
 	
-	for enemy in enemies:
-		var enemy_pos = enemy.pos
-		var distance = player_pos.distance_to(enemy_pos)
-		if distance < nearest_distance:
-			nearest_distance = distance
-			nearest_enemy = enemy
-	
-	if nearest_enemy and nearest_distance < 200.0:
-		# Find enemy pool index
-		var enemy_index = -1
-		var all_enemies = wave_director.enemies
-		for i in range(all_enemies.size()):
-			if all_enemies[i] == nearest_enemy:
-				enemy_index = i
-				break
-		
-		if enemy_index >= 0:
-			# Create proper damage request payload
-			var source_id = EntityId.player()
-			var target_id = EntityId.enemy(enemy_index)
-			var tags = PackedStringArray([selected_damage_type, "test_damage"])
-			var payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, damage_amount, tags)
-			
-			EventBus.damage_requested.emit(payload)
-			print("Dealt ", damage_amount, " ", selected_damage_type, " damage to enemy[", enemy_index, "] ", nearest_enemy.type_id)
-		else:
-			print("Could not find enemy in pool")
+	if target_nearest and player:
+		# Find nearest enemy to player
+		var nearest_dist = INF
+		for i in range(enemies.size()):
+			var enemy = enemies[i]
+			var dist = player.position.distance_to(enemy.pos)
+			if dist < nearest_dist:
+				nearest_dist = dist
+				target_enemy = enemy
+				target_idx = i
+		print("Targeting nearest enemy #", target_idx, " at distance ", nearest_dist)
 	else:
-		print("No enemies in range (max 200 units)")
+		# Pick a random alive enemy
+		target_idx = randi() % enemies.size()
+		target_enemy = enemies[target_idx]
+		print("Picked random enemy #", target_idx, " from alive list")
+	
+	# Find enemy pool index
+	var enemy_index = -1
+	var all_enemies = wave_director.enemies
+	for i in range(all_enemies.size()):
+		if all_enemies[i] == target_enemy:
+			enemy_index = i
+			print("  Found enemy at pool index: ", i)
+			break
+	
+	if enemy_index == -1:
+		print("  ERROR: Could not find enemy in pool!")
+	
+	if enemy_index >= 0:
+		var old_hp = target_enemy.hp
+		print("Auto-damage: ", damage_amount, " ", selected_damage_type, " to enemy[", enemy_index, "] ", target_enemy.type_id)
+		print("  Enemy position: ", target_enemy.pos)
+		print("  Enemy HP before damage: ", old_hp)
+		print("  Total enemies in pool: ", all_enemies.size())
+		print("  Alive enemies before damage: ", enemies.size())
+		
+		# Use WaveDirector's damage_enemy method which handles death properly
+		wave_director.damage_enemy(enemy_index, damage_amount)
+		
+		# Check if enemy actually died
+		print("  Enemy HP after damage: ", target_enemy.hp)
+		print("  Enemy alive status: ", target_enemy.alive)
+		
+		# Get updated enemy list
+		var updated_enemies = wave_director.get_alive_enemies()
+		print("  Alive enemies after damage: ", updated_enemies.size())
+		
+		# Manually trigger enemies_updated signal to ensure visual update
+		if wave_director.has_signal("enemies_updated"):
+			wave_director.enemies_updated.emit(updated_enemies)
+		
+		# Force multimesh update
+		_update_enemy_visuals()
 
 func _spawn_enemy_near_mouse():
 	var mouse_pos = get_global_mouse_position()
@@ -206,10 +244,15 @@ func _on_damage_applied(payload):
 	print("✓ Damage applied: ", payload.final_damage, " to ", payload.target_id, " (crit: ", payload.is_critical, ")")
 
 func _on_enemy_killed(payload):
-	print("💀 Enemy killed: ", payload.entity_id, " at ", payload.position)
+	print("💀 Enemy killed at ", payload.pos, " (XP: ", payload.xp_value, ")")
 
-func _on_enemies_updated(alive_enemies: Array):
+func _update_enemy_visuals():
+	var alive_enemies = wave_director.get_alive_enemies()
+	print("  === Visual update ===")
+	print("    Alive enemies: ", alive_enemies.size())
+	print("    Previous instance count: ", enemy_multimesh.multimesh.instance_count)
 	enemy_multimesh.multimesh.instance_count = alive_enemies.size()
+	print("    New instance count: ", enemy_multimesh.multimesh.instance_count)
 	
 	for i in range(alive_enemies.size()):
 		var enemy = alive_enemies[i]
@@ -222,10 +265,17 @@ func _on_enemies_updated(alive_enemies: Array):
 			health_pct = enemy.hp / enemy.max_hp
 		
 		# Vary the size based on health (wounded enemies appear smaller)
-		var scale = 0.5 + (health_pct * 0.5)
-		transform = transform.scaled(Vector2(scale, scale))
+		var enemy_scale = 0.5 + (health_pct * 0.5)
+		transform = transform.scaled(Vector2(enemy_scale, enemy_scale))
 		
 		enemy_multimesh.multimesh.set_instance_transform_2d(i, transform)
+		
+		# Log first few enemy positions for debugging
+		if i < 3:
+			print("    Enemy ", i, " at ", enemy.pos, " (HP: ", enemy.hp, "/", enemy.max_hp, ")")
+
+func _on_enemies_updated(alive_enemies: Array):
+	_update_enemy_visuals()
 
 func _update_info_display():
 	var enemy_count = 0
@@ -249,10 +299,10 @@ func _update_info_display():
 	
 	info_label.text = "Damage System Test\n"
 	info_label.text += "WASD: Move\n"
-	info_label.text += "Click: Damage nearest enemy\n"
 	info_label.text += "E: Spawn enemy at mouse\n"
 	info_label.text += "1-4: Damage types\n"
-	info_label.text += "+/-: Damage amount\n\n"
+	info_label.text += "+/-: Damage amount\n"
+	info_label.text += "Auto-damage every 2sec\n\n"
 	info_label.text += "Player: " + player_coords + "\n"
 	info_label.text += "Damage: " + str(damage_amount) + " " + selected_damage_type + "\n"
 	info_label.text += "Enemies alive: " + str(enemy_count) + "\n"

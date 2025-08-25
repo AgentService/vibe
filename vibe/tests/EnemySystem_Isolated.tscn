@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://ci4wetu8wxsa1"]
 
-[ext_resource type="Script" path="res://tests/EnemySystem_Isolated.gd" id="1_enemysystem"]
+[ext_resource type="Script" uid="uid://d1kr2rlmi5mmt" path="res://tests/EnemySystem_Isolated.gd" id="1_enemysystem"]
 
 [node name="EnemySystem_Isolated" type="Node2D"]
 script = ExtResource("1_enemysystem")
@@ -25,3 +25,7 @@ text = "Enemy System Test
 Space: Spawn 300 enemy grid
 R: Clear all enemies
 1-4: Spawn specific types"
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(400, 300)
+zoom = Vector2(0.8, 0.8)

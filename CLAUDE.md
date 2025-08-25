@@ -96,6 +96,11 @@ get_node("../../UI/HUD").update_health(hp)
    # WRONG: Using --script with autoload dependencies will fail
    # "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
    ```
+4b) **Consider isolated system test** for new core systems; see `/Obsidian/systems/Isolated-Testing-System.md`.
+   ```bash
+   # Create SystemName_Isolated.tscn for visual system testing
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
+   ```
 5) **Wire minimal UI**; keep it lean; use CanvasLayer for overlays.
 6) **Update Obsidian docs** if system architecture changed; note required updates in commit message.
 7) **Commit** with conventional prefix (`feat:`, `balance:`) and short DPS impact rationale.

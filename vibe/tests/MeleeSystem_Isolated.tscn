@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://c2m8n4p6rar1s"]
 
-[ext_resource type="Script" path="res://tests/MeleeSystem_Isolated.gd" id="1_melee123"]
+[ext_resource type="Script" uid="uid://dbrlgrjh7ngpn" path="res://tests/MeleeSystem_Isolated.gd" id="1_melee123"]
 
 [node name="MeleeSystem_Isolated" type="Node2D"]
 script = ExtResource("1_melee123")
@@ -12,7 +12,6 @@ script = ExtResource("1_melee123")
 [node name="Sprite2D" type="Sprite2D" parent="Player"]
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
-enabled = true
 
 [node name="EnemyMultiMesh" type="MultiMeshInstance2D" parent="."]
 
@@ -23,6 +22,8 @@ layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="InfoLabel" type="Label" parent="UILayer/HUD"]
 layout_mode = 0

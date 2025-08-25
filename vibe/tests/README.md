@@ -1,17 +1,29 @@
-# Balance Tests
+# Test Suite
 
-This directory contains automated tests for the game's balance systems, including RNG determinism and Monte-Carlo combat simulations.
+This directory contains automated tests for the game's balance systems and isolated system testing.
 
 ## Test Files
 
+### Balance Testing
 - **`cli_test_runner.gd`** - Command-line test runner (recommended for headless execution)
 - **`run_tests.gd`** - Scene-based test runner (requires Godot editor)
 - **`balance_sims.gd`** - Monte-Carlo DPS/TTK simulation engine
 - **`test_rng_streams.gd`** - RNG stream determinism tests
 
+### Isolated System Tests
+- **`DamageSystem_Isolated.tscn`** - Test damage calculation and enemy death handling
+- **`EnemySystem_Isolated.tscn`** - Test enemy spawning and management with WaveDirector
+- **`MeleeSystem_Isolated.tscn`** - Test melee attacks with cone detection
+- **`AbilitySystem_Isolated.tscn`** - Test ability casting and projectile systems
+- **`CameraSystem_Isolated.tscn`** - Test camera movement and boundaries
+
+> 💡 **Adding a new system?** Consider creating an isolated test following the pattern `SystemName_Isolated.tscn`. See [Isolated Testing System documentation](../../Obsidian/systems/Isolated-Testing-System.md) for guidelines.
+
 ## Running Tests
 
-### Option 1: CLI Test Runner (Recommended)
+### Balance Tests
+
+#### Option 1: CLI Test Runner (Recommended)
 
 Run from the project root directory:
 
@@ -24,9 +36,28 @@ cd vibe
 run_tests.bat
 ```
 
-### Option 2: Scene-based Test Runner
+#### Option 2: Scene-based Test Runner
 
 Open `tests/run_tests.tscn` in Godot and run the scene.
+
+### Isolated System Tests
+
+#### Headless Testing
+```bash
+# Test specific system (headless)
+"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
+
+# Examples
+"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/DamageSystem_Isolated.tscn --quit-after 8
+"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/EnemySystem_Isolated.tscn --quit-after 5
+```
+
+#### Visual Testing with MCP
+```bash
+# Open scene in Godot editor
+mcp__godot-mcp__open_scene("res://tests/SystemName_Isolated.tscn")
+mcp__godot-mcp__play_scene("current")
+```
 
 ## What Gets Tested
 
