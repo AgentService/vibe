@@ -92,8 +92,18 @@ func _initialize_systems() -> void:
 	systems["CameraSystem"] = camera_system
 	Logger.info("CameraSystem initialized by GameOrchestrator", "orchestrator")
 	
+	# Phase D: WaveDirector (needs EnemyRegistry dependency)
+	wave_director = WaveDirector.new()
+	add_child(wave_director)
+	systems["WaveDirector"] = wave_director
+	# Set EnemyRegistry dependency
+	if wave_director.has_method("set_enemy_registry"):
+		wave_director.set_enemy_registry(enemy_registry)
+		Logger.info("WaveDirector initialized with EnemyRegistry dependency", "orchestrator")
+	else:
+		Logger.warn("WaveDirector doesn't have set_enemy_registry method", "orchestrator")
+	
 	# Systems to be moved in later phases:
-	# 3. WaveDirector (needs EnemyRegistry)
 	# 5. MeleeSystem (needs WaveDirector ref)
 	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
 
@@ -152,3 +162,8 @@ func inject_systems_to_arena(arena) -> void:
 	if camera_system and arena.has_method("set_camera_system"):
 		arena.set_camera_system(camera_system)
 		Logger.debug("CameraSystem injected to Arena", "orchestrator")
+	
+	# Phase D: Inject WaveDirector
+	if wave_director and arena.has_method("set_wave_director"):
+		arena.set_wave_director(wave_director)
+		Logger.debug("WaveDirector injected to Arena", "orchestrator")

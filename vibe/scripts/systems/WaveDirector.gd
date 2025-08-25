@@ -37,15 +37,23 @@ signal enemies_updated(alive_enemies: Array[EnemyEntity])
 func _ready() -> void:
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
-	_setup_enemy_registry()
+	# Only setup enemy registry if not already injected
+	if not enemy_registry:
+		_setup_enemy_registry()
 	_initialize_pool()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
+# Dependency injection method - called by GameOrchestrator
+func set_enemy_registry(injected_registry: EnemyRegistry) -> void:
+	enemy_registry = injected_registry
+	Logger.info("EnemyRegistry injected into WaveDirector", "waves")
+
 func _setup_enemy_registry() -> void:
+	# Fallback - create own registry if none was injected (for backwards compatibility)
 	enemy_registry = EnemyRegistry.new()
 	add_child(enemy_registry)
-	Logger.info("Enemy registry initialized", "waves")
+	Logger.info("Enemy registry initialized (fallback)", "waves")
 
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")

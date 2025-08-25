@@ -55,7 +55,8 @@ var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
 var boss_frame_duration: float = 0.1
-@onready var wave_director: WaveDirector = WaveDirector.new()
+# WaveDirector now injected by GameOrchestrator
+var wave_director: WaveDirector
 # Systems now injected by GameOrchestrator  
 @onready var damage_system: DamageSystem = DamageSystem.new()
 var arena_system: ArenaSystem
@@ -87,20 +88,16 @@ func _ready() -> void:
 	# Set proper process modes for systems that are not injected (with null checks)
 	if melee_system:
 		melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if wave_director:
-		wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if damage_system:
 		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	# Note: ability_system, arena_system, camera_system process modes set in injection methods
+	# Note: ability_system, arena_system, camera_system, wave_director process modes set in injection methods
 	
 	# Add systems as children (only those not injected by GameOrchestrator)
 	if melee_system:
 		add_child(melee_system)
-	if wave_director:
-		add_child(wave_director)
 	if damage_system:
 		add_child(damage_system)
-	# Note: ability_system, arena_system, camera_system now injected by GameOrchestrator
+	# Note: ability_system, arena_system, camera_system, wave_director now injected by GameOrchestrator
 	
 	# System references will be set after GameOrchestrator injection
 	
@@ -144,8 +141,7 @@ func _ready() -> void:
 	PlayerState.set_player_reference(player)
 	
 	# Connect signals AFTER systems are added and ready
-	# Note: ability_system and arena_system signals connected in injection methods
-	wave_director.enemies_updated.connect(_update_enemy_multimesh)
+	# Note: ability_system, arena_system, wave_director signals connected in injection methods
 	EventBus.level_up.connect(_on_level_up)
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
@@ -406,6 +402,14 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if player:
 		camera_system.setup_camera(player)
+
+func set_wave_director(injected_wave_director: WaveDirector) -> void:
+	wave_director = injected_wave_director
+	Logger.info("WaveDirector injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
+	wave_director.enemies_updated.connect(_update_enemy_multimesh)
 
 # EnemyRegistry will be handled in Phase D when WaveDirector is moved
 
