@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3 uid="uid://c2m8n4p6rar1s"]
+
+[ext_resource type="Script" path="res://tests/MeleeSystem_Isolated.gd" id="1_melee123"]
+
+[node name="MeleeSystem_Isolated" type="Node2D"]
+script = ExtResource("1_melee123")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+enabled = true
+
+[node name="EnemyMultiMesh" type="MultiMeshInstance2D" parent="."]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="InfoLabel" type="Label" parent="UILayer/HUD"]
+layout_mode = 0
+anchor_right = 0.5
+anchor_bottom = 0.3
+text = "Melee System Test
+WASD: Move
+Click: Melee attack
+E: Spawn enemy at mouse"

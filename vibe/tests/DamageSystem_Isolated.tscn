@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://crgf1m4h0bur3"]
+
+[ext_resource type="Script" uid="uid://bc57bgg2ogwd" path="res://tests/DamageSystem_Isolated.gd" id="1_damage123"]
+
+[node name="DamageSystem_Isolated" type="Node2D"]
+script = ExtResource("1_damage123")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
+[node name="EnemyMultiMesh" type="MultiMeshInstance2D" parent="."]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InfoLabel" type="Label" parent="UILayer/HUD"]
+layout_mode = 0
+anchor_right = 0.5
+anchor_bottom = 0.4
+text = "Damage System Test
+WASD: Move
+Click: Damage nearest enemy
+E: Spawn enemy at mouse
+1-4: Damage types
++/-: Damage amount"
