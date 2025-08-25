@@ -26,7 +26,7 @@ const EnemyRenderTier := preload("res://scripts/systems/EnemyRenderTier.gd")
 @onready var melee_effects: Node2D = $MeleeEffects
 # Systems now injected by GameOrchestrator
 var ability_system: AbilitySystem
-@onready var melee_system: MeleeSystem = MeleeSystem.new()
+var melee_system: MeleeSystem
 
 
 # ANIMATION CONFIGS
@@ -58,7 +58,7 @@ var boss_frame_duration: float = 0.1
 # WaveDirector now injected by GameOrchestrator
 var wave_director: WaveDirector
 # Systems now injected by GameOrchestrator  
-@onready var damage_system: DamageSystem = DamageSystem.new()
+var damage_system: DamageSystem
 var arena_system: ArenaSystem
 # texture_theme_system removed - no longer needed after arena simplification
 var camera_system: CameraSystem
@@ -85,19 +85,9 @@ func _ready() -> void:
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# Set proper process modes for systems that are not injected (with null checks)
-	if melee_system:
-		melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if damage_system:
-		damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	# Note: ability_system, arena_system, camera_system, wave_director process modes set in injection methods
+	# All system process modes now set in injection methods
 	
-	# Add systems as children (only those not injected by GameOrchestrator)
-	if melee_system:
-		add_child(melee_system)
-	if damage_system:
-		add_child(damage_system)
-	# Note: ability_system, arena_system, camera_system, wave_director now injected by GameOrchestrator
+	# All systems now injected by GameOrchestrator - no manual add_child needed
 	
 	# System references will be set after GameOrchestrator injection
 	
@@ -128,22 +118,14 @@ func _ready() -> void:
 	
 	_setup_card_system()
 	
-	# Set system references after injection
-	if damage_system and ability_system and wave_director:
-		damage_system.set_references(ability_system, wave_director)
-		Logger.debug("DamageSystem references set after injection", "systems")
-	
-	if melee_system and wave_director:
-		melee_system.set_wave_director_reference(wave_director)
-		Logger.debug("MeleeSystem references set after injection", "systems")
+	# System references now set by GameOrchestrator during initialization
 	
 	# Set player reference in PlayerState for cached position access
 	PlayerState.set_player_reference(player)
 	
 	# Connect signals AFTER systems are added and ready
-	# Note: ability_system, arena_system, wave_director signals connected in injection methods
+	# Note: all system signals connected in injection methods
 	EventBus.level_up.connect(_on_level_up)
-	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 	
 	# Setup MultiMesh instances
 	_setup_projectile_multimesh()
@@ -411,7 +393,20 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
 
-# EnemyRegistry will be handled in Phase D when WaveDirector is moved
+func set_melee_system(injected_melee_system: MeleeSystem) -> void:
+	melee_system = injected_melee_system
+	Logger.info("MeleeSystem injected into Arena", "systems")
+	
+	# Set process mode and connect signals
+	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	melee_system.melee_attack_started.connect(_on_melee_attack_started)
+
+func set_damage_system(injected_damage_system: DamageSystem) -> void:
+	damage_system = injected_damage_system
+	Logger.info("DamageSystem injected into Arena", "systems")
+	
+	# Set process mode
+	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")

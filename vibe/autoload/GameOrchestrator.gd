@@ -103,9 +103,26 @@ func _initialize_systems() -> void:
 	else:
 		Logger.warn("WaveDirector doesn't have set_enemy_registry method", "orchestrator")
 	
-	# Systems to be moved in later phases:
+	# Phase E: Combat systems with dependencies
 	# 5. MeleeSystem (needs WaveDirector ref)
+	melee_system = MeleeSystem.new()
+	add_child(melee_system)
+	systems["MeleeSystem"] = melee_system
+	if melee_system.has_method("set_wave_director_reference") and wave_director:
+		melee_system.set_wave_director_reference(wave_director)
+		Logger.info("MeleeSystem initialized with WaveDirector dependency", "orchestrator")
+	else:
+		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
+	
 	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
+	damage_system = DamageSystem.new()
+	add_child(damage_system)
+	systems["DamageSystem"] = damage_system
+	if damage_system.has_method("set_references") and ability_system and wave_director:
+		damage_system.set_references(ability_system, wave_director)
+		Logger.info("DamageSystem initialized with AbilitySystem and WaveDirector dependencies", "orchestrator")
+	else:
+		Logger.warn("DamageSystem dependency injection failed", "orchestrator")
 
 func get_card_system() -> CardSystem:
 	return card_system
@@ -167,3 +184,12 @@ func inject_systems_to_arena(arena) -> void:
 	if wave_director and arena.has_method("set_wave_director"):
 		arena.set_wave_director(wave_director)
 		Logger.debug("WaveDirector injected to Arena", "orchestrator")
+	
+	# Phase E: Inject combat systems
+	if melee_system and arena.has_method("set_melee_system"):
+		arena.set_melee_system(melee_system)
+		Logger.debug("MeleeSystem injected to Arena", "orchestrator")
+	
+	if damage_system and arena.has_method("set_damage_system"):
+		arena.set_damage_system(damage_system)
+		Logger.debug("DamageSystem injected to Arena", "orchestrator")
