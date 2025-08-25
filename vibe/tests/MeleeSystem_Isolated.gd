@@ -49,13 +49,14 @@ func _setup_systems():
 	add_child(melee_system)
 	
 	# Set up system references
-	if damage_system.has_method("set_references"):
-		damage_system.set_references(null, enemy_registry)
-	if melee_system.has_method("set_wave_director_reference"):
-		melee_system.set_wave_director_reference(enemy_registry)
+	if damage_system.has_method("set_enemy_registry"):
+		damage_system.set_enemy_registry(enemy_registry)
+	if melee_system.has_method("set_enemy_registry"):
+		melee_system.set_enemy_registry(enemy_registry)
 	
 	# Connect signals
-	enemy_registry.enemies_updated.connect(_on_enemies_updated)
+	if enemy_registry.has_signal("enemies_updated"):
+		enemy_registry.enemies_updated.connect(_on_enemies_updated)
 	if melee_system.has_signal("melee_attack_performed"):
 		melee_system.melee_attack_performed.connect(_on_melee_attack)
 
