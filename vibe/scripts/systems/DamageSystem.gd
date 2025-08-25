@@ -109,7 +109,7 @@ func _check_enemy_player_collisions() -> void:
 		return  # Player position not set
 	
 	for enemy in alive_enemies:
-		var enemy_pos := enemy["pos"] as Vector2
+		var enemy_pos := enemy.pos as Vector2
 		var distance := player_pos.distance_to(enemy_pos)
 		var collision_distance := enemy_radius + player_radius
 		

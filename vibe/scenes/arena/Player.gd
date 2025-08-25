@@ -21,7 +21,7 @@ var roll_duration: float = 0.3
 var roll_timer: float = 0.0
 var roll_speed: float = 400.0
 var roll_direction: Vector2 = Vector2.ZERO
-var invulnerable: bool = true
+var invulnerable: bool = false
 
 func _ready() -> void:
 	# Player should pause with the game
