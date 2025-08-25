@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://vibe/tests/test_memory_issues_diagnostic.gd" id="1"]
+
+[node name="MemoryIssuesDiagnostic" type="Node"]
+script = ExtResource("1")

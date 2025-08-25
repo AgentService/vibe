@@ -580,7 +580,7 @@ func _spawn_stress_test_enemies() -> void:
 		return
 	
 	var target_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_count: int = 3000
+	var spawn_count: int = 1000
 	var spawned: int = 0
 	
 	for i in range(spawn_count):

@@ -8,6 +8,7 @@
 script = ExtResource("1_dn4kl")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+scale = Vector2(1, 2)
 shape = SubResource("CapsuleShape2D_etesd")
 debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
 
