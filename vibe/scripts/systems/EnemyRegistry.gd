@@ -34,7 +34,7 @@ func load_all_enemy_types() -> void:
 	_wave_pool_dirty = true
 	
 	
-	var enemies_dir := "res://data/content/enemies/"
+	var enemies_dir := "res://vibe/data/content/enemies/"
 	Logger.info("Trying to open directory: " + enemies_dir, "enemies")
 	var dir := DirAccess.open(enemies_dir)
 	
