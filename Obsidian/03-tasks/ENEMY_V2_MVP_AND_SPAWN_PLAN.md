@@ -57,82 +57,106 @@ Notes:
 - SpawnDirector reads spawn_plan and enemy_scaling_profile
 - Boss spawns follow boss_sequence at milestones (times or events) defined in the plan
 
-## ASCII Visualizations
+## System Flow Diagrams
 
-### A) Current Approach (Simplified)
-```text
-+--------------------+     +---------------------------+     +-----------+     +-----------+     +--------------------+
-| EnemyType .tres    | --> | Legacy Registry (weights) | --> | Spawner   | --> | Pools     | --> | MultiMesh Renderer |
-+--------------------+     +---------------------------+     +-----------+     +-----------+     +--------------------+
-                                   |
-                                   v
-                           +------------------+
-                           | Boss Scenes      |
-                           | (scene-based)    |
-                           +------------------+
-
-Side inputs:
-- BalanceDB (legacy weights/tunables)
-- RNG.stream("waves"|"ai") for randomized choices (deterministic per run)
-- EventBus signals for timing (combat_step), deaths, etc.
+### A) Current System (Legacy)
 ```
+EnemyType.tres ──> EnemyRegistry ──> WaveDirector ──> Enemy Pool ──> MultiMesh Renderer
+                        │                                
+                        └──> Boss Scenes (DragonLord.tscn)
 
-Limitations:
-- Visual/behavior variety partly hardcoded
-- Per-map pacing encoded in code or ad-hoc places
-- New enemies may need multiple edits (content + code touch for visuals/behaviors)
+Pain Points:
+• Hardcoded visual variety (colors/shapes)
+• Manual editing in multiple places per enemy  
+• Map-specific pacing in code
+• Need new .tres file for each variation
+```
 
 ---
 
 ### B) Target MVP (Enemy V2)
-```text
-Data (content)                                      Balance
-+--------------------------+            +---------------------------------+
-| EnemyTemplate .tres      |            | BalanceDB                        |
-| templates/ & variations/ |            | - use_enemy_v2_system: bool      |
-+--------------------------+            | - v2_template_weights (optional) |
-                                        | - enemy_scaling (time/tier)*     |
-                                        +----------------------------------+
-                                                             |
-                                                             v
-                                                     +------------------+
-                                                     | EnemyFactory     |
-                        RNG.stream("ai") -------->   | - deterministic  |
-                                                     | - applies scaling |
-                                                     +------------------+
-                                                             |
-                                                             v
-                                                     +------------------+     +-----------+     +--------------------+
-                                                     | SpawnConfig      | --> | Pools     | --> | MultiMesh Renderer |
-                                                     +------------------+     +-----------+     +--------------------+
-
-Boss path (scene-based, minimal API in MVP):
-ArenaConfig.boss_sequence --> Boss Scene (inherits BossBase.tscn + BaseBoss.gd)
-                              BossTemplate.gd (base stats/visual tags)
-Signals: BaseBoss emits phase_changed, telegraph_started/ended to UI/effects
 ```
+EnemyTemplate.tres ──> EnemyFactory ──> SpawnConfig ──> Enemy Pool ──> MultiMesh Renderer
+      │                     │                              │
+   Templates/            RNG.stream("ai")              Same systems
+   Variations/           Deterministic                   as legacy
+                         variations
 
-Notes:
-- Single integration seam in Spawner:
-  if BalanceDB.use_enemy_v2_system: use EnemyFactory path; else legacy path
-- New enemies: add a variation .tres + adjust a weight (no code)
-- Per-instance variation limited to tint/scale to preserve batching
+Integration: if use_enemy_v2_system: V2_path() else: legacy_path()
+
+Benefits:
+• Add enemy = 1 .tres + weight (no code)
+• Infinite variations (color/size/speed jitter) 
+• Deterministic consistency
+• Zero legacy disruption
+```
 
 ---
 
-### C) Roadmap After MVP (Full Steps)
+### C) Future Vision (Full Data-Driven Spawn Plans)
 ```text
-+----------------+         +--------------------------------+          +--------------------+
-| ArenaConfig.tres  | ------> | ArenaSpawnPlan.tres            |   -----> | SpawnDirector      |
-| - spawn_plan      |         | - phases (time windows)        |          | - 30Hz scheduling  |
-| - scaling_profile |         | - pools (ids/tags + weights)   |          | - pick pool/zone   |
-| - boss_sequence   |         | - zone_weights (map markers)   |          | - deterministic rng |
-+-------------------+         | - boss_events (milestones)     |          +----------+---------+
-                              +--------------------------------+                     |
-                                                                                     v
-                                                                               +------------+            +-----------+     +--------------------+
-                                                                               | EnemyFactory|  ----->   | Pools     | --> | MultiMesh Renderer |
-                                                                               +------------+            +-----------+     +--------------------+
+┌───────────────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   FULL ENEMY V2 + SPAWN ORCHESTRATION                                        │
+├───────────────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                                               │
+│  🗺️  MAP CONFIGURATION                🎯 SPAWN ORCHESTRATION               🏭 ENEMY GENERATION                 │
+│  ┌─────────────────────────┐          ┌────────────────────────────┐        ┌─────────────────────────┐        │
+│  │   ArenaConfig.tres      │          │      SpawnDirector         │        │     EnemyFactory        │        │
+│  │ ┌─────────────────────┐ │  loads   │ ┌────────────────────────┐ │ calls  │ ┌─────────────────────┐ │        │
+│  │ │spawn_plan: "forest" │ ├─────────▶│ │ 30Hz fixed-step timer  │ ├───────▶│ │ Templates + Scaling │ │        │
+│  │ │scaling_profile: std │ │          │ │ Phase management       │ │        │ │ Deterministic RNG   │ │        │
+│  │ │boss_sequence: [...]  │ │          │ │ Zone weight selection  │ │        │ │ Variation compute   │ │        │
+│  │ └─────────────────────┘ │          │ │ Pool → Template route  │ │        │ └─────────────────────┘ │        │
+│  └─────────────────────────┘          │ └────────────────────────┘ │        └─────────────────────────┘        │
+│            │                          └────────────────────────────┘                       │                  │
+│            ▼                                         │                                      ▼                  │
+│  ┌─────────────────────────┐                        │                        ┌─────────────────────────┐        │
+│  │ ArenaSpawnPlan.tres     │                        │                        │      SpawnConfig        │        │
+│  │ ┌─────────────────────┐ │                        │                        │ ┌─────────────────────┐ │        │
+│  │ │ phases: [           │ │                        │                        │ │ Finalized Stats     │ │        │
+│  │ │   {0-60s: "early"}  │ │                        │                        │ │ Visual Properties   │ │        │
+│  │ │   {60-180s: "mid"}  │ │◀──────── reads ─────────┘                        │ │ Behavior Tags       │ │        │
+│  │ │   {180s+: "late"}   │ │                                                 │ └─────────────────────┘ │        │
+│  │ │ ]                   │ │                                                 └─────────────────────────┘        │
+│  │ │ zone_weights: {     │ │                                                            │                  │
+│  │ │   "north": 0.4      │ │                                                            ▼                  │
+│  │ │   "south": 0.6      │ │                                     ┌─────────────────────────────────────────┐ │
+│  │ │ }                   │ │                                     │         EXISTING SYSTEMS               │ │
+│  │ │ boss_events: [      │ │                                     │                                         │ │
+│  │ │   {120s: "lich"}    │ │                                     │  Enemy Pool ──┐                        │ │
+│  │ │ ]                   │ │                                     │               │                        │ │
+│  │ └─────────────────────┘ │                                     │  Combat Logic ┤ ← No Changes Required   │ │
+│  └─────────────────────────┘                                     │               │                        │ │
+│                                                                  │  Render Tiers ┤                        │ │
+│  📦 SPAWN POOLS                                                   │               │                        │ │
+│  ┌─────────────────────────┐                                     │  MultiMesh    ──┘                        │ │
+│  │   SpawnPool.tres        │                                     │                                         │ │
+│  │ ┌─────────────────────┐ │                                     └─────────────────────────────────────────┘ │
+│  │ │ "early_forest":     │ │                                                                                 │
+│  │ │   goblin: 0.6       │ │                                                                                 │
+│  │ │   wolf: 0.4         │ │                                                                                 │
+│  │ │                     │ │                 🎲 DETERMINISTIC SELECTION                                      │
+│  │ │ "mid_forest":       │ │                 ┌─────────────────────────────────────────────────┐            │
+│  │ │   orc: 0.5          │ │                 │ All choices derive from:                        │            │
+│  │ │   treant: 0.3       │ │                 │ hash(run_id, phase_idx, event_idx, zone_id)     │            │
+│  │ │   archer: 0.2       │ │                 │                                                 │            │
+│  │ │                     │ │                 │ Phase → Pool → Template → Zone → Variation      │            │
+│  │ │ "boss_encounters":  │ │                 │          ↓           ↓        ↓           ↓      │            │
+│  │ │   ancient_lich: 1.0 │ │                 │     Weighted    Template  Weighted   RNG.stream │            │
+│  │ │                     │ │                 │     Selection   Loading   Selection    ("ai")   │            │
+│  │ └─────────────────────┘ │                 └─────────────────────────────────────────────────┘            │
+│  └─────────────────────────┘                                                                                 │
+└───────────────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+🚀 FULL SYSTEM BENEFITS:
+• Map designers control enemy flow with pure data
+• Time-based progression and zone-specific spawning  
+• Boss events scheduled by milestones
+• Complete determinism across all systems
+• Template inheritance reduces content duplication
+• Hot-reload everything during development
+• Performance maintained (pools + MultiMesh unchanged)
+```
 
 Shared systems:
 - BalanceDB.enemy_scaling (time/tier/wave) applied inside EnemyFactory
@@ -147,7 +171,6 @@ Optional layers to add over time:
 - SpawnPolicy (per-group routing; migration tooling)
 - Telemetry (spawn histograms, parity checks)
 - Decommission legacy (after parity proven)
-```
 
 ## Scope
 
