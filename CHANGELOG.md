@@ -5,6 +5,16 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hybrid Enemy Spawning System**: Complete dual-mode enemy spawning supporting both pooled enemies and scene-based special bosses
+  - **EnemyType.gd extensions**: Added boss_scene, is_special_boss, and boss_spawn_method properties for hybrid spawning
+  - **WaveDirector hybrid routing**: _spawn_from_type() method routes enemies to pooled or scene spawning based on type properties
+  - **Special boss scenes**: DragonLord boss example using editor-created CharacterBody2D scene with complex AI and died signal
+  - **Public spawn API**: spawn_boss_by_id() and spawn_event_enemies() methods for future map event system integration
+  - **EnemyRegistry filtering**: Special bosses (spawn_weight = 0.0) automatically excluded from random wave spawning
+  - **Signal integration**: Scene bosses emit "died" signal properly integrated with EventBus for XP/loot rewards
+  - **Test coverage**: Complete validation testing for both pooled (knight_regular) and scene-based (dragon_lord) spawning paths
+  - **Content pipeline examples**: Updated .tres files showing pooled boss (knight_boss), regular enemies (knight_regular), and special scene boss (dragon_lord)
+  - **Future-ready architecture**: Supports complex boss encounters, multi-phase bosses, and map-triggered events while preserving existing performance
 - **Player Stats Migration to .tres**: Migrated hardcoded player stats to PlayerType.gd resource system
   - **PlayerType.gd resource**: New typed resource class for player statistics (move_speed, max_health, pickup_radius, roll_stats)
   - **default_player.tres**: Configuration resource with current player values (110 move_speed, 199 max_health, etc.)
