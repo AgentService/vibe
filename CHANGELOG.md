@@ -25,18 +25,15 @@
   - **Runtime Commands**: Supports custom command registration for balance parameter adjustment
   - **Development Workflow**: Perfect for live-tuning balance values during playtesting
   - **MCP Integration**: Can be used with MCP tools for automated testing scenarios
-- **Native Hot-Reload Implementation**: Implemented spawn radius hot-reload using Godot's built-in @export system
-  - **ArenaSystem Refactor**: Changed from ResourceLoader pattern to @export ArenaConfig for native hot-reload support
-  - **Direct Property Access**: ArenaSystem now accesses arena_config.spawn_radius directly, always returning live values
-  - **GameOrchestrator @export**: Added @export var default_arena_config: ArenaConfig for inspector assignment
-  - **Resource Path Fix**: Corrected default_arena.tres script reference to res://vibe/scripts/domain/ArenaConfig.gd
-  - **Native Integration**: Uses Godot's built-in resource system instead of custom file monitoring
-  - **Inspector Setup Required**: User must assign default_arena.tres to GameOrchestrator's @export field in inspector
-  - **Instant Updates**: Changes to .tres files in editor immediately affect running games via Godot's native system
-  - **Pure Resource Exception**: Scenes can now import configuration Resources (AnimationConfig, ArenaConfig, etc.) directly
-  - **Whitelist System**: Added whitelist of approved Resource classes that scenes commonly need
-  - **Documentation**: Updated ARCHITECTURE.md with clear examples of allowed vs disallowed imports
-  - **Pragmatic Approach**: Balances architectural purity with practical game development needs
+- **Universal Hot-Reload System**: Complete automatic .tres resource hot-reload system without F5 dependency
+  - **BalanceDB File Monitor**: Timer-based monitoring (0.5s interval) for all balance .tres files in BalanceDB autoload
+  - **Scene @export Pattern**: Arena and Player use @export variables for automatic Inspector hot-reload
+  - **Direct Resource Access**: Removed cached variables, use direct property access for real-time updates
+  - **Cache Bypassing**: ResourceLoader.CACHE_MODE_IGNORE ensures fresh resource loading on every change
+  - **Developer Documentation**: Clear instructions in data/README.md for adding new files to auto-reload system
+  - **Best Practice Patterns**: @export for scene-based resources, ResourceLoader monitoring for autoload systems
+  - **Zero Manual Input**: Changes to balance, arena, and player .tres files automatically affect running games
+  - **Complete Coverage**: Player stats, arena config, all balance files support automatic hot-reload
 - **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
   - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
   - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety
