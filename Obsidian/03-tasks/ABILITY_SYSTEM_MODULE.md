@@ -6,6 +6,7 @@
 **Created**: 2025-08-23  
 **Context**: Extract abilities from Arena system and create dedicated module
 
+
 ## Overview
 
 Create a dedicated ability system module separate from the Arena system for better organization, maintainability, and editor workflow. The current system has abilities mixed into Arena.gd which makes it harder to manage and expand.
@@ -42,7 +43,10 @@ Ability {
   - upgrade_paths
   - trigger_conditions
 }
+
+
 ```
+
 
 ### Integration Points
 - Player input handling

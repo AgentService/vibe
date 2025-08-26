@@ -135,7 +135,7 @@ func test_nested_validation() -> bool:
 			"x": 400.0,
 			"y": 300.0
 		},
-		"spawn_radius": 600.0,
+		# spawn_radius moved to ArenaConfig
 		"enemy_hp": 3.0,
 		"enemy_speed_min": 60.0,
 		"enemy_speed_max": 120.0,
@@ -155,7 +155,7 @@ func test_nested_validation() -> bool:
 			"x": "invalid", # Should be float
 			"y": 300.0
 		},
-		"spawn_radius": 600.0,
+		# spawn_radius moved to ArenaConfig
 		"enemy_hp": 3.0,
 		"enemy_speed_min": 60.0,
 		"enemy_speed_max": 120.0,

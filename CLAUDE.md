@@ -22,9 +22,15 @@
 
 ## Content formats
 - **Gameplay content** (enemies, abilities, items, heroes, maps) → **`.tres` resources** in `/vibe/data/content/*`.
-- **Balance tunables** (damage, rates, spawn weights) → **JSON** in `/vibe/data/balance/`.
+- **Balance tunables** (damage, rates, spawn weights) → **`.tres` resources** in `/vibe/data/balance/`.
 - **Engine config/inspector-friendly** data (theme, input maps, export presets) → **`.tres/.res`**.
 - Document all schema changes in `/godot/data/README.md` and include one example file.
+
+## Hot-Reload Patterns
+- **Scene-based resources**: Use `@export var resource: ResourceType` for automatic Inspector hot-reload (Player, Arena configs)
+- **System-based resources**: Use `ResourceLoader.load()` with file monitoring or F5 hot-reload for autoload systems (Balance data)  
+- **Best practice**: Follow Godot patterns (@export for scenes, ResourceLoader for systems)
+- **Performance**: Cache frequently accessed resources, use `CACHE_MODE_IGNORE` only for hot-reload scenarios
 
 ## Layers & Dependency Rules
 - **`scenes/*` (UI/View)** → may call `scripts/systems/*`, never deep-link domain. Signal connections only.

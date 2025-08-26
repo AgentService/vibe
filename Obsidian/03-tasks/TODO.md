@@ -13,6 +13,8 @@ combat log
 dongerslider
 brusthaarslider
 gigachad
+USE DASH AS A ABILITY to upgrade
+
 
 Hotkey Setup
 Escape Menu

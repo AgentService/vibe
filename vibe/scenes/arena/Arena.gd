@@ -5,7 +5,7 @@ extends Node2D
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
-const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
+# Player scene loaded dynamically to support @export hot-reload
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
@@ -316,7 +316,9 @@ func _input(event: InputEvent) -> void:
 				_test_card_selection()
 
 func _setup_player() -> void:
-	player = PLAYER_SCENE.instantiate()
+	# Load player scene dynamically to support @export hot-reload
+	var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
+	player = player_scene.instantiate()
 	player.global_position = Vector2(0, 0)  # Center of arena
 	add_child(player)
 	

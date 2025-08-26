@@ -7,6 +7,9 @@ extends Node
 
 class_name WaveDirector
 
+# Import ArenaSystem for dependency injection
+const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
+
 var enemies: Array[EnemyEntity] = []
 var max_enemies: int
 var spawn_timer: float = 0.0
@@ -22,6 +25,8 @@ var target_distance: float
 
 # Enemy typing system
 var enemy_registry: EnemyRegistry
+# Arena system for spawn configuration  
+var arena_system
 
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[EnemyEntity] = []
@@ -44,10 +49,14 @@ func _ready() -> void:
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
-# Dependency injection method - called by GameOrchestrator
+# Dependency injection methods - called by GameOrchestrator
 func set_enemy_registry(injected_registry: EnemyRegistry) -> void:
 	enemy_registry = injected_registry
 	Logger.info("EnemyRegistry injected into WaveDirector", "waves")
+
+func set_arena_system(injected_arena_system) -> void:
+	arena_system = injected_arena_system
+	Logger.info("ArenaSystem injected into WaveDirector", "waves")
 
 func _setup_enemy_registry() -> void:
 	# Fallback - create own registry if none was injected (for backwards compatibility)
@@ -59,7 +68,7 @@ func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
 	spawn_interval = BalanceDB.get_waves_value("spawn_interval")
 	arena_center = BalanceDB.get_waves_value("arena_center")
-	spawn_radius = BalanceDB.get_waves_value("spawn_radius")
+	# spawn_radius now comes from ArenaSystem, set via dependency injection
 	enemy_speed_min = BalanceDB.get_waves_value("enemy_speed_min")
 	enemy_speed_max = BalanceDB.get_waves_value("enemy_speed_max")
 	spawn_count_min = BalanceDB.get_waves_value("spawn_count_min")
@@ -162,8 +171,10 @@ func _spawn_enemy() -> void:
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	
 	var angle := RNG.randf_range("waves", 0.0, TAU)
-	var spawn_pos := target_pos + Vector2.from_angle(angle) * spawn_radius
-	var direction := (target_pos - spawn_pos).normalized()
+	var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
+	Logger.info("WaveDirector using spawn_radius: " + str(effective_spawn_radius) + " (arena_system exists: " + str(arena_system != null) + ")", "waves")
+	var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
+	var direction: Vector2 = (target_pos - spawn_pos).normalized()
 	
 	var enemy := enemies[free_idx]
 	
