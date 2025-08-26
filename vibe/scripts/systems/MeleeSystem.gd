@@ -130,7 +130,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		var damage_tags = PackedStringArray(["melee"])
 		var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, final_damage, damage_tags)
 		EventBus.damage_requested.emit(damage_payload)
-		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
 	
 	# Apply damage directly to scene-based bosses
 	for boss in hit_scene_bosses:
@@ -141,7 +142,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		else:
 			Logger.warn("Scene boss doesn't have take_damage method", "combat")
 	
-	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " pooled enemies + " + str(hit_scene_bosses.size()) + " scene bosses", "abilities")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " pooled enemies + " + str(hit_scene_bosses.size()) + " scene bosses", "abilities")
 	return hit_enemies
 
 func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> bool:
@@ -179,7 +181,8 @@ func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_d
 			var boss_pos = node.global_position
 			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
 				hit_bosses.append(node)
-				Logger.debug("Found scene boss in melee range: " + node.name, "combat")
+				if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+					Logger.debug("Found scene boss in melee range: " + node.name, "combat")
 	
 	return hit_bosses
 

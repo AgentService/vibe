@@ -48,7 +48,8 @@ func open_with_cards(cards: Array[CardResource]) -> void:
 		return
 	
 	Logger.info("CardSelection opening with " + str(cards.size()) + " cards", "ui")
-	Logger.debug("Game paused state: " + str(get_tree().paused), "ui")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Game paused state: " + str(get_tree().paused), "ui")
 	
 	available_cards = cards
 	_populate_cards()
@@ -84,7 +85,8 @@ func _populate_cards() -> void:
 		card_container.add_child(margin_container)
 		card_containers.append(margin_container)
 	
-	Logger.debug("Created " + str(card_containers.size()) + " card containers", "ui")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(card_containers.size()) + " card containers", "ui")
 
 func _create_card_button(card: CardResource, index: int) -> Control:
 	# Create main card container
@@ -217,7 +219,8 @@ func _create_card_button(card: CardResource, index: int) -> Control:
 	return main_card
 
 func _on_card_selected(card_index: int) -> void:
-	Logger.debug("Card selection callback triggered for index: " + str(card_index), "ui")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Card selection callback triggered for index: " + str(card_index), "ui")
 	
 	if card_index < 0 or card_index >= available_cards.size():
 		Logger.error("Invalid card index selected: " + str(card_index), "ui")

@@ -58,7 +58,8 @@ func load_all_enemy_types() -> void:
 	
 	dir.list_dir_end()
 	
-	Logger.debug("Found " + str(total_files) + " files, loaded " + str(loaded_count) + " .tres enemies", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Found " + str(total_files) + " files, loaded " + str(loaded_count) + " .tres enemies", "enemies")
 	
 	if loaded_count == 0:
 		Logger.warn("No enemy types loaded, using fallback", "enemies")
@@ -69,7 +70,8 @@ func load_all_enemy_types() -> void:
 		# Debug: List all loaded enemy types
 		for type_id in enemy_types.keys():
 			var enemy_type: EnemyType = enemy_types[type_id]
-			Logger.debug("Loaded enemy: " + type_id + " (size: " + str(enemy_type.size) + ", weight: " + str(enemy_type.spawn_weight) + ")", "enemies")
+			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+				Logger.debug("Loaded enemy: " + type_id + " (size: " + str(enemy_type.size) + ", weight: " + str(enemy_type.spawn_weight) + ")", "enemies")
 	
 	enemy_types_loaded.emit()
 
@@ -127,7 +129,8 @@ func _rebuild_wave_pool() -> void:
 		
 		# Skip special bosses and enemies with zero weight from random spawning
 		if type.is_special_boss or type.spawn_weight <= 0.0:
-			Logger.debug("Excluded from wave pool: " + type.id + " (special_boss: " + str(type.is_special_boss) + ", weight: " + str(type.spawn_weight) + ")", "enemies")
+			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+				Logger.debug("Excluded from wave pool: " + type.id + " (special_boss: " + str(type.is_special_boss) + ", weight: " + str(type.spawn_weight) + ")", "enemies")
 			continue
 		
 		var raw_weight := int(type.spawn_weight * 10.0)
@@ -142,7 +145,8 @@ func _rebuild_wave_pool() -> void:
 			_cached_wave_pool.append(type)
 	
 	_wave_pool_dirty = false
-	Logger.debug("Rebuilt wave pool with " + str(_cached_wave_pool.size()) + " weighted entries (max: %d)" % MAX_POOL_SIZE, "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Rebuilt wave pool with " + str(_cached_wave_pool.size()) + " weighted entries (max: %d)" % MAX_POOL_SIZE, "enemies")
 
 func get_available_type_ids() -> Array[String]:
 	var ids: Array[String] = []

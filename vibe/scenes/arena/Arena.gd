@@ -152,7 +152,8 @@ func _test_enemy_spawning() -> void:
 	Logger.debug("Enemy spawning test", "debug")
 	if wave_director:
 		var alive_enemies = wave_director.get_alive_enemies()
-		Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
 		
 		if alive_enemies.size() > 0:
 			_update_enemy_multimesh(alive_enemies)
@@ -195,7 +196,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for SWARM tier
 	if not swarm_run_textures.is_empty():
 		mm_enemies_swarm.texture = swarm_run_textures[0]
-		Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("SWARM tier .tres animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
@@ -212,7 +214,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for REGULAR tier
 	if not regular_run_textures.is_empty():
 		mm_enemies_regular.texture = regular_run_textures[0]
-		Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
@@ -229,7 +232,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for ELITE tier
 	if not elite_run_textures.is_empty():
 		mm_enemies_elite.texture = elite_run_textures[0]
-		Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("ELITE tier .tres animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
@@ -246,7 +250,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for BOSS tier
 	if not boss_run_textures.is_empty():
 		mm_enemies_boss.texture = boss_run_textures[0]
-		Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("BOSS tier .tres animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
@@ -259,7 +264,8 @@ func _setup_enemy_transforms() -> void:
 	_enemy_transforms.resize(cache_size)
 	for i in range(cache_size):
 		_enemy_transforms[i] = Transform2D()
-	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
 # Removed unused MultiMesh setup functions (walls, terrain, obstacles, interactables)
 
@@ -865,7 +871,8 @@ func _create_swarm_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		swarm_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
 
 func _load_regular_animations() -> void:
 	var resource_path := "res://data/animations/regular_enemy_animations.tres"
@@ -905,7 +912,8 @@ func _create_regular_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		regular_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
 
 func _load_elite_animations() -> void:
 	var resource_path := "res://data/animations/elite_enemy_animations.tres"
@@ -945,7 +953,8 @@ func _create_elite_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		elite_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
 
 func _load_boss_animations() -> void:
 	var resource_path := "res://data/animations/boss_enemy_animations.tres"
@@ -985,4 +994,5 @@ func _create_boss_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		boss_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")

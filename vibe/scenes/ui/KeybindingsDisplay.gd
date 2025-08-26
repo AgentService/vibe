@@ -158,7 +158,8 @@ func _auto_resize_panel() -> void:
 		if content_size.y > max_height - padding.y:
 			_enable_scrolling()
 		
-		Logger.debug("KeybindingsDisplay auto-resized to: " + str(size), "ui")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("KeybindingsDisplay auto-resized to: " + str(size), "ui")
 
 func _enable_scrolling() -> void:
 	# Convert VBoxContainer to ScrollContainer setup

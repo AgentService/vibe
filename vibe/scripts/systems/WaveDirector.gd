@@ -198,7 +198,8 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
-	Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ")", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ")", "enemies")
 
 func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	# Handle special boss death - emit via EventBus for XP/loot systems

@@ -73,5 +73,6 @@ func select_multiple_cards(level: int, count: int, rng_stream: String) -> Array[
 			selected_cards.append(selected_card)
 			used_cards.append(selected_card)
 	
-	Logger.debug("Selected " + str(selected_cards.size()) + " cards from pool: " + pool_name, "cards")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Selected " + str(selected_cards.size()) + " cards from pool: " + pool_name, "cards")
 	return selected_cards

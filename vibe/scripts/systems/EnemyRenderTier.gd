@@ -126,7 +126,8 @@ func group_enemy_types_by_tier(enemy_types: Array[EnemyType]) -> Dictionary:
 				boss_types.append(enemy_type)
 	
 	var total_types: int = enemy_types.size()
-	Logger.debug("Tier distribution: SWARM=" + str(swarm_types.size()) + ", REGULAR=" + str(regular_types.size()) + ", ELITE=" + str(elite_types.size()) + ", BOSS=" + str(boss_types.size()) + " (total: " + str(total_types) + ")", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Tier distribution: SWARM=" + str(swarm_types.size()) + ", REGULAR=" + str(regular_types.size()) + ", ELITE=" + str(elite_types.size()) + ", BOSS=" + str(boss_types.size()) + " (total: " + str(total_types) + ")", "enemies")
 	
 	return {
 		Tier.SWARM: swarm_types,

@@ -24,9 +24,11 @@ func _input(event: InputEvent) -> void:
 		toggle_debug_mode()
 
 func debug(msg: String, category: String = "") -> void:
+	if current_level > LogLevel.DEBUG: return
 	_log(LogLevel.DEBUG, msg, category)
 
 func info(msg: String, category: String = "") -> void:
+	if current_level > LogLevel.INFO: return
 	_log(LogLevel.INFO, msg, category)
 
 func warn(msg: String, category: String = "") -> void:
@@ -76,6 +78,9 @@ func set_level(level: LogLevel) -> void:
 
 func is_debug() -> bool:
 	return current_level <= LogLevel.DEBUG
+
+func is_level_enabled(level: LogLevel) -> bool:
+	return level >= current_level
 
 func _load_config() -> void:
 	var config_resource: LogConfigResource = load(config_path)

@@ -3,6 +3,31 @@
 ## Current Commands
 claude --dangerously-skip-permissions
 
+## Shell Enhancement Commands (Git Bash)
+Enhanced Git Bash with modern productivity tools and discovery commands:
+
+### Tool Discovery Commands
+- `galias` - Show Git aliases and shortcuts
+- `falias` - Show fzf (fuzzy finder) commands and usage
+- `balias` - Show bat (syntax highlighter) commands
+- `ralias` - Show ripgrep (fast search) commands
+- `ealias` - Show eza (modern ls) commands
+- `zalias` - Show zoxide (smart cd) commands
+
+### Productivity Tools Installed
+- **fzf** - Fuzzy file finder with `ff` command
+- **bat** - Syntax highlighting file viewer with Dracula theme
+- **ripgrep** - Super-fast text search (12x faster than grep)
+- **eza** - Modern file listing with icons and git integration
+- **zoxide** - Smart cd that learns your directory patterns
+- **starship** - Modern cross-shell prompt
+
+### Welcome & Navigation
+- `welcome` or `w` - Show welcome screen with command reference table
+- `reload` - Reload shell configuration
+- `halp` - Quick help menu
+- `cheat` - Command cheatsheet
+
 ### `/doc-create` - Feature Implementation Documentation
 Creates feature implementation file in changelogs/features folder with format: `DD_MM_YYYY-FEATURE_NAME.md`
 

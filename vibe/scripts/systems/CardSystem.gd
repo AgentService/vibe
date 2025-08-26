@@ -55,7 +55,8 @@ func get_card_selection(level: int, count: int = 3) -> Array[CardResource]:
 		Logger.warn("No cards available at level " + str(level), "cards")
 		return []
 	
-	Logger.debug("Available cards at level " + str(level) + ": " + str(available_cards.size()), "cards")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Available cards at level " + str(level) + ": " + str(available_cards.size()), "cards")
 	
 	# Select cards using the pool's weighted selection
 	current_selection = pool.select_multiple_cards(level, count, "loot")
@@ -70,7 +71,8 @@ func apply_card(card: CardResource) -> void:
 		Logger.error("Attempted to apply null card", "cards")
 		return
 	
-	Logger.debug("Applying card: " + card.name, "cards")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Applying card: " + card.name, "cards")
 	
 	# Apply card modifiers to RunManager stats
 	card.apply_to_stats(RunManager.stats)
