@@ -2,24 +2,20 @@ extends CharacterBody2D
 class_name Player
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
+const PlayerType = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
-@export var move_speed: float = 110.0
-@export var pickup_radius: float = 12.0
+@export var player_type: PlayerType
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 var knight_animation_config: AnimationConfig_Type
 var current_animation: String = "idle"
-
-var max_health: int = 199
-var current_health: int = 100
+var current_health: int
 
 var is_rolling: bool = false
-var roll_duration: float = 0.3
 var roll_timer: float = 0.0
-var roll_speed: float = 400.0
 var roll_direction: Vector2 = Vector2.ZERO
 var invulnerable: bool = false
 
@@ -27,14 +23,46 @@ func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
+	current_health = get_max_health()
 	_setup_collision()
 	_setup_animations()
 	EventBus.damage_taken.connect(_on_damage_taken)
 
+# Getter functions that read directly from player_type resource for hot-reload support
+func get_move_speed() -> float:
+	if player_type:
+		return player_type.move_speed
+	return 110.0  # Fallback value
+
+func get_pickup_radius() -> float:
+	if player_type:
+		return player_type.pickup_radius
+	return 12.0  # Fallback value
+
+func get_max_health() -> int:
+	if player_type:
+		return player_type.max_health
+	return 199  # Fallback value
+
+func get_roll_duration() -> float:
+	if player_type:
+		return player_type.roll_duration
+	return 0.3  # Fallback value
+
+func get_roll_speed() -> float:
+	if player_type:
+		return player_type.roll_speed
+	return 400.0  # Fallback value
+
+func get_collision_radius() -> float:
+	if player_type:
+		return player_type.collision_radius
+	return 8.0  # Fallback value
+
 func _setup_collision() -> void:
 	var collision_shape := $CollisionShape2D
 	var circle_shape := CircleShape2D.new()
-	circle_shape.radius = 8.0
+	circle_shape.radius = get_collision_radius()
 	collision_shape.shape = circle_shape
 
 func _setup_animations() -> void:
@@ -109,7 +137,7 @@ func _start_roll() -> void:
 func _update_roll(delta: float) -> void:
 	if is_rolling:
 		roll_timer += delta
-		if roll_timer >= roll_duration:
+		if roll_timer >= get_roll_duration():
 			is_rolling = false
 			invulnerable = false
 
@@ -128,10 +156,10 @@ func _handle_movement(_delta: float) -> void:
 	
 	if is_rolling:
 		# Continue dashing in roll direction
-		velocity = roll_direction * roll_speed
+		velocity = roll_direction * get_roll_speed()
 	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
-		velocity = input_vector * move_speed
+		velocity = input_vector * get_move_speed()
 		_play_animation("run")
 	else:
 		velocity = Vector2.ZERO
@@ -229,8 +257,6 @@ func _on_damage_taken(damage: int) -> void:
 func get_health() -> int:
 	return current_health
 
-func get_max_health() -> int:
-	return max_health
 
 func _play_animation(anim_name: String) -> void:
 	# Guard against empty animation names

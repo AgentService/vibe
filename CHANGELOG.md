@@ -5,16 +5,45 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hybrid Enemy Spawning System**: Complete dual-mode enemy spawning supporting both pooled enemies and scene-based special bosses
+  - **EnemyType.gd extensions**: Added boss_scene, is_special_boss, and boss_spawn_method properties for hybrid spawning
+  - **WaveDirector hybrid routing**: _spawn_from_type() method routes enemies to pooled or scene spawning based on type properties
+  - **Special boss scenes**: DragonLord boss example using editor-created CharacterBody2D scene with complex AI and died signal
+  - **Public spawn API**: spawn_boss_by_id() and spawn_event_enemies() methods for future map event system integration
+  - **EnemyRegistry filtering**: Special bosses (spawn_weight = 0.0) automatically excluded from random wave spawning
+  - **Signal integration**: Scene bosses emit "died" signal properly integrated with EventBus for XP/loot rewards
+  - **Test coverage**: Complete validation testing for both pooled (knight_regular) and scene-based (dragon_lord) spawning paths
+  - **Content pipeline examples**: Updated .tres files showing pooled boss (knight_boss), regular enemies (knight_regular), and special scene boss (dragon_lord)
+  - **Future-ready architecture**: Supports complex boss encounters, multi-phase bosses, and map-triggered events while preserving existing performance
+- **Player Stats Migration to .tres**: Migrated hardcoded player stats to PlayerType.gd resource system
+  - **PlayerType.gd resource**: New typed resource class for player statistics (move_speed, max_health, pickup_radius, roll_stats)
+  - **default_player.tres**: Configuration resource with current player values (110 move_speed, 199 max_health, etc.)
+  - **Validation system**: PlayerType.validate() method ensures stat integrity with error reporting
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres loading fails
+  - **Inspector editing**: Player stats now editable through Godot Inspector in default_player.tres
+  - **Architecture consistency**: Follows established EnemyType.gd pattern for data-driven character stats
 - **EnemyBehaviorSystem Removal**: Completely removed unused EnemyBehaviorSystem class and all references
   - **File Deleted**: Removed vibe/scripts/systems/EnemyBehaviorSystem.gd entirely
   - **Documentation Cleaned**: Removed all references from 6 Obsidian documentation files
   - **AI Logic**: All enemy AI is now handled directly by WaveDirector
   - **No Breaking Changes**: System was already unused - no functional impact
 - **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
-  - **Pure Resource Exception**: Scenes can now import configuration Resources (AnimationConfig, ArenaConfig, etc.) directly
-  - **Whitelist System**: Added whitelist of approved Resource classes that scenes commonly need
-  - **Documentation**: Updated ARCHITECTURE.md with clear examples of allowed vs disallowed imports
-  - **Pragmatic Approach**: Balances architectural purity with practical game development needs
+- **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
+  - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
+  - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)
+  - **Debug Controls**: Added F1 (Console) and C (Cards) to KeybindingsDisplay debug section  
+  - **Runtime Commands**: Supports custom command registration for balance parameter adjustment
+  - **Development Workflow**: Perfect for live-tuning balance values during playtesting
+  - **MCP Integration**: Can be used with MCP tools for automated testing scenarios
+- **Universal Hot-Reload System**: Complete automatic .tres resource hot-reload system without F5 dependency
+  - **BalanceDB File Monitor**: Timer-based monitoring (0.5s interval) for all balance .tres files in BalanceDB autoload
+  - **Scene @export Pattern**: Arena and Player use @export variables for automatic Inspector hot-reload
+  - **Direct Resource Access**: Removed cached variables, use direct property access for real-time updates
+  - **Cache Bypassing**: ResourceLoader.CACHE_MODE_IGNORE ensures fresh resource loading on every change
+  - **Developer Documentation**: Clear instructions in data/README.md for adding new files to auto-reload system
+  - **Best Practice Patterns**: @export for scene-based resources, ResourceLoader monitoring for autoload systems
+  - **Zero Manual Input**: Changes to balance, arena, and player .tres files automatically affect running games
+  - **Complete Coverage**: Player stats, arena config, all balance files support automatic hot-reload
 - **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
   - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
   - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety

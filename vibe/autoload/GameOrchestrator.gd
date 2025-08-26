@@ -82,6 +82,9 @@ func _initialize_systems() -> void:
 	
 	# 7. ArenaSystem (no deps)
 	arena_system = ArenaSystem.new()
+	# Load and set the arena config
+	var arena_config = load("res://data/content/arena/default_arena.tres") as ArenaConfig
+	arena_system.arena_config = arena_config
 	add_child(arena_system)
 	systems["ArenaSystem"] = arena_system
 	Logger.info("ArenaSystem initialized by GameOrchestrator", "orchestrator")
@@ -102,6 +105,13 @@ func _initialize_systems() -> void:
 		Logger.info("WaveDirector initialized with EnemyRegistry dependency", "orchestrator")
 	else:
 		Logger.warn("WaveDirector doesn't have set_enemy_registry method", "orchestrator")
+	
+	# Set ArenaSystem dependency
+	if wave_director.has_method("set_arena_system"):
+		wave_director.set_arena_system(arena_system)
+		Logger.info("WaveDirector initialized with ArenaSystem dependency", "orchestrator")
+	else:
+		Logger.warn("WaveDirector doesn't have set_arena_system method", "orchestrator")
 	
 	# Phase E: Combat systems with dependencies
 	# 5. MeleeSystem (needs WaveDirector ref)

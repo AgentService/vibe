@@ -87,15 +87,34 @@ All .tres resources are backed by typed GDScript resource classes:
 
 ### Hot-Reload Support
 
-- **F5**: Reloads all balance and configuration resources
-- **Automatic**: Godot automatically detects .tres file changes
-- **Systems**: All systems respond to BalanceDB.balance_reloaded signal
+- **Automatic Balance Files**: 0.5 second auto-reload for files registered in BalanceDB
+- **Scene Resources**: Instant hot-reload for @export resources (arena, player configs)
+- **F5 Fallback**: Manual reload trigger for all resources
 
 ## Hot Reloading
 
-The BalanceDB singleton supports hot reloading of all .tres resources during development:
-- **F5 Key**: Triggers full resource reload
-- **Automatic**: Godot detects .tres file changes automatically
+The BalanceDB singleton provides automatic hot-reloading for balance files during development:
+
+### **Auto-Reload (0.5s)**
+Balance files are automatically monitored and reloaded when changed:
+```gdscript
+// Currently monitored files in BalanceDB._setup_auto_reload():
+- res://data/balance/combat_balance.tres
+- res://data/balance/abilities_balance.tres  
+- res://data/balance/melee_balance.tres
+- res://data/balance/player_balance.tres
+- res://data/balance/waves_balance.tres
+- res://data/ui/radar_config.tres
+```
+
+### **Adding New Auto-Reload Files**
+To add a new balance file to auto-reload monitoring:
+1. Add file path to `_balance_files` dictionary in `BalanceDB._setup_auto_reload()`
+2. Ensure file is loaded in `BalanceDB.load_all_balance_data()`
+3. Test file changes are detected within 0.5 seconds
+
+### **Manual Reload**  
+- **F5 Key**: Triggers full resource reload for all files
 - **Signal**: Listen to `BalanceDB.balance_reloaded` for updates
 
 ## Fallback Values

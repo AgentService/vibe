@@ -1,11 +1,11 @@
-[gd_resource type="Resource" script_class="MeleeBalance" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="MeleeBalance" load_steps=2 format=3 uid="uid://c8m7k3vi8argl"]
 
-[ext_resource type="Script" path="res://scripts/domain/MeleeBalance.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://c8renjyd4obh4" path="res://scripts/domain/MeleeBalance.gd" id="1_0"]
 
 [resource]
 script = ExtResource("1_0")
-damage = 55.0
-range = 250.0
-cone_angle = 90.0
-attack_speed = 2
-visual_effect_duration = 0.5
+damage = 22.0
+attack_range = 122.0
+cone_angle = 360.0
+attack_speed = 3
+visual_effect_duration = 1.0

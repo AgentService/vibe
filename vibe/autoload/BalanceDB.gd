@@ -14,15 +14,60 @@ var _waves_balance: WavesBalance
 var _data: Dictionary = {}  # Still needed for UI files
 var _fallback_data: Dictionary = {}
 
+# Auto hot-reload file monitoring
+var _file_watcher_timer: Timer
+var _balance_files: Dictionary = {}  # path -> last_modified_time
+const FILE_CHECK_INTERVAL: float = 0.5
+
 func _ready() -> void:
 	_setup_fallback_data()
 	load_all_balance_data()
+	_setup_auto_reload()
 
 func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F5:
 		Logger.info("F5 pressed - Hot-reloading balance data...", "balance")
 		reload_balance_data()
 		Logger.info("Balance data reloaded successfully!", "balance")
+
+func _setup_auto_reload() -> void:
+	# Setup file monitoring for all balance files
+	# TO ADD NEW AUTO-RELOAD FILES: Add file path to this dictionary
+	_balance_files = {
+		"res://data/balance/combat_balance.tres": 0,
+		"res://data/balance/abilities_balance.tres": 0,
+		"res://data/balance/melee_balance.tres": 0,
+		"res://data/balance/player_balance.tres": 0,
+		"res://data/balance/waves_balance.tres": 0,
+		"res://data/ui/radar_config.tres": 0
+	}
+	
+	# Get initial timestamps
+	for file_path in _balance_files:
+		if FileAccess.file_exists(file_path):
+			_balance_files[file_path] = FileAccess.get_modified_time(file_path)
+	
+	# Setup timer
+	_file_watcher_timer = Timer.new()
+	_file_watcher_timer.wait_time = FILE_CHECK_INTERVAL
+	_file_watcher_timer.timeout.connect(_check_balance_files)
+	add_child(_file_watcher_timer)
+	_file_watcher_timer.start()
+	
+	Logger.info("Balance auto hot-reload monitoring started", "balance")
+
+func _check_balance_files() -> void:
+	for file_path in _balance_files:
+		if not FileAccess.file_exists(file_path):
+			continue
+			
+		var current_time = FileAccess.get_modified_time(file_path)
+		if current_time > _balance_files[file_path]:
+			Logger.info("Balance file changed: " + file_path.get_file(), "balance")
+			_balance_files[file_path] = current_time
+			reload_balance_data()
+			Logger.info("Balance data auto-reloaded!", "balance")
+			break  # Reload all at once, don't check remaining files this cycle
 
 func _setup_fallback_data() -> void:
 	_fallback_data = {
@@ -43,7 +88,7 @@ func _setup_fallback_data() -> void:
 			"max_enemies": 500,
 			"spawn_interval": 1.0,
 			"arena_center": {"x": 400.0, "y": 300.0},
-			"spawn_radius": 600.0,
+			# spawn_radius moved to ArenaConfig
 			"enemy_speed_min": 60.0,
 			"enemy_speed_max": 120.0,
 			"spawn_count_min": 3,
@@ -146,9 +191,7 @@ func _create_fallback_resource(key: String) -> Resource:
 			waves.max_enemies = fallback_data.get("max_enemies", 500)
 			waves.spawn_interval = fallback_data.get("spawn_interval", 1.0)
 			waves.arena_center = Vector2(400.0, 300.0)
-			waves.spawn_radius = fallback_data.get("spawn_radius", 600.0)
-			waves.spawn_radius_large = fallback_data.get("spawn_radius_large", 600.0)
-			waves.spawn_radius_mega = fallback_data.get("spawn_radius_mega", 600.0)
+			# spawn_radius properties moved to ArenaConfig
 			waves.enemy_speed_min = fallback_data.get("enemy_speed_min", 60.0)
 			waves.enemy_speed_max = fallback_data.get("enemy_speed_max", 120.0)
 			waves.spawn_count_min = fallback_data.get("spawn_count_min", 3)
@@ -215,12 +258,7 @@ func get_waves_value(key: String) -> Variant:
 			return _waves_balance.spawn_interval
 		"arena_center":
 			return _waves_balance.arena_center
-		"spawn_radius":
-			return _waves_balance.spawn_radius
-		"spawn_radius_large":
-			return _waves_balance.spawn_radius_large
-		"spawn_radius_mega":
-			return _waves_balance.spawn_radius_mega
+		# spawn_radius getters removed - use ArenaSystem instead
 		"enemy_speed_min":
 			return _waves_balance.enemy_speed_min
 		"enemy_speed_max":

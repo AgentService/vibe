@@ -1,18 +1,17 @@
 extends Node2D
 
-## Arena scene managing MultiMesh rendering and debug projectile spawning.
-## Renders projectile pool via single MultiMeshInstance2D.
+## Arena scene managing MultiMesh rendering and receiving injected game systems.
+## Renders projectile pool via MultiMeshInstance2D.
+## Systems are initialized and managed by GameOrchestrator autoload.
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
-const PLAYER_SCENE: PackedScene = preload("res://scenes/arena/Player.tscn")
+# Player scene loaded dynamically to support @export hot-reload
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
 const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-# Removed non-existent subsystem imports - systems simplified
-# TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 
@@ -22,9 +21,7 @@ const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd"
 @onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
-# Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
-# Systems now injected by GameOrchestrator
 var ability_system: AbilitySystem
 var melee_system: MeleeSystem
 
@@ -55,14 +52,10 @@ var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
 var boss_frame_duration: float = 0.1
-# WaveDirector now injected by GameOrchestrator
 var wave_director: WaveDirector
-# Systems now injected by GameOrchestrator  
 var damage_system: DamageSystem
 var arena_system: ArenaSystem
-# texture_theme_system removed - no longer needed after arena simplification
 var camera_system: CameraSystem
-# enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
 var player: Player
@@ -85,11 +78,6 @@ func _ready() -> void:
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# All system process modes now set in injection methods
-	
-	# All systems now injected by GameOrchestrator - no manual add_child needed
-	
-	# System references will be set after GameOrchestrator injection
 	
 	# Create enemy render tier system
 	if EnemyRenderTier == null:
@@ -118,13 +106,11 @@ func _ready() -> void:
 	
 	_setup_card_system()
 	
-	# System references now set by GameOrchestrator during initialization
 	
 	# Set player reference in PlayerState for cached position access
 	PlayerState.set_player_reference(player)
 	
-	# Connect signals AFTER systems are added and ready
-	# Note: all system signals connected in injection methods
+	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
 	
 	# Setup MultiMesh instances
@@ -152,7 +138,8 @@ func _test_enemy_spawning() -> void:
 	Logger.debug("Enemy spawning test", "debug")
 	if wave_director:
 		var alive_enemies = wave_director.get_alive_enemies()
-		Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
 		
 		if alive_enemies.size() > 0:
 			_update_enemy_multimesh(alive_enemies)
@@ -195,7 +182,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for SWARM tier
 	if not swarm_run_textures.is_empty():
 		mm_enemies_swarm.texture = swarm_run_textures[0]
-		Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("SWARM tier .tres animation failed to load", "enemies")
 	mm_enemies_swarm.multimesh = swarm_multimesh
@@ -212,7 +200,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for REGULAR tier
 	if not regular_run_textures.is_empty():
 		mm_enemies_regular.texture = regular_run_textures[0]
-		Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
 	mm_enemies_regular.multimesh = regular_multimesh
@@ -229,7 +218,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for ELITE tier
 	if not elite_run_textures.is_empty():
 		mm_enemies_elite.texture = elite_run_textures[0]
-		Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("ELITE tier .tres animation failed to load", "enemies")
 	mm_enemies_elite.multimesh = elite_multimesh
@@ -246,7 +236,8 @@ func _setup_tier_multimeshes() -> void:
 	# Use .tres-loaded textures for BOSS tier
 	if not boss_run_textures.is_empty():
 		mm_enemies_boss.texture = boss_run_textures[0]
-		Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
 	else:
 		Logger.error("BOSS tier .tres animation failed to load", "enemies")
 	mm_enemies_boss.multimesh = boss_multimesh
@@ -259,9 +250,9 @@ func _setup_enemy_transforms() -> void:
 	_enemy_transforms.resize(cache_size)
 	for i in range(cache_size):
 		_enemy_transforms[i] = Transform2D()
-	Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
-# Removed unused MultiMesh setup functions (walls, terrain, obstacles, interactables)
 
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
@@ -314,9 +305,14 @@ func _input(event: InputEvent) -> void:
 			KEY_C:
 				Logger.info("Manual card selection test", "debug")
 				_test_card_selection()
+			KEY_B:
+				Logger.info("Spawning Dragon Lord boss", "debug")
+				_spawn_dragon_lord_test()
 
 func _setup_player() -> void:
-	player = PLAYER_SCENE.instantiate()
+	# Load player scene dynamically to support @export hot-reload
+	var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
+	player = player_scene.instantiate()
 	player.global_position = Vector2(0, 0)  # Center of arena
 	add_child(player)
 	
@@ -349,7 +345,11 @@ func _setup_card_system() -> void:
 	else:
 		Logger.warn("Card system not yet injected during setup", "cards")
 
-# Dependency injection methods - called by GameOrchestrator
+# ============================================================================
+# DEPENDENCY INJECTION METHODS
+# Called by GameOrchestrator to inject initialized systems with proper 
+# process modes and signal connections
+# ============================================================================
 func set_card_system(injected_card_system: CardSystem) -> void:
 	card_system = injected_card_system
 	Logger.info("CardSystem injected into Arena", "cards")
@@ -364,7 +364,6 @@ func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 	ability_system = injected_ability_system
 	Logger.info("AbilitySystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
 
@@ -372,7 +371,6 @@ func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_system = injected_arena_system
 	Logger.info("ArenaSystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 
@@ -380,7 +378,6 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	camera_system = injected_camera_system
 	Logger.info("CameraSystem injected into Arena", "systems")
 	
-	# Set process mode and setup camera
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if player:
 		camera_system.setup_camera(player)
@@ -389,7 +386,6 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director = injected_wave_director
 	Logger.info("WaveDirector injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
 
@@ -397,7 +393,6 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	melee_system = injected_melee_system
 	Logger.info("MeleeSystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 
@@ -405,7 +400,6 @@ func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	damage_system = injected_damage_system
 	Logger.info("DamageSystem injected into Arena", "systems")
 	
-	# Set process mode
 	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 func _on_level_up(payload) -> void:
@@ -436,7 +430,6 @@ func _on_card_selected(card: CardResource) -> void:
 	Logger.info("Player selected card: " + card.name, "cards")
 	card_system.apply_card(card)
 
-# Theme functions removed - no longer needed after arena simplification
 
 func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
@@ -573,7 +566,6 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var tier_color := _get_tier_debug_color(tier)
 			mm_instance.multimesh.set_instance_color(i, tier_color)
 
-# Removed unused MultiMesh update functions (walls, terrain, obstacles, interactables)
 
 func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")
@@ -645,6 +637,35 @@ func _spawn_stress_test_enemies() -> void:
 	
 	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
 
+func _spawn_dragon_lord_test() -> void:
+	if not wave_director:
+		Logger.warn("WaveDirector not available for Dragon Lord test", "debug")
+		return
+	
+	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
+	var spawn_pos: Vector2 = player_pos + Vector2(200, 0)  # Spawn to the right of player
+	
+	Logger.info("Testing Dragon Lord spawn at: " + str(spawn_pos), "debug")
+	
+	# First check if dragon_lord exists in registry
+	if wave_director.enemy_registry:
+		var dragon_lord = wave_director.enemy_registry.get_enemy_type("dragon_lord")
+		if dragon_lord:
+			Logger.info("Dragon Lord found in registry: " + dragon_lord.display_name, "debug")
+			Logger.info("Is special boss: " + str(dragon_lord.is_special_boss), "debug")
+		else:
+			Logger.warn("Dragon Lord NOT found in registry", "debug")
+			Logger.info("Available enemy types: " + str(wave_director.enemy_registry.get_available_type_ids()), "debug")
+	
+	# Try to spawn the Dragon Lord
+	var success = wave_director.spawn_boss_by_id("dragon_lord", spawn_pos)
+	Logger.info("Dragon Lord spawn result: " + str(success), "debug")
+	
+	if success:
+		Logger.info("Dragon Lord should now appear at " + str(spawn_pos) + "!", "debug")
+	else:
+		Logger.warn("Dragon Lord spawn failed - check logs for details", "debug")
+
 func _test_card_selection() -> void:
 	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
 	if not card_system:
@@ -677,6 +698,7 @@ func _toggle_performance_stats() -> void:
 
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
+	Logger.info("B: Spawn Dragon Lord boss (hybrid spawning test)", "ui")
 	Logger.info("C: Test card selection", "ui")
 	Logger.info("Escape: Pause/resume toggle", "ui")
 	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
@@ -830,7 +852,8 @@ func _create_swarm_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		swarm_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
 
 func _load_regular_animations() -> void:
 	var resource_path := "res://data/animations/regular_enemy_animations.tres"
@@ -870,7 +893,8 @@ func _create_regular_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		regular_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
 
 func _load_elite_animations() -> void:
 	var resource_path := "res://data/animations/elite_enemy_animations.tres"
@@ -910,7 +934,8 @@ func _create_elite_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		elite_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
 
 func _load_boss_animations() -> void:
 	var resource_path := "res://data/animations/boss_enemy_animations.tres"
@@ -950,4 +975,5 @@ func _create_boss_textures() -> void:
 		var frame_texture := ImageTexture.create_from_image(frame_image)
 		boss_run_textures.append(frame_texture)
 	
-	Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")

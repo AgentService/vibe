@@ -7,12 +7,17 @@
 doublecheck changelogs\features\24_08_2025-DICTIONARY_TO_ENEMYENTITY_MIGRATION.md
 escpecially dictionary for mesh and enemytypes for rest question?
 
-remove obstactlesystem.gd?!
+
+Lock-free ring buffers ?? zero-allocation
+  designs achieve million+ ops/sec throughput
+
 
 combat log
 dongerslider
 brusthaarslider
 gigachad
+USE DASH AS A ABILITY to upgrade
+
 
 Hotkey Setup
 Escape Menu

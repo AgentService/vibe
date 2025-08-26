@@ -89,6 +89,8 @@ func _populate_bindings() -> void:
 		debug_grid.add_theme_constant_override("v_separation", 2)
 		bindings_container.add_child(debug_grid)
 		
+		_add_binding_row(debug_grid, "Console:", "F1")
+		_add_binding_row(debug_grid, "Cards:", "C")
 		_add_binding_row(debug_grid, "God Mode:", "Ctrl+1")
 		_add_binding_row(debug_grid, "Stop Spawn:", "Ctrl+2")
 		_add_binding_row(debug_grid, "Silent Pause:", "F10")
@@ -156,7 +158,8 @@ func _auto_resize_panel() -> void:
 		if content_size.y > max_height - padding.y:
 			_enable_scrolling()
 		
-		Logger.debug("KeybindingsDisplay auto-resized to: " + str(size), "ui")
+		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+			Logger.debug("KeybindingsDisplay auto-resized to: " + str(size), "ui")
 
 func _enable_scrolling() -> void:
 	# Convert VBoxContainer to ScrollContainer setup

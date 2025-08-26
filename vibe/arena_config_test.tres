@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="ArenaConfig" load_steps=2 format=3 uid="uid://dfl3j48xus83v"]
+
+[ext_resource type="Script" uid="uid://cjud0krcwufd" path="res://scripts/domain/ArenaConfig.gd" id="1_frg8t"]
+
+[resource]
+script = ExtResource("1_frg8t")
+arena_id = "basic_arena"
+arena_name = "Basic Combat Arena"
+bounds = Rect2(-400, 0, 800, 0)
+arena_center = Vector2(0, 0)
+spawn_radius = 4444.0

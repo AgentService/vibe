@@ -6,9 +6,7 @@ class_name WavesBalance
 @export_range(1, 10000) var max_enemies: int = 100
 @export var spawn_interval: float = 1.0
 @export var arena_center: Vector2 = Vector2.ZERO
-@export var spawn_radius: float = 200.0
-@export var spawn_radius_large: float = 600.0
-@export var spawn_radius_mega: float = 800.0
+# spawn_radius moved to ArenaConfig - enemies spawn using arena configuration
 @export var enemy_speed_min: float = 10.0
 @export var enemy_speed_max: float = 20.0
 @export_range(1, 100) var spawn_count_min: int = 3

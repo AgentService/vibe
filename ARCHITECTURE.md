@@ -41,7 +41,7 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
   var damage: float
   func get_modified_damage(stats: Dictionary) -> float: ...
   ```
-- **Autoloads (Glue):** RunManager (flow, fixed step), EventBus (global signals), RNG (seeded streams), ContentDB (.tres load), BalanceDB (resource loading).
+- **Autoloads (Glue):** `BalanceDB`, `CheatSystem`, `EventBus`, `GameOrchestrator`, `Logger`, `PauseManager`, `PlayerState`, `RNG`, and `RunManager`.
 
 ## Fixed-Step Combat Loop (Decision 5A)
 ```gdscript
@@ -67,24 +67,35 @@ Systems subscribe to `combat_step(dt)` and update in lockstep (DoT, AI, cooldown
 
 ## Signals Matrix
 
-| Signal | Emitter | Arguments | Cadence | Pause Behavior | Purpose |
-|--------|---------|-----------|---------|----------------|---------|
+| Signal | Emitter(s) | Payload | Cadence | Purpose |
+|--------|------------|---------|---------|---------|
 | **TIMING** |
-| `combat_step` | RunManager | `dt: float` | 30Hz fixed | Paused during UI | Drives deterministic combat updates |
+| `combat_step` | RunManager | `CombatStepPayload` | 30Hz Fixed | Drives deterministic combat updates. |
 | **DAMAGE** |
-| `damage_requested` | AbilitySystem, Projectiles | `source_id: EntityId, target_id: EntityId, base_damage: float, tags: PackedStringArray` | Per collision | Active | Request damage calculation |
-| `damage_applied` | DamageSystem | `target_id: EntityId, final_damage: float, is_crit: bool, tags: PackedStringArray` | Per damage | Active | Single damage instance applied |
-| `damage_batch_applied` | DamageSystem | `damage_instances: Array[Dictionary]` | Per AoE/batch | Active | Multiple damage instances for AoE |
+| `damage_requested` | AbilitySystem, Projectiles | `DamageRequestPayload` | Per Hit | Requests a damage calculation from the `DamageSystem`. |
+| `damage_applied` | DamageSystem | `DamageAppliedPayload` | Per Hit | Confirms a single damage instance was applied. |
+| `damage_batch_applied` | DamageSystem | `DamageBatchAppliedPayload` | Per AoE | Confirms multiple damage instances for AoE attacks. |
+| `damage_dealt` | DamageSystem | `DamageDealtPayload` | Per Hit | Signals damage was dealt, used for camera shake, etc. |
+| `damage_taken` | Enemy Systems | `damage: int` | Per Hit | Signals the player has taken damage. |
+| `player_died` | DamageSystem | `()` | On Death | Signals the player's health has reached zero. |
+| **MELEE** |
+| `melee_attack_started` | MeleeSystem | `payload` | On Attack | A melee attack has been initiated. |
+| `melee_enemies_hit` | MeleeSystem | `payload` | On Hit | A melee attack has hit one or more enemies. |
 | **ENTITIES** |
-| `entity_killed` | DamageSystem | `entity_id: EntityId, death_pos: Vector2, rewards: Dictionary` | Per death | Active | Entity death with typed rewards |
-| `enemy_killed` | WaveDirector | `pos: Vector2, xp_value: int` | Per death | Active | Legacy enemy death (deprecated) |
+| `entity_killed` | DamageSystem | `EntityKilledPayload` | On Death | An entity has been killed, contains reward data. |
+| `enemy_killed` | WaveDirector | `EnemyKilledPayload` | On Death | **[DEPRECATED]** Legacy signal, use `entity_killed`. |
 | **PROGRESSION** |
-| `xp_changed` | XpSystem | `current_xp: int, next_level_xp: int` | Per XP gain | Active | XP values updated |
-| `level_up` | XpSystem | `new_level: int` | Per level | Triggers pause | Player leveled up, show CardPicker |
-| **PLAYER STATE** |
-| `player_position_changed` | PlayerState | `position: Vector2` | 10-15Hz / 12px delta | Active | Cached player position for systems |
-| **GAME STATE** |
-| `game_paused_changed` | RunManager | `is_paused: bool` | On state change | N/A | Game pause state coordination |
+| `xp_changed` | XpSystem | `XpChangedPayload` | On XP Gain | The player's XP has changed. |
+| `level_up` | XpSystem | `LevelUpPayload` | On Level Up | The player has leveled up, triggers pause and card UI. |
+| **GAME STATE & CAMERA** |
+| `game_paused_changed` | PauseManager | `GamePausedChangedPayload` | On Change | The game's pause state has changed. |
+| `arena_bounds_changed` | ArenaSystem | `ArenaBoundsChangedPayload` | On Load | Informs the camera of the new arena's boundaries. |
+| `player_position_changed` | PlayerState | `PlayerPositionChangedPayload` | ~15Hz | Provides cached player position for other systems. |
+| **INTERACTION & LOOT** |
+| `interaction_prompt_changed` | (Unused) | `InteractionPromptChangedPayload` | - | **[DEPRECATED]** No longer used. |
+| `loot_generated` | Arena Systems | `LootGeneratedPayload` | On Event | Signals loot was generated (e.g., from a chest). |
+| **DEBUG** |
+| `cheat_toggled` | CheatSystem | `CheatTogglePayload` | On Toggle | A debug cheat has been toggled. |
 
 ### Signal Usage Rules
 - **EntityId-based**: Use typed EntityId for all entity references, never Node references
@@ -110,41 +121,35 @@ get_node("../Player").take_damage(10)
 ```
 GodotGame/
 ├── vibe/                          # Main Godot project
-│   ├── autoload/                  # Global singletons
-│   │   ├── EventBus.gd           # Global signal system
-│   │   ├── RNG.gd                # Seeded random number generation
-│   │   └── RunManager.gd         # Game flow and fixed-step timing
-│   ├── scenes/                    # UI and game scenes
-│   │   ├── arena/                 # Combat arena
-│   │   │   ├── Arena.gd          # Arena logic
-│   │   │   └── Arena.tscn        # Arena scene
-│   │   └── main/                  # Main menu and game flow
-│   │       ├── Main.gd            # Main game controller
-│   │       └── Main.tscn         # Main scene
-│   ├── scripts/                   # Game systems and logic
-│   │   └── systems/               # Core game systems
-│   │       └── AbilitySystem.gd   # Ability and skill management
-│   ├── tests/                     # Test scenes and scripts
-│   │   ├── run_tests.gd           # Test runner
-│   │   ├── run_tests.tscn         # Test scene
-│   │   └── test_rng_streams.gd    # RNG system tests
+│   ├── addons/                    # Third-party plugins (e.g., MCP)
+│   ├── assets/                    # Art, sound, and music assets
+│   ├── autoload/                  # Global singletons (e.g., EventBus)
+│   ├── data/                      # .tres resources for balance, config, etc.
+│   ├── scenes/                    # Game scenes
+│   │   ├── arena/
+│   │   ├── bosses/
+│   │   ├── main/
+│   │   └── ui/
+│   ├── scripts/                   # GDScript logic files
+│   │   ├── domain/                # Pure data classes and signal payloads
+│   │   ├── resources/             # Custom Resource definitions
+│   │   ├── systems/               # Core game logic systems
+│   │   └── utils/                 # Helper scripts and utilities
+│   ├── tests/                     # Automated test scenes and scripts
 │   ├── project.godot              # Godot project configuration
 │   └── icon.svg                   # Project icon
 ├── ARCHITECTURE.md                # This file - system design and decisions
-├── CHANGELOG.md                   # Current week development changes (see /changelogs/ for archives)
-├── changelogs/                    # Change tracking system (weekly archives, features)
-│   ├── README.md                  # Changelog management approach
-│   ├── weekly/                    # Weekly archives (2025-wXX.md)
-│   └── features/                  # Feature implementation files (DD_MM_YYYY-FEATURE_NAME.md)
-├── CLAUDE.md                      # Claude-specific notes and decisions
-├── CURSOR.md                      # Cursor-specific notes and decisions
+├── CHANGELOG.md                   # Current week development changes
+├── changelogs/                    # Change tracking archives
+├── CLAUDE.md                      # AI-specific notes and decisions
 └── LESSONS_LEARNED.md             # Godot patterns and learnings
 ```
 
 ### Key Directories:
-- **`vibe/autoload/`**: Global systems accessible throughout the game
-- **`vibe/scenes/`**: Visual representation and UI logic
-- **`vibe/scripts/systems/`**: Core game mechanics and rules
-- **`vibe/tests/`**: Automated testing and validation
-- **Root level**: Project documentation and decision tracking
-
+- **`vibe/autoload/`**: Global systems accessible throughout the game.
+- **`vibe/data/`**: Data-driven `.tres` resources for tuning and content.
+- **`vibe/scenes/`**: Visual representation and UI logic.
+- **`vibe/scripts/domain/`**: Pure data classes, including signal payloads.
+- **`vibe/scripts/systems/`**: Core game mechanics and rules.
+- **`vibe/tests/`**: Automated testing and validation.
+- **Root level**: Project documentation and decision tracking.

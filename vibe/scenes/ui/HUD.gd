@@ -64,6 +64,7 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _on_player_died() -> void:
 	is_game_over = true
 	death_screen.visible = true
+
 	get_tree().paused = true
 	Logger.info("Player died - game paused", "ui")
 

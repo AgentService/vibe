@@ -68,6 +68,7 @@ enabled=PackedStringArray("gdai-mcp-plugin-godot")
 - **EventBus**: Validates signal usage and connections  
 - **Architecture**: Enforces layer boundaries and dependencies
 - **Testing**: Integrates with headless test execution
+- **Limbo Console**: Can create and register runtime commands for debugging
 
 ### Development Workflow
 ```
