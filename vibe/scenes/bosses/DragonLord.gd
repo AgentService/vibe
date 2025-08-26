@@ -21,6 +21,12 @@ var chase_range: float = 400.0
 func _ready() -> void:
 	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
 	
+	# Start the animation
+	var animated_sprite = $AnimatedSprite2D
+	if animated_sprite:
+		animated_sprite.play("default")  # Start playing the default animation
+		Logger.debug("Dragon Lord animation started", "bosses")
+	
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
