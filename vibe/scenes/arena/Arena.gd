@@ -314,6 +314,9 @@ func _input(event: InputEvent) -> void:
 			KEY_C:
 				Logger.info("Manual card selection test", "debug")
 				_test_card_selection()
+			KEY_B:
+				Logger.info("Spawning Dragon Lord boss", "debug")
+				_spawn_dragon_lord_test()
 
 func _setup_player() -> void:
 	# Load player scene dynamically to support @export hot-reload
@@ -647,6 +650,35 @@ func _spawn_stress_test_enemies() -> void:
 	
 	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
 
+func _spawn_dragon_lord_test() -> void:
+	if not wave_director:
+		Logger.warn("WaveDirector not available for Dragon Lord test", "debug")
+		return
+	
+	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
+	var spawn_pos: Vector2 = player_pos + Vector2(200, 0)  # Spawn to the right of player
+	
+	Logger.info("Testing Dragon Lord spawn at: " + str(spawn_pos), "debug")
+	
+	# First check if dragon_lord exists in registry
+	if wave_director.enemy_registry:
+		var dragon_lord = wave_director.enemy_registry.get_enemy_type("dragon_lord")
+		if dragon_lord:
+			Logger.info("Dragon Lord found in registry: " + dragon_lord.display_name, "debug")
+			Logger.info("Is special boss: " + str(dragon_lord.is_special_boss), "debug")
+		else:
+			Logger.warn("Dragon Lord NOT found in registry", "debug")
+			Logger.info("Available enemy types: " + str(wave_director.enemy_registry.get_available_type_ids()), "debug")
+	
+	# Try to spawn the Dragon Lord
+	var success = wave_director.spawn_boss_by_id("dragon_lord", spawn_pos)
+	Logger.info("Dragon Lord spawn result: " + str(success), "debug")
+	
+	if success:
+		Logger.info("Dragon Lord should now appear at " + str(spawn_pos) + "!", "debug")
+	else:
+		Logger.warn("Dragon Lord spawn failed - check logs for details", "debug")
+
 func _test_card_selection() -> void:
 	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
 	if not card_system:
@@ -679,6 +711,7 @@ func _toggle_performance_stats() -> void:
 
 func _print_debug_help() -> void:
 	Logger.info("=== Debug Controls ===", "ui")
+	Logger.info("B: Spawn Dragon Lord boss (hybrid spawning test)", "ui")
 	Logger.info("C: Test card selection", "ui")
 	Logger.info("Escape: Pause/resume toggle", "ui")
 	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")

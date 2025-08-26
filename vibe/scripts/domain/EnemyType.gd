@@ -20,6 +20,11 @@ class_name EnemyType
 @export var visual_config: Dictionary = {}
 @export var behavior_config: Dictionary = {}
 
+# NEW: Boss scene support for hybrid spawning system
+@export var boss_scene: PackedScene  # For special bosses - editor-created scenes
+@export var is_special_boss: bool = false  # Flag for scene-based spawning
+@export var boss_spawn_method: String = "pooled"  # "pooled" or "scene" (future extensibility)
+
 
 func get_color() -> Color:
 	var color_data: Dictionary = visual_config.get("color", {"r": 1.0, "g": 0.0, "b": 0.0, "a": 1.0})
@@ -69,8 +74,20 @@ func validate() -> Array[String]:
 	if render_tier.is_empty():
 		errors.append("Enemy render_tier must be specified")
 	
-	var valid_tiers: Array[String] = ["swarm", "regular", "elite", "boss"]
+	var valid_tiers: Array[String] = ["swarm", "regular", "elite", "boss", "special_boss"]
 	if not render_tier in valid_tiers:
 		errors.append("Enemy render_tier must be one of: " + str(valid_tiers))
+	
+	# Validate boss scene properties
+	if is_special_boss and not boss_scene:
+		errors.append("Special boss enemies must have a boss_scene assigned")
+	
+	var valid_spawn_methods: Array[String] = ["pooled", "scene"]
+	if not boss_spawn_method in valid_spawn_methods:
+		errors.append("Boss spawn_method must be one of: " + str(valid_spawn_methods))
+	
+	# Special boss validation
+	if is_special_boss and boss_spawn_method == "pooled":
+		errors.append("Special boss enemies must use 'scene' spawn method")
 	
 	return errors

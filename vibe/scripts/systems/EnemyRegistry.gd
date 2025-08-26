@@ -34,7 +34,7 @@ func load_all_enemy_types() -> void:
 	_wave_pool_dirty = true
 	
 	
-	var enemies_dir := "res://vibe/data/content/enemies/"
+	var enemies_dir := "res://data/content/enemies/"
 	Logger.info("Trying to open directory: " + enemies_dir, "enemies")
 	var dir := DirAccess.open(enemies_dir)
 	
@@ -93,7 +93,7 @@ func _load_enemy_type_from_file(file_path: String) -> bool:
 
 func _load_fallback_types() -> void:
 	Logger.error("Enemy loading failed completely - no fallback available", "enemies")
-	Logger.error("Ensure knight .tres files exist in res://vibe/data/content/enemies/", "enemies")
+	Logger.error("Ensure knight .tres files exist in res://data/content/enemies/", "enemies")
 
 func get_enemy_type(type_id: String) -> EnemyType:
 	return enemy_types.get(type_id, null)
@@ -124,6 +124,12 @@ func _rebuild_wave_pool() -> void:
 	
 	for enemy_type in enemy_types.values():
 		var type := enemy_type as EnemyType
+		
+		# Skip special bosses and enemies with zero weight from random spawning
+		if type.is_special_boss or type.spawn_weight <= 0.0:
+			Logger.debug("Excluded from wave pool: " + type.id + " (special_boss: " + str(type.is_special_boss) + ", weight: " + str(type.spawn_weight) + ")", "enemies")
+			continue
+		
 		var raw_weight := int(type.spawn_weight * 10.0)
 		var weight: int = min(raw_weight, MAX_WEIGHT_PER_TYPE)  # Cap weight per type
 		

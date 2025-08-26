@@ -97,7 +97,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	var effective_range = _get_effective_range()
 	var effective_cone = _get_effective_cone_angle()
 	
-	# Find enemies in cone
+	# Find pooled enemies in cone
 	var hit_enemies: Array[EnemyEntity] = []
 	for enemy in enemies:
 		if not enemy.alive:
@@ -106,15 +106,18 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
+	# HYBRID SYSTEM: Also check for scene-based bosses (Dragon Lord, etc.)
+	var hit_scene_bosses = _find_scene_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
+	
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
 	
 	# Emit signals
 	melee_attack_started.emit(player_pos, target_pos)
-	if hit_enemies.size() > 0:
+	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0:
 		enemies_hit.emit(hit_enemies)
 	
-	# Apply damage to hit enemies
+	# Apply damage to pooled enemies via DamageSystem
 	for enemy in hit_enemies:
 		var final_damage = _calculate_damage()
 		var source_id = EntityId.player()
@@ -129,8 +132,16 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		EventBus.damage_requested.emit(damage_payload)
 		Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
 	
+	# Apply damage directly to scene-based bosses
+	for boss in hit_scene_bosses:
+		var final_damage = _calculate_damage()
+		if boss.has_method("take_damage"):
+			boss.take_damage(final_damage, "melee")
+			Logger.info("Direct damage to scene boss: " + str(final_damage) + " damage", "combat")
+		else:
+			Logger.warn("Scene boss doesn't have take_damage method", "combat")
 	
-	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " enemies", "abilities")
+	Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " pooled enemies + " + str(hit_scene_bosses.size()) + " scene bosses", "abilities")
 	return hit_enemies
 
 func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> bool:
@@ -146,6 +157,42 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	var min_dot = cos(cone_radians / 2.0)
 	
 	return dot_product >= min_dot
+
+func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
+	var hit_bosses: Array[Node] = []
+	
+	# Find all scene-based bosses in the current scene
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		return hit_bosses
+	
+	# Look for CharacterBody2D nodes that might be scene bosses
+	var all_nodes = _get_all_characterbody2d_nodes(current_scene)
+	
+	for node in all_nodes:
+		# Skip if this is the player
+		if node.name == "Player":
+			continue
+			
+		# Check if it looks like a boss (has take_damage method and died signal)
+		if node.has_method("take_damage") and node.has_signal("died"):
+			var boss_pos = node.global_position
+			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
+				hit_bosses.append(node)
+				Logger.debug("Found scene boss in melee range: " + node.name, "combat")
+	
+	return hit_bosses
+
+func _get_all_characterbody2d_nodes(node: Node) -> Array[CharacterBody2D]:
+	var result: Array[CharacterBody2D] = []
+	
+	if node is CharacterBody2D:
+		result.append(node)
+	
+	for child in node.get_children():
+		result.append_array(_get_all_characterbody2d_nodes(child))
+	
+	return result
 
 func _calculate_damage() -> float:
 	var base_damage = damage

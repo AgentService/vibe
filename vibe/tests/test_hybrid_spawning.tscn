@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://blax4c6y3nwrp"]
+
+[ext_resource type="Script" path="res://tests/test_hybrid_spawning.gd" id="1_n4k7m"]
+
+[node name="TestHybridSpawning" type="Node"]
+script = ExtResource("1_n4k7m")
