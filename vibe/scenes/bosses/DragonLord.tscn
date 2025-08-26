@@ -52,3 +52,4 @@ shape = SubResource("RectangleShape2D_215q3")
 scale = Vector2(5, 5)
 sprite_frames = SubResource("SpriteFrames_udfki")
 frame = 1
+frame_progress = 0.632766

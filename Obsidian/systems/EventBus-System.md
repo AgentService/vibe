@@ -9,47 +9,44 @@
 
 **🆕 UPDATED**: All signals now use **typed payload objects** for compile-time safety and better IDE support.
 
-### Combat & Damage Signals
-```gdscript
-# Typed payload approach - provides compile-time guarantees
-signal damage_requested(payload)  # DamageRequestPayload
-signal damage_applied(payload)    # DamageAppliedPayload  
-signal combat_step(payload)       # CombatStepPayload
-signal enemy_killed(payload)      # EnemyKilledPayload
-signal entity_killed(payload)     # EntityKilledPayload
-```
+### Core Signal Groups
 
-### Player Progression Signals  
-```gdscript
-# XP and leveling with typed payloads
-signal xp_changed(payload)        # XpChangedPayload
-signal level_up(payload)          # LevelUpPayload
-```
+This section reflects the signals currently defined in `vibe/autoload/EventBus.gd`.
 
-### Arena & Environment Signals
-```gdscript
-# Spatial events with typed payloads
-signal arena_bounds_changed(payload)      # ArenaBoundsChangedPayload
-signal player_position_changed(payload)   # PlayerPositionChangedPayload
-signal damage_dealt(payload)              # DamageDealtPayload
-```
+**TIMING**
+- `signal combat_step(payload)`: Drives deterministic combat updates.
 
-### Enemy System Signals (UPDATED)
-```gdscript
-# WaveDirector → Arena communication (now uses typed objects)
-signal enemies_updated(alive_enemies: Array[EnemyEntity])  # ✅ UPDATED: Array[EnemyEntity] instead of Array[Dictionary]
+**DAMAGE**
+- `signal damage_requested(payload)`: Requests a damage calculation.
+- `signal damage_applied(payload)`: Confirms a single damage instance was applied.
+- `signal damage_batch_applied(payload)`: Confirms multiple damage instances for AoE attacks.
+- `signal damage_dealt(payload)`: Signals damage was dealt, used for effects like camera shake.
+- `signal damage_taken(damage: int)`: Signals the player has taken damage.
+- `signal player_died()`: Signals the player's health has reached zero.
 
-# Cross-system enemy references
-signal enemy_spawned(enemy: EnemyEntity)     # Individual spawn events  
-signal enemy_pool_exhausted()                # Pool management alerts
-```
+**MELEE**
+- `signal melee_attack_started(payload)`: A melee attack has been initiated.
+- `signal melee_enemies_hit(payload)`: A melee attack has hit one or more enemies.
 
-### Interaction & Loot Signals
-```gdscript
-# UI and gameplay interactions
-signal interaction_prompt_changed(payload)  # InteractionPromptChangedPayload
-signal loot_generated(payload)             # LootGeneratedPayload
-```
+**ENTITIES**
+- `signal entity_killed(payload)`: An entity has been killed, contains reward data.
+- `signal enemy_killed(payload)`: **[DEPRECATED]** Legacy signal, use `entity_killed`.
+
+**PROGRESSION**
+- `signal xp_changed(payload)`: The player's XP has changed.
+- `signal level_up(payload)`: The player has leveled up.
+
+**GAME STATE & CAMERA**
+- `signal game_paused_changed(payload)`: The game's pause state has changed.
+- `signal arena_bounds_changed(payload)`: Informs the camera of the new arena's boundaries.
+- `signal player_position_changed(payload)`: Provides cached player position for other systems.
+
+**INTERACTION & LOOT**
+- `signal interaction_prompt_changed(payload)`: **[DEPRECATED]** No longer used.
+- `signal loot_generated(payload)`: Signals loot was generated (e.g., from a chest).
+
+**DEBUG**
+- `signal cheat_toggled(payload)`: A debug cheat has been toggled.
 
 ### Typed Payload Classes
 **Location**: `/vibe/scripts/domain/signal_payloads/`
