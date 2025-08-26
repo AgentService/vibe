@@ -5,31 +5,32 @@ Review and validate the 8 isolated test scenes created for the GameOrchestrator 
 
 ## Test Scenes to Validate
 
-### Working Tests (verified)
-- [x] CoreLoop_Isolated.tscn - Basic player movement, camera, HUD, pause
-- [x] EnemySystem_Isolated.tscn - Enemy spawning with 300 enemies in grid
-- [x] CardSystem_Isolated.tscn - Card selection UI and application
+### ✅ Completed Tests (all working)
+- [x] **CoreLoop_Isolated.tscn** - Basic player movement, camera, HUD, pause
+- [x] **EnemySystem_Isolated.tscn** - Enemy spawning with 300 enemies in grid
+- [x] **CardSystem_Isolated.tscn** - Card selection UI and application
+  - Fixed card display showing "Unknown Card"
+  - Fixed modifier key mapping (melee_damage_add → melee_damage)
+  - Added support for multiplicative modifiers (*_mult)
+- [x] **CameraSystem_Isolated.tscn** - Camera following, zoom, bounds
+  - Fixed camera deadzone by separating camera from player parent
+  - Added preload statement for CameraSystem class
+- [x] **AbilitySystem_Isolated.tscn** - Projectile spawning and management
+  - Fixed keycode errors (removed invalid KEY_KP_PLUS constants)
+  - Added proper numpad support (KEY_KP_ADD, KEY_KP_SUBTRACT)
+  - Added preload statement for AbilitySystem class
+- [x] **WaveDirector_Isolated.tscn** - Wave spawning and management
+  - Fixed signal connection errors (added has_signal checks)
+- [x] **MeleeSystem_Isolated.tscn** - Melee attacks and enemy interactions
+  - Fixed system reference setup (updated method names)
+  - Fixed signal connection errors
+- [x] **DamageSystem_Isolated.tscn** - Damage calculation and application
+  - Fixed system reference setup (updated method names)
+  - Fixed signal connection errors
 
-### Tests Requiring Validation
-- [ ] **CameraSystem_Isolated.tscn** - Camera following, zoom, bounds
-  - Check if CameraSystem class exists and methods work
-  - Validate camera setup and following logic
-  
-- [ ] **AbilitySystem_Isolated.tscn** - Projectile spawning and management
-  - Verify AbilitySystem class and projectile pooling
-  - Test MultiMesh projectile rendering
-  
-- [ ] **WaveDirector_Isolated.tscn** - Wave spawning and management
-  - Check WaveDirector class implementation
-  - Validate enemy wave progression logic
-  
-- [ ] **MeleeSystem_Isolated.tscn** - Melee attacks and enemy interactions
-  - Verify MeleeSystem class exists
-  - Test melee attack mechanics and collision
-  
-- [ ] **DamageSystem_Isolated.tscn** - Damage calculation and application
-  - Check DamageSystem implementation
-  - Validate damage types and resistance calculations
+### 🔧 Issues Identified
+1. **Real Game Camera System** - Needs deadzone fix (separate task)
+2. **Mouse Firing in AbilitySystem** - May need core system implementation (separate task)
 
 ## Common Issues to Check
 

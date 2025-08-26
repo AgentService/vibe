@@ -26,6 +26,7 @@ RNG="*res://autoload/RNG.gd"
 BalanceDB="*res://autoload/BalanceDB.gd"
 PlayerState="*res://autoload/PlayerState.gd"
 CheatSystem="*res://autoload/CheatSystem.gd"
+GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 
 [display]
 

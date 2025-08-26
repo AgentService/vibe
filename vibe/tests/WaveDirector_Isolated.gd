@@ -33,7 +33,8 @@ func _setup_wave_system():
 		wave_director.enemy_spawned.connect(_on_enemy_spawned)
 	
 	# Connect to enemy registry updates
-	enemy_registry.enemies_updated.connect(_on_enemies_updated)
+	if enemy_registry.has_signal("enemies_updated"):
+		enemy_registry.enemies_updated.connect(_on_enemies_updated)
 
 func _setup_enemy_multimesh():
 	var multimesh = MultiMesh.new()

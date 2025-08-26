@@ -1,0 +1,44 @@
+[gd_scene load_steps=2 format=3 uid="uid://clfcmbccp8k7t"]
+
+[ext_resource type="Script" uid="uid://ci0n4c6nf4q7i" path="res://tests/CardSystem_Isolated.gd" id="1_cardsystem"]
+
+[node name="CardSystem_Isolated" type="Node2D"]
+script = ExtResource("1_cardsystem")
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InfoLabel" type="Label" parent="UILayer/HUD"]
+layout_mode = 0
+anchor_right = 0.5
+anchor_bottom = 1.0
+text = "Card System Test
+Space: Get card selection
+1-3: Select card
++/-: Change level
+ESC: Close card display"
+
+[node name="CardDisplay" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="CardContainer" type="VBoxContainer" parent="UILayer/CardDisplay"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2

@@ -6,6 +6,7 @@
 ## Project Overview
 - **Engine:** Godot 4.2+ (2D top-down).
 - **Focus:** PoE-style buildcraft (skills + supports, items/affixes, small skill tree), wave/survivor arena.
+- **MCP Integration:** GDAI MCP Plugin v0.2.4 installed. Provides AI tools for scene creation, script editing, debugging, and visual feedback.
 
 
 ## IMPORTANT – Working Rules
@@ -94,6 +95,11 @@ get_node("../../UI/HUD").update_health(hp)
    
    # WRONG: Using --script with autoload dependencies will fail
    # "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
+   ```
+4b) **Consider isolated system test** for new core systems; see `/Obsidian/systems/Isolated-Testing-System.md`.
+   ```bash
+   # Create SystemName_Isolated.tscn for visual system testing
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
    ```
 5) **Wire minimal UI**; keep it lean; use CanvasLayer for overlays.
 6) **Update Obsidian docs** if system architecture changed; note required updates in commit message.
