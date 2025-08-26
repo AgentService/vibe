@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="LogConfigResource" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="LogConfigResource" load_steps=2 format=3 uid="uid://uu27p48a8lg4"]
 
-[ext_resource type="Script" path="res://scripts/domain/LogConfigResource.gd" id="1_am23r"]
+[ext_resource type="Script" uid="uid://yv6ld61q6tom" path="res://scripts/domain/LogConfigResource.gd" id="1_am23r"]
 
 [resource]
 script = ExtResource("1_am23r")

@@ -1,7 +1,8 @@
 extends Node2D
 
-## Arena scene managing MultiMesh rendering and debug projectile spawning.
-## Renders projectile pool via single MultiMeshInstance2D.
+## Arena scene managing MultiMesh rendering and receiving injected game systems.
+## Renders projectile pool via MultiMeshInstance2D.
+## Systems are initialized and managed by GameOrchestrator autoload.
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
@@ -11,8 +12,6 @@ const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection
 const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
 const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-# Removed non-existent subsystem imports - systems simplified
-# TextureThemeSystem removed - no longer needed after arena simplification
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 
@@ -22,9 +21,7 @@ const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd"
 @onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
-# Removed unused MultiMesh references (walls, terrain, obstacles, interactables)
 @onready var melee_effects: Node2D = $MeleeEffects
-# Systems now injected by GameOrchestrator
 var ability_system: AbilitySystem
 var melee_system: MeleeSystem
 
@@ -55,14 +52,10 @@ var boss_run_textures: Array[ImageTexture] = []
 var boss_current_frame: int = 0
 var boss_frame_timer: float = 0.0
 var boss_frame_duration: float = 0.1
-# WaveDirector now injected by GameOrchestrator
 var wave_director: WaveDirector
-# Systems now injected by GameOrchestrator  
 var damage_system: DamageSystem
 var arena_system: ArenaSystem
-# texture_theme_system removed - no longer needed after arena simplification
 var camera_system: CameraSystem
-# enemy_behavior_system removed - AI logic moved to WaveDirector
 var enemy_render_tier: EnemyRenderTier
 
 var player: Player
@@ -85,11 +78,6 @@ func _ready() -> void:
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	# All system process modes now set in injection methods
-	
-	# All systems now injected by GameOrchestrator - no manual add_child needed
-	
-	# System references will be set after GameOrchestrator injection
 	
 	# Create enemy render tier system
 	if EnemyRenderTier == null:
@@ -118,13 +106,11 @@ func _ready() -> void:
 	
 	_setup_card_system()
 	
-	# System references now set by GameOrchestrator during initialization
 	
 	# Set player reference in PlayerState for cached position access
 	PlayerState.set_player_reference(player)
 	
-	# Connect signals AFTER systems are added and ready
-	# Note: all system signals connected in injection methods
+	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
 	
 	# Setup MultiMesh instances
@@ -267,7 +253,6 @@ func _setup_enemy_transforms() -> void:
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Enemy transform cache initialized with " + str(cache_size) + " transforms", "performance")
 
-# Removed unused MultiMesh setup functions (walls, terrain, obstacles, interactables)
 
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
@@ -360,7 +345,11 @@ func _setup_card_system() -> void:
 	else:
 		Logger.warn("Card system not yet injected during setup", "cards")
 
-# Dependency injection methods - called by GameOrchestrator
+# ============================================================================
+# DEPENDENCY INJECTION METHODS
+# Called by GameOrchestrator to inject initialized systems with proper 
+# process modes and signal connections
+# ============================================================================
 func set_card_system(injected_card_system: CardSystem) -> void:
 	card_system = injected_card_system
 	Logger.info("CardSystem injected into Arena", "cards")
@@ -375,7 +364,6 @@ func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 	ability_system = injected_ability_system
 	Logger.info("AbilitySystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
 
@@ -383,7 +371,6 @@ func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_system = injected_arena_system
 	Logger.info("ArenaSystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	arena_system.arena_loaded.connect(_on_arena_loaded)
 
@@ -391,7 +378,6 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	camera_system = injected_camera_system
 	Logger.info("CameraSystem injected into Arena", "systems")
 	
-	# Set process mode and setup camera
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if player:
 		camera_system.setup_camera(player)
@@ -400,7 +386,6 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director = injected_wave_director
 	Logger.info("WaveDirector injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
 
@@ -408,7 +393,6 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	melee_system = injected_melee_system
 	Logger.info("MeleeSystem injected into Arena", "systems")
 	
-	# Set process mode and connect signals
 	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	melee_system.melee_attack_started.connect(_on_melee_attack_started)
 
@@ -416,7 +400,6 @@ func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	damage_system = injected_damage_system
 	Logger.info("DamageSystem injected into Arena", "systems")
 	
-	# Set process mode
 	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 func _on_level_up(payload) -> void:
@@ -447,7 +430,6 @@ func _on_card_selected(card: CardResource) -> void:
 	Logger.info("Player selected card: " + card.name, "cards")
 	card_system.apply_card(card)
 
-# Theme functions removed - no longer needed after arena simplification
 
 func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
@@ -584,7 +566,6 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 			var tier_color := _get_tier_debug_color(tier)
 			mm_instance.multimesh.set_instance_color(i, tier_color)
 
-# Removed unused MultiMesh update functions (walls, terrain, obstacles, interactables)
 
 func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")
