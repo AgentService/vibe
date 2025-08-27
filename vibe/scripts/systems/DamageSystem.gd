@@ -62,18 +62,28 @@ func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, _proj_idx: in
 		Logger.warn("Failed to find pool indices - proj: " + str(actual_proj_idx) + " enemy: " + str(actual_enemy_idx), "combat")
 		return
 	
-	# Request damage calculation
-	var source_id := EntityId.projectile(actual_proj_idx)
-	var target_id := EntityId.enemy(actual_enemy_idx)
+	# DAMAGE V2: Apply damage directly via DamageService
 	var base_damage: float = BalanceDB.get_combat_value("base_damage")
-	var tags := PackedStringArray(["projectile", "basic_attack"])
+	var entity_id = "enemy_" + str(actual_enemy_idx)
+	
+	# AUTO-REGISTER: Register enemy if not already registered
+	if not DamageService.is_entity_alive(entity_id) and not DamageService.get_entity(entity_id).has("id"):
+		var entity_data = {
+			"id": entity_id,
+			"type": "enemy",
+			"hp": enemy.hp,
+			"max_hp": enemy.hp,
+			"alive": true,
+			"pos": enemy.pos
+		}
+		DamageService.register_entity(entity_id, entity_data)
+		Logger.debug("Auto-registered enemy for projectile: " + entity_id, "combat")
 	
 	# Kill projectile immediately
 	ability_system.projectiles[actual_proj_idx]["alive"] = false
 	
-	# Emit damage request
-	var damage_payload := EventBus.DamageRequestPayload_Type.new(source_id, target_id, base_damage, tags)
-	EventBus.damage_requested.emit(damage_payload)
+	# Apply damage via DamageService
+	DamageService.apply_damage(entity_id, base_damage, "projectile", ["projectile", "basic_attack"])
 
 func _find_projectile_pool_index(target_projectile: Dictionary) -> int:
 	for i in range(ability_system.projectiles.size()):

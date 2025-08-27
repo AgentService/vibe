@@ -129,6 +129,20 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			continue
 		
 		var entity_id = "enemy_" + str(enemy_pool_index)
+		
+		# AUTO-REGISTER: Register enemy if not already registered
+		if not DamageService.is_entity_alive(entity_id) and not DamageService.get_entity(entity_id).has("id"):
+			var entity_data = {
+				"id": entity_id,
+				"type": "enemy",
+				"hp": enemy.hp,
+				"max_hp": enemy.hp,
+				"alive": true,
+				"pos": enemy.pos
+			}
+			DamageService.register_entity(entity_id, entity_data)
+			Logger.debug("Auto-registered enemy: " + entity_id, "combat")
+		
 		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"])
 		if killed:
 			total_hit_count += 1
@@ -140,6 +154,20 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	for boss in hit_scene_bosses:
 		# Scene bosses need to be identified by their scene path or unique identifier
 		var boss_id = "boss_" + str(boss.get_instance_id())
+		
+		# AUTO-REGISTER: Register boss if not already registered
+		if not DamageService.is_entity_alive(boss_id) and not DamageService.get_entity(boss_id).has("id"):
+			var entity_data = {
+				"id": boss_id,
+				"type": "boss",
+				"hp": boss.get_current_health() if boss.has_method("get_current_health") else 200.0,
+				"max_hp": boss.get_max_health() if boss.has_method("get_max_health") else 200.0,
+				"alive": boss.is_alive() if boss.has_method("is_alive") else true,
+				"pos": boss.global_position
+			}
+			DamageService.register_entity(boss_id, entity_data)
+			Logger.debug("Auto-registered boss: " + boss_id, "combat")
+		
 		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"])
 		if killed:
 			total_hit_count += 1
