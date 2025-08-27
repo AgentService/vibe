@@ -37,8 +37,10 @@
   - **Enemy integration**: Direct WaveDirector enemy.hp updates and alive state management
   - **Legacy system disabled**: All old damage code commented out and signal conflicts resolved
   - **Unified damage calculation**: Single crit system (10% base) and modifier pipeline
-  - **Debug tools**: debug_register_all_existing_entities() for runtime entity registration (T key)
-  - **Test coverage**: Isolated tests + full integration validation ready
+  - **Auto-registration**: Seamless entity registration on first damage attempt (no T key needed)
+  - **Universal damage**: Both melee and projectile systems now work consistently across all entity types
+  - **Debug tools**: debug_register_all_existing_entities() for runtime diagnostics (T key)
+  - **Production ready**: Full integration testing validated, all damage flows operational
 - **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
   - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
   - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)

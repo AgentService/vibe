@@ -77,7 +77,6 @@ func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, _proj_idx: in
 			"pos": enemy.pos
 		}
 		DamageService.register_entity(entity_id, entity_data)
-		Logger.debug("Auto-registered enemy for projectile: " + entity_id, "combat")
 	
 	# Kill projectile immediately
 	ability_system.projectiles[actual_proj_idx]["alive"] = false

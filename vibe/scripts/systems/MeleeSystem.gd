@@ -141,7 +141,6 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 				"pos": enemy.pos
 			}
 			DamageService.register_entity(entity_id, entity_data)
-			Logger.debug("Auto-registered enemy: " + entity_id, "combat")
 		
 		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"])
 		if killed:
@@ -166,7 +165,6 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 				"pos": boss.global_position
 			}
 			DamageService.register_entity(boss_id, entity_data)
-			Logger.debug("Auto-registered boss: " + boss_id, "combat")
 		
 		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"])
 		if killed:

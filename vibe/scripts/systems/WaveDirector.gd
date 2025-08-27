@@ -209,19 +209,10 @@ func _spawn_enemy_v2() -> void:
 	_spawn_from_config_v2(legacy_enemy_type, cfg)
 
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
-	print("WAVE DEBUG: _spawn_from_config_v2 CALLED!")
-	print("WAVE DEBUG: spawn_config is: ", spawn_config)
-	if spawn_config:
-		print("WAVE DEBUG: render_tier is: ", spawn_config.render_tier)
-	
 	# Boss detection - route to scene spawning for boss-tier enemies
 	if spawn_config.render_tier == "boss":
-		print("WAVE DEBUG: Boss detected! Calling _spawn_boss_scene")
 		_spawn_boss_scene(spawn_config)
-		print("WAVE DEBUG: _spawn_boss_scene completed")
 		return
-	else:
-		print("WAVE DEBUG: Regular enemy - using pooled spawning")
 	
 	# Use existing pooled spawn logic for regular enemies
 	var free_idx := _find_free_enemy()
@@ -240,46 +231,30 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 
 # Boss scene spawning for V2 system
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	print("BOSS DEBUG: _spawn_boss_scene CALLED!")
-	
 	# Load boss scene based on template
 	var scene_path: String = "res://scenes/bosses/AncientLich.tscn"  # TODO: Get from template
-	print("BOSS DEBUG: Loading scene from: ", scene_path)
 	
 	var boss_scene: PackedScene = load(scene_path)
 	if not boss_scene:
-		print("BOSS DEBUG: Failed to load boss scene!")
+		Logger.warn("Failed to load boss scene: " + scene_path, "waves")
 		return
-	print("BOSS DEBUG: Boss scene loaded successfully")
 	
 	# Instantiate boss scene
-	print("BOSS DEBUG: Instantiating boss scene...")
 	var boss_instance = boss_scene.instantiate()
 	if not boss_instance:
-		print("BOSS DEBUG: Failed to instantiate boss scene!")
+		Logger.warn("Failed to instantiate boss scene", "waves")
 		return
-	print("BOSS DEBUG: Boss instantiated: ", boss_instance.name, " class: ", boss_instance.get_class())
 	
 	# Setup boss with spawn config
-	print("BOSS DEBUG: Setting up boss config...")
 	if boss_instance.has_method("setup_from_spawn_config"):
 		boss_instance.spawn_config = spawn_config
 		boss_instance.setup_from_spawn_config(spawn_config)
-		print("BOSS DEBUG: Boss configured with spawn config")
-	else:
-		print("BOSS DEBUG: Boss doesn't have setup_from_spawn_config method")
 	
 	# Add to scene tree
 	var parent = get_parent()
-	print("BOSS DEBUG: Adding boss to parent: ", parent.name)
 	parent.add_child(boss_instance)
-	print("BOSS DEBUG: Boss added to scene tree at path: ", boss_instance.get_path())
 	
-	# Verify it has the expected methods
-	print("BOSS DEBUG: Boss has take_damage method: ", boss_instance.has_method("take_damage"))
-	print("BOSS DEBUG: Boss has died signal: ", boss_instance.has_signal("died"))
-	
-	print("BOSS DEBUG: Boss spawning complete!")
+	Logger.info("V2 Boss spawned: " + boss_instance.name + " at " + str(spawn_config.position), "waves")
 
 # HYBRID SPAWNING SYSTEM: Core routing logic
 func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:

@@ -7,6 +7,8 @@ extends Node
 class_name DamageRegistryV2
 
 var _entities: Dictionary = {}  # String ID -> Dictionary data
+var _cleanup_timer: float = 0.0
+const CLEANUP_INTERVAL: float = 10.0  # Cleanup every 10 seconds
 
 signal damage_applied(entity_id: String, damage: float, killed: bool)
 signal entity_registered(entity_id: String, entity_type: String)
@@ -14,6 +16,13 @@ signal entity_unregistered(entity_id: String)
 
 func _ready() -> void:
 	Logger.info("DamageRegistry V2 initialized", "combat")
+
+func _process(delta: float) -> void:
+	# Periodic cleanup of dead entities
+	_cleanup_timer += delta
+	if _cleanup_timer >= CLEANUP_INTERVAL:
+		cleanup_dead_entities()
+		_cleanup_timer = 0.0
 
 ## Register an entity with the damage system
 ## @param id: Unique string identifier (e.g., "enemy_0", "boss_ancient_lich", "player")
@@ -133,6 +142,12 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 			Logger.info("Player defeated!", "combat")
 		_:
 			Logger.debug("Unknown entity type died: " + entity_type, "combat")
+	
+	# Clean up: Unregister dead entity to prevent memory leaks
+	# Wait a frame to allow any final processing, then cleanup
+	await get_tree().process_frame
+	if _entities.has(entity_id):
+		unregister_entity(entity_id)
 
 ## Sync damage from DamageRegistry back to actual game entities
 func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
@@ -228,3 +243,20 @@ func debug_register_all_existing_entities() -> void:
 					Logger.info("DEBUG: Registered existing enemy: " + entity_id, "combat")
 	
 	Logger.info("DEBUG: Registered " + str(registered_count) + " existing entities", "combat")
+
+## Cleanup dead entities to prevent memory leaks
+func cleanup_dead_entities() -> void:
+	var cleanup_count = 0
+	var entities_to_remove: Array[String] = []
+	
+	for entity_id in _entities.keys():
+		var entity: Dictionary = _entities[entity_id]
+		if not entity.get("alive", false):
+			entities_to_remove.append(entity_id)
+	
+	for entity_id in entities_to_remove:
+		unregister_entity(entity_id)
+		cleanup_count += 1
+	
+	if cleanup_count > 0:
+		Logger.debug("Cleaned up " + str(cleanup_count) + " dead entities", "combat")
