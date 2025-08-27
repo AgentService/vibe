@@ -715,6 +715,9 @@ func _spawn_v2_boss_test() -> void:
 func _test_boss_damage() -> void:
 	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
 	
+	# DAMAGE V2: Register existing entities first
+	DamageService.debug_register_all_existing_entities()
+	
 	# Search for boss nodes recursively - start from root to find GameOrchestrator bosses
 	var found_bosses = []
 	_find_bosses_recursive(get_tree().root, found_bosses)

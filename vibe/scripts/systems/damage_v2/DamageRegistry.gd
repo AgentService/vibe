@@ -56,6 +56,9 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 	
 	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
 	
+	# CRITICAL: Sync damage back to actual game entities
+	_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
+	
 	# Handle death
 	var was_killed: bool = false
 	if new_hp <= 0.0 and entity.get("alive", true):
@@ -130,3 +133,98 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 			Logger.info("Player defeated!", "combat")
 		_:
 			Logger.debug("Unknown entity type died: " + entity_type, "combat")
+
+## Sync damage from DamageRegistry back to actual game entities
+func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
+	var entity_type: String = entity_data.get("type", "unknown")
+	
+	match entity_type:
+		"enemy":
+			# Sync to pooled enemy in WaveDirector
+			var enemy_index_str = entity_id.replace("enemy_", "")
+			var enemy_index = enemy_index_str.to_int()
+			
+			# Get WaveDirector instance
+			var wave_director = get_tree().get_first_node_in_group("wave_directors")
+			if not wave_director:
+				Logger.warn("WaveDirector not found for enemy sync: " + entity_id, "combat")
+				return
+			
+			# Update enemy HP directly
+			if enemy_index >= 0 and enemy_index < wave_director.enemies.size():
+				var enemy = wave_director.enemies[enemy_index]
+				enemy.hp = new_hp
+				if new_hp <= 0.0:
+					enemy.alive = false
+					wave_director._cache_dirty = true  # Mark cache as dirty
+		
+		"boss":
+			# Sync to scene-based boss
+			var instance_id_str = entity_id.replace("boss_", "")
+			var instance_id = instance_id_str.to_int()
+			
+			# Find boss node by instance ID
+			var boss_node = instance_from_id(instance_id)
+			if boss_node and boss_node.has_method("get_current_health"):
+				# Update boss HP directly
+				if boss_node.has_method("set_current_health"):
+					boss_node.set_current_health(new_hp)
+				else:
+					# Direct property access
+					boss_node.current_health = new_hp
+				
+				# Trigger death if needed
+				if new_hp <= 0.0 and boss_node.has_method("_die"):
+					boss_node._die()
+			else:
+				Logger.warn("Boss node not found for sync: " + entity_id, "combat")
+		
+		"player":
+			# TODO: Sync to player health when player damage is implemented
+			Logger.debug("Player damage sync not implemented yet", "combat")
+
+## DEBUG: Register all existing entities that haven't been registered yet
+func debug_register_all_existing_entities() -> void:
+	Logger.info("DEBUG: Scanning for unregistered entities...", "combat")
+	var registered_count = 0
+	
+	# Register existing bosses
+	var scene_root = get_tree().current_scene
+	if scene_root:
+		for node in scene_root.get_children():
+			if node.has_method("get_current_health") and node.has_method("get_max_health"):
+				var entity_id = "boss_" + str(node.get_instance_id())
+				if not _entities.has(entity_id):
+					var entity_data = {
+						"id": entity_id,
+						"type": "boss",
+						"hp": node.get_current_health(),
+						"max_hp": node.get_max_health(),
+						"alive": node.is_alive() if node.has_method("is_alive") else true,
+						"pos": node.global_position
+					}
+					register_entity(entity_id, entity_data)
+					registered_count += 1
+					Logger.info("DEBUG: Registered existing boss: " + entity_id, "combat")
+	
+	# Register existing enemies from WaveDirector
+	var wave_director = get_tree().get_first_node_in_group("wave_directors")
+	if wave_director:
+		for i in range(wave_director.enemies.size()):
+			var enemy = wave_director.enemies[i]
+			if enemy.alive:
+				var entity_id = "enemy_" + str(i)
+				if not _entities.has(entity_id):
+					var entity_data = {
+						"id": entity_id,
+						"type": "enemy",
+						"hp": enemy.hp,
+						"max_hp": enemy.hp,  # Assuming current HP is max for existing enemies
+						"alive": true,
+						"pos": enemy.pos
+					}
+					register_entity(entity_id, entity_data)
+					registered_count += 1
+					Logger.info("DEBUG: Registered existing enemy: " + entity_id, "combat")
+	
+	Logger.info("DEBUG: Registered " + str(registered_count) + " existing entities", "combat")

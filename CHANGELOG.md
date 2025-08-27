@@ -28,6 +28,15 @@
   - **AI Logic**: All enemy AI is now handled directly by WaveDirector
   - **No Breaking Changes**: System was already unused - no functional impact
 - **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
+- **Unified Damage System V2 MVP**: Clean slate implementation of unified damage pipeline (Phases 1-5B completed)
+  - **DamageRegistry.gd**: New Dictionary-based entity storage system replacing dual damage paths
+  - **DamageService autoload**: Single damage pipeline for all entity types (pooled enemies, scene bosses, player)
+  - **Entity registration hooks**: Automatic registration in WaveDirector spawn methods and boss scene _ready()
+  - **Legacy system disabled**: Commented out old damage code in MeleeSystem, DamageSystem, WaveDirector, boss scenes
+  - **Unified damage calculation**: Single crit system (10% base) and modifier pipeline for all entities
+  - **Proper cleanup**: Entity unregistration on death/destruction for memory management
+  - **Test coverage**: Validated basic DamageRegistry functionality with isolated tests
+  - **Next phase**: Entity synchronization and damage flow validation pending
 - **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
   - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
   - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)

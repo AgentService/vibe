@@ -40,6 +40,7 @@ var _last_free_index: int = 0
 signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
 func _ready() -> void:
+	add_to_group("wave_directors")  # For DamageRegistry sync access
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
 	# Only setup enemy registry if not already injected

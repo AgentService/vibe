@@ -139,5 +139,8 @@ func get_max_health() -> float:
 func get_current_health() -> float:
 	return current_health
 
+func set_current_health(new_health: float) -> void:
+	current_health = new_health
+
 func is_alive() -> bool:
 	return current_health > 0.0

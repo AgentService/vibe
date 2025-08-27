@@ -86,9 +86,10 @@ func _perform_attack() -> void:
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# Use EventBus to damage player
+		# DAMAGE V2: Use DamageService for player damage (when implemented)
+		# For now, use old EventBus.damage_taken signal for player damage
 		if EventBus:
-			EventBus.damage_requested.emit("dragon_lord", "player", attack_damage, ["fire", "boss"])
+			EventBus.damage_taken.emit(attack_damage)
 
 # OLD DAMAGE METHOD - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
 func take_damage(damage: float, _source: String = "") -> void:
@@ -112,6 +113,9 @@ func get_max_health() -> float:
 
 func get_current_health() -> float:
 	return current_health
+
+func set_current_health(new_health: float) -> void:
+	current_health = new_health
 
 func is_alive() -> bool:
 	return current_health > 0.0
