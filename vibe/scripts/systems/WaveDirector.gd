@@ -296,7 +296,19 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	if boss_node.has_signal("died"):
 		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
 	
-	Logger.info("Spawned special boss: " + enemy_type.id + " at " + str(position), "waves")
+	# DAMAGE V2: Register boss with DamageService
+	var entity_id = "boss_" + str(boss_node.get_instance_id())
+	var entity_data = {
+		"id": entity_id,
+		"type": "boss",
+		"hp": boss_node.get_max_health() if boss_node.has_method("get_max_health") else 200.0,
+		"max_hp": boss_node.get_max_health() if boss_node.has_method("get_max_health") else 200.0,
+		"alive": true,
+		"pos": position
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	
+	Logger.info("Spawned special boss: " + enemy_type.id + " at " + str(position) + " registered as " + entity_id, "waves")
 
 func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED
@@ -312,8 +324,20 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
+	# DAMAGE V2: Register enemy with DamageService
+	var entity_id = "enemy_" + str(free_idx)
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": enemy.hp,
+		"max_hp": enemy.hp,
+		"alive": true,
+		"pos": position
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ")", "enemies")
+		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
 func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	# Handle special boss death - emit via EventBus for XP/loot systems
@@ -397,25 +421,29 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 
 # Player reference no longer needed - using PlayerState autoload for position
 
+# OLD DAMAGE HANDLING - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
 func damage_enemy(enemy_index: int, damage: float) -> void:
-	if enemy_index < 0 or enemy_index >= max_enemies:
-		return
+	# if enemy_index < 0 or enemy_index >= max_enemies:
+	#	return
 	
-	var enemy := enemies[enemy_index]
-	if not enemy.alive:
-		return
+	# var enemy := enemies[enemy_index]
+	# if not enemy.alive:
+	#	return
 	
-	var old_hp = enemy.hp
-	enemy.hp -= damage
-	Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.type_id, old_hp, enemy.hp, damage], "combat")
+	# var old_hp = enemy.hp
+	# enemy.hp -= damage
+	# Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.type_id, old_hp, enemy.hp, damage], "combat")
 	
-	if enemy.hp <= 0.0:
-		var death_pos: Vector2 = enemy.pos
-		enemy.alive = false
-		_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
-		Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
-		var payload := EventBus.EnemyKilledPayload_Type.new(death_pos, 1)
-		EventBus.enemy_killed.emit(payload)
+	# if enemy.hp <= 0.0:
+	#	var death_pos: Vector2 = enemy.pos
+	#	enemy.alive = false
+	#	_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
+	#	Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
+	#	var payload := EventBus.EnemyKilledPayload_Type.new(death_pos, 1)
+	#	EventBus.enemy_killed.emit(payload)
+	
+	# TEMPORARY: Do nothing until DamageRegistry handles damage
+	pass
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	if enemy_index < 0 or enemy_index >= max_enemies:

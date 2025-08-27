@@ -35,11 +35,28 @@ func _ready() -> void:
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
+	
+	# DAMAGE V2: Register with DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	var entity_data = {
+		"id": entity_id,
+		"type": "boss",
+		"hp": current_health,
+		"max_hp": max_health,
+		"alive": true,
+		"pos": global_position
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	Logger.debug("AncientLich registered with DamageService as " + entity_id, "enemies")
 
 func _exit_tree() -> void:
 	# Clean up signal connections
 	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
 		EventBus.combat_step.disconnect(_on_combat_step)
+	
+	# DAMAGE V2: Unregister from DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	DamageService.unregister_entity(entity_id)
 
 func setup_from_spawn_config(config: SpawnConfig) -> void:
 	spawn_config = config
@@ -99,12 +116,16 @@ func _perform_attack() -> void:
 			var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, attack_damage, damage_tags)
 			EventBus.damage_requested.emit(damage_payload)
 
+# OLD DAMAGE METHOD - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
 func take_damage(amount: float, _source: String = "") -> void:
-	current_health -= amount
-	Logger.info("AncientLich takes %.1f damage (%.1f/%.1f HP)" % [amount, current_health, max_health], "enemies")
+	# current_health -= amount
+	# Logger.info("AncientLich takes %.1f damage (%.1f/%.1f HP)" % [amount, current_health, max_health], "enemies")
 	
-	if current_health <= 0:
-		_die()
+	# if current_health <= 0:
+	#	_die()
+	
+	# TEMPORARY: Do nothing until DamageRegistry handles boss damage
+	pass
 
 func _die() -> void:
 	Logger.info("AncientLich has been defeated!", "enemies")

@@ -118,28 +118,32 @@ func _check_enemy_player_collisions() -> void:
 			EventBus.damage_taken.emit(1)
 			break  # Only one damage per frame
 
+# OLD DAMAGE HANDLING - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
 func _on_damage_requested(payload) -> void:
-	if payload.target_id.type != EntityId.Type.ENEMY:
-		return
+	# if payload.target_id.type != EntityId.Type.ENEMY:
+	#	return
 	
 	# Get enemy info before damage for better logging
-	var enemy_info = "unknown"
-	var pre_damage_hp = 0.0
-	if wave_director and payload.target_id.index < wave_director.enemies.size():
-		var enemy = wave_director.enemies[payload.target_id.index]
-		if not enemy.alive:
-			Logger.warn("Damage requested on already dead enemy[%d] %s" % [payload.target_id.index, enemy.type_id], "combat")
-			return
-		enemy_info = enemy.type_id
-		pre_damage_hp = enemy.hp
+	# var enemy_info = "unknown"
+	# var pre_damage_hp = 0.0
+	# if wave_director and payload.target_id.index < wave_director.enemies.size():
+	#	var enemy = wave_director.enemies[payload.target_id.index]
+	#	if not enemy.alive:
+	#		Logger.warn("Damage requested on already dead enemy[%d] %s" % [payload.target_id.index, enemy.type_id], "combat")
+	#		return
+	#	enemy_info = enemy.type_id
+	#	pre_damage_hp = enemy.hp
 	
 	# Calculate final damage (add crit, modifiers, etc. here)
-	var is_crit: bool = RNG.randf("crit") < 0.1  # 10% crit chance
-	var final_damage: float = payload.base_damage * (2.0 if is_crit else 1.0)
+	# var is_crit: bool = RNG.randf("crit") < 0.1  # 10% crit chance
+	# var final_damage: float = payload.base_damage * (2.0 if is_crit else 1.0)
 	
 	# Apply damage to enemy (this will handle death logic)
-	wave_director.damage_enemy(payload.target_id.index, final_damage)
+	# wave_director.damage_enemy(payload.target_id.index, final_damage)
 	
 	# Emit damage applied signal
-	var applied_payload := EventBus.DamageAppliedPayload_Type.new(payload.target_id, final_damage, is_crit, payload.tags)
-	EventBus.damage_applied.emit(applied_payload)
+	# var applied_payload := EventBus.DamageAppliedPayload_Type.new(payload.target_id, final_damage, is_crit, payload.tags)
+	# EventBus.damage_applied.emit(applied_payload)
+	
+	# TEMPORARY: Do nothing until DamageRegistry is ready
+	pass

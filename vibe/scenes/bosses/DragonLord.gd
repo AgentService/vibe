@@ -30,11 +30,28 @@ func _ready() -> void:
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
+	
+	# DAMAGE V2: Register with DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	var entity_data = {
+		"id": entity_id,
+		"type": "boss",
+		"hp": current_health,
+		"max_hp": max_health,
+		"alive": true,
+		"pos": global_position
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	Logger.debug("DragonLord registered with DamageService as " + entity_id, "bosses")
 
 func _exit_tree() -> void:
 	# Clean up signal connections
 	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
 		EventBus.combat_step.disconnect(_on_combat_step)
+	
+	# DAMAGE V2: Unregister from DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	DamageService.unregister_entity(entity_id)
 
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
@@ -73,12 +90,16 @@ func _perform_attack() -> void:
 		if EventBus:
 			EventBus.damage_requested.emit("dragon_lord", "player", attack_damage, ["fire", "boss"])
 
+# OLD DAMAGE METHOD - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
 func take_damage(damage: float, _source: String = "") -> void:
-	current_health -= damage
-	Logger.info("DragonLord takes " + str(damage) + " damage (" + str(current_health) + "/" + str(max_health) + " HP)", "bosses")
+	# current_health -= damage
+	# Logger.info("DragonLord takes " + str(damage) + " damage (" + str(current_health) + "/" + str(max_health) + " HP)", "bosses")
 	
-	if current_health <= 0.0:
-		_die()
+	# if current_health <= 0.0:
+	#	_die()
+	
+	# TEMPORARY: Do nothing until DamageRegistry handles boss damage
+	pass
 
 func _die() -> void:
 	Logger.info("DragonLord has been defeated!", "bosses")
