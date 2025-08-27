@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://y1rof4f8opsm"]
+
+[ext_resource type="Script" path="res://test_boss_spawn_direct.gd" id="1_tfgsr"]
+
+[node name="TestBossSpawn" type="Node"]
+script = ExtResource("1_tfgsr")

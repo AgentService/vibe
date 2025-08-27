@@ -1,7 +1,7 @@
-[gd_resource type="Resource" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="AnimationConfig" load_steps=3 format=3 uid="uid://q3nibwt7wyib"]
 
 [ext_resource type="Script" path="res://scripts/domain/AnimationConfig.gd" id="1_0"]
-[ext_resource type="Texture2D" path="res://assets/sprites/knight.png" id="2_0"]
+[ext_resource type="Texture2D" uid="uid://bcjnjx1n6ghhp" path="res://assets/sprites/knight.png" id="2_0"]
 
 [resource]
 script = ExtResource("1_0")
