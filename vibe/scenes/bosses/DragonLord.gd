@@ -22,19 +22,36 @@ func _ready() -> void:
 	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
 	
 	# Start the animation
-	var animated_sprite = $AnimatedSprite2D
-	if animated_sprite:
+	var animated_sprite = $CollisionShape/AnimatedSprite2D
+	if animated_sprite and animated_sprite.sprite_frames:
 		animated_sprite.play("default")  # Start playing the default animation
 		Logger.debug("Dragon Lord animation started", "bosses")
 	
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
+	
+	# DAMAGE V2: Register with DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	var entity_data = {
+		"id": entity_id,
+		"type": "boss",
+		"hp": current_health,
+		"max_hp": max_health,
+		"alive": true,
+		"pos": global_position
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	Logger.debug("DragonLord registered with DamageService as " + entity_id, "bosses")
 
 func _exit_tree() -> void:
 	# Clean up signal connections
 	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
 		EventBus.combat_step.disconnect(_on_combat_step)
+	
+	# DAMAGE V2: Unregister from DamageService
+	var entity_id = "boss_" + str(get_instance_id())
+	DamageService.unregister_entity(entity_id)
 
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
@@ -69,16 +86,13 @@ func _perform_attack() -> void:
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# Use EventBus to damage player
+		# DAMAGE V2: Use DamageService for player damage (when implemented)
+		# For now, use old EventBus.damage_taken signal for player damage
 		if EventBus:
-			EventBus.damage_requested.emit("dragon_lord", "player", attack_damage, ["fire", "boss"])
+			EventBus.damage_taken.emit(attack_damage)
 
-func take_damage(damage: float, _source: String = "") -> void:
-	current_health -= damage
-	Logger.info("DragonLord takes " + str(damage) + " damage (" + str(current_health) + "/" + str(max_health) + " HP)", "bosses")
-	
-	if current_health <= 0.0:
-		_die()
+# DAMAGE V2: take_damage() method removed - damage handled via DamageService
+# Bosses register with DamageService in _ready() and receive damage via unified pipeline
 
 func _die() -> void:
 	Logger.info("DragonLord has been defeated!", "bosses")
@@ -91,6 +105,9 @@ func get_max_health() -> float:
 
 func get_current_health() -> float:
 	return current_health
+
+func set_current_health(new_health: float) -> void:
+	current_health = new_health
 
 func is_alive() -> bool:
 	return current_health > 0.0

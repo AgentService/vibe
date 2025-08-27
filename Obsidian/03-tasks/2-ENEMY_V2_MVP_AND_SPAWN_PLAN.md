@@ -1,6 +1,6 @@
 # Enemy V2 — MVP and Spawn Plan (Comprehensive Implementation Task)
 
-Status: MVP Core Complete (95%) - Boss Scene Integration Required
+Status: MVP Core Complete - Boss System Integration Phase
 Owner: Solo (Indie)
 Priority: High
 Dependencies: CLAUDE.md, ARCHITECTURE.md, BalanceDB, RNG, EventBus, existing pooling/MultiMesh
@@ -10,56 +10,36 @@ Risk: Low (additive behind toggle), reversible
 
 ## Current Progress Status (As of Implementation)
 
-### ✅ **Completed (MVP Core - 95%)**
-**V2 System Architecture (COMPLETE):**
-- **EnemyTemplate.gd** (`vibe/scripts/domain/`): Complete resource schema with inheritance via parent_path, validation, and resolve_inheritance() method
-- **EnemyFactory.gd** (`vibe/scripts/systems/enemy_v2/`): Full template loading, deterministic variation generation, weighted selection pool
-- **SpawnConfig.gd** (`vibe/scripts/domain/`): Bridge between V2 templates and legacy pooling via to_enemy_type() conversion
+### ✅ **Completed (MVP Core)**
+- **EnemyTemplate.gd**: Complete resource schema with inheritance support via parent_path
+- **EnemyFactory.gd**: Full template loading, deterministic variation generation, spawn config output
+- **SpawnConfig.gd**: Bridge between V2 templates and legacy pooling system  
+- **Template System**: 3 base templates + 5 variations (goblin, orc_warrior, archer, elite_knight, ancient_lich)
+- **V2 Integration Seam**: `WaveDirector._spawn_enemy()` with guarded V2 branch (`BalanceDB.use_enemy_v2_system`)
+- **BalanceDB Integration**: Added `use_enemy_v2_system` toggle and `v2_template_weights` support
+- **Deterministic Variation**: RNG streams with hash-based seeding (run_id + wave_index + spawn_index)
+- **Legacy Compatibility**: Zero disruption - V2 enemies use existing pooled system and MultiMesh rendering
+- **Test Infrastructure**: `EnemySystem_Isolated_v2.tscn` with 500-enemy stress testing
+- **B Key Boss Spawning**: Manual ancient_lich boss spawn with 5x health, 2x damage scaling
 
-**Template Data System (COMPLETE):**
-- **Base Templates**: `melee_base.tres`, `ranged_base.tres`, `boss_base.tres` with proper inheritance structure
-- **Variations**: 5 complete templates (goblin, orc_warrior, archer, elite_knight, ancient_lich)
-- **Inheritance Working**: ancient_lich.tres properly extends boss_base.tres with custom stats/visuals
-
-**Integration Layer (COMPLETE):**
-- **WaveDirector Integration**: `_spawn_enemy_v2()` method fully implemented (lines 176-223)
-- **Toggle System**: `BalanceDB.use_enemy_v2_system = true` in waves_balance.tres
-- **Seam Implementation**: Clean V2 branch in `_spawn_enemy()` with local preload pattern
-
-**Deterministic System (COMPLETE):**
-- **RNG Streams**: Hash-based seeding using run_id + wave_index + spawn_index + template_id
-- **Variation Generation**: Color tint, size_scale, stats within template ranges
-- **Legacy Compatibility**: SpawnConfig → EnemyType conversion preserves existing pooling/MultiMesh
-
-**Testing Infrastructure (COMPLETE):**
-- **Isolated Test Scene**: `vibe/tests/EnemySystem_Isolated_v2.tscn` with comprehensive controls
-- **Visual Validation**: HUD overlay showing template stats, colors, deterministic data
-- **Stress Testing**: 500-enemy capability verified
-
-### ✅ **Validated & Working**
+### ✅ **Validated**
 - **Performance**: 500-enemy stress test passes - MultiMesh batching intact
 - **Determinism**: Fixed seeds produce identical enemy stats/colors across runs
-- **Data-Driven Goal**: Adding new enemy = 1 .tres file + weight adjustment (no code changes) ✅ ACHIEVED
-- **Regular Enemy Spawning**: All non-boss templates (goblin, orc_warrior, archer, elite_knight) spawn perfectly via V2 system
-- **Integration Stability**: Toggle between V1/V2 systems works seamlessly without disruption
+- **Data-Driven**: Adding new enemy = 1 .tres file + weight adjustment (no code changes)
+- **Boss Spawning**: Ancient lich spawns successfully with debug logging showing all steps working
 
-### 🔴 **CRITICAL REMAINING ISSUE (5% of MVP)**
+### 🟡 **Current Challenges**
 
-#### **Boss Scene Integration Gap**
-**Technical Status:**
-- **Boss Template System**: ancient_lich.tres exists with proper inheritance from boss_base.tres
-- **Boss Spawning Logic**: V2 system generates correct SpawnConfig for bosses (health: 150-200, damage: 35-50)
-- **Current Limitation**: Boss SpawnConfig gets converted to legacy EnemyType and routed to MultiMesh pooled system
+#### **Boss Visual System Gap**
+- **Issue**: V2 bosses currently use MultiMesh pooled rendering system (designed for swarms)
+- **Current State**: Boss appears as "small knight sprite" from boss animation tier
+- **User Workflow Issue**: Editing boss animations via manual .tres files without Animation Panel access is poor UX
+- **Debug Evidence**: Boss spawning works perfectly (860 HP, proper scaling) but visual system needs improvement
 
-**The Problem:**
-- **Architecture Mismatch**: Bosses use `render_tier = "boss"` but still go through pooled MultiMesh renderer
-- **Visual Result**: Boss appears as small sprite instead of proper boss scene with AnimatedSprite2D
-- **Missing Component**: No boss scene instantiation path in `_spawn_from_config_v2()`
-
-**Required Fix:**
-- **Detection Logic**: Check if `SpawnConfig.render_tier == "boss"` in WaveDirector
-- **Scene Spawning**: Route boss configs to scene instantiation instead of pooled system  
-- **Boss Scene Creation**: Need AncientLich.tscn with AnimatedSprite2D for proper visual workflow
+#### **Animation Workflow Problem**
+- **Current**: Boss animations defined in `boss_enemy_animations.tres` (manual frame editing)
+- **Problem**: No visual Animation Panel access, can't easily edit sprites/frames
+- **User Request**: "Need AnimatedSprite2D scene workflow for boss frame editing"
 
 ### 📋 **Architectural Decision Required**
 
@@ -73,22 +53,11 @@ Risk: Low (additive behind toggle), reversible
 3. **Build AncientLich.tscn** with AnimatedSprite2D + proper Animation Panel workflow
 4. **Modify boss spawn logic** to instantiate scenes rather than pooled entities
 
-### 🎯 **PRECISE MVP COMPLETION PLAN (3 Steps)**
-
-#### **Step 1: Boss Scene Creation**
-- **Create** `vibe/scenes/bosses/AncientLich.tscn` with AnimatedSprite2D + proper visual workflow
-- **Template Structure**: CharacterBody2D → AnimatedSprite2D + CollisionShape2D + boss controller script  
-- **Animation Setup**: Configure SpriteFrames resource for Animation Panel access
-
-#### **Step 2: Boss Detection & Routing Logic**
-- **Modify** `WaveDirector._spawn_from_config_v2()` to detect `render_tier == "boss"`
-- **Add** `_spawn_boss_scene()` method for scene instantiation path
-- **Route** boss configs → scene spawning, regular configs → pooled system
-
-#### **Step 3: Boss Template Integration**
-- **Add** `scene_path` field to EnemyTemplate schema (optional for boss templates)
-- **Update** `ancient_lich.tres` with `visual_config.scene_path = "res://scenes/bosses/AncientLich.tscn"`
-- **Test** boss spawning with proper AnimatedSprite2D visuals
+### 🎯 **Next Steps for MVP Finalization**
+1. Create boss scene template system (AncientLich.tscn with AnimatedSprite2D)  
+2. Extend V2 integration to route bosses → scene instantiation, regulars → MultiMesh pools
+3. Implement visual_config processing for boss scenes
+4. Complete remaining checklist items for full MVP
 
 ---
 
@@ -419,28 +388,18 @@ Acceptance Criteria (Spawn Plan)
 
 ## Task Checklist
 
-### ✅ **MVP CORE COMPLETED**
-- [x] Create new folders under `vibe/scripts/systems/enemy_v2/` and `vibe/data/content/enemies_v2/`
-- [x] Implement `EnemyFactory.gd` (MVP) with deterministic variation and simple inheritance
-- [x] Author 3 base templates and 5 variations (goblin, orc_warrior, archer, elite_knight, ancient_lich)
-- [x] Add toggle `use_enemy_v2_system` and weights in BalanceDB
-- [x] Insert V2 integration seam in WaveDirector (`_spawn_enemy_v2()` method)
-- [x] Build `EnemySystem_Isolated_v2.tscn` with comprehensive testing controls
-- [x] Validate determinism and visual variety across all regular enemy types
-- [x] Stress test for batching/performance (500-enemy capability verified)
-
-### 🔄 **BOSS SYSTEM COMPLETION (Final 5%)**
-- [ ] **Create AncientLich.tscn boss scene** with AnimatedSprite2D workflow
-- [ ] **Add boss detection logic** in WaveDirector._spawn_from_config_v2()
-- [ ] **Implement _spawn_boss_scene() method** for scene-based boss spawning
-- [ ] **Test boss spawning** with proper visual rendering and Animation Panel access
-
-### 📋 **FUTURE ENHANCEMENTS (Post-MVP)**
-- [ ] Add BaseBoss.gd, BossTemplate.gd base classes for rich boss framework
-- [ ] Extend BalanceDB with `enemy_scaling` (time_multipliers, tier_multipliers) 
-- [ ] Update ArenaConfig for `spawn_plan`, `enemy_scaling_profile`, `boss_sequence`
-- [ ] Implement `SpawnPool.tres` and `ArenaSpawnPlan.tres` for data-driven spawn scheduling
-- [ ] Add SpawnDirector system for phase/zone-based enemy spawning
+- [ ] Add BaseBoss.gd, BossTemplate.gd, and a sample Boss scene (inheritance pattern + hooks)
+- [ ] Extend BalanceDB with `enemy_scaling` (time_multipliers, tier_multipliers) and apply in EnemyFactory/SpawnDirector
+- [ ] Update ArenaConfig to include `spawn_plan`, `enemy_scaling_profile`, and `boss_sequence`; ensure SpawnDirector reads it
+- [ ] Create new folders under `vibe/scripts/systems/enemy_v2/` and `vibe/data/content/enemies_v2/`
+- [ ] Implement `EnemyFactory.gd` (MVP) with deterministic variation and simple inheritance
+- [ ] Author 3 base templates and 3–6 variations
+- [ ] Add toggle `use_enemy_v2_system` and weights (either in templates or BalanceDB)
+- [ ] Insert a single guarded branch in spawner to call V2 (`V2 INTEGRATION` block)
+- [ ] Build `EnemySystem_Isolated_v2.tscn` and validate determinism/variety
+- [ ] Stress test for batching/performance
+- [ ] Implement `SpawnPool.tres` and `ArenaSpawnPlan.tres`
+- [ ] Add/extend a `SpawnDirector` to read plan and drive spawns via the same seam
 - [ ] Verify deterministic scheduling and per-zone spawns in test arena
 
 ---
@@ -450,3 +409,87 @@ Acceptance Criteria (Spawn Plan)
 - Keep all V2 code/data in the dedicated `enemy_v2` folders to simplify future removal.
 - The decommission of legacy is a separate task with a safe, step-by-step guide:
   - See: `Obsidian/03-tasks/REMOVE_LEGACY_ENEMY_SYSTEM.md`
+
+
+> /multi-mind is running… "
+ lets continue\
+@Obsidian\03-tasks\ENEMY_V2_MVP_AND_SPAWN_PLAN.md \
+\
+read ## Current Progress Status (As of Implementation)
+and the rest for context.\
+make a state analysis\
+I think we need to go and use animatedSprite for bosses so i can use the frame editor when   
+adding new bosses.\\
+make a plan" rounds=1
+  ⎿  Read Obsidian\03-tasks\ENEMY_V2_MVP_AND_SPAWN_PLAN.md (412 lines)
+
+● I'll analyze the Enemy V2 system progress and create a comprehensive plan for
+  completing the MVP, particularly focusing on the boss visual system using
+  AnimatedSprite2D for proper editor workflow.
+
+● Task(Analyze Enemy V2 state)
+  ⎿  User rejected Claude's plan:
+     ╭──────────────────────────────────────────────────────────────────────────────────────╮
+     │ Enemy V2 Boss System Integration Plan                                                │
+     │                                                                                      │
+     │ Analysis Summary                                                                     │
+     │                                                                                      │
+     │ The Enemy V2 system is 85% complete with excellent foundation but has a critical     │
+     │ architectural gap: boss visual system mismatch. Boss enemies currently use MultiMesh │
+     │ pooled rendering (designed for swarms) instead of scene-based rendering with         │
+     │ AnimatedSprite2D support.                                                            │
+     │                                                                                      │
+     │ Implementation Plan                                                                  │
+     │                                                                                      │
+     │ Phase 1: Boss Scene System Foundation                                                │
+     │                                                                                      │
+     │ 1. Create BaseBoss.gd - Boss behavior controller with phase hooks and UI integration │
+     │ 2. Create BossTemplate.gd - Boss-specific configuration resource extending           │
+     │ EnemyTemplate                                                                        │
+     │ 3. Build AncientLich.tscn - Scene template with AnimatedSprite2D and Animation Panel │
+     │ workflow                                                                             │
+     │ 4. Implement boss scene inheritance pattern - BossBase.tscn → ConcreteBoss.tscn      │
+     │ structure                                                                            │
+     │                                                                                      │
+     │ Phase 2: V2 Integration Extension                                                    │
+     │                                                                                      │
+     │ 1. Extend EnemyFactory to detect render_tier = "boss" and route to scene spawning    │
+     │ 2. Modify V2 spawn logic in WaveDirector to instantiate boss scenes vs pooled        │
+     │ entities                                                                             │
+     │ 3. Create visual_config processing for boss scenes (AnimatedSprite2D setup)          │
+     │ 4. Implement boss-specific scaling with tier multipliers (5x health, 2x damage)      │
+     │                                                                                      │
+     │ Phase 3: Balance & Scaling System                                                    │
+     │                                                                                      │
+     │ 1. Add enemy_scaling to BalanceDB with time_multipliers and tier_multipliers         │
+     │ 2. Implement progressive scaling in EnemyFactory based on wave/time context          │
+     │ 3. Update ArenaConfig schema with spawn_plan, enemy_scaling_profile, boss_sequence   │
+     │ 4. Create SpawnDirector foundation for future data-driven scheduling                 │
+     │                                                                                      │
+     │ Phase 4: Validation & Testing                                                        │
+     │                                                                                      │
+     │ 1. Test boss scene spawning - Ancient lich with proper AnimatedSprite2D rendering    │
+     │ 2. Validate hybrid rendering - Regular enemies via MultiMesh, bosses via scenes      │
+     │ 3. Stress test performance - Ensure no regression in regular enemy batching          │
+     │ 4. Complete remaining MVP checklist items                                            │
+     │                                                                                      │
+     │ Success Criteria                                                                     │
+     │                                                                                      │
+     │ - ✅ Boss enemies render with AnimatedSprite2D and Animation Panel workflow           
+│
+     │ - ✅ Regular enemies maintain MultiMesh performance (500+ enemies)                    
+│
+     │ - ✅ Hybrid rendering system works seamlessly via render_tier detection               
+│
+     │ - ✅ Boss scaling system applies proper multipliers (5x HP, 2x damage)                
+│
+     │ - ✅ MVP checklist 100% complete with full architectural foundation                   
+│
+     │                                                                                      │
+     │ Risk Mitigation                                                                      │
+     │                                                                                      │
+     │ - Maintain existing toggle system for safe rollback                                  │
+     │ - Preserve legacy compatibility during boss system integration                       │
+     │ - Test performance impact of dual rendering strategies                               │
+     │ - Ensure deterministic behavior across both rendering paths                          │
+     ╰───────────────────────────────────────────────────────────────

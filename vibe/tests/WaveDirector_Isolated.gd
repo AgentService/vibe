@@ -7,7 +7,6 @@ extends Node2D
 @onready var info_label: Label = $UILayer/HUD/InfoLabel
 
 var wave_director: WaveDirector
-var enemy_registry: EnemyRegistry
 
 func _ready():
 	print("=== WaveDirector_Isolated Test Started ===")
@@ -17,11 +16,7 @@ func _ready():
 	_setup_enemy_multimesh()
 
 func _setup_wave_system():
-	enemy_registry = EnemyRegistry.new()
-	add_child(enemy_registry)
-	
 	wave_director = WaveDirector.new()
-	wave_director.set_enemy_registry(enemy_registry)
 	add_child(wave_director)
 	
 	# Connect to wave events
@@ -32,9 +27,9 @@ func _setup_wave_system():
 	if wave_director.has_signal("enemy_spawned"):
 		wave_director.enemy_spawned.connect(_on_enemy_spawned)
 	
-	# Connect to enemy registry updates
-	if enemy_registry.has_signal("enemies_updated"):
-		enemy_registry.enemies_updated.connect(_on_enemies_updated)
+	# Connect to wave director enemy updates
+	if wave_director.has_signal("enemies_updated"):
+		wave_director.enemies_updated.connect(_on_enemies_updated)
 
 func _setup_enemy_multimesh():
 	var multimesh = MultiMesh.new()
@@ -79,8 +74,6 @@ func _start_or_next_wave():
 func _reset_waves():
 	if wave_director.has_method("reset_waves"):
 		wave_director.reset_waves()
-	if enemy_registry.has_method("clear_all_enemies"):
-		enemy_registry.clear_all_enemies()
 	print("Waves reset")
 
 func _spawn_test_enemy(enemy_type: String):
@@ -89,9 +82,8 @@ func _spawn_test_enemy(enemy_type: String):
 	var radius = 200 + randf() * 100
 	var spawn_pos = Vector2.from_angle(angle) * radius
 	
-	if enemy_registry.has_method("spawn_enemy"):
-		enemy_registry.spawn_enemy(enemy_type, spawn_pos)
-		print("Manual enemy spawned: ", enemy_type)
+	# Manual spawn through wave director V2 system
+	print("Manual enemy spawn requested: ", enemy_type, " at ", spawn_pos)
 
 func _on_wave_started(wave_number: int):
 	print("Wave ", wave_number, " started")
@@ -119,8 +111,8 @@ func _update_info_display():
 	var current_wave = 0
 	var wave_status = "Idle"
 	
-	if enemy_registry and enemy_registry.has_method("get_alive_enemies"):
-		enemy_count = enemy_registry.get_alive_enemies().size()
+	if wave_director and wave_director.has_method("get_alive_enemies"):
+		enemy_count = wave_director.get_alive_enemies().size()
 	
 	if wave_director:
 		if wave_director.has_method("get_current_wave"):

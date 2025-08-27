@@ -5,7 +5,6 @@ extends Node
 
 # Import system classes - using _Type suffix to avoid conflicts with class names
 const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
-const EnemyRegistry_Type = preload("res://scripts/systems/EnemyRegistry.gd")
 const WaveDirector_Type = preload("res://scripts/systems/WaveDirector.gd")
 const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
@@ -23,7 +22,6 @@ var initialization_phase: String = "idle"
 
 # System instances that will be created here and injected to Arena
 var card_system: CardSystem_Type
-var enemy_registry: EnemyRegistry_Type
 var wave_director: WaveDirector_Type
 var ability_system: AbilitySystem_Type
 var melee_system: MeleeSystem_Type
@@ -68,11 +66,6 @@ func _initialize_systems() -> void:
 	Logger.info("CardSystem initialized by GameOrchestrator", "orchestrator")
 	
 	# Phase C: Non-dependent systems
-	# 1. EnemyRegistry (no deps)
-	enemy_registry = EnemyRegistry_Type.new()
-	add_child(enemy_registry)
-	systems["EnemyRegistry"] = enemy_registry
-	Logger.info("EnemyRegistry initialized by GameOrchestrator", "orchestrator")
 	
 	# 4. AbilitySystem (no deps)
 	ability_system = AbilitySystem_Type.new()
@@ -95,16 +88,10 @@ func _initialize_systems() -> void:
 	systems["CameraSystem"] = camera_system
 	Logger.info("CameraSystem initialized by GameOrchestrator", "orchestrator")
 	
-	# Phase D: WaveDirector (needs EnemyRegistry dependency)
+	# Phase D: WaveDirector (no dependencies)
 	wave_director = WaveDirector_Type.new()
 	add_child(wave_director)
 	systems["WaveDirector"] = wave_director
-	# Set EnemyRegistry dependency
-	if wave_director.has_method("set_enemy_registry"):
-		wave_director.set_enemy_registry(enemy_registry)
-		Logger.info("WaveDirector initialized with EnemyRegistry dependency", "orchestrator")
-	else:
-		Logger.warn("WaveDirector doesn't have set_enemy_registry method", "orchestrator")
 	
 	# Set ArenaSystem dependency
 	if wave_director.has_method("set_arena_system"):
@@ -137,8 +124,7 @@ func _initialize_systems() -> void:
 func get_card_system() -> CardSystem_Type:
 	return card_system
 
-func get_enemy_registry() -> EnemyRegistry_Type:
-	return enemy_registry
+
 
 func get_wave_director() -> WaveDirector_Type:
 	return wave_director
@@ -174,9 +160,6 @@ func inject_systems_to_arena(arena) -> void:
 		Logger.warn("Arena doesn't have set_card_system method", "orchestrator")
 	
 	# Phase C: Inject non-dependent systems
-	if enemy_registry and arena.has_method("set_enemy_registry"):
-		arena.set_enemy_registry(enemy_registry)
-		Logger.debug("EnemyRegistry injected to Arena", "orchestrator")
 	
 	if ability_system and arena.has_method("set_ability_system"):
 		arena.set_ability_system(ability_system)

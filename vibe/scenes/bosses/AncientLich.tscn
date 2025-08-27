@@ -1,8 +1,7 @@
-[gd_scene load_steps=10 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=9 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://c36wbfq653mki" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
-[ext_resource type="PackedScene" uid="uid://c5iwguoi5ujyi" path="res://scenes/bosses/DragonLord.tscn" id="3_vnul3"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_ysv3m"]
 radius = 5.09902
@@ -54,5 +53,3 @@ shape = SubResource("CircleShape2D_ysv3m")
 position = Vector2(0, -4)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
-
-[node name="DragonLord" parent="CollisionShape2D" instance=ExtResource("3_vnul3")]

@@ -540,7 +540,7 @@ func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 		return
 	
 	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies, wave_director.enemy_registry)
+	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
 	
 	# Update each tier's MultiMesh
 	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
@@ -619,26 +619,7 @@ func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
 func _spawn_stress_test_enemies() -> void:
-	if not wave_director:
-		Logger.warn("WaveDirector not available for stress test", "performance")
-		return
-	
-	var target_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_count: int = 1000
-	var spawned: int = 0
-	
-	for i in range(spawn_count):
-		# Spawn enemies in a circle around player
-		var angle: float = (i / float(spawn_count)) * TAU
-		var distance: float = 300.0 + (i % 10) * 100.0  # Vary distances
-		var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * distance
-		
-		if wave_director.spawn_enemy_at(spawn_pos, "knight_boss"):
-			spawned += 1
-		else:
-			break  # Pool exhausted
-	
-	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
+	Logger.warn("Stress test disabled - legacy spawn method removed with V2 system migration", "performance")
 
 func _spawn_v2_boss_test() -> void:
 	# Check if V2 system is enabled
@@ -715,6 +696,9 @@ func _spawn_v2_boss_test() -> void:
 func _test_boss_damage() -> void:
 	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
 	
+	# DAMAGE V2: Register existing entities first
+	DamageService.debug_register_all_existing_entities()
+	
 	# Search for boss nodes recursively - start from root to find GameOrchestrator bosses
 	var found_bosses = []
 	_find_bosses_recursive(get_tree().root, found_bosses)
@@ -728,20 +712,21 @@ func _test_boss_damage() -> void:
 	var boss = found_bosses[0]
 	Logger.info("Testing boss: " + boss.name + " (type: " + boss.get_class() + ") at position " + str(boss.global_position), "debug")
 	
-	# Check if boss has take_damage method
-	if boss.has_method("take_damage"):
-		Logger.info("Boss has take_damage method - testing direct damage", "debug")
-		Logger.info("Boss health before: " + str(boss.current_health) + "/" + str(boss.max_health), "debug")
-		boss.take_damage(50.0, "test")
-		Logger.info("Boss health after: " + str(boss.current_health) + "/" + str(boss.max_health), "debug")
-	else:
-		Logger.warn("Boss doesn't have take_damage method", "debug")
+	# DAMAGE V2: Use unified damage system
+	var entity_id = "boss_" + str(boss.get_instance_id())
+	Logger.info("Boss entity ID: " + entity_id, "debug")
+	Logger.info("Boss health before: " + str(boss.get_current_health()) + "/" + str(boss.get_max_health()), "debug")
+	
+	# Apply damage via DamageService
+	var damage_applied = DamageService.apply_damage(entity_id, 50.0, "test_damage", ["test"])
+	Logger.info("Damage applied: " + str(damage_applied), "debug")
+	Logger.info("Boss health after: " + str(boss.get_current_health()) + "/" + str(boss.get_max_health()), "debug")
 	
 	Logger.info("=== BOSS DAMAGE TEST END ===", "debug")
 
 func _find_bosses_recursive(node: Node, bosses_array: Array) -> void:
-	# Check if this node looks like a boss
-	if node.has_method("take_damage") and node.has_signal("died"):
+	# Check if this node looks like a boss - DAMAGE V2: bosses have died signal and health properties
+	if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
 		Logger.debug("Found potential boss: " + node.name + " (class: " + node.get_class() + ")", "debug")
 		bosses_array.append(node)
 	

@@ -117,33 +117,64 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0:
 		enemies_hit.emit(hit_enemies)
 	
-	# Apply damage to pooled enemies via DamageSystem
+	# NEW DAMAGE V2: Apply damage via DamageService to all hit entities
+	var final_damage = _calculate_damage()
+	var total_hit_count = 0
+	
+	# Apply damage to pooled enemies
 	for enemy in hit_enemies:
-		var final_damage = _calculate_damage()
-		var source_id = EntityId.player()
-		# Find the actual enemy pool index
 		var enemy_pool_index = _find_enemy_pool_index(enemy)
 		if enemy_pool_index == -1:
 			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
 			continue
-		var target_id = EntityId.enemy(enemy_pool_index)
-		var damage_tags = PackedStringArray(["melee"])
-		var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, final_damage, damage_tags)
-		EventBus.damage_requested.emit(damage_payload)
+		
+		var entity_id = "enemy_" + str(enemy_pool_index)
+		
+		# AUTO-REGISTER: Register enemy if not already registered
+		if not DamageService.is_entity_alive(entity_id) and not DamageService.get_entity(entity_id).has("id"):
+			var entity_data = {
+				"id": entity_id,
+				"type": "enemy",
+				"hp": enemy.hp,
+				"max_hp": enemy.hp,
+				"alive": true,
+				"pos": enemy.pos
+			}
+			DamageService.register_entity(entity_id, entity_data)
+		
+		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"])
+		if killed:
+			total_hit_count += 1
+		
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("Damage request: " + str(final_damage) + " to enemy " + enemy.type_id + " (hp: " + str(enemy.hp) + ")", "abilities")
+			Logger.debug("Damage applied to enemy: " + str(final_damage) + " to " + entity_id, "abilities")
 	
-	# Apply damage directly to scene-based bosses
+	# Apply damage to scene-based bosses
 	for boss in hit_scene_bosses:
-		var final_damage = _calculate_damage()
-		if boss.has_method("take_damage"):
-			boss.take_damage(final_damage, "melee")
-			Logger.info("Direct damage to scene boss: " + str(final_damage) + " damage", "combat")
-		else:
-			Logger.warn("Scene boss doesn't have take_damage method", "combat")
+		# Scene bosses need to be identified by their scene path or unique identifier
+		var boss_id = "boss_" + str(boss.get_instance_id())
+		
+		# AUTO-REGISTER: Register boss if not already registered
+		if not DamageService.is_entity_alive(boss_id) and not DamageService.get_entity(boss_id).has("id"):
+			var entity_data = {
+				"id": boss_id,
+				"type": "boss",
+				"hp": boss.get_current_health() if boss.has_method("get_current_health") else 200.0,
+				"max_hp": boss.get_max_health() if boss.has_method("get_max_health") else 200.0,
+				"alive": boss.is_alive() if boss.has_method("is_alive") else true,
+				"pos": boss.global_position
+			}
+			DamageService.register_entity(boss_id, entity_data)
+		
+		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"])
+		if killed:
+			total_hit_count += 1
+		
+		Logger.info("Damage applied to scene boss: " + str(final_damage) + " to " + boss_id, "combat")
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " pooled enemies + " + str(hit_scene_bosses.size()) + " scene bosses", "abilities")
+	
 	return hit_enemies
 
 func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> bool:
@@ -176,8 +207,8 @@ func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_d
 		if node.name == "Player":
 			continue
 			
-		# Check if it looks like a boss (has take_damage method and died signal)
-		if node.has_method("take_damage") and node.has_signal("died"):
+		# DAMAGE V2: Check if it looks like a boss (has died signal and health methods)
+		if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
 			var boss_pos = node.global_position
 			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
 				hit_bosses.append(node)
