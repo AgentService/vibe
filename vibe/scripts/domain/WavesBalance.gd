@@ -18,8 +18,3 @@ class_name WavesBalance
 @export var enemy_viewport_cull_margin: float = 100.0
 @export var enemy_update_distance: float = 2800.0
 @export_range(0.1, 2.0) var camera_min_zoom: float = 1.0
-
-# Enemy V2 System Configuration
-@export var use_enemy_v2_system: bool = false
-@export var v2_template_weights: Dictionary = {}
-

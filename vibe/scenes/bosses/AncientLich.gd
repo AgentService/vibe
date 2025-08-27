@@ -24,13 +24,13 @@ var attack_range: float = 60.0
 var chase_range: float = 300.0
 
 func _ready() -> void:
-	Logger.info("AncientLich boss ready", "enemies")
+	Logger.info("AncientLich boss ready", "bosses")
 	
 	# Start animation like DragonLord - always do this in _ready
 	var animated_sprite_node = $CollisionShape2D/AnimatedSprite2D
 	if animated_sprite_node and animated_sprite_node.sprite_frames:
 		animated_sprite_node.play("default")
-		Logger.debug("AncientLich animation started", "enemies")
+		Logger.debug("AncientLich animation started", "bosses")
 	
 	# Connect to combat step for deterministic behavior
 	if EventBus:
@@ -47,7 +47,7 @@ func _ready() -> void:
 		"pos": global_position
 	}
 	DamageService.register_entity(entity_id, entity_data)
-	Logger.debug("AncientLich registered with DamageService as " + entity_id, "enemies")
+	Logger.debug("AncientLich registered with DamageService as " + entity_id, "bosses")
 
 func _exit_tree() -> void:
 	# Clean up signal connections
@@ -73,7 +73,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	modulate = config.color_tint
 	scale = Vector2.ONE * config.size_scale
 	
-	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "enemies")
+	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
 
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
@@ -103,7 +103,7 @@ func _update_ai(dt: float) -> void:
 				last_attack_time = 0.0
 
 func _perform_attack() -> void:
-	Logger.debug("AncientLich attacks for %.1f damage!" % attack_damage, "enemies")
+	Logger.debug("AncientLich attacks for %.1f damage!" % attack_damage, "bosses")
 	
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
@@ -116,19 +116,11 @@ func _perform_attack() -> void:
 			var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, attack_damage, damage_tags)
 			EventBus.damage_requested.emit(damage_payload)
 
-# OLD DAMAGE METHOD - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
-func take_damage(amount: float, _source: String = "") -> void:
-	# current_health -= amount
-	# Logger.info("AncientLich takes %.1f damage (%.1f/%.1f HP)" % [amount, current_health, max_health], "enemies")
-	
-	# if current_health <= 0:
-	#	_die()
-	
-	# TEMPORARY: Do nothing until DamageRegistry handles boss damage
-	pass
+# DAMAGE V2: take_damage() method removed - damage handled via DamageService
+# Bosses register with DamageService in _ready() and receive damage via unified pipeline
 
 func _die() -> void:
-	Logger.info("AncientLich has been defeated!", "enemies")
+	Logger.info("AncientLich has been defeated!", "bosses")
 	died.emit()  # Signal for integration
 	queue_free()
 

@@ -3,7 +3,7 @@ extends Node
 ## Wave director managing pooled enemies and spawning mechanics.
 ## Spawns enemies from outside the arena moving toward center.
 ## Updates on fixed combat step (30 Hz) for deterministic behavior.
-## Supports typed enemy spawning via EnemyRegistry.
+## Uses Enemy V2 system for weighted enemy spawning.
 
 class_name WaveDirector
 
@@ -23,8 +23,6 @@ var spawn_count_max: int
 var arena_bounds: float
 var target_distance: float
 
-# Enemy typing system
-var enemy_registry: EnemyRegistry
 # Arena system for spawn configuration  
 var arena_system
 
@@ -43,27 +41,18 @@ func _ready() -> void:
 	add_to_group("wave_directors")  # For DamageRegistry sync access
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
-	# Only setup enemy registry if not already injected
-	if not enemy_registry:
-		_setup_enemy_registry()
+
 	_initialize_pool()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
-# Dependency injection methods - called by GameOrchestrator
-func set_enemy_registry(injected_registry: EnemyRegistry) -> void:
-	enemy_registry = injected_registry
-	Logger.info("EnemyRegistry injected into WaveDirector", "waves")
+
 
 func set_arena_system(injected_arena_system) -> void:
 	arena_system = injected_arena_system
 	Logger.info("ArenaSystem injected into WaveDirector", "waves")
 
-func _setup_enemy_registry() -> void:
-	# Fallback - create own registry if none was injected (for backwards compatibility)
-	enemy_registry = EnemyRegistry.new()
-	add_child(enemy_registry)
-	Logger.info("Enemy registry initialized (fallback)", "waves")
+
 
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
@@ -91,29 +80,9 @@ func _on_balance_reloaded() -> void:
 	_initialize_pool()
 	Logger.info("Reloaded wave balance values", "waves")
 
-func _choose_enemy_type() -> String:
-	# Use EnemyRegistry for weighted selection
-	if not enemy_registry:
-		Logger.warn("EnemyRegistry not available, using fallback", "waves")
-		return "knight_regular"
-	
-	var enemy_type: EnemyType = enemy_registry.get_random_enemy_type("waves")
-	if not enemy_type:
-		Logger.warn("No enemy types available from registry, using fallback", "waves")
-		return "knight_regular"
-	
-	return enemy_type.id
 
-func _get_enemy_speed(enemy_type_id: String) -> float:
-	if not enemy_registry:
-		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
-	
-	var enemy_type: EnemyType = enemy_registry.get_enemy_type(enemy_type_id)
-	if not enemy_type:
-		Logger.warn("No enemy type found for ID: " + enemy_type_id + ", using default speed", "waves")
-		return RNG.randf_range("waves", enemy_speed_min, enemy_speed_max)
-	
-	return RNG.randf_range("waves", enemy_type.speed_min, enemy_type.speed_max)
+
+
 
 
 func _initialize_pool() -> void:
@@ -150,28 +119,7 @@ func _handle_spawning(dt: float) -> void:
 			_spawn_enemy()
 
 func _spawn_enemy() -> void:
-	# V2 INTEGRATION START
-	if BalanceDB.use_enemy_v2_system:
-		_spawn_enemy_v2()
-		return
-	# V2 INTEGRATION END
-	
-	# Legacy system (unchanged)
-	var enemy_type_obj = null
-	if enemy_registry:
-		enemy_type_obj = enemy_registry.get_random_enemy_type("waves")
-	
-	if enemy_type_obj == null:
-		Logger.warn("No enemy types available from registry", "waves")
-		return
-	
-	# Use cached player position from PlayerState autoload
-	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
-	var angle := RNG.randf_range("waves", 0.0, TAU)
-	var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
-	var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
-	
-	_spawn_from_type(enemy_type_obj, spawn_pos)
+	_spawn_enemy_v2()
 
 # Enemy V2 spawning system
 func _spawn_enemy_v2() -> void:
@@ -321,19 +269,7 @@ func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	EventBus.enemy_killed.emit(payload)
 	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
-## Public method for manual enemy spawning (debug/testing)
-func spawn_enemy_at(position: Vector2, enemy_type_str: String = "green_slime") -> bool:
-	if not enemy_registry:
-		Logger.warn("EnemyRegistry not available for manual spawning", "waves")
-		return false
-	
-	var enemy_type_obj: EnemyType = enemy_registry.get_enemy_type(enemy_type_str)
-	if not enemy_type_obj:
-		Logger.warn("Enemy type not found: " + enemy_type_str, "waves")
-		return false
-	
-	_spawn_from_type(enemy_type_obj, position)
-	return true
+
 
 func _find_free_enemy() -> int:
 	# Start search from last known free index for better performance
@@ -397,29 +333,8 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 
 # Player reference no longer needed - using PlayerState autoload for position
 
-# OLD DAMAGE HANDLING - COMMENTED OUT FOR DAMAGE_V2 REFACTOR
-func damage_enemy(enemy_index: int, damage: float) -> void:
-	# if enemy_index < 0 or enemy_index >= max_enemies:
-	#	return
-	
-	# var enemy := enemies[enemy_index]
-	# if not enemy.alive:
-	#	return
-	
-	# var old_hp = enemy.hp
-	# enemy.hp -= damage
-	# Logger.info("Enemy[%d] %s: %.1f → %.1f HP (took %.1f damage)" % [enemy_index, enemy.type_id, old_hp, enemy.hp, damage], "combat")
-	
-	# if enemy.hp <= 0.0:
-	#	var death_pos: Vector2 = enemy.pos
-	#	enemy.alive = false
-	#	_cache_dirty = true  # Mark cache as dirty when enemy dies from damage
-	#	Logger.info("Enemy[%d] %s KILLED at position %s" % [enemy_index, enemy.type_id, death_pos], "combat")
-	#	var payload := EventBus.EnemyKilledPayload_Type.new(death_pos, 1)
-	#	EventBus.enemy_killed.emit(payload)
-	
-	# TEMPORARY: Do nothing until DamageRegistry handles damage
-	pass
+# DAMAGE V2: damage_enemy() method removed - enemies damaged via DamageService
+# Enemy HP updates handled by DamageRegistry sync system (_sync_damage_to_game_entity)
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	if enemy_index < 0 or enemy_index >= max_enemies:
@@ -431,29 +346,8 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	
 	enemy["vel"] = velocity
 
-# PUBLIC API FOR MAP EVENTS: Future-proofing for event system
-func spawn_boss_by_id(boss_id: String, position: Vector2) -> bool:
-	
-	# Legacy boss spawning
-	if not enemy_registry:
-		Logger.warn("EnemyRegistry not available for boss spawning", "waves")
-		return false
-		
-	var boss_type: EnemyType = enemy_registry.get_enemy_type(boss_id)
-	if boss_type:
-		_spawn_from_type(boss_type, position)
-		return true
-	
-	Logger.warn("Boss type not found: " + boss_id, "waves")
-	return false
 
-# Batch spawning for complex encounters
-func spawn_event_enemies(spawn_data: Array[Dictionary]) -> void:
-	# spawn_data format: [{"id": "dragon_lord", "pos": Vector2(100, 200)}]
-	for data in spawn_data:
-		if "id" in data and "pos" in data:
-			spawn_boss_by_id(data.id, data.pos)
-		else:
-			Logger.warn("Invalid spawn data format: " + str(data), "waves")
+
+
 
 # AI methods removed - back to simple chase behavior

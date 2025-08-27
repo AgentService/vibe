@@ -207,8 +207,8 @@ func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_d
 		if node.name == "Player":
 			continue
 			
-		# Check if it looks like a boss (has take_damage method and died signal)
-		if node.has_method("take_damage") and node.has_signal("died"):
+		# DAMAGE V2: Check if it looks like a boss (has died signal and health methods)
+		if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
 			var boss_pos = node.global_position
 			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
 				hit_bosses.append(node)

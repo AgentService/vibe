@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="EnemyType" load_steps=3 format=3 uid="uid://boak4c5x2lwqm"]
 
-[ext_resource type="Script" path="res://scripts/domain/EnemyType.gd" id="1_n1k8o"]
-[ext_resource type="PackedScene" path="res://scenes/bosses/DragonLord.tscn" id="2_l4k6m"]
+[ext_resource type="Script" uid="uid://h7v7qpqbbs10" path="res://scripts/domain/EnemyType.gd" id="1_n1k8o"]
+[ext_resource type="PackedScene" uid="uid://c5iwguoi5ujyi" path="res://scenes/bosses/DragonLord.tscn" id="2_l4k6m"]
 
 [resource]
 script = ExtResource("1_n1k8o")
@@ -14,7 +14,7 @@ speed_max = 85.0
 size = Vector2(96, 96)
 collision_radius = 48.0
 xp_value = 100
-spawn_weight = 0.0
+spawn_weight = 1000.0
 render_tier = "special_boss"
 visual_config = {
 "color": {

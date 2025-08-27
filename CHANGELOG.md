@@ -4,7 +4,19 @@
 
 ## [Current Week - In Progress]
 
+### Removed
+- **Legacy Enemy System Decommissioned**: Completed removal of dual-path enemy system in favor of V2-only approach
+  - **Core changes**: Removed EnemyRegistry.gd, use_enemy_v2_system toggle, legacy spawn branch in WaveDirector
+  - **Data cleanup**: Removed knight_*.tres legacy enemy resources (kept dragon_lord.tres for boss scenes)
+  - **Architecture**: Simplified WaveDirector to use V2 system exclusively, updated EnemyRenderTier to work without EnemyRegistry
+  - **Tests**: Removed test_hybrid_spawning.gd and legacy test dependencies
+  - **Result**: Single enemy pipeline through V2 system, reduced maintenance burden, no feature regression
+
 ### Added
+- **Memory Bank Documentation System**: Established memory-bank/ as single source of truth for session resets and onboarding
+  - Core files: projectbrief.md, productContext.md, systemPatterns.md, techContext.md, activeContext.md, progress.md
+  - Sourced from: README.md, ARCHITECTURE.md, docs/ARCHITECTURE_QUICK_REFERENCE.md, vibe/docs/ARCHITECTURE_RULES.md, CLAUDE.md, LESSONS_LEARNED.md, changelogs, Obsidian systems docs
+  - Workflow: Read all Memory Bank files at task start; update activeContext and progress after significant changes
 - **Hybrid Enemy Spawning System**: Complete dual-mode enemy spawning supporting both pooled enemies and scene-based special bosses
   - **EnemyType.gd extensions**: Added boss_scene, is_special_boss, and boss_spawn_method properties for hybrid spawning
   - **WaveDirector hybrid routing**: _spawn_from_type() method routes enemies to pooled or scene spawning based on type properties
@@ -40,7 +52,7 @@
   - **Auto-registration**: Seamless entity registration on first damage attempt (no T key needed)
   - **Universal damage**: Both melee and projectile systems now work consistently across all entity types
   - **Debug tools**: debug_register_all_existing_entities() for runtime diagnostics (T key)
-  - **Production ready**: Full integration testing validated, all damage flows operational
+  - **Production ready**: Clean, polished system with minimal logging and automatic memory management
 - **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
   - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
   - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)
