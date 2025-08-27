@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://h4q8v3w9s0t1x"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_8g9h0"]
+
+[resource]
+script = ExtResource("1_8g9h0")
+id = &"elite_knight"
+parent_path = "res://data/content/enemies_v2/templates/melee_base.tres"
+health_range = Vector2(40, 60)
+damage_range = Vector2(18, 25)
+speed_range = Vector2(50, 70)
+size_factor = 1.3
+hue_range = Vector2(0.45, 0.55)
+tags = Array[StringName]([&"knight", &"elite", &"melee"])
+weight = 0.5
+render_tier = "elite"
+visual_config = {}

@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://bfyjq04ipm4kg"]
+
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_9h0i1"]
+
+[resource]
+script = ExtResource("1_9h0i1")
+id = &"ancient_lich"
+parent_path = "res://data/content/enemies_v2/templates/boss_base.tres"
+health_range = Vector2(150, 200)
+damage_range = Vector2(35, 50)
+speed_range = Vector2(25, 40)
+size_factor = 1.8
+hue_range = Vector2(0.7, 0.9)
+tags = Array[StringName]([&"lich", &"boss", &"undead", &"magic"])
+weight = 0.05
+render_tier = "boss"
+visual_config = {
+"animation_speed": 1.0,
+"frame_count": 1,
+"frame_regions": [Rect2(0, 0, 24, 24)],
+"frame_size": Vector2(24, 24),
+"loop": false,
+"scale": Vector2(3, 3),
+"sprite_path": "res://assets/sprites/slime_purple.png"
+}

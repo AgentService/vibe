@@ -292,7 +292,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			# Arena switching removed - now using single default arena
-			KEY_T:
+			KEY_U:
 				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
 				Logger.info("F10 debug pause deprecated - use Escape key instead", "ui")
@@ -306,8 +306,11 @@ func _input(event: InputEvent) -> void:
 				Logger.info("Manual card selection test", "debug")
 				_test_card_selection()
 			KEY_B:
-				Logger.info("Spawning Dragon Lord boss", "debug")
-				_spawn_dragon_lord_test()
+				Logger.info("=== B KEY PRESSED - SPAWNING V2 BOSS ===", "debug")
+				_spawn_v2_boss_test()
+			KEY_T:
+				Logger.info("=== T KEY PRESSED - TESTING BOSS DAMAGE ===", "debug")
+				_test_boss_damage()
 
 func _setup_player() -> void:
 	# Load player scene dynamically to support @export hot-reload
@@ -637,34 +640,114 @@ func _spawn_stress_test_enemies() -> void:
 	
 	Logger.info("Stress test: spawned " + str(spawned) + " enemies", "performance")
 
-func _spawn_dragon_lord_test() -> void:
-	if not wave_director:
-		Logger.warn("WaveDirector not available for Dragon Lord test", "debug")
+func _spawn_v2_boss_test() -> void:
+	# Check if V2 system is enabled
+	if not BalanceDB.use_enemy_v2_system:
+		Logger.warn("V2 enemy system is disabled - cannot spawn V2 boss", "debug")
+		Logger.info("Enable V2 system in WavesBalance.tres to use V2 bosses", "debug")
 		return
 	
 	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_pos: Vector2 = player_pos + Vector2(200, 0)  # Spawn to the right of player
+	var spawn_pos: Vector2 = player_pos + Vector2(150, 150)  # Spawn near player
 	
-	Logger.info("Testing Dragon Lord spawn at: " + str(spawn_pos), "debug")
+	Logger.info("=== LICH SPAWN DEBUG START ===", "debug")
+	Logger.info("1. V2 system enabled ✓", "debug")
+	Logger.info("2. Spawn position: " + str(spawn_pos), "debug")
 	
-	# First check if dragon_lord exists in registry
-	if wave_director.enemy_registry:
-		var dragon_lord = wave_director.enemy_registry.get_enemy_type("dragon_lord")
-		if dragon_lord:
-			Logger.info("Dragon Lord found in registry: " + dragon_lord.display_name, "debug")
-			Logger.info("Is special boss: " + str(dragon_lord.is_special_boss), "debug")
-		else:
-			Logger.warn("Dragon Lord NOT found in registry", "debug")
-			Logger.info("Available enemy types: " + str(wave_director.enemy_registry.get_available_type_ids()), "debug")
+	# Direct V2 boss spawning - simplified approach
+	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
-	# Try to spawn the Dragon Lord
-	var success = wave_director.spawn_boss_by_id("dragon_lord", spawn_pos)
-	Logger.info("Dragon Lord spawn result: " + str(success), "debug")
+	# Create boss spawn context
+	var spawn_context := {
+		"run_id": RunManager.run_seed,
+		"wave_index": 999,
+		"spawn_index": 0,
+		"position": spawn_pos,
+		"context_tags": ["boss", "manual_spawn"]
+	}
 	
-	if success:
-		Logger.info("Dragon Lord should now appear at " + str(spawn_pos) + "!", "debug")
+	# Generate boss config
+	Logger.info("3. Generating boss config from ancient_lich template...", "debug")
+	var boss_config = EnemyFactory.spawn_from_template_id("ancient_lich", spawn_context)
+	if not boss_config:
+		Logger.error("   ✗ Failed to generate V2 boss config", "debug")
+		return
+	Logger.info("   ✓ Boss config generated successfully", "debug")
+	
+	# Apply boss scaling
+	Logger.info("4. Applying boss scaling...", "debug")
+	var original_health = boss_config.health
+	var original_damage = boss_config.damage
+	boss_config.health *= 5.0  # 5x stronger
+	boss_config.damage *= 2.0  # 2x damage
+	boss_config.size_scale *= 1.5  # Larger
+	Logger.info("   Health: " + str(original_health) + " → " + str(boss_config.health), "debug")
+	Logger.info("   Damage: " + str(original_damage) + " → " + str(boss_config.damage), "debug")
+	
+	# Spawn using existing V2 system
+	Logger.info("5. Checking WaveDirector...", "debug")
+	if not wave_director:
+		Logger.error("   ✗ WaveDirector is null!", "debug")
+		return
+	if not wave_director.has_method("_spawn_from_config_v2"):
+		Logger.error("   ✗ WaveDirector missing _spawn_from_config_v2 method", "debug")
+		return
+	Logger.info("   ✓ WaveDirector ready", "debug")
+	
+	Logger.info("6. Converting to legacy enemy type...", "debug")
+	var legacy_type := boss_config.to_enemy_type()
+	legacy_type.is_special_boss = true
+	legacy_type.display_name = "Ancient Lich Boss"
+	Logger.info("   Legacy type ID: " + legacy_type.id + ", Health: " + str(legacy_type.health), "debug")
+	
+	Logger.info("7. Spawning via WaveDirector...", "debug")
+	Logger.info("WaveDirector is: " + str(wave_director), "debug")
+	Logger.info("About to call _spawn_from_config_v2 with legacy_type=" + str(legacy_type.id) + ", boss_config=" + str(boss_config.template_id), "debug")
+	
+	if wave_director and wave_director.has_method("_spawn_from_config_v2"):
+		Logger.info("WaveDirector has _spawn_from_config_v2 method - calling it", "debug")
+		wave_director._spawn_from_config_v2(legacy_type, boss_config)
+		Logger.info("_spawn_from_config_v2 call completed", "debug")
 	else:
-		Logger.warn("Dragon Lord spawn failed - check logs for details", "debug")
+		Logger.warn("WaveDirector missing or doesn't have _spawn_from_config_v2 method", "debug")
+	Logger.info("=== LICH SPAWN DEBUG END - SUCCESS! ===", "debug")
+
+func _test_boss_damage() -> void:
+	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
+	
+	# Search for boss nodes recursively - start from root to find GameOrchestrator bosses
+	var found_bosses = []
+	_find_bosses_recursive(get_tree().root, found_bosses)
+	
+	Logger.info("Found " + str(found_bosses.size()) + " potential bosses", "debug")
+	
+	if found_bosses.is_empty():
+		Logger.warn("No bosses found to test damage on", "debug")
+		return
+	
+	var boss = found_bosses[0]
+	Logger.info("Testing boss: " + boss.name + " (type: " + boss.get_class() + ") at position " + str(boss.global_position), "debug")
+	
+	# Check if boss has take_damage method
+	if boss.has_method("take_damage"):
+		Logger.info("Boss has take_damage method - testing direct damage", "debug")
+		Logger.info("Boss health before: " + str(boss.current_health) + "/" + str(boss.max_health), "debug")
+		boss.take_damage(50.0, "test")
+		Logger.info("Boss health after: " + str(boss.current_health) + "/" + str(boss.max_health), "debug")
+	else:
+		Logger.warn("Boss doesn't have take_damage method", "debug")
+	
+	Logger.info("=== BOSS DAMAGE TEST END ===", "debug")
+
+func _find_bosses_recursive(node: Node, bosses_array: Array) -> void:
+	# Check if this node looks like a boss
+	if node.has_method("take_damage") and node.has_signal("died"):
+		Logger.debug("Found potential boss: " + node.name + " (class: " + node.get_class() + ")", "debug")
+		bosses_array.append(node)
+	
+	# Recursively search children
+	for child in node.get_children():
+		_find_bosses_recursive(child, bosses_array)
 
 func _test_card_selection() -> void:
 	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")

@@ -285,6 +285,29 @@ func get_waves_value(key: String) -> Variant:
 			Logger.error("Unknown waves balance key: " + key, "balance")
 			return _get_fallback_value("waves", key)
 
+## Enemy V2 System Configuration
+func get_use_enemy_v2_system() -> bool:
+	if _waves_balance == null:
+		return false
+	return _waves_balance.use_enemy_v2_system
+
+func get_v2_template_weights() -> Dictionary:
+	if _waves_balance == null:
+		return {}
+	return _waves_balance.v2_template_weights
+
+# Convenience property getter for V2 system
+var use_enemy_v2_system: bool:
+	get:
+		return get_use_enemy_v2_system()
+
+func _get_waves_fallback_value(key: String):
+	# Continue with fallback case
+	match key:
+		_:
+			Logger.error("Unknown waves balance key: " + key, "balance")
+			return _get_fallback_value("waves", key)
+
 func get_player_value(key: String) -> Variant:
 	if _player_balance == null:
 		return _get_fallback_value("player", key)

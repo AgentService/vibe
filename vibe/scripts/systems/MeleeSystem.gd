@@ -163,13 +163,13 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
 	var hit_bosses: Array[Node] = []
 	
-	# Find all scene-based bosses in the current scene
-	var current_scene = get_tree().current_scene
-	if not current_scene:
+	# Find all scene-based bosses starting from root (bosses are added to GameOrchestrator parent)
+	var root_node = get_tree().root
+	if not root_node:
 		return hit_bosses
 	
 	# Look for CharacterBody2D nodes that might be scene bosses
-	var all_nodes = _get_all_characterbody2d_nodes(current_scene)
+	var all_nodes = _get_all_characterbody2d_nodes(root_node)
 	
 	for node in all_nodes:
 		# Skip if this is the player

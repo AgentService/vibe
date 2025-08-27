@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://d0m4r9s5o6p7t"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_4c5d6"]
+
+[resource]
+script = ExtResource("1_4c5d6")
+id = &"boss_base"
+parent_path = ""
+health_range = Vector2(80, 120)
+damage_range = Vector2(25, 35)
+speed_range = Vector2(30, 50)
+size_factor = 1.5
+hue_range = Vector2(0.6, 0.8)
+tags = Array[StringName]([&"boss", &"elite"])
+weight = 0.1
+render_tier = "boss"
+visual_config = {}
