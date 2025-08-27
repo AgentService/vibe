@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://e1n5s0t6p7q8u"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_5d6e7"]
+
+[resource]
+script = ExtResource("1_5d6e7")
+id = &"goblin"
+parent_path = "res://data/content/enemies_v2/templates/melee_base.tres"
+health_range = Vector2(12, 20)
+damage_range = Vector2(6, 10)
+speed_range = Vector2(70, 90)
+size_factor = 0.8
+hue_range = Vector2(0.25, 0.35)
+tags = Array[StringName]([&"goblin", &"melee", &"swarm"])
+weight = 3.0
+render_tier = "swarm"
+visual_config = {}

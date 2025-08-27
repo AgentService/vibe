@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://cve745j717m6n"]
+
+[ext_resource type="Script" uid="uid://d1xk2pi5mdra2" path="res://tests/EnemySystem_Isolated_v2.gd" id="1_v2test"]
+
+[node name="EnemySystem_Isolated_v2" type="Node2D"]
+script = ExtResource("1_v2test")
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(400, 300)
+zoom = Vector2(0.6, 0.6)
+
+[node name="EnemyMultiMesh" type="MultiMeshInstance2D" parent="."]
+
+[node name="UILayer" type="CanvasLayer" parent="."]
+
+[node name="HUD" type="Control" parent="UILayer"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="InfoLabel" type="Label" parent="UILayer/HUD"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_right = 400.0
+offset_bottom = 300.0
+text = "Enemy V2 System Test
+Loading..."
+vertical_alignment = 1

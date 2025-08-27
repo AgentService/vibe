@@ -149,7 +149,13 @@ func _handle_spawning(dt: float) -> void:
 			_spawn_enemy()
 
 func _spawn_enemy() -> void:
-	# Try registry first, fallback to legacy system
+	# V2 INTEGRATION START
+	if BalanceDB.use_enemy_v2_system:
+		_spawn_enemy_v2()
+		return
+	# V2 INTEGRATION END
+	
+	# Legacy system (unchanged)
 	var enemy_type_obj = null
 	if enemy_registry:
 		enemy_type_obj = enemy_registry.get_random_enemy_type("waves")
@@ -165,6 +171,114 @@ func _spawn_enemy() -> void:
 	var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
 	
 	_spawn_from_type(enemy_type_obj, spawn_pos)
+
+# Enemy V2 spawning system
+func _spawn_enemy_v2() -> void:
+	# Prefer a local preload so later removal is trivial
+	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	# Use cached player position and calculate spawn position
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var angle := RNG.randf_range("waves", 0.0, TAU)
+	var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
+	var spawn_pos: Vector2 = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
+	
+	# Track spawn index for deterministic seeding
+	var local_spawn_counter: int = get_alive_enemies().size()  # Simple spawn indexing
+	
+	# Create spawn context for EnemyFactory
+	var spawn_context := {
+		"run_id": RunManager.run_seed,
+		"wave_index": 0,  # TODO: Add proper wave tracking
+		"spawn_index": local_spawn_counter,
+		"position": spawn_pos,
+		"context_tags": []  # Optional context tags
+	}
+	
+	# Generate V2 spawn configuration
+	var cfg := EnemyFactory.spawn_from_weights(spawn_context)
+	if not cfg:
+		Logger.warn("EnemyFactory failed to generate spawn config", "waves")
+		return
+	
+	# Convert to legacy EnemyType for existing pooling system
+	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
+	
+	# Hand off to existing pooling/rendering system
+	_spawn_from_config_v2(legacy_enemy_type, cfg)
+
+func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
+	print("WAVE DEBUG: _spawn_from_config_v2 CALLED!")
+	print("WAVE DEBUG: spawn_config is: ", spawn_config)
+	if spawn_config:
+		print("WAVE DEBUG: render_tier is: ", spawn_config.render_tier)
+	
+	# Boss detection - route to scene spawning for boss-tier enemies
+	if spawn_config.render_tier == "boss":
+		print("WAVE DEBUG: Boss detected! Calling _spawn_boss_scene")
+		_spawn_boss_scene(spawn_config)
+		print("WAVE DEBUG: _spawn_boss_scene completed")
+		return
+	else:
+		print("WAVE DEBUG: Regular enemy - using pooled spawning")
+	
+	# Use existing pooled spawn logic for regular enemies
+	var free_idx := _find_free_enemy()
+	if free_idx == -1:
+		Logger.warn("No free enemy slots available for V2 spawn", "waves")
+		return
+	
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var direction: Vector2 = (target_pos - spawn_config.position).normalized()
+	
+	var enemy := enemies[free_idx]
+	enemy.setup_with_type(enemy_type, spawn_config.position, direction * spawn_config.speed)
+	_cache_dirty = true  # Mark cache as dirty when spawning
+	
+	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
+
+# Boss scene spawning for V2 system
+func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
+	print("BOSS DEBUG: _spawn_boss_scene CALLED!")
+	
+	# Load boss scene based on template
+	var scene_path: String = "res://scenes/bosses/AncientLich.tscn"  # TODO: Get from template
+	print("BOSS DEBUG: Loading scene from: ", scene_path)
+	
+	var boss_scene: PackedScene = load(scene_path)
+	if not boss_scene:
+		print("BOSS DEBUG: Failed to load boss scene!")
+		return
+	print("BOSS DEBUG: Boss scene loaded successfully")
+	
+	# Instantiate boss scene
+	print("BOSS DEBUG: Instantiating boss scene...")
+	var boss_instance = boss_scene.instantiate()
+	if not boss_instance:
+		print("BOSS DEBUG: Failed to instantiate boss scene!")
+		return
+	print("BOSS DEBUG: Boss instantiated: ", boss_instance.name, " class: ", boss_instance.get_class())
+	
+	# Setup boss with spawn config
+	print("BOSS DEBUG: Setting up boss config...")
+	if boss_instance.has_method("setup_from_spawn_config"):
+		boss_instance.spawn_config = spawn_config
+		boss_instance.setup_from_spawn_config(spawn_config)
+		print("BOSS DEBUG: Boss configured with spawn config")
+	else:
+		print("BOSS DEBUG: Boss doesn't have setup_from_spawn_config method")
+	
+	# Add to scene tree
+	var parent = get_parent()
+	print("BOSS DEBUG: Adding boss to parent: ", parent.name)
+	parent.add_child(boss_instance)
+	print("BOSS DEBUG: Boss added to scene tree at path: ", boss_instance.get_path())
+	
+	# Verify it has the expected methods
+	print("BOSS DEBUG: Boss has take_damage method: ", boss_instance.has_method("take_damage"))
+	print("BOSS DEBUG: Boss has died signal: ", boss_instance.has_signal("died"))
+	
+	print("BOSS DEBUG: Boss spawning complete!")
 
 # HYBRID SPAWNING SYSTEM: Core routing logic
 func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:
@@ -315,6 +429,8 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 
 # PUBLIC API FOR MAP EVENTS: Future-proofing for event system
 func spawn_boss_by_id(boss_id: String, position: Vector2) -> bool:
+	
+	# Legacy boss spawning
 	if not enemy_registry:
 		Logger.warn("EnemyRegistry not available for boss spawning", "waves")
 		return false

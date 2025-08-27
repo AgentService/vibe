@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://g3p7u2v8r9s0w"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_7f8g9"]
+
+[resource]
+script = ExtResource("1_7f8g9")
+id = &"archer"
+parent_path = "res://data/content/enemies_v2/templates/ranged_base.tres"
+health_range = Vector2(8, 15)
+damage_range = Vector2(15, 20)
+speed_range = Vector2(45, 65)
+size_factor = 0.9
+hue_range = Vector2(0.15, 0.25)
+tags = Array[StringName]([&"archer", &"ranged", &"human"])
+weight = 1.5
+render_tier = "regular"
+visual_config = {}

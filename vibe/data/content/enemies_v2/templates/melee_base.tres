@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://b8k2p7q3m4n5r"]
+
+[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_2a3b4"]
+
+[resource]
+script = ExtResource("1_2a3b4")
+id = &"melee_base"
+parent_path = ""
+health_range = Vector2(15, 25)
+damage_range = Vector2(8, 12)
+speed_range = Vector2(60, 80)
+size_factor = 1.0
+hue_range = Vector2(0.0, 0.1)
+tags = Array[StringName]([&"melee", &"basic"])
+weight = 1.0
+render_tier = "regular"
+visual_config = {}
