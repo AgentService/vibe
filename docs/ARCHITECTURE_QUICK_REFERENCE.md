@@ -7,7 +7,7 @@
 ### Run Architecture Check
 ```bash
 # Easiest method
-double-click check_architecture.bat
+double-click tests/tools/check_architecture.bat
 
 # Command line
 "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tools/check_boundaries_standalone.gd --quit-after 10

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=14 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
@@ -75,6 +75,9 @@ animations = [{
 "speed": 5.0
 }]
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_215q3"]
+radius = 48.0
+
 [node name="DragonLord" type="CharacterBody2D"]
 script = ExtResource("1_215q3")
 
@@ -85,3 +88,18 @@ shape = SubResource("RectangleShape2D_215q3")
 position = Vector2(0, -21)
 sprite_frames = SubResource("SpriteFrames_udfki")
 animation = &"damage_taken"
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("CircleShape2D_215q3")
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.0
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -32.0
+offset_top = -80.0
+offset_right = 32.0
+offset_bottom = -53.0
+value = 100.0

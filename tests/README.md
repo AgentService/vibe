@@ -32,7 +32,7 @@ Run from the project root directory:
 "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/cli_test_runner.gd
 
 # Or use the batch file
-run_tests.bat
+tests/tools/run_tests.bat
 ```
 
 #### Option 2: Scene-based Test Runner

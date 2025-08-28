@@ -7,3 +7,5 @@
 script = ExtResource("1_0lc8k")
 
 [node name="Arena" parent="." instance=ExtResource("2_1lc8k")]
+position = Vector2(34, 1)
+scale = Vector2(1, 0.993702)

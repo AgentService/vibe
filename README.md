@@ -16,7 +16,7 @@
 
 ### Architecture Check
 ```bash
-double-click check_architecture.bat
+double-click tests/tools/check_architecture.bat
 ```
 
 ## 🏗️ Architecture
@@ -36,7 +36,7 @@ Enforces layered architecture with automated boundary checking:
 ## 🔧 Development
 
 ### Tools
-- **Architecture validation**: `check_architecture.bat`
+- **Architecture validation**: `tests/tools/check_architecture.bat`
 - **Pre-commit hooks**: Automatic violation prevention
 - **CI integration**: GitHub Actions pipeline
 
