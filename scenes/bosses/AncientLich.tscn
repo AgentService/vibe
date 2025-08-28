@@ -106,10 +106,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_vnul3"]
-size = Vector2(42, 47)
+size = Vector2(42, 46)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
-size = Vector2(42, 46.5)
+size = Vector2(42, 45.75)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_737yx"]
 bg_color = Color(0.1, 0.1, 0.1, 0.9)
@@ -149,13 +149,13 @@ sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1, 8.5)
+position = Vector2(1, 9)
 shape = SubResource("RectangleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1, 8.25)
+position = Vector2(1, 8.875)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]

@@ -106,10 +106,10 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_collision"]
-size = Vector2(42, 47)
+size = Vector2(43, 45)
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
-size = Vector2(42, 46.5)
+size = Vector2(43, 45)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 0.9)
@@ -146,16 +146,16 @@ script = ExtResource("1_215q3")
 position = Vector2(1, 0)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_lw0tx")
-animation = &"wake_up"
+animation = &"damage_taken"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 8.5)
+position = Vector2(0.5, 11.5)
 shape = SubResource("RectangleShape2D_collision")
 
 [node name="HitBox" type="Area2D" parent="."]
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0, 8.25)
+position = Vector2(0.5, 11.5)
 shape = SubResource("RectangleShape2D_hitbox")
 
 [node name="AttackTimer" type="Timer" parent="."]
@@ -163,9 +163,9 @@ wait_time = 2.0
 
 [node name="HealthBar" type="ProgressBar" parent="."]
 offset_left = -21.0
-offset_top = -18.0
+offset_top = -17.0
 offset_right = 21.0
-offset_bottom = -13.0
+offset_bottom = -12.0
 theme = SubResource("Theme_healthbar")
 value = 100.0
 show_percentage = false

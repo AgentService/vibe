@@ -55,9 +55,18 @@ Decision: Use AnimatedSprite2D for all boss visuals to leverage the frame editor
 
 ---
 
+## Sequencing and Scope Split
+
+- Do Task 6 first (6-BOSS_ANIMATEDSPRITE_MIGRATION_AND_BASEBOSS.md):
+  - BaseBoss runtime, AnimatedSprite2D boss scenes, boss_scene_path on EnemyTemplate, WaveDirector no-switch boss instantiation, Damage v2 compliance, stable IDs.
+- Then this task (5-DATA_DRIVEN_BOSS_AND_MAP_SPAWNING.md):
+  - MapConfig, EnemyPool/BossPool, SpawnTimer resources, EnemyFactory map helpers, WaveDirector map and timers.
+- Tests/docs:
+  - Hybrid spawning tests live here; boss runtime tests live in Task 6.
+
 ## Implementation Plan (Phases & Checklist)
 
-### Phase A — Boss Scene Path on EnemyTemplate
+### Phase A — Boss Scene Path on EnemyTemplate [Handled in Task 6]
 - [ ] Add field to EnemyTemplate.gd:
       `@export var boss_scene_path: String = ""`
 - [ ] Validate path format in EnemyTemplate.validate() (optional warning if render_tier == "boss" and path empty)
@@ -67,7 +76,7 @@ Decision: Use AnimatedSprite2D for all boss visuals to leverage the frame editor
 
 Output: Boss templates carry their own scene identity (no WaveDirector switches).
 
-### Phase B — WaveDirector Refactor (No Switches)
+### Phase B — WaveDirector Refactor (No Switches) [Handled in Task 6]
 - [ ] Replace _spawn_boss_scene(spawn_config) switch with data-driven path:
   - [ ] Resolve template via EnemyFactory.get_template(spawn_config.template_id)
   - [ ] Read template.boss_scene_path
@@ -145,7 +154,7 @@ Output: Centralized, testable selection logic consistent with V2.
 
 Output: Map controls enemy composition and special timed spawns.
 
-### Phase F — AnimatedSprite2D Boss Workflow
+### Phase F — AnimatedSprite2D Boss Workflow [Handled in Task 6]
 - [ ] Confirm boss scenes use AnimatedSprite2D (or AnimatedSprite2D + AnimationPlayer) for frame editor workflow
 - [ ] In _spawn_boss_scene, if boss_instance supports `setup_from_spawn_config`, pass SpawnConfig
 - [ ] Optional: support simple visual_config application if desired (e.g., tint/scale)
@@ -205,10 +214,10 @@ Docs:
 
 ## Minimal Milestone (Ship in small steps)
 
-- [ ] A1: EnemyTemplate.boss_scene_path + update two boss .tres
-- [ ] B1: WaveDirector uses template-based boss scene path (switch removed)
-- [ ] F1: Ensure both bosses render via AnimatedSprite2D scenes
-- [ ] Sanity test: manual boss spawn works with data-only mapping
+- [ ] C1: Implement MapConfig/BossPool/EnemyPool/SpawnTimer resources and one sample map (e.g., forest_map.tres)
+- [ ] D1: Add EnemyFactory.spawn_from_map_pool() helper with deterministic selection
+- [ ] E1: Integrate WaveDirector with MapConfig (pool selection + one repeating timer)
+- [ ] Sanity test: map-drivenawns influence enemy composition; bosses resolve via template.boss_scene_path from Task 6
 - [ ] Commit and tag
 
-Then proceed with C/D/E for map config and timers.
+Proceed with remaining C/D/E expansions (more maps, more pools/timers) after validation.
