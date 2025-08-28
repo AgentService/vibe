@@ -5,12 +5,12 @@ The CheatSystem is a debug/development singleton that provides runtime cheats fo
 
 ## Core Components
 
-### CheatSystem.gd (`vibe/autoload/CheatSystem.gd`)
+### CheatSystem.gd (`autoload/CheatSystem.gd`)
 - **Type**: Autoload singleton
 - **Process Mode**: `PROCESS_MODE_ALWAYS` (works during pause)
 - **Purpose**: Debug functionality for development and testing
 
-### CheatTogglePayload.gd (`vibe/scripts/domain/signal_payloads/CheatTogglePayload.gd`)
+### CheatTogglePayload.gd (`scripts/domain/signal_payloads/CheatTogglePayload.gd`)
 - **Type**: Resource payload class
 - **Purpose**: Signal payload for cheat state changes
 - **Fields**: `cheat_name: String`, `enabled: bool`
@@ -21,13 +21,13 @@ The CheatSystem is a debug/development singleton that provides runtime cheats fo
 - **Function**: `toggle_god_mode()`
 - **State**: `god_mode: bool`
 - **Effect**: Blocks all damage to player
-- **Integration**: Player.gd checks `CheatSystem.is_god_mode_active()` in `_on_damage_taken()` at vibe/scenes/arena/Player.gd:214
+- **Integration**: Player.gd checks `CheatSystem.is_god_mode_active()` in `_on_damage_taken()` at scenes/arena/Player.gd:214
 
 ### Spawn Control (Ctrl+2)
 - **Function**: `toggle_spawn_disabled()`
 - **State**: `spawn_disabled: bool`
 - **Effect**: Toggles enemy spawning on/off
-- **Integration**: WaveDirector.gd checks `CheatSystem.is_spawn_disabled()` in `_handle_spawning()` at vibe/scripts/systems/WaveDirector.gd:132
+- **Integration**: WaveDirector.gd checks `CheatSystem.is_spawn_disabled()` in `_handle_spawning()` at scripts/systems/WaveDirector.gd:132
 
 ### Silent Pause (F10)
 - **Function**: `toggle_silent_pause()`
@@ -52,7 +52,7 @@ All cheat inputs are processed in `_input()` with proper event handling:
 
 ### Player System
 ```gdscript
-# vibe/scenes/arena/Player.gd:214
+# scenes/arena/Player.gd:214
 if CheatSystem and CheatSystem.is_god_mode_active():
     Logger.debug("Damage blocked by god mode", "debug")
     return
@@ -60,7 +60,7 @@ if CheatSystem and CheatSystem.is_god_mode_active():
 
 ### Wave System
 ```gdscript
-# vibe/scripts/systems/WaveDirector.gd:132
+# scripts/systems/WaveDirector.gd:132
 if CheatSystem and CheatSystem.is_spawn_disabled():
     return
 ```

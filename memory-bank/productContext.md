@@ -39,7 +39,7 @@ Why this project exists, who it serves, how it should work, and the experience g
 - Survive waves; hybrid bosses appear; death or victory ends run.
 
 ## Content & Balance Principles
-- All tunables live in `vibe/data/*` as typed .tres (e.g., balance, XP curves, UI configs).
+- All tunables live in `data/*` as typed .tres (e.g., balance, XP curves, UI configs).
 - Resources validated on load; safe fallbacks when missing/malformed.
 - Enemy/content definitions are registry-driven; adding content requires no code changes.
 

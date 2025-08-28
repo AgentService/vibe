@@ -6,8 +6,8 @@ Priority: Medium (execute after V2 is proven)
 Dependencies:
 - Obsidian/03-tasks/ENEMY_V2_MVP_AND_SPAWN_PLAN.md (Completed: MVP + Spawn Plan)
 - BalanceDB toggle in place (`use_enemy_v2_system`)
-- V2 templates live under `vibe/data/content/enemies_v2/*`
-- V2 code under `vibe/scripts/systems/enemy_v2/*`
+- V2 templates live under `data/content/enemies_v2/*`
+- V2 code under `scripts/systems/enemy_v2/*`
 
 Risk: Low (toggle protected, isolated folders, single seam removal)
 Rollback: Easy (reintroduce seam and restore deleted dirs via Git)
@@ -55,7 +55,7 @@ C) Tests
 
 D) Documentation
 - Remove references to legacy registry/enemy data from ARCHITECTURE.md and CLAUDE.md
-- Update `/vibe/data/README.md` to document only V2 schemas
+- Update `/data/README.md` to document only V2 schemas
 - Update CHANGELOG.md summarizing the removal
 
 ## What is NOT removed
@@ -79,7 +79,7 @@ D) Documentation
 Example seam (for reference):
 ```gdscript
 # Remove the legacy branch and toggle; keep this V2 call:
-const EnemyFactory := preload("res://vibe/scripts/systems/enemy_v2/EnemyFactory.gd")
+const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 var cfg := EnemyFactory.spawn_from_weights(spawn_request)
 return spawn_from_config)
 ```
@@ -97,7 +97,7 @@ return spawn_from_config)
 
 6) Docs & changelog
 - Update ARCHITECTURE.md and CLAUDE.md to reference only V2
-- Update `/vibe/data/README.md` schema docs to reflect V2 template/weights
+- Update `/data/README.md` schema docs to reflect V2 template/weights
 - Add a CHANGELOG.md entry for this week documenting the removal
 
 7) Grep for stragglers
@@ -107,7 +107,7 @@ Search in VSCode:
 - `EnemyRegistry`
 - `legacy_spawn` or `spawn_legacy`
 - `use_enemy_v2_system` (remove entirely if no longer used)
-- Paths under `vibe/data/content/enemies/` (legacy location) if V2 is under `enemies_v2/`
+- Paths under `data/content/enemies/` (legacy location) if V2 is under `enemies_v2/`
 
 8) Build and run
 - Launch an arena; confirm all spawns function via V2

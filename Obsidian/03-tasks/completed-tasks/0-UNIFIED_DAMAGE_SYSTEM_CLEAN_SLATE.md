@@ -24,7 +24,7 @@ The initial unified damage system attempt failed due to:
 
 ### **Phase 1: Setup Clean Branch** (30 min)
 - Create new branch `damage-system-v2` from main
-- Create `vibe/scripts/systems/damage_v2/` directory  
+- Create `scripts/systems/damage_v2/` directory  
 - Document current damage flow for reference
 - Ensure game runs on new branch before changes
 

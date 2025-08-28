@@ -3,8 +3,8 @@
 ## Current Implementation
 
 ### CardPicker Modal
-**File**: `vibe/scenes/ui/CardPicker.tscn`
-**Script**: `vibe/scenes/ui/CardPicker.gd`
+**File**: `scenes/ui/CardPicker.tscn`
+**Script**: `scenes/ui/CardPicker.gd`
 
 ### Modal Flow
 ```gdscript

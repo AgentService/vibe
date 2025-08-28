@@ -1,7 +1,7 @@
 ## Brief overview
 - Repository of reusable but inactive Cline rule templates.
 - Copy selected templates into .clinerules/ to activate; keep bank templates pristine.
-- Optimized for a Godot project using vibe/ structure and data-driven .tres resources.
+- Optimized for a Godot project using the root structure and data-driven .tres resources.
 
 ## Structure
 - frameworks/: Engine- or framework-specific rules (e.g., Godot).

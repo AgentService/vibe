@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://dn65p4xiin4kv"]
+
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_9h0i1"]
+
+[resource]
+script = ExtResource("1_9h0i1")
+id = &"dragon_lord"
+parent_path = "res://data/content/enemies_v2/templates/boss_base.tres"
+health_range = Vector2(180, 220)
+damage_range = Vector2(45, 65)
+speed_range = Vector2(70, 90)
+size_factor = 2.0
+hue_range = Vector2(0.8, 1)
+tags = Array[StringName]([&"dragon", &"lord", &"boss", &"fire", &"elite"])
+weight = 22.0
+render_tier = "boss"
+visual_config = {
+"animation_speed": 1.0,
+"frame_count": 1,
+"frame_regions": [Rect2(0, 0, 24, 24)],
+"frame_size": Vector2(24, 24),
+"loop": false,
+"scale": Vector2(3, 3),
+"sprite_path": "res://assets/sprites/slime_purple.png"
+}

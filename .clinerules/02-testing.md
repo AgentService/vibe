@@ -1,14 +1,14 @@
 ## Brief overview
 - Testing standards for this Godot workspace.
-- Focus on fast, deterministic, isolated scene-based tests aligned with vibe/ structure.
+- Focus on fast, deterministic, isolated scene-based tests aligned with project structure.
 
 ## Test layout and naming
-- Place tests under vibe/tests mirroring system names (e.g., DamageSystem_Isolated.tscn/.gd).
+- Place tests under tests/ mirroring system names (e.g., DamageSystem_Isolated.tscn/.gd).
 - Use suffixes consistently: _Isolated for unit-style scene tests; test_* for integration/regression scripts.
 - Keep one concern per test scene/script; prefer small focused cases over mega-tests.
 
 ## Execution
-- Primary: run via vibe/tests/cli_test_runner.gd; batch: vibe/run_tests.bat.
+- Primary: run via tests/cli_test_runner.gd; batch: run_tests.bat.
 - Tests must run headless without editor interaction.
 - Ensure each test returns clear pass/fail signals; avoid flaky time-based waits.
 
@@ -28,7 +28,7 @@
 - Eliminate sleeps/timeouts where possible; use deterministic triggers.
 
 ## Test data and resources
-- Store test fixtures under vibe/data/debug/ or dedicated test folders; avoid inline hardcoding.
+- Store test fixtures under data/debug/ or dedicated test folders; avoid inline hardcoding.
 - Reuse .tres resources where feasible; load via preload() for hot paths in tests.
 
 ## Unified damage v2 testing

@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://6k2quw2wgnyx"]
+
+[ext_resource type="Shader" uid="uid://udp4uc61ys7f" path="res://shaders/boss_flash.gdshader" id="1"]
+
+[resource]
+shader = ExtResource("1")
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_modifier = 0.0

@@ -81,20 +81,20 @@ The documentation follows the established patterns:
 ## Related Project Files
 
 ### Key Implementation Files (UPDATED)
-- `vibe/scenes/arena/Arena.gd` (main scene, 378 lines) - processes Array[EnemyEntity] signals
-- `vibe/scenes/ui/HUD.gd` (game UI, 31 lines)
-- `vibe/scenes/ui/KeybindingsDisplay.gd` (controls reference, 87 lines)
-- `vibe/scripts/domain/EnemyType.gd` (enemy definitions from JSON)
-- `vibe/scripts/domain/EnemyEntity.gd` (typed entity wrapper) ⭐ NEW
-- `vibe/scripts/systems/EnemyRegistry.gd` (JSON enemy resource loading, knight types)
-- `vibe/scripts/systems/WaveDirector.gd` (Array[EnemyEntity] pool management) ⭐ UPDATED
-- `vibe/scripts/systems/EnemyRenderTier.gd` (tier assignment + Dictionary conversion) ⭐ UPDATED
-- `vibe/scripts/systems/DamageSystem.gd` (object identity collision detection) ⭐ UPDATED
-- `vibe/scripts/systems/MeleeSystem.gd` (WaveDirector references for pool indexing) ⭐ UPDATED
-- `vibe/autoload/EventBus.gd` (communication system with Array[EnemyEntity] signals) ⭐ UPDATED
-- `vibe/autoload/BalanceDB.gd` (data validation + hot-reload)
-- `vibe/autoload/RunManager.gd` (player stats management)
-- `vibe/scenes/main/Main.gd` (entry point, 14 lines)
+- `scenes/arena/Arena.gd` (main scene, 378 lines) - processes Array[EnemyEntity] signals
+- `scenes/ui/HUD.gd` (game UI, 31 lines)
+- `scenes/ui/KeybindingsDisplay.gd` (controls reference, 87 lines)
+- `scripts/domain/EnemyType.gd` (enemy definitions from JSON)
+- `scripts/domain/EnemyEntity.gd` (typed entity wrapper) ⭐ NEW
+- `scripts/systems/EnemyRegistry.gd` (JSON enemy resource loading, knight types)
+- `scripts/systems/WaveDirector.gd` (Array[EnemyEntity] pool management) ⭐ UPDATED
+- `scripts/systems/EnemyRenderTier.gd` (tier assignment + Dictionary conversion) ⭐ UPDATED
+- `scripts/systems/DamageSystem.gd` (object identity collision detection) ⭐ UPDATED
+- `scripts/systems/MeleeSystem.gd` (WaveDirector references for pool indexing) ⭐ UPDATED
+- `autoload/EventBus.gd` (communication system with Array[EnemyEntity] signals) ⭐ UPDATED
+- `autoload/BalanceDB.gd` (data validation + hot-reload)
+- `autoload/RunManager.gd` (player stats management)
+- `scenes/main/Main.gd` (entry point, 14 lines)
 
 ### Architecture Documents
 - `ARCHITECTURE.md` - Overall project architecture

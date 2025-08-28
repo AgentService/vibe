@@ -4,6 +4,15 @@
 
 ## [Current Week - In Progress]
 
+### Changed
+- **Project Structure Update**: Completed migration from vibe/ subdirectory to project root structure
+  - **File paths updated**: All documentation, configuration, and test files updated to use new structure
+  - **Core files**: .clinerules/, docs/, memory-bank/, tests/, scripts/, data/, scenes/, autoload/ now at project root
+  - **CI/CD**: Updated GitHub workflows and pre-commit hooks for new structure
+  - **Documentation**: Updated all .md files including ARCHITECTURE.md, CURSOR.md, LESSONS_LEARNED.md
+  - **Tests**: Updated all test file imports and scene references
+  - **Godot executable**: Updated references from "../Godot_v4.4.1-stable_win64_console.exe" to "./Godot_v4.4.1-stable_win64_console.exe"
+
 ### Removed
 - **Legacy Enemy System Decommissioned**: Completed removal of dual-path enemy system in favor of V2-only approach
   - **Core changes**: Removed EnemyRegistry.gd, use_enemy_v2_system toggle, legacy spawn branch in WaveDirector
@@ -15,7 +24,7 @@
 ### Added
 - **Memory Bank Documentation System**: Established memory-bank/ as single source of truth for session resets and onboarding
   - Core files: projectbrief.md, productContext.md, systemPatterns.md, techContext.md, activeContext.md, progress.md
-  - Sourced from: README.md, ARCHITECTURE.md, docs/ARCHITECTURE_QUICK_REFERENCE.md, vibe/docs/ARCHITECTURE_RULES.md, CLAUDE.md, LESSONS_LEARNED.md, changelogs, Obsidian systems docs
+  - Sourced from: README.md, ARCHITECTURE.md, docs/ARCHITECTURE_QUICK_REFERENCE.md, docs/ARCHITECTURE_RULES.md, CLAUDE.md, LESSONS_LEARNED.md, changelogs, Obsidian systems docs
   - Workflow: Read all Memory Bank files at task start; update activeContext and progress after significant changes
 - **Hybrid Enemy Spawning System**: Complete dual-mode enemy spawning supporting both pooled enemies and scene-based special bosses
   - **EnemyType.gd extensions**: Added boss_scene, is_special_boss, and boss_spawn_method properties for hybrid spawning

@@ -22,25 +22,25 @@ jobs:
         mv Godot_v4.4.1-stable_linux.x86_64 godot
     
     - name: Run Architecture Boundary Tests
-      working-directory: ./vibe
+      working-directory: ./
       run: |
         echo "🔍 Running architecture boundary validation..."
-        ../godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15
+        ./godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15
       
     - name: Run Full Test Suite (including architecture)
-      working-directory: ./vibe
+      working-directory: ./
       run: |
         echo "🧪 Running full test suite..."
-        ../godot --headless tests/run_tests.tscn --quit-after 30
+        ./godot --headless tests/run_tests.tscn --quit-after 30
       
     - name: Generate Architecture Report
       if: always()
-      working-directory: ./vibe
+      working-directory: ./
       run: |
         echo "📊 Generating architecture dependency report..."
         # Note: This would need to be a headless version of the tool
         # For now, we'll just run the boundary test which outputs violations
-        ../godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15 || echo "Violations detected"
+        ./godot --headless --script tests/test_architecture_boundaries.gd --quit-after 15 || echo "Violations detected"
       
     - name: Comment on PR (if violations found)
       if: failure() && github.event_name == 'pull_request'
@@ -63,7 +63,7 @@ jobs:
             ### How to Fix:
             1. Review the specific violations in the CI logs above
             2. Refer to \`ARCHITECTURE.md\` for guidance on proper layer boundaries
-            3. Run locally: \`cd vibe && ../godot --headless --script tests/test_architecture_boundaries.gd\`
+            3. Run locally: \`./godot --headless --script tests/test_architecture_boundaries.gd\`
             4. Use the static analysis tool: \`Tools > Execute Script > check_boundaries.gd\` in Godot Editor
             
             ### Architecture Layers:
@@ -91,7 +91,7 @@ jobs:
         mv Godot_v4.4.1-stable_linux.x86_64 godot
     
     - name: Generate Architecture Metrics
-      working-directory: ./vibe
+      working-directory: ./
       run: |
         echo "📈 Generating architecture metrics..."
         echo "Files by layer:" > architecture_report.txt
@@ -107,4 +107,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: architecture-report
-        path: vibe/architecture_report.txt
+        path: architecture_report.txt

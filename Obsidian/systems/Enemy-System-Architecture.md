@@ -75,7 +75,7 @@ match type_id:
 
 ### Data Files
 ```
-/vibe/data/enemies/
+/data/enemies/
 ├── config/
 │   ├── enemy_registry.json    # Central registry (spawn weights)
 │   └── enemy_tiers.json       # Tier boundaries & render configs
@@ -87,7 +87,7 @@ match type_id:
 
 ### System Files
 ```
-/vibe/scripts/
+/scripts/
 ├── domain/
 │   ├── EnemyType.gd           # JSON enemy definition wrapper
 │   └── EnemyEntity.gd         # Runtime typed enemy object
@@ -176,8 +176,8 @@ if loaded_count == 0:
 ```
 
 ### Path Resolution
-- **Corrected Paths**: `res://data/enemies/` (not `res://vibe/data/enemies/`)
-- **Godot Project Base**: `/vibe/` directory is project root
+- **Corrected Paths**: `res://data/enemies/` (not `res://data/enemies/`)
+- **Godot Project Base**: Root directory is project root
 - **Resource Loading**: Standard Godot resource path handling
 
 ## 🎮 Gameplay Impact
@@ -263,6 +263,6 @@ MeleeSystem ← WaveDirector reference (collision detection)
 
 **Implementation History:**
 - **August 22, 2025**: Initial pure JSON system implementation
-- **Path Fix**: Corrected `res://vibe/` → `res://` resolution issue  
+- **Path Fix**: Corrected resource path resolution issue  
 - **Fallback Removal**: Eliminated hardcoded enemy definitions
 - **Visual Tiers**: Implemented 4-tier color-coded system

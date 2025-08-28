@@ -14,7 +14,7 @@ The GameOrchestrator refactor successfully migrated all 8 game systems from Aren
 ## Cleanup Tasks
 
 ### 1. Remove Unused Comments & Documentation
-**Location**: `vibe/scenes/arena/Arena.gd`
+**Location**: `scenes/arena/Arena.gd`
 
 ```gdscript
 # Remove these outdated comments:
@@ -126,7 +126,7 @@ Consider adding section headers for better organization:
 ## Verification Steps
 
 After cleanup:
-1. **Run Quick Test**: `"../Godot_v4.4.1-stable_win64_console.exe" --headless --quit-after 5`
+1. **Run Quick Test**: `"./Godot_v4.4.1-stable_win64_console.exe" --headless --quit-after 5`
 2. **Verify No Functionality Loss**: Game should start identically
 3. **Check Code Readability**: Arena.gd should be cleaner and easier to read
 4. **Validate Comments**: All remaining comments should be relevant and helpful
@@ -145,8 +145,8 @@ After cleanup:
 - **Optional**: Can be done anytime, not blocking other work
 
 ## Related Files
-- `vibe/scenes/arena/Arena.gd` - Primary cleanup target
-- `vibe/scenes/arena/Arena.gd.backup` - Reference for before/after comparison
+- `scenes/arena/Arena.gd` - Primary cleanup target
+- `scenes/arena/Arena.gd.backup` - Reference for before/after comparison
 
 ## Completion
 When completed:

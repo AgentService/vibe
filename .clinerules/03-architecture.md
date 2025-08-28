@@ -1,9 +1,9 @@
 ## Brief overview
 - Architecture boundaries, event-driven flow, and autoload usage for this Godot project.
-- Keep systems decoupled, data-driven, and aligned with existing vibe/ structure.
+- Keep systems decoupled, data-driven, and aligned with existing project structure.
 
 ## Boundaries and layering
-- Separate concerns: systems in vibe/scripts/systems, reusable utils/resources in vibe/scripts/{utils,resources}, scenes in vibe/scenes/*, data in vibe/data/*.
+- Separate concerns: systems in scripts/systems, reusable utils/resources in scripts/{utils,resources}, scenes in scenes/*, data in data/*.
 - No cross-layer reach-ins; interact via signals/services, not direct node lookups across modules.
 - One script per scene; scene script orchestrates, system scripts implement logic.
 
@@ -23,7 +23,7 @@
 - Disable _process/_physics_process unless required; prefer event/timer-driven updates.
 
 ## Data-driven resources
-- Store tunables in .tres under vibe/data/*; avoid hardcoded gameplay values.
+- Store tunables in .tres under data/*; avoid hardcoded gameplay values.
 - Validate resources at load where critical; keep names/ids stable for tooling.
 - Preload for hot paths; lazy-load via ResourceLoader for infrequent assets.
 
@@ -46,5 +46,5 @@
 - Guard heavy logs behind flags; use Logger.gd for structured context.
 
 ## Documentation and checks
-- Reflect architectural changes in docs/ARCHITECTURE_QUICK_REFERENCE.md and vibe/docs/ARCHITECTURE_RULES.md.
-- Add/adjust isolated tests in vibe/tests for new boundaries; run vibe/check_architecture.bat if applicable.
+- Reflect architectural changes in docs/ARCHITECTURE_QUICK_REFERENCE.md and docs/ARCHITECTURE_RULES.md.
+- Add/adjust isolated tests in tests/ for new boundaries; run check_architecture.bat if applicable.

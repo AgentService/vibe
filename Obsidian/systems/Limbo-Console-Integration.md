@@ -4,7 +4,7 @@
 LimboConsole plugin provides an in-game developer console for runtime debugging, balance tuning, and system interaction.
 
 ## Plugin Details
-- **Location:** `vibe/addons/limbo_console/`
+- **Location:** `addons/limbo_console/`
 - **Version:** 0.4.1
 - **Autoload:** `LimboConsole` singleton
 - **Toggle Key:** `^` (circumflex)

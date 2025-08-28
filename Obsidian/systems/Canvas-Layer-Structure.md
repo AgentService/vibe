@@ -61,8 +61,8 @@ UIManager (CanvasLayer structure)
 ## Current Components Detail
 
 ### HUD Component (Layer 0 equivalent)
-**File**: `vibe/scenes/ui/HUD.tscn`
-**Script**: `vibe/scenes/ui/HUD.gd` (31 lines)
+**File**: `scenes/ui/HUD.tscn`
+**Script**: `scenes/ui/HUD.gd` (31 lines)
 
 **Structure**:
 ```
@@ -82,7 +82,7 @@ HUD (Control - fullscreen)
 - Contains [[KeybindingsDisplay-Component]] for persistent control reference
 
 ### CardPicker Component (Layer 2 equivalent)  
-**File**: `vibe/scenes/ui/CardPicker.tscn`
+**File**: `scenes/ui/CardPicker.tscn`
 **Modal Behavior**: Pauses game via `RunManager.pause_game(true)`
 
 ## Implementation Requirements

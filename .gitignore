@@ -2,6 +2,7 @@
 .godot/
 *.tmp
 .import/
+/android/
 
 # Visual Studio Code
 .vscode/

@@ -7,10 +7,10 @@
 ### Run Architecture Check
 ```bash
 # Easiest method
-cd vibe && double-click check_architecture.bat
+double-click tests/tools/check_architecture.bat
 
 # Command line
-cd vibe && "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tools/check_boundaries_standalone.gd --quit-after 10
+"./Godot_v4.4.1-stable_win64_console.exe" --headless --script tools/check_boundaries_standalone.gd --quit-after 10
 
 # Pre-commit (automatic)
 git commit -m "changes"  # Runs check automatically
@@ -109,10 +109,10 @@ func get_stats(): return player_system.get_player_stats()
 ### Tool Won't Run
 ```bash
 # Check location
-pwd  # Should be in /vibe directory
+pwd  # Should be in project root directory
 
 # Check Godot exists
-ls ../Godot_v4.4.1-stable_win64_console.exe
+ls ./Godot_v4.4.1-stable_win64_console.exe
 
 # Try longer timeout
 --quit-after 30
@@ -131,6 +131,6 @@ ls ../Godot_v4.4.1-stable_win64_console.exe
 ## 📚 Documentation Links
 
 - **Detailed Guide**: [ARCHITECTURE_ENFORCEMENT_GUIDE.md](ARCHITECTURE_ENFORCEMENT_GUIDE.md)
-- **Enforcement Rules**: [../vibe/docs/ARCHITECTURE_RULES.md](../vibe/docs/ARCHITECTURE_RULES.md)
+- **Enforcement Rules**: [ARCHITECTURE_RULES.md](ARCHITECTURE_RULES.md)
 - **Overall Architecture**: [../ARCHITECTURE.md](../ARCHITECTURE.md)
 - **Development Guidelines**: [../CLAUDE.md](../CLAUDE.md)

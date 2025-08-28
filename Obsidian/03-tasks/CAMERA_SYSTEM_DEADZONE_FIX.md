@@ -60,7 +60,7 @@ Verify that:
 - Camera bounds enforcement still works correctly
 
 ## Files to Modify
-- `vibe/scripts/systems/CameraSystem.gd` (lines 59-73)
+- `scripts/systems/CameraSystem.gd` (lines 59-73)
 
 ## Testing
 1. **Manual Test**: Run the game and move the player slowly to verify deadzone behavior

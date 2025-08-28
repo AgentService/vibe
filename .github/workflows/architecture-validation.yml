@@ -18,14 +18,14 @@ jobs:
         echo "Checking for get_node('../') anti-patterns in systems..."
         
         # Check for get_node with relative paths in systems directory
-        if grep -r "get_node(\"\.\./" vibe/scripts/systems/ 2>/dev/null; then
+        if grep -r "get_node(\"\.\./" scripts/systems/ 2>/dev/null; then
           echo "❌ FAIL: Found get_node('../') anti-patterns in systems directory"
           echo "Systems must use signals or autoloads for cross-system communication"
           exit 1
         fi
         
         # Check for other get_node patterns that might be problematic
-        if grep -r "get_node.*\.\." vibe/scripts/systems/ 2>/dev/null; then
+        if grep -r "get_node.*\.\." scripts/systems/ 2>/dev/null; then
           echo "❌ FAIL: Found get_node with '..' patterns in systems directory"
           echo "Systems must use signals or autoloads for cross-system communication"
           exit 1
@@ -44,7 +44,7 @@ jobs:
         fi
         
         # Check that EventBus.gd has proper docstrings
-        if ! grep -q "## Global event bus for cross-system communication" vibe/autoload/EventBus.gd; then
+        if ! grep -q "## Global event bus for cross-system communication" autoload/EventBus.gd; then
           echo "❌ FAIL: EventBus.gd missing proper documentation"
           exit 1
         fi
@@ -56,7 +56,7 @@ jobs:
         echo "Checking EntityId usage in signals..."
         
         # Check that signal payload classes use EntityId for typed entity references
-        entityid_files=$(find vibe/scripts/domain/signal_payloads/ -name "*.gd" -exec grep -l "EntityId" {} \; || true)
+        entityid_files=$(find scripts/domain/signal_payloads/ -name "*.gd" -exec grep -l "EntityId" {} \; || true)
         
         if [ -z "$entityid_files" ]; then
           echo "❌ FAIL: Signal payload classes should use EntityId for typed entity references"
@@ -70,13 +70,13 @@ jobs:
         echo "Checking system dependency patterns..."
         
         # Check that systems directory has proper structure
-        if [ ! -d "vibe/scripts/systems" ]; then
+        if [ ! -d "scripts/systems" ]; then
           echo "❌ FAIL: Systems directory not found"
           exit 1
         fi
         
         # Check that domain directory exists for data models
-        if [ ! -d "vibe/scripts/domain" ]; then
+        if [ ! -d "scripts/domain" ]; then
           echo "❌ FAIL: Domain directory not found"
           exit 1
         fi
@@ -88,7 +88,7 @@ jobs:
         echo "Checking for _exit_tree cleanup patterns..."
         
         # Look for systems that connect to signals but might not have cleanup
-        systems_with_connects=$(grep -l "\.connect(" vibe/scripts/systems/*.gd 2>/dev/null || true)
+        systems_with_connects=$(grep -l "\.connect(" scripts/systems/*.gd 2>/dev/null || true)
         
         if [ -n "$systems_with_connects" ]; then
           for system in $systems_with_connects; do
@@ -114,12 +114,10 @@ jobs:
     
     - name: Import project (first run to generate .godot directory)
       run: |
-        cd vibe
         godot --headless --editor --quit-after 5
     
     - name: Run headless tests
       run: |
-        cd vibe
         timeout 60 godot --headless --script tests/run_tests.gd || true
         
         # Check if tests completed successfully

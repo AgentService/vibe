@@ -269,7 +269,7 @@ if "wave_director" in arena:
 
 ### UI Configuration Should Use JSON, Not @export
 **Problem/Context**: UI components with @export variables violate project's JSON-first content rule
-**Solution/Pattern**: Move UI configuration values to JSON files in `/vibe/data/ui/`; load via ContentDB
+**Solution/Pattern**: Move UI configuration values to JSON files in `/data/ui/`; load via ContentDB
 **Code Example**:
 ```gdscript
 # Wrong - hardcoded @export values:
@@ -277,7 +277,7 @@ if "wave_director" in arena:
 @export var enemy_color: Color = Color(0.8, 0.2, 0.2, 1.0)
 
 # Right - JSON configuration:
-# /vibe/data/ui/radar.json
+# /data/ui/radar.json
 {"radar_range": 1500.0, "colors": {"enemy": {"r": 0.8, "g": 0.2, "b": 0.2, "a": 1.0}}}
 
 # Load in _ready():
