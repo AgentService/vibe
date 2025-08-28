@@ -7,10 +7,10 @@ func _initialize() -> void:
 	print("=== Testing Melee Damage Flow ===")
 	
 	# Create minimal systems
-	var melee_system = load("res://vibe/scripts/systems/MeleeSystem.gd").new()
-	var wave_director = load("res://vibe/scripts/systems/WaveDirector.gd").new() 
-	var damage_system = load("res://vibe/scripts/systems/DamageSystem.gd").new()
-	var ability_system = load("res://vibe/scripts/systems/AbilitySystem.gd").new()
+	var melee_system = load("res://scripts/systems/MeleeSystem.gd").new()
+	var wave_director = load("res://scripts/systems/WaveDirector.gd").new() 
+	var damage_system = load("res://scripts/systems/DamageSystem.gd").new()
+	var ability_system = load("res://scripts/systems/AbilitySystem.gd").new()
 	
 	# Initialize systems
 	melee_system._ready()

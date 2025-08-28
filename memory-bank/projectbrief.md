@@ -6,7 +6,7 @@ PoE-style buildcraft roguelike (2D top-down) built in Godot 4.x with a mechanics
 - Core loop: fixed-step (30 Hz) deterministic combat with wave/survivor arena.
 - Buildcraft focus: skills + supports, items/affixes, small skill tree, card-like progression choices.
 - Performance-first: thousands of enemies via batched rendering (MultiMesh) and pooling.
-- Data-driven: gameplay/balance/content configured via typed Resources (.tres) under vibe/data/*.
+- Data-driven: gameplay/balance/content configured via typed Resources (.tres) under data/*.
 - Event-driven: cross-system communication via EventBus autoload with typed payloads.
 - Layered architecture: Domain (pure data) → Systems (logic) → Scenes (UI); Autoloads as glue.
 
@@ -42,7 +42,7 @@ PoE-style buildcraft roguelike (2D top-down) built in Godot 4.x with a mechanics
 ## Success Criteria
 - Stable 30 Hz deterministic combat across machines/seeds.
 - Architecture check matrix remains clean (no forbidden edges).
-- All tunables live in vibe/data/* as typed .tres with hot-reload.
+- All tunables live in data/* as typed .tres with hot-reload.
 - Damage pipeline unified across all entity types (pooled enemies, scene bosses, player).
 - CI/pre-commit enforce boundaries and tests pass headless.
 - Documentation accurate: Memory Bank + Obsidian systems reflect current implementation.

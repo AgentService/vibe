@@ -59,15 +59,15 @@ Damage Event → EventBus.damage_applied → EnemyMultiMeshHitFeedback
 ```
 
 ### Key Files Modified
-- `vibe/scripts/systems/EnemyMultiMeshHitFeedback.gd` - Core feedback system
-- `vibe/scripts/resources/VisualFeedbackConfig.gd` - Configuration resource
-- `vibe/data/balance/visual_feedback.tres` - Balance configuration
-- `vibe/scripts/domain/signal_payloads/DamageRequestPayload.gd` - Added knockback fields
-- `vibe/scripts/domain/signal_payloads/DamageAppliedPayload.gd` - Added knockback fields
-- `vibe/scripts/systems/MeleeSystem.gd` - Knockback distance integration
-- `vibe/scripts/systems/damage_v2/DamageRegistry.gd` - Payload handling
-- `vibe/autoload/BalanceDB.gd` - Knockback distance support
-- `vibe/scenes/arena/Arena.gd` - System instantiation and injection
+- `scripts/systems/EnemyMultiMeshHitFeedback.gd` - Core feedback system
+- `scripts/resources/VisualFeedbackConfig.gd` - Configuration resource
+- `data/balance/visual_feedback.tres` - Balance configuration
+- `scripts/domain/signal_payloads/DamageRequestPayload.gd` - Added knockback fields
+- `scripts/domain/signal_payloads/DamageAppliedPayload.gd` - Added knockback fields
+- `scripts/systems/MeleeSystem.gd` - Knockback distance integration
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Payload handling
+- `autoload/BalanceDB.gd` - Knockback distance support
+- `scenes/arena/Arena.gd` - System instantiation and injection
 
 ### Configuration Parameters
 ```gdscript

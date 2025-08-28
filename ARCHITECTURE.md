@@ -7,7 +7,7 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
 - **ADD LEARNINGS TO LESSONS_LEARNED.md** after task completion if applicable (new patterns, solutions, or insights discovered)
 - **ALWAYS CHECK CLAUDE.md** before starting any task
 
-- *"YOU MUST keep tunables in /vibe/data/* (.tres resources)"
+- *"YOU MUST keep tunables in /data/* (.tres resources)"
 
 
 ## Layers
@@ -120,7 +120,7 @@ get_node("../Player").take_damage(10)
 
 ```
 GodotGame/
-├── vibe/                          # Main Godot project
+├── (root)/                        # Main Godot project
 │   ├── addons/                    # Third-party plugins (e.g., MCP)
 │   ├── assets/                    # Art, sound, and music assets
 │   ├── autoload/                  # Global singletons (e.g., EventBus)
@@ -146,10 +146,10 @@ GodotGame/
 ```
 
 ### Key Directories:
-- **`vibe/autoload/`**: Global systems accessible throughout the game.
-- **`vibe/data/`**: Data-driven `.tres` resources for tuning and content.
-- **`vibe/scenes/`**: Visual representation and UI logic.
-- **`vibe/scripts/domain/`**: Pure data classes, including signal payloads.
-- **`vibe/scripts/systems/`**: Core game mechanics and rules.
-- **`vibe/tests/`**: Automated testing and validation.
+- **`autoload/`**: Global systems accessible throughout the game.
+- **`data/`**: Data-driven `.tres` resources for tuning and content.
+- **`scenes/`**: Visual representation and UI logic.
+- **`scripts/domain/`**: Pure data classes, including signal payloads.
+- **`scripts/systems/`**: Core game mechanics and rules.
+- **`tests/`**: Automated testing and validation.
 - **Root level**: Project documentation and decision tracking.

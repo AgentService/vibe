@@ -1,6 +1,6 @@
 ## Brief overview
 - Coding standards for Godot/GDScript in this workspace.
-- Emphasize clarity, static typing, and alignment with existing vibe/ architecture.
+- Emphasize clarity, static typing, and alignment with existing architecture.
 
 ## GDScript style
 - Use static typing everywhere (vars, functions, signals); prefer typed arrays/dicts.
@@ -15,9 +15,9 @@
 - Expose tunables via @export with types; avoid editor-only defaults going stale.
 
 ## Data and resources
-- Store balance/data in .tres under vibe/data/*; do not hardcode in gameplay code.
+- Store balance/data in .tres under data/*; do not hardcode in gameplay code.
 - Load resources via typed properties or preload() for hot paths; ResourceLoader for dynamic.
-- Keep reusable scripts in vibe/scripts/* with clear domain/resources/utils boundaries.
+- Keep reusable scripts in scripts/* with clear domain/resources/utils boundaries.
 
 ## Combat and damage conventions
 - Route all damage via DamageService autoload (res://scripts/systems/damage_v2/DamageRegistry.gd); never call take_damage() directly.

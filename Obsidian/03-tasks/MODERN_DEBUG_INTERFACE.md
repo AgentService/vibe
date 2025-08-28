@@ -17,7 +17,7 @@ Replace the outdated cheat system with a modern, comprehensive debugging interfa
 ## Core Components
 
 ### 1. DebugManager (Core Debug Coordinator)
-**File:** `vibe/scripts/systems/debug/DebugManager.gd`
+**File:** `scripts/systems/debug/DebugManager.gd`
 
 ```gdscript
 extends Node
@@ -62,7 +62,7 @@ func _exit_debug_mode():
 ```
 
 ### 2. Entity Selection System
-**File:** `vibe/scripts/systems/debug/EntitySelector.gd`
+**File:** `scripts/systems/debug/EntitySelector.gd`
 
 ```gdscript
 extends Node
@@ -91,7 +91,7 @@ func get_entity_at_position(world_pos: Vector2) -> Dictionary:
 ```
 
 ### 3. Debug Ability Trigger
-**File:** `vibe/scripts/systems/debug/DebugAbilityTrigger.gd`
+**File:** `scripts/systems/debug/DebugAbilityTrigger.gd`
 
 ```gdscript
 extends Node
@@ -225,14 +225,14 @@ func trigger_ability(entity_data: Dictionary, ability_name: String):
 
 ## File Structure
 ```
-vibe/scripts/systems/debug/
+scripts/systems/debug/
 ├── DebugManager.gd                 # Core debug coordinator
 ├── EntitySelector.gd               # Entity selection system
 ├── DebugAbilityTrigger.gd         # Ability testing system
 ├── DebugUI.gd                     # Main debug panel controller
 └── DebugOverlay.gd                # Visual debug overlays
 
-vibe/scenes/debug/
+scenes/debug/
 ├── DebugPanel.tscn                # Main debug UI
 ├── EntityInspector.tscn           # Entity inspection panel
 ├── SpawnerControls.tscn           # Enemy spawning controls

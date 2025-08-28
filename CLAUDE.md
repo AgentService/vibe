@@ -11,7 +11,7 @@
 
 ## IMPORTANT – Working Rules
 - **YOU MUST** use **typed GDScript**; keep functions small (<40 lines); avoid God objects.
-- **YOU MUST** keep tunables in **`/godot/data/*`** (JSON) or engine config in `.tres` (see "Content formats").
+- **YOU MUST** keep tunables in **`/data/*`** (JSON) or engine config in `.tres` (see "Content formats").
 - **YOU MUST** communicate across systems via **Signals**; use `EventBus` autoload for global events.
 - **YOU MUST** use **Logger** for all output; never use `print()`, `push_error()`, or `push_warning()` directly.
 - **YOU MUST** maintain **determinism**:
@@ -21,10 +21,10 @@
 - **YOU MUST NOT** add networking to the client MVP (server/leagues later).
 
 ## Content formats
-- **Gameplay content** (enemies, abilities, items, heroes, maps) → **`.tres` resources** in `/vibe/data/content/*`.
-- **Balance tunables** (damage, rates, spawn weights) → **`.tres` resources** in `/vibe/data/balance/`.
+- **Gameplay content** (enemies, abilities, items, heroes, maps) → **`.tres` resources** in `/data/content/*`.
+- **Balance tunables** (damage, rates, spawn weights) → **`.tres` resources** in `/data/balance/`.
 - **Engine config/inspector-friendly** data (theme, input maps, export presets) → **`.tres/.res`**.
-- Document all schema changes in `/godot/data/README.md` and include one example file.
+- Document all schema changes in `/data/README.md` and include one example file.
 
 ## Hot-Reload Patterns
 - **Scene-based resources**: Use `@export var resource: ResourceType` for automatic Inspector hot-reload (Player, Arena configs)
@@ -59,7 +59,7 @@ get_node("../../UI/HUD").update_health(hp)
 - **Hot-reload**: F5 reloads config, F6 toggles DEBUG/INFO levels.
 
 ## Testing
-- Headless **Monte-Carlo sims** in `/godot/tests/` for DPS/TTK; seeds required. ([See ARCHITECTURE.md - Testing](ARCHITECTURE.md#testing-decision-7))
+- Headless **Monte-Carlo sims** in `/tests/` for DPS/TTK; seeds required. ([See ARCHITECTURE.md - Testing](ARCHITECTURE.md#testing-decision-7))
 - Add a minimal sim when adding/altering combat-relevant mechanics.
 - **Test script patterns**:
   - **Simple standalone tests**: `extends SceneTree` + `_initialize()` + `quit()` - for pure logic testing without autoloads
@@ -68,9 +68,9 @@ get_node("../../UI/HUD").update_health(hp)
 - **Test logging**: Use `print()` directly in tests for output - do NOT use Logger in test files
 
 ## Workflow (for Claude)
-1) **Update schemas** in `/vibe/data/content/*/README.md`; add one example .tres.
+1) **Update schemas** in `/data/content/*/README.md`; add one example .tres.
    ```tres
-   // Example: /vibe/data/content/abilities/fireball.tres
+   // Example: /data/content/abilities/fireball.tres
    [gd_resource type="Resource" script_class="AbilityType"]
    [resource]
    id = "fireball"
@@ -93,19 +93,19 @@ get_node("../../UI/HUD").update_health(hp)
 4) **Add/adjust headless sim**; verify DPS/TTK bands stay within ±10%. **Use `print()` for all test output** - never Logger.
    ```bash
    # For tests with autoloads (EventBus, RNG, ContentDB, etc.) - USE .tscn
-   "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn
-   "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_balance.tscn
+   "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn
+   "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_balance.tscn
    
    # For simple standalone scripts (no autoloads needed) - USE .gd
-   "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_math_test.gd
+   "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_math_test.gd
    
    # WRONG: Using --script with autoload dependencies will fail
-   # "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
+   # "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
    ```
 4b) **Consider isolated system test** for new core systems; see `/Obsidian/systems/Isolated-Testing-System.md`.
    ```bash
    # Create SystemName_Isolated.tscn for visual system testing
-   "../Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
+   "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/SystemName_Isolated.tscn --quit-after 5
    ```
 5) **Wire minimal UI**; keep it lean; use CanvasLayer for overlays.
 6) **Update Obsidian docs** if system architecture changed; note required updates in commit message.

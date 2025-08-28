@@ -165,15 +165,15 @@ The current boss system works functionally but has several areas for optimizatio
 ## Files to Modify
 
 ### **Core System Files:**
-- `vibe/scripts/systems/damage_v2/DamageRegistry.gd` - Add spatial query methods
-- `vibe/scripts/systems/MeleeSystem.gd` - Replace scene scanning with queries
-- `vibe/scripts/systems/DamageSystem.gd` - Update projectile collision detection
-- `vibe/scenes/arena/Arena.gd` - Add editor configuration support
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Add spatial query methods
+- `scripts/systems/MeleeSystem.gd` - Replace scene scanning with queries
+- `scripts/systems/DamageSystem.gd` - Update projectile collision detection
+- `scenes/arena/Arena.gd` - Add editor configuration support
 
 ### **New Files to Create:**
-- `vibe/scripts/domain/BossSpawnConfig.gd` - Boss spawn configuration resource
-- `vibe/scripts/domain/BossSpawnPoint.gd` - Map-based spawn point node
-- `vibe/data/config/boss_spawns.tres` - Default boss spawn configuration
+- `scripts/domain/BossSpawnConfig.gd` - Boss spawn configuration resource
+- `scripts/domain/BossSpawnPoint.gd` - Map-based spawn point node
+- `data/config/boss_spawns.tres` - Default boss spawn configuration
 
 ### **Documentation Files:**
 - `Obsidian/systems/Boss-Creation-Guide.md` - Complete boss creation workflow

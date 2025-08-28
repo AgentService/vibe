@@ -14,7 +14,7 @@ What works, what's left, current status, known issues, and the evolution of deci
 - Fixed-step RunManager with EventBus.combat_step cadence.
 - RNG: named streams (crit, loot, waves, ai, craft) seeded per run.
 - Layered boundaries: Scenes → Systems/Autoload, Systems → Domain/Autoload, Domain → Domain only.
-- Automated boundary tooling: vibe/check_architecture.bat, tests/test_architecture_boundaries.gd, CI gate.
+- Automated boundary tooling: check_architecture.bat, tests/test_architecture_boundaries.gd, CI gate.
 - Unified Damage v2: DamageService + DamageRegistry; damage_requested → damage_applied/dealt → damage_taken; entity_killed routed centrally; string-based entity IDs.
 - Hybrid Spawning: WaveDirector routes pooled vs scene-based bosses; public spawn APIs; special bosses excluded from weighted waves.
 - Data/Config: Migration to typed .tres (log_config, radar_config, xp_curves, balance, content); BalanceDB monitoring + @export for scene configs; ResourceLoader + CACHE_MODE_IGNORE for systems.

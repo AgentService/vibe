@@ -5,21 +5,21 @@ The isolated testing system provides dedicated test scenes for individual game s
 
 ## Current Test Scenes
 
-### `/vibe/tests/DamageSystem_Isolated.tscn`
+### `/tests/DamageSystem_Isolated.tscn`
 **Purpose:** Test damage calculation, application, and enemy death handling
 - **Auto-damage:** Applies damage to random/nearest enemies every 2 seconds
 - **Visual feedback:** Enemy scaling based on health percentage
 - **Death handling:** Uses proper WaveDirector damage methods
 - **Controls:** WASD (move), E (spawn enemy), 1-4 (damage types), +/- (damage amount)
 
-### `/vibe/tests/EnemySystem_Isolated.tscn`
+### `/tests/EnemySystem_Isolated.tscn`
 **Purpose:** Test enemy spawning, management, and rendering
 - **Grid spawning:** Space spawns 50 enemies in 10x5 grid pattern
 - **Type variations:** Different enemy types with distinct visual scaling
 - **Camera setup:** Positioned at (400,300) with 0.8x zoom for optimal viewing
 - **Controls:** Space (spawn grid), R (clear all), 1-4 (spawn specific types)
 
-### `/vibe/tests/MeleeSystem_Isolated.tscn`
+### `/tests/MeleeSystem_Isolated.tscn`
 **Purpose:** Test melee attack mechanics and cone detection
 - **Auto cone attacks:** 60-degree cone attacks every 1.5 seconds
 - **Range detection:** 80-unit attack range targeting nearest enemies  
@@ -102,8 +102,8 @@ Create a new isolated test when:
 - **AudioSystem** → Test sound triggering, volume, spatial audio
 
 ### Test Scene Naming Convention:
-`/vibe/tests/[SystemName]_Isolated.tscn`
-`/vibe/tests/[SystemName]_Isolated.gd`
+`/tests/[SystemName]_Isolated.tscn`
+`/tests/[SystemName]_Isolated.gd`
 
 ## Test Development Guidelines
 
@@ -138,7 +138,7 @@ Create a new isolated test when:
 ### Running Tests
 ```bash
 # Headless testing
-"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/SystemName_Isolated.tscn --quit-after 5
 
 # Visual testing via MCP
 mcp__godot-mcp__open_scene("res://tests/SystemName_Isolated.tscn")

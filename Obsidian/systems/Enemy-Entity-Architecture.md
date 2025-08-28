@@ -2,7 +2,7 @@
 
 **Status:** ✅ Implemented (August 2025)  
 **Purpose:** Typed object wrapper for enemy data with Dictionary compatibility  
-**Location:** `vibe/scripts/domain/EnemyEntity.gd`
+**Location:** `scripts/domain/EnemyEntity.gd`
 
 ## 🏗️ Overview
 

@@ -2,7 +2,7 @@
 
 ## Current Implementation
 
-**File**: `vibe/autoload/EventBus.gd`
+**File**: `autoload/EventBus.gd`
 **Type**: Autoload (Global Singleton)
 
 ## Signal Architecture
@@ -11,7 +11,7 @@
 
 ### Core Signal Groups
 
-This section reflects the signals currently defined in `vibe/autoload/EventBus.gd`.
+This section reflects the signals currently defined in `autoload/EventBus.gd`.
 
 **TIMING**
 - `signal combat_step(payload)`: Drives deterministic combat updates.
@@ -49,7 +49,7 @@ This section reflects the signals currently defined in `vibe/autoload/EventBus.g
 - `signal cheat_toggled(payload)`: A debug cheat has been toggled.
 
 ### Typed Payload Classes
-**Location**: `/vibe/scripts/domain/signal_payloads/`
+**Location**: `/scripts/domain/signal_payloads/`
 - All payload classes provide compile-time type safety
 - Accessed via EventBus preloads: `EventBus.DamageRequestPayload.new()`
 - Full IDE support with property auto-completion

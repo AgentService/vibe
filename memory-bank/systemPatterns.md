@@ -10,7 +10,7 @@ Authoritative reference for architecture, design patterns, and critical implemen
   - Autoload (autoload/*): Glue/singletons (EventBus, Logger, RunManager, RNG, BalanceDB, PauseManager, PlayerState, GameOrchestrator); may import Domain.
 - Enforcement:
   - Pre-commit and CI boundary checks.
-  - Tools: vibe/check_architecture.bat, tests/test_architecture_boundaries.gd, tools/check_boundaries*.
+  - Tools: check_architecture.bat, tests/test_architecture_boundaries.gd, tools/check_boundaries*.
 - Anti-patterns blocked:
   - Systems → Scenes coupling (get_node()).
   - Scenes → Domain imports (bypass Systems).
@@ -52,7 +52,7 @@ Authoritative reference for architecture, design patterns, and critical implemen
   - Direct take_damage() on nodes; scene tree scans for entities; per-system custom damage paths.
 
 ## Data-Driven Resources and Hot-Reload
-- All tunables and content are typed Resources (.tres) under vibe/data/* (balance, XP curves, UI configs, content).
+- All tunables and content are typed Resources (.tres) under data/* (balance, XP curves, UI configs, content).
 - Patterns:
   - Scenes: @export var config: ResourceType for inspector hot-reload.
   - Systems/Autoloads: ResourceLoader with monitoring/file timers (BalanceDB) and CACHE_MODE_IGNORE for live updates.
@@ -78,8 +78,8 @@ Authoritative reference for architecture, design patterns, and critical implemen
 - No print/push_warning/push_error in game code; tests may use print.
 
 ## Testing Patterns
-- Scene-based isolated tests under vibe/tests/*_Isolated.tscn for autoload-dependent systems; headless via Godot console.
-- CLI runner: vibe/tests/cli_test_runner.gd; vibe/run_tests.bat convenience.
+- Scene-based isolated tests under tests/*_Isolated.tscn for autoload-dependent systems; headless via Godot console.
+- CLI runner: tests/cli_test_runner.gd; run_tests.bat convenience.
 - Deterministic seeding (RNG) in tests; fast and deterministic; clear pass/fail.
 - Architecture boundary tests (test_architecture_boundaries.gd) enforce layer rules.
 - Use assert() and explicit checks; avoid global state leaks; reset/disconnect on teardown.

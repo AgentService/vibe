@@ -6,19 +6,16 @@
 
 ### Running the Game
 ```bash
-cd vibe
-"../Godot_v4.4.1-stable_win64.exe"
+"./Godot_v4.4.1-stable_win64.exe"
 ```
 
 ### Running Tests
 ```bash
-cd vibe
-"../Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn --quit-after 15
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn --quit-after 15
 ```
 
 ### Architecture Check
 ```bash
-cd vibe
 double-click check_architecture.bat
 ```
 
@@ -39,7 +36,7 @@ Enforces layered architecture with automated boundary checking:
 ## 🔧 Development
 
 ### Tools
-- **Architecture validation**: `vibe/check_architecture.bat`
+- **Architecture validation**: `check_architecture.bat`
 - **Pre-commit hooks**: Automatic violation prevention
 - **CI integration**: GitHub Actions pipeline
 

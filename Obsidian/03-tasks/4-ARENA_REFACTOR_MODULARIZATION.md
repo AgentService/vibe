@@ -23,7 +23,7 @@ This violates the single responsibility principle and makes maintenance difficul
 ## Refactoring Strategy
 
 ### Phase 1: Extract Animation System
-**New File**: `vibe/scripts/systems/EnemyAnimationSystem.gd`
+**New File**: `scripts/systems/EnemyAnimationSystem.gd`
 - Lines to extract: 824-1047 (223 lines)
 - Manages all tier-based enemy animations
 - Owns animation configs and textures
@@ -35,7 +35,7 @@ This violates the single responsibility principle and makes maintenance difficul
 - Reusable for future enemy types
 
 ### Phase 2: Extract MultiMesh Renderer
-**New File**: `vibe/scripts/systems/MultiMeshRenderer.gd`
+**New File**: `scripts/systems/MultiMeshRenderer.gd`
 - Lines to extract: 151-247, 527-573 (143 lines)
 - Manages all MultiMesh setup and updates
 - Handles tier-based rendering logic
@@ -47,7 +47,7 @@ This violates the single responsibility principle and makes maintenance difficul
 - Easier optimization and debugging
 
 ### Phase 3: Extract Debug Controller
-**New File**: `vibe/scripts/systems/DebugController.gd`
+**New File**: `scripts/systems/DebugController.gd`
 - Lines to extract: 621-811 (190 lines)
 - Handles all debug input (B, C, F11, F12 keys)
 - Manages test spawning and damage testing
@@ -59,7 +59,7 @@ This violates the single responsibility principle and makes maintenance difficul
 - Cleaner separation of debug vs gameplay
 
 ### Phase 4: Extract UI Manager
-**New File**: `vibe/scripts/systems/ArenaUIManager.gd`
+**New File**: `scripts/systems/ArenaUIManager.gd`
 - Lines to extract: 324-365, 406-435 (71 lines)
 - Manages HUD, card selection, pause menu
 - Handles UI-related signals

@@ -4,7 +4,7 @@ func _initialize() -> void:
 	print("=== Testing Hit Feedback System Integration ===")
 	
 	# Load and instantiate the Arena scene
-	var arena_scene = load("res://vibe/scenes/arena/Arena.tscn") as PackedScene
+	var arena_scene = load("res://scenes/arena/Arena.tscn") as PackedScene
 	if not arena_scene:
 		print("❌ FAIL: Could not load Arena scene")
 		quit()

@@ -34,8 +34,8 @@
 - **No unified damage events**: Different systems emit different signals
 
 ## Files That Need Modification
-- `vibe/scripts/systems/MeleeSystem.gd` (lines 121-147)
-- `vibe/scripts/systems/DamageSystem.gd` (_on_damage_requested method)
-- `vibe/scripts/systems/WaveDirector.gd` (damage_enemy method)
-- `vibe/scenes/bosses/DragonLord.gd` (take_damage method)
+- `scripts/systems/MeleeSystem.gd` (lines 121-147)
+- `scripts/systems/DamageSystem.gd` (_on_damage_requested method)
+- `scripts/systems/WaveDirector.gd` (damage_enemy method)
+- `scenes/bosses/DragonLord.gd` (take_damage method)
 - Any other scene boss scripts with take_damage methods

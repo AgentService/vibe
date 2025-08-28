@@ -17,7 +17,7 @@ Development Tools Layer (External)
 
 ## Plugin Structure
 ```
-/vibe/addons/gdai-mcp-plugin-godot/
+/addons/gdai-mcp-plugin-godot/
 ├── plugin.cfg                    # Plugin configuration
 ├── gdai_mcp_plugin.gd            # Main plugin entry point
 ├── gdai_mcp_runtime.gd           # Runtime communication handler  

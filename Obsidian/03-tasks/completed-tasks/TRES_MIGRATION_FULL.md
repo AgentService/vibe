@@ -63,7 +63,7 @@ Complete migration from JSON to .tres format for all enemy content, establishing
 - ✅ Remove obsolete JSON files from filesystem
 
 #### Documentation Updates ✅ COMPLETE
-- ✅ Update `vibe/data/README.md` with .tres format guidelines
+- ✅ Update `data/README.md` with .tres format guidelines
 - ✅ Update ARCHITECTURE.md and CURSOR.md references
 - ✅ Update CLAUDE.md with .tres workflow
 - ✅ Create .tres editing guidelines and resource creation workflow

@@ -5,7 +5,7 @@ func _initialize() -> void:
 	
 	# Test 1: Configuration loading
 	print("\n1. Testing configuration system...")
-	const VisualFeedbackConfig = preload("res://vibe/scripts/resources/VisualFeedbackConfig.gd")
+	const VisualFeedbackConfig = preload("res://scripts/resources/VisualFeedbackConfig.gd")
 	var config = VisualFeedbackConfig.new()
 	
 	print("   ✓ VisualFeedbackConfig created with defaults")
@@ -17,14 +17,14 @@ func _initialize() -> void:
 	
 	# Test 2: MultiMesh system
 	print("\n2. Testing MultiMesh hit feedback system...")
-	var mm_hit_feedback = preload("res://vibe/scripts/systems/EnemyMultiMeshHitFeedback.gd").new()
+	var mm_hit_feedback = preload("res://scripts/systems/EnemyMultiMeshHitFeedback.gd").new()
 	mm_hit_feedback.name = "TestMultiMeshHitFeedback"
 	root.add_child(mm_hit_feedback)
 	print("   ✓ EnemyMultiMeshHitFeedback system created")
 	
 	# Test 3: Boss system  
 	print("\n3. Testing Boss hit feedback system...")
-	var boss_hit_feedback = preload("res://vibe/scripts/systems/BossHitFeedback.gd").new()
+	var boss_hit_feedback = preload("res://scripts/systems/BossHitFeedback.gd").new()
 	boss_hit_feedback.name = "TestBossHitFeedback"
 	root.add_child(boss_hit_feedback)
 	print("   ✓ BossHitFeedback system created")
@@ -35,7 +35,7 @@ func _initialize() -> void:
 	mock_boss.name = "MockLich"
 	
 	# Add required methods and signals to mock boss
-	mock_boss.set_script(preload("res://vibe/scenes/bosses/AncientLich.gd"))
+	mock_boss.set_script(preload("res://scenes/bosses/AncientLich.gd"))
 	print("   ✓ Mock boss created with AncientLich script")
 	
 	# Test 5: Systems integration

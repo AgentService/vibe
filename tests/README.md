@@ -29,8 +29,7 @@ Run from the project root directory:
 
 ```bash
 # Windows
-cd vibe
-"../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/cli_test_runner.gd
+"./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/cli_test_runner.gd
 
 # Or use the batch file
 run_tests.bat
@@ -45,11 +44,11 @@ Open `tests/run_tests.tscn` in Godot and run the scene.
 #### Headless Testing
 ```bash
 # Test specific system (headless)
-"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/SystemName_Isolated.tscn --quit-after 5
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/SystemName_Isolated.tscn --quit-after 5
 
 # Examples
-"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/DamageSystem_Isolated.tscn --quit-after 8
-"./Godot_v4.4.1-stable_win64_console.exe" --headless vibe/tests/EnemySystem_Isolated.tscn --quit-after 5
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/DamageSystem_Isolated.tscn --quit-after 8
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/EnemySystem_Isolated.tscn --quit-after 5
 ```
 
 #### Visual Testing with MCP

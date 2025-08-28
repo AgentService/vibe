@@ -84,8 +84,8 @@ Update UI/HUD to show:
 - "Right-click: Projectile Attack (if unlocked)"
 
 ## Files to Modify
-- `vibe/tests/AbilitySystem_Isolated.gd` (for consistency)
-- `vibe/scenes/arena/Arena.gd` (for user feedback)
+- `tests/AbilitySystem_Isolated.gd` (for consistency)
+- `scenes/arena/Arena.gd` (for user feedback)
 - UI/HUD files (for control documentation)
 
 ## Testing

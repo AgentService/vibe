@@ -1,13 +1,13 @@
 extends SceneTree
 
-const VisualFeedbackConfig = preload("res://vibe/scripts/resources/VisualFeedbackConfig.gd")
+const VisualFeedbackConfig = preload("res://scripts/resources/VisualFeedbackConfig.gd")
 
 func _initialize() -> void:
 	print("=== Hit Feedback System Test ===")
 	
 	# Test 1: Verify visual config loading
 	print("\n1. Testing VisualFeedbackConfig loading...")
-	var visual_config = load("res://vibe/data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	var visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		print("   ❌ FAIL: Could not load visual feedback config")
 		quit()

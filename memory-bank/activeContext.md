@@ -42,7 +42,7 @@ Current focus, recent changes, next steps, and active decisions for ongoing deve
 - Determinism: 30 Hz fixed-step logic; RNG named streams only; no direct randi/randf.
 - Boundaries: Scenes→Systems/Autoload only; Systems→Domain/Autoload; Domain stays pure.
 - Damage: Single pipeline via DamageService/Registry; IDs are strings; no take_damage() calls on nodes.
-- Data: All tunables in vibe/* as typed .tres; validate with safe fallbacks; hot-reload everywhere practical.
+- Data: All tunables in data/* as typed .tres; validate with safe fallbacks; hot-reload everywhere practical.
 - Logging: Logger autoload only in game code; tests may use print.
 
 ## Important Patterns and Preferences

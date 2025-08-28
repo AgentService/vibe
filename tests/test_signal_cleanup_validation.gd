@@ -16,32 +16,32 @@ func _setup_test_systems() -> void:
 	systems_to_test = [
 		{
 			"name": "XpSystem",
-			"script": preload("res://vibe/scripts/systems/XpSystem.gd"),
+			"script": preload("res://scripts/systems/XpSystem.gd"),
 			"signals": ["EventBus.combat_step", "EventBus.enemy_killed", "BalanceDB.balance_reloaded"]
 		},
 		{
 			"name": "WaveDirector", 
-			"script": preload("res://vibe/scripts/systems/WaveDirector.gd"),
+			"script": preload("res://scripts/systems/WaveDirector.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		{
 			"name": "AbilitySystem",
-			"script": preload("res://vibe/scripts/systems/AbilitySystem.gd"),
+			"script": preload("res://scripts/systems/AbilitySystem.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		{
 			"name": "MeleeSystem",
-			"script": preload("res://vibe/scripts/systems/MeleeSystem.gd"),
+			"script": preload("res://scripts/systems/MeleeSystem.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		{
 			"name": "EnemyRegistry",
-			"script": preload("res://vibe/scripts/systems/EnemyRegistry.gd"),
+			"script": preload("res://scripts/systems/EnemyRegistry.gd"),
 			"signals": ["BalanceDB.balance_reloaded"]
 		},
 		{
 			"name": "CameraSystem",
-			"script": preload("res://vibe/scripts/systems/CameraSystem.gd"),
+			"script": preload("res://scripts/systems/CameraSystem.gd"),
 			"signals": ["EventBus.arena_bounds_changed", "EventBus.player_position_changed", "EventBus.damage_dealt", "EventBus.game_paused_changed", "PlayerState.player_position_changed"]
 		}
 	]

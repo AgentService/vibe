@@ -10,7 +10,7 @@ The game follows a **data-driven architecture** where all tunables, configuratio
 
 ### [[BalanceDB]] - Schema Validation & Hot-Reload
 **Purpose**: Load, validate, and manage all balance data with type safety and hot-reload support  
-**Location**: `vibe/autoload/BalanceDB.gd`  
+**Location**: `autoload/BalanceDB.gd`  
 **Status**: ✅ Production-ready with comprehensive validation
 
 ```gdscript
@@ -24,7 +24,7 @@ BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
 ### [[RNG]] - Deterministic Random Streams  
 **Purpose**: Seeded random number generation with named streams for deterministic gameplay  
-**Location**: `vibe/autoload/RNG.gd`  
+**Location**: `autoload/RNG.gd`  
 **Status**: ✅ Production-ready with stream management
 
 ```gdscript
@@ -35,7 +35,7 @@ var loot_roll: int = RNG.stream("drops").randi_range(1, 100)
 
 ### [[Logger]] - Centralized Logging System
 **Purpose**: Structured logging with configurable levels and optional category filtering  
-**Location**: `vibe/autoload/Logger.gd`  
+**Location**: `autoload/Logger.gd`  
 **Status**: ✅ Production-ready with complete migration
 
 ```gdscript
@@ -48,7 +48,7 @@ Logger.warn("Pool exhaustion detected", "abilities")
 
 ### [[RunManager]] - Player Stats & Session State
 **Purpose**: Manage player progression stats loaded from BalanceDB with hot-reload support  
-**Location**: `vibe/autoload/RunManager.gd`  
+**Location**: `autoload/RunManager.gd`  
 **Status**: ✅ Production-ready with BalanceDB integration
 
 ```gdscript
@@ -235,7 +235,7 @@ func _load_balance_values() -> void:
 ## 🧪 Testing & Validation
 
 ### Test Coverage
-**Location**: `vibe/tests/test_balance_validation.gd`
+**Location**: `tests/test_balance_validation.gd`
 
 - ✅ Valid data acceptance
 - ✅ Missing required field rejection  
@@ -412,8 +412,8 @@ The enemy system uses a pure JSON-driven architecture with standardized schema:
 - [[LESSONS_LEARNED.md]] - JSON validation patterns and solutions
 
 ### Implementation References
-- `vibe/data/README.md` - JSON schema documentation
-- `vibe/tests/test_balance_validation.gd` - Validation test examples
+- `data/README.md` - JSON schema documentation
+- `tests/test_balance_validation.gd` - Validation test examples
 - `CHANGELOG.md` - Schema validation system implementation history
 
 ---

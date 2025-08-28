@@ -1,6 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://cg8dp6vpw2u8n"]
-
-[ext_resource type="Script" uid="uid://bnqf6pu6ovrfh" path="res://test_boss_spawning_scene.gd" id="1_test"]
-
-[node name="TestBossSpawning" type="Node"]
-script = ExtResource("1_test")

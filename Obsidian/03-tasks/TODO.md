@@ -51,12 +51,12 @@ each enemy needs its own (waves.json rules)
 - [x] **PRIORITY 1:** BalanceDB #schema-validation — foundational to all #data-driven systems, prevents runtime errors
   
   - Status: ✅ COMPLETED - Full schema validation with JSON type handling, range validation, nested structure validation
-  - Files: vibe/autoload/BalanceDB.gd, vibe/data/balance/, vibe/data/ui/radar.json, vibe/tests/test_balance_validation.gd
+  - Files: autoload/BalanceDB.gd, data/balance/, data/ui/radar.json, tests/test_balance_validation.gd
 
 - [x] **PRIORITY 2:** EventBus #typed-contracts — compile-time payload guarantees, enhance existing test
   
   - Status: Good signal coverage, test_signal_contracts.gd exists but needs enhancement
-  - Files: vibe/autoload/EventBus.gd, vibe/tests/test_signal_contracts.gd
+  - Files: autoload/EventBus.gd, tests/test_signal_contracts.gd
 
 - [x] **PRIORITY 3:** #dependency-boundaries — automated enforcement to prevent #architecture violations
   
@@ -66,7 +66,7 @@ each enemy needs its own (waves.json rules)
 - [ ] **PRIORITY 4:** #determinism toolkit — record/replay for debugging non-deterministic issues
   
   - Status: RNG streams well-designed, needs debugging tools
-  - Files: vibe/autoload/RNG.gd, vibe/tests/run_tests.gd, vibe/tests/balance_sims.gd
+  - Files: autoload/RNG.gd, tests/run_tests.gd, tests/balance_sims.gd
 
   
 
@@ -75,34 +75,34 @@ each enemy needs its own (waves.json rules)
 - [x] **MELEE AUTO-ATTACK:** Implement continuous melee attacking at cursor position without requiring clicks
 
   - Status: Melee system complete but requires manual clicking
-  - Files: vibe/scripts/systems/MeleeSystem.gd, vibe/scenes/arena/Arena.gd
+  - Files: scripts/systems/MeleeSystem.gd, scenes/arena/Arena.gd
   - Implementation: Add timer-based auto-attack cycle following cursor position
 
 - [x] **CONE SIZE SCALING:** Expand base cone size and ensure cone angle card scaling works properly 
 
   - Status: Cone angle multiplier exists but may need base size adjustment
-  - Files: vibe/data/balance/melee.json, vibe/scripts/systems/MeleeSystem.gd, vibe/data/cards/card_pool.json
+  - Files: data/balance/melee.json, scripts/systems/MeleeSystem.gd, data/cards/card_pool.json
   - Implementation: Increase default cone_angle from 45° to 60°+, verify card scaling affects visual cone
 
 - [ ] #enemy-behavior interface + baseline behaviors (#rusher, #shooter, #tank)
 
-  - Files: vibe/scripts/systems/AbilitySystem.gd, vibe/scripts/systems/DamageSystem.gd
+  - Files: scripts/systems/AbilitySystem.gd, scripts/systems/DamageSystem.gd
 
 - [ ] #ability-system: Add #aoe, #beam-channel, #homing archetypes; introduce #damage-types/tags
 
-  - Files: vibe/scripts/systems/AbilitySystem.gd, vibe/scripts/systems/DamageSystem.gd
+  - Files: scripts/systems/AbilitySystem.gd, scripts/systems/DamageSystem.gd
 
 - [ ] #wave-director: Move #scaling and compositions into data with #tiers/#mini-bosses
 
-  - Files: vibe/scripts/systems/WaveDirector.gd, vibe/data/balance/waves.json
+  - Files: scripts/systems/WaveDirector.gd, data/balance/waves.json
 
 - [ ] #ci: Headless build + #tests + #balance snapshot checks (Windows + Linux)
 
-  - Files: vibe/tests/run_tests.gd, vibe/run_tests.bat, vibe/tests/results/baseline.json
+  - Files: tests/run_tests.gd, run_tests.bat, tests/results/baseline.json
 
 - [ ] #debug-overlay: frame budgets per system, #pool sizes, active counts, #rng stream names
 
-  - Files: vibe/scenes/ui/HUD.gd, vibe/autoload/RunManager.gd
+  - Files: scenes/ui/HUD.gd, autoload/RunManager.gd
 
   
 
@@ -110,7 +110,7 @@ each enemy needs its own (waves.json rules)
 
 - [ ] #pooling audit: enemies, projectiles, effects, UI (forbid per-frame allocs in #hot-paths)
 
-  - Files: vibe/scenes/arena/Player.gd, vibe/scenes/arena/XPOrb.gd
+  - Files: scenes/arena/Player.gd, scenes/arena/XPOrb.gd
 
 - [ ] #rendering: Use #multimesh for crowds/decals, verify #culling and batched updates
 
@@ -118,7 +118,7 @@ each enemy needs its own (waves.json rules)
 
 - [ ] #scripting micro-opts: cache node refs, #typed-arrays, disable unused #process-callbacks
 
-  - Files: vibe/scripts/systems/CameraSystem.gd, vibe/scripts/systems/ArenaSystem.gd
+  - Files: scripts/systems/CameraSystem.gd, scripts/systems/ArenaSystem.gd
 
   
 
@@ -126,11 +126,11 @@ each enemy needs its own (waves.json rules)
 
 - [ ] #radar polish and tuning from data (#animations, #lerp, #danger color-coding)
 
-  - Files: vibe/scenes/ui/EnemyRadar.gd, vibe/data/ui/radar.json
+  - Files: scenes/ui/EnemyRadar.gd, data/ui/radar.json
 
 - [ ] #card-picker: #rarity/#synergy/#mutual-exclusion support
 
-  - Files: vibe/scenes/ui/CardPicker.gd, vibe/data/cards/card_pool.json, vibe/scripts/systems/CardSystem.gd
+  - Files: scenes/ui/CardPicker.gd, data/cards/card_pool.json, scripts/systems/CardSystem.gd
 
   
 
@@ -138,11 +138,11 @@ each enemy needs its own (waves.json rules)
 
 - [ ] Expand #card-pool to 15–20 upgrades with clear tags (#offense/#defense/#utility/#economy)
 
-  - Files: vibe/data/cards/card_pool.json, vibe/scripts/systems/CardSystem.gd
+  - Files: data/cards/card_pool.json, scripts/systems/CardSystem.gd
 
 - [ ] #victory/#defeat: data-driven #wave targets, timers; add #win-lose screens
 
-  - Files: vibe/scenes/arena/Arena.gd, vibe/scripts/systems/WaveDirector.gd, vibe/data/balance/waves.json
+  - Files: scenes/arena/Arena.gd, scripts/systems/WaveDirector.gd, data/balance/waves.json
 
 - [ ] #meta-progression (design doc first), then implement #unlocks/#achievements
 
@@ -166,10 +166,10 @@ each enemy needs its own (waves.json rules)
 
 ### Quick Links
 
-- #radar data: vibe/data/ui/radar.json
+- #radar data: data/ui/radar.json
 
-- #combat tunables: vibe/data/balance/combat.json
+- #combat tunables: data/balance/combat.json
 
-- #waves: vibe/data/balance/waves.json
+- #waves: data/balance/waves.json
 
 - Enemy radar feature log: changelogs/features/enemy-radar

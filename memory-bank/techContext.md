@@ -11,7 +11,7 @@ Technologies, setup, constraints, dependencies, and tool usage patterns for this
 - OS target: Windows (dev), game is cross-platform via Godot
 
 ## Project Layout
-- Main project: vibe/
+- Main project: (root)/
   - addons/ (plugins)
   - assets/ (art/sound)
   - autoload/ (EventBus, Logger, RNG, RunManager, etc.)

@@ -198,7 +198,7 @@ Optional layers to add over time:
 - Typed GDScript; functions small; systems communicate via EventBus signals; use Logger, not print (except tests).
 - Determinism: fixed-step 30 Hz, RNG streams via `RNG.stream("ai"|"waves")`.
 - Pools for logic; MultiMesh for rendering; only per-instance color to preserve instancing.
-- Content as `.tres` under `vibe/data/*`; system code under `vibe/scripts/*`.
+- Content as `.tres` under `data/*`; system code under `scripts/*`.
 
 ---
 
@@ -207,17 +207,17 @@ Optional layers to add over time:
 New code and data live in their own folders (easy to remove later if desired):
 
 - Code (new)
-  - `vibe/scripts/systems/enemy_v2/`
+  - `scripts/systems/enemy_v2/`
     - `EnemyFactory.gd` — loads templates, resolves inheritance, applies deterministic variation, returns SpawnConfig.
 - Data (new)
-  - `vibe/data/content/enemies_v2/`
+  - `data/content/enemies_v2/`
     - `templates/` — base templates: `melee_base.tres`, `ranged_base.tres`, `boss_base.tres` (basic stats/visual hints).
     - `variations/` — quick variations extending bases (e.g., `goblin.tres`, `archer.tres`, `lich.tres`).
 - Balance (additive)
-  - `vibe/data/balance/` (existing BalanceDB):
+  - `data/balance/` (existing BalanceDB):
     - Add `use_enemy_v2_system: bool` and `v2_template_weights: { id: weight }` (or keep weights in templates — pick one for MVP).
 - Tests
-  - Isolated visual test scene (optional code overlay): `vibe/tests/EnemySystem_Isolated_v2.tscn`
+  - Isolated visual test scene (optional code overlay): `tests/EnemySystem_Isolated_v2.tscn`
 
 Note: You can keep “v2” folders separate to enable a trivial directory delete later if needed.
 
@@ -264,7 +264,7 @@ In your existing spawner (e.g., WaveDirector/EnemySystem), add the following sma
 # V2 INTEGRATION START
 if BalanceDB.use_enemy_v2_system:
     # Prefer a local preload so later removal is trivial
-    const EnemyFactory := preload("res://vibe/scripts/systems/enemy_v2/EnemyFactory.gd")
+    const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
     # Example; adapt parameters to your existing spawn call data:
     var cfg := EnemyFactory.spawn_from_weights({
         "run_id": RunManager.current_run_id,
@@ -286,9 +286,9 @@ if BalanceDB.use_enemy_v2_system:
 ## Implementation Steps (MVP)
 
 1) Create folders
-- `vibe/scripts/systems/enemy_v2/`
-- `vibe/data/content/enemies_v2/templates/`
-- `vibe/data/content/enemies_v2/variations/`
+- `scripts/systems/enemy_v2/`
+- `data/content/enemies_v2/templates/`
+- `data/content/enemies_v2/variations/`
 
 2) Implement EnemyFactory.gd (MVP)
 - Load templates & variations (one-time; store in a dictionary by id).
@@ -310,7 +310,7 @@ if BalanceDB.use_enemy_v2_system:
 - Insert the guarded V2 branch as shown in Integration Seam.
 
 6) Isolated test scene (recommended)
-- `vibe/tests/EnemySystem_Isolated_v2.tscn` spawns 20–50 enemies (deterministic).
+- `tests/EnemySystem_Isolated_v2.tscn` spawns 20–50 enemies (deterministic).
 - HUD overlay prints seed, health, speed, color H for quick sanity checks.
 
 7) Validation
@@ -391,7 +391,7 @@ Acceptance Criteria (Spawn Plan)
 - [ ] Add BaseBoss.gd, BossTemplate.gd, and a sample Boss scene (inheritance pattern + hooks)
 - [ ] Extend BalanceDB with `enemy_scaling` (time_multipliers, tier_multipliers) and apply in EnemyFactory/SpawnDirector
 - [ ] Update ArenaConfig to include `spawn_plan`, `enemy_scaling_profile`, and `boss_sequence`; ensure SpawnDirector reads it
-- [ ] Create new folders under `vibe/scripts/systems/enemy_v2/` and `vibe/data/content/enemies_v2/`
+- [ ] Create new folders under `scripts/systems/enemy_v2/` and `data/content/enemies_v2/`
 - [ ] Implement `EnemyFactory.gd` (MVP) with deterministic variation and simple inheritance
 - [ ] Author 3 base templates and 3–6 variations
 - [ ] Add toggle `use_enemy_v2_system` and weights (either in templates or BalanceDB)

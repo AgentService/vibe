@@ -63,7 +63,7 @@ func test_cache_array_growth() -> void:
 	print("\n--- Test 3: Cache Array Growth Analysis ---")
 	
 	# Test WaveDirector cache behavior
-	var wave_director = preload("res://vibe/scripts/systems/WaveDirector.gd").new()
+	var wave_director = preload("res://scripts/systems/WaveDirector.gd").new()
 	add_child(wave_director)
 	await get_tree().process_frame
 	await get_tree().process_frame

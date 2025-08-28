@@ -4,7 +4,7 @@
 
 ### UI Components Location
 ```
-vibe/scenes/ui/
+scenes/ui/
 ├── CardPicker.tscn/.gd       - Modal card selection overlay
 ├── EnemyRadar.gd             - Radar component (no .tscn, embedded in HUD)
 ├── KeybindingsDisplay.gd     - Controls reference panel (embedded in HUD)
@@ -13,7 +13,7 @@ vibe/scenes/ui/
 
 ### Game Scene Components
 ```
-vibe/scenes/arena/
+scenes/arena/
 ├── Arena.tscn/.gd        - Main game scene (378 lines)
 ├── Player.tscn/.gd       - Player entity
 └── XPOrb.tscn/.gd        - XP pickup objects
@@ -21,7 +21,7 @@ vibe/scenes/arena/
 
 ### Entry Point
 ```
-vibe/scenes/main/
+scenes/main/
 └── Main.tscn/.gd         - Application entry point (14 lines)
 ```
 

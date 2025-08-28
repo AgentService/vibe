@@ -1,14 +1,16 @@
 extends SceneTree
 
-## Simple test for DamageRegistry V2 - validates basic functionality in isolation
-
-const DamageRegistryV2 = preload("res://vibe/scripts/systems/damage_v2/DamageRegistry.gd")
+## Simple test for DamageRegistry V2 - standalone test using prints only
 
 func _initialize() -> void:
 	print("=== DamageRegistry V2 Test ===")
 	
-	# Create registry instance
-	var registry = DamageRegistryV2.new()
+	# Create registry instance manually without autoloads
+	var registry = Node.new()
+	registry.set_script(preload("res://scripts/systems/damage_v2/DamageRegistry.gd"))
+	
+	# Add to scene tree so signals work
+	get_root().add_child(registry)
 	
 	# Test 1: Register entities
 	print("\n1. Testing entity registration...")

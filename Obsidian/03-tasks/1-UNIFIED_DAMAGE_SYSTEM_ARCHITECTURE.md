@@ -77,9 +77,9 @@ Benefits:
 
 ### Phase 1: Interface Unification
 **Files to modify:**
-- `vibe/scripts/domain/IDamageReceiver.gd` (NEW)
-- `vibe/scenes/bosses/AncientLich.gd` 
-- `vibe/scripts/systems/WaveDirector.gd`
+- `scripts/domain/IDamageReceiver.gd` (NEW)
+- `scenes/bosses/AncientLich.gd` 
+- `scripts/systems/WaveDirector.gd`
 
 **Tasks:**
 1. Create `IDamageReceiver` interface with `apply_damage(payload: DamagePayload)` method
@@ -89,9 +89,9 @@ Benefits:
 
 ### Phase 2: Entity Registration System  
 **Files to modify:**
-- `vibe/scripts/systems/EntityRegistry.gd` (NEW)
-- `vibe/scripts/systems/DamageSystem.gd`
-- `vibe/scripts/systems/WaveDirector.gd`
+- `scripts/systems/EntityRegistry.gd` (NEW)
+- `scripts/systems/DamageSystem.gd`
+- `scripts/systems/WaveDirector.gd`
 
 **Tasks:**
 1. Create EntityRegistry to track all damage-receivable entities  
@@ -102,8 +102,8 @@ Benefits:
 
 ### Phase 3: Scene Detection Removal
 **Files to modify:**
-- `vibe/scripts/systems/MeleeSystem.gd`
-- `vibe/scripts/systems/DamageSystem.gd`
+- `scripts/systems/MeleeSystem.gd`
+- `scripts/systems/DamageSystem.gd`
 
 **Tasks:**
 1. Remove `_find_scene_bosses_in_cone()` method from MeleeSystem
@@ -113,9 +113,9 @@ Benefits:
 
 ### Phase 4: System Decoupling  
 **Files to modify:**
-- `vibe/scripts/systems/MeleeSystem.gd`
-- `vibe/scripts/systems/DamageSystem.gd`
-- `vibe/scripts/systems/AbilitySystem.gd`
+- `scripts/systems/MeleeSystem.gd`
+- `scripts/systems/DamageSystem.gd`
+- `scripts/systems/AbilitySystem.gd`
 
 **Tasks:**
 1. Remove `set_wave_director_reference()` from MeleeSystem
