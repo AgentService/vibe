@@ -14,7 +14,7 @@ speed_max = 85.0
 size = Vector2(96, 96)
 collision_radius = 48.0
 xp_value = 100
-spawn_weight = 1000.0
+spawn_weight = 1.0
 render_tier = "special_boss"
 visual_config = {
 "color": {

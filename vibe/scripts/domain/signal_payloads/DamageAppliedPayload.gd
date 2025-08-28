@@ -9,12 +9,16 @@ var target_id: EntityId
 var final_damage: float
 var is_crit: bool
 var tags: PackedStringArray
+var knockback_distance: float
+var source_position: Vector2
 
-func _init(target_entity: EntityId, damage: float, critical_hit: bool, damage_tags: PackedStringArray) -> void:
+func _init(target_entity: EntityId, damage: float, critical_hit: bool, damage_tags: PackedStringArray, knockback_dist: float = 0.0, source_pos: Vector2 = Vector2.ZERO) -> void:
 	target_id = target_entity
 	final_damage = damage
 	is_crit = critical_hit
 	tags = damage_tags
+	knockback_distance = knockback_dist
+	source_position = source_pos
 
 func _to_string() -> String:
-	return "DamageAppliedPayload(target=%s, damage=%s, crit=%s, tags=%s)" % [target_id, final_damage, is_crit, tags]
+	return "DamageAppliedPayload(target=%s, damage=%s, crit=%s, tags=%s, knockback=%s)" % [target_id, final_damage, is_crit, tags, knockback_distance]

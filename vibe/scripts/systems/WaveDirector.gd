@@ -26,6 +26,9 @@ var target_distance: float
 # Arena system for spawn configuration  
 var arena_system
 
+# Boss hit feedback system for boss registration
+var boss_hit_feedback: BossHitFeedback
+
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[EnemyEntity] = []
 var _cache_dirty: bool = true
@@ -201,6 +204,13 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	# Add to scene tree
 	var parent = get_parent()
 	parent.add_child(boss_instance)
+
+	# Register with boss hit feedback system
+	if boss_hit_feedback:
+		boss_hit_feedback.register_boss(boss_instance)
+		Logger.debug("Boss registered with hit feedback system", "waves")
+	else:
+		Logger.warn("BossHitFeedback not available for boss registration", "waves")
 	
 	Logger.info("V2 Boss spawned: " + boss_instance.name + " at " + str(spawn_config.position), "waves")
 

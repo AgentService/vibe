@@ -8,4 +8,4 @@ arena_id = "default_arena"
 arena_name = "Combat Arena"
 bounds = Rect2(-400, -300, 800, 600)
 arena_center = Vector2(0, 0)
-spawn_radius = 444.0
+spawn_radius = 333.0

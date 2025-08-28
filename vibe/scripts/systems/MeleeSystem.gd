@@ -19,6 +19,7 @@ var damage: float
 var attack_range: float
 var cone_angle: float  # In degrees
 var attack_speed: float  # Attacks per second
+var knockback_distance: float
 
 # Attack effects tracking
 var attack_effects: Array[Dictionary] = []
@@ -39,6 +40,7 @@ func _load_balance_values() -> void:
 	attack_range = BalanceDB.get_melee_value("range")
 	cone_angle = BalanceDB.get_melee_value("cone_angle")
 	attack_speed = BalanceDB.get_melee_value("attack_speed")
+	knockback_distance = BalanceDB.get_melee_value("knockback_distance")
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -142,7 +144,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			}
 			DamageService.register_entity(entity_id, entity_data)
 		
-		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"])
+		var effective_knockback = _get_effective_knockback_distance()
+		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"], effective_knockback, player_pos)
 		if killed:
 			total_hit_count += 1
 		
@@ -166,7 +169,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			}
 			DamageService.register_entity(boss_id, entity_data)
 		
-		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"])
+		var effective_knockback = _get_effective_knockback_distance()
+		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"], effective_knockback, player_pos)
 		if killed:
 			total_hit_count += 1
 		
@@ -248,6 +252,12 @@ func _get_effective_cone_angle() -> float:
 	var base_angle = cone_angle
 	var bonus_angle = RunManager.stats.get("melee_cone_angle_add", 0.0)
 	return base_angle + bonus_angle
+
+func _get_effective_knockback_distance() -> float:
+	var base_knockback = knockback_distance
+	var bonus_knockback = RunManager.stats.get("melee_knockback_add", 0.0)
+	var knockback_mult = RunManager.stats.get("melee_knockback_mult", 1.0)
+	return (base_knockback + bonus_knockback) * knockback_mult
 
 
 func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:

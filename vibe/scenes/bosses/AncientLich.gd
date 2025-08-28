@@ -69,8 +69,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	# Set position
 	global_position = config.position
 	
-	# Apply visual config
-	modulate = config.color_tint
+	# Apply visual config (removed color tint functionality)
 	scale = Vector2.ONE * config.size_scale
 	
 	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")

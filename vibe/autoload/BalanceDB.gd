@@ -107,7 +107,8 @@ func _setup_fallback_data() -> void:
 			"range": 100.0,
 			"cone_angle": 90.0,
 			"attack_speed": 2,
-			"lifesteal": 0.0
+			"lifesteal": 0.0,
+			"knockback_distance": 20.0
 		},
 		"ui": {
 			"radar": {
@@ -340,6 +341,8 @@ func get_melee_value(key: String) -> Variant:
 			return _melee_balance.attack_speed
 		"visual_effect_duration":
 			return _melee_balance.visual_effect_duration
+		"knockback_distance":
+			return _melee_balance.knockback_distance
 		_:
 			Logger.error("Unknown melee balance key: " + key, "balance")
 			return _get_fallback_value("melee", key)

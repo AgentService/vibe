@@ -44,8 +44,10 @@ func unregister_entity(id: String) -> void:
 ## @param amount: Base damage amount
 ## @param source: String identifying damage source (for logging)
 ## @param tags: Array of damage tags (e.g., ["melee", "fire"])
+## @param knockback_distance: Knockback distance in pixels
+## @param source_position: Position of damage source for knockback direction
 ## @return bool: True if entity was killed, false otherwise
-func apply_damage(target_id: String, amount: float, source: String = "unknown", tags: Array = []) -> bool:
+func apply_damage(target_id: String, amount: float, source: String = "unknown", tags: Array = [], knockback_distance: float = 0.0, source_position: Vector2 = Vector2.ZERO) -> bool:
 	if not _entities.has(target_id):
 		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
 		return false
@@ -76,7 +78,35 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 		Logger.info("Entity %s KILLED by %s" % [target_id, source], "combat")
 		_handle_entity_death(target_id, entity)
 	
-	# Emit damage applied signal
+	# Determine if this was a critical hit for visual feedback
+	var is_crit: bool = final_damage > amount * 1.5  # Simple crit detection
+	
+	# Create EntityId from string target_id
+	var entity_id: EntityId
+	if target_id.begins_with("enemy_"):
+		var enemy_index = target_id.replace("enemy_", "").to_int()
+		entity_id = EntityId.enemy(enemy_index)
+	elif target_id.begins_with("boss_"):
+		var boss_index = target_id.replace("boss_", "").to_int()
+		entity_id = EntityId.new(EntityId.Type.ENEMY, boss_index)  # Treat bosses as special enemies
+	elif target_id == "player":
+		entity_id = EntityId.player()
+	else:
+		# Fallback for unknown entity types
+		entity_id = EntityId.new(EntityId.Type.ENEMY, 0)
+	
+	# Create and emit damage applied payload with knockback info
+	var damage_payload = EventBus.DamageAppliedPayload_Type.new(
+		entity_id,
+		final_damage,
+		is_crit,
+		PackedStringArray(tags),
+		knockback_distance,
+		source_position
+	)
+	EventBus.damage_applied.emit(damage_payload)
+	
+	# Legacy signal for backward compatibility
 	damage_applied.emit(target_id, final_damage, was_killed)
 	
 	return was_killed

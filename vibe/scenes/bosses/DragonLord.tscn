@@ -1,10 +1,26 @@
-[gd_scene load_steps=9 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=13 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_215q3"]
 size = Vector2(48, 48)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pbg4s"]
+atlas = ExtResource("2_215q3")
+region = Rect2(0, 49, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_udfki"]
+atlas = ExtResource("2_215q3")
+region = Rect2(24, 49, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ft2s7"]
+atlas = ExtResource("2_215q3")
+region = Rect2(48, 49, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5md56"]
+atlas = ExtResource("2_215q3")
+region = Rect2(72, 49, 24, 23)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_215q3"]
 atlas = ExtResource("2_215q3")
@@ -24,6 +40,23 @@ region = Rect2(72, 26, 24, 23)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_udfki"]
 animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pbg4s")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_udfki")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ft2s7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5md56")
+}],
+"loop": false,
+"name": &"damage_taken",
+"speed": 5.0
+}, {
 "frames": [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_215q3")
@@ -51,4 +84,4 @@ shape = SubResource("RectangleShape2D_215q3")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CollisionShape"]
 position = Vector2(0, -21)
 sprite_frames = SubResource("SpriteFrames_udfki")
-frame_progress = 0.410819
+animation = &"damage_taken"
