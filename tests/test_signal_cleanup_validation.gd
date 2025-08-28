@@ -35,11 +35,6 @@ func _setup_test_systems() -> void:
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		{
-			"name": "EnemyRegistry",
-			"script": preload("res://scripts/systems/EnemyRegistry.gd"),
-			"signals": ["BalanceDB.balance_reloaded"]
-		},
-		{
 			"name": "CameraSystem",
 			"script": preload("res://scripts/systems/CameraSystem.gd"),
 			"signals": ["EventBus.arena_bounds_changed", "EventBus.player_position_changed", "EventBus.damage_dealt", "EventBus.game_paused_changed", "PlayerState.player_position_changed"]

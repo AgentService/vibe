@@ -48,52 +48,52 @@ static func _run_minimal_simulation(tracker: SignalTracker) -> void:
 	# Simulate a few combat steps
 	for i in range(10):
 		# Emit combat step signal
-		var combat_payload := EventBus.CombatStepPayload.new(1.0 / 30.0)
+		var combat_payload: CombatStepPayload = CombatStepPayload.new(1.0 / 30.0)
 		EventBus.combat_step.emit(combat_payload)
 		
 		# Simulate some damage
 		if i % 3 == 0:
 			var source_id := EntityId.projectile(0)
 			var target_id := EntityId.enemy(0)
-			var damage_payload := EventBus.DamageRequestPayload.new(source_id, target_id, 10.0, PackedStringArray(["projectile"]))
+			var damage_payload: DamageRequestPayload = DamageRequestPayload.new(source_id, target_id, 10.0, PackedStringArray(["projectile"]))
 			EventBus.damage_requested.emit(damage_payload)
 		
 		# Simulate XP gain
 		if i % 5 == 0:
-			var xp_payload := EventBus.XpChangedPayload.new(i * 10, (i + 1) * 100)
+			var xp_payload: XpChangedPayload = XpChangedPayload.new(i * 10, (i + 1) * 100)
 			EventBus.xp_changed.emit(xp_payload)
 	
 	# Simulate a level up
-	var level_payload := EventBus.LevelUpPayload.new(2)
+	var level_payload: LevelUpPayload = LevelUpPayload.new(2)
 	EventBus.level_up.emit(level_payload)
 	
 	# Simulate pause state change
-	var pause_payload := EventBus.GamePausedChangedPayload.new(true)
+	var pause_payload: GamePausedChangedPayload = GamePausedChangedPayload.new(true)
 	EventBus.game_paused_changed.emit(pause_payload)
-	pause_payload = EventBus.GamePausedChangedPayload.new(false)
+	pause_payload = GamePausedChangedPayload.new(false)
 	EventBus.game_paused_changed.emit(pause_payload)
 	
 	# Simulate additional signals for comprehensive coverage
-	var arena_bounds_payload := EventBus.ArenaBoundsChangedPayload.new(Rect2(0, 0, 800, 600))
+	var arena_bounds_payload: ArenaBoundsChangedPayload = ArenaBoundsChangedPayload.new(Rect2(0, 0, 800, 600))
 	EventBus.arena_bounds_changed.emit(arena_bounds_payload)
 	
-	var player_pos_payload := EventBus.PlayerPositionChangedPayload.new(Vector2(400, 300))
+	var player_pos_payload: PlayerPositionChangedPayload = PlayerPositionChangedPayload.new(Vector2(400, 300))
 	EventBus.player_position_changed.emit(player_pos_payload)
 	
-	var damage_dealt_payload := EventBus.DamageDealtPayload.new(25.0, "player", "enemy")
+	var damage_dealt_payload: DamageDealtPayload = DamageDealtPayload.new(25.0, "player", "enemy")
 	EventBus.damage_dealt.emit(damage_dealt_payload)
 	
-	var interaction_payload := EventBus.InteractionPromptChangedPayload.new("chest_001", "chest", true)
+	var interaction_payload: InteractionPromptChangedPayload = InteractionPromptChangedPayload.new("chest_001", "chest", true)
 	EventBus.interaction_prompt_changed.emit(interaction_payload)
 	
-	var loot_payload := EventBus.LootGeneratedPayload.new("chest_001", "chest", {"items": ["sword", "potion"]})
+	var loot_payload: LootGeneratedPayload = LootGeneratedPayload.new("chest_001", "chest", {"items": ["sword", "potion"]})
 	EventBus.loot_generated.emit(loot_payload)
 	
 	# Test some edge cases
-	var entity_killed_payload := EventBus.EntityKilledPayload.new(EntityId.enemy(0), Vector2(200, 150), {"xp": 10, "gold": 5})
+	var entity_killed_payload: EntityKilledPayload = EntityKilledPayload.new(EntityId.enemy(0), Vector2(200, 150), {"xp": 10, "gold": 5})
 	EventBus.entity_killed.emit(entity_killed_payload)
 	
-	var damage_applied_payload := EventBus.DamageAppliedPayload.new(EntityId.enemy(0), 15.0, true, PackedStringArray(["fire", "crit"]))
+	var damage_applied_payload: DamageAppliedPayload = DamageAppliedPayload.new(EntityId.enemy(0), 15.0, true, PackedStringArray(["fire", "crit"]))
 	EventBus.damage_applied.emit(damage_applied_payload)
 
 class SignalTracker:

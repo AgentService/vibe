@@ -252,7 +252,7 @@ func calculate_and_print_statistics(dps_data: Array[float], ttk_data: Array[floa
 	var ttk_mean: float = ttk_sum / trials
 	
 	# Calculate percentiles
-	var p50_idx: int = trials // 2
+	var p50_idx: int = trials / 2
 	var p95_idx: int = int(trials * 0.95)
 	
 	var dps_p50: float = dps_data[p50_idx]
