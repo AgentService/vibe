@@ -182,8 +182,15 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 
 # Boss scene spawning for V2 system
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	# Load boss scene based on template
-	var scene_path: String = "res://scenes/bosses/AncientLich.tscn"  # TODO: Get from template
+	# Load boss scene based on template ID
+	var scene_path: String
+	match spawn_config.template_id:
+		"ancient_lich":
+			scene_path = "res://scenes/bosses/AncientLich.tscn"
+		"dragon_lord":
+			scene_path = "res://scenes/bosses/DragonLord.tscn"
+		_:
+			scene_path = "res://scenes/bosses/AncientLich.tscn"  # Fallback
 	
 	var boss_scene: PackedScene = load(scene_path)
 	if not boss_scene:
@@ -212,7 +219,7 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	else:
 		Logger.warn("BossHitFeedback not available for boss registration", "waves")
 	
-	Logger.info("V2 Boss spawned: " + boss_instance.name + " at " + str(spawn_config.position), "waves")
+	Logger.info("V2 Boss spawned: " + spawn_config.template_id + " (" + boss_instance.name + ") at " + str(spawn_config.position), "waves")
 
 # HYBRID SPAWNING SYSTEM: Core routing logic
 func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:

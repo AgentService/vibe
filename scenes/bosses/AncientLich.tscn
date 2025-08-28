@@ -1,26 +1,55 @@
-[gd_scene load_steps=9 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=21 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://c36wbfq653mki" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_ysv3m"]
-radius = 5.09902
-
 [sub_resource type="AtlasTexture" id="AtlasTexture_737yx"]
 atlas = ExtResource("2_vnul3")
-region = Rect2(0, 26, 24, 23)
+region = Rect2(0, 49, 24, 23)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_vnul3"]
 atlas = ExtResource("2_vnul3")
-region = Rect2(24, 26, 24, 23)
+region = Rect2(24, 49, 24, 23)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_ywjq4"]
 atlas = ExtResource("2_vnul3")
-region = Rect2(48, 26, 24, 23)
+region = Rect2(48, 49, 24, 23)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_wh3p3"]
 atlas = ExtResource("2_vnul3")
+region = Rect2(72, 49, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pvowl"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(0, 26, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_n7keb"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(24, 26, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b5qku"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(48, 26, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_0lwgk"]
+atlas = ExtResource("2_vnul3")
 region = Rect2(72, 26, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_o4kpg"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(0, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ihjjb"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(24, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_wtf3n"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(48, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1huwm"]
+atlas = ExtResource("2_vnul3")
+region = Rect2(72, 3, 24, 23)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_mjtd6"]
 animations = [{
@@ -37,19 +66,106 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_wh3p3")
 }],
+"loop": false,
+"name": &"damage_taken",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pvowl")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_n7keb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b5qku")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0lwgk")
+}],
 "loop": true,
 "name": &"default",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_o4kpg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ihjjb")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_wtf3n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1huwm")
+}],
+"loop": false,
+"name": &"wake_up",
+"speed": 5.0
 }]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_vnul3"]
+size = Vector2(42, 47)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
+size = Vector2(42, 46.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_737yx"]
+bg_color = Color(0.1, 0.1, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.5, 0.4, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vnul3"]
+bg_color = Color(0.8, 0.2, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.3, 0.3, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="Theme" id="Theme_737yx"]
+ProgressBar/styles/background = SubResource("StyleBoxFlat_737yx")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_vnul3")
 
 [node name="AncientLich" type="CharacterBody2D"]
 script = ExtResource("1_mjtd6")
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, 4)
-shape = SubResource("CircleShape2D_ysv3m")
-
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CollisionShape2D"]
-position = Vector2(0, -4)
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, 0)
 scale = Vector2(3, 3)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
+frame = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, 8.5)
+shape = SubResource("RectangleShape2D_vnul3")
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+position = Vector2(1, 8.25)
+shape = SubResource("RectangleShape2D_737yx")
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.5
+
+[node name="HealthBar" type="ProgressBar" parent="."]
+offset_left = -20.0
+offset_top = -20.0
+offset_right = 22.0
+offset_bottom = -15.0
+theme = SubResource("Theme_737yx")
+value = 99.0
+show_percentage = false

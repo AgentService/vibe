@@ -1,66 +1,59 @@
-[gd_scene load_steps=14 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=21 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_215q3"]
-size = Vector2(48, 48)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_pbg4s"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_lw0tx"]
 atlas = ExtResource("2_215q3")
 region = Rect2(0, 49, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_udfki"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_5yvh4"]
 atlas = ExtResource("2_215q3")
 region = Rect2(24, 49, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_ft2s7"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_7bior"]
 atlas = ExtResource("2_215q3")
 region = Rect2(48, 49, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_5md56"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_pbg4s"]
 atlas = ExtResource("2_215q3")
 region = Rect2(72, 49, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_215q3"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_udfki"]
 atlas = ExtResource("2_215q3")
 region = Rect2(0, 26, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_lw0tx"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_ft2s7"]
 atlas = ExtResource("2_215q3")
 region = Rect2(24, 26, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_5yvh4"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_5md56"]
 atlas = ExtResource("2_215q3")
 region = Rect2(48, 26, 24, 23)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_7bior"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_0sbds"]
 atlas = ExtResource("2_215q3")
 region = Rect2(72, 26, 24, 23)
 
-[sub_resource type="SpriteFrames" id="SpriteFrames_udfki"]
+[sub_resource type="AtlasTexture" id="AtlasTexture_sdqp3"]
+atlas = ExtResource("2_215q3")
+region = Rect2(0, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_l415e"]
+atlas = ExtResource("2_215q3")
+region = Rect2(24, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_b5l11"]
+atlas = ExtResource("2_215q3")
+region = Rect2(48, 3, 24, 23)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ap5hc"]
+atlas = ExtResource("2_215q3")
+region = Rect2(72, 3, 24, 23)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_lw0tx"]
 animations = [{
 "frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_pbg4s")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_udfki")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_ft2s7")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_5md56")
-}],
-"loop": false,
-"name": &"damage_taken",
-"speed": 5.0
-}, {
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_215q3")
-}, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_lw0tx")
 }, {
@@ -69,37 +62,110 @@ animations = [{
 }, {
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_7bior")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pbg4s")
+}],
+"loop": false,
+"name": &"damage_taken",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_udfki")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ft2s7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5md56")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_0sbds")
 }],
 "loop": true,
 "name": &"default",
 "speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_sdqp3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_l415e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_b5l11")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ap5hc")
+}],
+"loop": false,
+"name": &"wake_up",
+"speed": 5.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_215q3"]
-radius = 48.0
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_collision"]
+size = Vector2(42, 47)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_hitbox"]
+size = Vector2(42, 46.5)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.1, 0.1, 0.1, 0.9)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.6, 0.5, 0.4, 1)
+corner_radius_top_left = 3
+corner_radius_top_right = 3
+corner_radius_bottom_right = 3
+corner_radius_bottom_left = 3
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_fill"]
+bg_color = Color(0.8, 0.2, 0.2, 1)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(1, 0.3, 0.3, 1)
+corner_radius_top_left = 2
+corner_radius_top_right = 2
+corner_radius_bottom_right = 2
+corner_radius_bottom_left = 2
+
+[sub_resource type="Theme" id="Theme_healthbar"]
+ProgressBar/styles/background = SubResource("StyleBoxFlat_bg")
+ProgressBar/styles/fill = SubResource("StyleBoxFlat_fill")
 
 [node name="DragonLord" type="CharacterBody2D"]
 script = ExtResource("1_215q3")
 
-[node name="CollisionShape" type="CollisionShape2D" parent="."]
-shape = SubResource("RectangleShape2D_215q3")
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(1, 0)
+scale = Vector2(3, 3)
+sprite_frames = SubResource("SpriteFrames_lw0tx")
+animation = &"wake_up"
 
-[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="CollisionShape"]
-position = Vector2(0, -21)
-sprite_frames = SubResource("SpriteFrames_udfki")
-animation = &"damage_taken"
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, 8.5)
+shape = SubResource("RectangleShape2D_collision")
 
 [node name="HitBox" type="Area2D" parent="."]
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-shape = SubResource("CircleShape2D_215q3")
+position = Vector2(0, 8.25)
+shape = SubResource("RectangleShape2D_hitbox")
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.0
 
 [node name="HealthBar" type="ProgressBar" parent="."]
-offset_left = -32.0
-offset_top = -80.0
-offset_right = 32.0
-offset_bottom = -53.0
+offset_left = -21.0
+offset_top = -18.0
+offset_right = 21.0
+offset_bottom = -13.0
+theme = SubResource("Theme_healthbar")
 value = 100.0
+show_percentage = false

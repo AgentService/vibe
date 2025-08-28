@@ -6,6 +6,9 @@ extends CharacterBody2D
 
 signal died
 
+@onready var health_bar: ProgressBar = $HealthBar
+
+var spawn_config: SpawnConfig
 var max_health: float = 200.0
 var current_health: float = 200.0
 var speed: float = 80.0
@@ -22,7 +25,7 @@ func _ready() -> void:
 	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
 	
 	# Start the animation
-	var animated_sprite = $CollisionShape/AnimatedSprite2D
+	var animated_sprite = $AnimatedSprite2D
 	if animated_sprite and animated_sprite.sprite_frames:
 		animated_sprite.play("default")  # Start playing the default animation
 		Logger.debug("Dragon Lord animation started", "bosses")
@@ -43,6 +46,9 @@ func _ready() -> void:
 	}
 	DamageService.register_entity(entity_id, entity_data)
 	Logger.debug("DragonLord registered with DamageService as " + entity_id, "bosses")
+	
+	# Initialize health bar
+	_update_health_bar()
 
 func _exit_tree() -> void:
 	# Clean up signal connections
@@ -108,6 +114,28 @@ func get_current_health() -> float:
 
 func set_current_health(new_health: float) -> void:
 	current_health = new_health
+	_update_health_bar()
+	
+	# Check for death
+	if current_health <= 0.0 and is_alive():
+		_die()
 
 func is_alive() -> bool:
 	return current_health > 0.0
+
+func _update_health_bar() -> void:
+	if health_bar:
+		var health_percentage = (current_health / max_health) * 100.0
+		health_bar.value = health_percentage
+
+# V2 Enemy System Integration
+func setup_from_spawn_config(config: SpawnConfig) -> void:
+	spawn_config = config
+	max_health = config.health
+	current_health = config.health
+	attack_damage = config.damage
+	speed = config.speed
+	
+	# Set position
+	global_position = config.position
+	Logger.debug("DragonLord setup from spawn config: HP=" + str(max_health) + " damage=" + str(attack_damage) + " speed=" + str(speed), "bosses")

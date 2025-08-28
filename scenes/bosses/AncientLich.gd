@@ -7,7 +7,8 @@ class_name AncientLich
 
 signal died
 
-@onready var animated_sprite: AnimatedSprite2D = $CollisionShape2D/AnimatedSprite2D
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+@onready var health_bar: ProgressBar = $HealthBar
 
 var spawn_config: SpawnConfig
 var max_health: float = 200.0
@@ -23,14 +24,21 @@ var target_position: Vector2
 var attack_range: float = 60.0
 var chase_range: float = 300.0
 
+# Animation state
+var has_woken_up: bool = false
+var is_taking_damage: bool = false
+var is_aggroed: bool = false
+
 func _ready() -> void:
 	Logger.info("AncientLich boss ready", "bosses")
 	
-	# Start animation like DragonLord - always do this in _ready
-	var animated_sprite_node = $CollisionShape2D/AnimatedSprite2D
+	# Start with wake_up animation and pause it on first frame
+	var animated_sprite_node = $AnimatedSprite2D
 	if animated_sprite_node and animated_sprite_node.sprite_frames:
-		animated_sprite_node.play("default")
-		Logger.debug("AncientLich animation started", "bosses")
+		animated_sprite_node.play("wake_up")
+		animated_sprite_node.pause()  # Stay on first frame until aggroed
+		animated_sprite_node.connect("animation_finished", _on_animation_finished)
+		Logger.debug("AncientLich spawned in dormant state", "bosses")
 	
 	# Connect to combat step for deterministic behavior
 	if EventBus:
@@ -48,6 +56,9 @@ func _ready() -> void:
 	}
 	DamageService.register_entity(entity_id, entity_data)
 	Logger.debug("AncientLich registered with DamageService as " + entity_id, "bosses")
+	
+	# Initialize health bar
+	_update_health_bar()
 
 func _exit_tree() -> void:
 	# Clean up signal connections
@@ -86,6 +97,15 @@ func _update_ai(dt: float) -> void:
 		
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
+	
+	# Trigger aggro when player gets close
+	if distance_to_player <= chase_range and not is_aggroed:
+		_aggro()
+		return
+	
+	# Only move after fully waking up
+	if not has_woken_up:
+		return
 	
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
@@ -131,7 +151,39 @@ func get_current_health() -> float:
 	return current_health
 
 func set_current_health(new_health: float) -> void:
+	var old_health = current_health
 	current_health = new_health
+	_update_health_bar()
+	
+	# Play damage animation if health decreased and not already playing damage anim
+	if new_health < old_health and not is_taking_damage and has_woken_up:
+		is_taking_damage = true
+		animated_sprite.play("damage_taken")
+	
+	# Check for death
+	if current_health <= 0.0 and is_alive():
+		_die()
 
 func is_alive() -> bool:
 	return current_health > 0.0
+
+func _update_health_bar() -> void:
+	if health_bar:
+		var health_percentage = (current_health / max_health) * 100.0
+		health_bar.value = health_percentage
+
+func _aggro() -> void:
+	if is_aggroed:
+		return
+	is_aggroed = true
+	Logger.debug("AncientLich aggroed - beginning wake up sequence!", "bosses")
+	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
+
+func _on_animation_finished() -> void:
+	if animated_sprite.animation == "wake_up":
+		has_woken_up = true
+		animated_sprite.play("default")
+		Logger.debug("AncientLich fully awakened", "bosses")
+	elif animated_sprite.animation == "damage_taken":
+		is_taking_damage = false
+		animated_sprite.play("default")
