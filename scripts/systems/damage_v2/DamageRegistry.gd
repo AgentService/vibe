@@ -165,8 +165,13 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 			var payload = EventBus.EnemyKilledPayload_Type.new(position, 1)
 			EventBus.enemy_killed.emit(payload)
 		"boss":
-			# TODO: Handle boss death events
-			Logger.info("Boss defeated: " + entity_id, "combat")
+			# Call boss _die() method for proper cleanup and signal emission
+			var boss_node = entity_data.get("node_reference")
+			if boss_node and is_instance_valid(boss_node) and boss_node.has_method("_die"):
+				boss_node._die()
+			else:
+				Logger.warn("Boss node reference invalid for death handling: " + entity_id, "combat")
+				Logger.info("Boss defeated: " + entity_id, "combat")
 		"player":
 			# TODO: Handle player death
 			Logger.info("Player defeated!", "combat")
@@ -204,25 +209,14 @@ func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, dam
 					wave_director._cache_dirty = true  # Mark cache as dirty
 		
 		"boss":
-			# Sync to scene-based boss
-			var instance_id_str = entity_id.replace("boss_", "")
-			var instance_id = instance_id_str.to_int()
-			
-			# Find boss node by instance ID
-			var boss_node = instance_from_id(instance_id)
-			if boss_node and boss_node.has_method("get_current_health"):
-				# Update boss HP directly
-				if boss_node.has_method("set_current_health"):
-					boss_node.set_current_health(new_hp)
-				else:
-					# Direct property access
-					boss_node.current_health = new_hp
-				
-				# Trigger death if needed
-				if new_hp <= 0.0 and boss_node.has_method("_die"):
-					boss_node._die()
+			# Sync to scene-based boss using node reference
+			var boss_node = entity_data.get("node_reference")
+			if boss_node and is_instance_valid(boss_node) and boss_node.has_method("set_current_health"):
+				# Update boss HP via BaseBoss method (triggers health_changed signal)
+				boss_node.set_current_health(new_hp)
+				Logger.debug("Boss HP synced: " + entity_id + " → " + str(new_hp), "combat")
 			else:
-				Logger.warn("Boss node not found for sync: " + entity_id, "combat")
+				Logger.warn("Boss node reference invalid for sync: " + entity_id, "combat")
 		
 		"player":
 			# TODO: Sync to player health when player damage is implemented

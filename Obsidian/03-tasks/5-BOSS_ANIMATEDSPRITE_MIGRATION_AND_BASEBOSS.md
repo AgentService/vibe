@@ -9,6 +9,35 @@ Complexity: 6/10
 
 ---
 
+TASK was party completed:
+
+CURRENT ISSUE:
+ HP Bar doenst move. Sometimes when hitting one enemy, the damage_taken animation from another far away one triggers instead of the attacked on.
+
+> W 0:06:23:162   Logger.gd:55 @ _log(): [WARN:COMBAT] Damage requested on      │
+│   unknown entity: player                                                        │
+│     <C++ Source>  core/variant/variant_utility.cpp:1118 @ push_warning()        │
+│     <Stack Trace> Logger.gd:55 @ _log()                                         │
+│                   Logger.gd:35 @ warn()                                         │
+│                   DamageRegistry.gd:52 @ apply_damage()                         │
+│                   BaseBoss.gd:151 @ _perform_attack()                           │
+│                   BaseBoss.gd:137 @ _update_ai()                                │
+│                   BaseBoss.gd:102 @ _on_combat_step()                           │
+│                   RunManager.gd:67 @ _process()                                 │
+│   W 0:06:19:436   Logger.gd:55 @ _log(): [WARN:COMBAT] Damage requested on      │
+│   dead entity: boss:dragon_lord:5                                               │
+│     <C++ Source>  core/variant/variant_utility.cpp:1118 @ push_warning()        │
+│     <Stack Trace> Logger.gd:55 @ _log()                                         │
+│                   Logger.gd:35 @ warn()                                         │
+│                   DamageRegistry.gd:57 @ apply_damage()                         │
+│                   MeleeSystem.gd:178 @ perform_attack()                         │
+│                   Arena.gd:532 @ _handle_auto_attack()                          │
+│                   Arena.gd:326 @ _process()                   
+
+
+
+
+
 ## State Analysis
 
 - Bosses currently piggyback on pooled/MultiMesh paths or rely on hardcoded scene switches in WaveDirector.
@@ -146,7 +175,6 @@ Notes:
 - [ ] Update `docs/ARCHITECTURE_QUICK_REFERENCE.md` & `docs/ARCHITECTURE_RULES.md`:
   - Boss authoring with AnimatedSprite2D, BaseBoss usage, and data-driven mapping.
 - [ ] Add feature entry: `changelogs/features/YYYY_MM_DD-boss-animatedsprite-migration.md`.
-- [ ] Weekly rollup under `changelogs/weekly/`.
 
 ---
 

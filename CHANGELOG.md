@@ -4,6 +4,17 @@
 
 ## [Current Week - In Progress]
 
+### Added
+- **Boss AnimatedSprite2D Migration & BaseBoss Unification**: Migrated boss system to unified architecture with scene-based AnimatedSprite2D workflow
+  - **BaseBoss class**: Created `scripts/systems/BaseBoss.gd` extending CharacterBody2D with typed signals (`health_changed`, `died`), EventBus integration, and DamageService registration
+  - **BossHealthBar component**: Created `scenes/components/BossHealthBar.tscn/gd` reusable UI component that subscribes to boss `health_changed` signals for decoupled updates
+  - **Data-driven boss scenes**: Added `boss_scene_path` field to EnemyTemplate.gd with validation; updated ancient_lich.tres and dragon_lord.tres with scene paths
+  - **Template-driven spawning**: Refactored WaveDirector._spawn_boss_scene to load scenes from EnemyTemplate.boss_scene_path instead of hardcoded switch statements
+  - **Stable entity IDs**: Added `entity_id` field to SpawnConfig.gd; WaveDirector generates deterministic IDs like "boss:ancient_lich:1" for DamageService registration
+  - **DamageRegistry boss sync**: Extended DamageRegistry._sync_damage_to_game_entity to handle boss entities via node_reference, calling set_current_health() to trigger health_changed signals
+  - **Boss refactoring**: Updated AncientLich.gd and DragonLord.gd to extend BaseBoss, removing duplicate code for cleaner inheritance-based architecture
+  - **Tests**: Created BossSystem_Isolated.tscn/gd for testing boss creation, health signals, and damage integration
+
 ### Changed
 - **Project Structure Update**: Completed migration from vibe/ subdirectory to project root structure
   - **File paths updated**: All documentation, configuration, and test files updated to use new structure

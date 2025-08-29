@@ -154,8 +154,12 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	
 	# Apply damage to scene-based bosses
 	for boss in hit_scene_bosses:
-		# Scene bosses need to be identified by their scene path or unique identifier
-		var boss_id = "boss_" + str(boss.get_instance_id())
+		# Use the boss's stable entity_id if available (BaseBoss), otherwise fallback to instance ID
+		var boss_id: String
+		if boss is BaseBoss and not boss.entity_id.is_empty():
+			boss_id = boss.entity_id
+		else:
+			boss_id = "boss_" + str(boss.get_instance_id())
 		
 		# AUTO-REGISTER: Register boss if not already registered
 		if not DamageService.is_entity_alive(boss_id) and not DamageService.get_entity(boss_id).has("id"):
@@ -165,7 +169,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 				"hp": boss.get_current_health() if boss.has_method("get_current_health") else 200.0,
 				"max_hp": boss.get_max_health() if boss.has_method("get_max_health") else 200.0,
 				"alive": boss.is_alive() if boss.has_method("is_alive") else true,
-				"pos": boss.global_position
+				"pos": boss.global_position,
+				"node_reference": boss  # Store reference for sync_damage_to_game_entity
 			}
 			DamageService.register_entity(boss_id, entity_data)
 		

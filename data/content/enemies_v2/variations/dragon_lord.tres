@@ -12,7 +12,7 @@ speed_range = Vector2(70, 90)
 size_factor = 2.0
 hue_range = Vector2(0.8, 1)
 tags = Array[StringName]([&"dragon", &"lord", &"boss", &"fire", &"elite"])
-weight = 5.0
+weight = 2.0
 render_tier = "boss"
 visual_config = {
 "animation_speed": 1.0,
@@ -23,3 +23,4 @@ visual_config = {
 "scale": Vector2(3, 3),
 "sprite_path": "res://assets/sprites/slime_purple.png"
 }
+boss_scene_path = "res://scenes/bosses/DragonLord.tscn"

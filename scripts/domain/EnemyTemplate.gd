@@ -22,6 +22,9 @@ class_name EnemyTemplate
 # Optional visual config for backwards compatibility
 @export var visual_config: Dictionary = {}
 
+# Boss scene path for data-driven boss spawning
+@export var boss_scene_path: String = ""  # Path to boss scene for boss-tier templates
+
 func validate() -> Array[String]:
 	var errors: Array[String] = []
 	
@@ -62,6 +65,10 @@ func validate() -> Array[String]:
 	if not render_tier in valid_tiers:
 		errors.append("Render tier must be one of: " + str(valid_tiers))
 	
+	# Validate boss scene path for boss-tier templates
+	if render_tier == "boss" and boss_scene_path.is_empty():
+		errors.append("Boss-tier templates must have a boss_scene_path")
+	
 	return errors
 
 ## Resolve inheritance by loading and flattening parent template
@@ -93,6 +100,7 @@ func resolve_inheritance() -> EnemyTemplate:
 	flattened.weight = resolved_parent.weight
 	flattened.render_tier = resolved_parent.render_tier
 	flattened.visual_config = resolved_parent.visual_config.duplicate()
+	flattened.boss_scene_path = resolved_parent.boss_scene_path
 	
 	# Override with child values (only if they differ from defaults)
 	if self.health_range != Vector2(10.0, 15.0):
@@ -113,5 +121,7 @@ func resolve_inheritance() -> EnemyTemplate:
 		flattened.render_tier = self.render_tier
 	if not self.visual_config.is_empty():
 		flattened.visual_config = self.visual_config.duplicate()
+	if not self.boss_scene_path.is_empty():
+		flattened.boss_scene_path = self.boss_scene_path
 	
 	return flattened
