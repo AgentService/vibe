@@ -4,5 +4,5 @@
 
 [resource]
 shader = ExtResource("1")
-shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/flash_color = Color(3, 3, 3, 1)
 shader_parameter/flash_modifier = 0.0

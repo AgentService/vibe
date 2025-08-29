@@ -13,6 +13,7 @@ class_name EnemyTemplate
 @export var speed_range: Vector2 = Vector2(50.0, 80.0)   # min, max speed
 @export var size_factor: float = 1.0                     # Scale multiplier
 @export var hue_range: Vector2 = Vector2(0.0, 1.0)       # 0.0-1.0 hue range
+@export var knockback_resistance: float = 0.0            # 0.0=full knockback, 1.0=no knockback
 @export var tags: Array[StringName] = []                 # For filtering/categorization
 @export var weight: float = 1.0                          # Spawn weight (optional if using central table)
 
@@ -57,6 +58,9 @@ func validate() -> Array[String]:
 		
 	if hue_range.x > hue_range.y:
 		errors.append("Hue range: min cannot be greater than max")
+	
+	if knockback_resistance < 0.0 or knockback_resistance > 1.0:
+		errors.append("Knockback resistance must be between 0.0 and 1.0")
 	
 	if weight < 0.0:
 		errors.append("Weight cannot be negative")

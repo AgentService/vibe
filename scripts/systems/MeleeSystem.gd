@@ -152,34 +152,41 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 			Logger.debug("Damage applied to enemy: " + str(final_damage) + " to " + entity_id, "abilities")
 	
-	# Apply damage to scene-based bosses
+	# Apply damage to scene-based bosses (all are BaseBoss with stable entity IDs)
 	for boss in hit_scene_bosses:
-		# Use the boss's stable entity_id if available (BaseBoss), otherwise fallback to instance ID
-		var boss_id: String
-		if boss is BaseBoss and not boss.entity_id.is_empty():
-			boss_id = boss.entity_id
-		else:
-			boss_id = "boss_" + str(boss.get_instance_id())
+		# All bosses are BaseBoss with guaranteed entity_id (checked in _find_scene_bosses_in_cone)
+		var boss_id: String = boss.entity_id
 		
-		# AUTO-REGISTER: Register boss if not already registered
-		if not DamageService.is_entity_alive(boss_id) and not DamageService.get_entity(boss_id).has("id"):
+		# Check if boss node is actually alive before processing
+		if not boss.is_alive():
+			Logger.debug("Skipping dead boss in damage application: " + boss_id + " HP: " + str(boss.get_current_health()), "combat")
+			continue
+		
+		# AUTO-REGISTER: Only register if entity doesn't exist at all (not if it's dead)
+		var entity_exists = DamageService.get_entity(boss_id).has("id")
+		if not entity_exists:
 			var entity_data = {
 				"id": boss_id,
 				"type": "boss",
-				"hp": boss.get_current_health() if boss.has_method("get_current_health") else 200.0,
-				"max_hp": boss.get_max_health() if boss.has_method("get_max_health") else 200.0,
-				"alive": boss.is_alive() if boss.has_method("is_alive") else true,
+				"hp": boss.get_current_health(),
+				"max_hp": boss.get_max_health(),
+				"alive": true,
 				"pos": boss.global_position,
 				"node_reference": boss  # Store reference for sync_damage_to_game_entity
 			}
 			DamageService.register_entity(boss_id, entity_data)
+			Logger.debug("Auto-registered BaseBoss: " + boss_id, "combat")
+		elif not DamageService.is_entity_alive(boss_id):
+			# Entity exists but is dead - don't resurrect it
+			Logger.debug("Skipping dead entity in damage service: " + boss_id, "combat")
+			continue
 		
 		var effective_knockback = _get_effective_knockback_distance()
 		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"], effective_knockback, player_pos)
 		if killed:
 			total_hit_count += 1
 		
-		Logger.info("Damage applied to scene boss: " + str(final_damage) + " to " + boss_id, "combat")
+		Logger.info("Damage applied to BaseBoss: " + str(final_damage) + " to " + boss_id, "combat")
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Melee attack hit " + str(hit_enemies.size()) + " pooled enemies + " + str(hit_scene_bosses.size()) + " scene bosses", "abilities")
@@ -200,40 +207,44 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	
 	return dot_product >= min_dot
 
-func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
-	var hit_bosses: Array[Node] = []
+func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[BaseBoss]:
+	var hit_bosses: Array[BaseBoss] = []
 	
-	# Find all scene-based bosses starting from root (bosses are added to GameOrchestrator parent)
+	# Find all BaseBoss nodes starting from root
 	var root_node = get_tree().root
 	if not root_node:
 		return hit_bosses
 	
-	# Look for CharacterBody2D nodes that might be scene bosses
-	var all_nodes = _get_all_characterbody2d_nodes(root_node)
+	# Look specifically for BaseBoss nodes only
+	var all_bosses = _get_all_baseboss_nodes(root_node)
 	
-	for node in all_nodes:
-		# Skip if this is the player
-		if node.name == "Player":
+	for boss in all_bosses:
+		# Skip if boss doesn't have a valid entity_id (shouldn't happen with BaseBoss)
+		if boss.entity_id.is_empty():
+			Logger.warn("BaseBoss found without entity_id: " + boss.name, "combat")
 			continue
 			
-		# DAMAGE V2: Check if it looks like a boss (has died signal and health methods)
-		if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
-			var boss_pos = node.global_position
-			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
-				hit_bosses.append(node)
-				if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-					Logger.debug("Found scene boss in melee range: " + node.name, "combat")
+		# Skip if boss is dead
+		if not boss.is_alive():
+			continue
+			
+		var boss_pos = boss.global_position
+		if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
+			hit_bosses.append(boss)
+			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+				var distance = player_pos.distance_to(boss_pos)
+				Logger.debug("Found BaseBoss in melee range: " + boss.entity_id + " (" + boss.name + ") at distance " + str(distance) + " HP: " + str(boss.get_current_health()), "combat")
 	
 	return hit_bosses
 
-func _get_all_characterbody2d_nodes(node: Node) -> Array[CharacterBody2D]:
-	var result: Array[CharacterBody2D] = []
+func _get_all_baseboss_nodes(node: Node) -> Array[BaseBoss]:
+	var result: Array[BaseBoss] = []
 	
-	if node is CharacterBody2D:
+	if node is BaseBoss:
 		result.append(node)
 	
 	for child in node.get_children():
-		result.append_array(_get_all_characterbody2d_nodes(child))
+		result.append_array(_get_all_baseboss_nodes(child))
 	
 	return result
 

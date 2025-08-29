@@ -14,6 +14,7 @@ const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
+const UnifiedHitFeedback := preload("res://scripts/systems/UnifiedHitFeedback.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -57,41 +58,9 @@ var damage_system: DamageSystem
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
-var enemy_hit_feedback: EnemyMultiMeshHitFeedback
+var unified_hit_feedback: UnifiedHitFeedback
 
-@export_group("Boss Hit Feedback Settings")
-@export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
-	set(value):
-		boss_knockback_force = value
-		if boss_hit_feedback:
-			boss_hit_feedback.knockback_force_multiplier = value
-@export var boss_knockback_duration: float = 2.0: ## Duration multiplier for boss knockback
-	set(value):
-		boss_knockback_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.knockback_duration_multiplier = value
-@export var boss_hit_stop_duration: float = 0.15: ## Freeze time on boss hit impact
-	set(value):
-		boss_hit_stop_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.hit_stop_duration = value
-@export var boss_velocity_decay: float = 0.82: ## Boss knockback decay rate (0.7-0.95)
-	set(value):
-		boss_velocity_decay = value
-		if boss_hit_feedback:
-			boss_hit_feedback.velocity_decay_factor = value
-@export var boss_flash_duration: float = 0.2: ## Boss flash effect duration
-	set(value):
-		boss_flash_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.flash_duration_override = value
-@export var boss_flash_intensity: float = 5.0: ## Boss flash effect intensity
-	set(value):
-		boss_flash_intensity = value
-		if boss_hit_feedback:
-			boss_hit_feedback.flash_intensity_override = value
-
-var boss_hit_feedback: BossHitFeedback
+# Boss feedback settings removed - now configured per-boss in BaseBoss inspector
 
 var player: Player
 var xp_system: XpSystem
@@ -110,19 +79,20 @@ var _enemy_transforms: Array[Transform2D] = []
 func _ready() -> void:
 	Logger.info("Arena initializing", "ui")
 	
+	# UnifiedHitFeedback will be created later after systems are injected
+	
 	# Arena input should work during pause for debug controls
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	
 	# Create enemy render tier system
-	if EnemyRenderTier == null:
-		Logger.error("EnemyRenderTier class is null!", "ui")
-		return
-	
+	Logger.info("KNOCKBACK DEBUG: Creating EnemyRenderTier instance...", "systems")
 	enemy_render_tier = EnemyRenderTier_Type.new()
 	if enemy_render_tier == null:
 		Logger.error("EnemyRenderTier instance creation failed!", "ui")
 		return
+	
+	Logger.info("KNOCKBACK DEBUG: EnemyRenderTier created successfully", "systems")
 	
 	add_child(enemy_render_tier)
 	
@@ -130,20 +100,13 @@ func _ready() -> void:
 	if not enemy_render_tier.is_node_ready():
 		enemy_render_tier._ready()
 	
-	# Create enemy hit feedback system
-	enemy_hit_feedback = EnemyMultiMeshHitFeedback.new()
-	add_child(enemy_hit_feedback)
-	
-	# Create boss hit feedback system
-	boss_hit_feedback = BossHitFeedback.new()
-	# Apply Arena's exported settings to the boss hit feedback system
-	boss_hit_feedback.knockback_force_multiplier = boss_knockback_force
-	boss_hit_feedback.knockback_duration_multiplier = boss_knockback_duration
-	boss_hit_feedback.hit_stop_duration = boss_hit_stop_duration
-	boss_hit_feedback.velocity_decay_factor = boss_velocity_decay
-	boss_hit_feedback.flash_duration_override = boss_flash_duration
-	boss_hit_feedback.flash_intensity_override = boss_flash_intensity
-	add_child(boss_hit_feedback)
+	# Create unified hit feedback system (replaces separate enemy and boss feedback)
+	Logger.info("KNOCKBACK DEBUG: About to create UnifiedHitFeedback system", "systems")
+	Logger.info("KNOCKBACK DEBUG: Creating UnifiedHitFeedback system", "systems")
+	unified_hit_feedback = UnifiedHitFeedback.new()
+	Logger.info("KNOCKBACK DEBUG: UnifiedHitFeedback instantiated", "systems")
+	add_child(unified_hit_feedback)
+	Logger.info("KNOCKBACK DEBUG: UnifiedHitFeedback created and added to arena", "systems")
 	
 	# Create and add new systems
 	_setup_player()
@@ -154,10 +117,7 @@ func _ready() -> void:
 	GameOrchestrator.initialize_core_loop()
 	GameOrchestrator.inject_systems_to_arena(self)
 
-	# Inject boss hit feedback system to WaveDirector for boss registration
-	if GameOrchestrator.wave_director:
-		GameOrchestrator.wave_director.boss_hit_feedback = boss_hit_feedback
-		Logger.debug("BossHitFeedback injected to WaveDirector", "arena")
+	# Boss visual feedback now handled directly by BaseBoss - no injection needed
 	
 	_setup_card_system()
 	
@@ -177,15 +137,15 @@ func _ready() -> void:
 	_setup_tier_multimeshes()
 	_setup_enemy_transforms()
 	
-	# Setup hit feedback system with MultiMesh references
-	if enemy_hit_feedback:
-		enemy_hit_feedback.setup_multimesh_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
+	# Setup unified hit feedback system with MultiMesh references
+	if unified_hit_feedback:
+		unified_hit_feedback.setup_multimesh_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
 		# Inject EnemyRenderTier reference
 		if enemy_render_tier:
-			enemy_hit_feedback.set_enemy_render_tier(enemy_render_tier)
+			unified_hit_feedback.set_enemy_render_tier(enemy_render_tier)
 		# Inject WaveDirector reference if available
 		if wave_director:
-			enemy_hit_feedback.set_wave_director(wave_director)
+			unified_hit_feedback.set_wave_director(wave_director)
 	
 	# Print debug help
 	_print_debug_help()
@@ -457,9 +417,9 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	wave_director.enemies_updated.connect(_update_enemy_multimesh)
 	
-	# Inject WaveDirector into hit feedback system if it exists
-	if enemy_hit_feedback:
-		enemy_hit_feedback.set_wave_director(wave_director)
+	# Inject WaveDirector into unified hit feedback system if it exists
+	if unified_hit_feedback:
+		unified_hit_feedback.set_wave_director(wave_director)
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	melee_system = injected_melee_system

@@ -1,7 +1,8 @@
-[gd_scene load_steps=21 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=22 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
+[ext_resource type="PackedScene" path="res://scenes/components/BossHealthBar.tscn" id="3_lw0tx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lw0tx"]
 atlas = ExtResource("2_215q3")
@@ -135,7 +136,7 @@ corner_radius_top_right = 2
 corner_radius_bottom_right = 2
 corner_radius_bottom_left = 2
 
-[sub_resource type="Theme" id="Theme_healthbar"]
+[sub_resource type="Theme" id="Theme_5yvh4"]
 ProgressBar/styles/background = SubResource("StyleBoxFlat_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_fill")
 
@@ -161,11 +162,6 @@ shape = SubResource("RectangleShape2D_hitbox")
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.0
 
-[node name="HealthBar" type="ProgressBar" parent="."]
-offset_left = -21.0
-offset_top = -17.0
-offset_right = 21.0
-offset_bottom = -12.0
-theme = SubResource("Theme_healthbar")
-value = 100.0
-show_percentage = false
+[node name="HealthBar" parent="." instance=ExtResource("3_lw0tx")]
+z_index = 10
+theme = SubResource("Theme_5yvh4")

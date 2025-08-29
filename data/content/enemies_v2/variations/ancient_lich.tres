@@ -12,7 +12,7 @@ speed_range = Vector2(25, 40)
 size_factor = 1.8
 hue_range = Vector2(0.7, 0.9)
 tags = Array[StringName]([&"lich", &"boss", &"undead", &"magic"])
-weight = 1.0
+weight = 12.0
 render_tier = "boss"
 visual_config = {
 "animation_speed": 1.0,

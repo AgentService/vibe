@@ -86,9 +86,15 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 	if target_id.begins_with("enemy_"):
 		var enemy_index = target_id.replace("enemy_", "").to_int()
 		entity_id = EntityId.enemy(enemy_index)
-	elif target_id.begins_with("boss_"):
-		var boss_index = target_id.replace("boss_", "").to_int()
-		entity_id = EntityId.new(EntityId.Type.ENEMY, boss_index)  # Treat bosses as special enemies
+	elif target_id.begins_with("boss:"):
+		# V2 boss format: "boss:template_id:counter" - use the entity reference's instance ID
+		var boss_node = entity.get("node_reference")
+		if boss_node and is_instance_valid(boss_node):
+			var boss_instance_id = boss_node.get_instance_id()
+			entity_id = EntityId.new(EntityId.Type.ENEMY, boss_instance_id)  # Use actual instance ID
+		else:
+			Logger.warn("V2 Boss missing valid node_reference for EntityId creation: " + target_id, "combat")
+			entity_id = EntityId.new(EntityId.Type.ENEMY, 99999)  # High index as fallback
 	elif target_id == "player":
 		entity_id = EntityId.player()
 	else:
@@ -104,6 +110,7 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 		knockback_distance,
 		source_position
 	)
+	Logger.info("KNOCKBACK: Emitting damage_applied - target: " + target_id + " knockback: " + str(knockback_distance) + " EntityId: " + str(entity_id.index), "combat")
 	EventBus.damage_applied.emit(damage_payload)
 	
 	# Legacy signal for backward compatibility

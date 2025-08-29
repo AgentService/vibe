@@ -1,7 +1,8 @@
-[gd_scene load_steps=3 format=3 uid="uid://bxqx8iqvnl4fs"]
+[gd_scene load_steps=4 format=3 uid="uid://bxqx8iqvnl4fs"]
 
 [ext_resource type="Script" uid="uid://hwomvhc6coll" path="res://scenes/main/Main.gd" id="1_0lc8k"]
 [ext_resource type="PackedScene" uid="uid://bdhkrcc8rvnca" path="res://scenes/arena/Arena.tscn" id="2_1lc8k"]
+[ext_resource type="Script" uid="uid://cu2h7srfrerbc" path="res://scripts/systems/UnifiedHitFeedback.gd" id="3_q24mn"]
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0lc8k")
@@ -9,3 +10,6 @@ script = ExtResource("1_0lc8k")
 [node name="Arena" parent="." instance=ExtResource("2_1lc8k")]
 position = Vector2(34, 1)
 scale = Vector2(1, 0.993702)
+
+[node name="UnifiedHitFeedback" type="Node" parent="Arena"]
+script = ExtResource("3_q24mn")

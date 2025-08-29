@@ -26,8 +26,10 @@ var target_distance: float
 # Arena system for spawn configuration  
 var arena_system
 
-# Boss hit feedback system for boss registration
-var boss_hit_feedback: BossHitFeedback
+# Boss visual feedback is now handled directly by BaseBoss - no external registration needed
+
+# Global spawn counter for unique entity IDs
+var global_spawn_counter: int = 0
 
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[EnemyEntity] = []
@@ -160,14 +162,16 @@ func _spawn_enemy_v2() -> void:
 	_spawn_from_config_v2(legacy_enemy_type, cfg)
 
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
-	# Generate stable entity ID for DamageService
-	var spawn_counter: int = get_alive_enemies().size()
+	# Generate stable entity ID for DamageService using global counter
 	var entity_id: String
 	
 	if spawn_config.render_tier == "boss":
-		entity_id = "boss:" + str(spawn_config.template_id) + ":" + str(spawn_counter)
+		entity_id = "boss:" + str(spawn_config.template_id) + ":" + str(global_spawn_counter)
 	else:
-		entity_id = "enemy:" + str(spawn_config.template_id) + ":" + str(spawn_counter)
+		entity_id = "enemy:" + str(spawn_config.template_id) + ":" + str(global_spawn_counter)
+	
+	# Increment global counter for next spawn
+	global_spawn_counter += 1
 	
 	spawn_config.set_entity_id(entity_id)
 	
@@ -223,44 +227,9 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	var parent = get_parent()
 	parent.add_child(boss_instance)
 
-	# Register with boss hit feedback system
-	if boss_hit_feedback:
-		boss_hit_feedback.register_boss(boss_instance)
-		Logger.debug("Boss registered with hit feedback system", "waves")
-	else:
-		Logger.warn("BossHitFeedback not available for boss registration", "waves")
+	# Boss visual feedback is now handled directly by BaseBoss itself
 	
 	Logger.info("V2 Boss spawned: " + spawn_config.template_id + " [" + spawn_config.entity_id + "] (" + boss_instance.name + ") at " + str(spawn_config.position), "waves")
-
-# HYBRID SPAWNING SYSTEM: Core routing logic
-func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:
-	if enemy_type.is_special_boss and enemy_type.boss_scene:
-		_spawn_special_boss(enemy_type, position)
-	else:
-		_spawn_pooled_enemy(enemy_type, position)  # Current system unchanged
-
-func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
-	var boss_node = enemy_type.boss_scene.instantiate()
-	get_tree().current_scene.add_child(boss_node)
-	boss_node.global_position = position
-	
-	# Connect boss death to EventBus for XP/loot
-	if boss_node.has_signal("died"):
-		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
-	
-	# DAMAGE V2: Register boss with DamageService
-	var entity_id = "boss_" + str(boss_node.get_instance_id())
-	var entity_data = {
-		"id": entity_id,
-		"type": "boss",
-		"hp": boss_node.get_max_health() if boss_node.has_method("get_max_health") else 200.0,
-		"max_hp": boss_node.get_max_health() if boss_node.has_method("get_max_health") else 200.0,
-		"alive": true,
-		"pos": position
-	}
-	DamageService.register_entity(entity_id, entity_data)
-	
-	Logger.info("Spawned special boss: " + enemy_type.id + " at " + str(position) + " registered as " + entity_id, "waves")
 
 func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED
@@ -291,11 +260,6 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
-func _on_special_boss_died(enemy_type: EnemyType) -> void:
-	# Handle special boss death - emit via EventBus for XP/loot systems
-	var payload := EventBus.EnemyKilledPayload_Type.new(Vector2.ZERO, enemy_type.xp_value)
-	EventBus.enemy_killed.emit(payload)
-	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
 
 

@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://d0m4r9s5o6p7t"]
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://d0m4sas5o6p7t"]
 
-[ext_resource type="Script" path="res://scripts/domain/EnemyTemplate.gd" id="1_4c5d6"]
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_4c5d6"]
 
 [resource]
 script = ExtResource("1_4c5d6")
@@ -15,3 +15,4 @@ tags = Array[StringName]([&"boss", &"elite"])
 weight = 0.1
 render_tier = "boss"
 visual_config = {}
+boss_scene_path = ""
