@@ -40,32 +40,6 @@ func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0)
 	velocity = Vector2.ZERO
 	entity_id = ""
 
-## Convert to legacy EnemyType for existing systems (temporary compatibility)
-func to_enemy_type() -> EnemyType:
-	var enemy_type: EnemyType = EnemyType.new()
-	enemy_type.id = str(template_id)
-	enemy_type.health = health
-	enemy_type.speed = speed
-	enemy_type.speed_min = speed * 0.9  # Add some variance for legacy compatibility
-	enemy_type.speed_max = speed * 1.1
-	enemy_type.size = Vector2(24.0 * size_scale, 24.0 * size_scale)
-	enemy_type.collision_radius = 12.0 * size_scale
-	enemy_type.xp_value = 1  # Default XP value
-	enemy_type.spawn_weight = 1.0
-	enemy_type.render_tier = render_tier
-	
-	# Set visual config with color
-	enemy_type.visual_config = {
-		"color": {
-			"r": color_tint.r,
-			"g": color_tint.g, 
-			"b": color_tint.b,
-			"a": color_tint.a
-		},
-		"shape": "square"  # Default shape
-	}
-	
-	return enemy_type
 
 ## Get stable entity ID for DamageService registration
 func get_entity_id() -> String:

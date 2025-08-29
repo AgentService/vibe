@@ -13,8 +13,15 @@ const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
 const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
-const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 const UnifiedHitFeedback := preload("res://scripts/systems/UnifiedHitFeedback.gd")
+
+# Tier enumeration for V2 system (from old EnemyRenderTier)
+enum Tier {
+	SWARM = 0,
+	REGULAR = 1,
+	ELITE = 2,
+	BOSS = 3
+}
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -57,7 +64,6 @@ var wave_director: WaveDirector
 var damage_system: DamageSystem
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
-var enemy_render_tier: EnemyRenderTier
 var unified_hit_feedback: UnifiedHitFeedback
 
 # Boss feedback settings removed - now configured per-boss in BaseBoss inspector
@@ -85,20 +91,6 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
 	
-	# Create enemy render tier system
-	Logger.info("KNOCKBACK DEBUG: Creating EnemyRenderTier instance...", "systems")
-	enemy_render_tier = EnemyRenderTier_Type.new()
-	if enemy_render_tier == null:
-		Logger.error("EnemyRenderTier instance creation failed!", "ui")
-		return
-	
-	Logger.info("KNOCKBACK DEBUG: EnemyRenderTier created successfully", "systems")
-	
-	add_child(enemy_render_tier)
-	
-	# Force call ready if needed
-	if not enemy_render_tier.is_node_ready():
-		enemy_render_tier._ready()
 	
 	# Create unified hit feedback system (replaces separate enemy and boss feedback)
 	Logger.info("KNOCKBACK DEBUG: About to create UnifiedHitFeedback system", "systems")
@@ -140,9 +132,6 @@ func _ready() -> void:
 	# Setup unified hit feedback system with MultiMesh references
 	if unified_hit_feedback:
 		unified_hit_feedback.setup_multimesh_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
-		# Inject EnemyRenderTier reference
-		if enemy_render_tier:
-			unified_hit_feedback.set_enemy_render_tier(enemy_render_tier)
 		# Inject WaveDirector reference if available
 		if wave_director:
 			unified_hit_feedback.set_wave_director(wave_director)
@@ -564,22 +553,18 @@ func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
 func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
-	if enemy_render_tier == null:
-		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
-		return
-	
-	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
+	# Group enemies by tier using V2 system
+	var tier_groups := _group_enemies_by_tier_v2(alive_enemies)
 	
 	# Update each tier's MultiMesh
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
+	_update_tier_multimesh(tier_groups[Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), Tier.SWARM)
+	_update_tier_multimesh(tier_groups[Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), Tier.REGULAR) 
+	_update_tier_multimesh(tier_groups[Tier.ELITE], mm_enemies_elite, Vector2(48, 48), Tier.ELITE)
+	_update_tier_multimesh(tier_groups[Tier.BOSS], mm_enemies_boss, Vector2(64, 64), Tier.BOSS)
 	
 	# Removed excessive tier rendering debug logs
 
-func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
+func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: Tier) -> void:
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
 		mm_instance.multimesh.instance_count = count
@@ -633,16 +618,64 @@ func _get_enemy_color_for_type(type_id: String) -> Color:
 		_:
 			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
 
-func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
+# V2 tier grouping function (replaces EnemyRenderTier.group_enemies_by_tier)
+func _group_enemies_by_tier_v2(alive_enemies: Array[EnemyEntity]) -> Dictionary:
+	var swarm_enemies: Array[Dictionary] = []
+	var regular_enemies: Array[Dictionary] = []
+	var elite_enemies: Array[Dictionary] = []
+	var boss_enemies: Array[Dictionary] = []
+	
+	# Import EnemyFactory for template lookup
+	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	for enemy in alive_enemies:
+		var tier: Tier = Tier.REGULAR  # Default tier
+		
+		# Get render tier from EnemyTemplate via the enemy's type_id
+		if not enemy.type_id.is_empty():
+			var template: EnemyTemplate = EnemyFactory.get_template(enemy.type_id)
+			if template != null:
+				match template.render_tier:
+					"swarm":
+						tier = Tier.SWARM
+					"regular":
+						tier = Tier.REGULAR
+					"elite":
+						tier = Tier.ELITE
+					"boss":
+						tier = Tier.BOSS
+					_:
+						tier = Tier.REGULAR
+		
+		var enemy_dict: Dictionary = enemy.to_dictionary()
+		
+		match tier:
+			Tier.SWARM:
+				swarm_enemies.append(enemy_dict)
+			Tier.REGULAR:
+				regular_enemies.append(enemy_dict)
+			Tier.ELITE:
+				elite_enemies.append(enemy_dict)
+			Tier.BOSS:
+				boss_enemies.append(enemy_dict)
+	
+	return {
+		Tier.SWARM: swarm_enemies,
+		Tier.REGULAR: regular_enemies,
+		Tier.ELITE: elite_enemies,
+		Tier.BOSS: boss_enemies
+	}
+
+func _get_tier_debug_color(tier: Tier) -> Color:
 	# Distinct colors for each tier for visual debugging - more saturated for better visibility
 	match tier:
-		EnemyRenderTier_Type.Tier.SWARM:
+		Tier.SWARM:
 			return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red
-		EnemyRenderTier_Type.Tier.REGULAR:
+		Tier.REGULAR:
 			return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan
-		EnemyRenderTier_Type.Tier.ELITE:
+		Tier.ELITE:
 			return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta
-		EnemyRenderTier_Type.Tier.BOSS:
+		Tier.BOSS:
 			return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
@@ -695,28 +728,18 @@ func _spawn_v2_boss_test() -> void:
 	Logger.info("   Damage: " + str(original_damage) + " → " + str(boss_config.damage), "debug")
 	
 	# Spawn using existing V2 system
-	Logger.info("5. Checking WaveDirector...", "debug")
 	if not wave_director:
 		Logger.error("   ✗ WaveDirector is null!", "debug")
 		return
 	if not wave_director.has_method("_spawn_from_config_v2"):
 		Logger.error("   ✗ WaveDirector missing _spawn_from_config_v2 method", "debug")
 		return
-	Logger.info("   ✓ WaveDirector ready", "debug")
-	
-	Logger.info("6. Converting to legacy enemy type...", "debug")
-	var legacy_type := boss_config.to_enemy_type()
-	legacy_type.is_special_boss = true
-	legacy_type.display_name = "Ancient Lich Boss"
-	Logger.info("   Legacy type ID: " + legacy_type.id + ", Health: " + str(legacy_type.health), "debug")
-	
-	Logger.info("7. Spawning via WaveDirector...", "debug")
 	Logger.info("WaveDirector is: " + str(wave_director), "debug")
-	Logger.info("About to call _spawn_from_config_v2 with legacy_type=" + str(legacy_type.id) + ", boss_config=" + str(boss_config.template_id), "debug")
+	Logger.info("About to call _spawn_from_config_v2 with boss_config=" + str(boss_config.template_id), "debug")
 	
 	if wave_director and wave_director.has_method("_spawn_from_config_v2"):
 		Logger.info("WaveDirector has _spawn_from_config_v2 method - calling it", "debug")
-		wave_director._spawn_from_config_v2(legacy_type, boss_config)
+		wave_director._spawn_from_config_v2(boss_config)
 		Logger.info("_spawn_from_config_v2 call completed", "debug")
 	else:
 		Logger.warn("WaveDirector missing or doesn't have _spawn_from_config_v2 method", "debug")

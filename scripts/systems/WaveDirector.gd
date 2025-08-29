@@ -155,13 +155,10 @@ func _spawn_enemy_v2() -> void:
 		Logger.warn("EnemyFactory failed to generate spawn config", "waves")
 		return
 	
-	# Convert to legacy EnemyType for existing pooling system
-	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
-	
-	# Hand off to existing pooling/rendering system
-	_spawn_from_config_v2(legacy_enemy_type, cfg)
+	# Hand off to V2 pooling/rendering system
+	_spawn_from_config_v2(cfg)
 
-func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
+func _spawn_from_config_v2(spawn_config: SpawnConfig) -> void:
 	# Generate stable entity ID for DamageService using global counter
 	var entity_id: String
 	
@@ -190,7 +187,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	var direction: Vector2 = (target_pos - spawn_config.position).normalized()
 	
 	var enemy := enemies[free_idx]
-	enemy.setup_with_type(enemy_type, spawn_config.position, direction * spawn_config.speed)
+	enemy.setup_with_config(spawn_config, spawn_config.position, direction * spawn_config.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
 	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
@@ -231,34 +228,6 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	
 	Logger.info("V2 Boss spawned: " + spawn_config.template_id + " [" + spawn_config.entity_id + "] (" + boss_instance.name + ") at " + str(spawn_config.position), "waves")
 
-func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
-	# Existing pooled spawn logic - UNCHANGED
-	var free_idx := _find_free_enemy()
-	if free_idx == -1:
-		Logger.warn("No free enemy slots available", "waves")
-		return
-	
-	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
-	var direction: Vector2 = (target_pos - position).normalized()
-	
-	var enemy := enemies[free_idx]
-	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
-	_cache_dirty = true  # Mark cache as dirty when spawning
-	
-	# DAMAGE V2: Register enemy with DamageService
-	var entity_id = "enemy_" + str(free_idx)
-	var entity_data = {
-		"id": entity_id,
-		"type": "enemy",
-		"hp": enemy.hp,
-		"max_hp": enemy.hp,
-		"alive": true,
-		"pos": position
-	}
-	DamageService.register_entity(entity_id, entity_data)
-	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
 
 

@@ -4,6 +4,15 @@
 
 ## [Current Week - In Progress]
 
+### Removed
+- **V1 Enemy System Cleanup**: Fully removed legacy V1 enemy system components for cleaner V2-only architecture
+  - **EnemyType.gd**: Removed V1 enemy type class and render tier system 
+  - **EnemyRenderTier.gd**: Removed legacy tier classification system
+  - **SpawnConfig.to_enemy_type()**: Removed V1 compatibility bridge method
+  - **EnemyEntity V1 methods**: Removed `from_dictionary()`, `setup_with_type()`, and `setup_dictionary_with_type()` methods
+  - **Arena.gd**: Updated to use V2 tier grouping directly via `_group_enemies_by_tier_v2()` and local Tier enum
+  - **UnifiedHitFeedback.gd**: Updated to work with V2 system via local tier grouping and `_get_enemy_tier()` using EnemyTemplate lookup
+
 ### Added
 - **Boss AnimatedSprite2D Migration & BaseBoss Unification**: Migrated boss system to unified architecture with scene-based AnimatedSprite2D workflow
   - **BaseBoss class**: Created `scripts/systems/BaseBoss.gd` extending CharacterBody2D with typed signals (`health_changed`, `died`), EventBus integration, and DamageService registration

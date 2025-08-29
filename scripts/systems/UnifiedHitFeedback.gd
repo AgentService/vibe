@@ -15,7 +15,14 @@ var mm_enemies_boss: MultiMeshInstance2D
 
 # System references (injected by Arena)
 var wave_director: WaveDirector
-var enemy_render_tier: EnemyRenderTier
+
+# Tier enumeration (from old EnemyRenderTier)
+enum Tier {
+	SWARM = 0,
+	REGULAR = 1,
+	ELITE = 2,
+	BOSS = 3
+}
 
 # Visual feedback configuration
 var visual_config: VisualFeedbackConfig
@@ -83,6 +90,56 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	Logger.info("KNOCKBACK DEBUG: UnifiedHitFeedback._exit_tree()", "feedback")
+
+# Local tier grouping function (replaces EnemyRenderTier.group_enemies_by_tier)
+func _group_enemies_by_tier(alive_enemies: Array[EnemyEntity]) -> Dictionary:
+	var swarm_enemies: Array[Dictionary] = []
+	var regular_enemies: Array[Dictionary] = []
+	var elite_enemies: Array[Dictionary] = []
+	var boss_enemies: Array[Dictionary] = []
+	
+	# Import EnemyFactory for template lookup
+	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	for enemy in alive_enemies:
+		var tier: Tier = Tier.REGULAR  # Default tier
+		
+		# Get render tier from EnemyTemplate via the enemy's type_id
+		if not enemy.type_id.is_empty():
+			var template: EnemyTemplate = EnemyFactory.get_template(enemy.type_id)
+			if template != null:
+				match template.render_tier:
+					"swarm":
+						tier = Tier.SWARM
+					"regular":
+						tier = Tier.REGULAR
+					"elite":
+						tier = Tier.ELITE
+					"boss":
+						tier = Tier.BOSS
+					_:
+						tier = Tier.REGULAR
+		
+		var enemy_dict: Dictionary = enemy.to_dictionary()
+		
+		match tier:
+			Tier.SWARM:
+				swarm_enemies.append(enemy_dict)
+			Tier.REGULAR:
+				regular_enemies.append(enemy_dict)
+			Tier.ELITE:
+				elite_enemies.append(enemy_dict)
+			Tier.BOSS:
+				boss_enemies.append(enemy_dict)
+	
+	return {
+		Tier.SWARM: swarm_enemies,
+		Tier.REGULAR: regular_enemies,
+		Tier.ELITE: elite_enemies,
+		Tier.BOSS: boss_enemies
+	}
+
+func _disconnect_signals() -> void:
 	if EventBus.damage_applied.is_connected(_on_damage_applied):
 		EventBus.damage_applied.disconnect(_on_damage_applied)
 
@@ -98,9 +155,6 @@ func setup_multimesh_references(swarm: MultiMeshInstance2D, regular: MultiMeshIn
 func set_wave_director(wd: WaveDirector) -> void:
 	wave_director = wd
 
-## Set EnemyRenderTier reference (called by Arena)
-func set_enemy_render_tier(ert: EnemyRenderTier) -> void:
-	enemy_render_tier = ert
 
 func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	var target_id_str = str(payload.target_id)
@@ -118,7 +172,7 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 
 ## Apply feedback to MultiMesh enemies (flash + knockback via color manipulation)
 func _apply_multimesh_feedback(enemy_index: int, payload: DamageAppliedPayload) -> void:
-	if not wave_director or not enemy_render_tier:
+	if not wave_director:
 		Logger.warn("Wave director or render tier not available for MultiMesh feedback", "feedback")
 		return
 	
@@ -427,9 +481,6 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 		Logger.warn("WaveDirector not injected for MultiMesh lookup", "feedback")
 		return {}
 	
-	if not enemy_render_tier:
-		Logger.warn("EnemyRenderTier not injected for MultiMesh lookup", "feedback")
-		return {}
 	
 	# Extract enemy pool index from entity_id
 	var parts: PackedStringArray = entity_id.split("_")
@@ -450,7 +501,7 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 	
 	# Group all alive enemies by tier to find visual index
 	var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
-	var tier_groups: Dictionary = enemy_render_tier.group_enemies_by_tier(alive_enemies)
+	var tier_groups: Dictionary = _group_enemies_by_tier(alive_enemies)
 	
 	# Determine target enemy's tier
 	var target_tier = _get_enemy_tier(target_enemy)
@@ -458,17 +509,17 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 	var multimesh_instance: MultiMeshInstance2D
 	
 	match target_tier:
-		EnemyRenderTier.Tier.SWARM:
-			tier_enemies = tier_groups[EnemyRenderTier.Tier.SWARM]
+		Tier.SWARM:
+			tier_enemies = tier_groups[Tier.SWARM]
 			multimesh_instance = mm_enemies_swarm
-		EnemyRenderTier.Tier.REGULAR:
-			tier_enemies = tier_groups[EnemyRenderTier.Tier.REGULAR]
+		Tier.REGULAR:
+			tier_enemies = tier_groups[Tier.REGULAR]
 			multimesh_instance = mm_enemies_regular
-		EnemyRenderTier.Tier.ELITE:
-			tier_enemies = tier_groups[EnemyRenderTier.Tier.ELITE]
+		Tier.ELITE:
+			tier_enemies = tier_groups[Tier.ELITE]
 			multimesh_instance = mm_enemies_elite
-		EnemyRenderTier.Tier.BOSS:
-			tier_enemies = tier_groups[EnemyRenderTier.Tier.BOSS]
+		Tier.BOSS:
+			tier_enemies = tier_groups[Tier.BOSS]
 			multimesh_instance = mm_enemies_boss
 		_:
 			Logger.warn("Unknown enemy tier for feedback", "feedback")
@@ -488,17 +539,26 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 	return {}
 
 ## Get enemy tier for more reliable matching
-func _get_enemy_tier(enemy: EnemyEntity) -> EnemyRenderTier.Tier:
-	if not enemy_render_tier:
-		return EnemyRenderTier.Tier.REGULAR
+# Determine enemy tier from V2 template system
+func _get_enemy_tier(enemy: EnemyEntity) -> Tier:
+	# Import EnemyFactory for template lookup
+	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
-	# Use the same logic as EnemyRenderTier to determine tier from type_id
-	var type_id_lower = enemy.type_id.to_lower()
-	if "boss" in type_id_lower or "lich" in type_id_lower or "dragon" in type_id_lower:
-		return EnemyRenderTier.Tier.BOSS
-	elif "elite" in type_id_lower or "champion" in type_id_lower:
-		return EnemyRenderTier.Tier.ELITE
-	elif "regular" in type_id_lower or "grunt" in type_id_lower or "soldier" in type_id_lower:
-		return EnemyRenderTier.Tier.REGULAR
-	else:
-		return EnemyRenderTier.Tier.SWARM  # Default to swarm
+	# Get render tier from EnemyTemplate via the enemy's type_id
+	if not enemy.type_id.is_empty():
+		var template: EnemyTemplate = EnemyFactory.get_template(enemy.type_id)
+		if template != null:
+			match template.render_tier:
+				"swarm":
+					return Tier.SWARM
+				"regular":
+					return Tier.REGULAR
+				"elite":
+					return Tier.ELITE
+				"boss":
+					return Tier.BOSS
+				_:
+					return Tier.REGULAR
+	
+	# Fallback to regular tier
+	return Tier.REGULAR

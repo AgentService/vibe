@@ -14,28 +14,6 @@ var alive: bool
 var speed: float
 var size: Vector2
 
-static func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null) -> EnemyEntity:
-	var entity := EnemyEntity.new()
-	
-	# Core fields from existing dictionary structure
-	entity.pos = enemy_dict.get("pos", Vector2.ZERO)
-	entity.vel = enemy_dict.get("vel", Vector2.ZERO)
-	entity.hp = enemy_dict.get("hp", 10.0)
-	entity.alive = enemy_dict.get("alive", false)
-	
-	# New fields for typed system
-	entity.type_id = enemy_dict.get("type_id", "knight_swarm")
-	entity.max_hp = enemy_dict.get("max_hp", entity.hp)
-	entity.speed = enemy_dict.get("speed", 60.0)
-	entity.size = enemy_dict.get("size", Vector2(24, 24))
-	
-	# If enemy type provided, use it to set defaults
-	if enemy_type != null:
-		entity.max_hp = enemy_type.health
-		entity.speed = enemy_type.speed
-		entity.size = enemy_type.size
-	
-	return entity
 
 func to_dictionary() -> Dictionary:
 	return {
@@ -59,28 +37,17 @@ func update_dictionary(enemy_dict: Dictionary) -> void:
 	enemy_dict["speed"] = speed
 	enemy_dict["size"] = size
 
-static func setup_dictionary_with_type(enemy_dict: Dictionary, enemy_type: EnemyType, spawn_pos: Vector2, velocity: Vector2) -> void:
-	enemy_dict["pos"] = spawn_pos
-	enemy_dict["vel"] = velocity
-	enemy_dict["hp"] = enemy_type.health
-	enemy_dict["max_hp"] = enemy_type.health
-	enemy_dict["alive"] = true
-	enemy_dict["type_id"] = enemy_type.id
-	enemy_dict["speed"] = enemy_type.speed
-	enemy_dict["size"] = enemy_type.size
-	enemy_dict["ai_type"] = enemy_type.get_ai_type()
-	enemy_dict["aggro_range"] = enemy_type.get_aggro_range()
 
-# New method to setup EnemyEntity directly
-func setup_with_type(enemy_type: EnemyType, spawn_pos: Vector2, velocity: Vector2) -> void:
+# V2 method to setup EnemyEntity from SpawnConfig
+func setup_with_config(spawn_config: SpawnConfig, spawn_pos: Vector2, velocity: Vector2) -> void:
 	pos = spawn_pos
 	vel = velocity
-	hp = enemy_type.health
-	max_hp = enemy_type.health
+	hp = spawn_config.health
+	max_hp = spawn_config.health
 	alive = true
-	type_id = enemy_type.id
-	speed = enemy_type.speed
-	size = enemy_type.size
+	type_id = str(spawn_config.template_id)
+	speed = spawn_config.speed
+	size = Vector2(24.0 * spawn_config.size_scale, 24.0 * spawn_config.size_scale)
 
 func is_valid() -> bool:
 	return not type_id.is_empty() and max_hp > 0.0 and speed >= 0.0
