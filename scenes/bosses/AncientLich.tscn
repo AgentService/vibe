@@ -1,9 +1,8 @@
-[gd_scene load_steps=23 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=22 format=3 uid="uid://1m8y72s2e63o"]
 
-[ext_resource type="Script" uid="uid://c36wbfq653mki" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
+[ext_resource type="Script" uid="uid://vmttfuq6bpmh" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
-[ext_resource type="PackedScene" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
-[ext_resource type="Script" uid="uid://cpnbqp0wf8fk5" path="res://scenes/components/BossHealthBar.gd" id="4_wh3p3"]
+[ext_resource type="PackedScene" uid="uid://dqwfsmuk84u04" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_737yx"]
 atlas = ExtResource("2_vnul3")
@@ -165,13 +164,8 @@ shape = SubResource("RectangleShape2D_737yx")
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.5
 
-[node name="HealthBar" type="ProgressBar" parent="." instance=ExtResource("3_ywjq4")]
+[node name="HealthBar" parent="." instance=ExtResource("3_ywjq4")]
 z_index = 10
-offset_left = -21.0
-offset_top = -18.0
-offset_right = 21.0
-offset_bottom = -13.0
+offset_right = 22.0
+offset_bottom = -14.0
 theme = SubResource("Theme_boss_healthbar")
-value = 100.0
-show_percentage = false
-script = ExtResource("4_wh3p3")
