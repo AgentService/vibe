@@ -1,7 +1,8 @@
-[gd_scene load_steps=21 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=19 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://c36wbfq653mki" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
+[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_737yx"]
 atlas = ExtResource("2_vnul3")
@@ -105,67 +106,37 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_vnul3"]
-size = Vector2(42, 47)
+[sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
+radius = 4.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
-size = Vector2(42, 46.5)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_737yx"]
-bg_color = Color(0.1, 0.1, 0.1, 0.9)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.6, 0.5, 0.4, 1)
-corner_radius_top_left = 3
-corner_radius_top_right = 3
-corner_radius_bottom_right = 3
-corner_radius_bottom_left = 3
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_vnul3"]
-bg_color = Color(0.8, 0.2, 0.2, 1)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(1, 0.3, 0.3, 1)
-corner_radius_top_left = 2
-corner_radius_top_right = 2
-corner_radius_bottom_right = 2
-corner_radius_bottom_left = 2
-
-[sub_resource type="Theme" id="Theme_737yx"]
-ProgressBar/styles/background = SubResource("StyleBoxFlat_737yx")
-ProgressBar/styles/fill = SubResource("StyleBoxFlat_vnul3")
+size = Vector2(14, 15)
 
 [node name="AncientLich" type="CharacterBody2D"]
+scale = Vector2(3, 3)
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(1, 0)
-scale = Vector2(3, 3)
+position = Vector2(0, -8.5)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1, 8.5)
-shape = SubResource("RectangleShape2D_vnul3")
+position = Vector2(0, -5)
+shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
+position = Vector2(-1, -8.5)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1, 8.25)
+position = Vector2(1, 3)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.5
 
-[node name="HealthBar" type="ProgressBar" parent="."]
-offset_left = -20.0
-offset_top = -20.0
-offset_right = 22.0
-offset_bottom = -15.0
-theme = SubResource("Theme_737yx")
-value = 99.0
-show_percentage = false
+[node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
+offset_left = -7.0
+offset_top = -15.0
+offset_right = 7.0
+offset_bottom = -13.0

@@ -6,7 +6,7 @@ extends CharacterBody2D
 
 signal died
 
-@onready var health_bar: ProgressBar = $HealthBar
+@onready var health_bar: BossHealthBar = $BossHealthBar
 
 var spawn_config: SpawnConfig
 var max_health: float = 200.0
@@ -125,8 +125,7 @@ func is_alive() -> bool:
 
 func _update_health_bar() -> void:
 	if health_bar:
-		var health_percentage = (current_health / max_health) * 100.0
-		health_bar.value = health_percentage
+		health_bar.update_health(current_health, max_health)
 
 # V2 Enemy System Integration
 func setup_from_spawn_config(config: SpawnConfig) -> void:
