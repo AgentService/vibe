@@ -9,3 +9,4 @@ enemy_radius = 12.0
 base_damage = 25.0
 crit_chance = 0.1
 crit_multiplier = 2.0
+unified_damage_v3 = true

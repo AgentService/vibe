@@ -39,6 +39,9 @@ signal damage_applied(payload)
 ## Batch damage applied - emitted by DamageSystem for AoE/multi-target abilities
 signal damage_batch_applied(payload)
 
+## Damage entity sync - emitted by DamageRegistry V3 for unified entity HP updates
+signal damage_entity_sync(payload)
+
 ## Player takes damage - emitted when enemies hit player
 signal damage_taken(damage: int)
 

@@ -43,8 +43,10 @@ func _ready() -> void:
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
+		# DAMAGE V3: Listen for unified damage sync events
+		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 	
-	# DAMAGE V2: Register with DamageService
+	# DAMAGE V3: Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
 	var entity_data = {
 		"id": entity_id,
@@ -54,8 +56,11 @@ func _ready() -> void:
 		"alive": true,
 		"pos": global_position
 	}
+	
+	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
-	Logger.debug("AncientLich registered with DamageService as " + entity_id, "bosses")
+	EntityTracker.register_entity(entity_id, entity_data)
+	Logger.debug("AncientLich registered with DamageService and EntityTracker as " + entity_id, "bosses")
 	
 	# Initialize health bar
 	_update_health_bar()
@@ -64,10 +69,13 @@ func _exit_tree() -> void:
 	# Clean up signal connections
 	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
 		EventBus.combat_step.disconnect(_on_combat_step)
+	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
+		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	
-	# DAMAGE V2: Unregister from DamageService
+	# DAMAGE V3: Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
 	DamageService.unregister_entity(entity_id)
+	EntityTracker.unregister_entity(entity_id)
 
 func setup_from_spawn_config(config: SpawnConfig) -> void:
 	spawn_config = config
@@ -89,6 +97,38 @@ func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
 	_update_ai(dt)
 	last_attack_time += dt
+
+## DAMAGE V3: Handle unified damage sync events for scene bosses
+func _on_damage_entity_sync(payload: Dictionary) -> void:
+	var entity_id: String = payload.get("entity_id", "")
+	var entity_type: String = payload.get("entity_type", "")
+	var new_hp: float = payload.get("new_hp", 0.0)
+	var is_death: bool = payload.get("is_death", false)
+	
+	# Only handle boss entities matching this instance
+	if entity_type != "boss":
+		return
+	
+	var expected_entity_id = "boss_" + str(get_instance_id())
+	if entity_id != expected_entity_id:
+		return  # Not for this boss
+	
+	# Update boss HP
+	current_health = new_hp
+	_update_health_bar()
+	
+	# Handle death
+	if is_death:
+		Logger.info("V3: Boss %s killed via damage sync" % [entity_id], "combat")
+		_die()
+	else:
+		# Update EntityTracker health data
+		var tracker_data = EntityTracker.get_entity(entity_id)
+		if tracker_data.has("id"):
+			tracker_data["hp"] = new_hp
+		
+		# Visual feedback for taking damage
+		_trigger_damage_animation()
 
 func _update_ai(dt: float) -> void:
 	# Get player position from PlayerState
@@ -114,6 +154,10 @@ func _update_ai(dt: float) -> void:
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 			move_and_slide()
+			
+			# Update EntityTracker position
+			var entity_id = "boss_" + str(get_instance_id())
+			EntityTracker.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
@@ -135,8 +179,8 @@ func _perform_attack() -> void:
 			var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, attack_damage, damage_tags)
 			EventBus.damage_requested.emit(damage_payload)
 
-# DAMAGE V2: take_damage() method removed - damage handled via DamageService
-# Bosses register with DamageService in _ready() and receive damage via unified pipeline
+# DAMAGE V3: take_damage() method removed - damage handled via unified pipeline
+# Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync
 
 func _die() -> void:
 	Logger.info("AncientLich has been defeated!", "bosses")
@@ -186,3 +230,9 @@ func _on_animation_finished() -> void:
 	elif animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")
+
+func _trigger_damage_animation() -> void:
+	# Trigger damage animation if not already playing and boss is awake
+	if not is_taking_damage and has_woken_up:
+		is_taking_damage = true
+		animated_sprite.play("damage_taken")

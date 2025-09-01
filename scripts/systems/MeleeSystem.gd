@@ -108,8 +108,14 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
-	# HYBRID SYSTEM: Also check for scene-based bosses (Dragon Lord, etc.)
-	var hit_scene_bosses = _find_scene_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
+	# UNIFIED DAMAGE V3: Use EntityTracker for boss detection (feature flag controlled)
+	var hit_scene_bosses: Array[Node] = []
+	var use_unified_v3: bool = BalanceDB.get_combat_value("unified_damage_v3")
+	if use_unified_v3:
+		hit_scene_bosses = _find_bosses_in_cone_v3(player_pos, attack_dir, effective_cone, effective_range)
+	else:
+		# HYBRID SYSTEM: Legacy scene tree search for bosses (Dragon Lord, etc.)
+		hit_scene_bosses = _find_scene_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
 	
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
@@ -125,7 +131,12 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	
 	# Apply damage to pooled enemies
 	for enemy in hit_enemies:
-		var enemy_pool_index = _find_enemy_pool_index(enemy)
+		var enemy_pool_index = -1
+		if use_unified_v3:
+			enemy_pool_index = _find_enemy_pool_index_v3(enemy)
+		else:
+			enemy_pool_index = _find_enemy_pool_index(enemy)
+		
 		if enemy_pool_index == -1:
 			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
 			continue
@@ -221,6 +232,30 @@ func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_d
 	
 	return hit_bosses
 
+## V3: Find bosses using EntityTracker (no scene tree traversal)
+func _find_bosses_in_cone_v3(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
+	var hit_bosses: Array[Node] = []
+	
+	# Use EntityTracker for efficient boss lookup
+	var boss_entity_ids = EntityTracker.get_entities_in_cone(player_pos, attack_dir, cone_degrees, range_limit, "boss")
+	
+	for entity_id in boss_entity_ids:
+		# Get boss instance from entity_id 
+		var instance_id_str = entity_id.replace("boss_", "")
+		var instance_id = instance_id_str.to_int()
+		
+		var boss_node = instance_from_id(instance_id)
+		if boss_node and is_instance_valid(boss_node):
+			hit_bosses.append(boss_node)
+			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+				Logger.debug("V3: Found boss in melee range via EntityTracker: " + boss_node.name, "combat")
+		else:
+			Logger.warn("V3: Boss node not found for entity_id: " + entity_id, "combat")
+			# Clean up stale entity
+			EntityTracker.unregister_entity(entity_id)
+	
+	return hit_bosses
+
 func _get_all_characterbody2d_nodes(node: Node) -> Array[CharacterBody2D]:
 	var result: Array[CharacterBody2D] = []
 	
@@ -307,6 +342,23 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
+
+## V3: Find enemy pool index using EntityTracker (no WaveDirector dependency)
+func _find_enemy_pool_index_v3(target_enemy: EnemyEntity) -> int:
+	# Use EntityTracker to find enemies near the target position
+	var nearby_entity_ids = EntityTracker.get_entities_in_radius(target_enemy.pos, 1.0, "enemy")
+	
+	for entity_id in nearby_entity_ids:
+		var entity_data = EntityTracker.get_entity(entity_id)
+		if entity_data.has("pos"):
+			var entity_pos: Vector2 = entity_data["pos"]
+			# Use exact position match to identify the specific enemy
+			if entity_pos.distance_to(target_enemy.pos) < 0.1:  # Very close match
+				var enemy_index_str = entity_id.replace("enemy_", "")
+				return enemy_index_str.to_int()
+	
+	Logger.warn("V3: Could not find entity_id for enemy at position " + str(target_enemy.pos), "combat")
+	return -1
 
 func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
 	if not wave_director:

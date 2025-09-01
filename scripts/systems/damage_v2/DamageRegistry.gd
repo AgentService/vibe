@@ -68,7 +68,11 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
 	
 	# CRITICAL: Sync damage back to actual game entities
-	_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
+	var use_unified_v3: bool = BalanceDB.get_combat_value("unified_damage_v3")
+	if use_unified_v3:
+		_sync_damage_to_game_entity_v3(target_id, entity, final_damage, new_hp)
+	else:
+		_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
 	
 	# Handle death
 	var was_killed: bool = false
@@ -179,7 +183,30 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 	if _entities.has(entity_id):
 		unregister_entity(entity_id)
 
-## Sync damage from DamageRegistry back to actual game entities
+## V3: Unified damage syncing via EventBus signals (cleaner, decoupled)
+func _sync_damage_to_game_entity_v3(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
+	var entity_type: String = entity_data.get("type", "unknown")
+	
+	# Create a standardized damage sync payload
+	var sync_payload = {
+		"entity_id": entity_id,
+		"entity_type": entity_type,
+		"damage": damage,
+		"new_hp": new_hp,
+		"is_death": new_hp <= 0.0
+	}
+	
+	# Emit damage sync event for systems to handle
+	# This removes the need for DamageRegistry to know about WaveDirector/Boss internals
+	if EventBus.has_signal("damage_entity_sync"):
+		EventBus.damage_entity_sync.emit(sync_payload)
+		Logger.debug("V3: Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+	else:
+		# Fallback to direct sync if EventBus signal not available
+		Logger.warn("V3: EventBus.damage_entity_sync not available, using direct sync", "combat")
+		_sync_damage_to_game_entity(entity_id, entity_data, damage, new_hp)
+
+## V2: Legacy damage syncing (direct access - brittle but working)
 func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
 	var entity_type: String = entity_data.get("type", "unknown")
 	

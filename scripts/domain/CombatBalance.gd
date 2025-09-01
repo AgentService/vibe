@@ -8,3 +8,6 @@ class_name CombatBalance
 @export var base_damage: float = 25.0
 @export_range(0.0, 1.0) var crit_chance: float = 0.1
 @export_range(1.0, 10.0) var crit_multiplier: float = 2.0
+
+## Feature flag for Unified Damage System V3
+@export var unified_damage_v3: bool = false
