@@ -9,6 +9,8 @@ What works, what's left, current status, known issues, and the evolution of deci
 - Data-driven via typed .tres resources with universal hot-reload patterns.
 - Hybrid enemy spawning (pooled + scene bosses) operational.
 - Memory Bank established as source of truth for resets and onboarding.
+- Boss UI component integrated (BossHealthBar) with themed ProgressBar; bosses update via direct call; logs via Logger.
+- Boss damage feedback shader/material integrated for boss hit flashes.
 
 ## What Works (Validated)
 - Fixed-step RunManager with EventBus.combat_step cadence.
@@ -21,12 +23,15 @@ What works, what's left, current status, known issues, and the evolution of deci
 - Logging: Central Logger autoload with categories; print avoided in game code (allowed in tests).
 - Dev Console: Limbo Console integrated (F1) for runtime commands/tuning.
 - Documentation: Obsidian systems updated for typed EnemyEntity and signals; Memory Bank core created.
+- Boss UI: BossHealthBar component (ProgressBar + themed) works; bosses call update_health(current, max); logs via Logger.
+- Boss hit feedback shader/material applied for boss damage flashes.
 
 ## What's Left (Planned)
 - UI/Scene Architecture:
   - Decompose Arena responsibilities; enforce CanvasLayer layering/z-order.
   - Introduce GameManager entry scene; main/pause/options stubs.
   - Generalize Modal Overlay System (CardPicker precedent), pause-aware layers.
+  - Integrate BossHealthBar into HUD/GameManager; migrate updates to EventBus entity_health_changed; add an isolated scene test.
 - Testing & Enforcement:
   - Expand isolated scene tests for autoload-dependent systems; broaden cli_test_runner usage.
   - Regression tests for allowed pure Resource config imports in boundary checker.
@@ -44,6 +49,7 @@ What works, what's left, current status, known issues, and the evolution of deci
 - Rendering tiers are foundational; advanced optimizations still pending.
 - Hot-reload correctness depends on comprehensive validate() in resources.
 - Ensure all signals are declared in EventBus before emission to avoid runtime errors.
+- Boss UI currently direct-coupled (BossHealthBar.update_health); migrate to EventBus for decoupling and testability.
 
 ## Decision Evolution (Highlights)
 - Damage v2 consolidated all damage paths; entity lifecycle centralized (registry-owned).
@@ -58,6 +64,8 @@ What works, what's left, current status, known issues, and the evolution of deci
 - Limbo Console integration; universal .tres hot-reload via BalanceDB and @export patterns.
 - Unified Damage System v2 complete across entity types.
 - Memory Bank established (projectbrief, productContext, systemPatterns, techContext, activeContext, progress).
+- Boss UI component added (BossHealthBar.tscn/.gd) with themed ProgressBar and Logger-driven updates.
+- Boss hit feedback shader (shaders/boss_flash.gdshader) and material integrated for boss damage feedback.
 
 ## Next Actions (Short List)
 - Extract UI from Arena; set up GameManager scene and modal overlay scaffolding.

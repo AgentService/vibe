@@ -30,6 +30,9 @@ var boss_knockback_effects: Dictionary = {}
 # Boss references by instance ID
 var registered_bosses: Dictionary = {}
 
+# Cached sprite references for performance: instance_id -> AnimatedSprite2D
+var cached_boss_sprites: Dictionary = {}
+
 func _ready() -> void:
 	# Load visual feedback configuration  
 	visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
@@ -50,9 +53,9 @@ func _ready() -> void:
 	# Subscribe to damage events
 	EventBus.damage_applied.connect(_on_damage_applied)
 	
-	# Start a timer to periodically scan for new bosses
+	# Start a timer to periodically scan for new bosses (less frequent for performance)
 	var boss_scanner = Timer.new()
-	boss_scanner.wait_time = 1.0  # Check every second
+	boss_scanner.wait_time = 3.0  # Check every 3 seconds (reduced frequency)
 	boss_scanner.timeout.connect(_scan_for_bosses)
 	add_child(boss_scanner)
 	boss_scanner.start()
@@ -73,12 +76,20 @@ func register_boss(boss: Node) -> void:
 	
 	var instance_id = boss.get_instance_id()
 	registered_bosses[instance_id] = boss
-	Logger.debug("Boss " + boss.name + " registered for hit feedback (ID: " + str(instance_id) + ")", "bosses")
+	
+	# Cache sprite reference during registration for performance
+	var sprite = _find_animated_sprite(boss)
+	if sprite:
+		cached_boss_sprites[instance_id] = sprite
+		Logger.debug("Boss " + boss.name + " registered with cached sprite (ID: " + str(instance_id) + ")", "bosses")
+	else:
+		Logger.debug("Boss " + boss.name + " registered without sprite (ID: " + str(instance_id) + ")", "bosses")
 
 func unregister_boss(boss: Node) -> void:
 	"""Unregister a boss from hit feedback tracking"""
 	var instance_id = boss.get_instance_id()
 	registered_bosses.erase(instance_id)
+	cached_boss_sprites.erase(instance_id)
 	boss_flash_effects.erase(instance_id)
 	boss_knockback_effects.erase(instance_id)
 	Logger.debug("Boss " + boss.name + " unregistered from hit feedback", "bosses")
@@ -131,8 +142,8 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 		_start_boss_knockback_effect(instance_id, boss, payload.source_position, payload.knockback_distance)
 
 func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
-	# Find the AnimatedSprite2D within the boss structure
-	var animated_sprite = _find_animated_sprite(boss)
+	# Use cached sprite reference for performance
+	var animated_sprite = cached_boss_sprites.get(instance_id, null)
 	
 	# Use editor overrides if specified, otherwise use config values
 	var duration = flash_duration_override if flash_duration_override > 0 else visual_config.flash_duration
@@ -349,7 +360,10 @@ func _reset_boss_color(instance_id: int) -> void:
 
 func _scan_for_bosses() -> void:
 	"""Automatically find and register boss entities in the scene tree"""
-	_scan_node_for_bosses(get_tree().root)
+	# Only scan the current scene for performance, not entire tree
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		_scan_node_for_bosses(current_scene)
 
 func _scan_node_for_bosses(node: Node) -> void:
 	"""Recursively scan a node and its children for boss entities"""

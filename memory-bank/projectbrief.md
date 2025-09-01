@@ -25,12 +25,12 @@ PoE-style buildcraft roguelike (2D top-down) built in Godot 4.x with a mechanics
   - .tres resources for content + configuration (balance, XP curves, UI configs, etc.).
   - Hot-reload support (F5 pattern and/or file monitoring in BalanceDB).
 - Unified Damage System v2:
-  - Single entry viaService/Registry with dictionary/payload-based requests.
+  - Single entry via Service/Registry with dictionary/payload-based requests.
   - Signals: damage_requested → damage_applied → damage_taken; entity_killed handled centrally.
   - String-based entity IDs; resolve via registry/services, not scene tree scans.
 
 ## Nice-to-Haves (Stretch)
-- Generic modal/overlay system for UI (card picker,, options).
+- Generic modal/overlay system for UI (card picker, options).
 - Scene management flow (GameManager) with clean transitions and state.
 - Developer console (Limbo Console) integrated for runtime tuning and diagnostics.
 
@@ -53,6 +53,6 @@ PoE-style buildcraft roguelike (2D top-down) built in Godot 4.x with a mechanics
 
 ## High-Level Architecture (Authoritative)
 - Autoloads: EventBus, Logger, RunManager, RNG, PauseManager, BalanceDB, PlayerState, GameOrchestrator
-- Systems: AbilitySystem, DamageSystem/Service/Registry (v2),Director, EnemyRegistry, EnemyRenderTier, MeleeSystem, XpSystem
+- Systems: AbilitySystem, DamageSystem/Service/Registry (v2), WaveDirector, EnemyRegistry, EnemyRenderTier, MeleeSystem, XpSystem
 - Domain: Typed Resources and payloads (EnemyType, PlayerType, XP curves, signal payload classes)
-- Scenes/UI: Arena (to be decomposed), HUD, KeybindingsDisplay, future modal/overlay layers
+- Scenes/UI: Arena (to be decomposed), HUD (includes BossHealthBar), Keybindings, future modal/overlay layers

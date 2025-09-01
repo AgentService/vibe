@@ -3,10 +3,10 @@
 Technologies, setup, constraints, dependencies, and tool usage patterns for this project.
 
 ## Stack and Environment
-- Engine: Godot 4.x (Windows)
-  - Binaries in repo root:
-    - Godot_v4.4.1-stable_win64.exe
-    - Godot_v4.4.1-stable_win64_console.exe (headless)
+- Engine Godot 4.4.x (Windows/macOS/Linux)
+  - Binaries are not committed to the repo. Use installed Godot or set env vars:
+    - GODOT_BIN points to the GUI editor executable
+    - GODOT_BIN_HEADLESS points to the console/headless executable
 - Language: GDScript with static typing (vars, functions, signals; typed arrays/dicts required)
 - OS target: Windows (dev), game is cross-platform via Godot
 
@@ -22,30 +22,27 @@ Technologies, setup, constraints, dependencies, and tool usage patterns for this
 - Documentation:
   - Root ARCHITECTURE.md (system design/decisions)
   - docs/ARCHITECTURE_QUICK_REFERENCE.md (boundary tools + patterns)
-  - vibe/docs/ARCHITECTURE_RULES.md (enforcement rules)
+  - docs/ARCHITECTURE_RULES.md (enforcement rules)
   - Obsidian/ (system docs with [[links]])
   - memory-bank/ (this Memory Bank)
 
 ## Run, Test, Validate
 - Run game:
-  - cd vibe
-  - "../Godot_v4.4.1-stable_win64.exe"
+  - %GODOT_BIN% project.godot
 - Run tests (headless, 15s cap):
-  - cd vibe
-  - "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn --quit-after 15
+  - %GODOT_BIN_HEADLESS% --headless tests/run_tests.tscn --quit-after 15
 - Architecture check:
-  - cd vibe && double-click check_architecture.bat
-  - Or:
-    - "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tools/check_boundaries_standalone.gd --quit-after 10
+  - %GODOT_BIN_HEADLESS% --headless --script tools/check_boundaries_standalone.gd --quit-after 10
 - Pre-commit:
   - Hooks run boundary checks automatically; CI runs on PRs
 
-## Plugins and Dependencies- Limbo Console v0.4.1 (vibe/addons/limbo_console): in-game console (F1 toggle) for dev commands/tuning
-- GDAI MCP Plugin v0.2.4 (vibe/addons/gdai-mcp-plugin-godot): AI tools integration for Godot editor
+## Plugins and Dependencies
+- Limbo Console v0.4.1 (addons/limbo_console): in-game console (F1 toggle) for dev commands/tuning
+- GDAI MCP Plugin v0.2.4 (addons/gdai-mcp-plugin-godot): AI tools integration for Godot editor
 - No external runtime deps required beyond Godot
 
 ## Data and Resources
-- Resource-first approach: all tunables/content as typed .tres under vibe/data/*
+- Resource-first approach: all tunables/content as typed .tres under data/*
   - Completed migration from JSON → .tres (log_config, radar_config, xp_curves, balance/content)
 - Hot-reload:
   - Scenes: @export var config: ResourceType (inspector hot-reload)
@@ -80,7 +77,7 @@ Technologies, setup, constraints, dependencies, and tool usage patterns for this
 
 ## Testing Standards
 - Use scene-based tests (*.tscn) for anything needing autoloads; headless via console binary
-- CLI: vibe/tests/cli_test_runner.gd and vibe/run_tests.bat
+- CLI: tests/cli_test_runner.gd and run_tests.bat
 - Deterministic seeding per test; avoid global state leaks; disconnect on teardown
 - Print is allowed in tests (Logger is not); assert early with helpful messages
 

@@ -29,6 +29,9 @@ var arena_system
 # Boss hit feedback system for boss registration
 var boss_hit_feedback: BossHitFeedback
 
+# Preloaded boss scenes for performance
+var _preloaded_boss_scenes: Dictionary = {}
+
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[EnemyEntity] = []
 var _cache_dirty: bool = true
@@ -46,6 +49,7 @@ func _ready() -> void:
 	EventBus.combat_step.connect(_on_combat_step)
 
 	_initialize_pool()
+	_preload_boss_scenes()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
@@ -87,6 +91,11 @@ func _on_balance_reloaded() -> void:
 
 
 
+
+func _preload_boss_scenes() -> void:
+	_preloaded_boss_scenes["ancient_lich"] = load("res://scenes/bosses/AncientLich.tscn")
+	_preloaded_boss_scenes["dragon_lord"] = load("res://scenes/bosses/DragonLord.tscn")
+	Logger.info("Boss scenes preloaded for performance", "waves")
 
 func _initialize_pool() -> void:
 	enemies.resize(max_enemies)
@@ -182,19 +191,10 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 
 # Boss scene spawning for V2 system
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	# Load boss scene based on template ID
-	var scene_path: String
-	match spawn_config.template_id:
-		"ancient_lich":
-			scene_path = "res://scenes/bosses/AncientLich.tscn"
-		"dragon_lord":
-			scene_path = "res://scenes/bosses/DragonLord.tscn"
-		_:
-			scene_path = "res://scenes/bosses/AncientLich.tscn"  # Fallback
-	
-	var boss_scene: PackedScene = load(scene_path)
+	# Use preloaded boss scene for performance
+	var boss_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id, _preloaded_boss_scenes["ancient_lich"])
 	if not boss_scene:
-		Logger.warn("Failed to load boss scene: " + scene_path, "waves")
+		Logger.warn("Failed to get preloaded boss scene: " + spawn_config.template_id, "waves")
 		return
 	
 	# Instantiate boss scene

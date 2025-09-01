@@ -4,8 +4,8 @@ extends Node
 ## Provides god mode, spawn control, and silent pause functionality.
 
 # Cheat states
-var god_mode: bool = false
-var spawn_disabled: bool = false
+var god_mode: bool = true  # Enable godmode by default
+var spawn_disabled: bool = false  # Ensure spawning is enabled
 
 func _ready() -> void:
 	# Always process, even during pause
@@ -35,8 +35,6 @@ func _input(event: InputEvent) -> void:
 
 func toggle_god_mode() -> void:
 	god_mode = not god_mode
-	var status := "enabled" if god_mode else "disabled"
-	Logger.info("God mode " + status, "debug")
 	
 	# Emit event for systems that need to react
 	var payload := EventBus.CheatTogglePayload_Type.new("god_mode", god_mode)

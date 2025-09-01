@@ -23,7 +23,7 @@ Authoritative reference for architecture, design patterns, and critical implemen
 - Core cadence:
   - combat_step(dt): 30 Hz fixed-step from RunManager.
   - Damage flow: damage_requested → damage_applied (and/or damage_batch_applied) → damage_dealt → damage_taken; entity_killed on death.
-  - Game state/UI: game_paused_changed, arena_bounds_changed, player_position_changed.
+  - Game state/UI: game_paused_changed, arena_bounds_changed, player_position_changed, entity_health_changed (planned for BossHealthBar).
 - Rules:
   - Use EntityId (string-based ids) and payloads; never Node references.
   - Scenes listen/update UI; Systems compute/emit; Domain stays pure.
@@ -66,6 +66,7 @@ Authoritative reference for architecture, design patterns, and critical implemen
 - Render tiers: SWARM/REGULAR/ELITE/BOSS with tier-based routing to appropriate layers.
 - Object pools for enemies/projectiles; cache allocations (e.g., Transform2D arrays sized to max_enemies).
 - Disable _process/_physics_process when unused; prefer signals/timers; batch operations; use physics layers/areas for filtering.
+- Boss hit feedback via shaders/boss_flash.gdshader material for boss damage flashes.
 
 ## Spawning Patterns (Hybrid)
 - WaveDirector routes by EnemyType:
@@ -88,6 +89,7 @@ Authoritative reference for architecture, design patterns, and critical implemen
 - CanvasLayer for all UI overlays (HUD, KeybindingsDisplay, modals).
 - Modal overlays pause combat; generic modal system planned (CardPicker precedent).
 - Scene management roadmap: GameManager entry, transitions, centralized UI state.
+- BossHealthBar: ProgressBar + theme component; current direct-call update_health(current, max); migrate to EventBus entity_health_changed; add isolated test.
 
 ## Conventions and Style
 - Static typing everywhere (vars, functions, signals); typed arrays/dicts.
