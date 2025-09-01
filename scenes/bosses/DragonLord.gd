@@ -33,10 +33,10 @@ func _ready() -> void:
 	# Connect to combat step for deterministic behavior
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
-		# DAMAGE V3: Listen for unified damage sync events
+		# Listen for unified damage sync events
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 	
-	# DAMAGE V3: Register with both DamageService and EntityTracker
+	# Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
 	var entity_data = {
 		"id": entity_id,
@@ -62,7 +62,7 @@ func _exit_tree() -> void:
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	
-	# DAMAGE V3: Unregister from both systems
+	# Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
 	DamageService.unregister_entity(entity_id)
 	EntityTracker.unregister_entity(entity_id)
@@ -72,7 +72,7 @@ func _on_combat_step(payload) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## DAMAGE V3: Handle unified damage sync events for scene bosses
+## Handle unified damage sync events for scene bosses
 func _on_damage_entity_sync(payload: Dictionary) -> void:
 	var entity_id: String = payload.get("entity_id", "")
 	var entity_type: String = payload.get("entity_type", "")
@@ -93,7 +93,7 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	
 	# Handle death
 	if is_death:
-		Logger.info("V3: Boss %s killed via damage sync" % [entity_id], "combat")
+		Logger.info("Boss %s killed via damage sync" % [entity_id], "combat")
 		_die()
 	else:
 		# Update EntityTracker health data
@@ -136,12 +136,12 @@ func _perform_attack() -> void:
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# DAMAGE V2: Use DamageService for player damage (when implemented)
+		# Use DamageService for player damage (when implemented)
 		# For now, use old EventBus.damage_taken signal for player damage
 		if EventBus:
 			EventBus.damage_taken.emit(attack_damage)
 
-# DAMAGE V3: take_damage() method removed - damage handled via unified pipeline
+# take_damage() method removed - damage handled via unified pipeline
 # Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync
 
 func _die() -> void:

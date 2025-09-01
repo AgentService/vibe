@@ -76,8 +76,7 @@ func _setup_fallback_data() -> void:
 			"enemy_radius": 12.0,
 			"base_damage": 1.0,
 			"crit_chance": 0.1,
-			"crit_multiplier": 2.0,
-			"unified_damage_v3": false
+			"crit_multiplier": 2.0
 		},
 		"abilities": {
 			"max_projectiles": 1000,
@@ -164,7 +163,6 @@ func _create_fallback_resource(key: String) -> Resource:
 			combat.base_damage = fallback_data.get("base_damage", 1.0)
 			combat.crit_chance = fallback_data.get("crit_chance", 0.1)
 			combat.crit_multiplier = fallback_data.get("crit_multiplier", 2.0)
-			combat.unified_damage_v3 = fallback_data.get("unified_damage_v3", false)
 			return combat
 		"abilities":
 			var abilities: AbilitiesBalance = AbilitiesBalance.new()
@@ -227,8 +225,6 @@ func get_combat_value(key: String) -> Variant:
 			return _combat_balance.crit_chance
 		"crit_multiplier":
 			return _combat_balance.crit_multiplier
-		"unified_damage_v3":
-			return _combat_balance.unified_damage_v3
 		_:
 			Logger.error("Unknown combat balance key: " + key, "balance")
 			return _get_fallback_value("combat", key)

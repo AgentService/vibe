@@ -1,6 +1,6 @@
 extends Node
 
-## Unified Damage Registry V2 - Clean slate implementation
+## Unified Damage Registry - Clean slate implementation
 ## Single damage pipeline for all entity types (pooled enemies, scene bosses, player)
 ## Uses Dictionary-based entity storage to avoid circular dependencies
 
@@ -15,7 +15,7 @@ signal entity_registered(entity_id: String, entity_type: String)
 signal entity_unregistered(entity_id: String)
 
 func _ready() -> void:
-	Logger.info("DamageRegistry V2 initialized", "combat")
+	Logger.info("DamageRegistry initialized", "combat")
 
 func _process(delta: float) -> void:
 	# Periodic cleanup of dead entities
@@ -67,12 +67,8 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 	
 	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
 	
-	# CRITICAL: Sync damage back to actual game entities
-	var use_unified_v3: bool = BalanceDB.get_combat_value("unified_damage_v3")
-	if use_unified_v3:
-		_sync_damage_to_game_entity_v3(target_id, entity, final_damage, new_hp)
-	else:
-		_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
+	# CRITICAL: Sync damage back to actual game entities via unified pipeline
+	_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
 	
 	# Handle death
 	var was_killed: bool = false
@@ -183,8 +179,8 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 	if _entities.has(entity_id):
 		unregister_entity(entity_id)
 
-## V3: Unified damage syncing via EventBus signals (cleaner, decoupled)
-func _sync_damage_to_game_entity_v3(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
+## Unified damage syncing via EventBus signals (cleaner, decoupled)
+func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
 	var entity_type: String = entity_data.get("type", "unknown")
 	
 	# Create a standardized damage sync payload
@@ -198,62 +194,9 @@ func _sync_damage_to_game_entity_v3(entity_id: String, entity_data: Dictionary, 
 	
 	# Emit damage sync event for systems to handle
 	# This removes the need for DamageRegistry to know about WaveDirector/Boss internals
-	if EventBus.has_signal("damage_entity_sync"):
-		EventBus.damage_entity_sync.emit(sync_payload)
-		Logger.debug("V3: Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
-	else:
-		# Fallback to direct sync if EventBus signal not available
-		Logger.warn("V3: EventBus.damage_entity_sync not available, using direct sync", "combat")
-		_sync_damage_to_game_entity(entity_id, entity_data, damage, new_hp)
+	EventBus.damage_entity_sync.emit(sync_payload)
+	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
 
-## V2: Legacy damage syncing (direct access - brittle but working)
-func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, damage: float, new_hp: float) -> void:
-	var entity_type: String = entity_data.get("type", "unknown")
-	
-	match entity_type:
-		"enemy":
-			# Sync to pooled enemy in WaveDirector
-			var enemy_index_str = entity_id.replace("enemy_", "")
-			var enemy_index = enemy_index_str.to_int()
-			
-			# Get WaveDirector instance
-			var wave_director = get_tree().get_first_node_in_group("wave_directors")
-			if not wave_director:
-				Logger.warn("WaveDirector not found for enemy sync: " + entity_id, "combat")
-				return
-			
-			# Update enemy HP directly
-			if enemy_index >= 0 and enemy_index < wave_director.enemies.size():
-				var enemy = wave_director.enemies[enemy_index]
-				enemy.hp = new_hp
-				if new_hp <= 0.0:
-					enemy.alive = false
-					wave_director._cache_dirty = true  # Mark cache as dirty
-		
-		"boss":
-			# Sync to scene-based boss
-			var instance_id_str = entity_id.replace("boss_", "")
-			var instance_id = instance_id_str.to_int()
-			
-			# Find boss node by instance ID
-			var boss_node = instance_from_id(instance_id)
-			if boss_node and boss_node.has_method("get_current_health"):
-				# Update boss HP directly
-				if boss_node.has_method("set_current_health"):
-					boss_node.set_current_health(new_hp)
-				else:
-					# Direct property access
-					boss_node.current_health = new_hp
-				
-				# Trigger death if needed
-				if new_hp <= 0.0 and boss_node.has_method("_die"):
-					boss_node._die()
-			else:
-				Logger.warn("Boss node not found for sync: " + entity_id, "combat")
-		
-		"player":
-			# TODO: Sync to player health when player damage is implemented
-			Logger.debug("Player damage sync not implemented yet", "combat")
 
 ## DEBUG: Register all existing entities that haven't been registered yet
 func debug_register_all_existing_entities() -> void:

@@ -765,7 +765,7 @@ func _spawn_v2_boss_test() -> void:
 func _test_boss_damage() -> void:
 	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
 	
-	# DAMAGE V2: Register existing entities first
+	# Register existing entities first
 	DamageService.debug_register_all_existing_entities()
 	
 	# Search for boss nodes recursively - start from root to find GameOrchestrator bosses
@@ -781,7 +781,7 @@ func _test_boss_damage() -> void:
 	var boss = found_bosses[0]
 	Logger.info("Testing boss: " + boss.name + " (type: " + boss.get_class() + ") at position " + str(boss.global_position), "debug")
 	
-	# DAMAGE V2: Use unified damage system
+	# Use unified damage system
 	var entity_id = "boss_" + str(boss.get_instance_id())
 	Logger.info("Boss entity ID: " + entity_id, "debug")
 	Logger.info("Boss health before: " + str(boss.get_current_health()) + "/" + str(boss.get_max_health()), "debug")
@@ -794,7 +794,7 @@ func _test_boss_damage() -> void:
 	Logger.info("=== BOSS DAMAGE TEST END ===", "debug")
 
 func _find_bosses_recursive(node: Node, bosses_array: Array) -> void:
-	# Check if this node looks like a boss - DAMAGE V2: bosses have died signal and health properties
+	# Check if this node looks like a boss - bosses have died signal and health properties
 	if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
 		Logger.debug("Found potential boss: " + node.name + " (class: " + node.get_class() + ")", "debug")
 		bosses_array.append(node)

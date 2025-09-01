@@ -22,6 +22,12 @@
   - **Result**: Single enemy pipeline through V2 system, reduced maintenance burden, no feature regression
 
 ### Added
+- **Unified Damage System V3 Cleanup**: Completed removal of all legacy damage system code paths and feature flags
+  - **Removed**: unified_damage_v3 feature flag from CombatBalance schema and BalanceDB
+  - **Simplified**: DamageRegistry now uses unified EventBus-based syncing exclusively
+  - **Cleaned**: All V2/V3 version comments updated to reflect current standard architecture
+  - **Legacy removal**: Eliminated fallback code paths, unused WaveDirector references in MeleeSystem
+  - **Result**: Single clean damage pipeline using EntityTracker spatial queries, EventBus synchronization, and unified entity registration
 - **Memory Bank Documentation System**: Established memory-bank/ as single source of truth for session resets and onboarding
   - Core files: projectbrief.md, productContext.md, systemPatterns.md, techContext.md, activeContext.md, progress.md
   - Sourced from: README.md, ARCHITECTURE.md, docs/ARCHITECTURE_QUICK_REFERENCE.md, docs/ARCHITECTURE_RULES.md, CLAUDE.md, LESSONS_LEARNED.md, changelogs, Obsidian systems docs

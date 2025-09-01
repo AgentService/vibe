@@ -61,7 +61,7 @@ func _handle_collision(projectile: Dictionary, enemy: EnemyEntity, _proj_idx: in
 		Logger.warn("Failed to find pool indices - proj: " + str(actual_proj_idx) + " enemy: " + str(actual_enemy_idx), "combat")
 		return
 	
-	# DAMAGE V2: Apply damage directly via DamageService
+	# Apply damage directly via DamageService
 	var base_damage: float = BalanceDB.get_combat_value("base_damage")
 	var entity_id = "enemy_" + str(actual_enemy_idx)
 	
@@ -125,5 +125,5 @@ func _check_enemy_player_collisions() -> void:
 			EventBus.damage_taken.emit(1)
 			break  # Only one damage per frame
 
-# DAMAGE V2: Old damage_requested handler removed - replaced by DamageService
+# Old damage_requested handler removed - replaced by DamageService
 # Projectile collision damage now handled directly via DamageService.apply_damage()

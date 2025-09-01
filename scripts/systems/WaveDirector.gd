@@ -296,7 +296,7 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	if boss_node.has_signal("died"):
 		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
 	
-	# DAMAGE V2: Register boss with DamageService
+	# Register boss with DamageService
 	var entity_id = "boss_" + str(boss_node.get_instance_id())
 	var entity_data = {
 		"id": entity_id,
@@ -324,7 +324,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
-	# DAMAGE V2: Register enemy with DamageService
+	# Register enemy with DamageService
 	var entity_id = "enemy_" + str(free_idx)
 	var entity_data = {
 		"id": entity_id,
@@ -422,7 +422,7 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 
 # Player reference no longer needed - using PlayerState autoload for position
 
-# DAMAGE V2: damage_enemy() method removed - enemies damaged via DamageService
+# damage_enemy() method removed - enemies damaged via DamageService
 # Enemy HP updates handled by DamageRegistry sync system (_sync_damage_to_game_entity)
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
