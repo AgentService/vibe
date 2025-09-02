@@ -1,7 +1,7 @@
 extends Node
 
 ## Debug Controller - Phase 3 Arena Refactoring
-## Handles all debug input actions (F11, F12, B, C, T keys) and debug testing
+## Handles debug input actions (C, F12 keys) and debug testing
 ## Can be disabled in production builds
 
 class_name DebugController
@@ -14,7 +14,7 @@ var enabled: bool = true
 
 func setup(arena: Node, deps: Dictionary) -> void:
 	arena_ref = arena
-	card_system = deps.get("card_system")
+	card_system = deps.get("CardSystem")
 
 func _input(event: InputEvent) -> void:
 	if not enabled or not (event is InputEventKey and event.pressed):
@@ -24,7 +24,10 @@ func _input(event: InputEvent) -> void:
 		KEY_C:
 			Logger.info("Manual card selection test", "debug")
 			_test_card_selection()
-		# F11, F12, B, T keys removed - obsolete debug functions
+		KEY_F12:
+			Logger.info("Toggle debug overlay", "debug")
+			_toggle_debug_overlay()
+		# F11, B, T keys removed - obsolete debug functions
 
 # Debug Methods - Only essential ones kept active
 
@@ -52,4 +55,8 @@ func _test_card_selection() -> void:
 	else:
 		Logger.error("UI manager not available for card selection test", "debug")
 
-# Obsolete debug methods removed - F11, F12, B, T keys no longer needed
+func _toggle_debug_overlay() -> void:
+	if arena_ref and arena_ref.ui_manager:
+		arena_ref.ui_manager.try_toggle_debug_overlay()
+	else:
+		Logger.warn("Cannot toggle debug overlay - Arena or UI manager not available", "debug")
