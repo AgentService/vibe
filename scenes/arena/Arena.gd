@@ -17,6 +17,7 @@ const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSyste
 const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
+const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -156,7 +157,7 @@ func _ready() -> void:
 
 	# Inject boss hit feedback system to WaveDirector for boss registration
 	if GameOrchestrator.wave_director:
-		GameOrchestrator.wave_director.boss_hit_feedback = boss_hit_feedback
+		GameOrchestrator.wave_director.boss_hit_feedback = visual_effects_manager.get_boss_hit_feedback()
 		Logger.debug("BossHitFeedback injected to WaveDirector", "arena")
 	
 	_setup_card_system()
