@@ -18,6 +18,7 @@ const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
 const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
+const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -42,10 +43,7 @@ var arena_system: ArenaSystem
 var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
-
-# SYSTEM INJECTION CLEANUP - Phase 5
-# Centralized system collection for cleaner injection management
-var _injected: Dictionary = {}
+var system_injection_manager: SystemInjectionManager
 
 @export_group("Boss Hit Feedback Settings")
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
@@ -150,6 +148,11 @@ func _ready() -> void:
 	# Setup Player Attack Handler
 	player_attack_handler = PlayerAttackHandler.new()
 	add_child(player_attack_handler)
+	
+	# Setup System Injection Manager
+	system_injection_manager = SystemInjectionManager.new()
+	add_child(system_injection_manager)
+	system_injection_manager.setup(self)
 	
 	# Initialize GameOrchestrator systems and inject them AFTER MultiMesh Manager is ready
 	GameOrchestrator.initialize_core_loop()
@@ -261,8 +264,8 @@ func _setup_player() -> void:
 
 func _setup_xp_system() -> void:
 	xp_system = XpSystem.new(self)
-	_injected["XpSystem"] = xp_system
 	add_child(xp_system)
+	# XP system is created locally, not injected by GameOrchestrator
 
 func _setup_ui() -> void:
 	# Create and configure ArenaUIManager
@@ -286,85 +289,51 @@ func _setup_card_system() -> void:
 # process modes and signal connections
 # ============================================================================
 
-# Phase 5: Centralized system injection collector
-# Provides dictionary-based injection while maintaining backward compatibility
+# PHASE 13: System injection now handled by SystemInjectionManager
+# All injection methods delegated to centralized manager
+
 func inject_systems(systems: Dictionary) -> void:
-	_injected = systems.duplicate()
-	Logger.info("Arena: Centralized system injection completed with " + str(_injected.size()) + " systems", "systems")
-	
-	# Optional: connect signals here centrally if needed in future
-	# For now, individual set_* methods handle their own connections
+	if system_injection_manager:
+		system_injection_manager.inject_systems(systems)
 
 func set_card_system(injected_card_system: CardSystem) -> void:
-	card_system = injected_card_system
-	_injected["CardSystem"] = injected_card_system
-	Logger.info("CardSystem injected into Arena", "cards")
-	
-	# Complete the card system setup through UI manager
-	if ui_manager:
-		ui_manager.setup_card_system(card_system)
-		Logger.debug("Card system connected to ArenaUIManager", "cards")
+	if system_injection_manager:
+		system_injection_manager.set_card_system(injected_card_system)
 
 func set_ability_system(injected_ability_system: AbilitySystem) -> void:
-	ability_system = injected_ability_system
-	_injected["AbilitySystem"] = injected_ability_system
-	Logger.info("AbilitySystem injected into Arena", "systems")
-	
-	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	ability_system.projectiles_updated.connect(multimesh_manager.update_projectiles)
+	if system_injection_manager:
+		system_injection_manager.set_ability_system(injected_ability_system)
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
-	arena_system = injected_arena_system
-	_injected["ArenaSystem"] = injected_arena_system
-	Logger.info("ArenaSystem injected into Arena", "systems")
-	
-	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	arena_system.arena_loaded.connect(_on_arena_loaded)
+	if system_injection_manager:
+		system_injection_manager.set_arena_system(injected_arena_system)
 
 func set_camera_system(injected_camera_system: CameraSystem) -> void:
-	camera_system = injected_camera_system
-	_injected["CameraSystem"] = injected_camera_system
-	Logger.info("CameraSystem injected into Arena", "systems")
-	
-	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if player:
-		camera_system.setup_camera(player)
+	if system_injection_manager:
+		system_injection_manager.set_camera_system(injected_camera_system)
 
 func set_wave_director(injected_wave_director: WaveDirector) -> void:
-	wave_director = injected_wave_director
-	_injected["WaveDirector"] = injected_wave_director
-	Logger.info("WaveDirector injected into Arena", "systems")
-	
-	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	wave_director.enemies_updated.connect(multimesh_manager.update_enemies)
-	
-	# Inject WaveDirector into visual effects manager if it exists
-	if visual_effects_manager:
-		visual_effects_manager.configure_enemy_feedback_dependencies(null, wave_director)
+	if system_injection_manager:
+		system_injection_manager.set_wave_director(injected_wave_director)
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
-	melee_system = injected_melee_system
-	_injected["MeleeSystem"] = injected_melee_system
-	Logger.info("MeleeSystem injected into Arena", "systems")
-	
-	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	melee_system.melee_attack_started.connect(player_attack_handler.on_melee_attack_started)
+	if system_injection_manager:
+		system_injection_manager.set_melee_system(injected_melee_system)
 
 func set_damage_system(injected_damage_system: DamageSystem) -> void:
-	damage_system = injected_damage_system
-	_injected["DamageSystem"] = injected_damage_system
-	Logger.info("DamageSystem injected into Arena", "systems")
-	
-	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if system_injection_manager:
+		system_injection_manager.set_damage_system(injected_damage_system)
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
 	debug_controller = DebugController.new()
 	add_child(debug_controller)
 	
-	# Use centralized _injected dictionary for cleaner dependency management
-	debug_controller.setup(self, _injected)
-	Logger.info("DebugController setup complete with " + str(_injected.size()) + " injected systems", "systems")
+	# Use SystemInjectionManager for DebugController setup
+	if system_injection_manager:
+		system_injection_manager.setup_debug_controller()
+	else:
+		Logger.error("SystemInjectionManager not available for DebugController setup", "systems")
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
