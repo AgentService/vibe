@@ -19,6 +19,7 @@ const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
 const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
 const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
+const ArenaInputHandler := preload("res://scripts/systems/ArenaInputHandler.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -44,6 +45,7 @@ var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
 var system_injection_manager: SystemInjectionManager
+var arena_input_handler: ArenaInputHandler
 
 @export_group("Boss Hit Feedback Settings")
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
@@ -175,6 +177,11 @@ func _ready() -> void:
 	# Setup Player Attack Handler with dependencies
 	player_attack_handler.setup(player, melee_system, ability_system, wave_director, melee_effects, get_viewport())
 	
+	# Setup Arena Input Handler
+	arena_input_handler = ArenaInputHandler.new()
+	add_child(arena_input_handler)
+	arena_input_handler.setup(ui_manager, melee_system, player_attack_handler, self)
+	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
 	_setup_enemy_animation_system()
@@ -224,34 +231,7 @@ func _process(delta: float) -> void:
 			enemy_animation_system.animate_frames(delta)
 	
 
-func _input(event: InputEvent) -> void:
-	# Handle Escape key for pause menu (priority handling)
-	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
-		# Check if card selection is currently visible - if so, let it handle the input
-		if ui_manager and ui_manager.get_card_selection() and ui_manager.get_card_selection().visible:
-			return  # Let card selection handle the escape key
-		
-		# Toggle pause menu through UI manager
-		if ui_manager:
-			ui_manager.toggle_pause()
-		return
-	
-	# Handle mouse position updates for auto-attack
-	if event is InputEventMouseMotion:
-		var world_pos = get_global_mouse_position()
-		melee_system.set_auto_attack_target(world_pos)
-	
-	# Handle mouse clicks for attacks
-	if event is InputEventMouseButton and event.pressed:
-		# Convert screen coordinates to world coordinates
-		var world_pos = get_global_mouse_position()
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			player_attack_handler.handle_melee_attack(world_pos)
-		elif event.button_index == MOUSE_BUTTON_RIGHT and RunManager.stats.get("has_projectiles", false):
-			player_attack_handler.handle_projectile_attack(world_pos)
-		return
-	
-	# All debug keys now handled by DebugController system
+# PHASE 14: Input handling now managed by ArenaInputHandler
 
 func _setup_player() -> void:
 	# Load player scene dynamically to support @export hot-reload

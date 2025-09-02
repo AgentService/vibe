@@ -4,6 +4,10 @@ extends Node
 # Centralizes all system injection logic and dependency management
 # Reduces Arena.gd boilerplate and provides clean injection interface
 
+# Type imports needed for system injection
+const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
+const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
+
 # Arena references needed for system setup
 var arena_ref: Node
 var _injected: Dictionary = {}
