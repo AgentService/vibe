@@ -7,14 +7,12 @@ extends Node2D
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 # Player scene loaded dynamically to support @export hot-reload
-const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
-const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
-const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
 const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
+const ArenaUIManager := preload("res://scripts/systems/ArenaUIManager.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -26,6 +24,7 @@ const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
 var ability_system: AbilitySystem
 var melee_system: MeleeSystem
 var debug_controller: DebugController
+var ui_manager: ArenaUIManager
 
 
 # ANIMATION CONFIGS
@@ -107,10 +106,8 @@ var boss_hit_feedback: BossHitFeedback
 
 var player: Player
 var xp_system: XpSystem
-var hud: HUD
 var card_system: CardSystem
-var card_selection: CardSelection
-var pause_menu: PauseMenu
+# UI elements now managed by ArenaUIManager
 
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
@@ -199,8 +196,7 @@ func _ready() -> void:
 		if wave_director:
 			enemy_hit_feedback.set_wave_director(wave_director)
 	
-	# Print debug help
-	_print_debug_help()
+	# Debug help now provided by DebugController
 	Logger.info("Arena ready", "ui")
 	
 	# Schedule a test to check if enemies are spawning after a few seconds
@@ -343,12 +339,12 @@ func _input(event: InputEvent) -> void:
 	# Handle Escape key for pause menu (priority handling)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		# Check if card selection is currently visible - if so, let it handle the input
-		if card_selection and card_selection.visible:
+		if ui_manager and ui_manager.get_card_selection() and ui_manager.get_card_selection().visible:
 			return  # Let card selection handle the escape key
 		
-		# Toggle pause menu
-		if pause_menu:
-			pause_menu.toggle_pause()
+		# Toggle pause menu through UI manager
+		if ui_manager:
+			ui_manager.toggle_pause()
 		return
 	
 	# Handle mouse position updates for auto-attack
@@ -382,20 +378,13 @@ func _setup_xp_system() -> void:
 	add_child(xp_system)
 
 func _setup_ui() -> void:
-	# Create CanvasLayer for UI
-	var ui_layer: CanvasLayer = CanvasLayer.new()
-	ui_layer.name = "UILayer"
-	add_child(ui_layer)
+	# Create and configure ArenaUIManager
+	ui_manager = ArenaUIManager.new()
+	add_child(ui_manager)
+	ui_manager.setup()
 	
-	hud = HUD_SCENE.instantiate()
-	ui_layer.add_child(hud)
-	
-	card_selection = CARD_SELECTION_SCENE.instantiate()
-	ui_layer.add_child(card_selection)
-	
-	# Add pause menu (it has its own CanvasLayer)
-	pause_menu = PAUSE_MENU_SCENE.instantiate()
-	add_child(pause_menu)
+	# Connect UI manager events
+	ui_manager.card_selected.connect(_on_card_selected)
 
 func _setup_card_system() -> void:
 	# CardSystem is now injected by GameOrchestrator - just verify it's ready
@@ -413,11 +402,10 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 	card_system = injected_card_system
 	Logger.info("CardSystem injected into Arena", "cards")
 	
-	# Complete the card system setup now that we have the system
-	if card_selection:
-		card_selection.card_selected.connect(_on_card_selected)
-		card_selection.setup_card_system(card_system)
-		Logger.debug("Card selection connected to injected CardSystem", "cards")
+	# Complete the card system setup through UI manager
+	if ui_manager:
+		ui_manager.setup_card_system(card_system)
+		Logger.debug("Card system connected to ArenaUIManager", "cards")
 
 func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 	ability_system = injected_ability_system
@@ -492,11 +480,12 @@ func _on_level_up(payload) -> void:
 		Logger.warn("No cards available for level " + str(payload.new_level), "cards")
 		return
 	
-	# Pause game and show card selection
+	# Pause game and show card selection through UI manager
 	Logger.debug("About to pause game for card selection", "cards")
 	PauseManager.pause_game(true)
 	Logger.debug("Game paused, opening card selection", "cards")
-	card_selection.open_with_cards(cards)
+	if ui_manager:
+		ui_manager.open_card_selection(cards)
 
 func _on_card_selected(card: CardResource) -> void:
 	if not card:
@@ -812,112 +801,14 @@ func _spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void
 	wave_director._spawn_from_config_v2(legacy_type, boss_config)
 	Logger.info("=== CONFIGURED BOSS SPAWN COMPLETE ===", "debug")
 
-func _test_boss_damage() -> void:
-	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
-	
-	# Register existing entities first
-	DamageService.debug_register_all_existing_entities()
-	
-	# Use DamageService to find registered bosses (no scene tree traversal)
-	var boss_entity_ids = DamageService.get_entities_by_type("boss")
-	
-	Logger.info("Found " + str(boss_entity_ids.size()) + " registered bosses", "debug")
-	
-	if boss_entity_ids.is_empty():
-		Logger.warn("No registered bosses found to test damage on", "debug")
-		return
-	
-	var entity_id = boss_entity_ids[0]
-	var boss_data = DamageService.get_entity(entity_id)
-	Logger.info("Testing boss: " + entity_id + " at position " + str(boss_data.get("pos", Vector2.ZERO)), "debug")
-	Logger.info("Boss health before: " + str(boss_data.get("hp", 0)) + "/" + str(boss_data.get("max_hp", 0)), "debug")
-	
-	# Apply damage via DamageService
-	var damage_applied = DamageService.apply_damage(entity_id, 50.0, "test_damage", ["test"])
-	Logger.info("Damage applied: " + str(damage_applied), "debug")
-	
-	# Check health after damage
-	boss_data = DamageService.get_entity(entity_id)
-	Logger.info("Boss health after: " + str(boss_data.get("hp", 0)) + "/" + str(boss_data.get("max_hp", 0)), "debug")
-	
-	Logger.info("=== BOSS DAMAGE TEST END ===", "debug")
+# _test_boss_damage moved to DebugController
 
 
-func _test_card_selection() -> void:
-	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
-	if not card_system:
-		Logger.error("Card system not available for test", "debug")
-		return
-	
-	# Simulate level up with level 1 cards
-	var test_cards: Array[CardResource] = card_system.get_card_selection(1, 3)
-	Logger.info("Got " + str(test_cards.size()) + " test cards", "debug")
-	
-	if test_cards.is_empty():
-		Logger.error("No test cards available", "debug")
-		return
-	
-	Logger.info("Pausing game for manual test", "debug")
-	PauseManager.pause_game(true)
-	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
-	Logger.info("Opening card selection manually", "debug")
-	card_selection.open_with_cards(test_cards)
-
-func _toggle_performance_stats() -> void:
-	# Force HUD debug overlay toggle
-	if hud and hud.has_method("_toggle_debug_overlay"):
-		hud._toggle_debug_overlay()
-	else:
-		# Print stats to console if HUD toggle not available
-		_print_performance_stats()
+# All debug methods moved to DebugController - Phase 3 cleanup
 
 
 
-func _print_debug_help() -> void:
-	Logger.info("=== Debug Controls ===", "ui")
-	Logger.info("B: Spawn Dragon Lord boss (hybrid spawning test)", "ui")
-	Logger.info("C: Test card selection", "ui")
-	Logger.info("Escape: Pause/resume toggle", "ui")
-	Logger.info("F11: Spawn 1000 enemies (stress test)", "ui")
-	Logger.info("F12: Performance stats toggle", "ui")
-	Logger.info("WASD: Move player", "ui")
-	Logger.info("FPS overlay: Always visible", "ui")
-	Logger.info("", "ui")
-
-func _print_performance_stats() -> void:
-	var stats: Dictionary = get_debug_stats()
-	var fps: int = Engine.get_frames_per_second()
-	var memory: int = int(OS.get_static_memory_usage() / (1024 * 1024))
-	
-	Logger.info("=== Performance Stats ===", "performance")
-	Logger.info("FPS: " + str(fps), "performance")
-	Logger.info("Memory: " + str(memory) + " MB", "performance")
-	Logger.info("Total enemies: " + str(stats.get("enemy_count", 0)), "performance")
-	Logger.info("Visible enemies: " + str(stats.get("visible_enemies", 0)), "performance")
-	Logger.info("Projectiles: " + str(stats.get("projectile_count", 0)), "performance")
-	Logger.info("Active sprites: " + str(stats.get("active_sprites", 0)), "performance")
-
-func get_debug_stats() -> Dictionary:
-	var stats: Dictionary = {}
-	
-	if wave_director:
-		var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
-		stats["enemy_count"] = alive_enemies.size()
-		
-		# Add culling stats
-		var visible_rect: Rect2 = _get_visible_world_rect()
-		var visible_count: int = 0
-		for enemy in alive_enemies:
-			if _is_enemy_visible(enemy.pos, visible_rect):
-				visible_count += 1
-		stats["visible_enemies"] = visible_count
-	
-	if ability_system:
-		var alive_projectiles: Array[Dictionary] = ability_system._get_alive_projectiles()
-		stats["projectile_count"] = alive_projectiles.size()
-	
-	
-	return stats
+# Debug helper methods moved to DebugController - Phase 3 cleanup
 
 
 func _exit_tree() -> void:

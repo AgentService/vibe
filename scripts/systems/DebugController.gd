@@ -47,10 +47,9 @@ func _test_card_selection() -> void:
 	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
 	Logger.info("Opening card selection manually", "debug")
 	
-	var card_selection = arena_ref.card_selection
-	if card_selection:
-		card_selection.open_with_cards(test_cards)
+	if arena_ref.ui_manager:
+		arena_ref.ui_manager.open_card_selection(test_cards)
 	else:
-		Logger.error("Card selection UI not available", "debug")
+		Logger.error("UI manager not available for card selection test", "debug")
 
 # Obsolete debug methods removed - F11, F12, B, T keys no longer needed
