@@ -16,6 +16,7 @@ const ArenaUIManager := preload("res://scripts/systems/ArenaUIManager.gd")
 const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSystem.gd")
 const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
+const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -31,6 +32,7 @@ var ui_manager: ArenaUIManager
 var enemy_animation_system: EnemyAnimationSystem
 var multimesh_manager: MultiMeshManager
 var boss_spawn_manager: BossSpawnManager
+var player_attack_handler: PlayerAttackHandler
 
 
 var wave_director: WaveDirector
@@ -93,9 +95,6 @@ var xp_system: XpSystem
 var card_system: CardSystem
 # UI elements now managed by ArenaUIManager
 
-var spawn_timer: float = 0.0
-var base_spawn_interval: float = 0.25
-
 var _enemy_transforms: Array[Transform2D] = []
 
 
@@ -152,6 +151,10 @@ func _ready() -> void:
 	boss_spawn_manager = BossSpawnManager.new()
 	add_child(boss_spawn_manager)
 	
+	# Setup Player Attack Handler
+	player_attack_handler = PlayerAttackHandler.new()
+	add_child(player_attack_handler)
+	
 	# Initialize GameOrchestrator systems and inject them AFTER MultiMesh Manager is ready
 	GameOrchestrator.initialize_core_loop()
 	GameOrchestrator.inject_systems_to_arena(self)
@@ -169,6 +172,9 @@ func _ready() -> void:
 	
 	# Setup Boss Spawn Manager with dependencies
 	boss_spawn_manager.setup(wave_director, player)
+	
+	# Setup Player Attack Handler with dependencies
+	player_attack_handler.setup(player, melee_system, ability_system, wave_director, melee_effects, get_viewport())
 	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
@@ -215,8 +221,8 @@ func _setup_enemy_transforms() -> void:
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
 	if not get_tree().paused:
-		_handle_debug_spawning(delta)
-		_handle_auto_attack()
+		player_attack_handler.handle_debug_spawning(delta)
+		player_attack_handler.handle_auto_attack()
 		# Animation handled by dedicated system
 		if enemy_animation_system:
 			enemy_animation_system.animate_frames(delta)
@@ -244,9 +250,9 @@ func _input(event: InputEvent) -> void:
 		# Convert screen coordinates to world coordinates
 		var world_pos = get_global_mouse_position()
 		if event.button_index == MOUSE_BUTTON_LEFT:
-			_handle_melee_attack(world_pos)
+			player_attack_handler.handle_melee_attack(world_pos)
 		elif event.button_index == MOUSE_BUTTON_RIGHT and RunManager.stats.get("has_projectiles", false):
-			_handle_projectile_attack(world_pos)
+			player_attack_handler.handle_projectile_attack(world_pos)
 		return
 	
 	# All debug keys now handled by DebugController system
@@ -349,7 +355,7 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	Logger.info("MeleeSystem injected into Arena", "systems")
 	
 	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	melee_system.melee_attack_started.connect(_on_melee_attack_started)
+	melee_system.melee_attack_started.connect(player_attack_handler.on_melee_attack_started)
 
 func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	damage_system = injected_damage_system
@@ -400,92 +406,6 @@ func _on_card_selected(card: CardResource) -> void:
 func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
 
-func _handle_melee_attack(target_pos: Vector2) -> void:
-	if not player or not melee_system:
-		return
-	
-	var player_pos = player.global_position
-	var alive_enemies = wave_director.get_alive_enemies()
-	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
-
-func _handle_projectile_attack(_target_pos: Vector2) -> void:
-	if not player or not ability_system:
-		return
-	
-	_spawn_debug_projectile()
-
-func _handle_auto_attack() -> void:
-	if not melee_system.auto_attack_enabled or not player:
-		return
-	
-	var player_pos = player.global_position
-	var alive_enemies = wave_director.get_alive_enemies()
-	
-	# Only attack if there are enemies nearby
-	if alive_enemies.size() > 0:
-		melee_system.perform_attack(player_pos, melee_system.auto_attack_target, alive_enemies)
-
-func _on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:
-	_show_melee_cone_effect(player_pos, target_pos)
-
-func _show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
-	# Use manually created polygon from the scene
-	var cone_polygon = $MeleeEffects/MeleeCone
-	if not cone_polygon:
-		return
-	
-	# Get effective melee stats to match the actual damage area
-	var effective_range = melee_system._get_effective_range()
-	var range_scale = effective_range / 100.0  # Assuming your cone is ~100 units long
-	
-	# Position and scale the cone at player position
-	cone_polygon.global_position = player_pos
-	cone_polygon.scale = Vector2(range_scale, range_scale)  # Scale to match damage range
-	
-	# Point the cone toward mouse/target position (where damage occurs)
-	var attack_dir = (target_pos - player_pos).normalized()
-	cone_polygon.rotation = attack_dir.angle() - PI/2  # Fix 90° offset (cone was 1/4 ahead)
-	
-	# Show the cone with transparency
-	cone_polygon.visible = true
-	cone_polygon.modulate.a = 0.3
-	
-	# Hide after short duration
-	var tween = create_tween()
-	tween.tween_property(cone_polygon, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(func(): cone_polygon.visible = false)
-
-func _handle_debug_spawning(delta: float) -> void:
-	# Only auto-shoot projectiles if player has projectile abilities
-	if not RunManager.stats.get("has_projectiles", false):
-		return
-		
-	spawn_timer += delta
-	var current_interval: float = base_spawn_interval / RunManager.stats.fire_rate_mult
-	
-	if spawn_timer >= current_interval:
-		spawn_timer = 0.0
-		_spawn_debug_projectile()
-
-func _spawn_debug_projectile() -> void:
-	if not player:
-		return
-	
-	var spawn_pos: Vector2 = player.global_position
-	var mouse_pos := get_global_mouse_position()
-	var direction := (mouse_pos - spawn_pos).normalized()
-
-	var projectile_count: int = 1 + RunManager.stats.projectile_count_add
-	var base_speed: float = 480.0 * RunManager.stats.projectile_speed_mult
-	
-	for i in range(projectile_count):
-		var spread: float = 0.0
-		if projectile_count > 1:
-			var spread_range: float = 0.4
-			spread = RNG.randf_range("waves", -spread_range, spread_range) * (i - projectile_count / 2.0)
-		
-		var final_direction: Vector2 = direction.rotated(spread)
-		ability_system.spawn_projectile(spawn_pos, final_direction, base_speed, 2.0)
 
 
 
