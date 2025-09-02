@@ -86,6 +86,7 @@ func _populate_bindings() -> void:
 		
 		_add_binding_row(debug_grid, "Console:", "F1")
 		_add_binding_row(debug_grid, "Cards:", "C")
+		_add_binding_row(debug_grid, "Performance:", "F12")
 		_add_binding_row(debug_grid, "God Mode:", "Ctrl+1")
 		_add_binding_row(debug_grid, "Stop Spawn:", "Ctrl+2")
 		_add_binding_row(debug_grid, "Silent Pause:", "F10")

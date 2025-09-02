@@ -6,15 +6,22 @@ extends Node
 
 class_name DebugController
 
+const PerformanceMonitor_Type = preload("res://scripts/systems/PerformanceMonitor.gd")
+
 # System references needed for debug actions
 var card_system: CardSystem
 var arena_ref: Node  # Reference to Arena for accessing HUD, player, etc.
+var performance_monitor
 
 var enabled: bool = true
 
 func setup(arena: Node, deps: Dictionary) -> void:
 	arena_ref = arena
 	card_system = deps.get("card_system")
+	
+	# Create performance monitor for debug stats
+	performance_monitor = PerformanceMonitor_Type.new()
+	add_child(performance_monitor)
 
 func _input(event: InputEvent) -> void:
 	if not enabled or not (event is InputEventKey and event.pressed):
@@ -24,7 +31,10 @@ func _input(event: InputEvent) -> void:
 		KEY_C:
 			Logger.info("Manual card selection test", "debug")
 			_test_card_selection()
-		# F11, F12, B, T keys removed - obsolete debug functions
+		KEY_F12:
+			Logger.info("Performance stats display", "debug")
+			_display_performance_stats()
+		# F11, B, T keys removed - obsolete debug functions
 
 # Debug Methods - Only essential ones kept active
 
@@ -52,4 +62,25 @@ func _test_card_selection() -> void:
 	else:
 		Logger.error("UI manager not available for card selection test", "debug")
 
-# Obsolete debug methods removed - F11, F12, B, T keys no longer needed
+func _display_performance_stats() -> void:
+	Logger.info("=== PERFORMANCE STATS DEBUG TEST ===", "debug")
+	if not performance_monitor:
+		Logger.error("Performance monitor not available", "debug")
+		return
+	
+	# Gather system references from arena
+	var wave_director = arena_ref._injected.get("WaveDirector")
+	var ability_system = arena_ref._injected.get("AbilitySystem")
+	
+	if not wave_director:
+		Logger.warn("WaveDirector not available for performance stats", "debug")
+	if not ability_system:
+		Logger.warn("AbilitySystem not available for performance stats", "debug")
+	
+	# Get and display performance stats
+	var stats = performance_monitor.get_debug_stats(arena_ref, wave_director, ability_system)
+	performance_monitor.print_stats(stats)
+	
+	Logger.info("Performance stats completed", "debug")
+
+# Obsolete debug methods removed - F11, B, T keys no longer needed
