@@ -111,6 +111,13 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 	
 	return was_killed
 
+## Update entity position for spatial queries
+## @param entity_id: String identifier of entity to update
+## @param new_pos: New position of the entity
+func update_entity_position(entity_id: String, new_pos: Vector2) -> void:
+	if _entities.has(entity_id):
+		_entities[entity_id]["pos"] = new_pos
+
 ## Get entity data by ID
 func get_entity(entity_id: String) -> Dictionary:
 	return _entities.get(entity_id, {})
@@ -136,6 +143,62 @@ func get_alive_entities() -> Array[String]:
 		var entity: Dictionary = _entities[id]
 		if entity.get("alive", false):
 			result.append(id)
+	return result
+
+## Get all entities within radius of position (spatial query)
+## @param center: Center position for search
+## @param radius: Search radius in pixels  
+## @param filter_types: Optional array of entity types to include (e.g., ["boss", "enemy"])
+## @return Array of entity IDs within radius
+func get_entities_in_area(center: Vector2, radius: float, filter_types: Array = []) -> Array[String]:
+	var result: Array[String] = []
+	
+	for entity_id in _entities.keys():
+		var entity_data = _entities[entity_id]
+		
+		# Skip dead entities
+		if not entity_data.get("alive", false):
+			continue
+			
+		# Apply type filter if specified
+		if not filter_types.is_empty():
+			var entity_type = entity_data.get("type", "")
+			if not filter_types.has(entity_type):
+				continue
+		
+		# Distance check
+		var entity_pos = entity_data.get("pos", Vector2.ZERO)
+		if center.distance_to(entity_pos) <= radius:
+			result.append(entity_id)
+	
+	return result
+
+## Get entities in cone area (for melee attacks, projectile targeting)
+## @param origin: Cone apex position
+## @param direction: Cone direction (normalized vector)
+## @param angle_degrees: Cone angle in degrees  
+## @param max_range: Maximum range
+## @param filter_types: Optional array of entity types to include
+## @return Array of entity IDs in cone
+func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: float, max_range: float, filter_types: Array = []) -> Array[String]:
+	# First get all entities in range, then filter by cone
+	var entities_in_range = get_entities_in_area(origin, max_range, filter_types)
+	var result: Array[String] = []
+	
+	var cone_radians = deg_to_rad(angle_degrees)
+	var min_dot = cos(cone_radians / 2.0)
+	
+	for entity_id in entities_in_range:
+		var entity_data = _entities[entity_id]
+		var entity_pos = entity_data.get("pos", Vector2.ZERO)
+		
+		# Check if in cone angle
+		var to_entity = (entity_pos - origin).normalized()
+		var dot_product = to_entity.dot(direction)
+		
+		if dot_product >= min_dot:
+			result.append(entity_id)
+	
 	return result
 
 ## Calculate final damage with modifiers

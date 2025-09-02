@@ -768,40 +768,30 @@ func _test_boss_damage() -> void:
 	# Register existing entities first
 	DamageService.debug_register_all_existing_entities()
 	
-	# Search for boss nodes recursively - start from root to find GameOrchestrator bosses
-	var found_bosses = []
-	_find_bosses_recursive(get_tree().root, found_bosses)
+	# Use DamageService to find registered bosses (no scene tree traversal)
+	var boss_entity_ids = DamageService.get_entities_by_type("boss")
 	
-	Logger.info("Found " + str(found_bosses.size()) + " potential bosses", "debug")
+	Logger.info("Found " + str(boss_entity_ids.size()) + " registered bosses", "debug")
 	
-	if found_bosses.is_empty():
-		Logger.warn("No bosses found to test damage on", "debug")
+	if boss_entity_ids.is_empty():
+		Logger.warn("No registered bosses found to test damage on", "debug")
 		return
 	
-	var boss = found_bosses[0]
-	Logger.info("Testing boss: " + boss.name + " (type: " + boss.get_class() + ") at position " + str(boss.global_position), "debug")
-	
-	# Use unified damage system
-	var entity_id = "boss_" + str(boss.get_instance_id())
-	Logger.info("Boss entity ID: " + entity_id, "debug")
-	Logger.info("Boss health before: " + str(boss.get_current_health()) + "/" + str(boss.get_max_health()), "debug")
+	var entity_id = boss_entity_ids[0]
+	var boss_data = DamageService.get_entity(entity_id)
+	Logger.info("Testing boss: " + entity_id + " at position " + str(boss_data.get("pos", Vector2.ZERO)), "debug")
+	Logger.info("Boss health before: " + str(boss_data.get("hp", 0)) + "/" + str(boss_data.get("max_hp", 0)), "debug")
 	
 	# Apply damage via DamageService
 	var damage_applied = DamageService.apply_damage(entity_id, 50.0, "test_damage", ["test"])
 	Logger.info("Damage applied: " + str(damage_applied), "debug")
-	Logger.info("Boss health after: " + str(boss.get_current_health()) + "/" + str(boss.get_max_health()), "debug")
+	
+	# Check health after damage
+	boss_data = DamageService.get_entity(entity_id)
+	Logger.info("Boss health after: " + str(boss_data.get("hp", 0)) + "/" + str(boss_data.get("max_hp", 0)), "debug")
 	
 	Logger.info("=== BOSS DAMAGE TEST END ===", "debug")
 
-func _find_bosses_recursive(node: Node, bosses_array: Array) -> void:
-	# Check if this node looks like a boss - bosses have died signal and health properties
-	if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
-		Logger.debug("Found potential boss: " + node.name + " (class: " + node.get_class() + ")", "debug")
-		bosses_array.append(node)
-	
-	# Recursively search children
-	for child in node.get_children():
-		_find_bosses_recursive(child, bosses_array)
 
 func _test_card_selection() -> void:
 	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")

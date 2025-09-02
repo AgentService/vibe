@@ -107,8 +107,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
-	# Use EntityTracker for efficient boss detection
-	var hit_scene_bosses = _find_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
+	# Use DamageService for efficient boss detection  
+	var hit_scene_bosses = _find_bosses_in_cone_via_damage_service(player_pos, attack_dir, effective_cone, effective_range)
 	
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
@@ -133,7 +133,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		var entity_id = "enemy_" + str(enemy_pool_index)
 		
 		# AUTO-REGISTER: Register enemy if not already registered
-		if not DamageService.is_entity_alive(entity_id) and not DamageService.get_entity(entity_id).has("id"):
+		if not DamageService.get_entity(entity_id).has("id"):
 			var entity_data = {
 				"id": entity_id,
 				"type": "enemy",
@@ -158,7 +158,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		var boss_id = "boss_" + str(boss.get_instance_id())
 		
 		# AUTO-REGISTER: Register boss if not already registered
-		if not DamageService.is_entity_alive(boss_id) and not DamageService.get_entity(boss_id).has("id"):
+		if not DamageService.get_entity(boss_id).has("id"):
 			var entity_data = {
 				"id": boss_id,
 				"type": "boss",
@@ -195,12 +195,12 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	
 	return dot_product >= min_dot
 
-## Find bosses using EntityTracker (no scene tree traversal)
-func _find_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
+## Find bosses using DamageService spatial queries (no scene tree traversal)
+func _find_bosses_in_cone_via_damage_service(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
 	var hit_bosses: Array[Node] = []
 	
-	# Use EntityTracker for efficient boss lookup
-	var boss_entity_ids = EntityTracker.get_entities_in_cone(player_pos, attack_dir, cone_degrees, range_limit, "boss")
+	# Use DamageService for efficient boss lookup
+	var boss_entity_ids = DamageService.get_entities_in_cone(player_pos, attack_dir, cone_degrees, range_limit, ["boss"])
 	
 	for entity_id in boss_entity_ids:
 		# Get boss instance from entity_id 
@@ -211,11 +211,11 @@ func _find_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees
 		if boss_node and is_instance_valid(boss_node):
 			hit_bosses.append(boss_node)
 			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-				Logger.debug("V3: Found boss in melee range via EntityTracker: " + boss_node.name, "combat")
+				Logger.debug("V4: Found boss in melee range via DamageService: " + boss_node.name, "combat")
 		else:
-			Logger.warn("V3: Boss node not found for entity_id: " + entity_id, "combat")
-			# Clean up stale entity
-			EntityTracker.unregister_entity(entity_id)
+			Logger.warn("V4: Boss node not found for entity_id: " + entity_id, "combat")
+			# Clean up stale entity from DamageService
+			DamageService.unregister_entity(entity_id)
 	
 	return hit_bosses
 
@@ -296,20 +296,21 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
 
-## Find enemy pool index using EntityTracker (no WaveDirector dependency)
+## Find enemy pool index by searching through WaveDirector enemy array
 func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
-	# Use EntityTracker to find enemies near the target position
-	var nearby_entity_ids = EntityTracker.get_entities_in_radius(target_enemy.pos, 1.0, "enemy")
+	# Get WaveDirector from GameOrchestrator or injection
+	var wave_director = get_node("/root/GameOrchestrator").get_wave_director()
+	if not wave_director:
+		Logger.warn("V4: No WaveDirector available for enemy pool lookup", "combat")
+		return -1
 	
-	for entity_id in nearby_entity_ids:
-		var entity_data = EntityTracker.get_entity(entity_id)
-		if entity_data.has("pos"):
-			var entity_pos: Vector2 = entity_data["pos"]
-			# Use exact position match to identify the specific enemy
-			if entity_pos.distance_to(target_enemy.pos) < 0.1:  # Very close match
-				var enemy_index_str = entity_id.replace("enemy_", "")
-				return enemy_index_str.to_int()
+	# Search through the enemies array for a position match
+	var enemies = wave_director.enemies
+	for i in range(enemies.size()):
+		var enemy = enemies[i]
+		if enemy.alive and enemy.pos.distance_to(target_enemy.pos) < 0.1:
+			return i
 	
-	Logger.warn("V3: Could not find entity_id for enemy at position " + str(target_enemy.pos), "combat")
+	Logger.warn("V4: Could not find enemy index for position " + str(target_enemy.pos), "combat")
 	return -1
 

@@ -120,9 +120,10 @@ func _update_ai(dt: float) -> void:
 			velocity = direction * speed
 			move_and_slide()
 			
-			# Update EntityTracker position
+			# Update EntityTracker and DamageService positions
 			var entity_id = "boss_" + str(get_instance_id())
 			EntityTracker.update_entity_position(entity_id, global_position)
+			DamageService.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
