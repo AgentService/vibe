@@ -5,7 +5,6 @@ extends Node
 
 class_name MeleeSystem
 
-var wave_director: WaveDirector
 var attack_cooldown: float = 0.0
 var is_attacking: bool = false
 var attack_duration: float = 0.2  # Visual attack duration
@@ -108,8 +107,8 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
-	# HYBRID SYSTEM: Also check for scene-based bosses (Dragon Lord, etc.)
-	var hit_scene_bosses = _find_scene_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
+	# Use EntityTracker for efficient boss detection
+	var hit_scene_bosses = _find_bosses_in_cone(player_pos, attack_dir, effective_cone, effective_range)
 	
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
@@ -119,13 +118,14 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0:
 		enemies_hit.emit(hit_enemies)
 	
-	# NEW DAMAGE V2: Apply damage via DamageService to all hit entities
+	# Apply damage via DamageService to all hit entities
 	var final_damage = _calculate_damage()
 	var total_hit_count = 0
 	
 	# Apply damage to pooled enemies
 	for enemy in hit_enemies:
 		var enemy_pool_index = _find_enemy_pool_index(enemy)
+		
 		if enemy_pool_index == -1:
 			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
 			continue
@@ -195,42 +195,30 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 	
 	return dot_product >= min_dot
 
-func _find_scene_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
+## Find bosses using EntityTracker (no scene tree traversal)
+func _find_bosses_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
 	var hit_bosses: Array[Node] = []
 	
-	# Find all scene-based bosses starting from root (bosses are added to GameOrchestrator parent)
-	var root_node = get_tree().root
-	if not root_node:
-		return hit_bosses
+	# Use EntityTracker for efficient boss lookup
+	var boss_entity_ids = EntityTracker.get_entities_in_cone(player_pos, attack_dir, cone_degrees, range_limit, "boss")
 	
-	# Look for CharacterBody2D nodes that might be scene bosses
-	var all_nodes = _get_all_characterbody2d_nodes(root_node)
-	
-	for node in all_nodes:
-		# Skip if this is the player
-		if node.name == "Player":
-			continue
-			
-		# DAMAGE V2: Check if it looks like a boss (has died signal and health methods)
-		if node.has_signal("died") and node.has_method("get_current_health") and node.has_method("get_max_health"):
-			var boss_pos = node.global_position
-			if _is_enemy_in_cone(boss_pos, player_pos, attack_dir, cone_degrees, range_limit):
-				hit_bosses.append(node)
-				if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-					Logger.debug("Found scene boss in melee range: " + node.name, "combat")
+	for entity_id in boss_entity_ids:
+		# Get boss instance from entity_id 
+		var instance_id_str = entity_id.replace("boss_", "")
+		var instance_id = instance_id_str.to_int()
+		
+		var boss_node = instance_from_id(instance_id)
+		if boss_node and is_instance_valid(boss_node):
+			hit_bosses.append(boss_node)
+			if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+				Logger.debug("V3: Found boss in melee range via EntityTracker: " + boss_node.name, "combat")
+		else:
+			Logger.warn("V3: Boss node not found for entity_id: " + entity_id, "combat")
+			# Clean up stale entity
+			EntityTracker.unregister_entity(entity_id)
 	
 	return hit_bosses
 
-func _get_all_characterbody2d_nodes(node: Node) -> Array[CharacterBody2D]:
-	var result: Array[CharacterBody2D] = []
-	
-	if node is CharacterBody2D:
-		result.append(node)
-	
-	for child in node.get_children():
-		result.append_array(_get_all_characterbody2d_nodes(child))
-	
-	return result
 
 func _calculate_damage() -> float:
 	var base_damage = damage
@@ -308,17 +296,20 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
 
+## Find enemy pool index using EntityTracker (no WaveDirector dependency)
 func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
-	if not wave_director:
-		Logger.error("WaveDirector reference not set in MeleeSystem", "combat")
-		return -1
-		
-	for i in range(wave_director.enemies.size()):
-		var enemy := wave_director.enemies[i]
-		# Use object identity instead of position comparison for reliability
-		if enemy == target_enemy and enemy.alive:
-			return i
+	# Use EntityTracker to find enemies near the target position
+	var nearby_entity_ids = EntityTracker.get_entities_in_radius(target_enemy.pos, 1.0, "enemy")
+	
+	for entity_id in nearby_entity_ids:
+		var entity_data = EntityTracker.get_entity(entity_id)
+		if entity_data.has("pos"):
+			var entity_pos: Vector2 = entity_data["pos"]
+			# Use exact position match to identify the specific enemy
+			if entity_pos.distance_to(target_enemy.pos) < 0.1:  # Very close match
+				var enemy_index_str = entity_id.replace("enemy_", "")
+				return enemy_index_str.to_int()
+	
+	Logger.warn("V3: Could not find entity_id for enemy at position " + str(target_enemy.pos), "combat")
 	return -1
 
-func set_wave_director_reference(wd: WaveDirector) -> void:
-	wave_director = wd

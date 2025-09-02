@@ -54,7 +54,6 @@ All cheat inputs are processed in `_input()` with proper event handling:
 ```gdscript
 # scenes/arena/Player.gd:214
 if CheatSystem and CheatSystem.is_god_mode_active():
-    Logger.debug("Damage blocked by god mode", "debug")
     return
 ```
 

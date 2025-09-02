@@ -240,7 +240,6 @@ func _handle_facing() -> void:
 func _on_damage_taken(damage: int) -> void:
 	# Check for god mode cheat
 	if CheatSystem and CheatSystem.is_god_mode_active():
-		Logger.debug("Damage blocked by god mode", "debug")
 		return
 	
 	if invulnerable:

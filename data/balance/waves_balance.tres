@@ -1,11 +1,11 @@
 [gd_resource type="Resource" script_class="WavesBalance" load_steps=2 format=3 uid="uid://c11sdhxdwo63d"]
 
-[ext_resource type="Script" uid="uid://ccel4nmeb7dpl" path="res://scripts/domain/WavesBalance.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://csqnmlbwp883o" path="res://scripts/domain/WavesBalance.gd" id="1_0"]
 
 [resource]
 script = ExtResource("1_0")
-max_enemies = 3333
-spawn_interval = 3.0
+max_enemies = 500
+spawn_interval = 1.0
 arena_center = Vector2(0, 0)
 enemy_speed_min = 10.0
 enemy_speed_max = 20.0

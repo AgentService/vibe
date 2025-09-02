@@ -29,6 +29,9 @@ var arena_system
 # Boss hit feedback system for boss registration
 var boss_hit_feedback: BossHitFeedback
 
+# Preloaded boss scenes for performance
+var _preloaded_boss_scenes: Dictionary = {}
+
 # Cached alive enemies list for performance
 var _alive_enemies_cache: Array[EnemyEntity] = []
 var _cache_dirty: bool = true
@@ -44,8 +47,12 @@ func _ready() -> void:
 	add_to_group("wave_directors")  # For DamageRegistry sync access
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
+	
+	# DAMAGE V3: Listen for unified damage sync events
+	EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 
 	_initialize_pool()
+	_preload_boss_scenes()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
@@ -74,6 +81,8 @@ func _exit_tree() -> void:
 	# Cleanup signal connections
 	if EventBus.combat_step.is_connected(_on_combat_step):
 		EventBus.combat_step.disconnect(_on_combat_step)
+	if EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
+		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
 		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
 	Logger.debug("WaveDirector: Cleaned up signal connections", "systems")
@@ -87,6 +96,11 @@ func _on_balance_reloaded() -> void:
 
 
 
+
+func _preload_boss_scenes() -> void:
+	_preloaded_boss_scenes["ancient_lich"] = load("res://scenes/bosses/AncientLich.tscn")
+	_preloaded_boss_scenes["dragon_lord"] = load("res://scenes/bosses/DragonLord.tscn")
+	Logger.info("Boss scenes preloaded for performance", "waves")
 
 func _initialize_pool() -> void:
 	enemies.resize(max_enemies)
@@ -108,6 +122,48 @@ func _on_combat_step(payload) -> void:
 	var alive_enemies := get_alive_enemies()
 	#Logger.debug("WaveDirector emitting enemies_updated with " + str(alive_enemies.size()) + " enemies", "waves")
 	enemies_updated.emit(alive_enemies)
+
+## DAMAGE V3: Handle unified damage sync events for pooled enemies
+func _on_damage_entity_sync(payload: Dictionary) -> void:
+	var entity_id: String = payload.get("entity_id", "")
+	var entity_type: String = payload.get("entity_type", "")
+	var new_hp: float = payload.get("new_hp", 0.0)
+	var is_death: bool = payload.get("is_death", false)
+	
+	# Only handle enemy entities
+	if entity_type != "enemy":
+		return
+		
+	# Extract enemy index from entity_id
+	var enemy_index_str = entity_id.replace("enemy_", "")
+	var enemy_index = enemy_index_str.to_int()
+	
+	# Validate enemy index
+	if enemy_index < 0 or enemy_index >= enemies.size():
+		Logger.warn("V3: Invalid enemy index for damage sync: %d" % [enemy_index], "combat")
+		return
+	
+	var enemy = enemies[enemy_index]
+	if not enemy.alive:
+		Logger.debug("V3: Damage sync on dead enemy %d ignored" % [enemy_index], "combat")
+		return
+	
+	# Update enemy HP
+	enemy.hp = new_hp
+	
+	# Handle death
+	if is_death:
+		enemy.alive = false
+		_cache_dirty = true
+		Logger.debug("V3: Enemy %d killed via damage sync" % [enemy_index], "combat")
+		
+		# Update EntityTracker
+		EntityTracker.unregister_entity(entity_id)
+	else:
+		# Update EntityTracker position/health data
+		var entity_data = EntityTracker.get_entity(entity_id)
+		if entity_data.has("id"):
+			entity_data["hp"] = new_hp
 
 func _handle_spawning(dt: float) -> void:
 	# Check for spawn disabled cheat
@@ -178,23 +234,26 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	enemy.setup_with_type(enemy_type, spawn_config.position, direction * spawn_config.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
+	# DAMAGE V3: Register enemy with EntityTracker
+	var entity_id = "enemy_" + str(free_idx)
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": enemy.hp,
+		"max_hp": enemy.max_hp,
+		"alive": true,
+		"pos": enemy.pos
+	}
+	EntityTracker.register_entity(entity_id, entity_data)
+	
 	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
 
 # Boss scene spawning for V2 system
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	# Load boss scene based on template ID
-	var scene_path: String
-	match spawn_config.template_id:
-		"ancient_lich":
-			scene_path = "res://scenes/bosses/AncientLich.tscn"
-		"dragon_lord":
-			scene_path = "res://scenes/bosses/DragonLord.tscn"
-		_:
-			scene_path = "res://scenes/bosses/AncientLich.tscn"  # Fallback
-	
-	var boss_scene: PackedScene = load(scene_path)
+	# Use preloaded boss scene for performance
+	var boss_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id, _preloaded_boss_scenes["ancient_lich"])
 	if not boss_scene:
-		Logger.warn("Failed to load boss scene: " + scene_path, "waves")
+		Logger.warn("Failed to get preloaded boss scene: " + spawn_config.template_id, "waves")
 		return
 	
 	# Instantiate boss scene
@@ -237,7 +296,7 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	if boss_node.has_signal("died"):
 		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
 	
-	# DAMAGE V2: Register boss with DamageService
+	# Register boss with DamageService
 	var entity_id = "boss_" + str(boss_node.get_instance_id())
 	var entity_data = {
 		"id": entity_id,
@@ -265,7 +324,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
-	# DAMAGE V2: Register enemy with DamageService
+	# Register enemy with DamageService
 	var entity_id = "enemy_" + str(free_idx)
 	var entity_data = {
 		"id": entity_id,
@@ -287,6 +346,12 @@ func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
 
+
+func _find_enemy_index(target_enemy: EnemyEntity) -> int:
+	for i in range(enemies.size()):
+		if enemies[i] == target_enemy:
+			return i
+	return -1
 
 func _find_free_enemy() -> int:
 	# Start search from last known free index for better performance
@@ -320,7 +385,14 @@ func _update_enemies(dt: float) -> void:
 			enemy.vel = direction * enemy.speed
 			
 			# Update enemy position based on current velocity
+			var old_pos = enemy.pos
 			enemy.pos += enemy.vel * dt
+			
+			# DAMAGE V3: Update EntityTracker position
+			var enemy_index = _find_enemy_index(enemy)
+			if enemy_index != -1:
+				var entity_id = "enemy_" + str(enemy_index)
+				EntityTracker.update_entity_position(entity_id, enemy.pos)
 		
 		# Kill enemy if it reaches target or goes out of bounds - DISABLED
 		# if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
@@ -350,7 +422,7 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 
 # Player reference no longer needed - using PlayerState autoload for position
 
-# DAMAGE V2: damage_enemy() method removed - enemies damaged via DamageService
+# damage_enemy() method removed - enemies damaged via DamageService
 # Enemy HP updates handled by DamageRegistry sync system (_sync_damage_to_game_entity)
 
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:

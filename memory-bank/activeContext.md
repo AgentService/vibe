@@ -19,12 +19,15 @@ Current focus, recent changes, next steps, and active decisions for ongoing deve
 - Universal .tres hot-reload: BalanceDB monitors resources; scenes use @export; systems use ResourceLoader with CACHE_MODE_IGNORE.
 - Obsidian docs updated (EnemyEntity migration, typed flows).
 - Config migration JSON → typed .tres (log_config, radar_config, xp_curves, balance/content).
+- Boss UI component: BossHealthBar (ProgressBar + theme) added; bosses call update_health(current, max) directly; logs via Logger; slated to migrate to EventBus-driven health change signal.
+- Boss hit feedback shader added (shaders/boss_flash.gdshader + material), integrated for boss damage feedback.
 
 ## Next Steps (Plan)
 1. UI/Scene Architecture
    - Extract UI responsibilities from Arena; enforce CanvasLayer layering and z-order.
    - Implement GameManager scene (entry, transitions, pause/options stubs).
    - Build generic Modal Overlay System (CardPicker precedent) with pause-aware layering.
+   - Integrate BossHealthBar into HUD/GameManager; migrate updates to an EventBus-driven entity_health_changed flow; add an isolated scene test.
 2. Testing & Enforcement
    - Ensure autoload-dependent systems have isolated scene tests; expand cli_test_runner coverage.
    - Keep test_architecture_boundaries.gd green; add regression tests for allowed Resource config imports.
@@ -44,6 +47,7 @@ Current focus, recent changes, next steps, and active decisions for ongoing deve
 - Damage: Single pipeline via DamageService/Registry; IDs are strings; no take_damage() calls on nodes.
 - Data: All tunables in data/* as typed .tres; validate with safe fallbacks; hot-reload everywhere practical.
 - Logging: Logger autoload only in game code; tests may use print.
+- Boss UI coupling (temporary): BossHealthBar updates via direct boss.update_health(); allowed within scene ownership; migrate to EventBus entity_health_changed for decoupled UI.
 
 ## Important Patterns and Preferences
 - Typed payload classes accessed via EventBus preloads; connect in _ready(), disconnect in _exit_tree().
