@@ -9,11 +9,3 @@ script = ExtResource("1_0lc8k")
 [node name="Arena" parent="." instance=ExtResource("2_1lc8k")]
 position = Vector2(34, 1)
 scale = Vector2(1, 0.993702)
-boss_knockback_force = null
-boss_knockback_duration = null
-boss_hit_stop_duration = null
-boss_velocity_decay = null
-boss_flash_duration = null
-boss_flash_intensity = null
-boss_spawn_configs = null
-enable_debug_boss_spawning = null
