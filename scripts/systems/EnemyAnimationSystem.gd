@@ -114,15 +114,35 @@ func _load_swarm_animations() -> void:
 func _create_swarm_textures() -> void:
 	swarm_run_textures.clear()
 	
-	# Use existing slime sprite as a simple placeholder
-	var base_sprite := preload("res://assets/sprites/slime_green.png")
+	# Load swarm animation config
+	var swarm_animation_config: AnimationConfig = load("res://data/animations/swarm_enemy_animations.tres")
+	if not swarm_animation_config:
+		Logger.error("Failed to load swarm animation config", "enemies")
+		return
 	
-	# Create a simple single-frame animation for now
-	var frame_texture := ImageTexture.create_from_image(base_sprite.get_image())
-	swarm_run_textures.append(frame_texture)
+	var sprite_sheet: Texture2D = swarm_animation_config.sprite_sheet
+	var frame_width: int = swarm_animation_config.frame_size.x
+	var frame_height: int = swarm_animation_config.frame_size.y
+	var columns: int = swarm_animation_config.grid_columns
+	
+	var run_anim: Dictionary = swarm_animation_config.animations.run
+	swarm_frame_duration = run_anim.duration
+	
+	var sprite_image: Image = sprite_sheet.get_image()
+	
+	for frame_idx in run_anim.frames:
+		var index: int = int(frame_idx)
+		var col: int = index % columns
+		var row: int = index / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
+		
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		swarm_run_textures.append(frame_texture)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures (placeholder)", "enemies")
+		Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm animation textures", "enemies")
 
 func _load_regular_animations() -> void:
 	Logger.debug("Loading regular animations", "enemies")
@@ -133,15 +153,35 @@ func _load_regular_animations() -> void:
 func _create_regular_textures() -> void:
 	regular_run_textures.clear()
 	
-	# Use purple slime sprite as placeholder for regular enemies
-	var base_sprite := preload("res://assets/sprites/slime_purple.png")
+	# Load regular animation config
+	var regular_animation_config: AnimationConfig = load("res://data/animations/regular_enemy_animations.tres")
+	if not regular_animation_config:
+		Logger.error("Failed to load regular animation config", "enemies")
+		return
 	
-	# Create a simple single-frame animation for now
-	var frame_texture := ImageTexture.create_from_image(base_sprite.get_image())
-	regular_run_textures.append(frame_texture)
+	var sprite_sheet: Texture2D = regular_animation_config.sprite_sheet
+	var frame_width: int = regular_animation_config.frame_size.x
+	var frame_height: int = regular_animation_config.frame_size.y
+	var columns: int = regular_animation_config.grid_columns
+	
+	var run_anim: Dictionary = regular_animation_config.animations.run
+	regular_frame_duration = run_anim.duration
+	
+	var sprite_image: Image = sprite_sheet.get_image()
+	
+	for frame_idx in run_anim.frames:
+		var index: int = int(frame_idx)
+		var col: int = index % columns
+		var row: int = index / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
+		
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		regular_run_textures.append(frame_texture)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures (placeholder)", "enemies")
+		Logger.debug("Created " + str(regular_run_textures.size()) + " regular animation textures", "enemies")
 
 func _load_elite_animations() -> void:
 	Logger.debug("Loading elite animations", "enemies")
@@ -152,15 +192,35 @@ func _load_elite_animations() -> void:
 func _create_elite_textures() -> void:
 	elite_run_textures.clear()
 	
-	# Use knight sprite as placeholder for elite enemies
-	var base_sprite := preload("res://assets/sprites/knight.png")
+	# Load elite animation config
+	var elite_animation_config: AnimationConfig = load("res://data/animations/elite_enemy_animations.tres")
+	if not elite_animation_config:
+		Logger.error("Failed to load elite animation config", "enemies")
+		return
 	
-	# Create a simple single-frame animation for now
-	var frame_texture := ImageTexture.create_from_image(base_sprite.get_image())
-	elite_run_textures.append(frame_texture)
+	var sprite_sheet: Texture2D = elite_animation_config.sprite_sheet
+	var frame_width: int = elite_animation_config.frame_size.x
+	var frame_height: int = elite_animation_config.frame_size.y
+	var columns: int = elite_animation_config.grid_columns
+	
+	var run_anim: Dictionary = elite_animation_config.animations.run
+	elite_frame_duration = run_anim.duration
+	
+	var sprite_image: Image = sprite_sheet.get_image()
+	
+	for frame_idx in run_anim.frames:
+		var index: int = int(frame_idx)
+		var col: int = index % columns
+		var row: int = index / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
+		
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		elite_run_textures.append(frame_texture)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures (placeholder)", "enemies")
+		Logger.debug("Created " + str(elite_run_textures.size()) + " elite animation textures", "enemies")
 
 func _load_boss_animations() -> void:
 	Logger.debug("Loading boss animations", "enemies")
@@ -171,12 +231,32 @@ func _load_boss_animations() -> void:
 func _create_boss_textures() -> void:
 	boss_run_textures.clear()
 	
-	# Use fruit sprite as placeholder for boss enemies (distinctive)
-	var base_sprite := preload("res://assets/sprites/fruit.png")
+	# Load boss animation config
+	var boss_animation_config: AnimationConfig = load("res://data/animations/boss_enemy_animations.tres")
+	if not boss_animation_config:
+		Logger.error("Failed to load boss animation config", "enemies")
+		return
 	
-	# Create a simple single-frame animation for now
-	var frame_texture := ImageTexture.create_from_image(base_sprite.get_image())
-	boss_run_textures.append(frame_texture)
+	var sprite_sheet: Texture2D = boss_animation_config.sprite_sheet
+	var frame_width: int = boss_animation_config.frame_size.x
+	var frame_height: int = boss_animation_config.frame_size.y
+	var columns: int = boss_animation_config.grid_columns
+	
+	var run_anim: Dictionary = boss_animation_config.animations.run
+	boss_frame_duration = run_anim.duration
+	
+	var sprite_image: Image = sprite_sheet.get_image()
+	
+	for frame_idx in run_anim.frames:
+		var index: int = int(frame_idx)
+		var col: int = index % columns
+		var row: int = index / columns
+		
+		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
+		
+		var frame_texture := ImageTexture.create_from_image(frame_image)
+		boss_run_textures.append(frame_texture)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures (placeholder)", "enemies")
+		Logger.debug("Created " + str(boss_run_textures.size()) + " boss animation textures", "enemies")
