@@ -40,7 +40,7 @@ var damage_system: DamageSystem
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
-var enemy_hit_feedback: EnemyMultiMeshHitFeedback
+var visual_effects_manager: VisualEffectsManager
 
 # SYSTEM INJECTION CLEANUP - Phase 5
 # Centralized system collection for cleaner injection management
@@ -50,33 +50,33 @@ var _injected: Dictionary = {}
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
 	set(value):
 		boss_knockback_force = value
-		if boss_hit_feedback:
-			boss_hit_feedback.knockback_force_multiplier = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_knockback_force(value)
 @export var boss_knockback_duration: float = 2.0: ## Duration multiplier for boss knockback
 	set(value):
 		boss_knockback_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.knockback_duration_multiplier = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_knockback_duration(value)
 @export var boss_hit_stop_duration: float = 0.15: ## Freeze time on boss hit impact
 	set(value):
 		boss_hit_stop_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.hit_stop_duration = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_hit_stop_duration(value)
 @export var boss_velocity_decay: float = 0.82: ## Boss knockback decay rate (0.7-0.95)
 	set(value):
 		boss_velocity_decay = value
-		if boss_hit_feedback:
-			boss_hit_feedback.velocity_decay_factor = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_velocity_decay(value)
 @export var boss_flash_duration: float = 0.2: ## Boss flash effect duration
 	set(value):
 		boss_flash_duration = value
-		if boss_hit_feedback:
-			boss_hit_feedback.flash_duration_override = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_flash_duration(value)
 @export var boss_flash_intensity: float = 5.0: ## Boss flash effect intensity
 	set(value):
 		boss_flash_intensity = value
-		if boss_hit_feedback:
-			boss_hit_feedback.flash_intensity_override = value
+		if visual_effects_manager:
+			visual_effects_manager.set_boss_flash_intensity(value)
 
 @export_group("Boss Spawn Configuration")
 @export var boss_spawn_configs: Array[BossSpawnConfig] = []: ## Configurable boss spawn positions and settings
@@ -88,7 +88,6 @@ var _injected: Dictionary = {}
 	set(value):
 		enable_debug_boss_spawning = value
 
-var boss_hit_feedback: BossHitFeedback
 
 var player: Player
 var xp_system: XpSystem
@@ -122,20 +121,16 @@ func _ready() -> void:
 	if not enemy_render_tier.is_node_ready():
 		enemy_render_tier._ready()
 	
-	# Create enemy hit feedback system
-	enemy_hit_feedback = EnemyMultiMeshHitFeedback.new()
-	add_child(enemy_hit_feedback)
-	
-	# Create boss hit feedback system
-	boss_hit_feedback = BossHitFeedback.new()
-	# Apply Arena's exported settings to the boss hit feedback system
-	boss_hit_feedback.knockback_force_multiplier = boss_knockback_force
-	boss_hit_feedback.knockback_duration_multiplier = boss_knockback_duration
-	boss_hit_feedback.hit_stop_duration = boss_hit_stop_duration
-	boss_hit_feedback.velocity_decay_factor = boss_velocity_decay
-	boss_hit_feedback.flash_duration_override = boss_flash_duration
-	boss_hit_feedback.flash_intensity_override = boss_flash_intensity
-	add_child(boss_hit_feedback)
+	# Create visual effects manager and setup hit feedback systems
+	visual_effects_manager = VisualEffectsManager.new()
+	visual_effects_manager.boss_knockback_force = boss_knockback_force
+	visual_effects_manager.boss_knockback_duration = boss_knockback_duration
+	visual_effects_manager.boss_hit_stop_duration = boss_hit_stop_duration
+	visual_effects_manager.boss_velocity_decay = boss_velocity_decay
+	visual_effects_manager.boss_flash_duration = boss_flash_duration
+	visual_effects_manager.boss_flash_intensity = boss_flash_intensity
+	add_child(visual_effects_manager)
+	visual_effects_manager.setup_hit_feedback_systems()
 	
 	# Create and add new systems
 	_setup_player()
@@ -181,15 +176,12 @@ func _ready() -> void:
 	_setup_enemy_animation_system()
 	_setup_enemy_transforms()
 	
-	# Setup hit feedback system with MultiMesh references
-	if enemy_hit_feedback:
-		enemy_hit_feedback.setup_multimesh_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
-		# Inject EnemyRenderTier reference
-		if enemy_render_tier:
-			enemy_hit_feedback.set_enemy_render_tier(enemy_render_tier)
-		# Inject WaveDirector reference if available
-		if wave_director:
-			enemy_hit_feedback.set_wave_director(wave_director)
+	# Setup visual effects manager with MultiMesh references and dependencies
+	if visual_effects_manager:
+		visual_effects_manager.setup_enemy_feedback_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
+		# Configure dependencies if available
+		if enemy_render_tier or wave_director:
+			visual_effects_manager.configure_enemy_feedback_dependencies(enemy_render_tier, wave_director)
 	
 	# Debug help now provided by DebugController
 	Logger.info("Arena ready", "ui")
@@ -345,9 +337,9 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
 	wave_director.enemies_updated.connect(multimesh_manager.update_enemies)
 	
-	# Inject WaveDirector into hit feedback system if it exists
-	if enemy_hit_feedback:
-		enemy_hit_feedback.set_wave_director(wave_director)
+	# Inject WaveDirector into visual effects manager if it exists
+	if visual_effects_manager:
+		visual_effects_manager.configure_enemy_feedback_dependencies(null, wave_director)
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	melee_system = injected_melee_system
