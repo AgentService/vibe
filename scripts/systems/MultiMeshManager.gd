@@ -16,6 +16,7 @@ var mm_enemies_boss: MultiMeshInstance2D
 # Dependencies
 var enemy_render_tier: EnemyRenderTier
 
+# Initialize MultiMeshManager with node references and configure all MultiMesh instances
 func setup(projectiles: MultiMeshInstance2D, swarm: MultiMeshInstance2D, regular: MultiMeshInstance2D, elite: MultiMeshInstance2D, boss: MultiMeshInstance2D, tier_helper: EnemyRenderTier) -> void:
 	mm_projectiles = projectiles
 	mm_enemies_swarm = swarm

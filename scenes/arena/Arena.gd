@@ -178,28 +178,6 @@ func _ready() -> void:
 	
 	# Debug help now provided by DebugController
 	Logger.info("Arena ready", "ui")
-	
-	# Schedule a test to check if enemies are spawning after a few seconds
-	var timer = Timer.new()
-	timer.wait_time = 3.0
-	timer.one_shot = true
-	timer.timeout.connect(_test_enemy_spawning)
-	add_child(timer)
-	timer.start()
-
-func _test_enemy_spawning() -> void:
-	Logger.debug("Enemy spawning test", "debug")
-	if wave_director:
-		var alive_enemies = wave_director.get_alive_enemies()
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
-		
-		if alive_enemies.size() > 0:
-			multimesh_manager.update_enemies(alive_enemies)
-		else:
-			Logger.debug("No enemies spawned yet", "debug")
-	else:
-		Logger.error("WaveDirector is null!", "ui")
 
 
 func _setup_enemy_animation_system() -> void:
