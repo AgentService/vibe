@@ -25,6 +25,7 @@ const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
 @onready var melee_effects: Node2D = $MeleeEffects
 var ability_system: AbilitySystem
 var melee_system: MeleeSystem
+var debug_controller: DebugController
 
 
 # ANIMATION CONFIGS
@@ -365,6 +366,7 @@ func _input(event: InputEvent) -> void:
 			_handle_projectile_attack(world_pos)
 		return
 	
+	# Legacy debug keys (U, F10) - kept for compatibility
 	if event is InputEventKey and event.pressed:
 		match event.keycode:
 			# Arena switching removed - now using single default arena
@@ -372,21 +374,6 @@ func _input(event: InputEvent) -> void:
 				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
 			KEY_F10:
 				Logger.info("F10 debug pause deprecated - use Escape key instead", "ui")
-			KEY_F11:
-				Logger.info("Spawning 1000 enemies for stress test", "performance")
-				_spawn_stress_test_enemies()
-			KEY_F12:
-				Logger.info("Performance stats toggle", "performance")
-				_toggle_performance_stats()
-			KEY_C:
-				Logger.info("Manual card selection test", "debug")
-				_test_card_selection()
-			KEY_B:
-				Logger.info("=== B KEY PRESSED - SPAWNING V2 BOSS ===", "debug")
-				_spawn_v2_boss_test()
-			KEY_T:
-				Logger.info("=== T KEY PRESSED - TESTING BOSS DAMAGE ===", "debug")
-				_test_boss_damage()
 
 func _setup_player() -> void:
 	# Load player scene dynamically to support @export hot-reload
@@ -484,6 +471,22 @@ func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	Logger.info("DamageSystem injected into Arena", "systems")
 	
 	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+
+func setup_debug_controller() -> void:
+	# Create and configure DebugController with system dependencies
+	debug_controller = DebugController.new()
+	add_child(debug_controller)
+	
+	# Provide system references for debug actions
+	var debug_dependencies = {
+		"wave_director": wave_director,
+		"card_system": card_system,
+		"ability_system": ability_system,
+		"camera_system": camera_system
+	}
+	
+	debug_controller.setup(self, debug_dependencies)
+	Logger.info("DebugController setup complete", "systems")
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
@@ -698,39 +701,8 @@ func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
-func _spawn_stress_test_enemies() -> void:
-	Logger.warn("Stress test disabled - legacy spawn method removed with V2 system migration", "performance")
+# Debug methods moved to DebugController system - Phase 3 Arena Refactoring
 
-func _spawn_v2_boss_test() -> void:
-	# Check if debug boss spawning is enabled
-	if not enable_debug_boss_spawning:
-		Logger.info("Debug boss spawning is disabled in Arena configuration", "debug")
-		return
-		
-	# Check if V2 system is enabled
-	if not BalanceDB.use_enemy_v2_system:
-		Logger.warn("V2 enemy system is disabled - cannot spawn V2 boss", "debug")
-		Logger.info("Enable V2 system in WavesBalance.tres to use V2 bosses", "debug")
-		return
-	
-	# Use configured boss spawns if available, otherwise fallback to hardcoded
-	if boss_spawn_configs.is_empty():
-		Logger.info("No boss spawn configs found, using hardcoded fallback", "debug")
-		_spawn_single_boss_fallback()
-		return
-	
-	# Spawn all enabled boss configurations
-	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var arena_center: Vector2 = Vector2.ZERO
-	
-	var spawned_count = 0
-	for config in boss_spawn_configs:
-		if config.enabled:
-			var spawn_pos = config.calculate_spawn_position(player_pos, arena_center)
-			_spawn_configured_boss(config, spawn_pos)
-			spawned_count += 1
-	
-	Logger.info("Spawned " + str(spawned_count) + " configured bosses", "debug")
 
 func _spawn_single_boss_fallback() -> void:
 	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
