@@ -60,6 +60,10 @@ var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
 var enemy_hit_feedback: EnemyMultiMeshHitFeedback
 
+# SYSTEM INJECTION CLEANUP - Phase 5
+# Centralized system collection for cleaner injection management
+var _injected: Dictionary = {}
+
 @export_group("Boss Hit Feedback Settings")
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
 	set(value):
@@ -375,6 +379,7 @@ func _setup_player() -> void:
 
 func _setup_xp_system() -> void:
 	xp_system = XpSystem.new(self)
+	_injected["XpSystem"] = xp_system
 	add_child(xp_system)
 
 func _setup_ui() -> void:
@@ -398,8 +403,19 @@ func _setup_card_system() -> void:
 # Called by GameOrchestrator to inject initialized systems with proper 
 # process modes and signal connections
 # ============================================================================
+
+# Phase 5: Centralized system injection collector
+# Provides dictionary-based injection while maintaining backward compatibility
+func inject_systems(systems: Dictionary) -> void:
+	_injected = systems.duplicate()
+	Logger.info("Arena: Centralized system injection completed with " + str(_injected.size()) + " systems", "systems")
+	
+	# Optional: connect signals here centrally if needed in future
+	# For now, individual set_* methods handle their own connections
+
 func set_card_system(injected_card_system: CardSystem) -> void:
 	card_system = injected_card_system
+	_injected["CardSystem"] = injected_card_system
 	Logger.info("CardSystem injected into Arena", "cards")
 	
 	# Complete the card system setup through UI manager
@@ -409,6 +425,7 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 
 func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 	ability_system = injected_ability_system
+	_injected["AbilitySystem"] = injected_ability_system
 	Logger.info("AbilitySystem injected into Arena", "systems")
 	
 	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -416,6 +433,7 @@ func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_system = injected_arena_system
+	_injected["ArenaSystem"] = injected_arena_system
 	Logger.info("ArenaSystem injected into Arena", "systems")
 	
 	arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -423,6 +441,7 @@ func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 
 func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	camera_system = injected_camera_system
+	_injected["CameraSystem"] = injected_camera_system
 	Logger.info("CameraSystem injected into Arena", "systems")
 	
 	camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -431,6 +450,7 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 
 func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	wave_director = injected_wave_director
+	_injected["WaveDirector"] = injected_wave_director
 	Logger.info("WaveDirector injected into Arena", "systems")
 	
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -442,6 +462,7 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	melee_system = injected_melee_system
+	_injected["MeleeSystem"] = injected_melee_system
 	Logger.info("MeleeSystem injected into Arena", "systems")
 	
 	melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -449,6 +470,7 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 
 func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	damage_system = injected_damage_system
+	_injected["DamageSystem"] = injected_damage_system
 	Logger.info("DamageSystem injected into Arena", "systems")
 	
 	damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -458,13 +480,9 @@ func setup_debug_controller() -> void:
 	debug_controller = DebugController.new()
 	add_child(debug_controller)
 	
-	# Provide system references for debug actions
-	var debug_dependencies = {
-		"card_system": card_system
-	}
-	
-	debug_controller.setup(self, debug_dependencies)
-	Logger.info("DebugController setup complete", "systems")
+	# Use centralized _injected dictionary for cleaner dependency management
+	debug_controller.setup(self, _injected)
+	Logger.info("DebugController setup complete with " + str(_injected.size()) + " injected systems", "systems")
 
 func _on_level_up(payload) -> void:
 	Logger.info("Player leveled up to level " + str(payload.new_level), "player")
