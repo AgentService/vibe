@@ -366,14 +366,7 @@ func _input(event: InputEvent) -> void:
 			_handle_projectile_attack(world_pos)
 		return
 	
-	# Legacy debug keys (U, F10) - kept for compatibility
-	if event is InputEventKey and event.pressed:
-		match event.keycode:
-			# Arena switching removed - now using single default arena
-			KEY_U:
-				Logger.info("Theme switching disabled - no longer needed after arena simplification", "ui")
-			KEY_F10:
-				Logger.info("F10 debug pause deprecated - use Escape key instead", "ui")
+	# All debug keys now handled by DebugController system
 
 func _setup_player() -> void:
 	# Load player scene dynamically to support @export hot-reload
