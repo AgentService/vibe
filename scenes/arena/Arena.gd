@@ -14,6 +14,7 @@ const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd"
 const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
 const ArenaUIManager := preload("res://scripts/systems/ArenaUIManager.gd")
 const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSystem.gd")
+const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -27,6 +28,7 @@ var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
 var enemy_animation_system: EnemyAnimationSystem
+var multimesh_manager: MultiMeshManager
 
 
 var wave_director: WaveDirector
@@ -139,7 +141,12 @@ func _ready() -> void:
 	_setup_xp_system()
 	_setup_ui()
 	
-	# Initialize GameOrchestrator systems and inject them BEFORE setting up dependent systems
+	# Setup MultiMesh Manager BEFORE system injection
+	multimesh_manager = MultiMeshManager.new()
+	add_child(multimesh_manager)
+	multimesh_manager.setup(mm_projectiles, mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss, enemy_render_tier)
+	
+	# Initialize GameOrchestrator systems and inject them AFTER MultiMesh Manager is ready
 	GameOrchestrator.initialize_core_loop()
 	GameOrchestrator.inject_systems_to_arena(self)
 
@@ -156,10 +163,6 @@ func _ready() -> void:
 	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
-	
-	# Setup MultiMesh instances
-	_setup_projectile_multimesh()
-	_setup_tier_multimeshes()
 	_setup_enemy_animation_system()
 	_setup_enemy_transforms()
 	
@@ -192,84 +195,12 @@ func _test_enemy_spawning() -> void:
 			Logger.debug("Alive enemies: " + str(alive_enemies.size()), "debug")
 		
 		if alive_enemies.size() > 0:
-			_update_enemy_multimesh(alive_enemies)
+			multimesh_manager.update_enemies(alive_enemies)
 		else:
 			Logger.debug("No enemies spawned yet", "debug")
 	else:
 		Logger.error("WaveDirector is null!", "ui")
 
-func _setup_projectile_multimesh() -> void:
-	var multimesh := MultiMesh.new()
-	multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	multimesh.instance_count = 0
-
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(8, 8)
-	multimesh.mesh = quad_mesh
-
-	# 8x8 gelber Punkt als Texture bauen
-	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 1.0, 0.0, 1.0))
-	var tex := ImageTexture.create_from_image(img)
-	mm_projectiles.texture = tex
-	mm_projectiles.z_index = 2  # Above walls
-
-	mm_projectiles.multimesh = multimesh
-
-# TIER-BASED ENEMY SYSTEM - optional for performance alongside sprite rendering
-
-func _setup_tier_multimeshes() -> void:
-	# Setup SWARM tier MultiMesh (small squares)
-	var swarm_multimesh := MultiMesh.new()
-	swarm_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	swarm_multimesh.use_colors = true
-	swarm_multimesh.instance_count = 0
-	var swarm_mesh := QuadMesh.new()
-	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
-	swarm_multimesh.mesh = swarm_mesh
-	
-	
-	# Texture will be set by EnemyAnimationSystem
-	mm_enemies_swarm.multimesh = swarm_multimesh
-	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
-	
-	# Setup REGULAR tier MultiMesh (medium rectangles)
-	var regular_multimesh := MultiMesh.new()
-	regular_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	regular_multimesh.use_colors = true
-	regular_multimesh.instance_count = 0
-	var regular_mesh := QuadMesh.new()
-	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
-	regular_multimesh.mesh = regular_mesh
-	# Texture will be set by EnemyAnimationSystem
-	mm_enemies_regular.multimesh = regular_multimesh
-	mm_enemies_regular.z_index = 0  # Gameplay entities layer
-	
-	# Setup ELITE tier MultiMesh (large diamonds)
-	var elite_multimesh := MultiMesh.new()
-	elite_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	elite_multimesh.use_colors = true
-	elite_multimesh.instance_count = 0
-	var elite_mesh := QuadMesh.new()
-	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
-	elite_multimesh.mesh = elite_mesh
-	# Texture will be set by EnemyAnimationSystem
-	mm_enemies_elite.multimesh = elite_multimesh
-	mm_enemies_elite.z_index = 0  # Gameplay entities layer
-	
-	# Setup BOSS tier MultiMesh (large diamonds)
-	var boss_multimesh := MultiMesh.new()
-	boss_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	boss_multimesh.use_colors = true
-	boss_multimesh.instance_count = 0
-	var boss_mesh := QuadMesh.new()
-	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
-	boss_multimesh.mesh = boss_mesh
-	# Texture will be set by EnemyAnimationSystem
-	mm_enemies_boss.multimesh = boss_multimesh
-	mm_enemies_boss.z_index = 0  # Gameplay entities layer
-	
-	Logger.debug("Tier MultiMesh instances initialized", "enemies")
 
 func _setup_enemy_animation_system() -> void:
 	enemy_animation_system = EnemyAnimationSystem.new()
@@ -394,7 +325,7 @@ func set_ability_system(injected_ability_system: AbilitySystem) -> void:
 	Logger.info("AbilitySystem injected into Arena", "systems")
 	
 	ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	ability_system.projectiles_updated.connect(_update_projectile_multimesh)
+	ability_system.projectiles_updated.connect(multimesh_manager.update_projectiles)
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_system = injected_arena_system
@@ -419,7 +350,7 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	Logger.info("WaveDirector injected into Arena", "systems")
 	
 	wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	wave_director.enemies_updated.connect(_update_enemy_multimesh)
+	wave_director.enemies_updated.connect(multimesh_manager.update_enemies)
 	
 	# Inject WaveDirector into hit feedback system if it exists
 	if enemy_hit_feedback:
@@ -569,50 +500,6 @@ func _spawn_debug_projectile() -> void:
 		var final_direction: Vector2 = direction.rotated(spread)
 		ability_system.spawn_projectile(spawn_pos, final_direction, base_speed, 2.0)
 
-func _update_projectile_multimesh(alive_projectiles: Array[Dictionary]) -> void:
-	var count := alive_projectiles.size()
-	mm_projectiles.multimesh.instance_count = count
-
-	for i in range(count):
-		var projectile := alive_projectiles[i]
-		var proj_transform := Transform2D()
-		proj_transform.origin = projectile["pos"]
-		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
-
-func _update_enemy_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
-	if enemy_render_tier == null:
-		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
-		return
-	
-	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
-	
-	# Update each tier's MultiMesh
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
-	
-	# Removed excessive tier rendering debug logs
-
-func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
-	var count := tier_enemies.size()
-	if mm_instance and mm_instance.multimesh:
-		mm_instance.multimesh.instance_count = count
-		# Removed per-tier update debug log
-		
-		for i in range(count):
-			var enemy := tier_enemies[i]
-			
-			# Basic transform with position only
-			var instance_transform := Transform2D()
-			instance_transform.origin = enemy["pos"]
-			
-			mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
-			
-			# Set color based on tier for visual debugging
-			var tier_color := _get_tier_debug_color(tier)
-			mm_instance.multimesh.set_instance_color(i, tier_color)
 
 
 func _on_arena_loaded(arena_bounds: Rect2) -> void:
@@ -635,33 +522,6 @@ func _get_visible_world_rect() -> Rect2:
 func _is_enemy_visible(enemy_pos: Vector2, visible_rect: Rect2) -> bool:
 	return visible_rect.has_point(enemy_pos)
 
-func _get_enemy_color_for_type(type_id: String) -> Color:
-	# Fallback colors based on type_id
-	match type_id:
-		"knight_swarm":
-			return Color(1.0, 0.0, 0.0, 1.0)  # Red
-		"knight_regular":
-			return Color(0.0, 1.0, 0.0, 1.0)  # Green
-		"knight_elite":
-			return Color(0.0, 0.0, 1.0, 1.0)  # Blue
-		"knight_boss":
-			return Color(1.0, 0.0, 1.0, 1.0)  # Magenta
-		_:
-			return Color(1.0, 0.0, 0.0, 1.0)  # Default red
-
-func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
-	# Distinct colors for each tier for visual debugging - more saturated for better visibility
-	match tier:
-		EnemyRenderTier_Type.Tier.SWARM:
-			return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red
-		EnemyRenderTier_Type.Tier.REGULAR:
-			return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan
-		EnemyRenderTier_Type.Tier.ELITE:
-			return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta
-		EnemyRenderTier_Type.Tier.BOSS:
-			return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange
-		_:
-			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
 func _spawn_single_boss_fallback() -> void:
 	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
@@ -783,10 +643,10 @@ func _spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
-	if ability_system:
-		ability_system.projectiles_updated.disconnect(_update_projectile_multimesh)
-	if wave_director:
-		wave_director.enemies_updated.disconnect(_update_enemy_multimesh)
+	if ability_system and multimesh_manager:
+		ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
+	if wave_director and multimesh_manager:
+		wave_director.enemies_updated.disconnect(multimesh_manager.update_enemies)
 	if arena_system:
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
