@@ -142,6 +142,7 @@ func _is_pure_resource_import(line: String) -> bool:
 	var allowed_resources := [
 		"AnimationConfig",
 		"ArenaConfig", 
+		"BossSpawnConfig",
 		"RadarConfigResource",
 		"LogConfigResource",
 		"XPCurvesResource",

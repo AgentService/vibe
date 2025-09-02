@@ -14,6 +14,7 @@ const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
+const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -90,6 +91,16 @@ var enemy_hit_feedback: EnemyMultiMeshHitFeedback
 		boss_flash_intensity = value
 		if boss_hit_feedback:
 			boss_hit_feedback.flash_intensity_override = value
+
+@export_group("Boss Spawn Configuration")
+@export var boss_spawn_configs: Array[BossSpawnConfig] = []: ## Configurable boss spawn positions and settings
+	set(value):
+		boss_spawn_configs = value
+		notify_property_list_changed()
+
+@export var enable_debug_boss_spawning: bool = true: ## Enable debug boss spawning (B key)
+	set(value):
+		enable_debug_boss_spawning = value
 
 var boss_hit_feedback: BossHitFeedback
 
@@ -691,14 +702,39 @@ func _spawn_stress_test_enemies() -> void:
 	Logger.warn("Stress test disabled - legacy spawn method removed with V2 system migration", "performance")
 
 func _spawn_v2_boss_test() -> void:
+	# Check if debug boss spawning is enabled
+	if not enable_debug_boss_spawning:
+		Logger.info("Debug boss spawning is disabled in Arena configuration", "debug")
+		return
+		
 	# Check if V2 system is enabled
 	if not BalanceDB.use_enemy_v2_system:
 		Logger.warn("V2 enemy system is disabled - cannot spawn V2 boss", "debug")
 		Logger.info("Enable V2 system in WavesBalance.tres to use V2 bosses", "debug")
 		return
 	
+	# Use configured boss spawns if available, otherwise fallback to hardcoded
+	if boss_spawn_configs.is_empty():
+		Logger.info("No boss spawn configs found, using hardcoded fallback", "debug")
+		_spawn_single_boss_fallback()
+		return
+	
+	# Spawn all enabled boss configurations
 	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
-	var spawn_pos: Vector2 = player_pos + Vector2(150, 150)  # Spawn near player
+	var arena_center: Vector2 = Vector2.ZERO
+	
+	var spawned_count = 0
+	for config in boss_spawn_configs:
+		if config.enabled:
+			var spawn_pos = config.calculate_spawn_position(player_pos, arena_center)
+			_spawn_configured_boss(config, spawn_pos)
+			spawned_count += 1
+	
+	Logger.info("Spawned " + str(spawned_count) + " configured bosses", "debug")
+
+func _spawn_single_boss_fallback() -> void:
+	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
+	var spawn_pos: Vector2 = player_pos + Vector2(150, 150)  # Legacy hardcoded position
 	
 	Logger.info("=== LICH SPAWN DEBUG START ===", "debug")
 	Logger.info("1. V2 system enabled ✓", "debug")
@@ -761,6 +797,58 @@ func _spawn_v2_boss_test() -> void:
 	else:
 		Logger.warn("WaveDirector missing or doesn't have _spawn_from_config_v2 method", "debug")
 	Logger.info("=== LICH SPAWN DEBUG END - SUCCESS! ===", "debug")
+
+func _spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
+	Logger.info("=== CONFIGURED BOSS SPAWN START ===", "debug")
+	Logger.info("Boss ID: " + config.boss_id, "debug")
+	Logger.info("Config: " + config.get_description(), "debug")
+	Logger.info("Spawn position: " + str(spawn_pos), "debug")
+	
+	# Direct V2 boss spawning using configuration
+	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	# Create boss spawn context
+	var spawn_context := {
+		"run_id": RunManager.run_seed,
+		"wave_index": 999,
+		"spawn_index": 0,
+		"position": spawn_pos,
+		"context_tags": ["boss", "configured_spawn"]
+	}
+	
+	# Generate boss config from template
+	Logger.info("Generating boss config from template: " + config.boss_id, "debug")
+	var boss_config = EnemyFactory.spawn_from_template_id(config.boss_id, spawn_context)
+	if not boss_config:
+		Logger.error("Failed to generate boss config for: " + config.boss_id, "debug")
+		return
+	Logger.info("Boss config generated successfully", "debug")
+	
+	# Apply boss scaling
+	var original_health = boss_config.health
+	var original_damage = boss_config.damage
+	boss_config.health *= 5.0  # 5x stronger
+	boss_config.damage *= 2.0  # 2x damage
+	boss_config.size_scale *= 1.5  # Larger
+	Logger.info("Scaled - Health: " + str(original_health) + " → " + str(boss_config.health), "debug")
+	Logger.info("Scaled - Damage: " + str(original_damage) + " → " + str(boss_config.damage), "debug")
+	
+	# Spawn using existing V2 system
+	if not wave_director:
+		Logger.error("WaveDirector is null!", "debug")
+		return
+	if not wave_director.has_method("_spawn_from_config_v2"):
+		Logger.error("WaveDirector missing _spawn_from_config_v2 method", "debug")
+		return
+	
+	# Convert to legacy type and spawn
+	var legacy_type := boss_config.to_enemy_type()
+	legacy_type.is_special_boss = true
+	legacy_type.display_name = config.boss_id.capitalize() + " Boss"
+	
+	Logger.info("Spawning via WaveDirector...", "debug")
+	wave_director._spawn_from_config_v2(legacy_type, boss_config)
+	Logger.info("=== CONFIGURED BOSS SPAWN COMPLETE ===", "debug")
 
 func _test_boss_damage() -> void:
 	Logger.info("=== BOSS DAMAGE TEST START ===", "debug")
