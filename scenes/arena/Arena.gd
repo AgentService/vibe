@@ -13,6 +13,7 @@ const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
 const ArenaUIManager := preload("res://scripts/systems/ArenaUIManager.gd")
+const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSystem.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -25,34 +26,9 @@ var ability_system: AbilitySystem
 var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
+var enemy_animation_system: EnemyAnimationSystem
 
 
-# ANIMATION CONFIGS
-var swarm_animation_config: AnimationConfig
-var regular_animation_config: AnimationConfig
-var elite_animation_config: AnimationConfig
-var boss_animation_config: AnimationConfig
-
-# ANIMATION RENDERING STATE
-var swarm_run_textures: Array[ImageTexture] = []
-var swarm_current_frame: int = 0
-var swarm_frame_timer: float = 0.0
-var swarm_frame_duration: float = 0.12
-
-var regular_run_textures: Array[ImageTexture] = []
-var regular_current_frame: int = 0
-var regular_frame_timer: float = 0.0
-var regular_frame_duration: float = 0.1
-
-var elite_run_textures: Array[ImageTexture] = []
-var elite_current_frame: int = 0
-var elite_frame_timer: float = 0.0
-var elite_frame_duration: float = 0.1
-
-var boss_run_textures: Array[ImageTexture] = []
-var boss_current_frame: int = 0
-var boss_frame_timer: float = 0.0
-var boss_frame_duration: float = 0.1
 var wave_director: WaveDirector
 var damage_system: DamageSystem
 var arena_system: ArenaSystem
@@ -183,11 +159,8 @@ func _ready() -> void:
 	
 	# Setup MultiMesh instances
 	_setup_projectile_multimesh()
-	_load_swarm_animations()  # Load .tres animations for SWARM tier
-	_load_regular_animations()  # Load .tres animations for REGULAR tier
-	_load_elite_animations()    # Load .tres animations for ELITE tier
-	_load_boss_animations()     # Load .tres animations for BOSS tier
 	_setup_tier_multimeshes()
+	_setup_enemy_animation_system()
 	_setup_enemy_transforms()
 	
 	# Setup hit feedback system with MultiMesh references
@@ -256,13 +229,7 @@ func _setup_tier_multimeshes() -> void:
 	swarm_multimesh.mesh = swarm_mesh
 	
 	
-	# Use .tres-loaded textures for SWARM tier
-	if not swarm_run_textures.is_empty():
-		mm_enemies_swarm.texture = swarm_run_textures[0]
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("SWARM tier animation loaded (" + str(swarm_run_textures.size()) + " frames)", "enemies")
-	else:
-		Logger.error("SWARM tier .tres animation failed to load", "enemies")
+	# Texture will be set by EnemyAnimationSystem
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
@@ -274,13 +241,7 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	# Use .tres-loaded textures for REGULAR tier
-	if not regular_run_textures.is_empty():
-		mm_enemies_regular.texture = regular_run_textures[0]
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("REGULAR tier animation loaded (" + str(regular_run_textures.size()) + " frames)", "enemies")
-	else:
-		Logger.error("REGULAR tier .tres animation failed to load", "enemies")
+	# Texture will be set by EnemyAnimationSystem
 	mm_enemies_regular.multimesh = regular_multimesh
 	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
@@ -292,13 +253,7 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	# Use .tres-loaded textures for ELITE tier
-	if not elite_run_textures.is_empty():
-		mm_enemies_elite.texture = elite_run_textures[0]
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("ELITE tier animation loaded (" + str(elite_run_textures.size()) + " frames)", "enemies")
-	else:
-		Logger.error("ELITE tier .tres animation failed to load", "enemies")
+	# Texture will be set by EnemyAnimationSystem
 	mm_enemies_elite.multimesh = elite_multimesh
 	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
@@ -310,17 +265,25 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	# Use .tres-loaded textures for BOSS tier
-	if not boss_run_textures.is_empty():
-		mm_enemies_boss.texture = boss_run_textures[0]
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("BOSS tier animation loaded (" + str(boss_run_textures.size()) + " frames)", "enemies")
-	else:
-		Logger.error("BOSS tier .tres animation failed to load", "enemies")
+	# Texture will be set by EnemyAnimationSystem
 	mm_enemies_boss.multimesh = boss_multimesh
 	mm_enemies_boss.z_index = 0  # Gameplay entities layer
 	
 	Logger.debug("Tier MultiMesh instances initialized", "enemies")
+
+func _setup_enemy_animation_system() -> void:
+	enemy_animation_system = EnemyAnimationSystem.new()
+	add_child(enemy_animation_system)
+	
+	var multimesh_refs = {
+		"swarm": mm_enemies_swarm,
+		"regular": mm_enemies_regular,
+		"elite": mm_enemies_elite,
+		"boss": mm_enemies_boss
+	}
+	
+	enemy_animation_system.setup(multimesh_refs)
+	Logger.info("EnemyAnimationSystem initialized", "animations")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -336,7 +299,9 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		_handle_debug_spawning(delta)
 		_handle_auto_attack()
-		_animate_enemy_frames(delta)
+		# Animation handled by dedicated system
+		if enemy_animation_system:
+			enemy_animation_system.animate_frames(delta)
 	
 
 func _input(event: InputEvent) -> void:
@@ -698,9 +663,6 @@ func _get_tier_debug_color(tier: EnemyRenderTier_Type.Tier) -> Color:
 		_:
 			return Color(1.0, 1.0, 1.0, 1.0)  # White fallback
 
-# Debug methods moved to DebugController system - Phase 3 Arena Refactoring
-
-
 func _spawn_single_boss_fallback() -> void:
 	var player_pos: Vector2 = player.global_position if player else Vector2.ZERO
 	var spawn_pos: Vector2 = player_pos + Vector2(150, 150)  # Legacy hardcoded position
@@ -819,16 +781,6 @@ func _spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void
 	wave_director._spawn_from_config_v2(legacy_type, boss_config)
 	Logger.info("=== CONFIGURED BOSS SPAWN COMPLETE ===", "debug")
 
-# _test_boss_damage moved to DebugController
-
-
-# All debug methods moved to DebugController - Phase 3 cleanup
-
-
-
-# Debug helper methods moved to DebugController - Phase 3 cleanup
-
-
 func _exit_tree() -> void:
 	# Cleanup signal connections
 	if ability_system:
@@ -838,228 +790,3 @@ func _exit_tree() -> void:
 	if arena_system:
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
-
-func _animate_enemy_frames(delta: float) -> void:
-	# Animate each tier with .tres-based animation
-	_animate_swarm_tier(delta)
-	_animate_regular_tier(delta)
-	_animate_elite_tier(delta)
-	_animate_boss_tier(delta)
-
-func _animate_swarm_tier(delta: float) -> void:
-	# Only animate if we have .tres-loaded swarm textures
-	if swarm_run_textures.is_empty():
-		return
-	
-	swarm_frame_timer += delta
-	if swarm_frame_timer >= swarm_frame_duration:
-		swarm_frame_timer = 0.0
-		swarm_current_frame = (swarm_current_frame + 1) % swarm_run_textures.size()
-		
-		# Update SWARM tier texture
-		if mm_enemies_swarm and mm_enemies_swarm.multimesh and mm_enemies_swarm.multimesh.instance_count > 0:
-			mm_enemies_swarm.texture = swarm_run_textures[swarm_current_frame]
-
-func _animate_regular_tier(delta: float) -> void:
-	if regular_run_textures.is_empty():
-		return
-	
-	regular_frame_timer += delta
-	if regular_frame_timer >= regular_frame_duration:
-		regular_frame_timer = 0.0
-		regular_current_frame = (regular_current_frame + 1) % regular_run_textures.size()
-		
-		# Update REGULAR tier texture
-		if mm_enemies_regular and mm_enemies_regular.multimesh and mm_enemies_regular.multimesh.instance_count > 0:
-			mm_enemies_regular.texture = regular_run_textures[regular_current_frame]
-
-func _animate_elite_tier(delta: float) -> void:
-	if elite_run_textures.is_empty():
-		return
-	
-	elite_frame_timer += delta
-	if elite_frame_timer >= elite_frame_duration:
-		elite_frame_timer = 0.0
-		elite_current_frame = (elite_current_frame + 1) % elite_run_textures.size()
-		
-		# Update ELITE tier texture
-		if mm_enemies_elite and mm_enemies_elite.multimesh and mm_enemies_elite.multimesh.instance_count > 0:
-			mm_enemies_elite.texture = elite_run_textures[elite_current_frame]
-
-func _animate_boss_tier(delta: float) -> void:
-	if boss_run_textures.is_empty():
-		return
-	
-	boss_frame_timer += delta
-	if boss_frame_timer >= boss_frame_duration:
-		boss_frame_timer = 0.0
-		boss_current_frame = (boss_current_frame + 1) % boss_run_textures.size()
-		
-		# Update BOSS tier texture
-		if mm_enemies_boss and mm_enemies_boss.multimesh and mm_enemies_boss.multimesh.instance_count > 0:
-			mm_enemies_boss.texture = boss_run_textures[boss_current_frame]
-
-func _load_swarm_animations() -> void:
-	var resource_path := "res://data/animations/swarm_enemy_animations.tres"
-	swarm_animation_config = load(resource_path) as AnimationConfig
-	if swarm_animation_config == null:
-		Logger.warn("Failed to load swarm animation config from: " + resource_path, "enemies")
-		return
-	
-	Logger.debug("Loaded swarm animation config", "enemies")
-	_create_swarm_textures()
-
-func _create_swarm_textures() -> void:
-	if swarm_animation_config == null:
-		Logger.warn("No swarm animation config available", "enemies")
-		return
-	
-	var knight_full := swarm_animation_config.sprite_sheet
-	if knight_full == null:
-		Logger.warn("Failed to load swarm sprite sheet", "enemies")
-		return
-	
-	var knight_image := knight_full.get_image()
-	var frame_width: int = swarm_animation_config.frame_size.x
-	var frame_height: int = swarm_animation_config.frame_size.y
-	var columns: int = swarm_animation_config.grid_columns
-	
-	# Load run animation frames from .tres
-	var run_anim: Dictionary = swarm_animation_config.animations.run
-	swarm_frame_duration = run_anim.duration
-	
-	swarm_run_textures.clear()
-	for frame_idx in run_anim.frames:
-		var col: int = int(frame_idx) % columns
-		var row: int = int(frame_idx) / columns
-		
-		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
-		var frame_texture := ImageTexture.create_from_image(frame_image)
-		swarm_run_textures.append(frame_texture)
-	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(swarm_run_textures.size()) + " swarm textures", "enemies")
-
-func _load_regular_animations() -> void:
-	var resource_path := "res://data/animations/regular_enemy_animations.tres"
-	regular_animation_config = load(resource_path) as AnimationConfig
-	if regular_animation_config == null:
-		Logger.warn("Failed to load regular animation config from: " + resource_path, "enemies")
-		return
-	
-	Logger.debug("Loaded regular animation config", "enemies")
-	_create_regular_textures()
-
-func _create_regular_textures() -> void:
-	if regular_animation_config == null:
-		Logger.warn("No regular animation config available", "enemies")
-		return
-	
-	var knight_full := regular_animation_config.sprite_sheet
-	if knight_full == null:
-		Logger.warn("Failed to load regular sprite sheet", "enemies")
-		return
-	
-	var knight_image := knight_full.get_image()
-	var frame_width: int = regular_animation_config.frame_size.x
-	var frame_height: int = regular_animation_config.frame_size.y
-	var columns: int = regular_animation_config.grid_columns
-	
-	var run_anim: Dictionary = regular_animation_config.animations.run
-	regular_frame_duration = run_anim.duration
-	
-	regular_run_textures.clear()
-	for frame_idx in run_anim.frames:
-		var col: int = int(frame_idx) % columns
-		var row: int = int(frame_idx) / columns
-		
-		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
-		var frame_texture := ImageTexture.create_from_image(frame_image)
-		regular_run_textures.append(frame_texture)
-	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(regular_run_textures.size()) + " regular textures", "enemies")
-
-func _load_elite_animations() -> void:
-	var resource_path := "res://data/animations/elite_enemy_animations.tres"
-	elite_animation_config = load(resource_path) as AnimationConfig
-	if elite_animation_config == null:
-		Logger.warn("Failed to load elite animation config from: " + resource_path, "enemies")
-		return
-	
-	Logger.debug("Loaded elite animation config", "enemies")
-	_create_elite_textures()
-
-func _create_elite_textures() -> void:
-	if elite_animation_config == null:
-		Logger.warn("No elite animation config available", "enemies")
-		return
-	
-	var knight_full := elite_animation_config.sprite_sheet
-	if knight_full == null:
-		Logger.warn("Failed to load elite sprite sheet", "enemies")
-		return
-	
-	var knight_image := knight_full.get_image()
-	var frame_width: int = elite_animation_config.frame_size.x
-	var frame_height: int = elite_animation_config.frame_size.y
-	var columns: int = elite_animation_config.grid_columns
-	
-	var run_anim: Dictionary = elite_animation_config.animations.run
-	elite_frame_duration = run_anim.duration
-	
-	elite_run_textures.clear()
-	for frame_idx in run_anim.frames:
-		var col: int = int(frame_idx) % columns
-		var row: int = int(frame_idx) / columns
-		
-		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
-		var frame_texture := ImageTexture.create_from_image(frame_image)
-		elite_run_textures.append(frame_texture)
-	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(elite_run_textures.size()) + " elite textures", "enemies")
-
-func _load_boss_animations() -> void:
-	var resource_path := "res://data/animations/boss_enemy_animations.tres"
-	boss_animation_config = load(resource_path) as AnimationConfig
-	if boss_animation_config == null:
-		Logger.warn("Failed to load boss animation config from: " + resource_path, "enemies")
-		return
-	
-	Logger.debug("Loaded boss animation config", "enemies")
-	_create_boss_textures()
-
-func _create_boss_textures() -> void:
-	if boss_animation_config == null:
-		Logger.warn("No boss animation config available", "enemies")
-		return
-	
-	var knight_full := boss_animation_config.sprite_sheet
-	if knight_full == null:
-		Logger.warn("Failed to load boss sprite sheet", "enemies")
-		return
-	
-	var knight_image := knight_full.get_image()
-	var frame_width: int = boss_animation_config.frame_size.x
-	var frame_height: int = boss_animation_config.frame_size.y
-	var columns: int = boss_animation_config.grid_columns
-	
-	var run_anim: Dictionary = boss_animation_config.animations.run
-	boss_frame_duration = run_anim.duration
-	
-	boss_run_textures.clear()
-	for frame_idx in run_anim.frames:
-		var col: int = int(frame_idx) % columns
-		var row: int = int(frame_idx) / columns
-		
-		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i(0, 0))
-		var frame_texture := ImageTexture.create_from_image(frame_image)
-		boss_run_textures.append(frame_texture)
-	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Created " + str(boss_run_textures.size()) + " boss textures", "enemies")
