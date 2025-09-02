@@ -479,10 +479,7 @@ func setup_debug_controller() -> void:
 	
 	# Provide system references for debug actions
 	var debug_dependencies = {
-		"wave_director": wave_director,
-		"card_system": card_system,
-		"ability_system": ability_system,
-		"camera_system": camera_system
+		"card_system": card_system
 	}
 	
 	debug_controller.setup(self, debug_dependencies)
