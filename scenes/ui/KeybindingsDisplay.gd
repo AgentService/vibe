@@ -63,12 +63,7 @@ func _populate_bindings() -> void:
 	_add_binding_row(grid, "Attack:", "Left Click")
 	
 	# System controls
-	_add_binding_row(grid, "Pause:", "F10")
-	_add_binding_row(grid, "FPS:", "F12")
-	_add_binding_row(grid, "Theme:", "T")
-	
-	# Arena switching
-	_add_binding_row(grid, "Arena:", "1-5")
+	_add_binding_row(grid, "Pause:", "Escape")
 	
 	# Debug/Cheat controls (only show in debug builds or when CheatSystem is available)
 	if CheatSystem:
@@ -91,6 +86,7 @@ func _populate_bindings() -> void:
 		
 		_add_binding_row(debug_grid, "Console:", "F1")
 		_add_binding_row(debug_grid, "Cards:", "C")
+		_add_binding_row(debug_grid, "Performance:", "F12")
 		_add_binding_row(debug_grid, "God Mode:", "Ctrl+1")
 		_add_binding_row(debug_grid, "Stop Spawn:", "Ctrl+2")
 		_add_binding_row(debug_grid, "Silent Pause:", "F10")

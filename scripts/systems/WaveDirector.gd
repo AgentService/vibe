@@ -388,11 +388,12 @@ func _update_enemies(dt: float) -> void:
 			var old_pos = enemy.pos
 			enemy.pos += enemy.vel * dt
 			
-			# DAMAGE V3: Update EntityTracker position
+			# DAMAGE V4: Update EntityTracker and DamageService positions
 			var enemy_index = _find_enemy_index(enemy)
 			if enemy_index != -1:
 				var entity_id = "enemy_" + str(enemy_index)
 				EntityTracker.update_entity_position(entity_id, enemy.pos)
+				DamageService.update_entity_position(entity_id, enemy.pos)
 		
 		# Kill enemy if it reaches target or goes out of bounds - DISABLED
 		# if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):

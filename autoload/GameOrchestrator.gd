@@ -186,3 +186,8 @@ func inject_systems_to_arena(arena) -> void:
 	if damage_system and arena.has_method("set_damage_system"):
 		arena.set_damage_system(damage_system)
 		Logger.debug("DamageSystem injected to Arena", "orchestrator")
+	
+	# Phase F: Setup DebugController (after all systems are injected)
+	if arena.has_method("setup_debug_controller"):
+		arena.setup_debug_controller()
+		Logger.debug("DebugController setup complete", "orchestrator")
