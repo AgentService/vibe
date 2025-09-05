@@ -11,7 +11,7 @@ signal entity_selected(entity_id: String)
 signal entity_inspected(entity_data: Dictionary)
 signal spawning_requested(enemy_type: String, position: Vector2, count: int)
 
-var debug_enabled: bool = false
+var debug_enabled: bool = true
 var selected_entity_id: String = ""
 var debug_ui: Control
 
@@ -23,7 +23,11 @@ var arena_ui_manager: ArenaUIManager
 func _ready() -> void:
 	instance = self
 	process_mode = Node.PROCESS_MODE_ALWAYS  # Work during pause
-	Logger.info("DebugManager initialized", "debug")
+	Logger.info("DebugManager initialized with debug mode enabled by default", "debug")
+	
+	# Since debug is enabled by default, we need to call _enter_debug_mode during initialization
+	# Wait a frame to ensure all systems are ready
+	call_deferred("_initialize_debug_mode")
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed:
@@ -135,7 +139,7 @@ func register_arena_ui_manager(aum: ArenaUIManager) -> void:
 
 func register_debug_ui(ui: Control) -> void:
 	debug_ui = ui
-	debug_ui.visible = false  # Hidden by default
+	debug_ui.visible = true  # Visible by default for testing
 	Logger.debug("Debug UI registered with DebugManager", "debug")
 
 # Entity selection methods
@@ -165,11 +169,10 @@ func spawn_enemy_at_position(enemy_type: String, position: Vector2, count: int =
 	emit_signal("spawning_requested", enemy_type, position, count)
 
 func spawn_enemy_at_cursor(enemy_type: String, count: int = 1) -> void:
-	var mouse_pos := get_viewport().get_mouse_position()
-	# Convert screen position to world position
+	# Get proper world position from camera
 	var camera := get_viewport().get_camera_2d()
 	if camera:
-		var world_pos := camera.to_global(mouse_pos - get_viewport().get_visible_rect().size / 2)
+		var world_pos := camera.get_global_mouse_position()
 		spawn_enemy_at_position(enemy_type, world_pos, count)
 	else:
 		Logger.warn("No camera found for cursor spawn", "debug")
@@ -322,3 +325,11 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
 		else:
 			Logger.error("Failed to generate enemy config for: %s" % enemy_type, "debug")
+
+func _initialize_debug_mode() -> void:
+	# Called deferred from _ready to ensure systems are initialized
+	if debug_enabled:
+		Logger.info("Initializing debug mode on startup", "debug")
+		_enter_debug_mode()
+		# Emit the debug mode toggled signal to ensure all systems are notified
+		emit_signal("debug_mode_toggled", true)

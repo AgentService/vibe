@@ -18,8 +18,12 @@ extends Control
 
 var selected_count: int = 1
 var available_enemy_types: Array[String] = []
+var background_panel: PanelContainer
 
 func _ready() -> void:
+	# Create and setup background panel
+	_create_background_panel()
+	
 	# Connect button signals
 	spawn_at_cursor_btn.pressed.connect(_on_spawn_at_cursor_pressed)
 	spawn_at_player_btn.pressed.connect(_on_spawn_at_player_pressed)
@@ -43,7 +47,27 @@ func _ready() -> void:
 	# Set initial count selection
 	_on_count_selected(1)
 	
+	# Set initial entity inspector text
+	entity_info.text = "[b]Entity Inspector[/b]\n\n[color=#FFD700]Ctrl+Click[/color] on an entity to inspect"
+	_set_entity_buttons_enabled(false)
+	
+	# Update button text to show shortcuts
+	spawn_at_cursor_btn.text = "Spawn at Cursor (B)"
+	
 	Logger.debug("DebugPanel initialized", "debug")
+
+func _input(event: InputEvent) -> void:
+	# Only handle input if debug panel is visible and debug mode is active
+	if not visible or not DebugManager or not DebugManager.is_debug_mode_active():
+		return
+		
+	if event is InputEventKey and event.pressed:
+		var key_event := event as InputEventKey
+		
+		# B key: Spawn at cursor (same as clicking "Spawn at Cursor" button)
+		if key_event.keycode == KEY_B:
+			_on_spawn_at_cursor_pressed()
+			get_viewport().set_input_as_handled()
 
 func _populate_enemy_dropdown() -> void:
 	# Clear existing items
@@ -115,7 +139,7 @@ func _get_selected_enemy_type() -> String:
 
 func _on_entity_inspected(entity_data: Dictionary) -> void:
 	if entity_data.is_empty():
-		entity_info.text = "[b]Entity Inspector[/b]\n\n[color=yellow]Ctrl+Click[/color] on an entity to inspect"
+		entity_info.text = "[b]Entity Inspector[/b]\n\n[color=#FFD700]Ctrl+Click[/color] on an entity to inspect"
 		_set_entity_buttons_enabled(false)
 		return
 	
@@ -160,3 +184,27 @@ func _on_damage_pressed() -> void:
 	
 	if DebugManager:
 		DebugManager.damage_entity(selected_entity, 10)
+
+func _create_background_panel() -> void:
+	# Create background PanelContainer
+	background_panel = PanelContainer.new()
+	background_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	
+	# Create and apply custom StyleBoxFlat
+	var style := StyleBoxFlat.new()
+	style.bg_color = Color(0, 0, 0, 0.95)  # Semi-transparent black
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.border_color = Color(0.3, 0.3, 0.3, 1.0)  # Dark gray border
+	style.corner_radius_top_left = 8
+	style.corner_radius_top_right = 8
+	style.corner_radius_bottom_left = 8
+	style.corner_radius_bottom_right = 8
+	
+	background_panel.add_theme_stylebox_override("panel", style)
+	
+	# Add background as child (behind other content)
+	add_child(background_panel)
+	move_child(background_panel, 0)  # Move to back

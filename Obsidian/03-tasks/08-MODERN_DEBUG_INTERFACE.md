@@ -1,7 +1,7 @@
 # Modern Debug Interface System
 
 **Priority:** High  
-**Status:** Not Started  
+**Status:** In Progress - Phase 2 Complete  
 **Estimated Effort:** 3-4 days  
 **Dependencies:** EnemyManager, BossFactory, V2AbilityProxy, TicketSpawnManager  
 
@@ -150,26 +150,30 @@ func trigger_ability(entity_data: Dictionary, ability_name: String):
 
 ## Implementation Tasks
 
-### Phase 1: Core Debug Framework
-- [ ] Create DebugManager autoload system
-- [ ] Implement F12 toggle functionality
-- [ ] Add debug mode state management
-- [ ] Create basic debug UI scene structure
-- [ ] Implement debug UI visibility controls
+### Phase 1: Core Debug Framework ✅ COMPLETED
+- [x] Create DebugManager autoload system
+- [x] Implement F12 toggle functionality  
+- [x] Add debug mode state management
+- [x] Create basic debug UI scene structure
+- [x] Implement debug UI visibility controls
 
-### Phase 2: Entity Management
-- [ ] Build EntitySelector system
-- [ ] Add click-to-select entity functionality
-- [ ] Create entity data inspection system
-- [ ] Implement visual selection indicators
-- [ ] Add entity manipulation controls (kill, heal, damage)
+### Phase 2: Entity Management ✅ COMPLETED
+- [x] Build EntitySelector system with proper MultiMesh support
+- [x] Add Ctrl+Click entity selection (fixed conflict with auto-attack)
+- [x] Create entity data inspection system via EntityTracker
+- [x] Implement visual selection indicators (diamond + brackets)
+- [x] Fix visual positioning for MultiMesh entities (28px offset)
+- [x] Add entity manipulation controls (kill, heal, damage)
+- [x] Fix entity inspector initialization and display
+- [x] Remove debug positioning spam logs
 
-### Phase 3: Spawning System
-- [ ] Create enemy type dropdown with ContentDB integration
-- [ ] Implement spawn-at-cursor functionality
-- [ ] Add spawn-at-player option
-- [ ] Create batch spawning controls (1, 5, 10, 100)
-- [ ] Add spawn position validation
+### Phase 3: Spawning System ✅ COMPLETED
+- [x] Create enemy type dropdown (Ancient Lich, Dragon Lord, Goblin only)
+- [x] Implement spawn-at-cursor functionality with proper world positioning
+- [x] Add spawn-at-player option  
+- [x] Create batch spawning controls (1, 5, 10, 100)
+- [x] Integrate with WaveDirector and BossSpawnManager
+- [x] Add B key shortcut for spawn-at-cursor with UI hint
 
 ### Phase 4: Ability Testing
 - [ ] Build DebugAbilityTrigger system
@@ -191,6 +195,36 @@ func trigger_ability(entity_data: Dictionary, ability_name: String):
 - [ ] Implement debug command console
 - [ ] Create automated test scenario runner
 - [ ] Add debug session recording
+
+## 🚀 CURRENT PROGRESS & NEXT STEPS
+
+### ✅ **Completed (Phase 1-3)**
+- **DebugManager Autoload**: F12 toggle, debug mode state management, starts enabled by default
+- **Entity Selection**: Ctrl+Click selection with visual feedback (diamond/brackets)
+- **MultiMesh Support**: Fixed positioning for pooled enemies (goblins) with 28px offset
+- **Enemy Spawning**: Dropdown with Ancient Lich, Dragon Lord, Goblin spawning
+- **Spawn Controls**: At-cursor, at-player, count buttons (1/5/10/100) working
+- **Entity Inspector**: Shows entity stats (HP, type, position) with proper initialization
+- **Entity Manipulation**: Kill Selected, Heal Full, Damage 10 buttons working
+- **B Key Shortcut**: Spawn at cursor with "(B)" hint in button text
+- **Cursor Positioning**: Fixed spawn-at-cursor to use proper world coordinates
+
+### ✅ **All Major Issues Resolved**
+- DebugPanel background implemented via code-based StyleBoxFlat
+- Entity inspector works immediately on startup (no F12 toggle required)
+- Removed spam debug logs from entity position tracking
+- Fixed EntitySelector initialization to work with debug-enabled-by-default
+
+### 🎯 **Ready for Next Phase: Ability Testing (Phase 4)**
+1. **Build DebugAbilityTrigger system** - Force-trigger enemy/boss abilities
+2. **Create ability UI buttons** - Add ability controls to entity inspector
+3. **Implement AbilityProxy integration** - Hook into existing ability system
+4. **Add ability cooldown display** - Show ability states in real-time
+
+### ⚡ **Implementation Notes**
+- **EntityTracker integration**: Use existing entity data access
+- **DamageService**: Hook into existing damage system for heal/damage
+- **Boss vs Enemy handling**: Different APIs (scene nodes vs pooled entities)
 
 ## Technical Requirements
 

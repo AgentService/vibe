@@ -27,12 +27,16 @@ func _ready() -> void:
 	# Connect to DebugManager signals
 	if DebugManager:
 		DebugManager.debug_mode_toggled.connect(_on_debug_mode_toggled)
+		# Check if debug mode is already active and sync our state
+		mouse_enabled = DebugManager.is_debug_mode_active()
+		if mouse_enabled:
+			Logger.debug("EntitySelector starting with debug mode already active", "debug")
 	
 	# Create selection and hover indicators
 	_create_selection_indicator()
 	_create_hover_indicator()
 	
-	Logger.debug("EntitySelector initialized", "debug")
+	Logger.debug("EntitySelector initialized with mouse_enabled: " + str(mouse_enabled), "debug")
 
 func _create_selection_indicator() -> void:
 	# Create a visual indicator for the selected entity
@@ -192,8 +196,7 @@ func _get_entity_at_position(world_pos: Vector2) -> String:
 			
 		var entity_pos: Vector2 = entity_data["pos"]
 		
-		# For debugging - log the position discrepancy
-		Logger.debug("Entity %s at pos %s, click at %s, distance: %.1f" % [entity_id, entity_pos, world_pos, world_pos.distance_to(entity_pos)], "debug")
+
 		
 		var distance := world_pos.distance_to(entity_pos)
 		
