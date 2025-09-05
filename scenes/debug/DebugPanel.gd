@@ -37,11 +37,8 @@ var inspected_entity_data: Dictionary = {}
 
 # Performance stats management
 var performance_update_timer: Timer
-# TODO: Re-enable when DebugOverlay class exists
-# var debug_overlay: DebugOverlay
-# var debug_system_controls: DebugSystemControls
-var debug_overlay  # Untyped fallback
-var debug_system_controls  # Untyped fallback
+var debug_overlay: DebugOverlay
+var debug_system_controls: DebugSystemControls
 
 # Cache to prevent memory leaks from string creation
 var last_stats_text: String = ""
@@ -522,15 +519,14 @@ func _setup_performance_timer() -> void:
 	
 	Logger.debug("Performance stats timer setup complete", "debug")
 
-func _find_debug_overlay(node: Node):  # Untyped return to avoid missing class error
-	# TODO: Re-enable type checking when DebugOverlay class exists
+func _find_debug_overlay(node: Node) -> DebugOverlay:
 	# Check if this node is the debug overlay
-	# if node is DebugOverlay:
-	#	return node as DebugOverlay
+	if node is DebugOverlay:
+		return node as DebugOverlay
 	
 	# Check by name as well
 	if node.name == "DebugOverlay" and node.has_method("get_performance_stats"):
-		return node  # Untyped return
+		return node as DebugOverlay
 	
 	# Search children recursively
 	for child in node.get_children():
@@ -540,15 +536,14 @@ func _find_debug_overlay(node: Node):  # Untyped return to avoid missing class e
 	
 	return null
 
-func _find_debug_system_controls(node: Node):  # Untyped return to avoid missing class error
-	# TODO: Re-enable type checking when DebugSystemControls class exists
+func _find_debug_system_controls(node: Node) -> DebugSystemControls:
 	# Check if this node is the debug system controls
-	# if node is DebugSystemControls:
-	#	return node as DebugSystemControls
+	if node is DebugSystemControls:
+		return node as DebugSystemControls
 	
 	# Check by name as well
 	if node.name == "DebugSystemControls" and node.has_method("set_ai_paused"):
-		return node  # Untyped return
+		return node as DebugSystemControls
 	
 	# Search children recursively
 	for child in node.get_children():

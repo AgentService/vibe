@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
-[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_lw0tx"]
+[ext_resource type="PackedScene" path="res://scenes/components/BossHealthBar.tscn" id="3_lw0tx"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_lw0tx"]
 atlas = ExtResource("2_215q3")
