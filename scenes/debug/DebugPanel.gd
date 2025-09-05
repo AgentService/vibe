@@ -37,8 +37,11 @@ var inspected_entity_data: Dictionary = {}
 
 # Performance stats management
 var performance_update_timer: Timer
-var debug_overlay
-var debug_system_controls
+# TODO: Re-enable when DebugOverlay class exists
+# var debug_overlay: DebugOverlay
+# var debug_system_controls: DebugSystemControls
+var debug_overlay  # Untyped fallback
+var debug_system_controls  # Untyped fallback
 
 # Cache to prevent memory leaks from string creation
 var last_stats_text: String = ""
@@ -519,10 +522,15 @@ func _setup_performance_timer() -> void:
 	
 	Logger.debug("Performance stats timer setup complete", "debug")
 
-func _find_debug_overlay(node: Node):
-	# Check by name and method since class doesn't exist
+func _find_debug_overlay(node: Node):  # Untyped return to avoid missing class error
+	# TODO: Re-enable type checking when DebugOverlay class exists
+	# Check if this node is the debug overlay
+	# if node is DebugOverlay:
+	#	return node as DebugOverlay
+	
+	# Check by name as well
 	if node.name == "DebugOverlay" and node.has_method("get_performance_stats"):
-		return node
+		return node  # Untyped return
 	
 	# Search children recursively
 	for child in node.get_children():
@@ -532,10 +540,15 @@ func _find_debug_overlay(node: Node):
 	
 	return null
 
-func _find_debug_system_controls(node: Node):
-	# Check by name and method since class doesn't exist
+func _find_debug_system_controls(node: Node):  # Untyped return to avoid missing class error
+	# TODO: Re-enable type checking when DebugSystemControls class exists
+	# Check if this node is the debug system controls
+	# if node is DebugSystemControls:
+	#	return node as DebugSystemControls
+	
+	# Check by name as well
 	if node.name == "DebugSystemControls" and node.has_method("set_ai_paused"):
-		return node
+		return node  # Untyped return
 	
 	# Search children recursively
 	for child in node.get_children():
