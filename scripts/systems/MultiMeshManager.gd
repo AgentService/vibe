@@ -118,13 +118,22 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 	# Group enemies by tier
 	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
 	
-	# Update each tier's MultiMesh
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
-	_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
+	# Update each tier's MultiMesh with safety checks
+	if is_instance_valid(mm_enemies_swarm):
+		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
+	if is_instance_valid(mm_enemies_regular):
+		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.REGULAR], mm_enemies_regular, Vector2(32, 32), EnemyRenderTier_Type.Tier.REGULAR) 
+	if is_instance_valid(mm_enemies_elite):
+		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.ELITE], mm_enemies_elite, Vector2(48, 48), EnemyRenderTier_Type.Tier.ELITE)
+	if is_instance_valid(mm_enemies_boss):
+		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
 
 func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
+	# Safety check: ensure mm_instance is valid and not freed
+	if not is_instance_valid(mm_instance):
+		Logger.warn("MultiMeshInstance2D is invalid/freed for tier %s" % tier, "enemies")
+		return
+	
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
 		mm_instance.multimesh.instance_count = count
