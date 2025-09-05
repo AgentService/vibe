@@ -60,3 +60,4 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 		player_attack_handler.handle_melee_attack(world_pos)
 	elif event.button_index == MOUSE_BUTTON_RIGHT and RunManager.stats.get("has_projectiles", false):
 		player_attack_handler.handle_projectile_attack(world_pos)
+
