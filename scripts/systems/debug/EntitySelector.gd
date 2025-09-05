@@ -228,17 +228,25 @@ func _set_hovered_entity(entity_id: String) -> void:
 # ============================================================================
 
 func _apply_sprite_effect(entity_id: String, effect_type: String) -> void:
+	Logger.debug("_apply_sprite_effect called: entity_id=%s, effect_type=%s" % [entity_id, effect_type], "debug")
+	
 	var entity_data := EntityTracker.get_entity(entity_id)
 	if not entity_data.has("type"):
+		Logger.debug("Entity data missing 'type' field for: %s" % entity_id, "debug")
 		return
 		
 	var entity_type: String = entity_data["type"]
+	Logger.debug("Entity type: %s" % entity_type, "debug")
 	
 	# Different approaches for different entity types
 	if _is_multimesh_entity(entity_type):
+		Logger.debug("Applying multimesh effect", "debug")
 		_apply_multimesh_sprite_effect(entity_id, effect_type)
 	elif _is_boss_entity(entity_type):
+		Logger.debug("Applying boss effect", "debug")
 		_apply_boss_sprite_effect(entity_id, effect_type)
+	else:
+		Logger.debug("Unknown entity type for sprite effects: %s" % entity_type, "debug")
 
 func _clear_sprite_effect(entity_id: String, effect_type: String) -> void:
 	var entity_data := EntityTracker.get_entity(entity_id)
@@ -271,13 +279,21 @@ func _clear_multimesh_sprite_effect(entity_id: String, effect_type: String) -> v
 
 func _apply_boss_sprite_effect(entity_id: String, effect_type: String) -> void:
 	# For boss entities, find the actual scene node and modify its sprite
+	Logger.debug("Searching for boss node with ID: %s" % entity_id, "debug")
+	
 	var boss_node := _find_boss_node_by_id(entity_id)
 	if not boss_node:
+		Logger.debug("Boss node not found for ID: %s" % entity_id, "debug")
 		return
 		
+	Logger.debug("Found boss node: %s" % boss_node.name, "debug")
+	
 	var sprite := _find_sprite_in_boss(boss_node)
 	if not sprite:
+		Logger.debug("Sprite not found in boss node: %s" % boss_node.name, "debug")
 		return
+	
+	Logger.debug("Found sprite: %s, applying %s effect" % [sprite.name, effect_type], "debug")
 	
 	# Apply effect based on type
 	match effect_type:
@@ -333,9 +349,20 @@ func _node_matches_boss_id(node: Node, target_id: String) -> bool:
 	if node.has_method("get_entity_id"):
 		return node.get_entity_id() == target_id
 	
+	# Check for boss types by name (AncientLich, DragonLord, etc.)
+	if node.name.contains("Lich") or node.name.contains("Dragon") or node.name.contains("Boss"):
+		# Verify position match as additional verification
+		var entity_data := EntityTracker.get_entity(target_id)
+		if entity_data.has("pos"):
+			var entity_pos: Vector2 = entity_data["pos"]
+			var node_pos: Vector2 = node.global_position
+			var distance := entity_pos.distance_to(node_pos)
+			# If positions are close (within 50 pixels), it's likely a match
+			if distance < 50.0:
+				return true
+	
 	# Check groups
 	if node.is_in_group("bosses"):
-		# Could check position match as additional verification
 		return true
 	
 	return false
