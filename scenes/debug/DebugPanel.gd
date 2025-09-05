@@ -15,10 +15,14 @@ extends Control
 @onready var kill_btn: Button = $MainContainer/InspectorSection/EntityActions/KillButton
 @onready var heal_btn: Button = $MainContainer/InspectorSection/EntityActions/HealButton
 @onready var damage_btn: Button = $MainContainer/InspectorSection/EntityActions/DamageButton
+@onready var abilities_label: Label = $MainContainer/InspectorSection/AbilitySection/AbilitiesLabel
+@onready var ability_buttons_container: VBoxContainer = $MainContainer/InspectorSection/AbilitySection/AbilityButtons
 
 var selected_count: int = 1
 var available_enemy_types: Array[String] = []
 var background_panel: PanelContainer
+var ability_buttons: Array[Button] = []
+var current_entity_abilities: Array[String] = []
 
 func _ready() -> void:
 	# Create and setup background panel
@@ -51,10 +55,21 @@ func _ready() -> void:
 	entity_info.text = "[b]Entity Inspector[/b]\n\n[color=#FFD700]Ctrl+Click[/color] on an entity to inspect"
 	_set_entity_buttons_enabled(false)
 	
+	# Hide abilities section initially
+	abilities_label.visible = false
+	ability_buttons_container.visible = false
+	
 	# Update button text to show shortcuts
 	spawn_at_cursor_btn.text = "Spawn at Cursor (B)"
 	
 	Logger.debug("DebugPanel initialized", "debug")
+	
+	# Start timer to update ability cooldowns periodically
+	var cooldown_timer := Timer.new()
+	cooldown_timer.wait_time = 0.1  # Update every 100ms for smooth countdown
+	cooldown_timer.timeout.connect(_update_ability_cooldowns)
+	cooldown_timer.autostart = true
+	add_child(cooldown_timer)
 
 func _input(event: InputEvent) -> void:
 	# Only handle input if debug panel is visible and debug mode is active
@@ -141,6 +156,7 @@ func _on_entity_inspected(entity_data: Dictionary) -> void:
 	if entity_data.is_empty():
 		entity_info.text = "[b]Entity Inspector[/b]\n\n[color=#FFD700]Ctrl+Click[/color] on an entity to inspect"
 		_set_entity_buttons_enabled(false)
+		_clear_ability_buttons()
 		return
 	
 	# Format entity information for display
@@ -152,6 +168,9 @@ func _on_entity_inspected(entity_data: Dictionary) -> void:
 	
 	entity_info.text = info_text
 	_set_entity_buttons_enabled(entity_data.get("alive", false))
+	
+	# Update ability buttons for the selected entity
+	_update_ability_buttons(entity_data.get("id", ""))
 
 func _set_entity_buttons_enabled(enabled: bool) -> void:
 	kill_btn.disabled = not enabled
@@ -184,6 +203,102 @@ func _on_damage_pressed() -> void:
 	
 	if DebugManager:
 		DebugManager.damage_entity(selected_entity, 10)
+
+# Ability button management functions
+func _update_ability_buttons(entity_id: String) -> void:
+	# Clear existing ability buttons
+	_clear_ability_buttons()
+	
+	if entity_id.is_empty():
+		return
+	
+	# Get available abilities for this entity
+	var abilities := DebugManager.get_entity_abilities(entity_id)
+	current_entity_abilities = abilities
+	
+	if abilities.is_empty():
+		# Hide abilities section if no abilities
+		abilities_label.visible = false
+		ability_buttons_container.visible = false
+		return
+	
+	# Show abilities section
+	abilities_label.visible = true
+	ability_buttons_container.visible = true
+	
+	# Create button for each ability
+	for ability_name in abilities:
+		var button := Button.new()
+		button.text = ability_name.capitalize()
+		button.pressed.connect(_on_ability_button_pressed.bind(entity_id, ability_name))
+		
+		# Set initial cooldown state
+		_update_ability_button_state(button, entity_id, ability_name)
+		
+		ability_buttons_container.add_child(button)
+		ability_buttons.append(button)
+	
+	Logger.debug("Created %d ability buttons for entity %s" % [abilities.size(), entity_id], "debug")
+
+func _clear_ability_buttons() -> void:
+	# Remove all existing ability buttons
+	for button in ability_buttons:
+		if button and is_instance_valid(button):
+			button.queue_free()
+	
+	ability_buttons.clear()
+	current_entity_abilities.clear()
+	
+	# Hide abilities section
+	abilities_label.visible = false
+	ability_buttons_container.visible = false
+
+func _on_ability_button_pressed(entity_id: String, ability_name: String) -> void:
+	Logger.info("Ability button pressed: %s on entity %s" % [ability_name, entity_id], "debug")
+	
+	# Trigger the ability via DebugManager
+	var success := DebugManager.trigger_entity_ability(entity_id, ability_name)
+	
+	if success:
+		Logger.info("Successfully triggered ability '%s' on entity '%s'" % [ability_name, entity_id], "debug")
+		# Update button states after triggering ability
+		_update_all_ability_buttons(entity_id)
+	else:
+		Logger.warn("Failed to trigger ability '%s' on entity '%s'" % [ability_name, entity_id], "debug")
+
+func _update_ability_button_state(button: Button, entity_id: String, ability_name: String) -> void:
+	var cooldown_info := DebugManager.get_ability_cooldown(entity_id, ability_name)
+	
+	if cooldown_info.get("ready", true):
+		# Ability is ready
+		button.text = ability_name.capitalize() + " (Ready)"
+		button.disabled = false
+		button.modulate = Color.WHITE
+	else:
+		# Ability on cooldown
+		var remaining: float = cooldown_info.get("cooldown_remaining", 0.0)
+		button.text = ability_name.capitalize() + " (%.1fs)" % remaining
+		button.disabled = true
+		button.modulate = Color.GRAY
+
+func _update_all_ability_buttons(entity_id: String) -> void:
+	# Update all ability buttons for the current entity
+	for i in range(ability_buttons.size()):
+		if i < current_entity_abilities.size():
+			var button := ability_buttons[i]
+			var ability_name := current_entity_abilities[i]
+			_update_ability_button_state(button, entity_id, ability_name)
+
+func _update_ability_cooldowns() -> void:
+	# Periodic update of ability cooldowns for the currently selected entity
+	if not visible or not DebugManager or not DebugManager.is_debug_mode_active():
+		return
+	
+	var selected_entity := DebugManager.get_selected_entity()
+	if selected_entity.is_empty() or ability_buttons.is_empty():
+		return
+	
+	_update_all_ability_buttons(selected_entity)
 
 func _create_background_panel() -> void:
 	# Create background PanelContainer

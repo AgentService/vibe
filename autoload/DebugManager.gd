@@ -19,10 +19,16 @@ var debug_ui: Control
 var wave_director: WaveDirector
 var boss_spawn_manager: BossSpawnManager
 var arena_ui_manager: ArenaUIManager
+var ability_trigger: DebugAbilityTrigger
 
 func _ready() -> void:
 	instance = self
 	process_mode = Node.PROCESS_MODE_ALWAYS  # Work during pause
+	
+	# Create and add DebugAbilityTrigger
+	ability_trigger = DebugAbilityTrigger.new()
+	add_child(ability_trigger)
+	
 	Logger.info("DebugManager initialized with debug mode enabled by default", "debug")
 	
 	# Since debug is enabled by default, we need to call _enter_debug_mode during initialization
@@ -325,6 +331,22 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
 		else:
 			Logger.error("Failed to generate enemy config for: %s" % enemy_type, "debug")
+
+# Ability triggering methods
+func get_entity_abilities(entity_id: String) -> Array[String]:
+	if not debug_enabled or not ability_trigger:
+		return []
+	return ability_trigger.get_entity_abilities(entity_id)
+
+func trigger_entity_ability(entity_id: String, ability_name: String) -> bool:
+	if not debug_enabled or not ability_trigger:
+		return false
+	return ability_trigger.trigger_ability(entity_id, ability_name)
+
+func get_ability_cooldown(entity_id: String, ability_name: String) -> Dictionary:
+	if not debug_enabled or not ability_trigger:
+		return {"ready": false, "cooldown_remaining": 0.0}
+	return ability_trigger.get_ability_cooldown(entity_id, ability_name)
 
 func _initialize_debug_mode() -> void:
 	# Called deferred from _ready to ensure systems are initialized

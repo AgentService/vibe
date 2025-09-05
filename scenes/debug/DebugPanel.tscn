@@ -98,3 +98,13 @@ text = "Heal Full"
 [node name="DamageButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
 layout_mode = 2
 text = "Damage 10"
+
+[node name="AbilitySection" type="VBoxContainer" parent="MainContainer/InspectorSection"]
+layout_mode = 2
+
+[node name="AbilitiesLabel" type="Label" parent="MainContainer/InspectorSection/AbilitySection"]
+layout_mode = 2
+text = "Abilities:"
+
+[node name="AbilityButtons" type="VBoxContainer" parent="MainContainer/InspectorSection/AbilitySection"]
+layout_mode = 2
