@@ -1,0 +1,95 @@
+[gd_scene load_steps=2 format=3 uid="uid://d34gq241ftrpa"]
+
+[ext_resource type="Script" uid="uid://tfk56luxvpo" path="res://scenes/debug/DebugPanel.gd" id="1_ruq43"]
+
+[node name="DebugPanel" type="Control"]
+custom_minimum_size = Vector2(350, 400)
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+script = ExtResource("1_ruq43")
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+
+[node name="TitleLabel" type="Label" parent="MainContainer"]
+layout_mode = 2
+text = "Debug Panel (F12 to toggle)"
+
+[node name="Separator1" type="HSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="SpawnerTitle" type="Label" parent="MainContainer"]
+layout_mode = 2
+text = "Enemy Spawner"
+
+[node name="SpawnerSection" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+
+[node name="EnemyTypeDropdown" type="OptionButton" parent="MainContainer/SpawnerSection"]
+layout_mode = 2
+
+[node name="SpawnButtons" type="HBoxContainer" parent="MainContainer/SpawnerSection"]
+layout_mode = 2
+
+[node name="SpawnAtCursor" type="Button" parent="MainContainer/SpawnerSection/SpawnButtons"]
+layout_mode = 2
+text = "Spawn at Cursor"
+
+[node name="SpawnAtPlayer" type="Button" parent="MainContainer/SpawnerSection/SpawnButtons"]
+layout_mode = 2
+text = "Spawn at Player"
+
+[node name="CountButtons" type="HBoxContainer" parent="MainContainer/SpawnerSection"]
+layout_mode = 2
+
+[node name="CountLabel" type="Label" parent="MainContainer/SpawnerSection/CountButtons"]
+layout_mode = 2
+text = "Count:"
+
+[node name="Count1" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+layout_mode = 2
+text = "1"
+
+[node name="Count5" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+layout_mode = 2
+text = "5"
+
+[node name="Count10" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+layout_mode = 2
+text = "10"
+
+[node name="Count100" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+layout_mode = 2
+text = "100"
+
+[node name="Separator2" type="HSeparator" parent="MainContainer"]
+layout_mode = 2
+
+[node name="InspectorTitle" type="Label" parent="MainContainer"]
+layout_mode = 2
+text = "Entity Inspector"
+
+[node name="InspectorSection" type="VBoxContainer" parent="MainContainer"]
+layout_mode = 2
+
+[node name="EntityInfo" type="RichTextLabel" parent="MainContainer/InspectorSection"]
+custom_minimum_size = Vector2(300, 150)
+layout_mode = 2
+text = "Click on an entity to inspect"
+
+[node name="EntityActions" type="HBoxContainer" parent="MainContainer/InspectorSection"]
+layout_mode = 2
+
+[node name="KillButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+layout_mode = 2
+text = "Kill Selected"
+
+[node name="HealButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+layout_mode = 2
+text = "Heal Full"
+
+[node name="DamageButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+layout_mode = 2
+text = "Damage 10"
