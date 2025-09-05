@@ -5,13 +5,17 @@
 [node name="DebugPanel" type="Control"]
 custom_minimum_size = Vector2(350, 400)
 layout_mode = 3
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
+anchors_preset = 0
 script = ExtResource("1_ruq43")
 
 [node name="MainContainer" type="VBoxContainer" parent="."]
 layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
 
 [node name="TitleLabel" type="Label" parent="MainContainer"]
 layout_mode = 2
@@ -77,7 +81,8 @@ layout_mode = 2
 [node name="EntityInfo" type="RichTextLabel" parent="MainContainer/InspectorSection"]
 custom_minimum_size = Vector2(300, 150)
 layout_mode = 2
-text = "Click on an entity to inspect"
+bbcode_enabled = true
+text = "[b]Entity Inspector[/b]\\n\\n[color=yellow]Ctrl+Click[/color] on an entity to inspect"
 
 [node name="EntityActions" type="HBoxContainer" parent="MainContainer/InspectorSection"]
 layout_mode = 2
@@ -93,3 +98,9 @@ text = "Heal Full"
 [node name="DamageButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
 layout_mode = 2
 text = "Damage 10"
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.2, 0.2, 0.2, 0.9)
