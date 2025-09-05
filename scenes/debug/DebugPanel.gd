@@ -115,7 +115,7 @@ func _get_selected_enemy_type() -> String:
 
 func _on_entity_inspected(entity_data: Dictionary) -> void:
 	if entity_data.is_empty():
-		entity_info.text = "No entity selected"
+		entity_info.text = "[b]Entity Inspector[/b]\n\n[color=yellow]Ctrl+Click[/color] on an entity to inspect"
 		_set_entity_buttons_enabled(false)
 		return
 	

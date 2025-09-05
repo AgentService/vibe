@@ -191,6 +191,10 @@ func _get_entity_at_position(world_pos: Vector2) -> String:
 			continue
 			
 		var entity_pos: Vector2 = entity_data["pos"]
+		
+		# For debugging - log the position discrepancy
+		Logger.debug("Entity %s at pos %s, click at %s, distance: %.1f" % [entity_id, entity_pos, world_pos, world_pos.distance_to(entity_pos)], "debug")
+		
 		var distance := world_pos.distance_to(entity_pos)
 		
 		if distance < closest_distance:
@@ -207,7 +211,11 @@ func _select_entity(entity_id: String, world_pos: Vector2) -> void:
 	var entity_data := EntityTracker.get_entity(entity_id)
 	if entity_data.has("pos"):
 		var entity_pos: Vector2 = entity_data["pos"]
-		selection_indicator.global_position = entity_pos
+		
+		# Apply position offset compensation for MultiMesh entities
+		var display_pos := _get_visual_position(entity_data, entity_pos)
+		
+		selection_indicator.global_position = display_pos
 		selection_indicator.visible = true
 	
 	# Emit selection signals
@@ -257,7 +265,11 @@ func _process(_delta: float) -> void:
 		var entity_data := EntityTracker.get_entity(selected_entity_id)
 		if entity_data.has("pos"):
 			var entity_pos: Vector2 = entity_data["pos"]
-			selection_indicator.global_position = entity_pos
+			
+			# Apply position offset compensation for MultiMesh entities
+			var display_pos := _get_visual_position(entity_data, entity_pos)
+			
+			selection_indicator.global_position = display_pos
 		else:
 			# Entity no longer exists - deselect
 			_deselect_entity()
@@ -288,8 +300,34 @@ func _set_hovered_entity(entity_id: String) -> void:
 		var entity_data := EntityTracker.get_entity(entity_id)
 		if entity_data.has("pos"):
 			var entity_pos: Vector2 = entity_data["pos"]
-			hover_indicator.global_position = entity_pos
+			
+			# Apply position offset compensation for MultiMesh entities
+			var display_pos := _get_visual_position(entity_data, entity_pos)
+			
+			hover_indicator.global_position = display_pos
 			hover_indicator.visible = true
+			
+			# Position indicator with appropriate offset compensation
+
+func _get_visual_position(entity_data: Dictionary, stored_pos: Vector2) -> Vector2:
+	# Compensate for position offset differences between stored position and visual rendering
+	var entity_type: String = entity_data.get("type", "unknown")
+	
+	# MultiMesh entities appear to be rendered offset from their stored position
+	# Different entity types need different offset compensation based on their sprite size
+	if _is_multimesh_entity(entity_type):
+		var offset_x: float = _get_entity_visual_offset(entity_type)
+		return stored_pos + Vector2(offset_x, 0)
+	
+	# Boss entities (scene nodes) use stored position directly
+	return stored_pos
+
+func _get_entity_visual_offset(entity_type: String) -> float:
+	# All MultiMesh entities have generic "enemy" type
+	# Adjusting offset based on visual feedback - fine-tuning for goblin centering
+	if entity_type == "enemy":
+		return 28.0  # Increased from 24px for better centering on goblin sprites
+	return 0.0  # Fallback for other types
 
 # ============================================================================
 # SPRITE-BASED VISUAL EFFECTS
@@ -330,8 +368,9 @@ func _clear_sprite_effect(entity_id: String, effect_type: String) -> void:
 		_clear_boss_sprite_effect(entity_id, effect_type)
 
 func _is_multimesh_entity(entity_type: String) -> bool:
-	# MultiMesh entities are typically swarm types
-	return entity_type == "goblin"
+	# MultiMesh entities are pooled enemies rendered via MultiMeshManager
+	# These have generic "enemy" type, not specific names like bosses
+	return entity_type == "enemy"
 
 func _is_boss_entity(entity_type: String) -> bool:
 	# Boss entities are scene-based nodes
