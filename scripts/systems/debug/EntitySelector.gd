@@ -35,19 +35,92 @@ func _ready() -> void:
 	Logger.debug("EntitySelector initialized", "debug")
 
 func _create_selection_indicator() -> void:
-	# Selection now handled via sprite effects rather than separate indicators
-	# Keep minimal fallback indicator for entities without sprites
+	# Create a visual indicator for the selected entity
 	selection_indicator = Node2D.new()
 	selection_indicator.name = "SelectionIndicator"
 	add_child(selection_indicator)
+	
+	# Create a diamond shape with pulsing effect
+	var line2d := Line2D.new()
+	line2d.width = 4.0
+	line2d.default_color = Color.ORANGE_RED
+	line2d.closed = true
+	
+	# Create diamond points
+	var diamond_points: PackedVector2Array = [
+		Vector2(0, -45),    # Top
+		Vector2(45, 0),     # Right
+		Vector2(0, 45),     # Bottom
+		Vector2(-45, 0)     # Left
+	]
+	line2d.points = diamond_points
+	selection_indicator.add_child(line2d)
+	
+	# Add pulsing animation
+	var tween := create_tween()
+	tween.set_loops()
+	tween.tween_property(line2d, "modulate:a", 0.5, 0.8)
+	tween.tween_property(line2d, "modulate:a", 1.0, 0.8)
+	
+	# Hide by default
 	selection_indicator.visible = false
 
 func _create_hover_indicator() -> void:
-	# Hover now handled via sprite effects rather than separate indicators
-	# Keep minimal fallback indicator for entities without sprites  
+	# Create a visual indicator for hovering over entities
 	hover_indicator = Node2D.new()
 	hover_indicator.name = "HoverIndicator"
 	add_child(hover_indicator)
+	
+	# Create corner brackets for hover
+	var bracket_color := Color.CYAN
+	var bracket_size := 25.0
+	var bracket_width := 3.0
+	
+	# Top-left bracket
+	var tl_bracket := Line2D.new()
+	tl_bracket.width = bracket_width
+	tl_bracket.default_color = bracket_color
+	tl_bracket.points = PackedVector2Array([
+		Vector2(-bracket_size, -bracket_size/3),
+		Vector2(-bracket_size, -bracket_size),
+		Vector2(-bracket_size/3, -bracket_size)
+	])
+	hover_indicator.add_child(tl_bracket)
+	
+	# Top-right bracket
+	var tr_bracket := Line2D.new()
+	tr_bracket.width = bracket_width
+	tr_bracket.default_color = bracket_color
+	tr_bracket.points = PackedVector2Array([
+		Vector2(bracket_size/3, -bracket_size),
+		Vector2(bracket_size, -bracket_size),
+		Vector2(bracket_size, -bracket_size/3)
+	])
+	hover_indicator.add_child(tr_bracket)
+	
+	# Bottom-left bracket
+	var bl_bracket := Line2D.new()
+	bl_bracket.width = bracket_width
+	bl_bracket.default_color = bracket_color
+	bl_bracket.points = PackedVector2Array([
+		Vector2(-bracket_size/3, bracket_size),
+		Vector2(-bracket_size, bracket_size),
+		Vector2(-bracket_size, bracket_size/3)
+	])
+	hover_indicator.add_child(bl_bracket)
+	
+	# Bottom-right bracket
+	var br_bracket := Line2D.new()
+	br_bracket.width = bracket_width
+	br_bracket.default_color = bracket_color
+	br_bracket.points = PackedVector2Array([
+		Vector2(bracket_size, bracket_size/3),
+		Vector2(bracket_size, bracket_size),
+		Vector2(bracket_size/3, bracket_size)
+	])
+	hover_indicator.add_child(br_bracket)
+	
+	# Hide by default
 	hover_indicator.visible = false
 
 func _on_debug_mode_toggled(enabled: bool) -> void:
@@ -127,16 +200,15 @@ func _get_entity_at_position(world_pos: Vector2) -> String:
 	return closest_entity_id
 
 func _select_entity(entity_id: String, world_pos: Vector2) -> void:
-	# Clear previous selection effect
-	if not selected_entity_id.is_empty() and selected_sprite_effect_active:
-		_clear_sprite_effect(selected_entity_id, "selection")
-	
 	# Update selection state
 	selected_entity_id = entity_id
 	
-	# Apply selection effect to sprite
-	_apply_sprite_effect(entity_id, "selection")
-	selected_sprite_effect_active = true
+	# Get entity data for positioning indicator
+	var entity_data := EntityTracker.get_entity(entity_id)
+	if entity_data.has("pos"):
+		var entity_pos: Vector2 = entity_data["pos"]
+		selection_indicator.global_position = entity_pos
+		selection_indicator.visible = true
 	
 	# Emit selection signals
 	entity_selected.emit(entity_id)
@@ -152,13 +224,10 @@ func _deselect_entity() -> void:
 		return
 		
 	var old_entity_id := selected_entity_id
-	
-	# Clear sprite effect
-	if selected_sprite_effect_active:
-		_clear_sprite_effect(selected_entity_id, "selection")
-		selected_sprite_effect_active = false
-	
 	selected_entity_id = ""
+	
+	# Hide selection indicator
+	selection_indicator.visible = false
 	
 	# Emit deselection signals
 	entity_deselected.emit()
@@ -209,18 +278,18 @@ func _update_hover_detection() -> void:
 		_set_hovered_entity(entity_under_cursor)
 
 func _set_hovered_entity(entity_id: String) -> void:
-	# Clear previous hover effect
-	if not hovered_entity_id.is_empty() and hovered_sprite_effect_active:
-		_clear_sprite_effect(hovered_entity_id, "hover")
-	
 	hovered_entity_id = entity_id
 	
 	if entity_id.is_empty():
-		hovered_sprite_effect_active = false
+		# No entity hovered - hide hover indicator
+		hover_indicator.visible = false
 	else:
-		# Apply hover effect to sprite
-		_apply_sprite_effect(entity_id, "hover")
-		hovered_sprite_effect_active = true
+		# Entity hovered - show hover indicator
+		var entity_data := EntityTracker.get_entity(entity_id)
+		if entity_data.has("pos"):
+			var entity_pos: Vector2 = entity_data["pos"]
+			hover_indicator.global_position = entity_pos
+			hover_indicator.visible = true
 
 # ============================================================================
 # SPRITE-BASED VISUAL EFFECTS
@@ -266,7 +335,7 @@ func _is_multimesh_entity(entity_type: String) -> bool:
 
 func _is_boss_entity(entity_type: String) -> bool:
 	# Boss entities are scene-based nodes
-	return entity_type in ["ancient_lich", "dragon_lord"]
+	return entity_type in ["ancient_lich", "dragon_lord", "boss"]
 
 func _apply_multimesh_sprite_effect(entity_id: String, effect_type: String) -> void:
 	# For MultiMesh entities, we'd need to modify the shader or find the specific instance
