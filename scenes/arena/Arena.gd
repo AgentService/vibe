@@ -177,6 +177,12 @@ func _ready() -> void:
 	# Setup Player Attack Handler with dependencies
 	player_attack_handler.setup(player, melee_system, ability_system, wave_director, melee_effects, get_viewport())
 	
+	# Register systems with DebugManager for debug functionality
+	if DebugManager:
+		DebugManager.register_wave_director(wave_director)
+		DebugManager.register_boss_spawn_manager(boss_spawn_manager)
+		DebugManager.register_arena_ui_manager(ui_manager)
+	
 	# Setup Arena Input Handler
 	arena_input_handler = ArenaInputHandler.new()
 	add_child(arena_input_handler)

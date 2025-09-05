@@ -50,6 +50,13 @@ func _populate_enemy_dropdown() -> void:
 	enemy_type_dropdown.clear()
 	available_enemy_types.clear()
 	
+	# Only include implemented/tested enemy types for now
+	var implemented_enemies: Array[String] = [
+		"ancient_lich",    # Boss type
+		"dragon_lord",     # Boss type  
+		"goblin"           # Swarm type
+	]
+	
 	# Load available enemy types from EnemyFactory
 	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
@@ -57,16 +64,19 @@ func _populate_enemy_dropdown() -> void:
 	if not EnemyFactory._templates_loaded:
 		EnemyFactory.load_all_templates()
 	
-	# Get all template IDs
-	for template_id in EnemyFactory._templates.keys():
-		var template = EnemyFactory._templates[template_id]
-		# Only include templates with positive weight (spawnable)
-		if template.weight > 0.0:
-			available_enemy_types.append(template_id)
-			var display_name = template_id.replace("_", " ").capitalize()
-			enemy_type_dropdown.add_item(display_name)
+	# Add only implemented enemy types
+	for template_id in implemented_enemies:
+		if EnemyFactory._templates.has(template_id):
+			var template = EnemyFactory._templates[template_id]
+			# Verify template has positive weight
+			if template.weight > 0.0:
+				available_enemy_types.append(template_id)
+				var display_name = template_id.replace("_", " ").capitalize()
+				enemy_type_dropdown.add_item(display_name)
+		else:
+			Logger.warn("Implemented enemy type not found in templates: " + template_id, "debug")
 	
-	Logger.debug("Loaded %d enemy types into dropdown" % available_enemy_types.size(), "debug")
+	Logger.debug("Loaded %d implemented enemy types into dropdown" % available_enemy_types.size(), "debug")
 
 func _on_spawn_at_cursor_pressed() -> void:
 	var selected_enemy_type := _get_selected_enemy_type()
