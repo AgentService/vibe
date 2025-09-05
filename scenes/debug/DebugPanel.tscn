@@ -8,103 +8,118 @@ layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_ruq43")
 
-[node name="MainContainer" type="VBoxContainer" parent="."]
+[node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = 8.0
-offset_top = 8.0
-offset_right = -8.0
-offset_bottom = -8.0
 
-[node name="TitleLabel" type="Label" parent="MainContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Debug Panel (F12 to toggle)"
 
-[node name="Separator1" type="HSeparator" parent="MainContainer"]
+[node name="Separator1" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="SpawnerTitle" type="Label" parent="MainContainer"]
+[node name="SpawnerTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Enemy Spawner"
 
-[node name="SpawnerSection" type="VBoxContainer" parent="MainContainer"]
+[node name="EnemyTypeDropdown" type="OptionButton" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="EnemyTypeDropdown" type="OptionButton" parent="MainContainer/SpawnerSection"]
+[node name="SpawnButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="SpawnButtons" type="HBoxContainer" parent="MainContainer/SpawnerSection"]
+[node name="SpawnAtCursor" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
+layout_mode = 2
+text = "Spawn at Cursor (V)"
+
+[node name="SpawnAtPlayer" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
+layout_mode = 2
+text = "Spawn at Player (B)"
+
+[node name="CountButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="SpawnAtCursor" type="Button" parent="MainContainer/SpawnerSection/SpawnButtons"]
-layout_mode = 2
-text = "Spawn at Cursor"
-
-[node name="SpawnAtPlayer" type="Button" parent="MainContainer/SpawnerSection/SpawnButtons"]
-layout_mode = 2
-text = "Spawn at Player"
-
-[node name="CountButtons" type="HBoxContainer" parent="MainContainer/SpawnerSection"]
-layout_mode = 2
-
-[node name="CountLabel" type="Label" parent="MainContainer/SpawnerSection/CountButtons"]
+[node name="CountLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "Count:"
 
-[node name="Count1" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+[node name="Count1" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "1"
 
-[node name="Count5" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+[node name="Count5" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "5"
 
-[node name="Count10" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+[node name="Count10" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "10"
 
-[node name="Count100" type="Button" parent="MainContainer/SpawnerSection/CountButtons"]
+[node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
-text = "100"
+text = "Clear All Enemies"
 
-[node name="Separator2" type="HSeparator" parent="MainContainer"]
+[node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="InspectorTitle" type="Label" parent="MainContainer"]
+[node name="InspectorTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Entity Inspector"
 
-[node name="InspectorSection" type="VBoxContainer" parent="MainContainer"]
-layout_mode = 2
-
-[node name="EntityInfo" type="RichTextLabel" parent="MainContainer/InspectorSection"]
-custom_minimum_size = Vector2(300, 150)
+[node name="EntityInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 120)
 layout_mode = 2
 bbcode_enabled = true
-text = "[b]Entity Inspector[/b]\\n\\n[color=yellow]Ctrl+Click[/color] on an entity to inspect"
+text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
 
-[node name="EntityActions" type="HBoxContainer" parent="MainContainer/InspectorSection"]
+[node name="EntityActions" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="KillButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+[node name="KillButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
-text = "Kill Selected"
+text = "Kill"
 
-[node name="HealButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+[node name="HealButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
-text = "Heal Full"
+text = "Heal"
 
-[node name="DamageButton" type="Button" parent="MainContainer/InspectorSection/EntityActions"]
+[node name="DamageButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
-text = "Damage 10"
+text = "Damage"
 
-[node name="AbilitySection" type="VBoxContainer" parent="MainContainer/InspectorSection"]
+[node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
-[node name="AbilitiesLabel" type="Label" parent="MainContainer/InspectorSection/AbilitySection"]
+[node name="SystemTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Abilities:"
+text = "System Controls"
 
-[node name="AbilityButtons" type="VBoxContainer" parent="MainContainer/InspectorSection/AbilitySection"]
+[node name="PauseAICheckbox" type="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
+text = "Pause AI"
+
+[node name="ShowCollisionCheckbox" type="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Show Collision Shapes"
+
+[node name="SystemButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="ResetSessionButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SystemButtons"]
+layout_mode = 2
+text = "Reset Session"
+
+[node name="Separator4" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="PerformanceInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+bbcode_enabled = true
+text = "[color=white]Loading performance stats...[/color]"
+fit_content = true

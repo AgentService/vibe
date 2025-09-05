@@ -250,6 +250,13 @@ func _apply_flash_to_multimesh(entity_id: String, progress: float, flash_data: D
 	if not mm_instance or not mm_instance.multimesh:
 		return
 	
+	# SAFETY CHECK: Ensure instance exists before accessing
+	if instance_index < 0 or instance_index >= mm_instance.multimesh.instance_count:
+		Logger.warn("Instance index %d out of bounds (count: %d) for entity %s, removing effect" % [instance_index, mm_instance.multimesh.instance_count, entity_id], "visual")
+		# Clean up this invalid effect immediately
+		flash_effects.erase(entity_id)
+		return
+	
 	# Calculate flash color using curve - invert for proper flash effect
 	var curve_value: float = visual_config.flash_curve.sample(progress) if visual_config.flash_curve else (1.0 - progress)
 	var flash_intensity: float = curve_value * visual_config.flash_intensity
@@ -407,6 +414,11 @@ func _reset_enemy_color(entity_id: String) -> void:
 	var instance_index: int = enemy_info.index
 	
 	if not mm_instance or not mm_instance.multimesh:
+		return
+	
+	# SAFETY CHECK: Ensure instance exists before accessing
+	if instance_index < 0 or instance_index >= mm_instance.multimesh.instance_count:
+		Logger.warn("Cannot reset color: instance index %d out of bounds (count: %d) for entity %s" % [instance_index, mm_instance.multimesh.instance_count, entity_id], "visual")
 		return
 	
 	# Reset to original color (white for default tinting)
