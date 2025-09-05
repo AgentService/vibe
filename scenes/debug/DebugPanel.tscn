@@ -103,4 +103,4 @@ text = "Damage 10"
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
-color = Color(0.2, 0.2, 0.2, 0.9)
+color = Color(0.2, 0.2, 0.3, 0.8)
