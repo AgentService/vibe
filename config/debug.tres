@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="DebugConfig" load_steps=2 format=3 uid="uid://cfi2smq1cq850"]
+
+[ext_resource type="Script" uid="uid://dgbxuf076ac4s" path="res://scripts/domain/DebugConfig.gd" id="1_xkk1l"]
+
+[resource]
+script = ExtResource("1_xkk1l")
+debug_mode = true
+start_mode = "hideout"
+map_scene = "res://scenes/arena/Arena.tscn"
+character_id = "knight_default"

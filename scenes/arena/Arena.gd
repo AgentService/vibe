@@ -17,6 +17,7 @@ const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSyste
 const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
+const PlayerSpawner := preload("res://scripts/systems/PlayerSpawner.gd")
 const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
 const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
 const ArenaInputHandler := preload("res://scripts/systems/ArenaInputHandler.gd")
@@ -37,6 +38,7 @@ var enemy_animation_system: EnemyAnimationSystem
 var multimesh_manager: MultiMeshManager
 var boss_spawn_manager: BossSpawnManager
 var player_attack_handler: PlayerAttackHandler
+var player_spawner: PlayerSpawner
 
 
 var wave_director: WaveDirector
@@ -251,11 +253,21 @@ func _process(delta: float) -> void:
 # PHASE 14: Input handling now managed by ArenaInputHandler
 
 func _setup_player() -> void:
-	# Load player scene dynamically to support @export hot-reload
-	var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
-	player = player_scene.instantiate()
-	player.global_position = Vector2(0, 0)  # Center of arena
-	add_child(player)
+	# Initialize PlayerSpawner system
+	player_spawner = PlayerSpawner.new()
+	add_child(player_spawner)
+	
+	# Spawn player at PlayerSpawnPoint
+	player = player_spawner.spawn_player("PlayerSpawnPoint", self)
+	
+	if not player:
+		Logger.error("Failed to spawn player in Arena", "arena")
+		# Fallback: create player manually at center
+		var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
+		player = player_scene.instantiate()
+		player.global_position = Vector2(0, 0)
+		add_child(player)
+		Logger.warn("Using fallback player spawn method", "arena")
 	
 	# Camera setup now handled in injection method
 

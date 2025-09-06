@@ -1,6 +1,9 @@
-[gd_scene format=3 uid="uid://bki0vjlkutnfy"]
+[gd_scene load_steps=2 format=3 uid="uid://bki0vjlkutnfy"]
+
+[ext_resource type="Script" uid="uid://c5c3e45qnlfd" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
 
 [node name="Hideout" type="Node2D"]
+script = ExtResource("1_7lnkj")
 
 [node name="PlayerSpawnPoint" type="Marker2D" parent="."]
 

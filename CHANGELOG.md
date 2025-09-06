@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout System Phase 0**: Implemented dynamic scene loading infrastructure for hub-based game flow
+  - **Dynamic scene loading**: Main.gd now reads config/debug.json and dynamically instantiates Arena or Hideout scenes
+  - **Minimal hideout**: Created scenes/core/Hideout.tscn with PlayerSpawnPoint (Marker2D) and Camera2D
+  - **Debug configuration**: Enhanced debug.json with start_mode selection ("arena" | "hideout" | "map")
+  - **Backwards compatibility**: Arena mode works exactly as before, no breaking changes
+  - **Scene switching**: Can switch between modes via config without code changes
+  - **Foundation**: Sets up architecture for Phase 1 (PlayerSpawner) and Phase 2 (scene transitions)
 - **Entity Tracker Unified Clear-All**: Implemented comprehensive entity registration and damage-based clearing system
   - **Registration gaps fixed**: Added missing EntityTracker registration in WaveDirector._spawn_pooled_enemy and _spawn_special_boss
   - **Unified clear-all**: Updated WaveDirector.clear_all_enemies to route through DebugManager damage pipeline for consistency

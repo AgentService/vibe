@@ -1,6 +1,0 @@
-{
-  "debug_mode": true,
-  "start_mode": "arena",
- "map_scene": "res://scenes/arena/Arena.tscn",
-  "character_id": "knight_default"
-}
