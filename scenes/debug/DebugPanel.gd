@@ -243,14 +243,6 @@ func _on_entity_inspected(entity_data: Dictionary) -> void:
 	var entity_type = entity_data.get("type", "Unknown")
 	var current_hp = entity_data.get("current_hp", entity_data.get("hp", 0))
 	var max_hp = entity_data.get("max_hp", entity_data.get("max_health", entity_data.get("health", 1)))
-	var pos = entity_data.get("position", entity_data.get("global_position", Vector2.ZERO))
-	
-	# Handle different position formats
-	var position_vec: Vector2
-	if pos is Vector2:
-		position_vec = pos as Vector2
-	else:
-		position_vec = Vector2.ZERO
 		
 	# Fallback for boss data structure
 	if current_hp == 0 and max_hp <= 1:
@@ -262,7 +254,6 @@ func _on_entity_inspected(entity_data: Dictionary) -> void:
 	info_text += "[cell][color=yellow]Type:[/color][/cell][cell]%s[/cell]" % entity_type
 	info_text += "[cell][color=yellow]ID:[/color][/cell][cell]%s[/cell]" % inspected_entity_id  
 	info_text += "[cell][color=yellow]Health:[/color][/cell][cell]%d/%d[/cell]" % [current_hp, max_hp]
-	info_text += "[cell][color=yellow]Position:[/color][/cell][cell](%.1f, %.1f)[/cell]" % [position_vec.x, position_vec.y]
 	info_text += "[/table]"
 	
 	entity_info.text = info_text
@@ -332,21 +323,12 @@ func _update_inspector_hp_display(new_hp: float, is_death: bool = false) -> void
 	# Rebuild the entity info display with updated HP
 	var entity_type = inspected_entity_data.get("type", "Unknown")
 	var max_hp = inspected_entity_data.get("max_hp", inspected_entity_data.get("max_health", 100))
-	var pos = inspected_entity_data.get("position", inspected_entity_data.get("global_position", Vector2.ZERO))
-	
-	# Handle different position formats
-	var position_vec: Vector2
-	if pos is Vector2:
-		position_vec = pos as Vector2
-	else:
-		position_vec = Vector2.ZERO
 	
 	# Use table format with left alignment - same as entity inspection
 	var info_text := "[table=2]"
 	info_text += "[cell][color=yellow]Type:[/color][/cell][cell]%s[/cell]" % entity_type
 	info_text += "[cell][color=yellow]ID:[/color][/cell][cell]%s[/cell]" % inspected_entity_id  
 	info_text += "[cell][color=yellow]Health:[/color][/cell][cell][color=lime]%.0f[/color]/%.0f[/cell]" % [new_hp, max_hp]
-	info_text += "[cell][color=yellow]Position:[/color][/cell][cell](%.1f, %.1f)[/cell]" % [position_vec.x, position_vec.y]
 	info_text += "[/table]"
 	
 	entity_info.text = info_text
