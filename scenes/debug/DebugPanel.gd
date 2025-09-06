@@ -507,6 +507,11 @@ func _apply_button_styling() -> void:
 	button_style.corner_radius_top_right = 6
 	button_style.corner_radius_bottom_left = 6
 	button_style.corner_radius_bottom_right = 6
+	# Add better padding for text breathing room
+	button_style.content_margin_left = 8
+	button_style.content_margin_right = 8
+	button_style.content_margin_top = 6
+	button_style.content_margin_bottom = 6
 	
 	# Hover style for better interactivity
 	var button_hover_style := StyleBoxFlat.new()
@@ -520,6 +525,11 @@ func _apply_button_styling() -> void:
 	button_hover_style.corner_radius_top_right = 6
 	button_hover_style.corner_radius_bottom_left = 6
 	button_hover_style.corner_radius_bottom_right = 6
+	# Same padding for consistency
+	button_hover_style.content_margin_left = 8
+	button_hover_style.content_margin_right = 8
+	button_hover_style.content_margin_top = 6
+	button_hover_style.content_margin_bottom = 6
 	
 	# Apply to all buttons in the debug panel
 	var all_buttons = [
