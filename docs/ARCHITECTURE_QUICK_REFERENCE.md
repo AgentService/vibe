@@ -128,6 +128,29 @@ ls ./Godot_v4.4.1-stable_win64_console.exe
 2. Verify violation patterns are being detected
 3. Test with known bad pattern to confirm tool works
 
+## 🔄 Hideout Phase 0 Signals
+
+### New Typed Signals (Past-tense)
+```gdscript
+# EventBus.gd - Phase 0 additions
+signal enter_map_requested(map_id: StringName)
+signal character_selected(character_id: StringName)
+```
+
+### Usage Patterns
+```gdscript
+# MapDevice emitting typed signal
+EventBus.enter_map_requested.emit(StringName("forest_01"))
+
+# Character selection system
+EventBus.character_selected.emit(StringName("knight_default"))
+```
+
+### Boot Configuration
+- Config: `config/debug.tres` (DebugConfig Resource)
+- Boot modes: `"menu"`, `"hideout"`, `"arena"`, `"map"`
+- Scene selection via Main.gd dynamic loading
+
 ## 📚 Documentation Links
 
 - **Detailed Guide**: [ARCHITECTURE_ENFORCEMENT_GUIDE.md](ARCHITECTURE_ENFORCEMENT_GUIDE.md)

@@ -5,6 +5,15 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout Phase 0 Boot Switch**: Implemented typed, configurable boot flow with minimal-risk architectural improvements
+  - **Typed EventBus signals**: Added enter_map_requested(StringName) and character_selected(StringName) for past-tense signal contracts
+  - **DebugConfig Resource**: Updated to use StringName for character_id field (type consistency)
+  - **Hideout.tscn structure**: Enhanced with YSort node and renamed spawn point to "spawn_hideout_main" per Phase 0 spec
+  - **MapDevice as Area2D**: Converted from Node2D to Area2D with proper collision detection and typed signal emission
+  - **PlayerSpawner API**: Added spawn_at(root, spawn_name) method with deferred spawn to avoid race conditions
+  - **Boot mode selection**: Main.gd dynamic scene loading already supported hideout/arena toggle via config/debug.tres
+  - **Test coverage**: Added test_debug_boot_modes.gd and Hideout_Isolated.tscn for automated boot mode validation
+  - **Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md with Phase 0 signal patterns and boot configuration
 - **Hideout Enemy Leak Fix**: Resolved critical scene transition bug where enemies persisted after arena-to-hideout swap
   - **Scene ownership**: Added ArenaRoot node container for proper enemy parenting (no more leakage to autoloads)
   - **GameOrchestrator transition**: Implemented go_to_hideout/go_to_arena with proper teardown sequence

@@ -1,10 +1,9 @@
-extends Node2D
+extends Area2D
 
 ## MapDevice - Interactive portal for entering different maps/arenas from the hideout.
 ## Detects player proximity and provides interaction prompts.
 ## Emits EventBus signals for scene transitions.
 
-@onready var interaction_area: Area2D
 @onready var collision_shape: CollisionShape2D
 @onready var interaction_prompt: Label
 
@@ -12,23 +11,19 @@ var player_in_range: bool = false
 var player_reference: Node2D
 
 # Map device configuration
-@export var map_id: String = "arena"
+@export var map_id: StringName = &"arena"
 @export var map_display_name: String = "Combat Arena"
 @export var interaction_key: String = "E"
 @export var spawn_point_override: String = ""
 
 func _ready() -> void:
-	_setup_interaction_area()
+	_setup_collision_shape()
 	_setup_visual_elements()
+	_connect_area_signals()
 	Logger.info("MapDevice initialized for: " + map_display_name, "mapdevice")
 
-func _setup_interaction_area() -> void:
-	"""Creates the interaction area and collision detection."""
-	
-	# Create Area2D for interaction detection
-	interaction_area = Area2D.new()
-	interaction_area.name = "InteractionArea"
-	add_child(interaction_area)
+func _setup_collision_shape() -> void:
+	"""Creates the collision shape for this Area2D."""
 	
 	# Create CollisionShape2D with CircleShape2D
 	collision_shape = CollisionShape2D.new()
@@ -36,11 +31,13 @@ func _setup_interaction_area() -> void:
 	var circle_shape = CircleShape2D.new()
 	circle_shape.radius = 100.0  # Interaction radius
 	collision_shape.shape = circle_shape
-	interaction_area.add_child(collision_shape)
+	add_child(collision_shape)
+
+func _connect_area_signals() -> void:
+	"""Connects the Area2D signals since this node is now an Area2D."""
 	
-	# Connect area signals
-	interaction_area.body_entered.connect(_on_body_entered)
-	interaction_area.body_exited.connect(_on_body_exited)
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(_on_body_exited)
 
 func _setup_visual_elements() -> void:
 	"""Creates visual prompt and device appearance."""
@@ -120,14 +117,15 @@ func _activate_map_device() -> void:
 		"source": "hideout_map_device"
 	}
 	
-	# Emit transition request
+	# Emit both the new typed signal and existing request signal for compatibility
+	EventBus.enter_map_requested.emit(map_id)
 	EventBus.request_enter_map.emit(transition_data)
 	
 	# Hide interaction prompt immediately
 	interaction_prompt.visible = false
 	player_in_range = false
 
-func set_map_config(p_map_id: String, p_display_name: String, p_spawn_point: String = "") -> void:
+func set_map_config(p_map_id: StringName, p_display_name: String, p_spawn_point: String = "") -> void:
 	"""Configure the map device programmatically."""
 	
 	map_id = p_map_id

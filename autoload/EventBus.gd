@@ -104,6 +104,13 @@ signal request_return_hideout(data: Dictionary)
 ## Mode changed signal - emitted when switching between game modes (arena/hideout)
 signal mode_changed(mode: StringName)
 
+# HIDEOUT PHASE 0 TYPED SIGNALS (past-tense)
+## Map entry requested - emitted when player requests to enter a specific map
+signal enter_map_requested(map_id: StringName)
+
+## Character selected - emitted when player selects a character/build
+signal character_selected(character_id: StringName)
+
 func _ready() -> void:
 	# Connect debug logging to relevant signals only
 	level_up.connect(_log_level_up)

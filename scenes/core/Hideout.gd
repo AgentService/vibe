@@ -21,9 +21,9 @@ func _ready() -> void:
 	Logger.info("Hideout scene ready", "hideout")
 
 func _spawn_player() -> void:
-	"""Spawns the player at the PlayerSpawnPoint in this hideout."""
+	"""Spawns the player at the spawn_hideout_main in this hideout."""
 	
-	var spawn_point_name = "PlayerSpawnPoint"
+	var spawn_point_name = "spawn_hideout_main"
 	player_instance = player_spawner.spawn_player(spawn_point_name, self)
 	
 	if player_instance:

@@ -96,3 +96,49 @@ func get_player_instance() -> Node2D:
 func is_player_spawned() -> bool:
 	"""Returns true if player has been spawned and is valid."""
 	return player_instance != null and is_instance_valid(player_instance)
+
+func spawn_at(root: Node, spawn_name: String) -> Node2D:
+	"""
+	Phase 0 API - Spawns player at specified spawn point using deferred spawn to avoid race.
+	This is the new API contract as specified in the Hideout Phase 0 task.
+	
+	Args:
+		root: The root node containing the spawn point
+		spawn_name: Name of the spawn marker (e.g. "spawn_hideout_main")
+		
+	Returns:
+		The player instance or null if spawn failed
+	"""
+	
+	var marker := root.get_node_or_null(spawn_name)
+	if marker == null:
+		Logger.error("Spawn marker not found: %s" % spawn_name, "PlayerSpawner")
+		return null
+	
+	# Load player scene
+	var player_scene = load(PLAYER_SCENE_PATH)
+	if not player_scene:
+		Logger.error("Failed to load player scene: " + PLAYER_SCENE_PATH, "PlayerSpawner")
+		return null
+	
+	var player: Node2D = player_scene.instantiate()
+	if not player:
+		Logger.error("Failed to instantiate player scene", "PlayerSpawner")
+		return null
+	
+	# Use deferred spawn to avoid race conditions
+	call_deferred("_finalize_spawn", root, player, marker)
+	player_instance = player
+	return player
+
+func _finalize_spawn(root: Node, player: Node2D, marker: Node) -> void:
+	"""Finalize spawn placement - called deferred to avoid timing issues."""
+	
+	if not is_instance_valid(player) or not is_instance_valid(marker):
+		Logger.error("Invalid player or marker during finalize spawn", "PlayerSpawner")
+		return
+		
+	player.global_position = (marker as Node2D).global_position
+	root.add_child(player)
+	
+	Logger.info("Player spawned at deferred position: " + str(player.global_position), "PlayerSpawner")

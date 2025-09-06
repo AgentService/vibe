@@ -8,14 +8,14 @@ class_name DebugConfig
 @export_enum("menu", "arena", "hideout", "map", "map_test") var start_mode: String = "menu"
 @export var skip_main_menu: bool = false
 @export var map_scene: String = ""
-@export var character_id: String = "knight_default"
+@export var character_id: StringName = &"knight_default"
 
 func _init(
 	p_debug_mode: bool = true,
 	p_start_mode: String = "arena", 
 	p_skip_main_menu: bool = false,
 	p_map_scene: String = "",
-	p_character_id: String = "knight_default"
+	p_character_id: StringName = &"knight_default"
 ) -> void:
 	debug_mode = p_debug_mode
 	start_mode = p_start_mode

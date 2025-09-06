@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bk3q8kpmq62nc"]
+
+[ext_resource type="Script" uid="uid://dpcvs1y6ay862" path="res://tests/Hideout_Isolated.gd" id="1_yog6k"]
+
+[node name="HideoutIsolatedTest" type="Node"]
+script = ExtResource("1_yog6k")
