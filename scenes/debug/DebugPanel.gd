@@ -20,7 +20,7 @@ extends Control
 
 # System Controls UI elements  
 @onready var pause_ai_checkbox: CheckBox = $PanelContainer/MarginContainer/VBoxContainer/PauseAICheckbox
-@onready var clear_all_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/CountButtons/ClearAllButton
+@onready var clear_all_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ClearAllButton
 @onready var reset_session_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ResetSessionButton
 
 # Performance Stats UI elements
@@ -87,9 +87,9 @@ func _ready() -> void:
 	entity_info.text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
 	_set_entity_buttons_enabled(false)
 	
-	# Update button text to show shortcuts
-	spawn_at_cursor_btn.text = "Spawn at Cursor (V)"
-	spawn_at_player_btn.text = "Spawn at Player (B)"
+	# Update button text to show shortcuts (shortened for better layout)
+	spawn_at_cursor_btn.text = "At Cursor (V)"
+	spawn_at_player_btn.text = "At Player (B)"
 	
 	# Auto-enable performance stats (always visible now)
 	_set_performance_stats_visible(true)

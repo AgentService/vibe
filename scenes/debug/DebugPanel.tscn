@@ -19,7 +19,7 @@ layout_mode = 2
 
 [node name="Title" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
-text = "Debug Panel (F12 to toggle)"
+text = "Debug Panel"
 
 [node name="Separator1" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -36,11 +36,11 @@ layout_mode = 2
 
 [node name="SpawnAtCursor" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
 layout_mode = 2
-text = "Spawn at Cursor (V)"
+text = "At Cursor (V)"
 
 [node name="SpawnAtPlayer" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
 layout_mode = 2
-text = "Spawn at Player (B)"
+text = "At Player (B)"
 
 [node name="CountButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -61,14 +61,6 @@ text = "5"
 layout_mode = 2
 text = "10"
 
-[node name="Spacer" type="Control" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
-layout_mode = 2
-text = "Clear All Enemies"
-
 [node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 
@@ -87,14 +79,17 @@ layout_mode = 2
 
 [node name="KillButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Kill"
 
 [node name="HealButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Heal"
 
 [node name="DamageButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Damage"
 
 [node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
@@ -109,11 +104,18 @@ layout_mode = 2
 text = "Pause AI"
 
 
-[node name="SystemButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="SystemButtons" type="GridContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
+columns = 2
+
+[node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SystemButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Clear All"
 
 [node name="ResetSessionButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SystemButtons"]
 layout_mode = 2
+size_flags_horizontal = 3
 text = "Reset Session"
 
 [node name="Separator4" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
