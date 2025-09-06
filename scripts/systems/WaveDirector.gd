@@ -440,4 +440,28 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 
 
 
+func clear_all_enemies() -> void:
+	# Deactivate all alive pooled enemies and unregister from registries to prevent leaks
+	var cleared := 0
+	for i in range(enemies.size()):
+		var enemy := enemies[i]
+		if enemy.alive:
+			enemy.alive = false
+			enemy.hp = 0.0
+			# Move far off-screen to avoid any visual artifacts
+			enemy.pos = Vector2(-10000, -10000)
+			cleared += 1
+			var entity_id := "enemy_" + str(i)
+			# Unregister from EntityTracker
+			if typeof(EntityTracker) != TYPE_NIL and EntityTracker.has_method("unregister_entity"):
+				EntityTracker.unregister_entity(entity_id)
+			# Unregister from DamageService (DamageRegistry V2)
+			if typeof(DamageService) != TYPE_NIL and DamageService.has_method("unregister_entity"):
+				DamageService.unregister_entity(entity_id)
+			# Refresh internal caches and free index for future spawns
+	if cleared > 0:
+		_cache_dirty = true
+		_last_free_index = 0
+		Logger.info("Cleared %d enemies from WaveDirector pool" % [cleared], "debug")
+
 # AI methods removed - back to simple chase behavior

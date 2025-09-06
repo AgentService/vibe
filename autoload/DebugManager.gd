@@ -20,6 +20,7 @@ var wave_director: WaveDirector
 var boss_spawn_manager: BossSpawnManager
 var arena_ui_manager: ArenaUIManager
 var ability_trigger: DebugAbilityTrigger
+var debug_system_controls: DebugSystemControls
 
 func _ready() -> void:
 	instance = self
@@ -100,8 +101,21 @@ func _clear_all_bosses() -> void:
 	
 	var boss_nodes := _find_boss_nodes(current_scene)
 	for boss in boss_nodes:
+		# Unregister from registries first to prevent leaks, then free
+		var boss_id = "boss_" + str(boss.get_instance_id())
+		if typeof(DamageService) != TYPE_NIL and DamageService.has_method("unregister_entity"):
+			DamageService.unregister_entity(boss_id)
+		if typeof(EntityTracker) != TYPE_NIL and EntityTracker.has_method("unregister_entity"):
+			EntityTracker.unregister_entity(boss_id)
 		Logger.debug("Removing boss node: " + boss.name, "debug")
 		boss.queue_free()
+
+func clear_all_entities() -> void:
+	# Central clear invoked by DebugPanel; clears pooled enemies and bosses with proper unregisters
+	if wave_director and wave_director.has_method("clear_all_enemies"):
+		wave_director.clear_all_enemies()
+	_clear_all_bosses()
+	Logger.info("DebugManager: Cleared all enemies and bosses via central clear", "debug")
 
 func _find_boss_nodes(node: Node) -> Array[Node]:
 	var boss_nodes: Array[Node] = []
@@ -147,6 +161,35 @@ func register_debug_ui(ui: Control) -> void:
 	debug_ui = ui
 	debug_ui.visible = true  # Visible by default for testing
 	Logger.debug("Debug UI registered with DebugManager", "debug")
+
+func register_debug_system_controls(dsc: DebugSystemControls) -> void:
+	debug_system_controls = dsc
+	Logger.debug("DebugSystemControls registered with DebugManager", "debug")
+
+func get_debug_system_controls() -> DebugSystemControls:
+	if not debug_system_controls:
+		# Try to find it in the scene tree
+		var scene_tree := get_tree()
+		if scene_tree and scene_tree.current_scene:
+			debug_system_controls = _find_debug_system_controls(scene_tree.current_scene)
+	return debug_system_controls
+
+func _find_debug_system_controls(node: Node) -> DebugSystemControls:
+	# Check if this node is DebugSystemControls
+	if node is DebugSystemControls:
+		return node as DebugSystemControls
+	
+	# Check by name as fallback
+	if node.name == "DebugSystemControls":
+		return node as DebugSystemControls
+	
+	# Search children recursively
+	for child in node.get_children():
+		var result = _find_debug_system_controls(child)
+		if result:
+			return result
+	
+	return null
 
 # Entity selection methods
 func select_entity(entity_id: String) -> void:
@@ -194,13 +237,8 @@ func kill_entity(entity_id: String) -> void:
 		return
 		
 	Logger.info("Debug kill entity: " + entity_id, "debug")
-	# Emit damage that will instantly kill the entity
-	EventBus.damage_requested.emit(
-		"debug_system",  # source_id
-		entity_id,       # target_id
-		999999,          # damage (overkill)
-		["debug", "instant_kill"]  # damage_tags
-	)
+	# Apply massive damage that will instantly kill the entity
+	DamageService.apply_damage(entity_id, 999999, "debug_system", ["debug", "instant_kill"])
 
 func heal_entity(entity_id: String, amount: int = -1) -> void:
 	if not debug_enabled:
@@ -214,25 +252,16 @@ func heal_entity(entity_id: String, amount: int = -1) -> void:
 	var heal_amount: int = amount if amount > 0 else entity_data.get("max_hp", 100)
 	Logger.info("Debug heal entity %s for %d HP" % [entity_id, heal_amount], "debug")
 	
-	# Emit negative damage (healing)
-	EventBus.damage_requested.emit(
-		"debug_system",  # source_id
-		entity_id,       # target_id
-		-heal_amount,    # negative damage = healing
-		["debug", "healing"]  # damage_tags
-	)
+	# Apply negative damage (healing) via DamageService
+	DamageService.apply_damage(entity_id, -heal_amount, "debug_system", ["debug", "healing"])
 
 func damage_entity(entity_id: String, amount: int) -> void:
 	if not debug_enabled:
 		return
 		
 	Logger.info("Debug damage entity %s for %d HP" % [entity_id, amount], "debug")
-	EventBus.damage_requested.emit(
-		"debug_system",  # source_id
-		entity_id,       # target_id  
-		amount,          # damage
-		["debug", "manual"]  # damage_tags
-	)
+	# Apply damage directly via DamageService
+	DamageService.apply_damage(entity_id, amount, "debug_system", ["debug", "manual"])
 
 # Signal handlers for actual functionality
 func _on_spawning_requested(enemy_type: String, position: Vector2, count: int) -> void:

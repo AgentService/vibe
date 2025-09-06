@@ -437,11 +437,11 @@ func _on_show_collision_toggled(pressed: bool) -> void:
 
 func _on_clear_all_pressed() -> void:
 	Logger.info("Clear all enemies triggered", "debug")
-	
-	# Lazy-fetch DebugSystemControls if not available
-	if not debug_system_controls:
-		_reacquire_debug_system_controls()
-	
+	# Prefer DebugManager central clear (works even without DebugSystemControls)
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
+		DebugManager.clear_all_entities()
+		return
+	# Fallback to DebugSystemControls if present
 	if debug_system_controls:
 		debug_system_controls.clear_all_entities()
 	else:
