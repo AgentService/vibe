@@ -69,8 +69,8 @@ func _enter_debug_mode() -> void:
 	if wave_director and wave_director.has_method("clear_all_enemies"):
 		wave_director.clear_all_enemies()
 	
-	# Clear existing bosses - find all boss nodes in scene tree
-	_clear_all_bosses()
+	# Clear existing entities via unified clear-all (includes bosses via damage pipeline)
+	clear_all_entities()
 	
 	# Show debug UI
 	_show_debug_ui()
@@ -90,6 +90,10 @@ func _exit_debug_mode() -> void:
 	selected_entity_id = ""
 
 func _clear_all_bosses() -> void:
+	# DEPRECATED: Use clear_all_entities() instead which goes through damage pipeline
+	# This method is kept for backward compatibility but should not be called
+	Logger.warn("_clear_all_bosses is deprecated - use clear_all_entities() for unified damage-based clearing", "debug")
+	
 	# Find all boss nodes in the scene tree and remove them
 	var scene_tree := get_tree()
 	if not scene_tree:
@@ -107,15 +111,49 @@ func _clear_all_bosses() -> void:
 			DamageService.unregister_entity(boss_id)
 		if typeof(EntityTracker) != TYPE_NIL and EntityTracker.has_method("unregister_entity"):
 			EntityTracker.unregister_entity(boss_id)
-		Logger.debug("Removing boss node: " + boss.name, "debug")
+		Logger.debug("Removing boss node directly (deprecated): " + boss.name, "debug")
 		boss.queue_free()
 
 func clear_all_entities() -> void:
-	# Central clear invoked by DebugPanel; clears pooled enemies and bosses with proper unregisters
-	if wave_director and wave_director.has_method("clear_all_enemies"):
-		wave_director.clear_all_enemies()
-	_clear_all_bosses()
-	Logger.info("DebugManager: Cleared all enemies and bosses via central clear", "debug")
+	# Central clear invoked by DebugPanel; uses damage-based clearing for consistency
+	var cleared_count := 0
+	
+	# Get debug info before clearing
+	var tracker_debug := EntityTracker.get_debug_info()
+	Logger.info("Pre-clear EntityTracker state: %d total, %d alive (%s)" % [
+		tracker_debug.total_entities, 
+		tracker_debug.alive_entities, 
+		str(tracker_debug.types)
+	], "debug")
+	
+	# Get all alive entities from EntityTracker
+	var all_entities := EntityTracker.get_alive_entities()
+	
+	# Apply massive damage to each entity (same approach as kill_entity)
+	for entity_id in all_entities:
+		var entity_data := EntityTracker.get_entity(entity_id)
+		var entity_type = entity_data.get("type", "unknown")
+		
+		# Skip player entities to avoid clearing the player
+		if entity_type == "player":
+			continue
+			
+		# Apply massive damage via DamageService (consistent with kill_entity)
+		DamageService.apply_damage(entity_id, 999999, "debug_clear_all", ["debug", "clear_all"])
+		cleared_count += 1
+		
+		Logger.debug("Clearing entity: %s (type: %s)" % [entity_id, entity_type], "debug")
+	
+	# Wait one frame for damage processing, then check final state
+	await get_tree().process_frame
+	var post_tracker_debug := EntityTracker.get_debug_info()
+	
+	Logger.info("DebugManager: Cleared %d entities via damage-based clearing" % cleared_count, "debug")
+	Logger.info("Post-clear EntityTracker state: %d total, %d alive (%s)" % [
+		post_tracker_debug.total_entities, 
+		post_tracker_debug.alive_entities, 
+		str(post_tracker_debug.types)
+	], "debug")
 
 func _find_boss_nodes(node: Node) -> Array[Node]:
 	var boss_nodes: Array[Node] = []
