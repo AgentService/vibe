@@ -23,13 +23,12 @@ func _exit_tree() -> void:
 	Logger.debug("DebugSystemControls: Cleaned up", "debug")
 
 func set_ai_paused(paused: bool) -> void:
-	"""Pause/unpause AI for all enemies"""
+	"""Pause/unpause AI for all enemies via EventBus signal"""
 	ai_paused = paused
 	
-	# Apply to all enemies in scene
-	var scene_tree = get_tree()
-	if scene_tree and scene_tree.current_scene:
-		_set_ai_paused_recursive(scene_tree.current_scene, paused)
+	# Emit cheat toggle event for AI pause
+	var payload := EventBus.CheatTogglePayload_Type.new("ai_paused", paused)
+	EventBus.cheat_toggled.emit(payload)
 	
 	Logger.info("AI paused: %s" % paused, "debug")
 

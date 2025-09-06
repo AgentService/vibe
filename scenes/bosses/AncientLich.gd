@@ -23,6 +23,7 @@ var last_attack_time: float = 0.0
 var target_position: Vector2
 var attack_range: float = 60.0
 var chase_range: float = 300.0
+var ai_paused: bool = false  # Debug AI pause state
 
 # Animation state
 var has_woken_up: bool = false
@@ -45,6 +46,8 @@ func _ready() -> void:
 		EventBus.combat_step.connect(_on_combat_step)
 		# DAMAGE V3: Listen for unified damage sync events
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+		# DEBUG: Listen for cheat toggles (AI pause)
+		EventBus.cheat_toggled.connect(_on_cheat_toggled)
 	
 	# DAMAGE V3: Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
@@ -71,6 +74,8 @@ func _exit_tree() -> void:
 		EventBus.combat_step.disconnect(_on_combat_step)
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
+	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
+		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
 	
 	# DAMAGE V3: Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
@@ -131,6 +136,10 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		_trigger_damage_animation()
 
 func _update_ai(dt: float) -> void:
+	# Skip AI updates if paused by debug system
+	if ai_paused:
+		return
+		
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
@@ -237,3 +246,9 @@ func _trigger_damage_animation() -> void:
 	if not is_taking_damage and has_woken_up:
 		is_taking_damage = true
 		animated_sprite.play("damage_taken")
+
+func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
+	# Handle AI pause/unpause cheat toggle
+	if payload.cheat_name == "ai_paused":
+		ai_paused = payload.enabled
+		Logger.debug("AncientLich AI paused: %s" % ai_paused, "debug")

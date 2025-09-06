@@ -20,6 +20,7 @@ var last_attack_time: float = 0.0
 var target_position: Vector2
 var attack_range: float = 100.0
 var chase_range: float = 400.0
+var ai_paused: bool = false  # Debug AI pause state
 
 func _ready() -> void:
 	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
@@ -35,6 +36,8 @@ func _ready() -> void:
 		EventBus.combat_step.connect(_on_combat_step)
 		# Listen for unified damage sync events
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+		# DEBUG: Listen for cheat toggles (AI pause)
+		EventBus.cheat_toggled.connect(_on_cheat_toggled)
 	
 	# Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
@@ -61,6 +64,8 @@ func _exit_tree() -> void:
 		EventBus.combat_step.disconnect(_on_combat_step)
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
+	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
+		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
 	
 	# Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
@@ -105,6 +110,10 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		Logger.debug("DragonLord took %.1f damage, HP: %.1f/%.1f" % [payload.get("damage", 0.0), new_hp, max_health], "bosses")
 
 func _update_ai(dt: float) -> void:
+	# Skip AI updates if paused by debug system
+	if ai_paused:
+		return
+		
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
@@ -183,3 +192,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	# Set position
 	global_position = config.position
 	Logger.debug("DragonLord setup from spawn config: HP=" + str(max_health) + " damage=" + str(attack_damage) + " speed=" + str(speed), "bosses")
+
+func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
+	# Handle AI pause/unpause cheat toggle
+	if payload.cheat_name == "ai_paused":
+		ai_paused = payload.enabled
+		Logger.debug("DragonLord AI paused: %s" % ai_paused, "debug")
