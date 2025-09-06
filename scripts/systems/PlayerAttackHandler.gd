@@ -121,4 +121,7 @@ func show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	# Hide after short duration
 	var tween = create_tween()
 	tween.tween_property(cone_polygon, "modulate:a", 0.0, 0.2)
-	tween.tween_callback(func(): cone_polygon.visible = false)
+	tween.tween_callback(func(): 
+		if cone_polygon and is_instance_valid(cone_polygon):
+			cone_polygon.visible = false
+	)
