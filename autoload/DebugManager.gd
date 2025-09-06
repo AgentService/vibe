@@ -89,42 +89,11 @@ func _exit_debug_mode() -> void:
 	# Clear selection
 	selected_entity_id = ""
 
-func _clear_all_bosses() -> void:
-	# DEPRECATED: Use clear_all_entities() instead which goes through damage pipeline
-	# This method is kept for backward compatibility but should not be called
-	Logger.warn("_clear_all_bosses is deprecated - use clear_all_entities() for unified damage-based clearing", "debug")
-	
-	# Find all boss nodes in the scene tree and remove them
-	var scene_tree := get_tree()
-	if not scene_tree:
-		return
-		
-	var current_scene := scene_tree.current_scene
-	if not current_scene:
-		return
-	
-	var boss_nodes := _find_boss_nodes(current_scene)
-	for boss in boss_nodes:
-		# Unregister from registries first to prevent leaks, then free
-		var boss_id = "boss_" + str(boss.get_instance_id())
-		if typeof(DamageService) != TYPE_NIL and DamageService.has_method("unregister_entity"):
-			DamageService.unregister_entity(boss_id)
-		if typeof(EntityTracker) != TYPE_NIL and EntityTracker.has_method("unregister_entity"):
-			EntityTracker.unregister_entity(boss_id)
-		Logger.debug("Removing boss node directly (deprecated): " + boss.name, "debug")
-		boss.queue_free()
+# REMOVED: _clear_all_bosses() - use clear_all_entities() for unified damage-based clearing
 
 func clear_all_entities() -> void:
 	# Central clear invoked by DebugPanel; uses damage-based clearing for consistency
 	var cleared_count := 0
-	
-	# Get debug info before clearing
-	var tracker_debug := EntityTracker.get_debug_info()
-	Logger.info("Pre-clear EntityTracker state: %d total, %d alive (%s)" % [
-		tracker_debug.total_entities, 
-		tracker_debug.alive_entities, 
-		str(tracker_debug.types)
-	], "debug")
 	
 	# Get all alive entities from EntityTracker
 	var all_entities := EntityTracker.get_alive_entities()
@@ -144,31 +113,9 @@ func clear_all_entities() -> void:
 		
 		Logger.debug("Clearing entity: %s (type: %s)" % [entity_id, entity_type], "debug")
 	
-	# Wait one frame for damage processing, then check final state
-	await get_tree().process_frame
-	var post_tracker_debug := EntityTracker.get_debug_info()
-	
 	Logger.info("DebugManager: Cleared %d entities via damage-based clearing" % cleared_count, "debug")
-	Logger.info("Post-clear EntityTracker state: %d total, %d alive (%s)" % [
-		post_tracker_debug.total_entities, 
-		post_tracker_debug.alive_entities, 
-		str(post_tracker_debug.types)
-	], "debug")
 
-func _find_boss_nodes(node: Node) -> Array[Node]:
-	var boss_nodes: Array[Node] = []
-	
-	# Check if current node is a boss (common boss class names or groups)
-	if node.name.contains("Boss") or node.name.contains("Lich") or node.name.contains("Dragon"):
-		boss_nodes.append(node)
-	elif node.is_in_group("bosses"):
-		boss_nodes.append(node)
-	
-	# Recursively check children
-	for child in node.get_children():
-		boss_nodes.append_array(_find_boss_nodes(child))
-	
-	return boss_nodes
+# REMOVED: _find_boss_nodes() - no longer needed with unified damage-based clearing
 
 func _show_debug_ui() -> void:
 	if debug_ui:

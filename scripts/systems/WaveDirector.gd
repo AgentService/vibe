@@ -247,13 +247,6 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
 	
-	# TEMPORARY DEBUG: Log registration count validation
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		var tracker_debug := EntityTracker.get_debug_info()
-		Logger.debug("V2 spawn registered %s | EntityTracker: %d alive (%s)" % [
-			entity_id, tracker_debug.alive_entities, str(tracker_debug.types)
-		], "enemies")
-	
 	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
 
 # Boss scene spawning for V2 system
@@ -347,11 +340,6 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	DamageService.register_entity(entity_id, entity_data)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		# TEMPORARY DEBUG: Log registration count validation
-		var tracker_debug := EntityTracker.get_debug_info()
-		Logger.debug("Pooled spawn registered %s | EntityTracker: %d alive (%s)" % [
-			entity_id, tracker_debug.alive_entities, str(tracker_debug.types)
-		], "enemies")
 		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
 func _on_special_boss_died(enemy_type: EnemyType) -> void:
@@ -456,32 +444,12 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 
 
 func clear_all_enemies() -> void:
-	# LEGACY FALLBACK: Route to unified DebugManager clear-all for consistency
-	# This maintains backward compatibility while using the damage pipeline
-	if typeof(DebugManager) != TYPE_NIL and DebugManager.has_method("clear_all_entities"):
+	# DEPRECATED: Use DebugManager.clear_all_entities() for unified damage-based clearing
+	# This method is kept for backward compatibility but routes to the unified system
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
 		DebugManager.clear_all_entities()
-		Logger.info("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
+		Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
 	else:
-		# Fallback to direct cleanup if DebugManager unavailable
-		var cleared := 0
-		for i in range(enemies.size()):
-			var enemy := enemies[i]
-			if enemy.alive:
-				enemy.alive = false
-				enemy.hp = 0.0
-				# Move far off-screen to avoid any visual artifacts
-				enemy.pos = Vector2(-10000, -10000)
-				cleared += 1
-				var entity_id := "enemy_" + str(i)
-				# Unregister from EntityTracker
-				if typeof(EntityTracker) != TYPE_NIL and EntityTracker.has_method("unregister_entity"):
-					EntityTracker.unregister_entity(entity_id)
-				# Unregister from DamageService (DamageRegistry V2)
-				if typeof(DamageService) != TYPE_NIL and DamageService.has_method("unregister_entity"):
-					DamageService.unregister_entity(entity_id)
-		if cleared > 0:
-			_cache_dirty = true
-			_last_free_index = 0
-			Logger.info("WaveDirector fallback: Cleared %d enemies directly" % [cleared], "debug")
+		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
 
 # AI methods removed - back to simple chase behavior
