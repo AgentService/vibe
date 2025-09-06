@@ -345,17 +345,11 @@ func _return_to_hideout() -> void:
 	
 	Logger.info("Returning to hideout from arena", "arena")
 	
-	# Gather player data if available
-	var character_data = {}
-	if player and player.has_method("get_character_data"):
-		character_data = player.get_character_data()
-	
-	# Emit return request
-	EventBus.request_return_hideout.emit({
-		"spawn_point": "PlayerSpawnPoint",
-		"character_data": character_data,
-		"source": "arena_return"
-	})
+	# Use GameOrchestrator for proper teardown sequence
+	if GameOrchestrator and GameOrchestrator.has_method("go_to_hideout"):
+		GameOrchestrator.go_to_hideout()
+	else:
+		Logger.error("GameOrchestrator.go_to_hideout() not available", "arena")
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
@@ -448,3 +442,59 @@ func _exit_tree() -> void:
 	if arena_system:
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	EventBus.level_up.disconnect(_on_level_up)
+	
+	# Call teardown to ensure proper cleanup
+	on_teardown()
+
+func on_teardown() -> void:
+	"""Teardown contract for scene transitions - ensures clean Arena shutdown"""
+	Logger.info("Arena teardown initiated", "arena")
+	
+	# Stop and reset WaveDirector
+	if wave_director:
+		if wave_director.has_method("stop"):
+			wave_director.stop()
+		if wave_director.has_method("reset"):
+			wave_director.reset()
+	
+	# Clear EntityTracker of enemy entities
+	if EntityTracker:
+		if EntityTracker.has_method("clear"):
+			EntityTracker.clear("enemies")
+		if EntityTracker.has_method("reset"):
+			EntityTracker.reset()
+	
+	# Queue free all ArenaRoot children (belt and suspenders)
+	var arena_root = get_node_or_null("ArenaRoot")
+	if arena_root:
+		var child_count = arena_root.get_child_count()
+		for child in arena_root.get_children():
+			Logger.debug("Arena teardown: Freeing child %s" % child.name, "arena")
+			child.queue_free()
+		Logger.info("Arena teardown: Freed %d ArenaRoot children" % child_count, "arena")
+	
+	# Diagnostic: Check for remaining enemies and arena_owned nodes
+	var enemies_remaining = get_tree().get_nodes_in_group("enemies").size()
+	var arena_owned_remaining = get_tree().get_nodes_in_group("arena_owned").size()
+	
+	if enemies_remaining > 0:
+		Logger.warn("Arena teardown: %d enemies still in scene after cleanup" % enemies_remaining, "arena")
+	if arena_owned_remaining > 0:
+		Logger.warn("Arena teardown: %d arena_owned nodes still in scene after cleanup" % arena_owned_remaining, "arena")
+	
+	# EntityTracker diagnostic
+	if EntityTracker:
+		var debug_info = EntityTracker.get_debug_info()
+		Logger.info("Arena teardown: EntityTracker has %d entities (%d alive)" % [debug_info.total_entities, debug_info.alive_entities], "arena")
+	
+	# Disconnect any remaining EventBus signals that might reference this scene
+	var connections_to_disconnect = [
+		[EventBus.combat_step, "_on_combat_step"],
+		[EventBus.level_up, "_on_level_up"]
+	]
+	
+	for connection in connections_to_disconnect:
+		if connection[0].is_connected(Callable(self, connection[1])):
+			connection[0].disconnect(Callable(self, connection[1]))
+	
+	Logger.info("Arena teardown completed", "arena")

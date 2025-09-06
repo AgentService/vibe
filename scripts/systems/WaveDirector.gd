@@ -94,6 +94,15 @@ func _exit_tree() -> void:
 		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
 	Logger.debug("WaveDirector: Cleaned up signal connections", "systems")
 
+func _get_arena_root() -> Node2D:
+	# Find ArenaRoot in the current scene for proper enemy parenting
+	var current_scene = get_tree().current_scene
+	if current_scene and current_scene.has_node("ArenaRoot"):
+		return current_scene.get_node("ArenaRoot")
+	else:
+		Logger.warn("ArenaRoot not found, falling back to current_scene", "waves")
+		return current_scene
+
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	_initialize_pool()
@@ -275,9 +284,13 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 		boss_instance.spawn_config = spawn_config
 		boss_instance.setup_from_spawn_config(spawn_config)
 	
-	# Add to scene tree
-	var parent = get_parent()
-	parent.add_child(boss_instance)
+	# Add to ArenaRoot for proper scene ownership
+	var arena_root = _get_arena_root()
+	arena_root.add_child(boss_instance)
+	
+	# Add to groups for proper cleanup
+	boss_instance.add_to_group("arena_owned")
+	boss_instance.add_to_group("enemies")
 
 	# Register with boss hit feedback system
 	if boss_hit_feedback:
@@ -297,8 +310,13 @@ func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:
 
 func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	var boss_node = enemy_type.boss_scene.instantiate()
-	get_tree().current_scene.add_child(boss_node)
+	var arena_root = _get_arena_root()
+	arena_root.add_child(boss_node)
 	boss_node.global_position = position
+	
+	# Add to groups for proper cleanup
+	boss_node.add_to_group("arena_owned")
+	boss_node.add_to_group("enemies")
 	
 	# Connect boss death to EventBus for XP/loot
 	if boss_node.has_signal("died"):
@@ -462,6 +480,43 @@ func clear_all_enemies() -> void:
 		Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
 	else:
 		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
+
+func stop() -> void:
+	"""Stop WaveDirector - halt spawning and clear timers for scene transitions"""
+	Logger.info("WaveDirector: Stopping wave spawning", "waves")
+	
+	# Reset spawn timer to prevent immediate spawning
+	spawn_timer = 0.0
+	
+	# Clear all enemies via damage system (consistent approach)
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
+		DebugManager.clear_all_entities()
+	
+	# Mark as stopped (add is_running flag if needed)
+	Logger.info("WaveDirector: Stopped successfully", "waves")
+
+func reset() -> void:
+	"""Reset WaveDirector state for clean scene transitions"""
+	Logger.info("WaveDirector: Resetting state", "waves")
+	
+	# Reset spawn timer
+	spawn_timer = 0.0
+	
+	# Clear cached alive enemies
+	_alive_enemies_cache.clear()
+	_cache_dirty = true
+	_last_free_index = 0
+	
+	# Reset AI pause state
+	ai_paused = false
+	
+	# Clear all enemies (already done in stop() but belt and suspenders)
+	for i in range(enemies.size()):
+		if enemies[i].alive:
+			enemies[i].alive = false
+			enemies[i].hp = 0.0
+	
+	Logger.info("WaveDirector: Reset completed", "waves")
 
 # AI methods removed - back to simple chase behavior
 

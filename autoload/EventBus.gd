@@ -101,6 +101,9 @@ signal request_enter_map(data: Dictionary)
 ## Request to return to hideout - emitted by UI or game systems
 signal request_return_hideout(data: Dictionary)
 
+## Mode changed signal - emitted when switching between game modes (arena/hideout)
+signal mode_changed(mode: StringName)
+
 func _ready() -> void:
 	# Connect debug logging to relevant signals only
 	level_up.connect(_log_level_up)

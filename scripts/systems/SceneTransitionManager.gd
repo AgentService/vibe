@@ -73,6 +73,12 @@ func transition_to_scene(scene_path: String, scene_type: String) -> void:
 	# Remove current scene
 	if current_scene_node:
 		Logger.debug("Removing current scene: " + current_scene_node.name, "transition")
+		
+		# Call teardown method if it exists
+		if current_scene_node.has_method("on_teardown"):
+			current_scene_node.on_teardown()
+			Logger.debug("SceneTransitionManager: Called teardown on " + current_scene_node.name, "transition")
+		
 		current_scene_node.queue_free()
 		current_scene_node = null
 	

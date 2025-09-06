@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bx3ygu7pq7n41"]
+
+[ext_resource type="Script" path="res://tests/test_scene_swap_teardown.gd" id="1"]
+
+[node name="TestSceneSwapTeardown" type="Node"]
+script = ExtResource("1")

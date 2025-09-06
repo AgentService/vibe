@@ -223,3 +223,36 @@ func get_debug_info() -> Dictionary:
 		"spatial_grid_cells": _spatial_grid.size()
 	}
 
+## Clear entities of specific group/type (for scene transitions)
+func clear(entity_type: String) -> void:
+	"""Clear all entities of specified type - used during scene transitions"""
+	var entities_to_remove: Array[String] = []
+	
+	# Find entities to remove
+	for entity_id in _entities.keys():
+		var entity_data = _entities[entity_id]
+		if entity_data.get("type", "") == entity_type:
+			entities_to_remove.append(entity_id)
+	
+	# Remove them
+	for entity_id in entities_to_remove:
+		unregister_entity(entity_id)
+	
+	if entities_to_remove.size() > 0:
+		Logger.info("EntityTracker: Cleared %d entities of type '%s'" % [entities_to_remove.size(), entity_type], "combat")
+
+## Reset EntityTracker completely (for scene transitions)
+func reset() -> void:
+	"""Reset all EntityTracker state - use during scene transitions"""
+	var entity_count = _entities.size()
+	
+	# Clear all entities
+	_entities.clear()
+	_spatial_grid.clear()
+	
+	# Reset cleanup timer
+	_cleanup_timer = 0.0
+	
+	if entity_count > 0:
+		Logger.info("EntityTracker: Reset complete - cleared %d entities" % entity_count, "combat")
+

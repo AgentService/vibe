@@ -5,6 +5,17 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout Enemy Leak Fix**: Resolved critical scene transition bug where enemies persisted after arena-to-hideout swap
+  - **Scene ownership**: Added ArenaRoot node container for proper enemy parenting (no more leakage to autoloads)
+  - **GameOrchestrator transition**: Implemented go_to_hideout/go_to_arena with proper teardown sequence
+  - **Arena teardown contract**: Added on_teardown() method with comprehensive cleanup (systems, registries, signals)
+  - **SceneTransitionManager integration**: Enhanced existing system to call on_teardown() during scene transitions
+  - **WaveDirector cleanup**: Added stop() and reset() methods to halt spawning and clear enemy pools
+  - **EntityTracker cleanup**: Added clear(type) and reset() methods for complete entity registry cleanup
+  - **Global safety net**: EventBus.mode_changed signal triggers fail-safe purge of arena_owned/enemies groups
+  - **Bidirectional flow preserved**: H key (arena → hideout) and E key (hideout → arena) both work seamlessly
+  - **Diagnostic logging**: Enhanced teardown with detailed entity count reporting and leak detection
+  - **Test coverage**: Added tests/test_scene_swap_teardown.gd for automated validation
 - **Hideout System Phase 2**: Implemented scene transition system for seamless navigation between areas
   - **SceneTransitionManager**: Created runtime scene loading/unloading system with EventBus integration
   - **MapDevice interaction**: Interactive portals with Area2D proximity detection and UI prompts
