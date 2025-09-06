@@ -222,3 +222,4 @@ func get_debug_info() -> Dictionary:
 		"types": types,
 		"spatial_grid_cells": _spatial_grid.size()
 	}
+

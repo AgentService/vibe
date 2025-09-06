@@ -40,6 +40,8 @@ var _last_cache_frame: int = -1
 # Free enemy slot tracking for faster spawning
 var _last_free_index: int = 0
 
+# AI pause functionality for debug interface
+var ai_paused: bool = false
 
 signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
@@ -50,6 +52,9 @@ func _ready() -> void:
 	
 	# DAMAGE V3: Listen for unified damage sync events
 	EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+	
+	# Connect to cheat toggle events for AI pause functionality
+	EventBus.cheat_toggled.connect(_on_cheat_toggled)
 
 	_initialize_pool()
 	_preload_boss_scenes()
@@ -83,6 +88,8 @@ func _exit_tree() -> void:
 		EventBus.combat_step.disconnect(_on_combat_step)
 	if EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
+	if EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
+		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
 	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
 		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
 	Logger.debug("WaveDirector: Cleaned up signal connections", "systems")
@@ -245,6 +252,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 		"pos": enemy.pos
 	}
 	EntityTracker.register_entity(entity_id, entity_data)
+	DamageService.register_entity(entity_id, entity_data)
 	
 	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
 
@@ -296,7 +304,7 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	if boss_node.has_signal("died"):
 		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
 	
-	# Register boss with DamageService
+	# DAMAGE V3: Register boss with both EntityTracker and DamageService
 	var entity_id = "boss_" + str(boss_node.get_instance_id())
 	var entity_data = {
 		"id": entity_id,
@@ -306,6 +314,7 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 		"alive": true,
 		"pos": position
 	}
+	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
 	
 	Logger.info("Spawned special boss: " + enemy_type.id + " at " + str(position) + " registered as " + entity_id, "waves")
@@ -324,7 +333,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	enemy.setup_with_type(enemy_type, position, direction * enemy_type.speed)
 	_cache_dirty = true  # Mark cache as dirty when spawning
 	
-	# Register enemy with DamageService
+	# DAMAGE V3: Register enemy with both EntityTracker and DamageService
 	var entity_id = "enemy_" + str(free_idx)
 	var entity_data = {
 		"id": entity_id,
@@ -334,6 +343,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 		"alive": true,
 		"pos": position
 	}
+	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
@@ -369,6 +379,10 @@ func _find_free_enemy() -> int:
 	return -1
 
 func _update_enemies(dt: float) -> void:
+	# Skip enemy AI updates if paused for debug
+	if ai_paused:
+		return
+	
 	# Use cached player position from PlayerState autoload  
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
@@ -440,4 +454,18 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 
 
 
+func clear_all_enemies() -> void:
+	# DEPRECATED: Use DebugManager.clear_all_entities() for unified damage-based clearing
+	# This method is kept for backward compatibility but routes to the unified system
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
+		DebugManager.clear_all_entities()
+		Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
+	else:
+		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
+
 # AI methods removed - back to simple chase behavior
+
+func _on_cheat_toggled(payload) -> void:
+	# Handle AI pause/unpause cheat toggle
+	if payload.cheat_name == "ai_paused":
+		ai_paused = payload.enabled

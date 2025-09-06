@@ -20,6 +20,7 @@ const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.
 const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
 const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
 const ArenaInputHandler := preload("res://scripts/systems/ArenaInputHandler.gd")
+const EntitySelector := preload("res://scripts/systems/debug/EntitySelector.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -46,6 +47,8 @@ var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
 var system_injection_manager: SystemInjectionManager
 var arena_input_handler: ArenaInputHandler
+var entity_selector: EntitySelector
+var debug_system_controls: DebugSystemControls
 
 @export_group("Boss Hit Feedback Settings")
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
@@ -177,10 +180,24 @@ func _ready() -> void:
 	# Setup Player Attack Handler with dependencies
 	player_attack_handler.setup(player, melee_system, ability_system, wave_director, melee_effects, get_viewport())
 	
+	# Setup DebugSystemControls from scene node
+	debug_system_controls = $DebugSystemControls
+	
+	# Register systems with DebugManager for debug functionality
+	if DebugManager:
+		DebugManager.register_wave_director(wave_director)
+		DebugManager.register_boss_spawn_manager(boss_spawn_manager)
+		DebugManager.register_arena_ui_manager(ui_manager)
+		DebugManager.register_debug_system_controls(debug_system_controls)
+	
 	# Setup Arena Input Handler
 	arena_input_handler = ArenaInputHandler.new()
 	add_child(arena_input_handler)
 	arena_input_handler.setup(ui_manager, melee_system, player_attack_handler, self)
+	
+	# Setup Entity Selector for debug functionality
+	entity_selector = EntitySelector.new()
+	add_child(entity_selector)
 	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)

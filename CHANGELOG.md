@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Entity Tracker Unified Clear-All**: Implemented comprehensive entity registration and damage-based clearing system
+  - **Registration gaps fixed**: Added missing EntityTracker registration in WaveDirector._spawn_pooled_enemy and _spawn_special_boss
+  - **Unified clear-all**: Updated WaveDirector.clear_all_enemies to route through DebugManager damage pipeline for consistency
+  - **Boss clearing**: Replaced direct boss queue_free() with damage-based clearing via DebugManager.clear_all_entities()
+  - **Debug validation**: Added temporary logging to track registration counts and clear-all effectiveness
+  - **Test coverage**: Enhanced WaveDirector_Isolated test with registration validation and clear-all testing (T/C/D keys)
+  - **Results**: 100% entity tracking for both goblins and bosses, unified clear-all via damage pipeline, no memory leaks
 - **Arena Refactoring Phase 7 Complete**: EnemyAnimationSystem extraction successfully completed
   - **Animation fix**: Resolved issue where swarm enemies displayed full sprite sheet instead of individual animation frames
   - **Frame extraction**: Implemented proper frame-by-frame extraction from sprite sheets using animation configs

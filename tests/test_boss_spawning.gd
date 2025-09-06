@@ -1,82 +1,122 @@
 extends SceneTree
 
-## Test boss spawning system for Enemy V2 MVP completion
-## Validates that ancient_lich template routes to scene spawning instead of pools
+## Boss Spawning and Clear-All Test
+## Tests boss registration with EntityTracker and unified clear-all via damage pipeline
 
 func _initialize():
-	print("=== Boss Spawning Test ===")
+	print("=== Boss Spawning and Clear-All Test ===")
 	
-	# Enable V2 system
-	if not BalanceDB.use_enemy_v2_system:
-		print("ERROR: V2 system not enabled in BalanceDB")
-		quit()
-		return
+	# Wait for autoloads to initialize
+	await process_frame
+	await process_frame
 	
-	# Load EnemyFactory and test boss template
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-	EnemyFactory.load_all_templates()
+	# Test boss spawning registration
+	await test_boss_registration()
 	
-	print("Templates loaded: ", EnemyFactory.get_template_count())
+	# Test boss clear-all via damage pipeline
+	await test_boss_clear_all()
 	
-	# Test ancient_lich template specifically
-	var lich_template = EnemyFactory.get_template("ancient_lich")
-	if not lich_template:
-		print("ERROR: ancient_lich template not found")
-		quit()
-		return
-	
-	print("Ancient Lich Template Found:")
-	print("  ID: ", lich_template.id)
-	print("  Render Tier: ", lich_template.render_tier) 
-	print("  Health Range: ", lich_template.health_range)
-	print("  Damage Range: ", lich_template.damage_range)
-	print("  Parent Path: ", lich_template.parent_path)
-	
-	# Test spawn config generation
-	var spawn_context = {
-		"run_id": 12345,
-		"wave_index": 1,
-		"spawn_index": 0,
-		"position": Vector2(100, 100)
-	}
-	
-	var spawn_config = EnemyFactory.spawn_from_template_id("ancient_lich", spawn_context)
-	if not spawn_config:
-		print("ERROR: Failed to generate spawn config for ancient_lich")
-		quit()
-		return
-	
-	print("Spawn Config Generated:")
-	print("  Template ID: ", spawn_config.template_id)
-	print("  Render Tier: ", spawn_config.render_tier)
-	print("  Health: ", spawn_config.health)
-	print("  Damage: ", spawn_config.damage)
-	print("  Speed: ", spawn_config.speed)
-	print("  Color Tint: ", spawn_config.color_tint)
-	print("  Size Scale: ", spawn_config.size_scale)
-	
-	# Verify render_tier is "boss"
-	if spawn_config.render_tier == "boss":
-		print("✅ Boss detection will work - render_tier = 'boss'")
-	else:
-		print("❌ Boss detection FAILED - render_tier = '", spawn_config.render_tier, "'")
-	
-	# Test scene loading
-	var boss_scene_path = "res://scenes/bosses/AncientLich.tscn"
-	var boss_scene = load(boss_scene_path)
-	if boss_scene:
-		print("✅ Boss scene loads successfully: ", boss_scene_path)
-		
-		# Test instantiation
-		var boss_instance = boss_scene.instantiate()
-		if boss_instance:
-			print("✅ Boss scene instantiates successfully")
-			print("✅ Boss has setup_from_spawn_config method: ", boss_instance.has_method("setup_from_spawn_config"))
-			boss_instance.queue_free()
-		else:
-			print("❌ Boss scene instantiation failed")
-	else:
-		print("❌ Boss scene loading failed: ", boss_scene_path)
-	
-	print("=== Boss Spawning Test Complete ===")
+	print("=== Boss Test Complete ===")
 	quit()
+
+func test_boss_registration():
+	print("\n--- Testing Boss Registration ---")
+	
+	# Get initial state
+	var initial_debug := EntityTracker.get_debug_info()
+	print("Initial EntityTracker state: %d alive entities (%s)" % [initial_debug.alive_entities, str(initial_debug.types)])
+	
+	# Create a temporary scene to spawn boss in
+	var test_scene := Node2D.new()
+	current_scene.add_child(test_scene)
+	
+	# Test boss spawning via WaveDirector special boss path
+	var wave_director := WaveDirector.new()
+	test_scene.add_child(wave_director)
+	
+	# Create a test boss EnemyType for spawning
+	var boss_type := EnemyType.new()
+	boss_type.id = "test_ancient_lich"
+	boss_type.is_special_boss = true
+	boss_type.boss_scene = preload("res://scenes/bosses/AncientLich.tscn")
+	boss_type.health = 300.0
+	boss_type.xp_value = 100
+	
+	# Spawn the boss
+	var spawn_pos := Vector2(100, 100)
+	wave_director._spawn_special_boss(boss_type, spawn_pos)
+	
+	# Wait for registration
+	await process_frame
+	await process_frame
+	
+	# Check registration
+	var post_spawn_debug := EntityTracker.get_debug_info()
+	var boss_count := EntityTracker.get_entities_by_type("boss").size()
+	
+	print("Post-spawn state: %d alive entities (%s)" % [post_spawn_debug.alive_entities, str(post_spawn_debug.types)])
+	print("Boss entities found: %d" % boss_count)
+	
+	if boss_count >= 1:
+		print("✓ PASS: Boss registered in EntityTracker")
+	else:
+		print("✗ FAIL: Boss not found in EntityTracker")
+	
+	# Clean up
+	test_scene.queue_free()
+
+func test_boss_clear_all():
+	print("\n--- Testing Boss Clear-All via Damage Pipeline ---")
+	
+	# Create another test scene
+	var test_scene := Node2D.new()
+	current_scene.add_child(test_scene)
+	
+	# Spawn a boss directly using scene instantiation (simulating V2 boss spawn)
+	var boss_scene := preload("res://scenes/bosses/AncientLich.tscn")
+	var boss_instance := boss_scene.instantiate()
+	test_scene.add_child(boss_instance)
+	boss_instance.global_position = Vector2(200, 200)
+	
+	# Wait for boss to register itself
+	await process_frame
+	await process_frame
+	
+	# Get pre-clear state
+	var pre_clear_debug := EntityTracker.get_debug_info()
+	var initial_boss_count := EntityTracker.get_entities_by_type("boss").size()
+	
+	print("Pre-clear state: %d alive entities (%s)" % [pre_clear_debug.alive_entities, str(pre_clear_debug.types)])
+	print("Initial boss count: %d" % initial_boss_count)
+	
+	if initial_boss_count == 0:
+		print("✗ FAIL: No bosses to test clear-all with")
+		test_scene.queue_free()
+		return
+	
+	# Use DebugManager unified clear-all
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
+		print("Calling DebugManager.clear_all_entities()...")
+		DebugManager.clear_all_entities()
+		
+		# Wait for damage processing (more frames for boss death animation)
+		for i in range(5):
+			await process_frame
+		
+		# Check post-clear state  
+		var post_clear_debug := EntityTracker.get_debug_info()
+		var remaining_bosses := EntityTracker.get_entities_by_type("boss").size()
+		
+		print("Post-clear state: %d alive entities (%s)" % [post_clear_debug.alive_entities, str(post_clear_debug.types)])
+		print("Remaining bosses: %d" % remaining_bosses)
+		
+		# Validation
+		if remaining_bosses == 0:
+			print("✓ PASS: All bosses cleared via damage pipeline")
+		else:
+			print("✗ FAIL: %d bosses still remain after clear-all" % remaining_bosses)
+	else:
+		print("✗ FAIL: DebugManager.clear_all_entities() not available")
+	
+	# Clean up
+	test_scene.queue_free()

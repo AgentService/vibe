@@ -9,10 +9,12 @@ class_name ArenaUIManager
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
+const DEBUG_PANEL_SCENE: PackedScene = preload("res://scenes/debug/DebugPanel.tscn")
 
 var hud: HUD
 var card_selection: CardSelection
 var pause_menu: PauseMenu
+var debug_panel: Control
 
 signal card_selected(card: CardResource)
 
@@ -36,6 +38,16 @@ func setup() -> void:
 	pause_menu = PAUSE_MENU_SCENE.instantiate()
 	add_child(pause_menu)
 	Logger.info("ArenaUIManager: PauseMenu instantiated", "ui")
+
+	# Instantiate debug panel
+	debug_panel = DEBUG_PANEL_SCENE.instantiate()
+	ui_layer.add_child(debug_panel)
+	debug_panel.visible = false  # Hidden by default
+	Logger.info("ArenaUIManager: DebugPanel instantiated", "ui")
+
+	# Register debug panel with DebugManager
+	if DebugManager:
+		DebugManager.register_debug_ui(debug_panel)
 
 	# Bubble card selection events through manager
 	card_selection.card_selected.connect(func(card): card_selected.emit(card))
@@ -69,6 +81,9 @@ func get_card_selection() -> CardSelection:
 
 func get_pause_menu() -> PauseMenu:
 	return pause_menu
+
+func get_debug_panel() -> Control:
+	return debug_panel
 
 func _exit_tree() -> void:
 	# Clean up any connections if needed

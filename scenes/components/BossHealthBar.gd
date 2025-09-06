@@ -23,6 +23,7 @@ func update_health(current: float, max_health: float) -> void:
 			visible = true
 			Logger.debug("Boss health bar now visible after first damage", "bosses")
 		
-		Logger.debug("Boss health updated: %.1f/%.1f (%.0f%%)" % [current, max_health, health_percentage], "bosses")
+		# MEMORY LEAK FIX: Removed frequent debug logging that was causing memory allocation every frame
+		# Logger.debug("Boss health updated: %.1f/%.1f (%.0f%%)" % [current, max_health, health_percentage], "bosses")
 	else:
 		Logger.warn("Invalid max_health in boss health update: " + str(max_health), "bosses")

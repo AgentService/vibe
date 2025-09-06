@@ -62,6 +62,12 @@ func _unhandled_input(event):
 				_spawn_test_enemy("fast")
 			KEY_3:
 				_spawn_test_enemy("tank")
+			KEY_T:
+				_test_entity_registration()
+			KEY_C:
+				_test_clear_all()
+			KEY_D:
+				_debug_entity_tracker()
 
 func _start_or_next_wave():
 	if wave_director.has_method("start_next_wave"):
@@ -123,10 +129,104 @@ func _update_info_display():
 	info_label.text = "Wave Director Test\n"
 	info_label.text += "Space: Start/Next wave\n"
 	info_label.text += "R: Reset waves\n"
-	info_label.text += "1-3: Manual spawn\n\n"
+	info_label.text += "1-3: Manual spawn\n"
+	info_label.text += "T: Test registration\n"
+	info_label.text += "C: Test clear-all\n"
+	info_label.text += "D: Debug EntityTracker\n\n"
 	info_label.text += "Current wave: " + str(current_wave) + "\n"
 	info_label.text += "Wave status: " + wave_status + "\n"
 	info_label.text += "Active enemies: " + str(enemy_count)
 
 func _process(_delta):
 	_update_info_display()
+
+# Test entity registration validation for goblin registration task
+func _test_entity_registration():
+	print("=== Testing Entity Registration ===")
+	
+	# Clear any existing entities first
+	if wave_director and wave_director.has_method("clear_all_enemies"):
+		wave_director.clear_all_enemies()
+	
+	await get_tree().process_frame  # Wait for cleanup
+	
+	# Get initial state
+	var initial_debug := EntityTracker.get_debug_info()
+	print("Initial EntityTracker state: %d alive entities (%s)" % [initial_debug.alive_entities, str(initial_debug.types)])
+	
+	# Spawn several goblins manually through WaveDirector V2 spawn 
+	var spawn_count = 5
+	for i in range(spawn_count):
+		_spawn_test_enemy("basic")
+		await get_tree().process_frame  # Allow registration
+	
+	await get_tree().process_frame  # Final processing frame
+	
+	# Check if all goblins registered correctly 
+	var post_spawn_debug := EntityTracker.get_debug_info()
+	var enemy_count := EntityTracker.get_entities_by_type("enemy").size()
+	
+	print("Post-spawn EntityTracker state: %d alive (%s)" % [post_spawn_debug.alive_entities, str(post_spawn_debug.types)])
+	print("Enemy entities found: %d" % enemy_count)
+	
+	# Validation
+	if enemy_count == spawn_count:
+		print("✓ PASS: All %d goblins registered in EntityTracker" % spawn_count)
+	else:
+		print("✗ FAIL: Expected %d goblins, found %d in EntityTracker" % [spawn_count, enemy_count])
+
+# Test unified clear-all functionality
+func _test_clear_all():
+	print("=== Testing Clear-All via Damage Pipeline ===")
+	
+	# First spawn some entities to clear
+	var spawn_count = 3
+	for i in range(spawn_count):
+		_spawn_test_enemy("basic")
+		await get_tree().process_frame
+	
+	await get_tree().process_frame
+	
+	# Get pre-clear state
+	var pre_clear_debug := EntityTracker.get_debug_info()
+	print("Pre-clear state: %d alive entities (%s)" % [pre_clear_debug.alive_entities, str(pre_clear_debug.types)])
+	
+	# Use DebugManager unified clear-all
+	if DebugManager and DebugManager.has_method("clear_all_entities"):
+		print("Calling DebugManager.clear_all_entities()...")
+		DebugManager.clear_all_entities()
+		
+		# Wait for damage processing
+		await get_tree().process_frame
+		await get_tree().process_frame  # Additional frame for sync
+		
+		# Check post-clear state
+		var post_clear_debug := EntityTracker.get_debug_info()
+		var remaining_enemies := EntityTracker.get_entities_by_type("enemy").size()
+		
+		print("Post-clear state: %d alive entities (%s)" % [post_clear_debug.alive_entities, str(post_clear_debug.types)])
+		print("Remaining enemies: %d" % remaining_enemies)
+		
+		# Validation
+		if remaining_enemies == 0:
+			print("✓ PASS: All enemies cleared via damage pipeline")
+		else:
+			print("✗ FAIL: %d enemies still remain after clear-all" % remaining_enemies)
+	else:
+		print("✗ FAIL: DebugManager.clear_all_entities() not available")
+
+# Debug EntityTracker state
+func _debug_entity_tracker():
+	print("=== EntityTracker Debug Info ===")
+	var debug_info := EntityTracker.get_debug_info()
+	print("Total entities: %d" % debug_info.total_entities)
+	print("Alive entities: %d" % debug_info.alive_entities)
+	print("Types breakdown: %s" % str(debug_info.types))
+	print("Spatial grid cells: %d" % debug_info.spatial_grid_cells)
+	
+	# List all alive entities
+	var all_alive := EntityTracker.get_alive_entities()
+	print("All alive entity IDs:")
+	for entity_id in all_alive:
+		var entity_data := EntityTracker.get_entity(entity_id)
+		print("  - %s (type: %s, pos: %s)" % [entity_id, entity_data.get("type", "unknown"), entity_data.get("pos", Vector2.ZERO)])
