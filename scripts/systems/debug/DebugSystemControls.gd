@@ -32,6 +32,10 @@ func set_ai_paused(paused: bool) -> void:
 	
 	Logger.info("AI paused: %s" % paused, "debug")
 
+func is_ai_paused() -> bool:
+	"""Get current AI pause state"""
+	return ai_paused
+
 func set_collision_shapes_visible(visible: bool) -> void:
 	"""Toggle collision shape visibility - DEPRECATED: Non-working functionality removed"""
 	collision_shapes_visible = visible

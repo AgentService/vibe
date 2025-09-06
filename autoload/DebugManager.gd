@@ -304,6 +304,9 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 			if wave_director and wave_director.has_method("_spawn_from_config_v2"):
 				wave_director._spawn_from_config_v2(legacy_type, boss_config)
 				Logger.info("Debug spawned boss: %s at %s" % [boss_type, spawn_pos], "debug")
+				
+				# If AI is currently paused, immediately apply paused state to new boss
+				_apply_ai_pause_to_new_entity()
 			else:
 				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
 		else:
@@ -348,6 +351,9 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
 		else:
 			Logger.error("Failed to generate enemy config for: %s" % enemy_type, "debug")
+	
+	# If AI is currently paused, immediately apply paused state to all new enemies
+	_apply_ai_pause_to_new_entity()
 
 # Ability triggering methods
 func get_entity_abilities(entity_id: String) -> Array[String]:
@@ -364,6 +370,20 @@ func get_ability_cooldown(entity_id: String, ability_name: String) -> Dictionary
 	if not debug_enabled or not ability_trigger:
 		return {"ready": false, "cooldown_remaining": 0.0}
 	return ability_trigger.get_ability_cooldown(entity_id, ability_name)
+
+func _apply_ai_pause_to_new_entity() -> void:
+	"""If AI is currently paused, immediately apply paused state to newly spawned entities"""
+	if not debug_system_controls:
+		return
+		
+	# Check if AI is currently paused
+	if debug_system_controls.has_method("is_ai_paused") and debug_system_controls.is_ai_paused():
+		Logger.debug("AI is paused, applying pause state to newly spawned entities", "debug")
+		
+		# Emit the AI pause signal to ensure new entities receive it immediately
+		var payload := EventBus.CheatTogglePayload_Type.new("ai_paused", true)
+		# Small delay to ensure entities are fully spawned before receiving the signal
+		get_tree().create_timer(0.1).timeout.connect(func(): EventBus.cheat_toggled.emit(payload))
 
 func _initialize_debug_mode() -> void:
 	# Called deferred from _ready to ensure systems are initialized
