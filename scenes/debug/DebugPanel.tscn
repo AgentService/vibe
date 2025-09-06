@@ -69,7 +69,7 @@ layout_mode = 2
 text = "Entity Inspector"
 
 [node name="EntityInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 120)
+custom_minimum_size = Vector2(0, 140)
 layout_mode = 2
 bbcode_enabled = true
 text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
@@ -92,18 +92,6 @@ layout_mode = 2
 size_flags_horizontal = 3
 text = "Damage"
 
-[node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="SystemTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "System Controls"
-
-[node name="PauseAICheckbox" type="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Pause AI"
-
-
 [node name="SystemButtons" type="GridContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 columns = 2
@@ -117,6 +105,17 @@ text = "Clear All"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Reset Session"
+
+[node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="SystemTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "System Controls"
+
+[node name="PauseAICheckbox" type="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "Pause AI"
 
 [node name="Separator4" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2

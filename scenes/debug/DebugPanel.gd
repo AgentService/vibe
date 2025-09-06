@@ -488,9 +488,54 @@ func _apply_proper_styling() -> void:
 	var vbox_container = get_node("PanelContainer/MarginContainer/VBoxContainer")
 	if vbox_container:
 		vbox_container.add_theme_constant_override("separation", 8)
+	
+	# Apply modern button styling for better visibility
+	_apply_button_styling()
 		
 	Logger.debug("Applied proper Godot theme-based styling", "debug")
 
+func _apply_button_styling() -> void:
+	"""Apply modern button styling for better visibility while maintaining modern UX"""
+	var button_style := StyleBoxFlat.new()
+	button_style.bg_color = Color(0.25, 0.35, 0.55, 0.9)  # Modern blue-tinted background
+	button_style.border_width_left = 1
+	button_style.border_width_top = 1
+	button_style.border_width_right = 1
+	button_style.border_width_bottom = 1
+	button_style.border_color = Color(0.4, 0.6, 1.0, 0.6)  # Subtle blue border
+	button_style.corner_radius_top_left = 6
+	button_style.corner_radius_top_right = 6
+	button_style.corner_radius_bottom_left = 6
+	button_style.corner_radius_bottom_right = 6
+	
+	# Hover style for better interactivity
+	var button_hover_style := StyleBoxFlat.new()
+	button_hover_style.bg_color = Color(0.3, 0.4, 0.65, 0.95)  # Lighter on hover
+	button_hover_style.border_width_left = 1
+	button_hover_style.border_width_top = 1
+	button_hover_style.border_width_right = 1
+	button_hover_style.border_width_bottom = 1
+	button_hover_style.border_color = Color(0.5, 0.7, 1.0, 0.8)  # Brighter border on hover
+	button_hover_style.corner_radius_top_left = 6
+	button_hover_style.corner_radius_top_right = 6
+	button_hover_style.corner_radius_bottom_left = 6
+	button_hover_style.corner_radius_bottom_right = 6
+	
+	# Apply to all buttons in the debug panel
+	var all_buttons = [
+		spawn_at_cursor_btn, spawn_at_player_btn,
+		count1_btn, count5_btn, count10_btn,
+		kill_btn, heal_btn, damage_btn,
+		clear_all_btn, reset_session_btn
+	]
+	
+	for button in all_buttons:
+		if button:
+			button.add_theme_stylebox_override("normal", button_style)
+			button.add_theme_stylebox_override("hover", button_hover_style)
+			# Make text more visible
+			button.add_theme_color_override("font_color", Color.WHITE)
+			button.add_theme_color_override("font_hover_color", Color.WHITE)
 
 func _setup_performance_timer() -> void:
 	# Create performance update timer - update every second for responsive FPS display
@@ -613,12 +658,12 @@ func _update_performance_stats() -> void:
 	# Build new stats string using cached values and minimal string operations
 	# Build new stats using modern 2-column table format (like entity inspector)
 	var new_stats_text := "[table=2]"
-	new_stats_text += "[cell][color=#4A90E2]FPS:[/color][/cell][cell]%d[/cell]" % fps
-	new_stats_text += "[cell][color=#4A90E2]Total Enemies:[/color][/cell][cell]%d[/cell]" % total_enemies
-	new_stats_text += "[cell][color=#4A90E2]Mesh Enemies:[/color][/cell][cell]%d[/cell]" % cached_enemy_count
-	new_stats_text += "[cell][color=#4A90E2]Bosses:[/color][/cell][cell]%d[/cell]" % cached_boss_count
-	new_stats_text += "[cell][color=#4A90E2]Projectiles:[/color][/cell][cell]0[/cell]"
-	new_stats_text += "[cell][color=#4A90E2]Memory:[/color][/cell][cell]%.1f MB[/cell]" % memory_mb
+	new_stats_text += "[cell][color=#4A90E2]FPS[/color][/cell][cell]%d[/cell]" % fps
+	new_stats_text += "[cell][color=#4A90E2]Total Enemies[/color][/cell][cell]%d[/cell]" % total_enemies
+	new_stats_text += "[cell][color=#4A90E2]Mesh Enemies[/color][/cell][cell]%d[/cell]" % cached_enemy_count
+	new_stats_text += "[cell][color=#4A90E2]Bosses[/color][/cell][cell]%d[/cell]" % cached_boss_count
+	new_stats_text += "[cell][color=#4A90E2]Projectiles[/color][/cell][cell]0[/cell]"
+	new_stats_text += "[cell][color=#4A90E2]Memory[/color][/cell][cell]%.1f MB[/cell]" % memory_mb
 	new_stats_text += "[/table]"
 	
 	# Only update text if values actually changed to prevent memory leaks
