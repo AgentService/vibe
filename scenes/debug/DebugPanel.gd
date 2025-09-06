@@ -27,6 +27,7 @@ extends Control
 @onready var performance_info: RichTextLabel = $PanelContainer/MarginContainer/VBoxContainer/PerformanceInfo
 
 var selected_count: int = 1
+var selected_spawn_method: String = "cursor"  # "cursor" or "player"
 var available_enemy_types: Array[String] = []
 var background_panel: PanelContainer
 
@@ -82,6 +83,9 @@ func _ready() -> void:
 	
 	# Set initial count selection
 	_on_count_selected(1)
+	
+	# Set initial spawn method selection
+	_update_spawn_method_buttons()
 	
 	# Set initial entity inspector text
 	entity_info.text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
@@ -190,6 +194,10 @@ func _on_spawn_at_cursor_pressed() -> void:
 		Logger.warn("No enemy type selected for cursor spawn", "debug")
 		return
 	
+	# Update selected spawn method and button states
+	selected_spawn_method = "cursor"
+	_update_spawn_method_buttons()
+	
 	if DebugManager:
 		DebugManager.spawn_enemy_at_cursor(selected_enemy_type, selected_count)
 
@@ -198,6 +206,10 @@ func _on_spawn_at_player_pressed() -> void:
 	if selected_enemy_type.is_empty():
 		Logger.warn("No enemy type selected for player spawn", "debug")
 		return
+	
+	# Update selected spawn method and button states
+	selected_spawn_method = "player"
+	_update_spawn_method_buttons()
 	
 	if DebugManager:
 		DebugManager.spawn_enemy_at_player(selected_enemy_type, selected_count)
@@ -211,6 +223,11 @@ func _on_count_selected(count: int) -> void:
 	count10_btn.button_pressed = (count == 10)
 	
 	Logger.debug("Selected spawn count: %d" % count, "debug")
+
+func _update_spawn_method_buttons() -> void:
+	"""Update spawn method button states to show which is currently selected"""
+	spawn_at_cursor_btn.button_pressed = (selected_spawn_method == "cursor")
+	spawn_at_player_btn.button_pressed = (selected_spawn_method == "player")
 
 func _get_selected_enemy_type() -> String:
 	var selected_index := enemy_type_dropdown.selected
@@ -434,6 +451,10 @@ func _update_pause_ai_button_text() -> void:
 
 func _on_clear_all_pressed() -> void:
 	Logger.info("Clear all enemies triggered", "debug")
+	
+	# Remove focus from button for better UX
+	clear_all_btn.release_focus()
+	
 	# Prefer DebugManager central clear (works even without DebugSystemControls)
 	if DebugManager and DebugManager.has_method("clear_all_entities"):
 		DebugManager.clear_all_entities()

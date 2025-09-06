@@ -37,10 +37,12 @@ layout_mode = 2
 [node name="SpawnAtCursor" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
 layout_mode = 2
 text = "At Cursor (V)"
+toggle_mode = true
 
 [node name="SpawnAtPlayer" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
 layout_mode = 2
 text = "At Player (B)"
+toggle_mode = true
 
 [node name="CountButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
@@ -52,14 +54,17 @@ text = "Count:"
 [node name="Count1" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "1"
+toggle_mode = true
 
 [node name="Count5" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "5"
+toggle_mode = true
 
 [node name="Count10" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "10"
+toggle_mode = true
 
 [node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
