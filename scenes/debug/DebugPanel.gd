@@ -20,7 +20,6 @@ extends Control
 
 # System Controls UI elements  
 @onready var pause_ai_checkbox: CheckBox = $PanelContainer/MarginContainer/VBoxContainer/PauseAICheckbox
-@onready var show_collision_checkbox: CheckBox = $PanelContainer/MarginContainer/VBoxContainer/ShowCollisionCheckbox
 @onready var clear_all_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/CountButtons/ClearAllButton
 @onready var reset_session_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ResetSessionButton
 
@@ -68,7 +67,6 @@ func _ready() -> void:
 	
 	# Connect system controls signals
 	pause_ai_checkbox.toggled.connect(_on_pause_ai_toggled)
-	show_collision_checkbox.toggled.connect(_on_show_collision_toggled)
 	clear_all_btn.pressed.connect(_on_clear_all_pressed)
 	reset_session_btn.pressed.connect(_on_reset_session_pressed)
 	
@@ -421,17 +419,6 @@ func _on_pause_ai_toggled(pressed: bool) -> void:
 	else:
 		Logger.warn("DebugSystemControls not available for AI pause", "debug")
 
-func _on_show_collision_toggled(pressed: bool) -> void:
-	Logger.info("Collision shapes visibility toggled: %s" % pressed, "debug")
-	
-	# Lazy-fetch DebugSystemControls if not available
-	if not debug_system_controls:
-		_reacquire_debug_system_controls()
-	
-	if debug_system_controls:
-		debug_system_controls.set_collision_shapes_visible(pressed)
-	else:
-		Logger.warn("DebugSystemControls not available for collision shapes", "debug")
 
 # Performance stats are now always visible, no toggle needed
 
@@ -589,8 +576,23 @@ func _update_performance_stats() -> void:
 	if stats_update_count % 5 == 0:  # Much less frequent counting - every 5 seconds
 		# Count from WaveDirector (mesh enemies) - efficient method
 		cached_enemy_count = 0
+		
+		# Try to get DebugSystemControls from DebugManager if not available
+		if not debug_system_controls:
+			_reacquire_debug_system_controls()
+		
+		# Try multiple paths to get WaveDirector for mesh enemy counting
+		var wave_dir: WaveDirector = null
 		if debug_system_controls and debug_system_controls.wave_director:
-			var alive_enemies = debug_system_controls.wave_director.get_alive_enemies()
+			wave_dir = debug_system_controls.wave_director
+		elif DebugManager and DebugManager.wave_director:
+			wave_dir = DebugManager.wave_director
+		else:
+			# Fallback: direct autoload access
+			wave_dir = get_node_or_null("/root/WaveDirector")
+		
+		if wave_dir and wave_dir.has_method("get_alive_enemies"):
+			var alive_enemies = wave_dir.get_alive_enemies()
 			cached_enemy_count = alive_enemies.size()
 		
 		# Count bosses from EntityTracker instead of expensive scene tree traversal

@@ -33,15 +33,9 @@ func set_ai_paused(paused: bool) -> void:
 	Logger.info("AI paused: %s" % paused, "debug")
 
 func set_collision_shapes_visible(visible: bool) -> void:
-	"""Toggle collision shape visibility"""
+	"""Toggle collision shape visibility - DEPRECATED: Non-working functionality removed"""
 	collision_shapes_visible = visible
-	
-	# Apply to current scene
-	var scene_tree = get_tree()
-	if scene_tree and scene_tree.current_scene:
-		_set_collision_visible_recursive(scene_tree.current_scene, visible)
-	
-	Logger.info("Collision shapes visible: %s" % visible, "debug")
+	Logger.warn("Collision shape debugging functionality has been removed (non-working)", "debug")
 
 func clear_all_entities() -> void:
 	"""Clear all enemies and bosses from the scene"""
@@ -101,21 +95,6 @@ func _set_ai_paused_recursive(node: Node, paused: bool) -> void:
 	for child in node.get_children():
 		_set_ai_paused_recursive(child, paused)
 
-func _set_collision_visible_recursive(node: Node, visible: bool) -> void:
-	# Toggle collision shape visibility
-	if node is CollisionShape2D:
-		var collision = node as CollisionShape2D
-		collision.debug_color = Color.RED if visible else Color.TRANSPARENT
-	elif node is Area2D:
-		var area = node as Area2D
-		for child in area.get_children():
-			if child is CollisionShape2D:
-				var collision = child as CollisionShape2D
-				collision.debug_color = Color.BLUE if visible else Color.TRANSPARENT
-	
-	# Process children
-	for child in node.get_children():
-		_set_collision_visible_recursive(child, visible)
 
 func _clear_bosses_recursive(node: Node) -> int:
 	var cleared = 0

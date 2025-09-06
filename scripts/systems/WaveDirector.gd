@@ -40,6 +40,8 @@ var _last_cache_frame: int = -1
 # Free enemy slot tracking for faster spawning
 var _last_free_index: int = 0
 
+# AI pause functionality for debug interface
+var ai_paused: bool = false
 
 signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
@@ -50,6 +52,9 @@ func _ready() -> void:
 	
 	# DAMAGE V3: Listen for unified damage sync events
 	EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+	
+	# Connect to cheat toggle events for AI pause functionality
+	EventBus.cheat_toggled.connect(_on_cheat_toggled)
 
 	_initialize_pool()
 	_preload_boss_scenes()
@@ -83,6 +88,8 @@ func _exit_tree() -> void:
 		EventBus.combat_step.disconnect(_on_combat_step)
 	if EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
+	if EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
+		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
 	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
 		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
 	Logger.debug("WaveDirector: Cleaned up signal connections", "systems")
@@ -372,6 +379,10 @@ func _find_free_enemy() -> int:
 	return -1
 
 func _update_enemies(dt: float) -> void:
+	# Skip enemy AI updates if paused for debug
+	if ai_paused:
+		return
+	
 	# Use cached player position from PlayerState autoload  
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
@@ -453,3 +464,9 @@ func clear_all_enemies() -> void:
 		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
 
 # AI methods removed - back to simple chase behavior
+
+func _on_cheat_toggled(payload) -> void:
+	# Handle AI pause/unpause cheat toggle
+	if payload.cheat_name == "ai_paused":
+		ai_paused = payload.enabled
+		Logger.debug("WaveDirector AI paused: %s" % ai_paused, "debug")
