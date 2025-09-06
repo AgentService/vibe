@@ -437,6 +437,9 @@ func _on_clear_all_pressed() -> void:
 func _on_reset_session_pressed() -> void:
 	Logger.info("Reset session triggered", "debug")
 	
+	# Remove focus from button for better UX
+	reset_session_btn.release_focus()
+	
 	# Lazy-fetch DebugSystemControls if not available
 	if not debug_system_controls:
 		_reacquire_debug_system_controls()
@@ -456,31 +459,35 @@ func _apply_proper_styling() -> void:
 	var panel_container = get_node("PanelContainer")
 	if panel_container:
 		var panel_style := StyleBoxFlat.new()
-		panel_style.bg_color = Color(0, 0, 0, 1.0)  # Solid black background
-		panel_style.border_width_left = 2
-		panel_style.border_width_top = 2
-		panel_style.border_width_right = 2
-		panel_style.border_width_bottom = 2
-		panel_style.border_color = Color(0.3, 0.3, 0.3, 1.0)  # Dark gray border
-		panel_style.corner_radius_top_left = 8
-		panel_style.corner_radius_top_right = 8
-		panel_style.corner_radius_bottom_left = 8
-		panel_style.corner_radius_bottom_right = 8
+		panel_style.bg_color = Color(0.1, 0.1, 0.1, 0.92)  # Modern dark background with transparency
+		panel_style.border_width_left = 1
+		panel_style.border_width_top = 1
+		panel_style.border_width_right = 1
+		panel_style.border_width_bottom = 1
+		panel_style.border_color = Color(0.4, 0.6, 1.0, 0.8)  # Modern blue accent border
+		panel_style.corner_radius_top_left = 12
+		panel_style.corner_radius_top_right = 12
+		panel_style.corner_radius_bottom_left = 12
+		panel_style.corner_radius_bottom_right = 12
+		# Add subtle shadow/glow effect
+		panel_style.shadow_color = Color(0.0, 0.0, 0.0, 0.3)
+		panel_style.shadow_size = 4
+		panel_style.shadow_offset = Vector2(2, 2)
 		
 		panel_container.add_theme_stylebox_override("panel", panel_style)
 		
-	# Apply margin to MarginContainer (proper padding)
+	# Apply margin to MarginContainer (proper padding) - more generous for modern look
 	var margin_container = get_node("PanelContainer/MarginContainer")
 	if margin_container:
-		margin_container.add_theme_constant_override("margin_left", 8)
-		margin_container.add_theme_constant_override("margin_right", 8)
-		margin_container.add_theme_constant_override("margin_top", 8)
-		margin_container.add_theme_constant_override("margin_bottom", 8)
+		margin_container.add_theme_constant_override("margin_left", 16)
+		margin_container.add_theme_constant_override("margin_right", 16)
+		margin_container.add_theme_constant_override("margin_top", 16)
+		margin_container.add_theme_constant_override("margin_bottom", 16)
 		
-	# Apply separation to VBoxContainer (spacing between elements)
+	# Apply separation to VBoxContainer (spacing between elements) - more breathing room
 	var vbox_container = get_node("PanelContainer/MarginContainer/VBoxContainer")
 	if vbox_container:
-		vbox_container.add_theme_constant_override("separation", 4)
+		vbox_container.add_theme_constant_override("separation", 8)
 		
 	Logger.debug("Applied proper Godot theme-based styling", "debug")
 
@@ -604,12 +611,19 @@ func _update_performance_stats() -> void:
 	var total_enemies = cached_enemy_count + cached_boss_count
 	
 	# Build new stats string using cached values and minimal string operations
-	var new_stats_text = "FPS: %d\nEnemies: %d (Mesh: %d, Bosses: %d)\nProjectiles: 0\nMemory: %.1f MB" % [fps, total_enemies, cached_enemy_count, cached_boss_count, memory_mb]
+	# Build new stats using modern 2-column table format (like entity inspector)
+	var new_stats_text := "[table=2]"
+	new_stats_text += "[cell][color=#4A90E2]FPS:[/color][/cell][cell]%d[/cell]" % fps
+	new_stats_text += "[cell][color=#4A90E2]Total Enemies:[/color][/cell][cell]%d[/cell]" % total_enemies
+	new_stats_text += "[cell][color=#4A90E2]Mesh Enemies:[/color][/cell][cell]%d[/cell]" % cached_enemy_count
+	new_stats_text += "[cell][color=#4A90E2]Bosses:[/color][/cell][cell]%d[/cell]" % cached_boss_count
+	new_stats_text += "[cell][color=#4A90E2]Projectiles:[/color][/cell][cell]0[/cell]"
+	new_stats_text += "[cell][color=#4A90E2]Memory:[/color][/cell][cell]%.1f MB[/cell]" % memory_mb
+	new_stats_text += "[/table]"
 	
 	# Only update text if values actually changed to prevent memory leaks
 	if new_stats_text != last_stats_text:
-		# Use minimal string operations for BBCode
-		performance_info.text = "[color=white]%s[/color]" % new_stats_text
+		performance_info.text = new_stats_text
 		last_stats_text = new_stats_text
 
 func _count_bosses_in_scene() -> int:

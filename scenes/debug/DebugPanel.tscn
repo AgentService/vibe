@@ -61,6 +61,10 @@ text = "5"
 layout_mode = 2
 text = "10"
 
+[node name="Spacer" type="Control" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+
 [node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
 layout_mode = 2
 text = "Clear All Enemies"
