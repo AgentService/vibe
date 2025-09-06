@@ -333,6 +333,30 @@ func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_damage_system(injected_damage_system)
 
+func _input(event: InputEvent) -> void:
+	"""Handle arena-specific input events."""
+	
+	# Handle return to hideout (H key for testing)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_H:
+		_return_to_hideout()
+
+func _return_to_hideout() -> void:
+	"""Return to hideout from arena (debug/testing function)."""
+	
+	Logger.info("Returning to hideout from arena", "arena")
+	
+	# Gather player data if available
+	var character_data = {}
+	if player and player.has_method("get_character_data"):
+		character_data = player.get_character_data()
+	
+	# Emit return request
+	EventBus.request_return_hideout.emit({
+		"spawn_point": "PlayerSpawnPoint",
+		"character_data": character_data,
+		"source": "arena_return"
+	})
+
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
 	debug_controller = DebugController.new()

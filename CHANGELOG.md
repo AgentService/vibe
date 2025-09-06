@@ -5,13 +5,19 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout System Phase 1**: Implemented unified player spawning system across all scenes
+  - **PlayerSpawner system**: Created reusable scripts/systems/PlayerSpawner.gd for consistent player instantiation
+  - **Resource-based config**: Converted debug.json to debug.tres using DebugConfig resource class
+  - **Unified spawn points**: Added PlayerSpawnPoint markers to both Arena and Hideout scenes
+  - **Scene-specific spawning**: Hideout.gd and refactored Arena.gd both use PlayerSpawner with fallback
+  - **EventBus integration**: Player position changes emit events for other systems to consume
+  - **Architecture compliant**: Maintains domain/systems/scenes separation, passes all validation checks
 - **Hideout System Phase 0**: Implemented dynamic scene loading infrastructure for hub-based game flow
-  - **Dynamic scene loading**: Main.gd now reads config/debug.json and dynamically instantiates Arena or Hideout scenes
+  - **Dynamic scene loading**: Main.gd now reads config/debug.tres and dynamically instantiates Arena or Hideout scenes
   - **Minimal hideout**: Created scenes/core/Hideout.tscn with PlayerSpawnPoint (Marker2D) and Camera2D
-  - **Debug configuration**: Enhanced debug.json with start_mode selection ("arena" | "hideout" | "map")
+  - **Debug configuration**: Enhanced config with start_mode selection ("arena" | "hideout" | "map")
   - **Backwards compatibility**: Arena mode works exactly as before, no breaking changes
   - **Scene switching**: Can switch between modes via config without code changes
-  - **Foundation**: Sets up architecture for Phase 1 (PlayerSpawner) and Phase 2 (scene transitions)
 - **Entity Tracker Unified Clear-All**: Implemented comprehensive entity registration and damage-based clearing system
   - **Registration gaps fixed**: Added missing EntityTracker registration in WaveDirector._spawn_pooled_enemy and _spawn_special_boss
   - **Unified clear-all**: Updated WaveDirector.clear_all_enemies to route through DebugManager damage pipeline for consistency
