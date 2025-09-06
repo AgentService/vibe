@@ -5,7 +5,7 @@ extends Node2D
 
 const SceneTransitionManager = preload("res://scripts/systems/SceneTransitionManager.gd")
 
-var current_scene: Node2D
+var current_scene: Node
 var debug_config: DebugConfig
 var scene_transition_manager: SceneTransitionManager
 
@@ -49,13 +49,20 @@ func _load_debug_config() -> void:
 func _load_initial_scene() -> void:
 	var scene_path: String
 	
-	match debug_config.start_mode:
-		"hideout":
-			scene_path = "res://scenes/core/Hideout.tscn"
-		"arena", "map", _:
-			scene_path = debug_config.map_scene
+	# Check if we should skip main menu for development
+	if debug_config.start_mode == "menu" and debug_config.skip_main_menu:
+		Logger.info("Skipping main menu - going directly to hideout for development", "main")
+		scene_path = "res://scenes/core/Hideout.tscn"
+	else:
+		match debug_config.start_mode:
+			"menu":
+				scene_path = "res://scenes/ui/MainMenu.tscn"
+			"hideout":
+				scene_path = "res://scenes/core/Hideout.tscn"
+			"arena", "map", _:
+				scene_path = debug_config.map_scene if debug_config.map_scene != "" else "res://scenes/arena/Arena.tscn"
 	
-	Logger.info("Loading scene: " + scene_path, "main")
+	Logger.info("Loading initial scene: " + scene_path, "main")
 	_instantiate_scene(scene_path)
 
 func _instantiate_scene(scene_path: String) -> void:
@@ -90,7 +97,7 @@ func _on_transition_completed(scene_name: String) -> void:
 	# Update current scene reference
 	current_scene = scene_transition_manager.get_current_scene()
 
-func _on_scene_transitioned(new_scene: Node2D) -> void:
+func _on_scene_transitioned(new_scene: Node) -> void:
 	"""Called by SceneTransitionManager to update Main's scene reference."""
 	current_scene = new_scene
 

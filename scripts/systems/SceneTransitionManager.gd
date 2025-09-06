@@ -8,7 +8,7 @@ class_name SceneTransitionManager
 signal transition_started(from_scene: String, to_scene: String)
 signal transition_completed(scene_name: String)
 
-var current_scene_node: Node2D
+var current_scene_node: Node
 var transition_data: Dictionary = {}
 
 func _ready() -> void:
@@ -101,7 +101,7 @@ func _resolve_map_path(map_id: String) -> String:
 	Resolves map ID to scene path.
 	
 	Args:
-		map_id: Map identifier ("arena", "forest", "dungeon", etc.)
+		map_id: Map identifier ("arena", "hideout", "main_menu", etc.)
 	
 	Returns:
 		Full scene path
@@ -109,6 +109,12 @@ func _resolve_map_path(map_id: String) -> String:
 	match map_id:
 		"arena", "default":
 			return "res://scenes/arena/Arena.tscn"
+		"hideout":
+			return "res://scenes/core/Hideout.tscn"
+		"main_menu":
+			return "res://scenes/ui/MainMenu.tscn"
+		"character_select":
+			return "res://scenes/ui/CharacterSelect.tscn"
 		"forest":
 			return "res://scenes/maps/Forest.tscn"  # Future maps
 		"dungeon":
@@ -146,10 +152,10 @@ func _get_current_scene_name() -> String:
 		return current_scene_node.name
 	return "none"
 
-func get_current_scene() -> Node2D:
+func get_current_scene() -> Node:
 	"""Returns reference to the current scene node."""
 	return current_scene_node
 
-func set_current_scene(scene_node: Node2D) -> void:
+func set_current_scene(scene_node: Node) -> void:
 	"""Sets the current scene reference (called by Main on initial load)."""
 	current_scene_node = scene_node
