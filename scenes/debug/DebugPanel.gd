@@ -495,14 +495,14 @@ func _apply_proper_styling() -> void:
 	Logger.debug("Applied proper Godot theme-based styling", "debug")
 
 func _apply_button_styling() -> void:
-	"""Apply modern button styling for better visibility while maintaining modern UX"""
+	"""Apply modern button styling that blends well with dark panel theme"""
 	var button_style := StyleBoxFlat.new()
-	button_style.bg_color = Color(0.25, 0.35, 0.55, 0.9)  # Modern blue-tinted background
+	button_style.bg_color = Color(0.15, 0.15, 0.15, 0.8)  # Dark background matching panel theme
 	button_style.border_width_left = 1
 	button_style.border_width_top = 1
 	button_style.border_width_right = 1
 	button_style.border_width_bottom = 1
-	button_style.border_color = Color(0.4, 0.6, 1.0, 0.6)  # Subtle blue border
+	button_style.border_color = Color(0.3, 0.4, 0.6, 0.4)  # Subtle muted border
 	button_style.corner_radius_top_left = 6
 	button_style.corner_radius_top_right = 6
 	button_style.corner_radius_bottom_left = 6
@@ -513,14 +513,14 @@ func _apply_button_styling() -> void:
 	button_style.content_margin_top = 6
 	button_style.content_margin_bottom = 6
 	
-	# Hover style for better interactivity
+	# Hover style for better interactivity - subtle but noticeable
 	var button_hover_style := StyleBoxFlat.new()
-	button_hover_style.bg_color = Color(0.3, 0.4, 0.65, 0.95)  # Lighter on hover
+	button_hover_style.bg_color = Color(0.2, 0.25, 0.35, 0.9)  # Slightly lighter dark background
 	button_hover_style.border_width_left = 1
 	button_hover_style.border_width_top = 1
 	button_hover_style.border_width_right = 1
 	button_hover_style.border_width_bottom = 1
-	button_hover_style.border_color = Color(0.5, 0.7, 1.0, 0.8)  # Brighter border on hover
+	button_hover_style.border_color = Color(0.4, 0.5, 0.7, 0.6)  # More visible border on hover
 	button_hover_style.corner_radius_top_left = 6
 	button_hover_style.corner_radius_top_right = 6
 	button_hover_style.corner_radius_bottom_left = 6
@@ -543,8 +543,8 @@ func _apply_button_styling() -> void:
 		if button:
 			button.add_theme_stylebox_override("normal", button_style)
 			button.add_theme_stylebox_override("hover", button_hover_style)
-			# Make text more visible
-			button.add_theme_color_override("font_color", Color.WHITE)
+			# Light gray text for better integration with dark theme
+			button.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1.0))
 			button.add_theme_color_override("font_hover_color", Color.WHITE)
 
 func _setup_performance_timer() -> void:
