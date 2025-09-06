@@ -601,6 +601,33 @@ func _apply_button_styling() -> void:
 		# Update text based on state
 		_update_pause_ai_button_text()
 	
+	# Special styling for toggle buttons (Spawn method and Count) - green active state
+	var green_active_style := StyleBoxFlat.new()
+	green_active_style.bg_color = Color(0.3, 0.6, 0.3, 0.8)  # Green background when active
+	green_active_style.border_width_left = 1
+	green_active_style.border_width_top = 1
+	green_active_style.border_width_right = 1
+	green_active_style.border_width_bottom = 1
+	green_active_style.border_color = Color(0.4, 0.8, 0.4, 0.8)  # Brighter green border
+	green_active_style.corner_radius_top_left = 6
+	green_active_style.corner_radius_top_right = 6
+	green_active_style.corner_radius_bottom_left = 6
+	green_active_style.corner_radius_bottom_right = 6
+	green_active_style.content_margin_left = 8
+	green_active_style.content_margin_right = 8
+	green_active_style.content_margin_top = 6
+	green_active_style.content_margin_bottom = 6
+	
+	# Apply green active state to spawn method and count toggle buttons
+	var toggle_buttons = [
+		spawn_at_cursor_btn, spawn_at_player_btn,
+		count1_btn, count5_btn, count10_btn
+	]
+	
+	for button in toggle_buttons:
+		if button:
+			button.add_theme_stylebox_override("pressed", green_active_style)
+	
 
 func _setup_performance_timer() -> void:
 	# Create performance update timer - update every second for responsive FPS display
