@@ -245,6 +245,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 		"pos": enemy.pos
 	}
 	EntityTracker.register_entity(entity_id, entity_data)
+	DamageService.register_entity(entity_id, entity_data)
 	
 	# TEMPORARY DEBUG: Log registration count validation
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
