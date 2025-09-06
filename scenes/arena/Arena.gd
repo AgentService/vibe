@@ -434,16 +434,16 @@ func spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
 
 
 func _exit_tree() -> void:
-	# Cleanup signal connections
-	if ability_system and multimesh_manager:
+	# Cleanup signal connections with guards to prevent double disconnection
+	if ability_system and multimesh_manager and ability_system.projectiles_updated.is_connected(multimesh_manager.update_projectiles):
 		ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
-	if wave_director and multimesh_manager:
+	if wave_director and multimesh_manager and wave_director.enemies_updated.is_connected(multimesh_manager.update_enemies):
 		wave_director.enemies_updated.disconnect(multimesh_manager.update_enemies)
-	if arena_system:
+	if arena_system and arena_system.arena_loaded.is_connected(_on_arena_loaded):
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
-	EventBus.level_up.disconnect(_on_level_up)
 	
-	# Call teardown to ensure proper cleanup
+	# Call teardown to handle EventBus signals and other cleanup
+	# on_teardown() has proper guards for EventBus signal disconnection
 	on_teardown()
 
 func on_teardown() -> void:
