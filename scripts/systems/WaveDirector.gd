@@ -469,4 +469,3 @@ func _on_cheat_toggled(payload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
-		Logger.debug("WaveDirector AI paused: %s" % ai_paused, "debug")

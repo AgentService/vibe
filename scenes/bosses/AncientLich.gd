@@ -251,4 +251,3 @@ func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
-		Logger.debug("AncientLich AI paused: %s" % ai_paused, "debug")
