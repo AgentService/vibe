@@ -125,7 +125,8 @@ func _create_hover_indicator() -> void:
 	hover_indicator.add_child(br_bracket)
 	
 	# Hide by default
-	hover_indicator.visible = false
+	if hover_indicator:
+		hover_indicator.visible = false
 
 func _on_debug_mode_toggled(enabled: bool) -> void:
 	mouse_enabled = enabled
@@ -218,8 +219,11 @@ func _select_entity(entity_id: String, world_pos: Vector2) -> void:
 		# Apply position offset compensation for MultiMesh entities
 		var display_pos := _get_visual_position(entity_data, entity_pos)
 		
-		selection_indicator.global_position = display_pos
-		selection_indicator.visible = true
+		if selection_indicator:
+			selection_indicator.global_position = display_pos
+			selection_indicator.visible = true
+		else:
+			Logger.warn("EntitySelector: selection_indicator is null during entity selection", "debug")
 	
 	# Emit selection signals
 	entity_selected.emit(entity_id)
@@ -297,7 +301,8 @@ func _set_hovered_entity(entity_id: String) -> void:
 	
 	if entity_id.is_empty():
 		# No entity hovered - hide hover indicator
-		hover_indicator.visible = false
+		if hover_indicator:
+			hover_indicator.visible = false
 	else:
 		# Entity hovered - show hover indicator
 		var entity_data := EntityTracker.get_entity(entity_id)
@@ -307,8 +312,11 @@ func _set_hovered_entity(entity_id: String) -> void:
 			# Apply position offset compensation for MultiMesh entities
 			var display_pos := _get_visual_position(entity_data, entity_pos)
 			
-			hover_indicator.global_position = display_pos
-			hover_indicator.visible = true
+			if hover_indicator:
+				hover_indicator.global_position = display_pos
+				hover_indicator.visible = true
+			else:
+				Logger.warn("EntitySelector: hover_indicator is null during entity hover", "debug")
 			
 			# Position indicator with appropriate offset compensation
 
