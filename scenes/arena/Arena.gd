@@ -17,6 +17,7 @@ const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSyste
 const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
+const PlayerSpawner := preload("res://scripts/systems/PlayerSpawner.gd")
 const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
 const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
 const ArenaInputHandler := preload("res://scripts/systems/ArenaInputHandler.gd")
@@ -37,6 +38,7 @@ var enemy_animation_system: EnemyAnimationSystem
 var multimesh_manager: MultiMeshManager
 var boss_spawn_manager: BossSpawnManager
 var player_attack_handler: PlayerAttackHandler
+var player_spawner: PlayerSpawner
 
 
 var wave_director: WaveDirector
@@ -251,11 +253,21 @@ func _process(delta: float) -> void:
 # PHASE 14: Input handling now managed by ArenaInputHandler
 
 func _setup_player() -> void:
-	# Load player scene dynamically to support @export hot-reload
-	var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
-	player = player_scene.instantiate()
-	player.global_position = Vector2(0, 0)  # Center of arena
-	add_child(player)
+	# Initialize PlayerSpawner system
+	player_spawner = PlayerSpawner.new()
+	add_child(player_spawner)
+	
+	# Spawn player at PlayerSpawnPoint
+	player = player_spawner.spawn_player("PlayerSpawnPoint", self)
+	
+	if not player:
+		Logger.error("Failed to spawn player in Arena", "arena")
+		# Fallback: create player manually at center
+		var player_scene = load("res://scenes/arena/Player.tscn") as PackedScene
+		player = player_scene.instantiate()
+		player.global_position = Vector2(0, 0)
+		add_child(player)
+		Logger.warn("Using fallback player spawn method", "arena")
 	
 	# Camera setup now handled in injection method
 
@@ -320,6 +332,24 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 func set_damage_system(injected_damage_system: DamageSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_damage_system(injected_damage_system)
+
+func _input(event: InputEvent) -> void:
+	"""Handle arena-specific input events."""
+	
+	# Handle return to hideout (H key for testing)
+	if event is InputEventKey and event.pressed and event.keycode == KEY_H:
+		_return_to_hideout()
+
+func _return_to_hideout() -> void:
+	"""Return to hideout from arena (debug/testing function)."""
+	
+	Logger.info("Returning to hideout from arena", "arena")
+	
+	# Use GameOrchestrator for proper teardown sequence
+	if GameOrchestrator and GameOrchestrator.has_method("go_to_hideout"):
+		GameOrchestrator.go_to_hideout()
+	else:
+		Logger.error("GameOrchestrator.go_to_hideout() not available", "arena")
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
@@ -404,11 +434,67 @@ func spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
 
 
 func _exit_tree() -> void:
-	# Cleanup signal connections
-	if ability_system and multimesh_manager:
+	# Cleanup signal connections with guards to prevent double disconnection
+	if ability_system and multimesh_manager and ability_system.projectiles_updated.is_connected(multimesh_manager.update_projectiles):
 		ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
-	if wave_director and multimesh_manager:
+	if wave_director and multimesh_manager and wave_director.enemies_updated.is_connected(multimesh_manager.update_enemies):
 		wave_director.enemies_updated.disconnect(multimesh_manager.update_enemies)
-	if arena_system:
+	if arena_system and arena_system.arena_loaded.is_connected(_on_arena_loaded):
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
-	EventBus.level_up.disconnect(_on_level_up)
+	
+	# Call teardown to handle EventBus signals and other cleanup
+	# on_teardown() has proper guards for EventBus signal disconnection
+	on_teardown()
+
+func on_teardown() -> void:
+	"""Teardown contract for scene transitions - ensures clean Arena shutdown"""
+	Logger.info("Arena teardown initiated", "arena")
+	
+	# Stop and reset WaveDirector
+	if wave_director:
+		if wave_director.has_method("stop"):
+			wave_director.stop()
+		if wave_director.has_method("reset"):
+			wave_director.reset()
+	
+	# Clear EntityTracker of enemy entities
+	if EntityTracker:
+		if EntityTracker.has_method("clear"):
+			EntityTracker.clear("enemies")
+		if EntityTracker.has_method("reset"):
+			EntityTracker.reset()
+	
+	# Queue free all ArenaRoot children (belt and suspenders)
+	var arena_root = get_node_or_null("ArenaRoot")
+	if arena_root:
+		var child_count = arena_root.get_child_count()
+		for child in arena_root.get_children():
+			Logger.debug("Arena teardown: Freeing child %s" % child.name, "arena")
+			child.queue_free()
+		Logger.info("Arena teardown: Freed %d ArenaRoot children" % child_count, "arena")
+	
+	# Diagnostic: Check for remaining enemies and arena_owned nodes
+	var enemies_remaining = get_tree().get_nodes_in_group("enemies").size()
+	var arena_owned_remaining = get_tree().get_nodes_in_group("arena_owned").size()
+	
+	if enemies_remaining > 0:
+		Logger.warn("Arena teardown: %d enemies still in scene after cleanup" % enemies_remaining, "arena")
+	if arena_owned_remaining > 0:
+		Logger.warn("Arena teardown: %d arena_owned nodes still in scene after cleanup" % arena_owned_remaining, "arena")
+	
+	# EntityTracker diagnostic
+	if EntityTracker:
+		var debug_info = EntityTracker.get_debug_info()
+		Logger.info("Arena teardown: EntityTracker has %d entities (%d alive)" % [debug_info.total_entities, debug_info.alive_entities], "arena")
+	
+	# Disconnect any remaining EventBus signals that might reference this scene
+	var connections_to_disconnect = [
+		[EventBus.combat_step, "_on_combat_step"],
+		[EventBus.level_up, "_on_level_up"]
+	]
+	
+	for connection in connections_to_disconnect:
+		if connection[0].is_connected(Callable(self, connection[1])):
+			connection[0].disconnect(Callable(self, connection[1]))
+	
+	Logger.info("Arena teardown completed", "arena")

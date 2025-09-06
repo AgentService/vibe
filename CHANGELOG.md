@@ -5,6 +5,46 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout Phase 0 Boot Switch**: Implemented typed, configurable boot flow with minimal-risk architectural improvements
+  - **Typed EventBus signals**: Added enter_map_requested(StringName) and character_selected(StringName) for past-tense signal contracts
+  - **DebugConfig Resource**: Updated to use StringName for character_id field (type consistency)
+  - **Hideout.tscn structure**: Enhanced with YSort node and renamed spawn point to "spawn_hideout_main" per Phase 0 spec
+  - **MapDevice as Area2D**: Converted from Node2D to Area2D with proper collision detection and typed signal emission
+  - **PlayerSpawner API**: Added spawn_at(root, spawn_name) method with deferred spawn to avoid race conditions
+  - **Boot mode selection**: Main.gd dynamic scene loading already supported hideout/arena toggle via config/debug.tres
+  - **Test coverage**: Added test_debug_boot_modes.gd and Hideout_Isolated.tscn for automated boot mode validation
+  - **Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md with Phase 0 signal patterns and boot configuration
+- **Hideout Enemy Leak Fix**: Resolved critical scene transition bug where enemies persisted after arena-to-hideout swap
+  - **Scene ownership**: Added ArenaRoot node container for proper enemy parenting (no more leakage to autoloads)
+  - **GameOrchestrator transition**: Implemented go_to_hideout/go_to_arena with proper teardown sequence
+  - **Arena teardown contract**: Added on_teardown() method with comprehensive cleanup (systems, registries, signals)
+  - **SceneTransitionManager integration**: Enhanced existing system to call on_teardown() during scene transitions
+  - **WaveDirector cleanup**: Added stop() and reset() methods to halt spawning and clear enemy pools
+  - **EntityTracker cleanup**: Added clear(type) and reset() methods for complete entity registry cleanup
+  - **Global safety net**: EventBus.mode_changed signal triggers fail-safe purge of arena_owned/enemies groups
+  - **Bidirectional flow preserved**: H key (arena → hideout) and E key (hideout → arena) both work seamlessly
+  - **Diagnostic logging**: Enhanced teardown with detailed entity count reporting and leak detection
+  - **Test coverage**: Added tests/test_scene_swap_teardown.gd for automated validation
+- **Hideout System Phase 2**: Implemented scene transition system for seamless navigation between areas
+  - **SceneTransitionManager**: Created runtime scene loading/unloading system with EventBus integration
+  - **MapDevice interaction**: Interactive portals with Area2D proximity detection and UI prompts
+  - **EventBus signals**: Added request_enter_map and request_return_hideout for scene transitions
+  - **Coordinated transitions**: Main.gd integrates SceneTransitionManager for smooth scene changes
+  - **Player state preservation**: Character data maintained across scene transitions
+  - **Bidirectional flow**: Hideout ↔ Arena transitions working (E key to enter, H key to return)
+- **Hideout System Phase 1**: Implemented unified player spawning system across all scenes
+  - **PlayerSpawner system**: Created reusable scripts/systems/PlayerSpawner.gd for consistent player instantiation
+  - **Resource-based config**: Converted debug.json to debug.tres using DebugConfig resource class
+  - **Unified spawn points**: Added PlayerSpawnPoint markers to both Arena and Hideout scenes
+  - **Scene-specific spawning**: Hideout.gd and refactored Arena.gd both use PlayerSpawner with fallback
+  - **EventBus integration**: Player position changes emit events for other systems to consume
+  - **Architecture compliant**: Maintains domain/systems/scenes separation, passes all validation checks
+- **Hideout System Phase 0**: Implemented dynamic scene loading infrastructure for hub-based game flow
+  - **Dynamic scene loading**: Main.gd now reads config/debug.tres and dynamically instantiates Arena or Hideout scenes
+  - **Minimal hideout**: Created scenes/core/Hideout.tscn with PlayerSpawnPoint (Marker2D) and Camera2D
+  - **Debug configuration**: Enhanced config with start_mode selection ("arena" | "hideout" | "map")
+  - **Backwards compatibility**: Arena mode works exactly as before, no breaking changes
+  - **Scene switching**: Can switch between modes via config without code changes
 - **Entity Tracker Unified Clear-All**: Implemented comprehensive entity registration and damage-based clearing system
   - **Registration gaps fixed**: Added missing EntityTracker registration in WaveDirector._spawn_pooled_enemy and _spawn_special_boss
   - **Unified clear-all**: Updated WaveDirector.clear_all_enemies to route through DebugManager damage pipeline for consistency

@@ -38,9 +38,12 @@ func _on_resume_pressed() -> void:
 	toggle_pause()
 
 func _on_quit_pressed() -> void:
-	Logger.info("Quit button pressed", "ui") 
-	# Resume game first, then quit
+	Logger.info("Quit to main menu pressed", "ui") 
+	# Resume game first, then return to main menu
 	PauseManager.pause_game(false)
-	# For now, just quit the application
-	# Later this could return to main menu
-	get_tree().quit()
+	
+	# Request transition back to main menu
+	EventBus.request_enter_map.emit({
+		"map_id": "main_menu",
+		"source": "pause_menu_quit"
+	})

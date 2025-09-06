@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://340lrf83qsn1"]
+
+[ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_vjtqc")
+
+[node name="MenuContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+
+[node name="TitleLabel" type="Label" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="StartGameButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="OptionsButton" type="Button" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="QuitButton" type="Button" parent="MenuContainer"]
+layout_mode = 2

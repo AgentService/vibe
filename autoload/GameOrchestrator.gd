@@ -33,6 +33,9 @@ func _ready() -> void:
 	Logger.info("GameOrchestrator initializing", "orchestrator")
 	# Don't initialize systems yet - this will be done when called by Main/Arena
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	
+	# Connect to mode_changed for global cleanup safety net
+	EventBus.mode_changed.connect(_on_mode_changed)
 
 func initialize_core_loop() -> void:
 	if initialization_phase != "idle":
@@ -191,3 +194,65 @@ func inject_systems_to_arena(arena) -> void:
 	if arena.has_method("setup_debug_controller"):
 		arena.setup_debug_controller()
 		Logger.debug("DebugController setup complete", "orchestrator")
+
+# SCENE TRANSITION METHODS
+
+func go_to_hideout() -> void:
+	Logger.info("GameOrchestrator: Initiating transition to hideout", "orchestrator")
+	
+	# Stop combat systems immediately
+	if wave_director and wave_director.has_method("stop"):
+		wave_director.stop()
+	
+	# Emit mode change for global cleanup (before transition)
+	EventBus.mode_changed.emit("hideout")
+	
+	# Use existing EventBus system for compatibility with SceneTransitionManager
+	# SceneTransitionManager will handle calling on_teardown() on the current scene
+	EventBus.request_return_hideout.emit({
+		"spawn_point": "PlayerSpawnPoint",
+		"source": "orchestrator_transition"
+	})
+	Logger.info("GameOrchestrator: Initiated transition to hideout", "orchestrator")
+
+func go_to_arena() -> void:
+	Logger.info("GameOrchestrator: Initiating transition to arena", "orchestrator")
+	
+	# Emit mode change for global cleanup (before transition)
+	EventBus.mode_changed.emit("arena")
+	
+	# Use existing EventBus system for compatibility with SceneTransitionManager
+	# SceneTransitionManager will handle calling on_teardown() on the current scene
+	EventBus.request_enter_map.emit({
+		"map_id": "arena",
+		"spawn_point": "PlayerSpawnPoint", 
+		"source": "orchestrator_transition"
+	})
+	Logger.info("GameOrchestrator: Initiated transition to arena", "orchestrator")
+
+# GLOBAL CLEANUP SAFETY NET
+
+func _on_mode_changed(mode: StringName) -> void:
+	"""Safety net - global purge of arena entities on mode change"""
+	Logger.info("GameOrchestrator: Mode changed to %s - applying global cleanup" % mode, "orchestrator")
+	
+	# Global purge of arena_owned group
+	var arena_owned_nodes = get_tree().get_nodes_in_group("arena_owned")
+	if arena_owned_nodes.size() > 0:
+		Logger.warn("GameOrchestrator: Found %d arena_owned nodes during mode change - purging" % arena_owned_nodes.size(), "orchestrator")
+		for node in arena_owned_nodes:
+			node.queue_free()
+	
+	# Global purge of enemies group
+	var enemy_nodes = get_tree().get_nodes_in_group("enemies")
+	if enemy_nodes.size() > 0:
+		Logger.warn("GameOrchestrator: Found %d enemy nodes during mode change - purging" % enemy_nodes.size(), "orchestrator")
+		for node in enemy_nodes:
+			node.queue_free()
+	
+	# Force EntityTracker cleanup if switching to hideout
+	if mode == "hideout" and EntityTracker:
+		EntityTracker.clear("enemy")
+		EntityTracker.clear("boss")
+	
+	Logger.info("GameOrchestrator: Global cleanup completed for mode %s" % mode, "orchestrator")
