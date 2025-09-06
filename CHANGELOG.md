@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hideout System Phase 2**: Implemented scene transition system for seamless navigation between areas
+  - **SceneTransitionManager**: Created runtime scene loading/unloading system with EventBus integration
+  - **MapDevice interaction**: Interactive portals with Area2D proximity detection and UI prompts
+  - **EventBus signals**: Added request_enter_map and request_return_hideout for scene transitions
+  - **Coordinated transitions**: Main.gd integrates SceneTransitionManager for smooth scene changes
+  - **Player state preservation**: Character data maintained across scene transitions
+  - **Bidirectional flow**: Hideout ↔ Arena transitions working (E key to enter, H key to return)
 - **Hideout System Phase 1**: Implemented unified player spawning system across all scenes
   - **PlayerSpawner system**: Created reusable scripts/systems/PlayerSpawner.gd for consistent player instantiation
   - **Resource-based config**: Converted debug.json to debug.tres using DebugConfig resource class

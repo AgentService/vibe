@@ -1,0 +1,47 @@
+[gd_scene load_steps=2 format=3 uid="uid://pt6ae5r0wlab"]
+
+[ext_resource type="Script" uid="uid://c65tq2evfu2jr" path="res://scenes/ui/CharacterSelect.gd" id="1_of04n"]
+
+[node name="CharacterSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_of04n")
+
+[node name="MainContainer" type="VBoxContainer" parent="."]
+layout_mode = 0
+
+[node name="TitleLabel" type="Label" parent="MainContainer"]
+layout_mode = 2
+
+[node name="CharacterContainer" type="HBoxContainer" parent="MainContainer"]
+layout_mode = 2
+
+[node name="KnightOption" type="VBoxContainer" parent="MainContainer/CharacterContainer"]
+layout_mode = 2
+
+[node name="KnightButton" type="Button" parent="MainContainer/CharacterContainer/KnightOption"]
+layout_mode = 2
+
+[node name="KnightLabel" type="Label" parent="MainContainer/CharacterContainer/KnightOption"]
+layout_mode = 2
+
+[node name="RangerOption" type="VBoxContainer" parent="MainContainer/CharacterContainer"]
+layout_mode = 2
+
+[node name="RangerButton" type="Button" parent="MainContainer/CharacterContainer/RangerOption"]
+layout_mode = 2
+
+[node name="RangerLabel" type="Label" parent="MainContainer/CharacterContainer/RangerOption"]
+layout_mode = 2
+
+[node name="MageOption" type="VBoxContainer" parent="MainContainer/CharacterContainer"]
+layout_mode = 2
+
+[node name="MageButton" type="Button" parent="MainContainer/CharacterContainer/MageOption"]
+layout_mode = 2
+
+[node name="MageLabel" type="Label" parent="MainContainer/CharacterContainer/MageOption"]
+layout_mode = 2
+
+[node name="BackButton" type="Button" parent="MainContainer"]
+layout_mode = 2

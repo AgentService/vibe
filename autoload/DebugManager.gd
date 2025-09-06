@@ -130,8 +130,9 @@ func _hide_debug_ui() -> void:
 # System registration methods (called by Arena during setup)
 func register_wave_director(wd: WaveDirector) -> void:
 	wave_director = wd
-	# Connect spawning signal to actual spawning functionality
-	spawning_requested.connect(_on_spawning_requested)
+	# Connect spawning signal to actual spawning functionality (only if not already connected)
+	if not spawning_requested.is_connected(_on_spawning_requested):
+		spawning_requested.connect(_on_spawning_requested)
 	Logger.debug("WaveDirector registered with DebugManager", "debug")
 
 func register_boss_spawn_manager(bsm: BossSpawnManager) -> void:
