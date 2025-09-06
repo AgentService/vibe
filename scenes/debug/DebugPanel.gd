@@ -19,7 +19,7 @@ extends Control
 @onready var damage_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/EntityActions/DamageButton
 
 # System Controls UI elements  
-@onready var pause_ai_checkbox: CheckBox = $PanelContainer/MarginContainer/VBoxContainer/PauseAICheckbox
+@onready var pause_ai_button: Button = $PanelContainer/MarginContainer/VBoxContainer/PauseAIButton
 @onready var clear_all_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ClearAllButton
 @onready var reset_session_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ResetSessionButton
 
@@ -66,7 +66,7 @@ func _ready() -> void:
 	damage_btn.pressed.connect(_on_damage_pressed)
 	
 	# Connect system controls signals
-	pause_ai_checkbox.toggled.connect(_on_pause_ai_toggled)
+	pause_ai_button.toggled.connect(_on_pause_ai_toggled)
 	clear_all_btn.pressed.connect(_on_clear_all_pressed)
 	reset_session_btn.pressed.connect(_on_reset_session_pressed)
 	
@@ -410,6 +410,9 @@ func _validate_entity_for_damage_action() -> bool:
 func _on_pause_ai_toggled(pressed: bool) -> void:
 	Logger.info("AI pause toggled: %s" % pressed, "debug")
 	
+	# Update button text to reflect state
+	_update_pause_ai_button_text()
+	
 	# Lazy-fetch DebugSystemControls if not available
 	if not debug_system_controls:
 		_reacquire_debug_system_controls()
@@ -418,6 +421,13 @@ func _on_pause_ai_toggled(pressed: bool) -> void:
 		debug_system_controls.set_ai_paused(pressed)
 	else:
 		Logger.warn("DebugSystemControls not available for AI pause", "debug")
+
+func _update_pause_ai_button_text() -> void:
+	if pause_ai_button:
+		if pause_ai_button.button_pressed:
+			pause_ai_button.text = "AI Paused"
+		else:
+			pause_ai_button.text = "Pause AI"
 
 
 # Performance stats are now always visible, no toggle needed
@@ -536,7 +546,8 @@ func _apply_button_styling() -> void:
 		spawn_at_cursor_btn, spawn_at_player_btn,
 		count1_btn, count5_btn, count10_btn,
 		kill_btn, heal_btn, damage_btn,
-		clear_all_btn, reset_session_btn
+		clear_all_btn, reset_session_btn,
+		pause_ai_button
 	]
 	
 	for button in all_buttons:
@@ -547,35 +558,28 @@ func _apply_button_styling() -> void:
 			button.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1.0))
 			button.add_theme_color_override("font_hover_color", Color.WHITE)
 	
-	# Style the Pause AI checkbox for better visibility
-	_apply_checkbox_styling()
-
-func _apply_checkbox_styling() -> void:
-	"""Apply modern checkbox styling for better visibility against dark background"""
-	if pause_ai_checkbox:
-		# Create a custom style for the checkbox background
-		var checkbox_style := StyleBoxFlat.new()
-		checkbox_style.bg_color = Color(0.12, 0.12, 0.12, 0.9)  # Slightly lighter than buttons
-		checkbox_style.border_width_left = 2
-		checkbox_style.border_width_top = 2
-		checkbox_style.border_width_right = 2
-		checkbox_style.border_width_bottom = 2
-		checkbox_style.border_color = Color(0.4, 0.5, 0.7, 0.7)  # More visible border
-		checkbox_style.corner_radius_top_left = 4
-		checkbox_style.corner_radius_top_right = 4
-		checkbox_style.corner_radius_bottom_left = 4
-		checkbox_style.corner_radius_bottom_right = 4
-		checkbox_style.content_margin_left = 6
-		checkbox_style.content_margin_right = 6
-		checkbox_style.content_margin_top = 4
-		checkbox_style.content_margin_bottom = 4
+	# Special styling for toggle button (Pause AI) - active state
+	if pause_ai_button:
+		var active_button_style := StyleBoxFlat.new()
+		active_button_style.bg_color = Color(0.6, 0.3, 0.3, 0.8)  # Red-ish background when active
+		active_button_style.border_width_left = 1
+		active_button_style.border_width_top = 1
+		active_button_style.border_width_right = 1
+		active_button_style.border_width_bottom = 1
+		active_button_style.border_color = Color(0.8, 0.4, 0.4, 0.8)  # Brighter red border
+		active_button_style.corner_radius_top_left = 6
+		active_button_style.corner_radius_top_right = 6
+		active_button_style.corner_radius_bottom_left = 6
+		active_button_style.corner_radius_bottom_right = 6
+		active_button_style.content_margin_left = 8
+		active_button_style.content_margin_right = 8
+		active_button_style.content_margin_top = 6
+		active_button_style.content_margin_bottom = 6
 		
-		# Apply the background style
-		pause_ai_checkbox.add_theme_stylebox_override("normal", checkbox_style)
-		
-		# Style the text color for better visibility
-		pause_ai_checkbox.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
-		pause_ai_checkbox.add_theme_color_override("font_hover_color", Color.WHITE)
+		pause_ai_button.add_theme_stylebox_override("pressed", active_button_style)
+		# Update text based on state
+		_update_pause_ai_button_text()
+	
 
 func _setup_performance_timer() -> void:
 	# Create performance update timer - update every second for responsive FPS display

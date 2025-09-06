@@ -113,9 +113,10 @@ layout_mode = 2
 layout_mode = 2
 text = "System Controls"
 
-[node name="PauseAICheckbox" type="CheckBox" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="PauseAIButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
 text = "Pause AI"
+toggle_mode = true
 
 [node name="Separator4" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
 layout_mode = 2
