@@ -546,6 +546,36 @@ func _apply_button_styling() -> void:
 			# Light gray text for better integration with dark theme
 			button.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85, 1.0))
 			button.add_theme_color_override("font_hover_color", Color.WHITE)
+	
+	# Style the Pause AI checkbox for better visibility
+	_apply_checkbox_styling()
+
+func _apply_checkbox_styling() -> void:
+	"""Apply modern checkbox styling for better visibility against dark background"""
+	if pause_ai_checkbox:
+		# Create a custom style for the checkbox background
+		var checkbox_style := StyleBoxFlat.new()
+		checkbox_style.bg_color = Color(0.12, 0.12, 0.12, 0.9)  # Slightly lighter than buttons
+		checkbox_style.border_width_left = 2
+		checkbox_style.border_width_top = 2
+		checkbox_style.border_width_right = 2
+		checkbox_style.border_width_bottom = 2
+		checkbox_style.border_color = Color(0.4, 0.5, 0.7, 0.7)  # More visible border
+		checkbox_style.corner_radius_top_left = 4
+		checkbox_style.corner_radius_top_right = 4
+		checkbox_style.corner_radius_bottom_left = 4
+		checkbox_style.corner_radius_bottom_right = 4
+		checkbox_style.content_margin_left = 6
+		checkbox_style.content_margin_right = 6
+		checkbox_style.content_margin_top = 4
+		checkbox_style.content_margin_bottom = 4
+		
+		# Apply the background style
+		pause_ai_checkbox.add_theme_stylebox_override("normal", checkbox_style)
+		
+		# Style the text color for better visibility
+		pause_ai_checkbox.add_theme_color_override("font_color", Color(0.9, 0.9, 0.9, 1.0))
+		pause_ai_checkbox.add_theme_color_override("font_hover_color", Color.WHITE)
 
 func _setup_performance_timer() -> void:
 	# Create performance update timer - update every second for responsive FPS display
