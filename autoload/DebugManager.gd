@@ -144,8 +144,11 @@ func register_arena_ui_manager(aum: ArenaUIManager) -> void:
 
 func register_debug_ui(ui: Control) -> void:
 	debug_ui = ui
-	debug_ui.visible = true  # Visible by default for testing
-	Logger.debug("Debug UI registered with DebugManager", "debug")
+	if debug_ui:
+		debug_ui.visible = true  # Visible by default for testing
+		Logger.debug("Debug UI registered with DebugManager", "debug")
+	else:
+		Logger.warn("Attempted to register null debug UI", "debug")
 
 func register_debug_system_controls(dsc: DebugSystemControls) -> void:
 	debug_system_controls = dsc
