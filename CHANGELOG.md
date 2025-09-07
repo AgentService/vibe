@@ -4,6 +4,14 @@
 
 ## [Current Week - In Progress]
 
+### Fixed
+- **State Manager Navigation Flow**: Fixed game flow from Main Menu → Character Select → Hideout → Arena
+  - **CharacterSelect.gd**: Updated navigation to use StateManager APIs instead of direct EventBus calls
+  - **StateManager state tracking**: Ensures current_state is properly set to HIDEOUT after character selection
+  - **Pause menu functionality**: ESC now correctly opens pause menu in Hideout (was blocked due to wrong state)
+  - **MapDevice arena entry**: Pressing E in Hideout now works after menu navigation (was invalid transition)
+  - **Hideout.gd cleanup**: Removed duplicate local ESC handling to avoid conflicts with global PauseUI
+
 ### Added
 - **Game State Manager Core Loop**: Implemented centralized state orchestration system for scene transitions and run management
   - **StateManager Autoload**: Typed state enum (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT) with validation and logging
@@ -13,6 +21,13 @@
   - **GameOrchestrator integration**: Scene loading orchestrated through StateManager state changes with proper cleanup
   - **ResultsScreen UI**: New results scene with run summary, time survived, level reached, damage stats, and navigation buttons
   - **PauseUI Autoload**: Persistent CanvasLayer pause menu with StateManager-aware permissions and scene-specific options
+- **Pause Menu Architecture Cleanup**: Streamlined pause system to use single PauseUI autoload implementation
+  - **Removed duplicate pause systems**: Eliminated scene-based PauseMenu.gd/.tscn in favor of programmatic PauseUI autoload
+  - **Fixed PauseUI initialization**: Corrected @onready variable usage for dynamically created UI elements
+  - **ArenaUIManager cleanup**: Removed scene-based pause menu instantiation and references
+  - **ArenaInputHandler updates**: Simplified input handling to use centralized PauseManager.toggle_pause()
+  - **Reference cleanup**: Removed obsolete PauseMenu_Type imports from Arena.gd and updated comments
+  - **Architecture compliance**: Aligned implementation with GAME_STATE_MANAGER_CORE_LOOP.md specifications for persistent pause overlay
   - **SceneTransitionManager updates**: Enhanced with RESULTS state support and automatic run result display
   - **Scene API updates**: MainMenu, Player death, MapDevice, and Main boot flow now use StateManager methods
   - **Comprehensive testing**: test_state_transitions.gd validates state flow, signals, and transition rules; CoreLoop_Isolated updated

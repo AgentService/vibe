@@ -141,17 +141,16 @@ func _on_character_play_pressed(character_id: StringName) -> void:
 	
 	Logger.info("Character loaded: %s (ID: %s) Level: %d XP: %.1f" % [profile.name, profile.id, profile.level, profile.exp], "charselect")
 	
-	# Prepare transition data
-	var transition_data = {
-		"map_id": "hideout",
+	# Prepare context for StateManager
+	var context = {
 		"character_id": profile.id,
 		"character_data": profile.get_character_data(),
 		"spawn_point": "PlayerSpawnPoint",
 		"source": "character_select_play"
 	}
 	
-	# Request transition to hideout
-	EventBus.request_enter_map.emit(transition_data)
+	# Use StateManager to transition to hideout
+	StateManager.go_to_hideout(context)
 
 func _on_character_delete_pressed(character_id: StringName, character_name: String) -> void:
 	"""Show confirmation dialog before deleting character."""
@@ -288,17 +287,16 @@ func _on_character_selected(character_id: String) -> void:
 	
 	Logger.info("Character created and loaded: %s (ID: %s)" % [profile.name, profile.id], "charselect")
 	
-	# Prepare transition data with character information
-	var transition_data = {
-		"map_id": "hideout",
+	# Prepare context for StateManager
+	var context = {
 		"character_id": profile.id,
 		"character_data": profile.get_character_data(),
 		"spawn_point": "PlayerSpawnPoint",
 		"source": "character_select"
 	}
 	
-	# Request transition to hideout
-	EventBus.request_enter_map.emit(transition_data)
+	# Use StateManager to transition to hideout
+	StateManager.go_to_hideout(context)
 
 func _on_back_pressed() -> void:
 	"""Handle back button - context-sensitive navigation."""
@@ -313,10 +311,7 @@ func _on_back_pressed() -> void:
 	
 	# Go back to main menu
 	Logger.info("Back to main menu pressed", "charselect")
-	EventBus.request_enter_map.emit({
-		"map_id": "main_menu",
-		"source": "character_select_back"
-	})
+	StateManager.go_to_menu({"source": "character_select_back"})
 
 func get_selected_character() -> String:
 	"""Returns the currently selected character ID."""

@@ -4,12 +4,12 @@ extends CanvasLayer
 ## Shows pause menu when game is paused and only allows pausing in valid states.
 ## Subscribes to PauseManager events and checks StateManager for pause permissions.
 
-@onready var pause_overlay: ColorRect
-@onready var pause_menu: Control
-@onready var resume_button: Button
-@onready var settings_button: Button
-@onready var hideout_button: Button
-@onready var menu_button: Button
+var pause_overlay: ColorRect
+var pause_menu: Control
+var resume_button: Button
+var settings_button: Button
+var hideout_button: Button
+var menu_button: Button
 
 func _ready() -> void:
 	# Set up persistent CanvasLayer

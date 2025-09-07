@@ -40,7 +40,7 @@ func _handle_escape_key() -> void:
 	if ui_manager and ui_manager.get_card_selection() and ui_manager.get_card_selection().visible:
 		return  # Let card selection handle the escape key
 	
-	# Use the new StateManager-aware PauseUI system instead of old PauseMenu
+	# Use StateManager-aware pause system via PauseUI autoload
 	if StateManager.is_pause_allowed():
 		PauseManager.toggle_pause()
 		Logger.info("Pause toggled via ArenaInputHandler ESC", "input")
