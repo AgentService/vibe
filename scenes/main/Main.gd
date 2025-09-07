@@ -50,20 +50,68 @@ func _load_initial_scene() -> void:
 	var scene_path: String
 	
 	# Check if we should skip main menu for development
-	if debug_config.start_mode == "menu" and debug_config.skip_main_menu:
-		Logger.info("Skipping main menu - going directly to hideout for development", "main")
-		scene_path = "res://scenes/core/Hideout.tscn"
-	else:
+	if debug_config.skip_main_menu or (debug_config.start_mode != "menu"):
+		# Load character profile for debug mode
+		_load_debug_character()
+		
 		match debug_config.start_mode:
 			"menu":
-				scene_path = "res://scenes/ui/MainMenu.tscn"
+				if debug_config.skip_main_menu:
+					Logger.info("Skipping main menu - going directly to hideout for development", "main")
+					scene_path = "res://scenes/core/Hideout.tscn"
+				else:
+					scene_path = "res://scenes/ui/MainMenu.tscn"
 			"hideout":
 				scene_path = "res://scenes/core/Hideout.tscn"
 			"arena", "map", _:
 				scene_path = debug_config.map_scene if debug_config.map_scene != "" else "res://scenes/arena/Arena.tscn"
+	else:
+		scene_path = "res://scenes/ui/MainMenu.tscn"
 	
 	Logger.info("Loading initial scene: " + scene_path, "main")
 	_instantiate_scene(scene_path)
+
+func _load_debug_character() -> void:
+	"""Load character profile for debug mode when skipping menu."""
+	if not CharacterManager:
+		Logger.error("CharacterManager not available for debug character loading", "main")
+		return
+	
+	var debug_character_id = debug_config.get_debug_character_id()
+	
+	if debug_character_id.is_empty():
+		# Create a default debug character
+		Logger.info("Creating default debug character", "main")
+		var profile = CharacterManager.create_character("Debug Knight", StringName("Knight"))
+		if profile:
+			CharacterManager.load_character(profile.id)
+			PlayerProgression.load_from_profile(profile.progression)
+			Logger.info("Created and loaded debug character: %s" % profile.name, "main")
+		else:
+			Logger.error("Failed to create debug character", "main")
+	else:
+		# Try to load existing character
+		var characters = CharacterManager.list_characters()
+		var found_character: CharacterProfile = null
+		
+		for character in characters:
+			if character.id == debug_character_id:
+				found_character = character
+				break
+		
+		if found_character:
+			# Load existing character
+			CharacterManager.load_character(debug_character_id)
+			PlayerProgression.load_from_profile(found_character.progression)
+			Logger.info("Loaded debug character: %s (Level %d)" % [found_character.name, found_character.level], "main")
+		else:
+			# Character not found, create a fallback
+			Logger.warn("Debug character ID '%s' not found, creating fallback" % debug_character_id, "main")
+			var profile = CharacterManager.create_character("Debug Fallback", StringName("Knight"))
+			if profile:
+				CharacterManager.load_character(profile.id)
+				PlayerProgression.load_from_profile(profile.progression)
+				Logger.info("Created fallback debug character: %s" % profile.name, "main")
 
 func _instantiate_scene(scene_path: String) -> void:
 	"""Load initial scene (called once at startup)."""

@@ -1,6 +1,6 @@
 # Player Progression System — Vibe-Coding Plan (modular, .tres-driven)
 
-Status: Planning
+Status: In Progress
 Owner: Solo (Indie)
 Priority: High
 Dependencies: EventBus, Logger, GameOrchestrator, DebugManager, (optional) SaveManager, UI base
@@ -11,25 +11,25 @@ Complexity: 3/10 (small, self-contained)
 
 ## Goals & Acceptance Criteria
 
-- [ ] Data-driven progression:
+- [x] Data-driven progression:
   - Levels, thresholds, and unlock hooks live in .tres Resources (no hardcoded numbers)
   - Single XP curve resource drives level ups (10+ levels)
-- [ ] Autoload brain:
+- [x] Autoload brain:
   - PlayerProgression.gd (autoload) tracks: level: int, exp: float, xp_to_next: float
   - API: gain_exp(amount: float), load_from_profile(profile: Dictionary), export_state() -> Dictionary
-- [ ] Signals (via EventBus):
+- [x] Signals (via EventBus):
   - xp_gained(amount: float, new_total: float)
   - leveled_up(new_level: int, prev_level: int)
   - progression_changed(state: Dictionary)  # {level, exp, xp_to_next, total_for_level}
-- [ ] Debug hooks:
+- [x] Debug hooks:
   - F12 → Progression Tools: Add XP (+100), Force Level Up (only through PlayerProgression API)
 - [ ] Save/Load seams:
   - On profile load, call PlayerProgression.load_from_profile(profile)
   - On save, PlayerProgression.export_state() merged into profile by SaveManager/GameOrchestrator
-- [ ] UI stubs only (no visuals yet):
+- [x] UI stubs only (no visuals yet):
   - CharacterScreen.gd subscribes to progression_changed (no-op handler)
   - XPBarUI.gd subscribes to progression_changed (no-op handler)
-- [ ] Edge cases:
+- [x] Edge cases:
   - Multiple level-ups on a single large XP gain
   - Respect max level (carry-over XP ignored/held at cap)
   - Deterministic, no per-frame allocations, typed signals and functions
@@ -120,7 +120,7 @@ Behavior:
 
 ## Save/Load Integration
 
-- On profile load: GameOrchestrator (or SaveManager if present) calls:
+- On profile load: GameOrchestrator (or SaveManager if present):
   - PlayerProgression.load_from_profile(profile)
 - On save:
   - profile.merge(PlayerProgression.export_state())  # or assign fields
@@ -143,49 +143,50 @@ Behavior:
 ## Implementation Plan — Small Commit Loops
 
 Phase A — Resources
-- [ ] Create PlayerXPCurve.gd and PlayerUnlocks.gd (typed Resource scripts)
-- [ ] data/progression/xp_curve.tres with 10 dummy thresholds
-- [ ] data/progression/unlocks.tres placeholder
+- [x] Create PlayerXPCurve.gd and PlayerUnlocks.gd (typed Resource scripts)
+- [x] data/progression/xp_curve.tres with 10 dummy thresholds
+- [x] data/progression/unlocks.tres placeholder
 Output: Editor-inspectable data; no game code change risk
 
 Phase B — Autoload Skeleton
 - [ ] autoload/PlayerProgression.gd with typed fields, setup() and export/load stubs
-- [ ] Wire EventBus signals (see below)
-- [ ] Load curve in _ready() or via GameOrchestrator injection
+- [x] Wire EventBus signals (see below)
+- [x] Load curve in _ready() or via GameOrchestrator injection
 Output: Autoload exists; no gameplay effect yet
 
 Phase C — Gain EXP + Level Logic
-- [ ] Implement gain_exp(amount) with multi-level-up loop
-- [ ] Handle max-level cap; compute xp_to_next
-- [ ] Emit xp_gained, leveled_up, progression_changed via EventBus
-- [ ] Logger calls for state transitions
+- [x] Implement gain_exp(amount) with multi-level-up loop
+- [x] Handle max-level cap; compute xp_to_next
+- [x] Emit xp_gained, leveled_up, progression_changed via EventBus
+- [x] Logger calls for state transitions
 Output: Functional progression core
 
 Phase D — Debug Tools
-- [ ] Add "Progression Tools" to DebugManager (F12)
+- [x] Add "Progression Tools" to DebugManager (F12)
 - [ ] Buttons → PlayerProgression API (Add XP +100, Force Level Up)
-- [ ] Guard with dev-mode flag if necessary
+- [x] Guard with dev-mode flag if necessary
 Output: Manual test harness during gameplay
 
 Phase E — Save/Load Seam
-- [ ] Implement load_from_profile(profile), export_state()
+- [x] Implement load_from_profile(profile), export_state()
 - [ ] Hook into existing save/load points in GameOrchestrator (or SaveManager if present)
 Output: Persistence seam without overthinking storage
 
 Phase F — UI Stubs
-- [ ] scenes/ui/CharacterScreen.gd — subscribe to progression_changed (no-op body)
-- [ ] scenes/ui/XPBarUI.gd — subscribe to progression_changed (no-op body)
+- [x] scenes/ui/CharacterScreen.gd — subscribe to progression_changed (no-op body)
+- [x] scenes/ui/XPBarUI.gd — subscribe to progression_changed (no-op body)
 Output: Safe docking points for later UI work
 
 Phase G — Tests & Docs
-- [ ] tests/PlayerProgression_Isolated.tscn/gd (add exp → assert level-ups, caps, signals)
+- [x] tests/PlayerProgression_Isolated.tscn/gd (add exp → assert level-ups, caps, signals)
 - [ ] docs/ARCHITECTURE_QUICK_REFERENCE.md update (new system + signals)
 - [ ] changelogs/features/YYYY_MM_DD-player_progression.md
 Output: Verified behavior and documented system
 
 ---
 
-## Signals (EventBusAdd to autoload/EventBus.gd:
+## Signals (EventBus
+Add to autoload/EventBus.gd:
 ```gdscript
 signal xp_gained(amount: float, new_total: float)
 signal leveled_up(new_level: int, prev_level: int)
@@ -234,9 +235,9 @@ Docs:
 
 ## Minimal Milestone (ship fast)
 
-- [ ] A1: Resources + xp_curve.tres (10 levels)
-- [ ] B1: PlayerProgression autoload skeleton + EventBus signals
-- [ ] C1: gain_exp + level logic + Logger + signals
+- [x] A1: Resources + xp_curve.tres (10 levels)
+- [x] B1: PlayerProgression autoload skeleton + EventBus signals
+- [x] C1: gain_exp + level logic + Logger + signals
 - [ ] D1: Debug F12 buttons for Add XP / Force Level Up
 - [ ] Sanity test: gain 1000 XP and observe 2–3 level-ups with events
 
@@ -284,3 +285,14 @@ Total: ~5 hours incremental, safe to split into 6–8 small commits.
 - Keep API minimal and stable; no direct NodePath coupling
 - Favor injection of resources (setup(curve, unlocks)) for testability
 - Document any EventBus additions in Quick Reference
+
+---
+
+## Known deviations/todos from current implementation
+
+- PlayerProgression.gd lacks setup(curve, unlocks) injection method (plan recommends for testability).
+- Replace print() calls in PlayerProgression.gd with Logger to comply with .clinerules.
+- get_progression_state() sets "total_for_level" to xp_to_next; consider exposing actual total threshold for clarity.
+- GameOrchestrator save/load wiring not yet verified; add calls to load_from_profile/export_state at seam points.
+- Debug UI buttons for Add XP / Force Level Up not verified; DebugManager methods exist and F12 toggles debug mode.
+- Docs update and feature changelog entry pending.
