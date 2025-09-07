@@ -131,6 +131,19 @@ signal mode_changed(mode: StringName)
 ## Map entry requested - emitted when player requests to enter a specific map
 signal enter_map_requested(map_id: StringName)
 
+# RADAR SIGNALS
+## Simple radar entity data structure for typed enemy information
+class RadarEntity:
+	var pos: Vector2
+	var type: String  # "enemy", "boss"
+	
+	func _init(position: Vector2, entity_type: String):
+		pos = position
+		type = entity_type
+
+## Radar data updated - emitted by RadarSystem with enemy data and player position
+signal radar_data_updated(entities: Array[RadarEntity], player_pos: Vector2)
+
 
 func _ready() -> void:
 	# Connect debug logging to relevant signals only
