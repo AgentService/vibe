@@ -36,7 +36,7 @@ func _ready() -> void:
 
 func _load_progression_resources() -> void:
 	# Load XP curve
-	var curve_resource = load("res://data/progression/xp_curve.tres")
+	var curve_resource = load("res://data/core/progression-xp-curve.tres")
 	if curve_resource and curve_resource.is_valid():
 		xp_curve = curve_resource
 	else:
@@ -44,7 +44,7 @@ func _load_progression_resources() -> void:
 		_create_fallback_curve()
 	
 	# Load unlocks
-	var unlocks_resource = load("res://data/progression/unlocks.tres")
+	var unlocks_resource = load("res://data/content/unlocks.tres")
 	if unlocks_resource:
 		unlocks = unlocks_resource
 	else:

@@ -7,7 +7,7 @@ func _initialize() -> void:
 	
 	# Test 1: Verify visual config loading
 	print("\n1. Testing VisualFeedbackConfig loading...")
-	var visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	var visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		print("   ❌ FAIL: Could not load visual feedback config")
 		quit()

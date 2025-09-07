@@ -115,7 +115,7 @@ func _create_swarm_textures() -> void:
 	swarm_run_textures.clear()
 	
 	# Load swarm animation config
-	var swarm_animation_config: AnimationConfig = load("res://data/animations/swarm_enemy_animations.tres")
+	var swarm_animation_config: AnimationConfig = load("res://data/content/swarm_enemy_animations.tres")
 	if not swarm_animation_config:
 		Logger.error("Failed to load swarm animation config", "enemies")
 		return
@@ -154,7 +154,7 @@ func _create_regular_textures() -> void:
 	regular_run_textures.clear()
 	
 	# Load regular animation config
-	var regular_animation_config: AnimationConfig = load("res://data/animations/regular_enemy_animations.tres")
+	var regular_animation_config: AnimationConfig = load("res://data/content/regular_enemy_animations.tres")
 	if not regular_animation_config:
 		Logger.error("Failed to load regular animation config", "enemies")
 		return
@@ -193,7 +193,7 @@ func _create_elite_textures() -> void:
 	elite_run_textures.clear()
 	
 	# Load elite animation config
-	var elite_animation_config: AnimationConfig = load("res://data/animations/elite_enemy_animations.tres")
+	var elite_animation_config: AnimationConfig = load("res://data/content/elite_enemy_animations.tres")
 	if not elite_animation_config:
 		Logger.error("Failed to load elite animation config", "enemies")
 		return
@@ -232,7 +232,7 @@ func _create_boss_textures() -> void:
 	boss_run_textures.clear()
 	
 	# Load boss animation config
-	var boss_animation_config: AnimationConfig = load("res://data/animations/boss_enemy_animations.tres")
+	var boss_animation_config: AnimationConfig = load("res://data/content/boss_enemy_animations.tres")
 	if not boss_animation_config:
 		Logger.error("Failed to load boss animation config", "enemies")
 		return

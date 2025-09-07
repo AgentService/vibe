@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_8g9h0")
 id = &"elite_knight"
-parent_path = "res://data/content/enemies_v2/templates/melee_base.tres"
+parent_path = "res://data/content/enemy-templates/melee_base.tres"
 health_range = Vector2(40, 60)
 damage_range = Vector2(18, 25)
 speed_range = Vector2(50, 70)

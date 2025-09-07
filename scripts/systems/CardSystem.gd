@@ -17,7 +17,7 @@ func _load_card_pools() -> void:
 	Logger.info("Loading card pools...", "cards")
 	
 	# Load melee pool
-	var melee_pool_path: String = "res://data/cards/pools/melee_pool.tres"
+	var melee_pool_path: String = "res://data/content/melee_pool.tres"
 	if ResourceLoader.exists(melee_pool_path):
 		var melee_pool: CardPoolResource = ResourceLoader.load(melee_pool_path) as CardPoolResource
 		if melee_pool:

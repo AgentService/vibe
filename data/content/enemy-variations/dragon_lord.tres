@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_9h0i1")
 id = &"dragon_lord"
-parent_path = "res://data/content/enemies_v2/templates/boss_base.tres"
+parent_path = "res://data/content/enemy-templates/boss_base.tres"
 health_range = Vector2(180, 220)
 damage_range = Vector2(45, 65)
 speed_range = Vector2(70, 90)

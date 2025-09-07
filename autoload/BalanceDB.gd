@@ -34,12 +34,12 @@ func _setup_auto_reload() -> void:
 	# Setup file monitoring for all balance files
 	# TO ADD NEW AUTO-RELOAD FILES: Add file path to this dictionary
 	_balance_files = {
-		"res://data/balance/combat_balance.tres": 0,
-		"res://data/balance/abilities_balance.tres": 0,
-		"res://data/balance/melee_balance.tres": 0,
-		"res://data/balance/player_balance.tres": 0,
-		"res://data/balance/waves_balance.tres": 0,
-		"res://data/ui/radar_config.tres": 0
+		"res://data/balance/combat.tres": 0,
+		"res://data/balance/abilities.tres": 0,
+		"res://data/balance/melee.tres": 0,
+		"res://data/balance/player.tres": 0,
+		"res://data/balance/waves.tres": 0,
+		"res://data/ui.tres": 0
 	}
 	
 	# Get initial timestamps
@@ -137,11 +137,11 @@ func load_all_balance_data() -> void:
 	balance_reloaded.emit()
 
 func _load_balance_resources() -> void:
-	_combat_balance = _load_resource("res://data/balance/combat_balance.tres", "combat")
-	_abilities_balance = _load_resource("res://data/balance/abilities_balance.tres", "abilities")
-	_melee_balance = _load_resource("res://data/balance/melee_balance.tres", "melee") 
-	_player_balance = _load_resource("res://data/balance/player_balance.tres", "player")
-	_waves_balance = _load_resource("res://data/balance/waves_balance.tres", "waves")
+	_combat_balance = _load_resource("res://data/balance/combat.tres", "combat")
+	_abilities_balance = _load_resource("res://data/balance/abilities.tres", "abilities")
+	_melee_balance = _load_resource("res://data/balance/melee.tres", "melee") 
+	_player_balance = _load_resource("res://data/balance/player.tres", "player")
+	_waves_balance = _load_resource("res://data/balance/waves.tres", "waves")
 
 func _load_resource(resource_path: String, fallback_key: String) -> Resource:
 	var resource: Resource = ResourceLoader.load(resource_path)
@@ -383,7 +383,7 @@ func _load_ui_file(filename: String) -> void:
 	Logger.info("Successfully loaded and validated: ui/" + filename + ".json", "balance")
 
 func _load_radar_config() -> void:
-	var radar_config: RadarConfigResource = load("res://data/ui/radar_config.tres")
+	var radar_config: RadarConfigResource = load("res://data/ui.tres")
 	if radar_config == null:
 		Logger.warn("Failed to load radar config resource. Using fallback values.", "balance")
 		if not _data.has("ui"):
@@ -428,11 +428,11 @@ func _get_fallback_value(category: String, key: String) -> Variant:
 
 func reload_balance_data() -> void:
 	Logger.info("F5 pressed - Hot-reloading balance data...", "balance")
-	ResourceLoader.load("res://data/balance/combat_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/balance/abilities_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/balance/melee_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/balance/player_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/balance/waves_balance.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/ui/radar_config.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/balance/combat.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/balance/abilities.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/balance/melee.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/balance/player.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/balance/waves.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
+	ResourceLoader.load("res://data/ui.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	load_all_balance_data()
 	Logger.info("Balance data reloaded successfully!", "balance")

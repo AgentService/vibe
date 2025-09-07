@@ -40,7 +40,7 @@ func _initialize() -> void:
 	# Test 2: BossScaling resource file loading
 	test_count += 1
 	print("\nTest 2: BossScaling resource loading")
-	var resource_path := "res://data/debug/boss_scaling.tres"
+	var resource_path := "res://data/core/boss-scaling.tres"
 	
 	if ResourceLoader.exists(resource_path):
 		var loaded_scaling = ResourceLoader.load(resource_path) as BossScaling

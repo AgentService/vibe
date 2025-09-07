@@ -50,7 +50,7 @@ func _initialize() -> void:
 	# Test 3: Resource file loading
 	test_count += 1
 	print("\nTest 3: Character types resource loading")
-	var resource_path := "res://data/content/player/character_types.tres"
+	var resource_path := "res://data/core/character-types.tres"
 	
 	if ResourceLoader.exists(resource_path):
 		var loaded_resource = ResourceLoader.load(resource_path) as CharacterTypeDict

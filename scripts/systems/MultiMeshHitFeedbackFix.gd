@@ -18,7 +18,7 @@ var flash_effects: Dictionary = {}
 
 func _ready() -> void:
 	# Load corrected visual feedback config
-	visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		Logger.warn("Failed to load visual feedback config", "visual")
 		return

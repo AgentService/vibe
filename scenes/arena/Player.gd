@@ -171,7 +171,7 @@ func get_pos() -> Vector2:
 	return global_position
 
 func _load_knight_animations() -> void:
-	var resource_path := "res://data/animations/knight_animations.tres"
+	var resource_path := "res://data/content/knight_animations.tres"
 	knight_animation_config = load(resource_path) as AnimationConfig_Type
 	if knight_animation_config == null:
 		Logger.warn("Failed to load knight animation config from: " + resource_path, "player")

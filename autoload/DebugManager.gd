@@ -42,7 +42,7 @@ func _ready() -> void:
 
 func _load_boss_scaling() -> void:
 	"""Load boss scaling configuration from data-driven resource."""
-	var resource_path := "res://data/debug/boss_scaling.tres"
+	var resource_path := "res://data/core/boss-scaling.tres"
 	
 	if not ResourceLoader.exists(resource_path):
 		Logger.warn("Boss scaling resource not found: %s, using defaults" % resource_path, "debug")

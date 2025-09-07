@@ -13,8 +13,8 @@ func _initialize() -> void:
 	test_count += 1
 	print("\nTest 1: Resource file existence")
 	var required_files := [
-		"res://data/content/player/character_types.tres",
-		"res://data/debug/boss_scaling.tres",
+		"res://data/core/character-types.tres",
+		"res://data/core/boss-scaling.tres",
 		"res://scripts/domain/CharacterType.gd",
 		"res://scripts/domain/BossScaling.gd"
 	]
@@ -34,7 +34,7 @@ func _initialize() -> void:
 	# Test 2: Visual feedback configuration enhanced
 	test_count += 1
 	print("\nTest 2: Visual feedback configuration")
-	var vf_resource_path := "res://data/balance/visual_feedback.tres"
+	var vf_resource_path := "res://data/balance/visual-feedback.tres"
 	
 	if ResourceLoader.exists(vf_resource_path):
 		var vf_config = ResourceLoader.load(vf_resource_path) as VisualFeedbackConfig
@@ -50,7 +50,7 @@ func _initialize() -> void:
 	# Test 3: XP curve enhanced with fallbacks
 	test_count += 1
 	print("\nTest 3: XP progression fallback enhancement")
-	var xp_resource_path := "res://data/progression/xp_curve.tres"
+	var xp_resource_path := "res://data/core/progression-xp-curve.tres"
 	
 	if ResourceLoader.exists(xp_resource_path):
 		var xp_curve = ResourceLoader.load(xp_resource_path) as PlayerXPCurve
@@ -136,7 +136,7 @@ func _initialize() -> void:
 	var hot_reload_compatible := true
 	
 	# Verify character types can be reloaded
-	var char_types_path := "res://data/content/player/character_types.tres"
+	var char_types_path := "res://data/core/character-types.tres"
 	if ResourceLoader.exists(char_types_path):
 		var char_types_resource = ResourceLoader.load(char_types_path, "", ResourceLoader.CACHE_MODE_IGNORE) as CharacterTypeDict
 		if not char_types_resource or not char_types_resource.character_types or not char_types_resource.character_types.has("knight"):

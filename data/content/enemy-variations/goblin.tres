@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_5d6e7")
 id = &"goblin"
-parent_path = "res://data/content/enemies_v2/templates/melee_base.tres"
+parent_path = "res://data/content/enemy-templates/melee_base.tres"
 health_range = Vector2(12, 20)
 damage_range = Vector2(6, 10)
 speed_range = Vector2(70, 90)

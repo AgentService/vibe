@@ -39,7 +39,7 @@ func _ready() -> void:
 
 func _load_character_types() -> void:
 	"""Load character types from data-driven configuration."""
-	var resource_path := "res://data/content/player/character_types.tres"
+	var resource_path := "res://data/core/character-types.tres"
 	
 	if not ResourceLoader.exists(resource_path):
 		Logger.error("Character types resource not found: %s" % resource_path, "charselect")

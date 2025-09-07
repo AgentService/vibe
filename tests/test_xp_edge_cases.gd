@@ -46,7 +46,7 @@ func _initialize() -> void:
 	# Test 3: XP curve resource loading with fallback values
 	test_count += 1
 	print("\nTest 3: XP curve resource with fallback configuration")
-	var resource_path := "res://data/progression/xp_curve.tres"
+	var resource_path := "res://data/core/progression-xp-curve.tres"
 	
 	if ResourceLoader.exists(resource_path):
 		var loaded_curve = ResourceLoader.load(resource_path) as PlayerXPCurve
