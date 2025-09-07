@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="CharacterTypeDict" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CharacterTypeDict.gd" id="1"]
+
+[ext_resource type="Script" path="res://scripts/domain/CharacterType.gd" id="2"]
+
+[sub_resource type="Resource" id="knight_char_type"]
+script = ExtResource("2")
+id = &"knight"
+display_name = "Knight"
+description = "Sturdy melee fighter with high defense"
+base_hp = 100.0
+base_damage = 25.0
+base_speed = 1.0
+starting_abilities = Array[StringName]([])
+
+[sub_resource type="Resource" id="ranger_char_type"]
+script = ExtResource("2")
+id = &"ranger"
+display_name = "Ranger"
+description = "Agile ranged combatant with quick attacks"
+base_hp = 75.0
+base_damage = 30.0
+base_speed = 1.2
+starting_abilities = Array[StringName]([])
+
+[resource]
+script = ExtResource("1")
+character_types = {
+"knight": SubResource("knight_char_type"),
+"ranger": SubResource("ranger_char_type")
+}

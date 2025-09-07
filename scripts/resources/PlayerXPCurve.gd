@@ -14,6 +14,10 @@ enum CurveType { NORMAL, FAST, SLOW }
 @export var fast_thresholds: Array[int] = [10, 25, 50, 80, 120, 170, 230, 300, 380, 470]
 @export_group("Slow Curve (Extended Play)")
 @export var slow_thresholds: Array[int] = [200, 600, 1200, 2000, 3000, 4200, 5600, 7200, 9000, 11000, 13500, 16500, 20000, 24000, 29000]
+@export_group("Fallback Configuration")
+@export var base_xp_required: float = 100.0
+@export var xp_scaling_factor: float = 1.5
+@export var max_level_xp_required: float = 0.0  # 0 = unlimited
 
 var thresholds: Array[int]:
 	get:
@@ -53,3 +57,22 @@ func is_valid() -> bool:
 			return false
 	
 	return true
+
+## Get fallback XP requirement for emergency situations
+func get_fallback_xp() -> float:
+	return base_xp_required
+
+## Generate fallback curve when no valid thresholds exist
+func generate_fallback_curve(max_levels: int = 10) -> Array[int]:
+	var fallback_curve: Array[int] = []
+	var current_xp: float = base_xp_required
+	
+	for i in range(max_levels):
+		fallback_curve.append(int(current_xp))
+		current_xp *= xp_scaling_factor
+		
+		# Cap at max_level_xp_required if specified
+		if max_level_xp_required > 0.0 and current_xp > max_level_xp_required:
+			current_xp = max_level_xp_required
+	
+	return fallback_curve

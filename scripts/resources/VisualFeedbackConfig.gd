@@ -16,6 +16,14 @@ class_name VisualFeedbackConfig
 @export var knockback_curve: Curve
 @export var knockback_friction: float = 0.8
 
+@export_group("Boss Flash Override")
+@export var boss_flash_duration: float = 0.2  ## Flash duration override for bosses
+@export var boss_flash_intensity: float = 15.0  ## Flash intensity override for bosses
+
+@export_group("Performance Limits")
+@export var max_boss_effects: int = 50  ## Maximum number of boss effects to track
+@export var boss_scanner_interval: float = 3.0  ## How often to scan for new bosses (seconds)
+
 func _init() -> void:
 	# Set default curves if not provided
 	if not flash_curve:

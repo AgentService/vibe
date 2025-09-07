@@ -151,6 +151,31 @@ EventBus.character_selected.emit(StringName("knight_default"))
 - Boot modes: `"menu"`, `"hideout"`, `"arena"`, `"map"`
 - Scene selection via Main.gd dynamic loading
 
+## ⚖️ EventBus vs StateManager (Quick)
+
+- EventBus (transport of domain events)
+  - Use for: damage_requested/applied/taken, xp_gained/leveled_up, ability_* signals, enemy_spawned, debug toggles, pause state changed.
+  - Nature: broadcast, decoupled, no navigation logic or global state.
+
+- StateManager (orchestration facade)
+  - Use for: high-level navigation and flow: go_to_menu(), go_to_character_select(), go_to_hideout(), start_run(), end_run(), return_to_menu().
+  - Holds: current_state (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT).
+  - Gates: is_pause_allowed() → true only in HIDEOUT/ARENA/RESULTS.
+
+- Who calls what
+  - UI/Scenes (MainMenu, CharacterSelect, PauseOverlay, Results): call StateManager.go_to_*; listen to EventBus for domain updates (e.g., progression_changed).
+  - GameOrchestrator: subscribes to StateManager.state_changed; performs scene load/unload.
+  - Systems (Damage, WaveDirector, Ability, Melee): emit domain events via EventBus; never navigate directly. To end a run, emit a domain event StateManager subscribes to.
+  - Autoloads (RunManager, PlayerProgression, CharacterManager): use StateManager only to initiate/terminate flows; keep domain logic in their layer.
+
+## 🔁 Migration Checklist (facade-first, low-risk)
+- [ ] Create thin StateManager autoload (states, signals, API, is_pause_allowed()).
+- [ ] Centralize Escape: if StateManager.is_pause_allowed() then PauseUI.toggle_pause().
+- [ ] Refactor MainMenu/CharacterSelect/PauseOverlay to call StateManager.go_to_* (remove direct EventBus emits for navigation).
+- [ ] Keep EventBus as backbone for domain events; subscribe StateManager to key events (death/victory) to call end_run().
+- [ ] Add PauseUI autoload owning PauseOverlay (CanvasLayer WHEN_PAUSED) and subscribing to PauseManager/EventBus.
+- [ ] Extend tests: CoreLoop_Isolated (flow), test_pause_resume_lag (global), test_scene_swap_teardown (persistence).
+
 ## 📚 Documentation Links
 
 - **Detailed Guide**: [ARCHITECTURE_ENFORCEMENT_GUIDE.md](ARCHITECTURE_ENFORCEMENT_GUIDE.md)
