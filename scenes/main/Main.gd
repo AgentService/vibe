@@ -13,7 +13,7 @@ func _ready() -> void:
 	Logger.info("Main scene initializing with dynamic scene loading", "main")
 	_setup_scene_transition_manager()
 	_load_debug_config()
-	_load_initial_scene()
+	_setup_initial_state()
 	
 	# Connect to combat step for debug purposes
 	EventBus.combat_step.connect(_on_combat_step)
@@ -46,8 +46,8 @@ func _load_debug_config() -> void:
 		
 	Logger.info("Debug config loaded: start_mode=" + debug_config.start_mode, "main")
 
-func _load_initial_scene() -> void:
-	var scene_path: String
+func _setup_initial_state() -> void:
+	"""Setup initial state through StateManager based on debug config."""
 	
 	# Check if we should skip main menu for development
 	if debug_config.skip_main_menu or (debug_config.start_mode != "menu"):
@@ -58,18 +58,18 @@ func _load_initial_scene() -> void:
 			"menu":
 				if debug_config.skip_main_menu:
 					Logger.info("Skipping main menu - going directly to hideout for development", "main")
-					scene_path = "res://scenes/core/Hideout.tscn"
+					StateManager.go_to_hideout({"source": "debug_skip_menu"})
 				else:
-					scene_path = "res://scenes/ui/MainMenu.tscn"
+					StateManager.go_to_menu({"source": "debug_menu"})
 			"hideout":
-				scene_path = "res://scenes/core/Hideout.tscn"
+				StateManager.go_to_hideout({"source": "debug_hideout"})
 			"arena", "map", _:
-				scene_path = debug_config.map_scene if debug_config.map_scene != "" else "res://scenes/arena/Arena.tscn"
+				var arena_id = StringName("arena")
+				StateManager.start_run(arena_id, {"source": "debug_arena"})
 	else:
-		scene_path = "res://scenes/ui/MainMenu.tscn"
+		StateManager.go_to_menu({"source": "normal_boot"})
 	
-	Logger.info("Loading initial scene: " + scene_path, "main")
-	_instantiate_scene(scene_path)
+	Logger.info("Initial state setup complete via StateManager", "main")
 
 func _load_debug_character() -> void:
 	"""Load character profile for debug mode when skipping menu."""
@@ -113,26 +113,7 @@ func _load_debug_character() -> void:
 				PlayerProgression.load_from_profile(profile.progression)
 				Logger.info("Created fallback debug character: %s" % profile.name, "main")
 
-func _instantiate_scene(scene_path: String) -> void:
-	"""Load initial scene (called once at startup)."""
-	
-	var scene_resource = load(scene_path)
-	if not scene_resource:
-		Logger.error("Failed to load scene: " + scene_path, "main")
-		return
-	
-	current_scene = scene_resource.instantiate()
-	if not current_scene:
-		Logger.error("Failed to instantiate scene: " + scene_path, "main")
-		return
-	
-	add_child(current_scene)
-	
-	# Set the initial scene in the transition manager
-	if scene_transition_manager:
-		scene_transition_manager.set_current_scene(current_scene)
-	
-	Logger.info("Initial scene loaded successfully: " + scene_path, "main")
+# NOTE: Initial scene loading now handled by StateManager + GameOrchestrator + SceneTransitionManager
 
 func _on_transition_started(from_scene: String, to_scene: String) -> void:
 	"""Called when scene transition begins."""

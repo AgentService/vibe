@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://keetjrp31owk"]
+
+[ext_resource type="Script" uid="uid://sir3tfydrliq" path="res://tests/StateTransition_Test.gd" id="1_jbqyp"]
+
+[node name="StateTransition_Test" type="Node"]
+script = ExtResource("1_jbqyp")

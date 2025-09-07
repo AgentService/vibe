@@ -37,3 +37,5 @@ func _spawn_player() -> void:
 func get_player() -> Node2D:
 	"""Returns the player instance for other systems to reference."""
 	return player_instance
+
+# Removed local ESC handling - PauseUI now handles ESC globally to avoid conflicts

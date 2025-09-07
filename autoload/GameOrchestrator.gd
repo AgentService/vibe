@@ -32,10 +32,33 @@ var camera_system: CameraSystem
 func _ready() -> void:
 	Logger.info("GameOrchestrator initializing", "orchestrator")
 	# Don't initialize systems yet - this will be done when called by Main/Arena
-	process_mode = Node.PROCESS_MODE_PAUSABLE
+	process_mode = Node.PROCESS_MODE_ALWAYS  # Always process input, even when paused
+	
+	# Connect to StateManager for state-driven orchestration
+	StateManager.state_changed.connect(_on_state_changed)
 	
 	# Connect to mode_changed for global cleanup safety net
 	EventBus.mode_changed.connect(_on_mode_changed)
+
+func _input(event: InputEvent) -> void:
+	"""Handle global input - centralized escape handling for pause functionality."""
+	if event.is_action_pressed("ui_cancel") and event is InputEventKey:
+		Logger.info("ESC key detected in GameOrchestrator", "orchestrator")
+		_try_toggle_pause()
+		get_viewport().set_input_as_handled()  # Mark input as handled
+
+func _try_toggle_pause() -> void:
+	"""Attempt to toggle pause if allowed by current state."""
+	if StateManager.is_pause_allowed():
+		# Check if already paused - if so, unpause; if not, pause
+		if PauseManager.is_paused():
+			PauseManager.pause_game(false)
+			Logger.info("Game unpaused via GameOrchestrator", "orchestrator")
+		else:
+			PauseManager.pause_game(true)
+			Logger.info("Game paused via GameOrchestrator", "orchestrator")
+	else:
+		Logger.debug("Pause not allowed in current state: %s" % StateManager.get_current_state_string(), "orchestrator")
 
 func initialize_core_loop() -> void:
 	if initialization_phase != "idle":
@@ -195,40 +218,89 @@ func inject_systems_to_arena(arena) -> void:
 		arena.setup_debug_controller()
 		Logger.debug("DebugController setup complete", "orchestrator")
 
-# SCENE TRANSITION METHODS
+# STATE-DRIVEN SCENE MANAGEMENT
+
+func _on_state_changed(prev: StateManager.State, next: StateManager.State, context: Dictionary) -> void:
+	"""Handle state changes by orchestrating scene transitions and system management."""
+	Logger.info("GameOrchestrator: State changed %d -> %d" % [prev, next], "orchestrator")
+	
+	# Stop combat systems when leaving arena
+	if prev == StateManager.State.ARENA and wave_director and wave_director.has_method("stop"):
+		wave_director.stop()
+		Logger.info("GameOrchestrator: Stopped combat systems on arena exit", "orchestrator")
+	
+	# Emit mode change for global cleanup
+	var mode_name = _state_to_mode_name(next)
+	EventBus.mode_changed.emit(mode_name)
+	
+	# Trigger actual scene loading based on target state
+	_load_scene_for_state(next, context)
+
+func _load_scene_for_state(state: StateManager.State, context: Dictionary) -> void:
+	"""Load appropriate scene for the target state."""
+	match state:
+		StateManager.State.MENU:
+			EventBus.request_enter_map.emit({
+				"map_id": "main_menu",
+				"source": "state_manager",
+				"context": context
+			})
+		
+		StateManager.State.CHARACTER_SELECT:
+			EventBus.request_enter_map.emit({
+				"map_id": "character_select",
+				"source": "state_manager",
+				"context": context
+			})
+		
+		StateManager.State.HIDEOUT:
+			EventBus.request_return_hideout.emit({
+				"spawn_point": context.get("spawn_point", "PlayerSpawnPoint"),
+				"source": "state_manager",
+				"context": context
+			})
+		
+		StateManager.State.ARENA:
+			EventBus.request_enter_map.emit({
+				"map_id": context.get("arena_id", "arena"),
+				"spawn_point": "PlayerSpawnPoint",
+				"source": "state_manager",
+				"context": context
+			})
+		
+		StateManager.State.RESULTS:
+			EventBus.request_enter_map.emit({
+				"map_id": "results",
+				"source": "state_manager",
+				"context": context
+			})
+		
+		_:
+			Logger.warn("GameOrchestrator: No scene mapping for state %d" % state, "orchestrator")
+
+func _state_to_mode_name(state: StateManager.State) -> StringName:
+	"""Convert StateManager state to mode name for EventBus compatibility."""
+	match state:
+		StateManager.State.HIDEOUT:
+			return StringName("hideout")
+		StateManager.State.ARENA:
+			return StringName("arena")
+		StateManager.State.MENU, StateManager.State.CHARACTER_SELECT:
+			return StringName("menu")
+		StateManager.State.RESULTS:
+			return StringName("results")
+		_:
+			return StringName("unknown")
+
+# LEGACY TRANSITION METHODS (deprecated - use StateManager instead)
 
 func go_to_hideout() -> void:
-	Logger.info("GameOrchestrator: Initiating transition to hideout", "orchestrator")
-	
-	# Stop combat systems immediately
-	if wave_director and wave_director.has_method("stop"):
-		wave_director.stop()
-	
-	# Emit mode change for global cleanup (before transition)
-	EventBus.mode_changed.emit("hideout")
-	
-	# Use existing EventBus system for compatibility with SceneTransitionManager
-	# SceneTransitionManager will handle calling on_teardown() on the current scene
-	EventBus.request_return_hideout.emit({
-		"spawn_point": "PlayerSpawnPoint",
-		"source": "orchestrator_transition"
-	})
-	Logger.info("GameOrchestrator: Initiated transition to hideout", "orchestrator")
+	Logger.warn("GameOrchestrator.go_to_hideout() is deprecated - use StateManager.go_to_hideout()", "orchestrator")
+	StateManager.go_to_hideout()
 
 func go_to_arena() -> void:
-	Logger.info("GameOrchestrator: Initiating transition to arena", "orchestrator")
-	
-	# Emit mode change for global cleanup (before transition)
-	EventBus.mode_changed.emit("arena")
-	
-	# Use existing EventBus system for compatibility with SceneTransitionManager
-	# SceneTransitionManager will handle calling on_teardown() on the current scene
-	EventBus.request_enter_map.emit({
-		"map_id": "arena",
-		"spawn_point": "PlayerSpawnPoint", 
-		"source": "orchestrator_transition"
-	})
-	Logger.info("GameOrchestrator: Initiated transition to arena", "orchestrator")
+	Logger.warn("GameOrchestrator.go_to_arena() is deprecated - use StateManager.start_run()", "orchestrator")
+	StateManager.start_run(StringName("arena"))
 
 # GLOBAL CLEANUP SAFETY NET
 

@@ -250,6 +250,23 @@ func _on_damage_taken(damage: int) -> void:
 	if current_health <= 0:
 		_play_animation("death")
 		EventBus.player_died.emit()
+		
+		# End run through StateManager with death result
+		var death_result = {
+			"result_type": "death",
+			"death_cause": "Health reached zero",
+			"time_survived": Time.get_ticks_msec() / 1000.0,  # Convert to seconds
+			"level_reached": PlayerProgression.get_level() if PlayerProgression else 1,
+			"enemies_killed": 0,  # TODO: Track this in a combat stats system
+			"damage_dealt": 0,    # TODO: Track this in a combat stats system
+			"damage_taken": get_max_health() - current_health,
+			"xp_gained": 0,       # TODO: Track XP gained this run
+			"arena_id": StringName("arena")
+		}
+		
+		# Delay end_run call to allow death animation to start
+		await get_tree().create_timer(0.1).timeout
+		StateManager.end_run(death_result)
 	else:
 		_play_animation("hit")
 

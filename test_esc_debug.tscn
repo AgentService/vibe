@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dil8ae2craqw1"]
+
+[ext_resource type="Script" uid="uid://uoojdk8q80nb" path="res://test_esc_debug.gd" id="1_s0bf5"]
+
+[node name="TestEscDebug" type="Node"]
+script = ExtResource("1_s0bf5")

@@ -7,7 +7,6 @@ extends Node2D
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 # Player scene loaded dynamically to support @export hot-reload
-const PauseMenu_Type = preload("res://scenes/ui/PauseMenu.gd")
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
@@ -107,8 +106,8 @@ var _enemy_transforms: Array[Transform2D] = []
 func _ready() -> void:
 	Logger.info("Arena initializing", "ui")
 	
-	# Arena input should work during pause for debug controls
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Arena should pause game entities but allow debug controls
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	
 	
 	# Create enemy render tier system

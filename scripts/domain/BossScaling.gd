@@ -22,11 +22,30 @@ func _init(
 
 func apply_scaling(boss_config) -> void:
 	"""Apply scaling multipliers to a boss configuration object."""
-	if boss_config.has("health"):
+	# Handle both SpawnConfig objects and Dictionary configs for compatibility
+	if boss_config is SpawnConfig:
+		# SpawnConfig objects have direct property access
 		boss_config.health *= health_multiplier
-	if boss_config.has("damage"):
 		boss_config.damage *= damage_multiplier
-	if boss_config.has("speed"):
 		boss_config.speed *= speed_multiplier
-	if boss_config.has("size_scale"):
 		boss_config.size_scale *= size_multiplier
+	elif boss_config is Dictionary:
+		# Dictionary-based configs use has() method
+		if boss_config.has("health"):
+			boss_config.health *= health_multiplier
+		if boss_config.has("damage"):
+			boss_config.damage *= damage_multiplier
+		if boss_config.has("speed"):
+			boss_config.speed *= speed_multiplier
+		if boss_config.has("size_scale"):
+			boss_config.size_scale *= size_multiplier
+	else:
+		# Try direct property access as fallback
+		if boss_config.get("health") != null:
+			boss_config.health *= health_multiplier
+		if boss_config.get("damage") != null:
+			boss_config.damage *= damage_multiplier
+		if boss_config.get("speed") != null:
+			boss_config.speed *= speed_multiplier
+		if boss_config.get("size_scale") != null:
+			boss_config.size_scale *= size_multiplier

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cxv4b5lwhy21"]
+
+[ext_resource type="Script" uid="uid://caneaifnt2p72" path="res://tests/test_esc_toggle_automated.gd" id="1_uxnp4"]
+
+[node name="EscToggleAutomatedTest" type="Node"]
+script = ExtResource("1_uxnp4")

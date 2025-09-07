@@ -4,7 +4,56 @@
 
 ## [Current Week - In Progress]
 
+### Fixed
+- **ESC Key Pause Toggle**: Fixed ESC key not closing pause menu when pressed while overlay is open
+  - **PauseUI Input Handling**: Added _unhandled_input() to PauseUI to handle ESC when pause overlay is visible
+  - **Input Event Blocking**: Properly consume ESC input in PauseUI to prevent double-processing
+  - **Toggle Behavior**: ESC now correctly toggles pause on/off - first press opens menu, second press closes it
+- **State Manager Navigation Flow**: Fixed game flow from Main Menu → Character Select → Hideout → Arena
+  - **CharacterSelect.gd**: Updated navigation to use StateManager APIs instead of direct EventBus calls
+  - **StateManager state tracking**: Ensures current_state is properly set to HIDEOUT after character selection
+  - **Pause menu functionality**: ESC now correctly opens pause menu in Hideout (was blocked due to wrong state)
+  - **MapDevice arena entry**: Pressing E in Hideout now works after menu navigation (was invalid transition)
+  - **Hideout.gd cleanup**: Removed duplicate local ESC handling to avoid conflicts with global PauseUI
+
 ### Added
+- **Hideout Phase 1 - Main Menu & Character Select Integration**: Completed full integration of character selection flow with StateManager
+  - **MainMenu Continue Button**: Added intelligent Continue button that shows when characters exist, loads most recent by last_played timestamp
+  - **MainMenu UI Refactoring**: Changed "Start Game" to "New Character", proper button ordering and focus management based on character availability
+  - **StateManager Navigation**: All UI screens now use StateManager API exclusively (go_to_hideout, go_to_character_select, go_to_menu)
+  - **Character Context Passing**: Proper character data and progression loading through StateManager context system
+  - **CharacterSelection_Flow Test**: Comprehensive test validating MENU → CHARACTER_SELECT → create/select → HIDEOUT sequence
+  - **Architecture Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md and ARCHITECTURE_RULES.md with StateManager flow integration rules
+  - **UI Flow Enforcement**: Established mandatory rule that all scene navigation must use StateManager (no direct EventBus calls)
+- **Global Pause System**: Completed centralized pause/escape menu system with state-based gating and persistent overlay
+  - **PauseUI Autoload**: Persistent CanvasLayer pause overlay that works across all scenes with programmatically created UI elements
+  - **Centralized Escape Handling**: Moved input handling from PauseUI to GameOrchestrator for proper architecture separation
+  - **StateManager Integration**: Pause gated by StateManager.is_pause_allowed() - only allowed in HIDEOUT, ARENA, RESULTS states
+  - **Pause Menu Navigation**: Return to Hideout/Menu buttons use StateManager API (go_to_hideout, return_to_menu)
+  - **Global Input Architecture**: Established rule that all system-level input (ESC, etc.) must be handled in autoloads, not per-scene
+  - **Comprehensive Testing**: test_pause_state_restrictions validates ESC does nothing in MENU/CHARACTER_SELECT states
+  - **CoreLoop_Isolated Updates**: Enhanced test to validate both local pause (P key) and global pause (ESC key) functionality
+  - **Architecture Documentation**: Updated rules for centralized input handling and pause system integration
+- **Game State Manager Core Loop**: Implemented centralized state orchestration system for scene transitions and run management
+  - **StateManager Autoload**: Typed state enum (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT) with validation and logging
+  - **Typed state transitions**: All scene changes go through StateManager API with proper transition rules and context passing
+  - **Run lifecycle management**: start_run(), end_run() with unique run IDs and comprehensive result data tracking
+  - **Pause integration**: is_pause_allowed() method restricts pause to HIDEOUT, ARENA, and RESULTS states only
+  - **GameOrchestrator integration**: Scene loading orchestrated through StateManager state changes with proper cleanup
+  - **ResultsScreen UI**: New results scene with run summary, time survived, level reached, damage stats, and navigation buttons
+  - **PauseUI Autoload**: Persistent CanvasLayer pause menu with StateManager-aware permissions and scene-specific options
+- **Pause Menu Architecture Cleanup**: Streamlined pause system to use single PauseUI autoload implementation
+  - **Removed duplicate pause systems**: Eliminated scene-based PauseMenu.gd/.tscn in favor of programmatic PauseUI autoload
+  - **Fixed PauseUI initialization**: Corrected @onready variable usage for dynamically created UI elements
+  - **ArenaUIManager cleanup**: Removed scene-based pause menu instantiation and references
+  - **ArenaInputHandler updates**: Simplified input handling to use centralized PauseManager.toggle_pause()
+  - **Reference cleanup**: Removed obsolete PauseMenu_Type imports from Arena.gd and updated comments
+  - **Architecture compliance**: Aligned implementation with GAME_STATE_MANAGER_CORE_LOOP.md specifications for persistent pause overlay
+  - **SceneTransitionManager updates**: Enhanced with RESULTS state support and automatic run result display
+  - **Scene API updates**: MainMenu, Player death, MapDevice, and Main boot flow now use StateManager methods
+  - **Comprehensive testing**: test_state_transitions.gd validates state flow, signals, and transition rules; CoreLoop_Isolated updated
+  - **Legacy compatibility**: Deprecated methods maintained with warning logs during transition period
+  - **Debug mode support**: Full compatibility with existing debug.tres boot modes (menu/hideout/arena)
 - **Hardcoded Values Migration**: Completed comprehensive data-driven architecture migration eliminating hardcoded game values
   - **CharacterType Resource**: Created typed resource class for character base stats, descriptions, and starting abilities
   - **Character creation migration**: Moved knight/ranger stats from CharacterSelect.gd to data/content/player/character_types.tres

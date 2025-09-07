@@ -1,19 +1,17 @@
 extends Node
 
 ## Arena UI Manager - Phase 4 Arena Refactoring
-## Manages HUD, CardSelection, and PauseMenu instantiation and UI-related signal wiring
+## Manages HUD, CardSelection, and DebugPanel instantiation and UI-related signal wiring
 ## Centralizes all UI management for the Arena scene
 
 class_name ArenaUIManager
 
 const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
-const PAUSE_MENU_SCENE: PackedScene = preload("res://scenes/ui/PauseMenu.tscn")
 const DEBUG_PANEL_SCENE: PackedScene = preload("res://scenes/debug/DebugPanel.tscn")
 
 var hud: HUD
 var card_selection: CardSelection
-var pause_menu: PauseMenu
 var debug_panel: Control
 
 signal card_selected(card: CardResource)
@@ -34,10 +32,7 @@ func setup() -> void:
 	ui_layer.add_child(card_selection)
 	Logger.info("ArenaUIManager: CardSelection instantiated", "ui")
 
-	# Instantiate pause menu (no UI layer needed - handles its own rendering)
-	pause_menu = PAUSE_MENU_SCENE.instantiate()
-	add_child(pause_menu)
-	Logger.info("ArenaUIManager: PauseMenu instantiated", "ui")
+	# Note: Pause menu is now handled by PauseUI autoload
 
 	# Instantiate debug panel
 	debug_panel = DEBUG_PANEL_SCENE.instantiate()
@@ -61,8 +56,8 @@ func setup_card_system(card_system_ref: CardSystem) -> void:
 		Logger.debug("CardSystem connected to UI manager", "ui")
 
 func toggle_pause() -> void:
-	if pause_menu:
-		pause_menu.toggle_pause()
+	# Pause is now handled by PauseUI autoload via PauseManager
+	PauseManager.toggle_pause()
 
 func open_card_selection(cards: Array[CardResource]) -> void:
 	if card_selection:
@@ -79,8 +74,6 @@ func get_hud() -> HUD:
 func get_card_selection() -> CardSelection:
 	return card_selection
 
-func get_pause_menu() -> PauseMenu:
-	return pause_menu
 
 func get_debug_panel() -> Control:
 	return debug_panel
