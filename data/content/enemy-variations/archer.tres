@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_7f8g9")
 id = &"archer"
-parent_path = "res://data/content/enemies_v2/templates/ranged_base.tres"
+parent_path = "res://data/content/enemy-templates/ranged_base.tres"
 health_range = Vector2(8, 15)
 damage_range = Vector2(15, 20)
 speed_range = Vector2(45, 65)

@@ -1,35 +1,96 @@
-# Game Data Schemas
+# Data Configuration Files Index
 
-This directory contains game balance and configuration data in both .tres resources and JSON files. Complex content uses .tres format for type safety and Inspector editing, while simple configuration remains in JSON format. All data is loaded through the BalanceDB autoload singleton.
+This directory contains all game configuration files using the **hybrid functional + flat** organization structure for improved developer experience.
 
 ## Directory Structure
 
 ```
-/data/
-├── balance/          # Balance tunables (.tres resources)
-│   ├── combat_balance.tres    # Combat system values
-│   ├── abilities_balance.tres # Ability system configuration  
-│   ├── waves_balance.tres     # Wave director and enemy settings
-│   ├── player_balance.tres    # Player base stats
-│   └── melee_balance.tres     # Melee combat system
-├── cards/            # Card system data (.tres resources)
-│   ├── melee/        # Melee enhancement cards
-│   └── pools/        # Card pool definitions
-├── content/          # Game content definitions (.tres resources)
-│   ├── enemies/      # Enemy type definitions (.tres files)
-│   ├── abilities/    # Ability definitions (planned .tres)
-│   ├── items/        # Item definitions (planned .tres)
-│   ├── heroes/       # Hero/class definitions (planned .tres)
-│   ├── maps/         # Map definitions (planned .tres)
-│   └── arena/        # Arena configurations (.tres files)
-├── animations/       # Animation configurations (.tres resources)
-│   └── *_animations.tres  # Frame data and timing for each enemy type
-├── debug/            # Debug and logging configuration
-│   └── log_config.tres    # Logger configuration
-├── ui/               # UI component configuration
-│   └── radar_config.tres  # Enemy radar settings (.tres resource)
-└── xp_curves.tres    # Experience progression curves (.tres resource)
+data/
+├── core/                    # Essential game mechanics (most accessed)
+├── balance/                 # All tuning values (designer focus)  
+├── content/                 # Asset-heavy configurations
+├── debug.tres              # Debug configuration (consolidated)
+└── ui.tres                 # UI configuration (consolidated)
 ```
+
+## Core Files (`/data/core/`)
+
+**Essential game mechanics - most frequently accessed by developers:**
+
+- `character-types.tres` - Player character definitions and stats
+- `progression-xp-curve.tres` - XP curve configuration and level thresholds
+- `boss-scaling.tres` - Boss scaling multipliers for debug mode
+
+## Balance Files (`/data/balance/`)
+
+**All tuning values - primary focus for game designers:**
+
+- `combat.tres` - Combat balance parameters
+- `abilities.tres` - Ability damage, cooldowns, and effects
+- `melee.tres` - Melee combat specific balance
+- `player.tres` - Player stats and capabilities
+- `waves.tres` - Wave spawning and difficulty scaling
+- `visual-feedback.tres` - Visual feedback timing and intensity
+
+## Content Files (`/data/content/`)
+
+**Asset-heavy configurations:**
+
+### Animation Configs
+- `regular_enemy_animations.tres` - Regular enemy animation frames
+- `elite_enemy_animations.tres` - Elite enemy animation frames
+- `boss_enemy_animations.tres` - Boss enemy animation frames
+- `swarm_enemy_animations.tres` - Swarm enemy animation frames
+- `knight_animations.tres` - Knight character animations
+
+### Enemy Definitions
+- `enemy-templates/` - Base enemy templates (boss_base.tres, melee_base.tres, ranged_base.tres)
+- `enemy-variations/` - Specific enemy variations (ancient_lich.tres, archer.tres, etc.)
+
+### Cards & Items
+- `cards-melee/` - Melee upgrade cards (damage_boost.tres, attack_speed.tres, etc.)
+- `melee_pool.tres` - Melee card pool configuration
+
+### Game Content
+- `default_arena.tres` - Arena configuration
+- `default_player.tres` - Default player configuration  
+- `unlocks.tres` - Player progression unlocks
+
+## Flat Configuration Files
+
+**Single-file configurations for simplified access:**
+
+- `debug.tres` - Debug logging configuration (consolidated from debug/ folder)
+- `ui.tres` - UI configuration including radar settings (consolidated from ui/ folder)
+- `ui-debug-theme.tres` - Debug UI theme resources
+
+## Hot-Reload Support
+
+All configuration files support F5 hot-reload for rapid development:
+
+- **Core files**: Reloaded by respective managers (DebugManager, PlayerProgression)
+- **Balance files**: Reloaded by BalanceDB autoload system
+- **Content files**: Reloaded by content loading systems (EnemyFactory, CardSystem)
+
+## Usage Patterns
+
+### For Game Designers
+Start with `/data/balance/` - all tuning values are here with descriptive names.
+
+### For Developers  
+Start with `/data/core/` for essential mechanics, then `/data/content/` for assets.
+
+### For Debug/Testing
+Use `/data/debug.tres` for logging config and `/data/core/boss-scaling.tres` for debug scaling.
+
+## Migration Notes
+
+This structure was migrated from the previous nested organization to:
+- **Reduce search time** - developers can find any config in <10 seconds
+- **Logical grouping** - related configs are organized by function
+- **Consistent naming** - predictable file names following clear patterns
+- **Easy discovery** - new developers can quickly understand available options
+- **Preserved hot-reload** - all F5 functionality maintained
 
 ## Resource Format Guidelines
 
@@ -39,125 +100,24 @@ This directory contains game balance and configuration data in both .tres resour
 - **Configuration data**: Logging, UI, XP curves
 - **Benefits**: Type safety, Inspector editing, validation, hot-reload
 
-### JSON Files (Legacy/Simple Config)
-- **Simple configurations**: Enemy registry, enemy tiers
-- **Benefits**: Easy AI assistance, text editing, version control diffs
+### Hot-Reload Patterns
+- **Scene-based resources**: Use `@export var resource: ResourceType` for automatic Inspector hot-reload
+- **System-based resources**: Use `ResourceLoader.load()` with file monitoring for autoload systems
+- **Auto-reload**: Balance files monitored with 0.5s detection via BalanceDB
+- **Manual reload**: F5 key triggers full resource reload
 
-## Balance Resource Classes
+## Auto-Reload Configuration
 
-### Resource Classes
-
-All .tres resources are backed by typed GDScript resource classes:
-
-- **CombatBalance**: Combat system values (collision, damage, crits)
-- **AbilitiesBalance**: Ability system configuration  
-- **WavesBalance**: Wave spawning and enemy settings
-- **PlayerBalance**: Player base stats and modifiers
-- **MeleeBalance**: Melee combat system values
-- **LogConfigResource**: Debug logging configuration
-- **RadarConfigResource**: Enemy radar UI settings  
-- **XPCurvesResource**: Experience progression curves
-
-## Content Creation Workflow
-
-### Creating New .tres Resources
-
-1. **Create Resource Class**: Define a new resource class in `scripts/domain/`
-   ```gdscript
-   extends Resource
-   class_name MyConfigResource
-   
-   @export var my_property: float = 1.0
-   @export var my_enum: MyEnum = MyEnum.DEFAULT
-   ```
-
-2. **Use Inspector**: Create .tres files using Godot's Inspector
-   - Right-click in FileSystem dock
-   - Create → Resource
-   - Select your resource class
-   - Set properties in Inspector
-   - Save as .tres file
-
-3. **Load in Code**: Use ResourceLoader in systems
-   ```gdscript
-   var config: MyConfigResource = load("res://data/my_config.tres")
-   if config:
-	   my_value = config.my_property
-   ```
-
-### Hot-Reload Support
-
-- **Automatic Balance Files**: 0.5 second auto-reload for files registered in BalanceDB
-- **Scene Resources**: Instant hot-reload for @export resources (arena, player configs)
-- **F5 Fallback**: Manual reload trigger for all resources
-
-## Hot Reloading
-
-The BalanceDB singleton provides automatic hot-reloading for balance files during development:
-
-### **Auto-Reload (0.5s)**
-Balance files are automatically monitored and reloaded when changed:
+Currently monitored files in BalanceDB:
 ```gdscript
-// Currently monitored files in BalanceDB._setup_auto_reload():
-- res://data/balance/combat_balance.tres
-- res://data/balance/abilities_balance.tres  
-- res://data/balance/melee_balance.tres
-- res://data/balance/player_balance.tres
-- res://data/balance/waves_balance.tres
-- res://data/ui/radar_config.tres
+- res://data/balance/combat.tres
+- res://data/balance/abilities.tres  
+- res://data/balance/melee.tres
+- res://data/balance/player.tres
+- res://data/balance/waves.tres
+- res://data/ui.tres
 ```
 
-### **Adding New Auto-Reload Files**
-To add a new balance file to auto-reload monitoring:
-1. Add file path to `_balance_files` dictionary in `BalanceDB._setup_auto_reload()`
-2. Ensure file is loaded in `BalanceDB.load_all_balance_data()`
-3. Test file changes are detected within 0.5 seconds
+## Schema Documentation
 
-### **Manual Reload**  
-- **F5 Key**: Triggers full resource reload for all files
-- **Signal**: Listen to `BalanceDB.balance_reloaded` for updates
-
-## Fallback Values
-
-All systems include hardcoded fallback values. If a .tres resource fails to load, systems log warnings and continue with fallbacks to prevent crashes.
-
-## Adding New Balance Values
-
-1. Add new @export property to appropriate resource class
-2. Update fallback values in `BalanceDB.gd` 
-3. Set default value in .tres file using Inspector
-4. Update consuming systems to use new property
-5. Update this documentation
-
-## Adding New Enemy Types
-
-The enemy system uses .tres resources with automatic discovery. To add a new enemy type:
-
-1. **Create enemy resource**: Add `data/content/enemies/new_enemy.tres` using EnemyType resource class
-2. **Set spawn weight**: Configure `spawn_weight` property in the .tres file
-3. **Add sprite sheet**: Place sprite sheet texture in `assets/sprites/` (if needed)
-4. **Test integration**: Run enemy tests to verify resource validity
-
-The EnemyRegistry automatically discovers all .tres files in the enemies directory without requiring manual registration.
-
-## Enemy System Schemas
-
-### content/enemies/*.tres
-
-Individual enemy configurations using Godot Resources. See `/data/content/enemies/README.md` for complete schema and editing workflow.
-
-**Example**: `knight_regular.tres`
-- Uses `EnemyType` resource class with typed properties
-- Editable in Godot Inspector or as text
-- Automatic hot-reload when files change
-- Type safety and validation built-in
-
-### animations/*_animations.tres
-
-Animation configurations using .tres resources with type-safe properties. See specific animation files for resource class definitions and Inspector editing workflows.
-
-**Example**: `knight_animations.tres`
-- Uses `AnimationConfig` resource class
-- Sprite sheet path, frame dimensions, timing data
-- Automatic hot-reload when changed
-- Type safety and validation
+See individual config files for their data schemas. Each `.tres` file corresponds to a GDScript Resource class in `/scripts/domain/` or `/scripts/resources/`.

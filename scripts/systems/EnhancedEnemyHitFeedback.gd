@@ -28,10 +28,10 @@ const AlternativeVisualFeedback = preload("res://scripts/systems/AlternativeVisu
 
 func _ready() -> void:
 	# Load enhanced visual feedback configuration
-	visual_config = load("res://data/balance/visual_feedback_improved.tres") as VisualFeedbackConfig
+	visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
-		Logger.warn("Failed to load enhanced visual config, falling back to default", "visual")
-		visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+		Logger.warn("Failed to load visual feedback config, using defaults", "visual")
+		visual_config = VisualFeedbackConfig.new()
 	
 	# Subscribe to damage events
 	EventBus.damage_applied.connect(_on_damage_applied)

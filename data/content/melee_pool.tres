@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="CardPoolResource" format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/CardPoolResource.gd" id="1_pool"]
+[ext_resource type="Resource" path="res://data/content/cards-melee/unlock_projectiles.tres" id="2_unlock"]
+[ext_resource type="Resource" path="res://data/content/cards-melee/damage_boost.tres" id="3_boost"]
+[ext_resource type="Resource" path="res://data/content/cards-melee/damage_flat.tres" id="4_flat"]
+[ext_resource type="Resource" path="res://data/content/cards-melee/attack_speed.tres" id="5_speed"]
+[ext_resource type="Resource" path="res://data/content/cards-melee/extended_reach.tres" id="6_reach"]
+
+[resource]
+script = ExtResource("1_pool")
+pool_name = "Melee Cards"
+theme = "melee"
+card_list = Array[Resource]([ExtResource("2_unlock"), ExtResource("3_boost"), ExtResource("4_flat"), ExtResource("5_speed"), ExtResource("6_reach")])

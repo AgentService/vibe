@@ -7,7 +7,7 @@ enum LogLevel { DEBUG, INFO, WARN, ERROR, NONE }
 
 var current_level: LogLevel = LogLevel.DEBUG
 var enabled_categories: Dictionary = {}
-var config_path: String = "res://data/debug/log_config.tres"
+var config_path: String = "res://data/debug.tres"
 
 func _ready() -> void:
 	_load_config()

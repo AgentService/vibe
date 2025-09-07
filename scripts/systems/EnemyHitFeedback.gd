@@ -22,7 +22,7 @@ var is_scene_boss: bool = false
 func _ready() -> void:
 	# Load default config if not provided
 	if not feedback_config:
-		feedback_config = preload("res://data/balance/visual_feedback.tres")
+		feedback_config = preload("res://data/balance/visual-feedback.tres")
 	
 	# Store original sprite color
 	if target_sprite:

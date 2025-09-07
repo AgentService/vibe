@@ -29,7 +29,7 @@ const EnemyRenderTier_Type = preload("res://scripts/systems/EnemyRenderTier.gd")
 
 func _ready() -> void:
 	# Load visual feedback configuration
-	visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		Logger.warn("Failed to load visual feedback config, using defaults", "enemies")
 		visual_config = VisualFeedbackConfig.new()

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="VisualFeedbackConfig" format=3 uid="uid://d31e2ib4vee7x"]
+[gd_resource type="Resource" script_class="VisualFeedbackConfig" load_steps=0 format=3 uid="uid://d31e2ib4vee7x"]
 
 [ext_resource type="Script" path="res://scripts/resources/VisualFeedbackConfig.gd" id="1"]
 

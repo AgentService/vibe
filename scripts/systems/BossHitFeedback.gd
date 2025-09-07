@@ -35,7 +35,7 @@ var cached_boss_sprites: Dictionary = {}
 
 func _ready() -> void:
 	# Load visual feedback configuration  
-	visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		Logger.warn("Failed to load visual feedback config for bosses, using defaults", "bosses")
 		visual_config = VisualFeedbackConfig.new()

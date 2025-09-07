@@ -102,7 +102,7 @@ func _initialize_systems() -> void:
 	# 7. ArenaSystem (no deps)
 	arena_system = ArenaSystem.new()
 	# Load and set the arena config
-	var arena_config = load("res://data/content/arena/default_arena.tres") as ArenaConfig
+	var arena_config = load("res://data/content/default_arena.tres") as ArenaConfig
 	arena_system.arena_config = arena_config
 	add_child(arena_system)
 	systems["ArenaSystem"] = arena_system

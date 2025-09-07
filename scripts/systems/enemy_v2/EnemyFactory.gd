@@ -21,10 +21,10 @@ static func load_all_templates() -> void:
 	_pool_dirty = true
 	
 	# Load base templates first
-	_load_templates_from_directory("res://data/content/enemies_v2/templates/")
+	_load_templates_from_directory("res://data/content/enemy-templates/")
 	
 	# Load variations (which may inherit from base templates)  
-	_load_templates_from_directory("res://data/content/enemies_v2/variations/")
+	_load_templates_from_directory("res://data/content/enemy-variations/")
 	
 	# Resolve all inheritance relationships
 	_resolve_all_inheritance()

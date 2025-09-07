@@ -13,7 +13,7 @@ func _ready() -> void:
 	print("=== Visual Feedback Debug Analysis ===")
 	
 	# Load visual config
-	visual_config = load("res://data/balance/visual_feedback.tres") as VisualFeedbackConfig
+	visual_config = load("res://data/balance/visual-feedback.tres") as VisualFeedbackConfig
 	if not visual_config:
 		print("ERROR: Failed to load visual feedback config")
 		return

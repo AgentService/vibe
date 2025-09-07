@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_9h0i1")
 id = &"ancient_lich"
-parent_path = "res://data/content/enemies_v2/templates/boss_base.tres"
+parent_path = "res://data/content/enemy-templates/boss_base.tres"
 health_range = Vector2(150, 200)
 damage_range = Vector2(35, 50)
 speed_range = Vector2(25, 40)
