@@ -21,6 +21,7 @@ func _input(event: InputEvent) -> void:
 	# Handle Escape key for pause menu (priority handling)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_ESCAPE:
 		_handle_escape_key()
+		get_viewport().set_input_as_handled()  # Prevent other systems from handling this ESC
 		return
 	
 	# Handle mouse position updates for auto-attack
@@ -39,9 +40,12 @@ func _handle_escape_key() -> void:
 	if ui_manager and ui_manager.get_card_selection() and ui_manager.get_card_selection().visible:
 		return  # Let card selection handle the escape key
 	
-	# Toggle pause menu through UI manager
-	if ui_manager:
-		ui_manager.toggle_pause()
+	# Use the new StateManager-aware PauseUI system instead of old PauseMenu
+	if StateManager.is_pause_allowed():
+		PauseManager.toggle_pause()
+		Logger.info("Pause toggled via ArenaInputHandler ESC", "input")
+	else:
+		Logger.warn("Pause not allowed in current state: %s" % StateManager.get_current_state_string(), "input")
 
 func _handle_mouse_motion() -> void:
 	if not arena_ref or not melee_system:

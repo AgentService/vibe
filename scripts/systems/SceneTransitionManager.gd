@@ -107,7 +107,7 @@ func _resolve_map_path(map_id: String) -> String:
 	Resolves map ID to scene path.
 	
 	Args:
-		map_id: Map identifier ("arena", "hideout", "main_menu", etc.)
+		map_id: Map identifier ("arena", "hideout", "main_menu", "results", etc.)
 	
 	Returns:
 		Full scene path
@@ -121,6 +121,8 @@ func _resolve_map_path(map_id: String) -> String:
 			return "res://scenes/ui/MainMenu.tscn"
 		"character_select":
 			return "res://scenes/ui/CharacterSelect.tscn"
+		"results":
+			return "res://scenes/ui/ResultsScreen.tscn"
 		"forest":
 			return "res://scenes/maps/Forest.tscn"  # Future maps
 		"dungeon":
@@ -148,6 +150,13 @@ func _apply_transition_data() -> void:
 	var character_data = transition_data.get("character_data", {})
 	if not character_data.is_empty() and current_scene_node.has_method("apply_character_data"):
 		current_scene_node.apply_character_data(character_data)
+	
+	# Special handling for ResultsScreen - display run results
+	if current_scene_node.has_method("display_run_results"):
+		var run_results = transition_data.get("context", {})
+		if not run_results.is_empty():
+			current_scene_node.display_run_results(run_results)
+			Logger.debug("Applied run results to ResultsScreen", "transition")
 	
 	# Clear transition data
 	transition_data.clear()

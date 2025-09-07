@@ -5,6 +5,19 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Game State Manager Core Loop**: Implemented centralized state orchestration system for scene transitions and run management
+  - **StateManager Autoload**: Typed state enum (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT) with validation and logging
+  - **Typed state transitions**: All scene changes go through StateManager API with proper transition rules and context passing
+  - **Run lifecycle management**: start_run(), end_run() with unique run IDs and comprehensive result data tracking
+  - **Pause integration**: is_pause_allowed() method restricts pause to HIDEOUT, ARENA, and RESULTS states only
+  - **GameOrchestrator integration**: Scene loading orchestrated through StateManager state changes with proper cleanup
+  - **ResultsScreen UI**: New results scene with run summary, time survived, level reached, damage stats, and navigation buttons
+  - **PauseUI Autoload**: Persistent CanvasLayer pause menu with StateManager-aware permissions and scene-specific options
+  - **SceneTransitionManager updates**: Enhanced with RESULTS state support and automatic run result display
+  - **Scene API updates**: MainMenu, Player death, MapDevice, and Main boot flow now use StateManager methods
+  - **Comprehensive testing**: test_state_transitions.gd validates state flow, signals, and transition rules; CoreLoop_Isolated updated
+  - **Legacy compatibility**: Deprecated methods maintained with warning logs during transition period
+  - **Debug mode support**: Full compatibility with existing debug.tres boot modes (menu/hideout/arena)
 - **Hardcoded Values Migration**: Completed comprehensive data-driven architecture migration eliminating hardcoded game values
   - **CharacterType Resource**: Created typed resource class for character base stats, descriptions, and starting abilities
   - **Character creation migration**: Moved knight/ranger stats from CharacterSelect.gd to data/content/player/character_types.tres

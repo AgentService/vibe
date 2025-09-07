@@ -47,11 +47,8 @@ func _on_start_game_pressed() -> void:
 	
 	Logger.info("Start Game pressed", "mainmenu")
 	
-	# Request scene transition to character selection
-	EventBus.request_enter_map.emit({
-		"map_id": "character_select",
-		"source": "main_menu"
-	})
+	# Use StateManager for proper state transition
+	StateManager.go_to_character_select({"source": "main_menu"})
 
 func _on_options_pressed() -> void:
 	"""Handle Options button press - placeholder for future options menu."""

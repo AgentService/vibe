@@ -109,17 +109,15 @@ func _activate_map_device() -> void:
 	if player_reference and player_reference.has_method("get_character_data"):
 		character_data = player_reference.get_character_data()
 	
-	# Prepare transition data
-	var transition_data = {
-		"map_id": map_id,
+	# Prepare context for StateManager
+	var context = {
 		"spawn_point": spawn_point_override if spawn_point_override != "" else "PlayerSpawnPoint",
 		"character_data": character_data,
 		"source": "hideout_map_device"
 	}
 	
-	# Emit both the new typed signal and existing request signal for compatibility
-	EventBus.enter_map_requested.emit(map_id)
-	EventBus.request_enter_map.emit(transition_data)
+	# Use StateManager to start run
+	StateManager.start_run(map_id, context)
 	
 	# Hide interaction prompt immediately
 	interaction_prompt.visible = false

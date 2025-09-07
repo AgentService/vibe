@@ -107,8 +107,8 @@ var _enemy_transforms: Array[Transform2D] = []
 func _ready() -> void:
 	Logger.info("Arena initializing", "ui")
 	
-	# Arena input should work during pause for debug controls
-	process_mode = Node.PROCESS_MODE_ALWAYS
+	# Arena should pause game entities but allow debug controls
+	process_mode = Node.PROCESS_MODE_PAUSABLE
 	
 	
 	# Create enemy render tier system
