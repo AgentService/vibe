@@ -82,7 +82,7 @@ All .tres resources are backed by typed GDScript resource classes:
    ```gdscript
    var config: MyConfigResource = load("res://data/my_config.tres")
    if config:
-       my_value = config.my_property
+	   my_value = config.my_property
    ```
 
 ### Hot-Reload Support

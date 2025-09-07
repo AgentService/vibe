@@ -5,7 +5,8 @@
 [resource]
 script = ExtResource("1_xkk1l")
 debug_mode = true
-start_mode = "hideout"
+start_mode = "arena"
 skip_main_menu = true
 map_scene = "res://scenes/arena/Arena.tscn"
-character_id = "knight_default"
+character_selection = "auto"
+character_id = &""

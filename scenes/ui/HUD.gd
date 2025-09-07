@@ -20,15 +20,15 @@ func _ready() -> void:
 	# HUD should always process (including FPS counter during pause)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	
-	EventBus.xp_changed.connect(_on_xp_changed)
-	EventBus.level_up.connect(_on_level_up)
+	# Connect to new PlayerProgression signals
+	EventBus.progression_changed.connect(_on_progression_changed)
+	EventBus.leveled_up.connect(_on_leveled_up)
 	EventBus.damage_taken.connect(_on_player_damage_taken)
 	EventBus.player_died.connect(_on_player_died)
 	
 	
 	# Initialize display
-	_update_level_display(1)
-	_update_xp_display(0, 30)
+	_initialize_progression_display()
 	_update_health_display(100, 100)
 	_style_health_bar()
 	_style_level_label()
@@ -44,11 +44,21 @@ func _process(delta: float) -> void:
 	pass
 
 
-func _on_xp_changed(payload) -> void:
-	_update_xp_display(payload.current_xp, payload.next_level_xp)
+func _on_progression_changed(state: Dictionary) -> void:
+	var current_xp = int(state.get("exp", 0))
+	var xp_to_next = int(state.get("xp_to_next", 100))
+	var level = int(state.get("level", 1))
+	
+	# Calculate the total XP needed for the current level
+	var total_xp_for_level = current_xp + xp_to_next
+	
+	print("HUD: Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, total_xp_for_level])
+	_update_xp_display(current_xp, total_xp_for_level)
+	_update_level_display(level)
 
-func _on_level_up(payload) -> void:
-	_update_level_display(payload.new_level)
+func _on_leveled_up(new_level: int, prev_level: int) -> void:
+	print("HUD: Level up detected! %d -> %d" % [prev_level, new_level])
+	_update_level_display(new_level)
 
 func _on_player_damage_taken(_damage: int) -> void:
 	# Get current player health from player node
@@ -138,6 +148,18 @@ func _style_level_label() -> void:
 		label_theme.set_color("font_color", "Label", Color(1.0, 1.0, 1.0, 1.0))  # White text
 		
 		level_label.theme = label_theme
+
+func _initialize_progression_display() -> void:
+	# Get initial progression state from PlayerProgression
+	if PlayerProgression:
+		var state = PlayerProgression.get_progression_state()
+		_on_progression_changed(state)
+		print("HUD: Initialized with PlayerProgression state")
+	else:
+		# Fallback values
+		_update_level_display(1)
+		_update_xp_display(0, 100)
+		print("HUD: PlayerProgression not available, using fallback values")
 
 func _update_fps_display() -> void:
 	if fps_label:
