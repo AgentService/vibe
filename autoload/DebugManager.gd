@@ -386,6 +386,53 @@ func _apply_ai_pause_to_new_entity() -> void:
 		# Small delay to ensure entities are fully spawned before receiving the signal
 		get_tree().create_timer(0.1).timeout.connect(func(): EventBus.cheat_toggled.emit(payload))
 
+# Progression system debug methods
+func add_xp(amount: float = 100.0) -> void:
+	if not debug_enabled:
+		Logger.warn("Cannot add XP - debug mode not active", "debug")
+		return
+	
+	Logger.info("Debug: Adding %.1f XP" % amount, "progression_debug")
+	
+	if PlayerProgression:
+		PlayerProgression.gain_exp(amount)
+	else:
+		Logger.error("PlayerProgression not available", "progression_debug")
+
+func force_level_up() -> void:
+	if not debug_enabled:
+		Logger.warn("Cannot force level up - debug mode not active", "debug")
+		return
+	
+	Logger.info("Debug: Forcing level up", "progression_debug")
+	
+	if PlayerProgression:
+		var xp_needed: float = PlayerProgression.xp_to_next + 1.0  # Add small epsilon
+		Logger.debug("Forcing level up by adding %.1f XP" % xp_needed, "progression_debug")
+		PlayerProgression.gain_exp(xp_needed)
+	else:
+		Logger.error("PlayerProgression not available", "progression_debug")
+
+func get_progression_info() -> Dictionary:
+	if not PlayerProgression:
+		return {"error": "PlayerProgression not available"}
+	
+	return PlayerProgression.get_progression_state()
+
+func reset_progression() -> void:
+	if not debug_enabled:
+		Logger.warn("Cannot reset progression - debug mode not active", "debug")
+		return
+	
+	Logger.warn("Debug: Resetting progression to level 1", "progression_debug")
+	
+	if PlayerProgression:
+		# Reset to starting values
+		var reset_profile: Dictionary = {"level": 1, "exp": 0.0}
+		PlayerProgression.load_from_profile(reset_profile)
+	else:
+		Logger.error("PlayerProgression not available", "progression_debug")
+
 func _initialize_debug_mode() -> void:
 	# Called deferred from _ready to ensure systems are initialized
 	if debug_enabled:

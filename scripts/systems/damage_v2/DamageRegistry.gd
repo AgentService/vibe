@@ -228,8 +228,11 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 			var payload = EventBus.EnemyKilledPayload_Type.new(position, 1)
 			EventBus.enemy_killed.emit(payload)
 		"boss":
-			# TODO: Handle boss death events
-			Logger.info("Boss defeated: " + entity_id, "combat")
+			# Emit enemy killed event for XP/loot (bosses give more XP)
+			var boss_xp_value = 50  # Bosses give 50 XP vs regular enemies' 1 XP
+			var payload = EventBus.EnemyKilledPayload_Type.new(position, boss_xp_value)
+			EventBus.enemy_killed.emit(payload)
+			Logger.info("Boss defeated: " + entity_id + " (XP: %d)" % boss_xp_value, "combat")
 		"player":
 			# TODO: Handle player death
 			Logger.info("Player defeated!", "combat")

@@ -69,6 +69,29 @@ signal xp_changed(payload)
 ## Player leveled up - emitted by XpSystem, triggers pause + card selection
 signal level_up(payload)
 
+## NEW PROGRESSION SIGNALS (PlayerProgression system)
+## XP gained - emitted when player gains experience points
+signal xp_gained(amount: float, new_total: float)
+
+## Player leveled up - emitted when player levels up (new system)
+signal leveled_up(new_level: int, prev_level: int)
+
+## Progression state changed - emitted when any progression state changes
+signal progression_changed(state: Dictionary)
+
+# CHARACTER MANAGEMENT SIGNALS
+## Characters list changed - emitted when character list is updated (create/delete)
+signal characters_list_changed(profiles: Array[Dictionary])
+
+## Character created - emitted when a new character is created
+signal character_created(profile: Dictionary)
+
+## Character deleted - emitted when a character is deleted
+signal character_deleted(character_id: StringName)
+
+## Character selected - emitted when a character is selected for play
+signal character_selected(profile: Dictionary)
+
 # GAME STATE SIGNALS
 ## Game pause state changed - emitted by RunManager
 signal game_paused_changed(payload)
@@ -108,8 +131,6 @@ signal mode_changed(mode: StringName)
 ## Map entry requested - emitted when player requests to enter a specific map
 signal enter_map_requested(map_id: StringName)
 
-## Character selected - emitted when player selects a character/build
-signal character_selected(character_id: StringName)
 
 func _ready() -> void:
 	# Connect debug logging to relevant signals only

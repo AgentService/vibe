@@ -5,6 +5,28 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **PoE-Style Character System**: Implemented comprehensive per-character progression and persistence system
+  - **CharacterProfile Resource**: Typed resource class for character data (id, name, class, level, exp, dates, progression)
+  - **CharacterManager Autoload**: Full CRUD operations with character creation, loading, listing, deletion, and persistence
+  - **Per-character saves**: Individual .tres files in user://profiles/ with unique ID generation and collision handling
+  - **PlayerProgression integration**: Automatic synchronization of progression changes with debounced saves (1s timer)
+  - **EventBus signals**: Added characters_list_changed, character_created, character_deleted, character_selected
+  - **Updated CharacterSelect**: Enhanced with name input field and full character creation workflow
+  - **Comprehensive testing**: CharacterManager_Isolated test validates all CRUD operations, persistence, and progression sync
+  - **Knight/Ranger classes**: Initial class support with removal of Mage placeholder (per task specification)
+  - **Save path management**: Automatic user://profiles/ directory creation and file path utilities
+  - **Error handling**: Robust validation for corrupt saves, missing files, and edge cases
+- **Player Progression System**: Implemented comprehensive, data-driven progression system with resource-based configuration
+  - **PlayerProgression autoload**: Central progression manager handling level-ups, XP tracking, and unlock validation
+  - **Typed progression resources**: PlayerXPCurve.gd and PlayerUnlocks.gd for editor-friendly curve configuration
+  - **EventBus integration**: Added xp_gained, leveled_up, and progression_changed signals with typed parameters
+  - **Debug tools**: F12 progression tools - Add XP (+100), Force Level Up, Reset Progression via DebugManager
+  - **XpSystem migration**: Updated to delegate progression logic to PlayerProgression while preserving orb spawning
+  - **Multi-level-up support**: Handles large XP gains with proper sequential level-ups and max level capping
+  - **Save/Load seams**: export_state() and load_from_profile() methods ready for future SaveManager integration
+  - **UI stubs**: CharacterScreen.gd and XPBarUI.gd subscriber stubs for future UI implementation
+  - **Comprehensive testing**: PlayerProgression_Isolated test suite validates core progression, signals, and edge cases
+  - **Data-driven curve**: 10-level progression curve (100/300/600/1000/1500/2100/2800/3600/4500/5500 XP thresholds)
 - **Hideout Phase 0 Boot Switch**: Implemented typed, configurable boot flow with minimal-risk architectural improvements
   - **Typed EventBus signals**: Added enter_map_requested(StringName) and character_selected(StringName) for past-tense signal contracts
   - **DebugConfig Resource**: Updated to use StringName for character_id field (type consistency)

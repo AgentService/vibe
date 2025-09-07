@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="PlayerXPCurve" load_steps=2 format=3 uid="uid://clmou7dwf3r0"]
+
+[ext_resource type="Script" uid="uid://bkf3q5ychsn1p" path="res://scripts/resources/PlayerXPCurve.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+active_curve = 1
+normal_thresholds = Array[int]([100, 300, 600, 1000, 1500, 2100, 2800, 3600, 4500, 5500])
+fast_thresholds = Array[int]([10, 25, 50, 80, 120, 170, 230, 300, 380, 470])
+slow_thresholds = Array[int]([200, 600, 1200, 2000, 3000, 4200, 5600, 7200, 9000, 11000, 13500, 16500, 20000, 24000, 29000])
