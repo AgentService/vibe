@@ -11,11 +11,19 @@
   - **Per-character saves**: Individual .tres files in user://profiles/ with unique ID generation and collision handling
   - **PlayerProgression integration**: Automatic synchronization of progression changes with debounced saves (1s timer)
   - **EventBus signals**: Added characters_list_changed, character_created, character_deleted, character_selected
-  - **Updated CharacterSelect**: Enhanced with name input field and full character creation workflow
+  - **MVP CharacterSelect**: Enhanced with name input field and basic character creation workflow
   - **Comprehensive testing**: CharacterManager_Isolated test validates all CRUD operations, persistence, and progression sync
   - **Knight/Ranger classes**: Initial class support with removal of Mage placeholder (per task specification)
   - **Save path management**: Automatic user://profiles/ directory creation and file path utilities
   - **Error handling**: Robust validation for corrupt saves, missing files, and edge cases
+  - **POST-MVP ENHANCEMENTS**: Enhanced character list UI with Play/Delete/Create New functionality
+    - **Dynamic Character List**: Character listing with name, class, level, and last played date display
+    - **Play/Delete Actions**: Individual Play and Delete buttons per character with confirmation dialogs
+    - **Mode Switching**: Toggle between character list view and character creation mode
+    - **Context-Sensitive Navigation**: Smart back button (creation → list → main menu)
+    - **Character Management**: Delete confirmation with automatic list refresh and mode switching
+    - **Enhanced UI Layout**: Reorganized scene structure with CharacterListContainer and CreateNewSection
+    - **Focus Management**: Proper keyboard navigation and focus handling for accessibility
 - **Player Progression System**: Implemented comprehensive, data-driven progression system with resource-based configuration
   - **PlayerProgression autoload**: Central progression manager handling level-ups, XP tracking, and unlock validation
   - **Typed progression resources**: PlayerXPCurve.gd and PlayerUnlocks.gd for editor-friendly curve configuration
