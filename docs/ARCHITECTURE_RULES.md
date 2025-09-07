@@ -108,6 +108,44 @@ static func calculate_crit_damage(base: float, crit_mult: float) -> float:
     return base * crit_mult
 ```
 
+## EventBus vs StateManager
+
+### EventBus — what it IS for
+- Cross-system, decoupled broadcasting of domain events (transport only).
+- Examples: damage_requested/applied/taken, xp_gained/leveled_up, ability_requested/started/finished, enemy_spawned, debug toggles, pause state changed.
+- Characteristics: fire-and-forget, many listeners, no ordering guarantees beyond signal semantics, no orchestration logic inside.
+
+### EventBus — what it is NOT for
+- Not a state machine or router for high-level navigation.
+- Not a store of mutable global state (no “current scene/state” in EventBus).
+- Not for synchronous imperative control flow like “go to menu/hideout/arena”.
+- Not for deep coupling (avoid using as a backdoor to call system methods directly).
+
+### StateManager — responsibilities
+- Single source of truth for high-level game flow states (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT).
+- Imperative navigation API (go_to_menu/go_to_character_select/go_to_hideout/start_run/end_run/return_to_menu) with typed signals (state_changed/run_started/run_ended).
+- Policy gates for global UX (e.g., is_pause_allowed() → only HIDEOUT/ARENA/RESULTS).
+- Delegates scene loading/unloading to GameOrchestrator; may emit EventBus notifications as needed.
+
+### Who should call what (in this project)
+- UI/Scenes (MainMenu, CharacterSelect, PauseOverlay, ResultsScreen):
+  - Call StateManager.go_to_* for navigation.
+  - Subscribe to EventBus for domain updates (e.g., progression_changed) to render.
+- GameOrchestrator:
+  - Subscribes to StateManager.state_changed and performs scene swaps/teardown.
+- Gameplay Systems (DamageSystem, WaveDirector, AbilitySystem, MeleeSystem):
+  - Emit domain events via EventBus; do NOT navigate directly.
+  - If a system needs to end a run (e.g., detects player death), emit a domain event (e.g., run_end_requested/result). StateManager subscribes and calls end_run().
+- Autoloads (RunManager, PlayerProgression, CharacterManager):
+  - Expose/run domain logic.
+  - Interact with StateManager only when initiating/terminating runs or responding to flow (e.g., Character selection completion).
+
+### Migration stance (long-term friendly)
+- Adopt a thin StateManager facade now (recommended). Keep EventBus as backbone for domain signals.
+- Migrate UI emission from EventBus → StateManager API (minimal risk).
+- Subscribe StateManager to key EventBus events (e.g., death/victory) to trigger transitions.
+- Do not move domain spam to StateManager; it remains orchestration-only and stateless except current_state.
+
 ## Validation Tools
 
 ### 1. Automated Test (`tests/test_architecture_boundaries.gd`)

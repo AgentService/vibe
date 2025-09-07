@@ -5,6 +5,17 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **Hardcoded Values Migration**: Completed comprehensive data-driven architecture migration eliminating hardcoded game values
+  - **CharacterType Resource**: Created typed resource class for character base stats, descriptions, and starting abilities
+  - **Character creation migration**: Moved knight/ranger stats from CharacterSelect.gd to data/content/player/character_types.tres
+  - **XP progression fallbacks**: Enhanced PlayerXPCurve with configurable base_xp_required, xp_scaling_factor, max_level_xp_required
+  - **BossScaling Resource**: Created configurable boss debug scaling (health/damage/speed/size multipliers) in data/debug/boss_scaling.tres
+  - **Visual feedback timing**: Enhanced VisualFeedbackConfig with boss_flash_duration, boss_flash_intensity, max_boss_effects, boss_scanner_interval
+  - **Performance limits**: Migrated hardcoded performance thresholds to configurable balance data
+  - **Comprehensive testing**: Added test_character_creation.gd, test_xp_edge_cases.gd, test_boss_debug_scaling.gd, test_hardcoded_migration.gd
+  - **Hot-reload compatibility**: All new configurations support Godot's hot-reload via ResourceLoader.CACHE_MODE_IGNORE
+  - **Fallback architecture**: Robust error handling with configurable fallbacks when resources fail to load
+  - **Phase 3 compliance**: Fully satisfies architecture checklist requirement for data-driven configuration elimination
 - **PoE-Style Character System**: Implemented comprehensive per-character progression and persistence system
   - **CharacterProfile Resource**: Typed resource class for character data (id, name, class, level, exp, dates, progression)
   - **CharacterManager Autoload**: Full CRUD operations with character creation, loading, listing, deletion, and persistence

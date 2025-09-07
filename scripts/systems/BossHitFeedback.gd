@@ -20,8 +20,8 @@ var boss_flash_material: ShaderMaterial
 @export var min_velocity_threshold: float = 30.0  ## Minimum speed before stopping knockback
 
 @export_group("Boss Flash")
-@export var flash_duration_override: float = 0.2  ## Flash duration for bosses (0 = use config file)
-@export var flash_intensity_override: float = 15.0  ## Flash intensity for bosses (0 = use config file)
+@export var flash_duration_override: float = 0.0  ## Flash duration override (0 = use config file)
+@export var flash_intensity_override: float = 0.0  ## Flash intensity override (0 = use config file)
 
 # Flash effect tracking: boss_instance_id -> flash_data
 var boss_flash_effects: Dictionary = {}
@@ -39,9 +39,13 @@ func _ready() -> void:
 	if not visual_config:
 		Logger.warn("Failed to load visual feedback config for bosses, using defaults", "bosses")
 		visual_config = VisualFeedbackConfig.new()
-		# Set enhanced flash values for better visibility on AnimatedSprite2D bosses
-		visual_config.flash_duration = flash_duration_override if flash_duration_override > 0 else 0.2
-		visual_config.flash_intensity = flash_intensity_override if flash_intensity_override > 0 else 15.0
+		# Set default enhanced flash values for better visibility on AnimatedSprite2D bosses
+		visual_config.flash_duration = 0.2
+		visual_config.flash_intensity = 15.0
+		visual_config.boss_flash_duration = 0.2
+		visual_config.boss_flash_intensity = 15.0
+		visual_config.max_boss_effects = 50
+		visual_config.boss_scanner_interval = 3.0
 		visual_config.flash_color = Color(4.0, 4.0, 4.0, 1.0)  # Very bright white for AnimatedSprite2D
 		visual_config.knockback_duration = 0.3  # Base duration (multiplied by knockback_duration_multiplier)
 	
@@ -53,9 +57,9 @@ func _ready() -> void:
 	# Subscribe to damage events
 	EventBus.damage_applied.connect(_on_damage_applied)
 	
-	# Start a timer to periodically scan for new bosses (less frequent for performance)
+	# Start a timer to periodically scan for new bosses (configurable frequency)
 	var boss_scanner = Timer.new()
-	boss_scanner.wait_time = 3.0  # Check every 3 seconds (reduced frequency)
+	boss_scanner.wait_time = visual_config.boss_scanner_interval
 	boss_scanner.timeout.connect(_scan_for_bosses)
 	add_child(boss_scanner)
 	boss_scanner.start()
@@ -146,8 +150,15 @@ func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	var animated_sprite = cached_boss_sprites.get(instance_id, null)
 	
 	# Use editor overrides if specified, otherwise use config values
-	var duration = flash_duration_override if flash_duration_override > 0 else visual_config.flash_duration
-	var intensity = flash_intensity_override if flash_intensity_override > 0 else visual_config.flash_intensity
+	# Use boss-specific config values or fallback to general flash config
+	var duration = visual_config.boss_flash_duration if visual_config.boss_flash_duration > 0 else visual_config.flash_duration
+	var intensity = visual_config.boss_flash_intensity if visual_config.boss_flash_intensity > 0 else visual_config.flash_intensity
+	
+	# Allow scene-level overrides if specified
+	if flash_duration_override > 0:
+		duration = flash_duration_override
+	if flash_intensity_override > 0:
+		intensity = flash_intensity_override
 	
 	# Store original material BEFORE applying shader (modulate stays untouched)
 	var original_material = animated_sprite.material if animated_sprite else null
@@ -296,9 +307,9 @@ func _update_boss_knockback_effects(delta: float) -> void:
 	for instance_id in invalid_effects:
 		boss_knockback_effects.erase(instance_id)
 	
-	# Safety cleanup: limit max concurrent effects
-	if boss_knockback_effects.size() > 50:  # Lower limit for bosses
-		Logger.warn("Boss knockback effects exceeded 50, performing cleanup", "performance")
+	# Safety cleanup: limit max concurrent effects using configurable limit
+	if boss_knockback_effects.size() > visual_config.max_boss_effects:
+		Logger.warn("Boss knockback effects exceeded %d, performing cleanup" % visual_config.max_boss_effects, "performance")
 		_cleanup_oldest_boss_effects()
 
 func _apply_boss_flash_effect(flash_data: Dictionary, progress: float) -> void:

@@ -1,3 +1,16 @@
-[gd_resource type="Resource" format=3 uid="uid://d31e2ib4vee7x"]
+[gd_resource type="Resource" script_class="VisualFeedbackConfig" format=3 uid="uid://d31e2ib4vee7x"]
+
+[ext_resource type="Script" path="res://scripts/resources/VisualFeedbackConfig.gd" id="1"]
 
 [resource]
+script = ExtResource("1")
+flash_duration = 0.12
+flash_fade_duration = 0.08
+flash_intensity = 1.0
+flash_color = Color(1, 1, 1, 1)
+knockback_duration = 0.15
+knockback_friction = 0.8
+boss_flash_duration = 0.2
+boss_flash_intensity = 15.0
+max_boss_effects = 50
+boss_scanner_interval = 3.0

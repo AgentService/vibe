@@ -53,7 +53,9 @@ func _load_progression_resources() -> void:
 
 func _create_fallback_curve() -> void:
 	xp_curve = PlayerXPCurve.new()
-	# Fallback: 10 levels with simple progression (using normal curve defaults)
+	# Generate fallback curve with configurable parameters
+	var fallback_thresholds := xp_curve.generate_fallback_curve(10)
+	xp_curve.normal_thresholds = fallback_thresholds
 
 ## Gain experience points and handle level-ups
 func gain_exp(amount: float) -> void:
@@ -113,7 +115,7 @@ func _level_up() -> void:
 ## Update XP required for next level
 func _update_xp_to_next() -> void:
 	if not xp_curve:
-		xp_to_next = 100.0  # Fallback
+		xp_to_next = 100.0  # Emergency fallback if no curve at all
 		return
 	
 	var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)

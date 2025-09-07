@@ -14,6 +14,7 @@ signal spawning_requested(enemy_type: String, position: Vector2, count: int)
 var debug_enabled: bool = true
 var selected_entity_id: String = ""
 var debug_ui: Control
+var boss_scaling: BossScaling
 
 # System references for debug operations
 var wave_director: WaveDirector
@@ -26,6 +27,9 @@ func _ready() -> void:
 	instance = self
 	process_mode = Node.PROCESS_MODE_ALWAYS  # Work during pause
 	
+	# Load boss scaling configuration
+	_load_boss_scaling()
+	
 	# Create and add DebugAbilityTrigger
 	ability_trigger = DebugAbilityTrigger.new()
 	add_child(ability_trigger)
@@ -35,6 +39,24 @@ func _ready() -> void:
 	# Since debug is enabled by default, we need to call _enter_debug_mode during initialization
 	# Wait a frame to ensure all systems are ready
 	call_deferred("_initialize_debug_mode")
+
+func _load_boss_scaling() -> void:
+	"""Load boss scaling configuration from data-driven resource."""
+	var resource_path := "res://data/debug/boss_scaling.tres"
+	
+	if not ResourceLoader.exists(resource_path):
+		Logger.warn("Boss scaling resource not found: %s, using defaults" % resource_path, "debug")
+		boss_scaling = BossScaling.new()  # Use defaults
+		return
+	
+	var loaded_scaling = ResourceLoader.load(resource_path) as BossScaling
+	if not loaded_scaling:
+		Logger.warn("Failed to load boss scaling from: %s, using defaults" % resource_path, "debug")
+		boss_scaling = BossScaling.new()  # Use defaults
+		return
+	
+	boss_scaling = loaded_scaling
+	Logger.info("Loaded boss scaling configuration from data", "debug")
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed:
@@ -291,10 +313,14 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 		var boss_config = EnemyFactory.spawn_from_template_id(boss_type, spawn_context)
 		
 		if boss_config:
-			# Scale bosses for better visibility/testing
-			boss_config.health *= 3.0
-			boss_config.damage *= 1.5
-			boss_config.size_scale *= 1.2
+			# Scale bosses using configurable multipliers
+			if boss_scaling:
+				boss_scaling.apply_scaling(boss_config)
+			else:
+				# Emergency fallback if scaling config failed to load
+				boss_config.health *= 3.0
+				boss_config.damage *= 1.5
+				boss_config.size_scale *= 1.2
 			
 			# Convert to legacy enemy type for existing spawn system
 			var legacy_type := boss_config.to_enemy_type()

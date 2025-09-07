@@ -19,22 +19,13 @@ var selected_character: String = ""
 var is_creation_mode: bool = false
 var character_item_buttons: Array[Button] = []
 
-# Character classes available for creation
-var character_data = {
-	"knight": {
-		"name": "Knight",
-		"description": "Sturdy melee fighter with high defense",
-		"stats": {"hp": 100, "damage": 25, "speed": 1.0}
-	},
-	"ranger": {
-		"name": "Ranger", 
-		"description": "Agile ranged combatant with quick attacks",
-		"stats": {"hp": 75, "damage": 30, "speed": 1.2}
-	}
-}
+# Character classes loaded from data-driven configuration
+var character_data: Dictionary = {}
+var character_types: Dictionary = {}
 
 func _ready() -> void:
 	Logger.info("CharacterSelect initialized", "charselect")
+	_load_character_types()
 	_setup_ui_elements()
 	_connect_button_signals()
 	_load_character_list()
@@ -45,6 +36,31 @@ func _ready() -> void:
 		_switch_to_creation_mode()
 	else:
 		_switch_to_list_mode()
+
+func _load_character_types() -> void:
+	"""Load character types from data-driven configuration."""
+	var resource_path := "res://data/content/player/character_types.tres"
+	
+	if not ResourceLoader.exists(resource_path):
+		Logger.error("Character types resource not found: %s" % resource_path, "charselect")
+		# Fallback to empty data - UI will handle gracefully
+		return
+	
+	var loaded_resource = ResourceLoader.load(resource_path) as CharacterTypeDict
+	if not loaded_resource:
+		Logger.error("Failed to load character types from: %s" % resource_path, "charselect")
+		return
+	
+	character_types = loaded_resource.character_types
+	
+	# Convert CharacterType resources to the format expected by existing UI
+	character_data = {}
+	for type_id in character_types.keys():
+		var char_type := character_types[type_id] as CharacterType
+		if char_type:
+			character_data[type_id] = char_type.get_character_data()
+	
+	Logger.info("Loaded %d character types from data" % character_data.size(), "charselect")
 
 func _load_character_list() -> void:
 	"""Load and display the list of existing characters."""
