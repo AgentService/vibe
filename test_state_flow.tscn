@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://xj7ovagrq5e1"]
+
+[ext_resource type="Script" path="res://test_state_flow.gd" id="1_874r3"]
+
+[node name="StateFlowTest" type="Node"]
+script = ExtResource("1_874r3")

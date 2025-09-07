@@ -228,6 +228,71 @@ Well-defined boundaries make large refactoring operations safer.
 ### 📈 **Code Quality**
 Enforced patterns lead to more consistent, predictable code.
 
+---
+
+## StateManager Flow Integration Rules **✅ NEW**
+
+### ✅ Enforced Rule: All UI Flow Transitions Must Use StateManager
+**Mandatory for all scene navigation - no exceptions**
+
+#### ❌ VIOLATION: UI Using EventBus for Navigation
+```gdscript
+# FORBIDDEN in UI scenes (MainMenu, CharacterSelect, Results, etc.)
+func _on_continue_pressed():
+    EventBus.request_enter_map.emit({"map_id": "hideout"})
+    EventBus.request_return_hideout.emit({"spawn_point": "main"})
+```
+
+#### ✅ CORRECT: UI Using StateManager API
+```gdscript
+# REQUIRED in UI scenes
+func _on_continue_pressed():
+    var context = {"character_id": profile.id, "spawn_point": "PlayerSpawnPoint"}
+    StateManager.go_to_hideout(context)
+
+func _on_new_character_pressed():
+    StateManager.go_to_character_select({"source": "main_menu"})
+```
+
+### Implementation Status **✅ COMPLETED in Phase 1**
+- [x] MainMenu: Continue button → `StateManager.go_to_hideout()`
+- [x] MainMenu: New Character → `StateManager.go_to_character_select()`  
+- [x] CharacterSelect: Character selection → `StateManager.go_to_hideout()`
+- [x] CharacterSelect: Back button → `StateManager.go_to_menu()`
+- [x] Results: Navigation → StateManager API calls
+- [x] All direct EventBus navigation calls removed from UI layer
+
+---
+
+## Global Input Handling Rules **✅ NEW**
+
+### ✅ Enforced Rule: Centralized Input Handling for System Features
+**All global system input (ESC for pause, etc.) must be handled in autoloads - no per-scene duplication**
+
+#### ❌ VIOLATION: Per-Scene Input Handling
+```gdscript
+# FORBIDDEN in individual scenes (Arena, Hideout, etc.)
+func _unhandled_input(event: InputEvent):
+    if event.is_action_pressed("ui_cancel"):
+        toggle_pause()  # WRONG - creates duplicated handling
+```
+
+#### ✅ CORRECT: Centralized Input in Autoload
+```gdscript
+# REQUIRED in GameOrchestrator or similar autoload
+func _unhandled_input(event: InputEvent):
+    if event.is_action_pressed("ui_cancel"):
+        if StateManager.is_pause_allowed():
+            PauseUI.toggle_pause()  # Centralized, state-gated
+```
+
+### Implementation Status **✅ COMPLETED**
+- [x] GameOrchestrator handles global ESC key for pause
+- [x] PauseUI autoload manages persistent pause overlay
+- [x] StateManager.is_pause_allowed() gates pause by game state
+- [x] All per-scene pause handlers removed/avoided
+- [x] Tests validate pause restrictions across states
+
 ## Overrides and Exceptions
 
 ### Temporary Bypasses

@@ -110,18 +110,21 @@ func _setup_initial_state() -> void:
 	"""Set up initial UI state."""
 	pause_overlay.visible = false
 
-func _unhandled_input(event: InputEvent) -> void:
-	"""Handle global pause input."""
-	if event.is_action_pressed("ui_cancel") and event is InputEventKey:
-		_try_toggle_pause()
+## PUBLIC API METHODS
 
-func _try_toggle_pause() -> void:
-	"""Attempt to toggle pause if allowed by current state."""
-	if StateManager.is_pause_allowed():
-		PauseManager.toggle_pause()
-		Logger.info("Pause toggled via PauseUI", "ui")
-	else:
-		Logger.warn("Pause not allowed in current state: %s" % StateManager.get_current_state_string(), "ui")
+# toggle_pause() removed - GameOrchestrator now calls PauseManager directly
+
+func show_overlay() -> void:
+	"""Show pause overlay."""
+	pause_overlay.visible = true
+	_update_menu_for_current_state()
+	resume_button.grab_focus()
+
+func hide_overlay() -> void:
+	"""Hide pause overlay."""
+	pause_overlay.visible = false
+
+# ESC handling removed - now centralized in GameOrchestrator
 
 func _on_game_paused_changed(payload) -> void:
 	"""Handle pause state changes from PauseManager."""

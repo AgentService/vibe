@@ -17,8 +17,8 @@ var camera_zoom: float = 1.0
 
 func _ready():
 	print("=== CoreLoop_Isolated Test Started ===")
-	print("Controls: WASD to move, P to pause, Mouse wheel to zoom camera")
-	print("Testing StateManager integration and core game loop")
+	print("Controls: WASD to move, P to pause, ESC to pause (global), Mouse wheel to zoom camera")
+	print("Testing StateManager integration, global pause system, and core game loop")
 	
 	# Set StateManager to ARENA state for testing
 	StateManager.current_state = StateManager.State.ARENA
@@ -27,6 +27,7 @@ func _ready():
 	_setup_camera()
 	_setup_ui()
 	_test_state_manager_integration()
+	_test_pause_functionality()
 
 func _setup_player():
 	var player_sprite = player.get_node("Sprite2D")
@@ -57,10 +58,11 @@ func _setup_ui():
 func _unhandled_input(event):
 	if event is InputEventKey and event.pressed:
 		if event.keycode == KEY_P:
-			_toggle_pause()
-		elif event.keycode == KEY_ESCAPE:
+			_toggle_local_pause()
+		elif event.keycode == KEY_Q:
 			print("Exiting CoreLoop test...")
 			get_tree().quit()
+		# ESC will be handled by GameOrchestrator for global pause testing
 	elif event is InputEventMouseButton:
 		if event.button_index == MOUSE_BUTTON_WHEEL_UP:
 			_zoom_camera(0.1)
@@ -92,8 +94,8 @@ func _handle_player_movement(delta):
 	
 	player.move_and_slide()
 
-func _toggle_pause():
-	# Test StateManager pause permissions
+func _toggle_local_pause():
+	# Test local pause (P key) - this tests StateManager pause permissions
 	if StateManager.is_pause_allowed():
 		is_paused = not is_paused
 		pause_overlay.visible = is_paused
@@ -157,4 +159,47 @@ func _test_state_manager_integration():
 		print("✗ State string conversion failed: ", state_string)
 	
 	print("=== Integration Tests Complete ===")
-	print("Use P to test pause functionality with StateManager integration")
+	print("Use P to test local pause, ESC to test global pause functionality")
+
+func _test_pause_functionality():
+	"""Test pause functionality integration with PauseManager and PauseUI."""
+	print("\n=== Testing Pause System Integration ===")
+	
+	# Connect to pause events to monitor them
+	if not EventBus.game_paused_changed.is_connected(_on_pause_changed_test):
+		EventBus.game_paused_changed.connect(_on_pause_changed_test)
+	
+	# Test 1: Initial pause state should be false
+	if not PauseManager.is_paused():
+		print("✓ Initial pause state is false")
+	else:
+		print("✗ Initial pause state should be false")
+	
+	# Test 2: PauseUI should exist and be accessible
+	if PauseUI:
+		print("✓ PauseUI autoload accessible")
+	else:
+		print("✗ PauseUI autoload not found")
+	
+	# Test 3: StateManager should allow pause in ARENA state
+	if StateManager.is_pause_allowed():
+		print("✓ Pause allowed in current state (ARENA)")
+	else:
+		print("✗ Pause should be allowed in ARENA state")
+	
+	print("Manual tests available:")
+	print("  - Press P to test local pause (tests StateManager.is_pause_allowed)")
+	print("  - Press ESC to test global pause (tests GameOrchestrator -> PauseUI flow)")
+	print("  - Press Q to exit test")
+
+func _on_pause_changed_test(payload) -> void:
+	"""Monitor pause state changes for testing."""
+	var is_paused = payload.is_paused if payload else false
+	print("Pause state changed: ", is_paused)
+	
+	if is_paused:
+		print("  - Game is now paused")
+		print("  - PauseUI overlay should be visible")
+	else:
+		print("  - Game is now unpaused") 
+		print("  - PauseUI overlay should be hidden")

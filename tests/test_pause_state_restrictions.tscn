@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://hvs2yyv4t1rn"]
+
+[ext_resource type="Script" uid="uid://p6j22hy7wd5y" path="res://tests/test_pause_state_restrictions.gd" id="1_0tjan"]
+
+[node name="PauseStateRestrictionsTest" type="Node"]
+script = ExtResource("1_0tjan")

@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://diyc7iweubxm5"]
+
+[ext_resource type="Script" uid="uid://bq7tw01cr0pxp" path="res://tests/CharacterSelection_Flow.gd" id="1_hxj4l"]
+
+[node name="CharacterSelectionFlowTest" type="Node"]
+script = ExtResource("1_hxj4l")

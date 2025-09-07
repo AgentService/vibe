@@ -169,12 +169,27 @@ EventBus.character_selected.emit(StringName("knight_default"))
   - Autoloads (RunManager, PlayerProgression, CharacterManager): use StateManager only to initiate/terminate flows; keep domain logic in their layer.
 
 ## 🔁 Migration Checklist (facade-first, low-risk)
-- [ ] Create thin StateManager autoload (states, signals, API, is_pause_allowed()).
-- [ ] Centralize Escape: if StateManager.is_pause_allowed() then PauseUI.toggle_pause().
-- [ ] Refactor MainMenu/CharacterSelect/PauseOverlay to call StateManager.go_to_* (remove direct EventBus emits for navigation).
-- [ ] Keep EventBus as backbone for domain events; subscribe StateManager to key events (death/victory) to call end_run().
-- [ ] Add PauseUI autoload owning PauseOverlay (CanvasLayer WHEN_PAUSED) and subscribing to PauseManager/EventBus.
-- [ ] Extend tests: CoreLoop_Isolated (flow), test_pause_resume_lag (global), test_scene_swap_teardown (persistence).
+- [x] Create thin StateManager autoload (states, signals, API, is_pause_allowed()). **✅ COMPLETED**
+- [x] Centralize Escape: if StateManager.is_pause_allowed() then PauseUI.toggle_pause(). **✅ COMPLETED**
+- [x] Refactor MainMenu/CharacterSelect/PauseOverlay to call StateManager.go_to_* (remove direct EventBus emits for navigation). **✅ COMPLETED**
+- [x] Keep EventBus as backbone for domain events; subscribe StateManager to key events (death/victory) to call end_run(). **✅ COMPLETED**
+- [x] Add PauseUI autoload owning PauseOverlay (CanvasLayer WHEN_PAUSED) and subscribing to PauseManager/EventBus. **✅ COMPLETED**
+- [x] Extend tests: CoreLoop_Isolated (flow), test_pause_resume_lag (global), test_scene_swap_teardown (persistence). **✅ COMPLETED**
+
+### Main Menu & Character Selection Integration **✅ NEW**
+- [x] Continue button in MainMenu - shows when characters exist, loads most recent character
+- [x] MainMenu routes "Continue" → `StateManager.go_to_hideout()` with character context
+- [x] MainMenu routes "New Character" → `StateManager.go_to_character_select()`
+- [x] CharacterSelect routes selection → `StateManager.go_to_hideout()` with character context
+- [x] CharacterSelection_Flow test validates MENU → CHARACTER_SELECT → HIDEOUT sequence
+
+### Global Pause System **✅ NEW**
+- [x] PauseUI autoload - persistent CanvasLayer overlay across all scenes
+- [x] Centralized escape handling in GameOrchestrator - no per-scene pause handlers
+- [x] StateManager.is_pause_allowed() gates - pause only in HIDEOUT, ARENA, RESULTS
+- [x] Navigation through StateManager - Return to Hideout/Menu buttons use proper APIs
+- [x] Pause state restrictions tested - ESC does nothing in MENU/CHARACTER_SELECT
+- [x] Integration testing - CoreLoop_Isolated tests global pause functionality
 
 ## 📚 Documentation Links
 

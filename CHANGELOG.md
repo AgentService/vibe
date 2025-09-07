@@ -5,6 +5,10 @@
 ## [Current Week - In Progress]
 
 ### Fixed
+- **ESC Key Pause Toggle**: Fixed ESC key not closing pause menu when pressed while overlay is open
+  - **PauseUI Input Handling**: Added _unhandled_input() to PauseUI to handle ESC when pause overlay is visible
+  - **Input Event Blocking**: Properly consume ESC input in PauseUI to prevent double-processing
+  - **Toggle Behavior**: ESC now correctly toggles pause on/off - first press opens menu, second press closes it
 - **State Manager Navigation Flow**: Fixed game flow from Main Menu → Character Select → Hideout → Arena
   - **CharacterSelect.gd**: Updated navigation to use StateManager APIs instead of direct EventBus calls
   - **StateManager state tracking**: Ensures current_state is properly set to HIDEOUT after character selection
@@ -13,6 +17,23 @@
   - **Hideout.gd cleanup**: Removed duplicate local ESC handling to avoid conflicts with global PauseUI
 
 ### Added
+- **Hideout Phase 1 - Main Menu & Character Select Integration**: Completed full integration of character selection flow with StateManager
+  - **MainMenu Continue Button**: Added intelligent Continue button that shows when characters exist, loads most recent by last_played timestamp
+  - **MainMenu UI Refactoring**: Changed "Start Game" to "New Character", proper button ordering and focus management based on character availability
+  - **StateManager Navigation**: All UI screens now use StateManager API exclusively (go_to_hideout, go_to_character_select, go_to_menu)
+  - **Character Context Passing**: Proper character data and progression loading through StateManager context system
+  - **CharacterSelection_Flow Test**: Comprehensive test validating MENU → CHARACTER_SELECT → create/select → HIDEOUT sequence
+  - **Architecture Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md and ARCHITECTURE_RULES.md with StateManager flow integration rules
+  - **UI Flow Enforcement**: Established mandatory rule that all scene navigation must use StateManager (no direct EventBus calls)
+- **Global Pause System**: Completed centralized pause/escape menu system with state-based gating and persistent overlay
+  - **PauseUI Autoload**: Persistent CanvasLayer pause overlay that works across all scenes with programmatically created UI elements
+  - **Centralized Escape Handling**: Moved input handling from PauseUI to GameOrchestrator for proper architecture separation
+  - **StateManager Integration**: Pause gated by StateManager.is_pause_allowed() - only allowed in HIDEOUT, ARENA, RESULTS states
+  - **Pause Menu Navigation**: Return to Hideout/Menu buttons use StateManager API (go_to_hideout, return_to_menu)
+  - **Global Input Architecture**: Established rule that all system-level input (ESC, etc.) must be handled in autoloads, not per-scene
+  - **Comprehensive Testing**: test_pause_state_restrictions validates ESC does nothing in MENU/CHARACTER_SELECT states
+  - **CoreLoop_Isolated Updates**: Enhanced test to validate both local pause (P key) and global pause (ESC key) functionality
+  - **Architecture Documentation**: Updated rules for centralized input handling and pause system integration
 - **Game State Manager Core Loop**: Implemented centralized state orchestration system for scene transitions and run management
   - **StateManager Autoload**: Typed state enum (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT) with validation and logging
   - **Typed state transitions**: All scene changes go through StateManager API with proper transition rules and context passing

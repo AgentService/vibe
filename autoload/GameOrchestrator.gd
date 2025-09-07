@@ -32,13 +32,33 @@ var camera_system: CameraSystem
 func _ready() -> void:
 	Logger.info("GameOrchestrator initializing", "orchestrator")
 	# Don't initialize systems yet - this will be done when called by Main/Arena
-	process_mode = Node.PROCESS_MODE_PAUSABLE
+	process_mode = Node.PROCESS_MODE_ALWAYS  # Always process input, even when paused
 	
 	# Connect to StateManager for state-driven orchestration
 	StateManager.state_changed.connect(_on_state_changed)
 	
 	# Connect to mode_changed for global cleanup safety net
 	EventBus.mode_changed.connect(_on_mode_changed)
+
+func _input(event: InputEvent) -> void:
+	"""Handle global input - centralized escape handling for pause functionality."""
+	if event.is_action_pressed("ui_cancel") and event is InputEventKey:
+		Logger.info("ESC key detected in GameOrchestrator", "orchestrator")
+		_try_toggle_pause()
+		get_viewport().set_input_as_handled()  # Mark input as handled
+
+func _try_toggle_pause() -> void:
+	"""Attempt to toggle pause if allowed by current state."""
+	if StateManager.is_pause_allowed():
+		# Check if already paused - if so, unpause; if not, pause
+		if PauseManager.is_paused():
+			PauseManager.pause_game(false)
+			Logger.info("Game unpaused via GameOrchestrator", "orchestrator")
+		else:
+			PauseManager.pause_game(true)
+			Logger.info("Game paused via GameOrchestrator", "orchestrator")
+	else:
+		Logger.debug("Pause not allowed in current state: %s" % StateManager.get_current_state_string(), "orchestrator")
 
 func initialize_core_loop() -> void:
 	if initialization_phase != "idle":
