@@ -13,7 +13,7 @@ var menu_button: Button
 
 func _ready() -> void:
 	# Set up persistent CanvasLayer
-	process_mode = Node.PROCESS_MODE_WHEN_PAUSED
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100  # High layer to appear above everything
 	
 	_create_pause_ui()
