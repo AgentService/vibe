@@ -6,6 +6,7 @@ extends Node
 # Import system classes - using _Type suffix to avoid conflicts with class names
 const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
 const WaveDirector_Type = preload("res://scripts/systems/WaveDirector.gd")
+const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
 const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
 const DamageSystem_Type = preload("res://scripts/systems/DamageSystem.gd")
@@ -23,6 +24,7 @@ var initialization_phase: String = "idle"
 # System instances that will be created here and injected to Arena
 var card_system: CardSystem_Type
 var wave_director: WaveDirector_Type
+var radar_system: RadarSystem_Type
 var ability_system: AbilitySystem_Type
 var melee_system: MeleeSystem_Type
 var damage_system: DamageSystem_Type
@@ -126,6 +128,18 @@ func _initialize_systems() -> void:
 	else:
 		Logger.warn("WaveDirector doesn't have set_arena_system method", "orchestrator")
 	
+	# Phase D2: RadarSystem (depends on WaveDirector)
+	radar_system = RadarSystem_Type.new()
+	add_child(radar_system)
+	systems["RadarSystem"] = radar_system
+	
+	# Set WaveDirector dependency
+	if radar_system.has_method("setup") and wave_director:
+		radar_system.setup(wave_director)
+		Logger.info("RadarSystem initialized with WaveDirector dependency", "orchestrator")
+	else:
+		Logger.warn("RadarSystem dependency injection failed", "orchestrator")
+	
 	# Phase E: Combat systems with dependencies
 	# 5. MeleeSystem (needs WaveDirector ref)
 	melee_system = MeleeSystem_Type.new()
@@ -154,6 +168,9 @@ func get_card_system() -> CardSystem_Type:
 
 func get_wave_director() -> WaveDirector_Type:
 	return wave_director
+
+func get_radar_system() -> RadarSystem_Type:
+	return radar_system
 
 func get_ability_system() -> AbilitySystem_Type:
 	return ability_system

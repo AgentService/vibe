@@ -5,6 +5,17 @@
 ## [Current Week - In Progress]
 
 ### Fixed
+- **RadarSystem Boss Visibility**: Fixed radar only showing goblins but not bosses due to incomplete enemy detection
+  - **EntityTracker Integration**: RadarSystem now queries EntityTracker.get_entities_by_type("boss") to include scene-based bosses
+  - **Fallback Robustness**: Added EntityTracker fallback for enemies when WaveDirector is unavailable
+  - **Relaxed Dependencies**: _should_update() now works with either WaveDirector OR EntityTracker for better resilience
+  - **Hybrid Enemy Detection**: Radar now shows both pooled enemies (goblins) and scene-based bosses (Ancient Lich, Dragon Lord)
+- **RadarSystem Startup Issues**: Fixed RadarSystem never emitting data due to initialization and signal handling bugs
+  - **State Initialization**: Added _initialize_state() in _ready() to read current StateManager state and enable radar in ARENA
+  - **Pause Signal Handling**: Fixed _on_game_paused_changed() to support both typed payloads and Dictionary gracefully
+  - **Configuration Loading**: Ensured _load_configuration() is called during startup for proper emit rate settings
+  - **Signal Type Compatibility**: Fixed EnemyRadar signal handler to accept untyped Array and convert to Array[Vector2]
+  - **Startup Race Conditions**: Eliminated scenario where RadarSystem stays disabled until first state change event
 - **ESC Key Pause Toggle**: Fixed ESC key not closing pause menu when pressed while overlay is open
   - **PauseUI Input Handling**: Added _unhandled_input() to PauseUI to handle ESC when pause overlay is visible
   - **Input Event Blocking**: Properly consume ESC input in PauseUI to prevent double-processing
@@ -17,6 +28,23 @@
   - **Hideout.gd cleanup**: Removed duplicate local ESC handling to avoid conflicts with global PauseUI
 
 ### Added
+- **Boss Radar Visual Differentiation**: Enhanced radar system to distinguish bosses from regular enemies with unique visual indicators
+  - **RadarEntity Type System**: Created EventBus.RadarEntity class with position and type ("enemy", "boss") for typed radar data
+  - **Enhanced Signal Structure**: Updated EventBus.radar_data_updated to emit Array[RadarEntity] instead of Array[Vector2] for entity type information
+  - **Boss Visual Indicators**: Bosses displayed with larger orange dots (4.0-6.0px) featuring diamond outline pattern for easy identification
+  - **Color-Coded Enemies**: Regular enemies show as red dots (1.5-3.0px), bosses as orange dots with distinctive diamond markers
+  - **Configuration Support**: Added boss_color, boss_dot_max_size, boss_dot_min_size to RadarConfigResource for easy customization
+  - **Balance Data Integration**: Updated data/ui.tres with boss-specific radar configuration (orange color: #FF6600, larger size range)
+  - **Backward Compatibility**: EnemyRadar gracefully handles both old Vector2 arrays and new RadarEntity objects via signal type adaptation
+- **Radar System Decoupling**: Implemented EventBus-driven RadarSystem module to eliminate UI-domain coupling in enemy radar functionality
+  - **RadarSystem Module**: New system in `scripts/systems/RadarSystem.gd` handles enemy scanning with WaveDirector dependency injection
+  - **EventBus Signal**: Added `radar_data_updated(enemy_positions: Array[Vector2], player_pos: Vector2)` typed signal for UI updates
+  - **State & Pause Gating**: Radar only active in ARENA state and respects pause state for performance and correctness
+  - **Performance Optimizations**: 10 Hz throttled updates, reused buffers, and cached data to minimize allocations
+  - **EnemyRadar UI Refactor**: Removed scene tree traversal (`get_parent()` climbing) in favor of EventBus subscription
+  - **GameOrchestrator Integration**: RadarSystem created and managed with proper WaveDirector dependency injection
+  - **Isolated Testing**: Added `RadarSystem_Isolated.tscn/gd` and `EnemyRadar_View_Isolated.tscn/gd` unit tests
+  - **Architecture Compliance**: Verified no boundary violations - UI no longer accesses domain systems directly
 - **Hideout Phase 1 - Main Menu & Character Select Integration**: Completed full integration of character selection flow with StateManager
   - **MainMenu Continue Button**: Added intelligent Continue button that shows when characters exist, loads most recent by last_played timestamp
   - **MainMenu UI Refactoring**: Changed "Start Game" to "New Character", proper button ordering and focus management based on character availability

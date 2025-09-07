@@ -134,7 +134,7 @@ Code:
 - `scenes/core/Hideout.tscn` (NEU)
 - `scenes/ui/MainMenu.tscn` (NEU, Dummy)
 - `scenes/ui/CharacterSelect.tscn` (NEU, Dummy)
-- `scenes/core/MapDevice.tscn` (optional, oder Teil von Hideout)
+- `scenes/core/MapDevice.tscn` (Teil von Hideout)
 
 Data/Config:
 - `config/debug.json` oder `.tres` (NEU)
