@@ -1,59 +1,56 @@
 extends Node
 
-## Camera System for smooth player following with limits and zoom controls.
+## Camera System for zero-stutter player following with limits and zoom controls.
+##
+## ARCHITECTURE: Uses parent-child relationship for perfect camera following.
+## The camera is parented directly to the player node, which provides:
+## - Zero-lag following (no physics vs render timing issues)
+## - Perfect transform inheritance (eliminates all stuttering)
+## - No need for manual position updates or smoothing
+##
+## This approach is the Godot best practice for locked, zero-deadzone cameras.
 ## Follows the project's system architecture with signal-based communication.
 
 signal camera_moved(position: Vector2)
 signal camera_zoomed(zoom_level: float)
 signal camera_shake_requested(intensity: float, duration: float)
 
-@export var follow_speed: float = 8.0
 @export var zoom_speed: float = 5.0
-@export var min_zoom: float = 2  # Minimum zoom (can't zoom out beyond this)
-@export var max_zoom: float = 4.0  # Maximum zoom in  
-@export var default_zoom: float = 2  # Start at default close zoom
-@export var deadzone_radius: float = 20.0
+@export var min_zoom: float = 0.5  # Godot: <1 zooms in (closer), >1 zooms out
+@export var max_zoom: float = 3.0  # Cap zoom out
+@export var default_zoom: float = 1.0  # Neutral default zoom
 @export var shake_intensity: float = 0.0
 
 var camera: Camera2D
-var target_position: Vector2
 var target_zoom: float
 var arena_bounds: Rect2
 var shake_timer: float = 0.0
 var shake_duration: float = 0.0
-var original_position: Vector2
+var last_camera_position: Vector2
 
 func _ready() -> void:
 	# Camera should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
+	set_process(true)
 	
-	# Keep default zoom as minimum - no zooming out beyond this
-	# Load balance data for reference but maintain our zoom limits
-	var balance_min_zoom = BalanceDB.get_waves_value("camera_min_zoom")
-	if balance_min_zoom and balance_min_zoom > min_zoom:
-		min_zoom = balance_min_zoom  # Use balance data if it's more restrictive
+	# Lock zoom at default level - no zoom controls enabled
 	target_zoom = default_zoom
 	_connect_signals()
 
 func _connect_signals() -> void:
 	EventBus.arena_bounds_changed.connect(_on_arena_bounds_changed)
-	EventBus.player_position_changed.connect(_on_player_position_changed)
 	EventBus.damage_dealt.connect(_on_damage_dealt)
 	EventBus.game_paused_changed.connect(_on_game_paused_changed)
-	PlayerState.player_position_changed.connect(_on_player_moved)
+	# Camera follows player automatically as child - no position updates needed
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
 	if EventBus.arena_bounds_changed.is_connected(_on_arena_bounds_changed):
 		EventBus.arena_bounds_changed.disconnect(_on_arena_bounds_changed)
-	if EventBus.player_position_changed.is_connected(_on_player_position_changed):
-		EventBus.player_position_changed.disconnect(_on_player_position_changed)
 	if EventBus.damage_dealt.is_connected(_on_damage_dealt):
 		EventBus.damage_dealt.disconnect(_on_damage_dealt)
 	if EventBus.game_paused_changed.is_connected(_on_game_paused_changed):
 		EventBus.game_paused_changed.disconnect(_on_game_paused_changed)
-	if PlayerState.player_position_changed.is_connected(_on_player_moved):
-		PlayerState.player_position_changed.disconnect(_on_player_moved)
 	Logger.debug("CameraSystem: Cleaned up signal connections", "systems")
 
 func setup_camera(player_node: Node2D) -> void:
@@ -66,49 +63,28 @@ func setup_camera(player_node: Node2D) -> void:
 	camera.zoom = Vector2(default_zoom, default_zoom)
 	camera.enabled = true
 	
-	# Add camera to player so it follows automatically
+	# Camera parented to player for zero-lag, stutter-free following
+	# This approach eliminates physics vs render timing issues completely
+	camera.position_smoothing_enabled = false  # Not needed with direct parenting
+	
+	# Add camera as child of player for perfect transform inheritance
 	player_node.add_child(camera)
 	
-	target_position = player_node.global_position
-	original_position = target_position
+	# Initialize position tracking for signal optimization
+	last_camera_position = camera.global_position
 
-func _physics_process(delta: float) -> void:
+func _process(delta: float) -> void:
 	if not camera:
 		return
 	
-	_update_camera_position(delta)
 	_update_zoom(delta)
 	_update_shake(delta)
-
-func _update_camera_position(delta: float) -> void:
-	if target_position == Vector2.ZERO:
-		return
 	
-	var current_pos := camera.global_position
-	var distance := current_pos.distance_to(target_position)
-	
-	# Only move camera if player is outside deadzone
-	if distance > deadzone_radius:
-		var move_direction := (target_position - current_pos).normalized()
-		var move_speed := follow_speed * (distance / deadzone_radius)
-		
-		var new_position := current_pos + move_direction * move_speed * delta * 60.0
-		
-		# Clamp camera to arena bounds if set
-		if arena_bounds != Rect2():
-			var viewport_size := get_viewport().get_visible_rect().size
-			var zoom_factor := camera.zoom.x
-			var half_view := viewport_size / (2.0 * zoom_factor)
-			
-			new_position.x = clamp(new_position.x, 
-				arena_bounds.position.x + half_view.x,
-				arena_bounds.position.x + arena_bounds.size.x - half_view.x)
-			new_position.y = clamp(new_position.y,
-				arena_bounds.position.y + half_view.y,
-				arena_bounds.position.y + arena_bounds.size.y - half_view.y)
-		
-		camera.global_position = new_position
-		camera_moved.emit(new_position)
+	# Emit camera moved signal only when position actually changes
+	var current_position = camera.global_position
+	if current_position != last_camera_position:
+		camera_moved.emit(current_position)
+		last_camera_position = current_position
 
 func _update_zoom(delta: float) -> void:
 	var current_zoom: float = camera.zoom.x
@@ -121,10 +97,10 @@ func _update_shake(delta: float) -> void:
 	if shake_timer > 0.0:
 		shake_timer -= delta
 		
-		# Calculate shake offset
+		# Calculate shake offset (deterministic RNG stream)
 		var shake_offset := Vector2(
-			randf_range(-shake_intensity, shake_intensity),
-			randf_range(-shake_intensity, shake_intensity)
+			RNG.randf_range("camera_shake", -shake_intensity, shake_intensity),
+			RNG.randf_range("camera_shake", -shake_intensity, shake_intensity)
 		)
 		
 		# Apply shake with falloff
@@ -134,27 +110,16 @@ func _update_shake(delta: float) -> void:
 		if shake_timer <= 0.0:
 			camera.offset = Vector2.ZERO
 
-func _input(event: InputEvent) -> void:
-	if not camera:
-		return
-	
-	# Zoom controls
-	if event is InputEventMouseButton:
-		var mouse_event := event as InputEventMouseButton
-		if mouse_event.pressed:
-			if mouse_event.button_index == MOUSE_BUTTON_WHEEL_UP:
-				zoom_in()  # Only allow zooming in (closer)
-			elif mouse_event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
-				# Only zoom out if we're not already at default/minimum zoom
-				if target_zoom > min_zoom:
-					zoom_out()
+func _input(_event: InputEvent) -> void:
+	# Zoom controls disabled - camera locked at default zoom level
+	pass
 
 func zoom_in() -> void:
-	# Increase zoom value = zoom in (closer)
+	# Increase zoom.x to zoom in (Godot: larger zoom -> closer)
 	target_zoom = clamp(target_zoom + 0.2, min_zoom, max_zoom)
 
 func zoom_out() -> void:
-	# Decrease zoom value = zoom out (farther) - but don't allow beyond default
+	# Decrease zoom.x to zoom out (Godot: smaller zoom -> farther)
 	target_zoom = clamp(target_zoom - 0.2, min_zoom, max_zoom)
 
 func set_zoom(zoom_level: float) -> void:
@@ -168,20 +133,22 @@ func shake_camera(intensity: float, duration: float) -> void:
 
 func set_arena_bounds(bounds: Rect2) -> void:
 	arena_bounds = bounds
+	
+	# Use Camera2D built-in limits for cleaner bounds handling
+	if camera and bounds != Rect2():
+		camera.limit_left = int(bounds.position.x)
+		camera.limit_top = int(bounds.position.y)
+		camera.limit_right = int(bounds.position.x + bounds.size.x)
+		camera.limit_bottom = int(bounds.position.y + bounds.size.y)
 
-func center_on_position(position: Vector2) -> void:
-	target_position = position
-	if camera:
-		camera.global_position = position
+func center_on_position(_position: Vector2) -> void:
+	# With parented camera, centering is handled automatically
+	# This method exists for API compatibility but does nothing
+	pass
 
 func _on_arena_bounds_changed(payload) -> void:
 	set_arena_bounds(payload.bounds)
 
-func _on_player_position_changed(payload) -> void:
-	target_position = payload.position
-
-func _on_player_moved(position: Vector2) -> void:
-	target_position = position
 
 func _on_damage_dealt(payload) -> void:
 	# Add screen shake for significant damage

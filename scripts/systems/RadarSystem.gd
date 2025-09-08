@@ -10,8 +10,8 @@ class_name RadarSystem
 var _wave_director: WaveDirector
 var _enabled: bool = false
 
-# Configuration
-var _emit_hz: float = 10.0
+# Configuration - 60 Hz for perfectly smooth radar updates
+var _emit_hz: float = 60.0
 var _throttle_accum: float = 0.0
 
 # Data buffers (reused for performance)
@@ -30,9 +30,8 @@ func _ready() -> void:
 	Logger.debug("RadarSystem: _ready complete, enabled=%s, state=%s" % [_enabled, _current_state], "radar")
 
 func _setup_connections() -> void:
-	# Connect to combat step for updates
-	if EventBus:
-		EventBus.combat_step.connect(_on_combat_step)
+	# Radar needs smooth visual updates - use _process instead of combat step
+	set_process(true)
 	
 	# Connect to player position updates
 	if PlayerState and PlayerState.player_position_changed:
@@ -63,12 +62,12 @@ func set_emit_rate_hz(hz: float) -> void:
 	_emit_hz = max(1.0, hz)  # Minimum 1 Hz
 	Logger.debug("RadarSystem emit rate set to %s Hz" % _emit_hz, "radar")
 
-func _on_combat_step(payload) -> void:
+func _process(delta: float) -> void:
 	if not _should_update():
 		return
 	
-	# Throttle updates to configured rate
-	_throttle_accum += payload.dt
+	# Throttle updates to configured rate for smooth visual updates
+	_throttle_accum += delta
 	var emit_interval := 1.0 / _emit_hz
 	
 	if _throttle_accum >= emit_interval:
@@ -163,8 +162,7 @@ func _initialize_state() -> void:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
-	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
-		EventBus.combat_step.disconnect(_on_combat_step)
+	# No longer using combat_step - using _process instead
 	if PlayerState and PlayerState.player_position_changed and PlayerState.player_position_changed.is_connected(_on_player_position_changed):
 		PlayerState.player_position_changed.disconnect(_on_player_position_changed)
 	if StateManager and StateManager.state_changed and StateManager.state_changed.is_connected(_on_state_changed):
