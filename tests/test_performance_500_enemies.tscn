@@ -1,0 +1,34 @@
+[gd_scene load_steps=6 format=3 uid="uid://krf4275ywudn"]
+
+[ext_resource type="Script" uid="uid://c1s3466nm0hv8" path="res://tests/test_performance_500_enemies.gd" id="1_csuvo"]
+[ext_resource type="Script" uid="uid://dnfhgitgrpt2o" path="res://scripts/systems/WaveDirector.gd" id="2_tq8sn"]
+[ext_resource type="Script" uid="uid://bwyks8f3u7gvk" path="res://scripts/systems/DamageSystem.gd" id="3_qaash"]
+[ext_resource type="Script" uid="uid://svexmhrnx640" path="res://scripts/systems/AbilitySystem.gd" id="4_as6ld"]
+[ext_resource type="Script" uid="uid://cpg85dlkeb83" path="res://scripts/systems/MultiMeshManager.gd" id="5_eifc1"]
+
+[node name="PerformanceTest" type="Node"]
+script = ExtResource("1_csuvo")
+
+[node name="ArenaRoot" type="Node2D" parent="."]
+
+[node name="MM_Projectiles" type="MultiMeshInstance2D" parent="ArenaRoot"]
+
+[node name="MM_Enemies_Swarm" type="MultiMeshInstance2D" parent="ArenaRoot"]
+
+[node name="MM_Enemies_Regular" type="MultiMeshInstance2D" parent="ArenaRoot"]
+
+[node name="MM_Enemies_Elite" type="MultiMeshInstance2D" parent="ArenaRoot"]
+
+[node name="MM_Enemies_Boss" type="MultiMeshInstance2D" parent="ArenaRoot"]
+
+[node name="WaveDirector" type="Node" parent="."]
+script = ExtResource("2_tq8sn")
+
+[node name="DamageSystem" type="Node" parent="."]
+script = ExtResource("3_qaash")
+
+[node name="AbilitySystem" type="Node" parent="."]
+script = ExtResource("4_as6ld")
+
+[node name="MultiMeshManager" type="Node" parent="."]
+script = ExtResource("5_eifc1")
