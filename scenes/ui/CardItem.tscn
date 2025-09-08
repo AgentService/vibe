@@ -1,0 +1,56 @@
+[gd_scene load_steps=2 format=3 uid="uid://1v86kgldhwkh"]
+
+[ext_resource type="Script" uid="uid://b3g53mccv62g" path="res://scenes/ui/CardItem.gd" id="1_314or"]
+
+[node name="CardItem" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_314or")
+
+[node name="AspectRatioContainer" type="AspectRatioContainer" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+ratio = 0.71111
+
+[node name="CardPanel" type="Panel" parent="AspectRatioContainer"]
+layout_mode = 2
+
+[node name="ContentContainer" type="VBoxContainer" parent="AspectRatioContainer/CardPanel"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="TopSpacer" type="Control" parent="AspectRatioContainer/CardPanel/ContentContainer"]
+layout_mode = 2
+
+[node name="IconContainer" type="CenterContainer" parent="AspectRatioContainer/CardPanel/ContentContainer"]
+layout_mode = 2
+
+[node name="IconLabel" type="Label" parent="AspectRatioContainer/CardPanel/ContentContainer/IconContainer"]
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="AspectRatioContainer/CardPanel/ContentContainer"]
+layout_mode = 2
+
+[node name="DescriptionMargin" type="MarginContainer" parent="AspectRatioContainer/CardPanel/ContentContainer"]
+layout_mode = 2
+
+[node name="DescriptionLabel" type="Label" parent="AspectRatioContainer/CardPanel/ContentContainer/DescriptionMargin"]
+layout_mode = 2
+
+[node name="BottomSpacer" type="Control" parent="AspectRatioContainer/CardPanel/ContentContainer"]
+layout_mode = 2
+
+[node name="CardButton" type="Button" parent="AspectRatioContainer/CardPanel"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="LevelBadge" type="Panel" parent="AspectRatioContainer/CardPanel"]
+layout_mode = 0
+
+[node name="LevelLabel" type="Label" parent="AspectRatioContainer/CardPanel/LevelBadge"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0

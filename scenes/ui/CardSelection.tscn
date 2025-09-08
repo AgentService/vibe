@@ -1,12 +1,14 @@
 [gd_scene load_steps=2 format=3 uid="uid://b8k5h2vqgp5ri"]
 
-[ext_resource type="Script" path="res://scenes/ui/CardSelection.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://64rgge1y8386" path="res://scenes/ui/CardSelection.gd" id="1_script"]
 
 [node name="CardSelection" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_script")
 
 [node name="Background" type="ColorRect" parent="."]
@@ -14,6 +16,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.7)
 
 [node name="CenterContainer" type="CenterContainer" parent="."]
@@ -21,6 +25,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
 layout_mode = 2
@@ -36,10 +42,11 @@ text = "Select a card to enhance your abilities"
 horizontal_alignment = 1
 
 [node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer"]
-layout_mode = 2
 custom_minimum_size = Vector2(0, 40)
-
-[node name="CardContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
-separation = 0
-alignment = 1
+
+[node name="CardMargin" type="MarginContainer" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="CardContainer" type="HBoxContainer" parent="CenterContainer/VBoxContainer/CardMargin"]
+layout_mode = 2
