@@ -1,7 +1,7 @@
-[gd_scene load_steps=3 format=3 uid="uid://bki0vjlkutnfy"]
+[gd_scene load_steps=3 format=3 uid="uid://daayqxgb8gns4"]
 
-[ext_resource type="Script" uid="uid://c5c3e45qnlfd" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
-[ext_resource type="Script" uid="uid://coojuuco1sw1g" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
+[ext_resource type="Script" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
+[ext_resource type="Script" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
 
 [node name="Hideout" type="Node2D"]
 script = ExtResource("1_7lnkj")

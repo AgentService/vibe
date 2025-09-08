@@ -22,8 +22,8 @@ func _input(event: InputEvent) -> void:
 		
 	match event.keycode:
 		KEY_C:
-			Logger.info("Manual card selection test", "debug")
-			_test_card_selection()
+			Logger.info("Manual card selection with silent pause", "debug")
+			_test_card_selection_silent()
 		KEY_F12:
 			Logger.info("Toggle debug overlay", "debug")
 			_toggle_debug_overlay()
@@ -31,8 +31,8 @@ func _input(event: InputEvent) -> void:
 
 # Debug Methods - Only essential ones kept active
 
-func _test_card_selection() -> void:
-	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
+func _test_card_selection_silent() -> void:
+	Logger.info("=== MANUAL CARD SELECTION WITH SILENT PAUSE ===", "debug")
 	if not card_system:
 		Logger.error("Card system not available for test", "debug")
 		return
@@ -45,15 +45,42 @@ func _test_card_selection() -> void:
 		Logger.error("No test cards available", "debug")
 		return
 	
-	Logger.info("Pausing game for manual test", "debug")
-	PauseManager.pause_game(true)
-	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
-	Logger.info("Opening card selection manually", "debug")
+	# Do SILENT pause - pause game without opening pause menu
+	Logger.info("Applying silent pause for card selection", "debug")
+	if not PauseManager.is_paused():
+		PauseManager.silent_pause()  # Only pause if not already paused
+	Logger.debug("Game pause state (silent): " + str(get_tree().paused), "debug")
+	Logger.info("Opening card selection", "debug")
 	
 	if arena_ref.ui_manager:
 		arena_ref.ui_manager.open_card_selection(test_cards)
 	else:
 		Logger.error("UI manager not available for card selection test", "debug")
+
+# Original method - commented out
+# func _test_card_selection() -> void:
+#	Logger.info("=== MANUAL CARD SELECTION TEST ===", "debug")
+#	if not card_system:
+#		Logger.error("Card system not available for test", "debug")
+#		return
+#	
+#	# Simulate level up with level 1 cards
+#	var test_cards: Array[CardResource] = card_system.get_card_selection(1, 3)
+#	Logger.info("Got " + str(test_cards.size()) + " test cards", "debug")
+#	
+#	if test_cards.is_empty():
+#		Logger.error("No test cards available", "debug")
+#		return
+#	
+#	Logger.info("Pausing game for manual test", "debug")
+#	PauseManager.pause_game(true)
+#	Logger.debug("Game pause state after PauseManager.pause_game(true): " + str(get_tree().paused), "debug")
+#	Logger.info("Opening card selection manually", "debug")
+#	
+#	if arena_ref.ui_manager:
+#		arena_ref.ui_manager.open_card_selection(test_cards)
+#	else:
+#		Logger.error("UI manager not available for card selection test", "debug")
 
 func _toggle_debug_overlay() -> void:
 	if arena_ref and arena_ref.ui_manager:
