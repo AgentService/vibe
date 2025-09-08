@@ -1,10 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://bm1f0abbytvli"]
 
-<<<<<<< HEAD
-[ext_resource type="Script" path="res://scenes/ui/CardItem.gd" id="1_314or"]
-=======
 [ext_resource type="Script" uid="uid://da18kvj7lu1px" path="res://scenes/ui/CardItem.gd" id="1_314or"]
->>>>>>> e979d65a34075994ef458cd8be34db920080a266
 
 [node name="CardItem" type="Control"]
 layout_mode = 3
