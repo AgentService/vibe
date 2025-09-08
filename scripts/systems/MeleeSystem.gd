@@ -313,4 +313,3 @@ func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
 	
 	Logger.warn("V4: Could not find enemy index for position " + str(target_enemy.pos), "combat")
 	return -1
-

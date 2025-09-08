@@ -110,7 +110,7 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		# Visual feedback for taking damage (DragonLord doesn't have damage animation)
 		Logger.debug("DragonLord took %.1f damage, HP: %.1f/%.1f" % [payload.get("damage", 0.0), new_hp, max_health], "bosses")
 
-func _update_ai(dt: float) -> void:
+func _update_ai(_dt: float) -> void:
 	# Skip AI updates if paused by debug system
 	if ai_paused:
 		return

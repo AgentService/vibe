@@ -3,11 +3,11 @@ extends Node2D
 ## Main scene that manages dynamic scene loading and transitions.
 ## Supports both debug config initial loading and runtime scene transitions via SceneTransitionManager.
 
-const SceneTransitionManager = preload("res://scripts/systems/SceneTransitionManager.gd")
+const SceneTransitionManagerScript = preload("res://scripts/systems/SceneTransitionManager.gd")
 
 var current_scene: Node
 var debug_config: DebugConfig
-var scene_transition_manager: SceneTransitionManager
+var scene_transition_manager: SceneTransitionManagerScript
 
 func _ready() -> void:
 	Logger.info("Main scene initializing with dynamic scene loading", "main")
@@ -21,7 +21,7 @@ func _ready() -> void:
 func _setup_scene_transition_manager() -> void:
 	"""Initialize the scene transition manager for runtime scene changes."""
 	
-	scene_transition_manager = SceneTransitionManager.new()
+	scene_transition_manager = SceneTransitionManagerScript.new()
 	add_child(scene_transition_manager)
 	
 	# Connect transition signals for logging and coordination

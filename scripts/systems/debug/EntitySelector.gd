@@ -387,12 +387,12 @@ func _is_boss_entity(entity_type: String) -> bool:
 	# Boss entities are scene-based nodes
 	return entity_type in ["ancient_lich", "dragon_lord", "boss"]
 
-func _apply_multimesh_sprite_effect(entity_id: String, effect_type: String) -> void:
+func _apply_multimesh_sprite_effect(entity_id: String, _effect_type: String) -> void:
 	# For MultiMesh entities, we'd need to modify the shader or find the specific instance
 	# This is more complex and would require MultiMeshManager integration
 	Logger.debug("MultiMesh sprite effect not yet implemented for: %s" % entity_id, "debug")
 
-func _clear_multimesh_sprite_effect(entity_id: String, effect_type: String) -> void:
+func _clear_multimesh_sprite_effect(entity_id: String, _effect_type: String) -> void:
 	# Clear MultiMesh effect
 	Logger.debug("MultiMesh sprite effect clear not yet implemented for: %s" % entity_id, "debug")
 
@@ -421,7 +421,7 @@ func _apply_boss_sprite_effect(entity_id: String, effect_type: String) -> void:
 		"selection":
 			_apply_selection_effect_to_sprite(sprite)
 
-func _clear_boss_sprite_effect(entity_id: String, effect_type: String) -> void:
+func _clear_boss_sprite_effect(entity_id: String, _effect_type: String) -> void:
 	var boss_node := _find_boss_node_by_id(entity_id)
 	if not boss_node:
 		return

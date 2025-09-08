@@ -202,7 +202,7 @@ func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: fl
 	return result
 
 ## Calculate final damage with modifiers
-func _calculate_final_damage(base_damage: float, tags: Array) -> float:
+func _calculate_final_damage(base_damage: float, _tags: Array) -> float:
 	var final_damage: float = base_damage
 	
 	# Apply crit chance (10% base crit)

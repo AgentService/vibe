@@ -2,12 +2,12 @@ extends CharacterBody2D
 class_name Player
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
-const PlayerType = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
+const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
-@export var player_type: PlayerType
+@export var player_type: PlayerTypeScript
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 var knight_animation_config: AnimationConfig_Type

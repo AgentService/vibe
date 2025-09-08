@@ -309,8 +309,8 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 		}
 		
 		# Use EnemyFactory to generate boss config
-		const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-		var boss_config = EnemyFactory.spawn_from_template_id(boss_type, spawn_context)
+		const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+		var boss_config = EnemyFactoryScript.spawn_from_template_id(boss_type, spawn_context)
 		
 		if boss_config:
 			# Scale bosses using configurable multipliers
@@ -362,8 +362,8 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 		}
 		
 		# Use EnemyFactory to generate enemy config
-		const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-		var enemy_config = EnemyFactory.spawn_from_template_id(enemy_type, spawn_context)
+		const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+		var enemy_config = EnemyFactoryScript.spawn_from_template_id(enemy_type, spawn_context)
 		
 		if enemy_config:
 			# Convert to legacy enemy type for existing spawn system

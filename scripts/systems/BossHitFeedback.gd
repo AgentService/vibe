@@ -330,7 +330,7 @@ func _apply_boss_flash_effect(flash_data: Dictionary, progress: float) -> void:
 	shader_material.set_shader_parameter("flash_modifier", normalized_intensity)
 	
 
-func _apply_boss_knockback_effect(knockback_data: Dictionary, progress: float) -> void:
+func _apply_boss_knockback_effect(knockback_data: Dictionary, _progress: float) -> void:
 	var boss = knockback_data.boss
 	
 	# Hit-stop effect for impact feel
@@ -390,13 +390,13 @@ func _scan_node_for_bosses(node: Node) -> void:
 func _is_node_a_boss(node: Node) -> bool:
 	"""Check if a node is a boss by consulting enemy variations data"""
 	# Load EnemyFactory to check boss variations
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-	if not EnemyFactory._templates_loaded:
-		EnemyFactory.load_all_templates()
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	if not EnemyFactoryScript._templates_loaded:
+		EnemyFactoryScript.load_all_templates()
 	
 	# Check if any boss template class name matches this node's class
-	for template_id in EnemyFactory._templates:
-		var template = EnemyFactory._templates[template_id]
+	for template_id in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[template_id]
 		if template.render_tier == "boss":
 			# Extract class name from boss scene path or use template_id
 			var boss_class_name = template_id.capitalize().replace(" ", "")

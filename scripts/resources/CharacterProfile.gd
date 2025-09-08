@@ -65,9 +65,9 @@ static func _slugify(text: String) -> String:
 	
 	# Remove non-alphanumeric characters except underscore
 	var clean := ""
-	for char in result:
-		if char.is_valid_identifier() or char == "_":
-			clean += char
+	for character in result:
+		if character.is_valid_identifier() or character == "_":
+			clean += character
 	
 	# Limit length and ensure it's not empty
 	if clean.length() > 20:

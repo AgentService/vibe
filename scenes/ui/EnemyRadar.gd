@@ -153,22 +153,22 @@ func _get_boss_dot_size(distance: float) -> float:
 	var distance_factor := 1.0 - (distance / radar_range)
 	return lerp(min_boss_dot_size, max_boss_dot_size, distance_factor)
 
-func _draw_boss_indicator(pos: Vector2, size: float, color: Color) -> void:
+func _draw_boss_indicator(pos: Vector2, dot_size: float, color: Color) -> void:
 	# Draw boss as a distinctive shape - diamond/star pattern
 	# First draw the main circle
-	draw_circle(pos, size, color)
+	draw_circle(pos, dot_size, color)
 	
 	# Draw a smaller inner circle with slightly darker shade
 	var inner_color = Color(color.r * 0.7, color.g * 0.7, color.b * 0.7, color.a)
-	draw_circle(pos, size * 0.6, inner_color)
+	draw_circle(pos, dot_size * 0.6, inner_color)
 	
 	# Draw diamond points around the boss indicator
-	var diamond_size = size * 0.3
+	var _diamond_size = dot_size * 0.3  # Reserved for future diamond enhancement
 	var points = PackedVector2Array()
-	points.append(pos + Vector2(0, -size * 1.2))     # Top point
-	points.append(pos + Vector2(size * 1.2, 0))      # Right point  
-	points.append(pos + Vector2(0, size * 1.2))      # Bottom point
-	points.append(pos + Vector2(-size * 1.2, 0))     # Left point
+	points.append(pos + Vector2(0, -dot_size * 1.2))     # Top point
+	points.append(pos + Vector2(dot_size * 1.2, 0))      # Right point  
+	points.append(pos + Vector2(0, dot_size * 1.2))      # Bottom point
+	points.append(pos + Vector2(-dot_size * 1.2, 0))     # Left point
 	
 	# Draw diamond outline
 	for i in range(points.size()):

@@ -6,7 +6,7 @@ extends Node
 class_name DebugAbilityTrigger
 
 # Boss class references for type checking
-const AncientLich = preload("res://scenes/bosses/AncientLich.gd")
+const AncientLichScript = preload("res://scenes/bosses/AncientLich.gd")
 const DragonLord = preload("res://scenes/bosses/DragonLord.gd")
 
 # Ability definitions for different entity types
@@ -54,7 +54,7 @@ func _get_boss_abilities(entity_id: String) -> Array[String]:
 		abilities.append("attack")
 	
 	# Boss-specific abilities based on type
-	if boss_node is AncientLich:
+	if boss_node is AncientLichScript:
 		abilities.append("wake_up")
 		abilities.append("aggro")
 	elif boss_node is DragonLord:
@@ -63,7 +63,7 @@ func _get_boss_abilities(entity_id: String) -> Array[String]:
 	return abilities
 
 # Get enemy-specific abilities (for future enemy system expansion)
-func _get_enemy_abilities(entity_id: String) -> Array[String]:
+func _get_enemy_abilities(_entity_id: String) -> Array[String]:
 	# For now, return generic enemy abilities
 	# This can be expanded when enemy ability system is implemented
 	return ["attack", "charge"]
@@ -113,7 +113,7 @@ func _trigger_boss_ability(entity_id: String, ability_name: String) -> bool:
 				Logger.warn("Boss does not have _perform_attack method: %s" % entity_id, "debug")
 		
 		"wake_up":
-			if boss_node is AncientLich:
+			if boss_node is AncientLichScript:
 				var lich := boss_node as AncientLich
 				if lich.has_method("_aggro"):
 					lich._aggro()
@@ -224,4 +224,4 @@ func _node_matches_boss_id(node: Node, target_id: String) -> bool:
 
 func _is_boss_node(node: Node) -> bool:
 	# Check if node is a boss type
-	return node is AncientLich or node is DragonLord or node.is_in_group("bosses")
+	return node is AncientLichScript or node is DragonLord or node.is_in_group("bosses")

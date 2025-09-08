@@ -165,15 +165,15 @@ func _populate_enemy_dropdown() -> void:
 	enemy_type_dropdown.add_item("🌟 Spawn All")
 	
 	# Load available enemy types from EnemyFactory - all data-driven types
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Ensure templates are loaded
-	if not EnemyFactory._templates_loaded:
-		EnemyFactory.load_all_templates()
+	if not EnemyFactoryScript._templates_loaded:
+		EnemyFactoryScript.load_all_templates()
 	
 	# Add only enemy variations (not base templates) with positive weight
-	for template_id in EnemyFactory._templates:
-		var template = EnemyFactory._templates[template_id]
+	for template_id in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[template_id]
 		# Only include enemy variations (those with parent_path) or specific standalone enemies
 		# Base templates (boss_base, melee_base, etc.) should not appear in debug dropdown
 		var is_variation = not template.parent_path.is_empty()
@@ -685,7 +685,7 @@ func _find_debug_system_controls(node: Node) -> DebugSystemControls:
 	
 	return null
 
-func _set_performance_stats_visible(visible: bool) -> void:
+func _set_performance_stats_visible(is_visible: bool) -> void:
 	# Performance stats are now always visible, so force visible to true
 	if performance_info:
 		performance_info.visible = true  # Always keep visible

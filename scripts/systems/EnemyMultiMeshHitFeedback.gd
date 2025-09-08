@@ -273,7 +273,7 @@ func _apply_flash_to_multimesh(entity_id: String, progress: float, flash_data: D
 	# Apply color to MultiMesh instance
 	mm_instance.multimesh.set_instance_color(instance_index, current_color)
 
-func _apply_knockback_position(entity_id: String, progress: float, knockback_data: Dictionary) -> void:
+func _apply_knockback_position(entity_id: String, _progress: float, knockback_data: Dictionary) -> void:
 	# Hit-stop effect for impact feel
 	if knockback_data.hit_stop_timer < knockback_data.hit_stop_duration:
 		knockback_data.hit_stop_timer += get_process_delta_time()
@@ -361,7 +361,7 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 	var target_enemy_index: int = parts[1].to_int()
 	
 	# Find the enemy in the appropriate tier
-	var current_index: int = 0
+	var _current_index: int = 0  # Reserved for tier index tracking
 	
 	# Check SWARM tier
 	var swarm_enemies: Array[Dictionary] = tier_groups[EnemyRenderTier_Type.Tier.SWARM]
