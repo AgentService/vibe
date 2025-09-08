@@ -18,7 +18,7 @@ signal camera_shake_requested(intensity: float, duration: float)
 @export var zoom_speed: float = 5.0
 @export var min_zoom: float = 0.5  # Godot: <1 zooms in (closer), >1 zooms out
 @export var max_zoom: float = 3.0  # Cap zoom out
-@export var default_zoom: float = 1.0  # Neutral default zoom
+@export var default_zoom: float = 1.5  # Neutral default zoom
 @export var shake_intensity: float = 0.0
 
 var camera: Camera2D
@@ -33,6 +33,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	set_process(true)
 	
+	# Load balance values
+	_load_balance_values()
+	
 	# Lock zoom at default level - no zoom controls enabled
 	target_zoom = default_zoom
 	_connect_signals()
@@ -41,7 +44,12 @@ func _connect_signals() -> void:
 	EventBus.arena_bounds_changed.connect(_on_arena_bounds_changed)
 	EventBus.damage_dealt.connect(_on_damage_dealt)
 	EventBus.game_paused_changed.connect(_on_game_paused_changed)
+	BalanceDB.balance_reloaded.connect(_load_balance_values)
 	# Camera follows player automatically as child - no position updates needed
+
+func _load_balance_values() -> void:
+	min_zoom = BalanceDB.get_waves_value("camera_min_zoom")
+	Logger.info("CameraSystem: Loaded min_zoom = %s" % min_zoom, "camera")
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -51,6 +59,8 @@ func _exit_tree() -> void:
 		EventBus.damage_dealt.disconnect(_on_damage_dealt)
 	if EventBus.game_paused_changed.is_connected(_on_game_paused_changed):
 		EventBus.game_paused_changed.disconnect(_on_game_paused_changed)
+	if BalanceDB.balance_reloaded.is_connected(_load_balance_values):
+		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
 	Logger.debug("CameraSystem: Cleaned up signal connections", "systems")
 
 func setup_camera(player_node: Node2D) -> void:
