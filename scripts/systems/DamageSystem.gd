@@ -24,7 +24,7 @@ func _load_balance_values() -> void:
 	enemy_radius = BalanceDB.get_combat_value("enemy_radius")
 	Logger.info("Reloaded combat balance values", "combat")
 
-func _on_combat_step(payload) -> void:
+func _on_combat_step(_payload) -> void:
 	if not ability_system or not wave_director:
 		return
 	

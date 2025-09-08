@@ -4,7 +4,7 @@ extends Node
 # Centralizes all boss spawning logic and configuration management
 # Handles both fallback and configured boss spawning with scaling
 
-const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
+const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
 
 # Dependencies injected from Arena
 var wave_director: WaveDirector
@@ -25,7 +25,7 @@ func spawn_single_boss_fallback() -> void:
 	Logger.info("2. Spawn position: " + str(spawn_pos), "debug")
 	
 	# Direct V2 boss spawning - simplified approach
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Create boss spawn context
 	var spawn_context := {
@@ -38,7 +38,7 @@ func spawn_single_boss_fallback() -> void:
 	
 	# Generate boss config
 	Logger.info("3. Generating boss config from ancient_lich template...", "debug")
-	var boss_config = EnemyFactory.spawn_from_template_id("ancient_lich", spawn_context)
+	var boss_config = EnemyFactoryScript.spawn_from_template_id("ancient_lich", spawn_context)
 	if not boss_config:
 		Logger.error("   ✗ Failed to generate V2 boss config", "debug")
 		return
@@ -83,14 +83,14 @@ func spawn_single_boss_fallback() -> void:
 	Logger.info("=== LICH SPAWN DEBUG END - SUCCESS! ===", "debug")
 
 # Spawns a boss using the provided configuration
-func spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
+func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) -> void:
 	Logger.info("=== CONFIGURED BOSS SPAWN START ===", "debug")
 	Logger.info("Boss ID: " + config.boss_id, "debug")
 	Logger.info("Config: " + config.get_description(), "debug")
 	Logger.info("Spawn position: " + str(spawn_pos), "debug")
 	
 	# Direct V2 boss spawning using configuration
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Create boss spawn context
 	var spawn_context := {
@@ -103,7 +103,7 @@ func spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
 	
 	# Generate boss config from template
 	Logger.info("Generating boss config from template: " + config.boss_id, "debug")
-	var boss_config = EnemyFactory.spawn_from_template_id(config.boss_id, spawn_context)
+	var boss_config = EnemyFactoryScript.spawn_from_template_id(config.boss_id, spawn_context)
 	if not boss_config:
 		Logger.error("Failed to generate boss config for: " + config.boss_id, "debug")
 		return

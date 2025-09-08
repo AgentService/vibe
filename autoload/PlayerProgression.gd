@@ -5,17 +5,17 @@ extends Node
 ## Uses .tres resources for data-driven progression curves and unlock requirements.
 
 # Import resource classes
-const PlayerXPCurve = preload("res://scripts/resources/PlayerXPCurve.gd")
-const PlayerUnlocks = preload("res://scripts/resources/PlayerUnlocks.gd")
+const PlayerXPCurveScript = preload("res://scripts/resources/PlayerXPCurve.gd")
+const PlayerUnlocksScript = preload("res://scripts/resources/PlayerUnlocks.gd")
 
 # Current progression state
 var level: int = 1
-var exp: float = 0.0
+var experience: float = 0.0
 var xp_to_next: float = 100.0
 
 # Resource references
-var xp_curve: PlayerXPCurve
-var unlocks: PlayerUnlocks
+var xp_curve: PlayerXPCurveScript
+var unlocks: PlayerUnlocksScript
 
 # Internal state
 var _is_initialized: bool = false
@@ -32,7 +32,7 @@ func _ready() -> void:
 	_update_xp_to_next()
 	_is_initialized = true
 	
-	Logger.info("PlayerProgression initialized - Level: %d, XP: %.1f, XP to next: %.1f" % [level, exp, xp_to_next], "progression")
+	Logger.info("PlayerProgression initialized - Level: %d, XP: %.1f, XP to next: %.1f" % [level, experience, xp_to_next], "progression")
 
 func _load_progression_resources() -> void:
 	# Load XP curve
@@ -49,10 +49,10 @@ func _load_progression_resources() -> void:
 		unlocks = unlocks_resource
 	else:
 		Logger.warn("Failed to load unlocks resource, creating empty one", "progression")
-		unlocks = PlayerUnlocks.new()
+		unlocks = PlayerUnlocksScript.new()
 
 func _create_fallback_curve() -> void:
-	xp_curve = PlayerXPCurve.new()
+	xp_curve = PlayerXPCurveScript.new()
 	# Generate fallback curve with configurable parameters
 	var fallback_thresholds := xp_curve.generate_fallback_curve(10)
 	xp_curve.normal_thresholds = fallback_thresholds
@@ -67,14 +67,14 @@ func gain_exp(amount: float) -> void:
 		Logger.debug("Max level reached, ignoring XP gain", "progression")
 		return
 	
-	var old_total: float = exp
-	exp += amount
+	var old_total: float = experience
+	experience += amount
 	
-	print("PlayerProgression: Gained %.1f XP (%.1f -> %.1f), Level: %d, XP to next: %.1f" % [amount, old_total, exp, level, xp_to_next])
-	Logger.debug("Gained %.1f XP (%.1f -> %.1f)" % [amount, old_total, exp], "progression")
+	print("PlayerProgression: Gained %.1f XP (%.1f -> %.1f), Level: %d, XP to next: %.1f" % [amount, old_total, experience, level, xp_to_next])
+	Logger.debug("Gained %.1f XP (%.1f -> %.1f)" % [amount, old_total, experience], "progression")
 	
 	# Emit XP gained signal
-	EventBus.xp_gained.emit(amount, exp)
+	EventBus.xp_gained.emit(amount, experience)
 	
 	# Check for level-ups (handle multi-level-ups)
 	var level_ups: int = 0
@@ -82,7 +82,7 @@ func gain_exp(amount: float) -> void:
 		var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)
 		
 		# Check if we can level up
-		if next_level_total_xp == -1 or exp < float(next_level_total_xp):
+		if next_level_total_xp == -1 or experience < float(next_level_total_xp):
 			break
 		
 		_level_up()
@@ -103,8 +103,8 @@ func _level_up() -> void:
 	# Move to next level
 	level += 1
 	
-	print("PlayerProgression: LEVEL UP! %d -> %d (current XP: %.1f)" % [prev_level, level, exp])
-	Logger.info("Level up! %d -> %d (current XP: %.1f)" % [prev_level, level, exp], "progression")
+	print("PlayerProgression: LEVEL UP! %d -> %d (current XP: %.1f)" % [prev_level, level, experience])
+	Logger.info("Level up! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
 	
 	# Update XP requirement for next level
 	_update_xp_to_next()
@@ -127,7 +127,7 @@ func _update_xp_to_next() -> void:
 		Logger.info("Max level reached: %d" % level, "progression")
 	else:
 		# Calculate XP still needed for next level
-		xp_to_next = float(next_level_total_xp) - exp
+		xp_to_next = float(next_level_total_xp) - experience
 		_max_level_reached = false
 		
 		# Ensure xp_to_next is never negative
@@ -142,21 +142,21 @@ func load_from_profile(profile: Dictionary) -> void:
 		return
 	
 	var old_level: int = level
-	var old_exp: float = exp
+	var old_exp: float = experience
 	
 	level = profile.get("level", 1)
-	exp = profile.get("exp", 0.0)
+	experience = profile.get("exp", 0.0)
 	
 	# Validate loaded data
 	if level < 1:
 		level = 1
-	if exp < 0.0:
-		exp = 0.0
+	if experience < 0.0:
+		experience = 0.0
 	
 	# Update dependent state
 	_update_xp_to_next()
 	
-	Logger.info("Loaded progression from profile - Level: %d (was %d), XP: %.1f (was %.1f)" % [level, old_level, exp, old_exp], "progression")
+	Logger.info("Loaded progression from profile - Level: %d (was %d), XP: %.1f (was %.1f)" % [level, old_level, experience, old_exp], "progression")
 	
 	# Emit progression changed
 	_emit_progression_changed()
@@ -165,7 +165,7 @@ func load_from_profile(profile: Dictionary) -> void:
 func export_state() -> Dictionary:
 	return {
 		"level": level,
-		"exp": exp,
+		"exp": experience,
 		"version": 1  # For future migration compatibility
 	}
 
@@ -180,7 +180,7 @@ func has_unlock(unlock_id: StringName) -> bool:
 func get_progression_state() -> Dictionary:
 	return {
 		"level": level,
-		"exp": exp,
+		"exp": experience,
 		"xp_to_next": xp_to_next,
 		"total_for_level": xp_to_next,  # For UI compatibility
 		"max_level_reached": _max_level_reached

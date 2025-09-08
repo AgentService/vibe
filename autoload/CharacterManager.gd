@@ -237,7 +237,7 @@ func _get_profiles_summary() -> Array[Dictionary]:
 			"name": profile.name,
 			"class": profile.clazz,
 			"level": profile.level,
-			"exp": profile.exp,
+			"exp": profile.experience,
 			"last_played": profile.last_played,
 			"created_date": profile.created_date
 		})

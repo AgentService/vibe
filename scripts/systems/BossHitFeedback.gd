@@ -147,7 +147,7 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 
 func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	# Use cached sprite reference for performance
-	var animated_sprite = cached_boss_sprites.get(instance_id, null)
+	var cached_sprite = cached_boss_sprites.get(instance_id, null)
 	
 	# Use editor overrides if specified, otherwise use config values
 	# Use boss-specific config values or fallback to general flash config
@@ -161,26 +161,26 @@ func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 		intensity = flash_intensity_override
 	
 	# Store original material BEFORE applying shader (modulate stays untouched)
-	var original_material = animated_sprite.material if animated_sprite else null
+	var original_material = cached_sprite.material if cached_sprite else null
 	
 	# Create a unique shader material instance for this boss
 	var material_instance: ShaderMaterial = null
-	if boss_flash_material and animated_sprite:
+	if boss_flash_material and cached_sprite:
 		material_instance = boss_flash_material.duplicate() as ShaderMaterial
-		animated_sprite.material = material_instance
+		cached_sprite.material = material_instance
 	
 	var flash_data := {
 		"timer": 0.0,
 		"duration": duration,
 		"flash_intensity": intensity,
 		"boss": boss,
-		"animated_sprite": animated_sprite,
+		"animated_sprite": cached_sprite,
 		"shader_material": material_instance,
 		"original_material": original_material
 	}
 	
 	boss_flash_effects[instance_id] = flash_data
-	Logger.debug("Started boss flash effect for " + boss.name + " (sprite found: " + str(animated_sprite != null) + ")", "bosses")
+	Logger.debug("Started boss flash effect for " + boss.name + " (sprite found: " + str(cached_sprite != null) + ")", "bosses")
 
 func _find_animated_sprite(boss: Node) -> AnimatedSprite2D:
 	"""Find the AnimatedSprite2D node within the boss hierarchy"""
@@ -330,7 +330,7 @@ func _apply_boss_flash_effect(flash_data: Dictionary, progress: float) -> void:
 	shader_material.set_shader_parameter("flash_modifier", normalized_intensity)
 	
 
-func _apply_boss_knockback_effect(knockback_data: Dictionary, progress: float) -> void:
+func _apply_boss_knockback_effect(knockback_data: Dictionary, _progress: float) -> void:
 	var boss = knockback_data.boss
 	
 	# Hit-stop effect for impact feel
@@ -390,13 +390,13 @@ func _scan_node_for_bosses(node: Node) -> void:
 func _is_node_a_boss(node: Node) -> bool:
 	"""Check if a node is a boss by consulting enemy variations data"""
 	# Load EnemyFactory to check boss variations
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-	if not EnemyFactory._templates_loaded:
-		EnemyFactory.load_all_templates()
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	if not EnemyFactoryScript._templates_loaded:
+		EnemyFactoryScript.load_all_templates()
 	
 	# Check if any boss template class name matches this node's class
-	for template_id in EnemyFactory._templates:
-		var template = EnemyFactory._templates[template_id]
+	for template_id in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[template_id]
 		if template.render_tier == "boss":
 			# Extract class name from boss scene path or use template_id
 			var boss_class_name = template_id.capitalize().replace(" ", "")

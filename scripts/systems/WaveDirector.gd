@@ -115,15 +115,15 @@ func _on_balance_reloaded() -> void:
 
 func _preload_boss_scenes() -> void:
 	# Load boss scenes dynamically from EnemyFactory templates
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Ensure templates are loaded
-	if not EnemyFactory._templates_loaded:
-		EnemyFactory.load_all_templates()
+	if not EnemyFactoryScript._templates_loaded:
+		EnemyFactoryScript.load_all_templates()
 	
 	# Load all boss templates with scene paths
-	for template_id in EnemyFactory._templates:
-		var template = EnemyFactory._templates[template_id]
+	for template_id in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[template_id]
 		if template.render_tier == "boss" and not template.boss_scene_path.is_empty():
 			var scene_resource = load(template.boss_scene_path)
 			if scene_resource:
@@ -215,7 +215,7 @@ func _spawn_enemy() -> void:
 # Enemy V2 spawning system
 func _spawn_enemy_v2() -> void:
 	# Prefer a local preload so later removal is trivial
-	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Use cached player position and calculate spawn position
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -236,9 +236,9 @@ func _spawn_enemy_v2() -> void:
 	}
 	
 	# Generate V2 spawn configuration
-	var cfg := EnemyFactory.spawn_from_weights(spawn_context)
+	var cfg := EnemyFactoryScript.spawn_from_weights(spawn_context)
 	if not cfg:
-		Logger.warn("EnemyFactory failed to generate spawn config", "waves")
+		Logger.warn("EnemyFactoryScript failed to generate spawn config", "waves")
 		return
 	
 	# Convert to legacy EnemyType for existing pooling system
@@ -436,7 +436,7 @@ func _update_enemies(dt: float) -> void:
 			enemy.direction = direction
 			
 			# Update enemy position based on current velocity
-			var old_pos = enemy.pos
+			var _old_pos = enemy.pos  # Reserved for position delta calculations
 			enemy.pos += enemy.vel * dt
 			
 			# DAMAGE V4: Update EntityTracker and DamageService positions

@@ -8,7 +8,7 @@ class_name CharacterProfile
 @export var name: String = ""
 @export var clazz: StringName  # "Knight" | "Ranger" | "Mage"
 @export var level: int = 1
-@export var exp: float = 0.0
+@export var experience: float = 0.0
 @export var created_date: String = ""  # "YYYY-MM-DD"
 @export var last_played: String = ""   # "YYYY-MM-DD"
 @export var meta: Dictionary = {}      # Future: cosmetics, playtime, etc.
@@ -26,8 +26,8 @@ static func create_new(character_name: String, character_class: StringName) -> C
 	profile.name = character_name
 	profile.clazz = character_class
 	profile.level = 1
-	profile.exp = 0.0
-	profile.progression = {"level": 1, "exp": 0.0, "version": 1}
+	profile.experience = 0.0
+	profile.progression = {"level": 1, "exp": 0.0, "version": 1}  # Keep 'exp' key for save compatibility
 	
 	# Generate unique ID
 	profile.id = _generate_unique_id(character_name, character_class)
@@ -65,9 +65,9 @@ static func _slugify(text: String) -> String:
 	
 	# Remove non-alphanumeric characters except underscore
 	var clean := ""
-	for char in result:
-		if char.is_valid_identifier() or char == "_":
-			clean += char
+	for character in result:
+		if character.is_valid_identifier() or character == "_":
+			clean += character
 	
 	# Limit length and ensure it's not empty
 	if clean.length() > 20:
@@ -88,7 +88,7 @@ static func _generate_random_suffix() -> String:
 ## Update progression data from PlayerProgression system
 func sync_from_progression(progression_state: Dictionary) -> void:
 	level = progression_state.get("level", 1)
-	exp = progression_state.get("exp", 0.0)
+	experience = progression_state.get("exp", 0.0)
 	progression = progression_state.duplicate()
 	last_played = Time.get_date_string_from_system()
 
@@ -99,7 +99,7 @@ func get_character_data() -> Dictionary:
 		"name": name,
 		"class": clazz,
 		"level": level,
-		"exp": exp
+		"exp": experience
 	}
 
 ## Get save file path for this character
@@ -110,6 +110,6 @@ func get_save_path() -> String:
 func is_valid() -> bool:
 	if id.is_empty() or name.is_empty() or clazz.is_empty():
 		return false
-	if level < 1 or exp < 0.0:
+	if level < 1 or experience < 0.0:
 		return false
 	return true

@@ -126,6 +126,17 @@ func _input(event: InputEvent) -> void:
 			# But don't consume it here - let UI buttons process it first
 			call_deferred("_block_game_input")
 		return
+	
+	# Block spacebar/ui_accept from activating UI elements - preserve for player roll only
+	if event is InputEventKey and event.pressed:
+		var key_event := event as InputEventKey
+		if key_event.keycode == KEY_SPACE or event.is_action_pressed("ui_accept"):
+			# Don't consume the input - let it pass through to player for roll
+			# But make sure no UI element is focused to prevent activation
+			if get_viewport().gui_get_focus_owner():
+				get_viewport().gui_get_focus_owner().release_focus()
+			# Don't mark as handled - let player receive the input
+			return
 		
 	# Handle debug panel keyboard shortcuts
 	if not visible or not DebugManager or not DebugManager.is_debug_mode_active():
@@ -165,15 +176,15 @@ func _populate_enemy_dropdown() -> void:
 	enemy_type_dropdown.add_item("🌟 Spawn All")
 	
 	# Load available enemy types from EnemyFactory - all data-driven types
-	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Ensure templates are loaded
-	if not EnemyFactory._templates_loaded:
-		EnemyFactory.load_all_templates()
+	if not EnemyFactoryScript._templates_loaded:
+		EnemyFactoryScript.load_all_templates()
 	
 	# Add only enemy variations (not base templates) with positive weight
-	for template_id in EnemyFactory._templates:
-		var template = EnemyFactory._templates[template_id]
+	for template_id in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[template_id]
 		# Only include enemy variations (those with parent_path) or specific standalone enemies
 		# Base templates (boss_base, melee_base, etc.) should not appear in debug dropdown
 		var is_variation = not template.parent_path.is_empty()
@@ -229,6 +240,11 @@ func _on_count_selected(count: int) -> void:
 	count5_btn.button_pressed = (count == 5)
 	count10_btn.button_pressed = (count == 10)
 	
+	# Remove focus from all count buttons after selection
+	count1_btn.release_focus()
+	count5_btn.release_focus()
+	count10_btn.release_focus()
+	
 	Logger.debug("Selected spawn count: %d" % count, "debug")
 
 func _update_spawn_method_buttons() -> void:
@@ -243,16 +259,16 @@ func _get_selected_enemy_type() -> String:
 	return available_enemy_types[selected_index]
 
 func _spawn_all_enemies_at_cursor() -> void:
-	Logger.info("Spawning all enemy types at cursor", "debug")
+	Logger.info("Spawning all enemy types at cursor (count: %d)" % selected_count, "debug")
 	for enemy_type in available_enemy_types:
 		if enemy_type != "__SPAWN_ALL__":
-			DebugManager.spawn_enemy_at_cursor(enemy_type, 1)
+			DebugManager.spawn_enemy_at_cursor(enemy_type, selected_count)
 
 func _spawn_all_enemies_at_player() -> void:
-	Logger.info("Spawning all enemy types at player", "debug") 
+	Logger.info("Spawning all enemy types at player (count: %d)" % selected_count, "debug") 
 	for enemy_type in available_enemy_types:
 		if enemy_type != "__SPAWN_ALL__":
-			DebugManager.spawn_enemy_at_player(enemy_type, 1)
+			DebugManager.spawn_enemy_at_player(enemy_type, selected_count)
 
 func _on_entity_inspected(entity_data: Dictionary) -> void:
 	inspected_entity_data = entity_data
@@ -685,7 +701,7 @@ func _find_debug_system_controls(node: Node) -> DebugSystemControls:
 	
 	return null
 
-func _set_performance_stats_visible(visible: bool) -> void:
+func _set_performance_stats_visible(_is_visible: bool) -> void:
 	# Performance stats are now always visible, so force visible to true
 	if performance_info:
 		performance_info.visible = true  # Always keep visible

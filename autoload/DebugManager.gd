@@ -309,8 +309,8 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 		}
 		
 		# Use EnemyFactory to generate boss config
-		const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-		var boss_config = EnemyFactory.spawn_from_template_id(boss_type, spawn_context)
+		const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+		var boss_config = EnemyFactoryScript.spawn_from_template_id(boss_type, spawn_context)
 		
 		if boss_config:
 			# Scale bosses using configurable multipliers
@@ -348,8 +348,9 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 	
 	for i in count:
 		# Spread out multiple enemies in a circle pattern
-		var angle: float = (i * TAU) / count if count > 1 else 0
-		var offset := Vector2.from_angle(angle) * 30 * (i / 5 + 1)  # Expanding spiral
+		var angle: float = (i * TAU) / count if count > 1 else 0.0
+		var ring_number: int = int(float(i) / 5.0)  # Explicit conversion for ring calculation
+		var offset := Vector2.from_angle(angle) * 30 * (ring_number + 1)  # Expanding spiral
 		var spawn_pos := position + offset
 		
 		# Create spawn context
@@ -362,8 +363,8 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 		}
 		
 		# Use EnemyFactory to generate enemy config
-		const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-		var enemy_config = EnemyFactory.spawn_from_template_id(enemy_type, spawn_context)
+		const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+		var enemy_config = EnemyFactoryScript.spawn_from_template_id(enemy_type, spawn_context)
 		
 		if enemy_config:
 			# Convert to legacy enemy type for existing spawn system

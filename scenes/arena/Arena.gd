@@ -10,17 +10,17 @@ const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd") 
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
-const BossSpawnConfig := preload("res://scripts/domain/BossSpawnConfig.gd")
-const ArenaUIManager := preload("res://scripts/systems/ArenaUIManager.gd")
-const EnemyAnimationSystem := preload("res://scripts/systems/EnemyAnimationSystem.gd")
-const MultiMeshManager := preload("res://scripts/systems/MultiMeshManager.gd")
-const BossSpawnManager := preload("res://scripts/systems/BossSpawnManager.gd")
-const PlayerAttackHandler := preload("res://scripts/systems/PlayerAttackHandler.gd")
-const PlayerSpawner := preload("res://scripts/systems/PlayerSpawner.gd")
-const VisualEffectsManager := preload("res://scripts/systems/VisualEffectsManager.gd")
-const SystemInjectionManager := preload("res://scripts/systems/SystemInjectionManager.gd")
-const ArenaInputHandler := preload("res://scripts/systems/ArenaInputHandler.gd")
-const EntitySelector := preload("res://scripts/systems/debug/EntitySelector.gd")
+const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
+const ArenaUIManagerScript := preload("res://scripts/systems/ArenaUIManager.gd")
+const EnemyAnimationSystemScript := preload("res://scripts/systems/EnemyAnimationSystem.gd")
+const MultiMeshManagerScript := preload("res://scripts/systems/MultiMeshManager.gd")
+const BossSpawnManagerScript := preload("res://scripts/systems/BossSpawnManager.gd")
+const PlayerAttackHandlerScript := preload("res://scripts/systems/PlayerAttackHandler.gd")
+const PlayerSpawnerScript := preload("res://scripts/systems/PlayerSpawner.gd")
+const VisualEffectsManagerScript := preload("res://scripts/systems/VisualEffectsManager.gd")
+const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjectionManager.gd")
+const ArenaInputHandlerScript := preload("res://scripts/systems/ArenaInputHandler.gd")
+const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
 
 @onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
 # TIER-BASED ENEMY RENDERING SYSTEM
@@ -84,7 +84,7 @@ var debug_system_controls: DebugSystemControls
 			visual_effects_manager.set_boss_flash_intensity(value)
 
 @export_group("Boss Spawn Configuration")
-@export var boss_spawn_configs: Array[BossSpawnConfig] = []: ## Configurable boss spawn positions and settings
+@export var boss_spawn_configs: Array[BossSpawnConfigScript] = []: ## Configurable boss spawn positions and settings
 	set(value):
 		boss_spawn_configs = value
 		notify_property_list_changed()
@@ -127,7 +127,7 @@ func _ready() -> void:
 		enemy_render_tier._ready()
 	
 	# Create visual effects manager and setup hit feedback systems
-	visual_effects_manager = VisualEffectsManager.new()
+	visual_effects_manager = VisualEffectsManagerScript.new()
 	visual_effects_manager.boss_knockback_force = boss_knockback_force
 	visual_effects_manager.boss_knockback_duration = boss_knockback_duration
 	visual_effects_manager.boss_hit_stop_duration = boss_hit_stop_duration
@@ -143,20 +143,20 @@ func _ready() -> void:
 	_setup_ui()
 	
 	# Setup MultiMesh Manager BEFORE system injection
-	multimesh_manager = MultiMeshManager.new()
+	multimesh_manager = MultiMeshManagerScript.new()
 	add_child(multimesh_manager)
 	multimesh_manager.setup(mm_projectiles, mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss, enemy_render_tier)
 	
 	# Setup Boss Spawn Manager
-	boss_spawn_manager = BossSpawnManager.new()
+	boss_spawn_manager = BossSpawnManagerScript.new()
 	add_child(boss_spawn_manager)
 	
 	# Setup Player Attack Handler
-	player_attack_handler = PlayerAttackHandler.new()
+	player_attack_handler = PlayerAttackHandlerScript.new()
 	add_child(player_attack_handler)
 	
 	# Setup System Injection Manager
-	system_injection_manager = SystemInjectionManager.new()
+	system_injection_manager = SystemInjectionManagerScript.new()
 	add_child(system_injection_manager)
 	system_injection_manager.setup(self)
 	
@@ -192,12 +192,12 @@ func _ready() -> void:
 		DebugManager.register_debug_system_controls(debug_system_controls)
 	
 	# Setup Arena Input Handler
-	arena_input_handler = ArenaInputHandler.new()
+	arena_input_handler = ArenaInputHandlerScript.new()
 	add_child(arena_input_handler)
 	arena_input_handler.setup(ui_manager, melee_system, player_attack_handler, self)
 	
 	# Setup Entity Selector for debug functionality
-	entity_selector = EntitySelector.new()
+	entity_selector = EntitySelectorScript.new()
 	add_child(entity_selector)
 	
 	# System signals connected via GameOrchestrator injection
@@ -217,7 +217,7 @@ func _ready() -> void:
 
 
 func _setup_enemy_animation_system() -> void:
-	enemy_animation_system = EnemyAnimationSystem.new()
+	enemy_animation_system = EnemyAnimationSystemScript.new()
 	add_child(enemy_animation_system)
 	
 	var multimesh_refs = {
@@ -253,7 +253,7 @@ func _process(delta: float) -> void:
 
 func _setup_player() -> void:
 	# Initialize PlayerSpawner system
-	player_spawner = PlayerSpawner.new()
+	player_spawner = PlayerSpawnerScript.new()
 	add_child(player_spawner)
 	
 	# Spawn player at PlayerSpawnPoint
@@ -277,7 +277,7 @@ func _setup_xp_system() -> void:
 
 func _setup_ui() -> void:
 	# Create and configure ArenaUIManager
-	ui_manager = ArenaUIManager.new()
+	ui_manager = ArenaUIManagerScript.new()
 	add_child(ui_manager)
 	ui_manager.setup()
 	
@@ -424,7 +424,7 @@ func spawn_single_boss_fallback() -> void:
 	else:
 		Logger.error("BossSpawnManager not initialized", "boss")
 
-func spawn_configured_boss(config: BossSpawnConfig, spawn_pos: Vector2) -> void:
+func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) -> void:
 	if boss_spawn_manager:
 		boss_spawn_manager.spawn_configured_boss(config, spawn_pos)
 	else:

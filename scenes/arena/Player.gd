@@ -2,12 +2,12 @@ extends CharacterBody2D
 class_name Player
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
-const PlayerType = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
+const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
-@export var player_type: PlayerType
+@export var player_type: PlayerTypeScript
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 var knight_animation_config: AnimationConfig_Type
@@ -204,7 +204,7 @@ func _setup_sprite_frames() -> void:
 			atlas.atlas = texture
 			var index: int = int(frame_index)
 			var col: int = index % columns
-			var row: int = index / columns
+			var row: int = int(float(index) / float(columns))  # Explicit conversion for grid row calculation
 			atlas.region = Rect2(col * frame_width, row * frame_height, frame_width, frame_height)
 			sprite_frames.add_frame(anim_name, atlas)
 		

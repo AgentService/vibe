@@ -121,7 +121,7 @@ func _update_and_emit_radar_data() -> void:
 func _on_player_position_changed(position: Vector2) -> void:
 	_player_pos = position
 
-func _on_state_changed(prev: StateManager.State, next: StateManager.State, context: Dictionary) -> void:
+func _on_state_changed(_prev: StateManager.State, next: StateManager.State, _context: Dictionary) -> void:
 	_current_state = next
 	_update_enabled_state()
 
