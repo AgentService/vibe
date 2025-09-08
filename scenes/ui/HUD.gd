@@ -190,7 +190,7 @@ func _get_render_stats() -> String:
 	
 	# Get memory usage
 	var memory_usage: int = OS.get_static_memory_usage()
-	stats.append("Memory: " + str(int(memory_usage // (1024 * 1024))) + " MB")
+	stats.append("Memory: " + str(memory_usage / (1024 * 1024)) + " MB")
 	
 	# Get enemy/projectile counts from Arena if available
 	var arena: Node = get_tree().current_scene
