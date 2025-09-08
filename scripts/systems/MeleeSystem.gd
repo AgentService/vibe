@@ -120,7 +120,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	
 	# Apply damage via DamageService to all hit entities
 	var final_damage = _calculate_damage()
-	var total_hit_count = 0
+	var _total_hit_count = 0
 	
 	# Apply damage to pooled enemies
 	for enemy in hit_enemies:
@@ -147,7 +147,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		var effective_knockback = _get_effective_knockback_distance()
 		var killed = DamageService.apply_damage(entity_id, final_damage, "melee", ["melee"], effective_knockback, player_pos)
 		if killed:
-			total_hit_count += 1
+			_total_hit_count += 1
 		
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 			Logger.debug("Damage applied to enemy: " + str(final_damage) + " to " + entity_id, "abilities")
@@ -172,7 +172,7 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		var effective_knockback = _get_effective_knockback_distance()
 		var killed = DamageService.apply_damage(boss_id, final_damage, "melee", ["melee"], effective_knockback, player_pos)
 		if killed:
-			total_hit_count += 1
+			_total_hit_count += 1
 		
 		Logger.info("Damage applied to scene boss: " + str(final_damage) + " to " + boss_id, "combat")
 	

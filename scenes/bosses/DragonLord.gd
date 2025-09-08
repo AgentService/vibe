@@ -27,7 +27,6 @@ func _ready() -> void:
 	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
 	
 	# Start the animation
-	var animated_sprite = $AnimatedSprite2D
 	if animated_sprite and animated_sprite.sprite_frames:
 		animated_sprite.play("default")  # Start playing the default animation
 		Logger.debug("Dragon Lord animation started", "bosses")
