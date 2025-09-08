@@ -133,6 +133,7 @@ func _create_swarm_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
+		@warning_ignore("integer_division")
 		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
@@ -172,6 +173,7 @@ func _create_regular_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
+		@warning_ignore("integer_division")
 		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
@@ -211,6 +213,7 @@ func _create_elite_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
+		@warning_ignore("integer_division")
 		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
@@ -250,6 +253,7 @@ func _create_boss_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
+		@warning_ignore("integer_division")
 		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
