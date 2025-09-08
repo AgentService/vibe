@@ -204,7 +204,7 @@ func _setup_sprite_frames() -> void:
 			atlas.atlas = texture
 			var index: int = int(frame_index)
 			var col: int = index % columns
-			var row: int = index / columns  # Integer division is intended for grid calculations
+			var row: int = int(float(index) / float(columns))  # Explicit conversion for grid row calculation
 			atlas.region = Rect2(col * frame_width, row * frame_height, frame_width, frame_height)
 			sprite_frames.add_frame(anim_name, atlas)
 		
