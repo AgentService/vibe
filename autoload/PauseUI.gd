@@ -152,7 +152,7 @@ func _update_menu_for_current_state() -> void:
 	# Menu button always visible
 	menu_button.visible = true
 
-func _on_state_changed(prev: StateManager.State, next: StateManager.State, context: Dictionary) -> void:
+func _on_state_changed(_prev: StateManager.State, _next: StateManager.State, _context: Dictionary) -> void:
 	"""Handle state changes to update menu availability."""
 	# If pause is no longer allowed, unpause automatically
 	if not StateManager.is_pause_allowed() and PauseManager.is_paused():

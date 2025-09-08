@@ -685,7 +685,7 @@ func _find_debug_system_controls(node: Node) -> DebugSystemControls:
 	
 	return null
 
-func _set_performance_stats_visible(is_visible: bool) -> void:
+func _set_performance_stats_visible(_is_visible: bool) -> void:
 	# Performance stats are now always visible, so force visible to true
 	if performance_info:
 		performance_info.visible = true  # Always keep visible

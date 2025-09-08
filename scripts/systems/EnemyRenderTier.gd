@@ -63,14 +63,14 @@ func group_enemies_by_tier(alive_enemies: Array[EnemyEntity]) -> Dictionary:
 	var boss_enemies: Array[Dictionary] = []
 	
 	# V2 system: get tier from enemy template via EnemyFactory
-	const EnemyFactory := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	for enemy in alive_enemies:
 		var tier: Tier = Tier.REGULAR  # Default tier
 		
 		# Get render tier from EnemyTemplate via the enemy's type_id
 		if not enemy.type_id.is_empty():
-			var template: EnemyTemplate = EnemyFactory.get_template(enemy.type_id)
+			var template: EnemyTemplate = EnemyFactoryScript.get_template(enemy.type_id)
 			if template != null:
 				match template.render_tier:
 					"swarm":
