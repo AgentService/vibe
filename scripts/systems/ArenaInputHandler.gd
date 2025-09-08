@@ -61,7 +61,7 @@ func _handle_mouse_click(event: InputEventMouseButton) -> void:
 	# Convert screen coordinates to world coordinates
 	var world_pos = arena_ref.get_global_mouse_position()
 	if event.button_index == MOUSE_BUTTON_LEFT:
+		Logger.info("ArenaInputHandler: Left-click detected, triggering melee attack", "input")
 		player_attack_handler.handle_melee_attack(world_pos)
 	elif event.button_index == MOUSE_BUTTON_RIGHT and RunManager.stats.get("has_projectiles", false):
 		player_attack_handler.handle_projectile_attack(world_pos)
-

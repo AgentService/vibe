@@ -23,6 +23,11 @@ func setup(player_ref: Player, melee_sys: MeleeSystem, ability_sys: AbilitySyste
 	wave_director = wave_dir
 	melee_effects_node = melee_fx
 	arena_viewport = viewport
+	
+	# Connect MeleeSystem's local signal to this handler for both visual effects and EventBus relay
+	if melee_system:
+		melee_system.melee_attack_started.connect(_on_melee_attack_signal)
+	
 	Logger.info("PlayerAttackHandler initialized", "player")
 
 # Handle melee attack at target position
@@ -90,6 +95,19 @@ func spawn_debug_projectile(target_pos: Vector2 = Vector2.ZERO) -> void:
 		
 		var final_direction: Vector2 = direction.rotated(spread)
 		ability_system.spawn_projectile(spawn_pos, final_direction, base_speed, 2.0)
+
+# Handle melee attack started signal from MeleeSystem
+func _on_melee_attack_signal(player_pos: Vector2, target_pos: Vector2) -> void:
+	Logger.info("PlayerAttackHandler: Received melee attack signal, bridging to EventBus", "player")
+	
+	# Show visual effects
+	show_melee_cone_effect(player_pos, target_pos)
+	
+	# Emit to EventBus for player animation
+	EventBus.melee_attack_started.emit({
+		"player_pos": player_pos,
+		"target_pos": target_pos
+	})
 
 # Handle melee attack started event for visual effects
 func on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:

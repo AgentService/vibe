@@ -6,7 +6,7 @@
 script = ExtResource("1_0")
 damage = 555.0
 attack_range = 122.0
-cone_angle = 360.0
+cone_angle = 180.0
 attack_speed = 2
 visual_effect_duration = 1.0
 knockback_distance = 20.0

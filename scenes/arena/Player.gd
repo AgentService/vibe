@@ -19,6 +19,9 @@ var roll_timer: float = 0.0
 var roll_direction: Vector2 = Vector2.ZERO
 var invulnerable: bool = false
 
+var is_attacking: bool = false
+var attack_timer: float = 0.0
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -27,6 +30,13 @@ func _ready() -> void:
 	_setup_collision()
 	_setup_animations()
 	EventBus.damage_taken.connect(_on_damage_taken)
+	
+	# Connect to melee attack signals for animation
+	if EventBus.has_signal("melee_attack_started"):
+		EventBus.melee_attack_started.connect(_on_melee_attack_started)
+		Logger.info("Player: Connected to EventBus.melee_attack_started signal", "player")
+	else:
+		Logger.error("Player: EventBus.melee_attack_started signal not found!", "player")
 
 # Getter functions that read directly from player_type resource for hot-reload support
 func get_move_speed() -> float:
@@ -58,6 +68,11 @@ func get_collision_radius() -> float:
 	if player_type:
 		return player_type.collision_radius
 	return 8.0  # Fallback value
+
+func get_attack_animation_duration() -> float:
+	if player_type:
+		return player_type.attack_animation_duration
+	return 0.4  # Fallback value
 
 func _setup_collision() -> void:
 	var collision_shape := $CollisionShape2D
@@ -95,6 +110,7 @@ func _setup_editor_animation_fallback() -> void:
 func _physics_process(delta: float) -> void:
 	_handle_roll_input()
 	_update_roll(delta)
+	_update_attack(delta)
 	_handle_movement(delta)
 	_handle_facing()
 
@@ -141,6 +157,13 @@ func _update_roll(delta: float) -> void:
 			is_rolling = false
 			invulnerable = false
 
+func _update_attack(delta: float) -> void:
+	if is_attacking:
+		attack_timer += delta
+		if attack_timer >= get_attack_animation_duration():
+			is_attacking = false
+			attack_timer = 0.0
+
 func _handle_movement(_delta: float) -> void:
 	var input_vector: Vector2 = Vector2.ZERO
 	
@@ -160,10 +183,14 @@ func _handle_movement(_delta: float) -> void:
 	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		velocity = input_vector * get_move_speed()
-		_play_animation("run")
+		# Don't override attack animation with run animation
+		if not is_attacking:
+			_play_animation("run")
 	else:
 		velocity = Vector2.ZERO
-		_play_animation("idle")
+		# Don't override attack animation with idle animation
+		if not is_attacking:
+			_play_animation("idle")
 	
 	move_and_slide()
 
@@ -284,12 +311,27 @@ func _play_animation(anim_name: String) -> void:
 		Logger.warn("Player sprite_frames is null, cannot play animation: " + anim_name, "player")
 		return
 	
+	# Debug logging for attack_1 animation specifically
+	if anim_name == "attack_1":
+		Logger.info("Player: Attempting to play attack_1 animation", "player")
+		Logger.info("Player: Has attack_1 animation: " + str(animated_sprite.sprite_frames.has_animation("attack_1")), "player")
+	
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)
+		if anim_name == "attack_1":
+			Logger.info("Player: Successfully started playing attack_1 animation", "player")
 	elif not animated_sprite.sprite_frames.has_animation(anim_name):
+		Logger.warn("Player: Animation '" + anim_name + "' does not exist", "player")
 		# Fallback: if specific animation doesn't exist, try to stay on current or use "idle"
 		if animated_sprite.sprite_frames.has_animation("idle") and current_animation != "idle":
 			current_animation = "idle"
 			animated_sprite.play("idle")
 		# If no "idle", just keep playing current animation
+
+func _on_melee_attack_started(_payload: Dictionary) -> void:
+	# Play attack_1 animation when melee attack is triggered
+	Logger.info("Player: Melee attack started, playing attack_1 animation", "player")
+	is_attacking = true
+	attack_timer = 0.0
+	_play_animation("attack_1")

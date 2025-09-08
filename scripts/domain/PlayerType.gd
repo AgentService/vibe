@@ -14,6 +14,7 @@ class_name PlayerType
 @export var roll_duration: float = 0.3
 @export var roll_speed: float = 400.0
 @export var collision_radius: float = 8.0
+@export var attack_animation_duration: float = 0.4
 
 func validate() -> Array[String]:
 	var errors: Array[String] = []
@@ -38,5 +39,8 @@ func validate() -> Array[String]:
 	
 	if collision_radius <= 0.0:
 		errors.append("Player collision_radius must be greater than 0")
+	
+	if attack_animation_duration <= 0.0:
+		errors.append("Player attack_animation_duration must be greater than 0")
 	
 	return errors
