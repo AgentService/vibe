@@ -14,6 +14,7 @@ hue_range = Vector2(0.8, 1)
 tags = Array[StringName]([&"dragon", &"lord", &"boss", &"fire", &"elite"])
 weight = 22.0
 render_tier = "boss"
+boss_scene_path = "res://scenes/bosses/DragonLord.tscn"
 visual_config = {
 "animation_speed": 1.0,
 "frame_count": 1,

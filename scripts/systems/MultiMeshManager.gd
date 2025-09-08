@@ -141,9 +141,20 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 		for i in range(count):
 			var enemy := tier_enemies[i]
 			
-			# Basic transform with position only
+			# Transform with position and sprite flipping
 			var instance_transform := Transform2D()
 			instance_transform.origin = enemy["pos"]
+			
+			# Apply sprite flipping based on movement direction
+			if enemy.has("direction"):
+				var direction: Vector2 = enemy["direction"]
+				if direction.x < 0:
+					# Flip horizontally for leftward movement
+					instance_transform.x = Vector2(-1, 0)
+				else:
+					# Normal orientation for rightward movement
+					instance_transform.x = Vector2(1, 0)
+				instance_transform.y = Vector2(0, 1)
 			
 			mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 			

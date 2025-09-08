@@ -1,0 +1,93 @@
+[gd_scene load_steps=12 format=3 uid="uid://70l6fsexsfrh"]
+
+[ext_resource type="Script" uid="uid://hjracmfrs5p3" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
+[ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
+[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_bit24"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(768, 0, 384, 1024)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_mqrpj"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(0, 0, 352, 1024)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_w5q7g"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(352, 0, 352, 1024)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7b065"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(704, 0, 352, 1024)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uudk0"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(0, 0, 384, 1024)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_mjtd6"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_bit24")
+}],
+"loop": false,
+"name": &"damage_taken",
+"speed": 10.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_mqrpj")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_w5q7g")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7b065")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uudk0")
+}],
+"loop": false,
+"name": &"wake_up",
+"speed": 5.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
+radius = 4.0
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
+size = Vector2(14, 15)
+
+[node name="BananaLord" type="CharacterBody2D"]
+scale = Vector2(3, 3)
+script = ExtResource("1_mjtd6")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(0.1, 0.1)
+sprite_frames = SubResource("SpriteFrames_mjtd6")
+frame = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -5)
+shape = SubResource("CircleShape2D_vnul3")
+
+[node name="HitBox" type="Area2D" parent="."]
+position = Vector2(-1, -8.5)
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+position = Vector2(1, 3)
+shape = SubResource("RectangleShape2D_737yx")
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.5
+
+[node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
+offset_left = -7.0
+offset_top = -15.0
+offset_right = 7.0
+offset_bottom = -13.0

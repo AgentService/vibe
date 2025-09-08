@@ -160,33 +160,34 @@ func _populate_enemy_dropdown() -> void:
 	enemy_type_dropdown.clear()
 	available_enemy_types.clear()
 	
-	# Only include implemented/tested enemy types for now
-	var implemented_enemies: Array[String] = [
-		"ancient_lich",    # Boss type
-		"dragon_lord",     # Boss type  
-		"goblin"           # Swarm type
-	]
+	# Add "Spawn All" option first
+	available_enemy_types.append("__SPAWN_ALL__")
+	enemy_type_dropdown.add_item("🌟 Spawn All")
 	
-	# Load available enemy types from EnemyFactory
+	# Load available enemy types from EnemyFactory - all data-driven types
 	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
 	# Ensure templates are loaded
 	if not EnemyFactory._templates_loaded:
 		EnemyFactory.load_all_templates()
 	
-	# Add only implemented enemy types
-	for template_id in implemented_enemies:
-		if EnemyFactory._templates.has(template_id):
-			var template = EnemyFactory._templates[template_id]
-			# Verify template has positive weight
-			if template.weight > 0.0:
-				available_enemy_types.append(template_id)
-				var display_name = template_id.replace("_", " ").capitalize()
-				enemy_type_dropdown.add_item(display_name)
-		else:
-			Logger.warn("Implemented enemy type not found in templates: " + template_id, "debug")
+	# Add only enemy variations (not base templates) with positive weight
+	for template_id in EnemyFactory._templates:
+		var template = EnemyFactory._templates[template_id]
+		# Only include enemy variations (those with parent_path) or specific standalone enemies
+		# Base templates (boss_base, melee_base, etc.) should not appear in debug dropdown
+		var is_variation = not template.parent_path.is_empty()
+		var is_standalone_enemy = template.parent_path.is_empty() and not template_id.ends_with("_base")
+		
+		if template.weight > 0.0 and (is_variation or is_standalone_enemy):
+			available_enemy_types.append(template_id)
+			var display_name = template_id.replace("_", " ").capitalize()
+			enemy_type_dropdown.add_item(display_name)
 	
-	Logger.debug("Loaded %d implemented enemy types into dropdown" % available_enemy_types.size(), "debug")
+	# Auto-select "Spawn All" (first item)
+	enemy_type_dropdown.selected = 0
+	
+	Logger.debug("Loaded %d data-driven enemy types into dropdown (Spawn All auto-selected)" % available_enemy_types.size(), "debug")
 
 func _on_spawn_at_cursor_pressed() -> void:
 	var selected_enemy_type := _get_selected_enemy_type()
@@ -199,7 +200,10 @@ func _on_spawn_at_cursor_pressed() -> void:
 	_update_spawn_method_buttons()
 	
 	if DebugManager:
-		DebugManager.spawn_enemy_at_cursor(selected_enemy_type, selected_count)
+		if selected_enemy_type == "__SPAWN_ALL__":
+			_spawn_all_enemies_at_cursor()
+		else:
+			DebugManager.spawn_enemy_at_cursor(selected_enemy_type, selected_count)
 
 func _on_spawn_at_player_pressed() -> void:
 	var selected_enemy_type := _get_selected_enemy_type()
@@ -212,7 +216,10 @@ func _on_spawn_at_player_pressed() -> void:
 	_update_spawn_method_buttons()
 	
 	if DebugManager:
-		DebugManager.spawn_enemy_at_player(selected_enemy_type, selected_count)
+		if selected_enemy_type == "__SPAWN_ALL__":
+			_spawn_all_enemies_at_player()
+		else:
+			DebugManager.spawn_enemy_at_player(selected_enemy_type, selected_count)
 
 func _on_count_selected(count: int) -> void:
 	selected_count = count
@@ -234,6 +241,18 @@ func _get_selected_enemy_type() -> String:
 	if selected_index < 0 or selected_index >= available_enemy_types.size():
 		return ""
 	return available_enemy_types[selected_index]
+
+func _spawn_all_enemies_at_cursor() -> void:
+	Logger.info("Spawning all enemy types at cursor", "debug")
+	for enemy_type in available_enemy_types:
+		if enemy_type != "__SPAWN_ALL__":
+			DebugManager.spawn_enemy_at_cursor(enemy_type, 1)
+
+func _spawn_all_enemies_at_player() -> void:
+	Logger.info("Spawning all enemy types at player", "debug") 
+	for enemy_type in available_enemy_types:
+		if enemy_type != "__SPAWN_ALL__":
+			DebugManager.spawn_enemy_at_player(enemy_type, 1)
 
 func _on_entity_inspected(entity_data: Dictionary) -> void:
 	inspected_entity_data = entity_data

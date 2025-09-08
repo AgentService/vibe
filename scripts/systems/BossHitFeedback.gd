@@ -329,8 +329,6 @@ func _apply_boss_flash_effect(flash_data: Dictionary, progress: float) -> void:
 	shader_material.set_shader_parameter("flash_color", Color.WHITE)
 	shader_material.set_shader_parameter("flash_modifier", normalized_intensity)
 	
-	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Boss flash progress " + str(progress) + ": intensity=" + str(normalized_intensity), "bosses")
 
 func _apply_boss_knockback_effect(knockback_data: Dictionary, progress: float) -> void:
 	var boss = knockback_data.boss
@@ -357,8 +355,6 @@ func _apply_boss_knockback_effect(knockback_data: Dictionary, progress: float) -
 		boss.velocity = knockback_data.current_velocity
 		boss.move_and_slide()
 		
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("Boss knockback velocity: " + str(knockback_data.current_velocity.length()), "bosses")
 
 func _reset_boss_color(instance_id: int) -> void:
 	var flash_data = boss_flash_effects.get(instance_id, {})
@@ -380,11 +376,7 @@ func _scan_node_for_bosses(node: Node) -> void:
 	"""Recursively scan a node and its children for boss entities"""
 	# Check if this node is a boss
 	if node.has_method("get_current_health") and node.has_signal("died"):
-		# Check if it's likely a boss (has boss in class name or is in bosses group)
-		var is_boss = (node.get_class().to_lower().contains("boss") or 
-					  node.name.to_lower().contains("boss") or
-					  node.name.to_lower().contains("lich") or
-					  node.name.to_lower().contains("dragon"))
+		var is_boss = _is_node_a_boss(node)
 		
 		if is_boss:
 			var instance_id = node.get_instance_id()
@@ -394,6 +386,24 @@ func _scan_node_for_bosses(node: Node) -> void:
 	# Recursively check children
 	for child in node.get_children():
 		_scan_node_for_bosses(child)
+
+func _is_node_a_boss(node: Node) -> bool:
+	"""Check if a node is a boss by consulting enemy variations data"""
+	# Load EnemyFactory to check boss variations
+	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	if not EnemyFactory._templates_loaded:
+		EnemyFactory.load_all_templates()
+	
+	# Check if any boss template class name matches this node's class
+	for template_id in EnemyFactory._templates:
+		var template = EnemyFactory._templates[template_id]
+		if template.render_tier == "boss":
+			# Extract class name from boss scene path or use template_id
+			var boss_class_name = template_id.capitalize().replace(" ", "")
+			if node.get_class() == boss_class_name or node.name.begins_with(boss_class_name):
+				return true
+	
+	return false
 
 func _cleanup_oldest_boss_effects() -> void:
 	"""Emergency cleanup of oldest boss effects"""
