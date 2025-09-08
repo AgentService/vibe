@@ -133,7 +133,7 @@ func _create_swarm_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
-		var row: int = index / columns
+		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
 		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
@@ -172,7 +172,7 @@ func _create_regular_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
-		var row: int = index / columns
+		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
 		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
@@ -211,7 +211,7 @@ func _create_elite_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
-		var row: int = index / columns
+		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
 		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)
@@ -250,7 +250,7 @@ func _create_boss_textures() -> void:
 	for frame_idx in run_anim.frames:
 		var index: int = int(frame_idx)
 		var col: int = index % columns
-		var row: int = index / columns
+		var row: int = int(index / columns)
 		
 		var frame_image := Image.create(frame_width, frame_height, false, Image.FORMAT_RGBA8)
 		frame_image.blit_rect(sprite_image, Rect2i(col * frame_width, row * frame_height, frame_width, frame_height), Vector2i.ZERO)

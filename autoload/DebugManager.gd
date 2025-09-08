@@ -349,7 +349,7 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 	for i in count:
 		# Spread out multiple enemies in a circle pattern
 		var angle: float = (i * TAU) / count if count > 1 else 0.0
-		var offset := Vector2.from_angle(angle) * 30 * (i / 5 + 1)  # Expanding spiral
+		var offset := Vector2.from_angle(angle) * 30 * (int(i / 5) + 1)  # Expanding spiral
 		var spawn_pos := position + offset
 		
 		# Create spawn context
