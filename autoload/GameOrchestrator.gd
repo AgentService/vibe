@@ -15,6 +15,7 @@ const CameraSystem = preload("res://scripts/systems/CameraSystem.gd")
 
 # Core orchestration events
 signal systems_initialized()
+@warning_ignore("unused_signal")
 signal world_ready()
 
 # System references - will be populated during initialization
