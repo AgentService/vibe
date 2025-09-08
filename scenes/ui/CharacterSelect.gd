@@ -139,7 +139,7 @@ func _on_character_play_pressed(character_id: StringName) -> void:
 	# Load character progression into PlayerProgression
 	PlayerProgression.load_from_profile(profile.progression)
 	
-	Logger.info("Character loaded: %s (ID: %s) Level: %d XP: %.1f" % [profile.name, profile.id, profile.level, profile.exp], "charselect")
+	Logger.info("Character loaded: %s (ID: %s) Level: %d XP: %.1f" % [profile.name, profile.id, profile.level, profile.experience], "charselect")
 	
 	# Prepare context for StateManager
 	var context = {

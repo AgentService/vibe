@@ -53,8 +53,8 @@ func _test_character_creation() -> void:
 		_record_failure(test_name, "Character level should start at 1, got %d" % profile.level)
 		return
 	
-	if profile.exp != 0.0:
-		_record_failure(test_name, "Character exp should start at 0.0, got %.2f" % profile.exp)
+	if profile.experience != 0.0:
+		_record_failure(test_name, "Character exp should start at 0.0, got %.2f" % profile.experience)
 		return
 	
 	if not profile.id or profile.id.is_empty():
@@ -161,11 +161,11 @@ func _test_progression_sync() -> void:
 		_record_failure(test_name, "No current profile after loading character")
 		return
 	
-	if current_profile.exp < 50.0:
-		_record_failure(test_name, "Character profile not updated with gained XP: %.2f" % current_profile.exp)
+	if current_profile.experience < 50.0:
+		_record_failure(test_name, "Character profile not updated with gained XP: %.2f" % current_profile.experience)
 		return
 	
-	_record_success(test_name, "Progression synchronization working (XP: %.2f)" % current_profile.exp)
+	_record_success(test_name, "Progression synchronization working (XP: %.2f)" % current_profile.experience)
 
 func _test_character_deletion() -> void:
 	print("Testing character deletion...")

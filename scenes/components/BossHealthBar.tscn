@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://ci6ne8a3c5lro"]
 
-[ext_resource type="Script" path="res://scenes/components/BossHealthBar.gd" id="1_health_bar_script"]
+[ext_resource type="Script" uid="uid://b00h8rjyl12rq" path="res://scenes/components/BossHealthBar.gd" id="1_health_bar_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.1, 0.1, 0.1, 0.9)
@@ -34,7 +34,7 @@ ProgressBar/styles/fill = SubResource("StyleBoxFlat_fill")
 offset_left = -21.0
 offset_top = -18.0
 offset_right = 23.0
-offset_bottom = -16.0
+offset_bottom = -14.0
 theme = SubResource("Theme_boss_healthbar")
 value = 100.0
 show_percentage = false
