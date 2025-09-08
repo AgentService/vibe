@@ -199,7 +199,7 @@ func _setup_accessibility() -> void:
 	# Make button focusable
 	card_button.focus_mode = Control.FOCUS_ALL
 	
-	# TODO: Hover tooltip disabled to avoid duplicate descriptions
+	# TODO: Hover tooltisp disabled to avoid duplicate descriptions
 	# Description is already shown on the card itself
 	# if card_resource:
 	#	card_button.tooltip_text = card_resource.description

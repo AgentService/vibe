@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://2oa6my438e7e"]
+
+[ext_resource type="Script" path="res://tests/test_performance_arena_scene.gd" id="1_y35jq"]
+
+[node name="ArenaPerformanceTest" type="Node"]
+script = ExtResource("1_y35jq")

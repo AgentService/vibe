@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bjvllloeneyr5"]
+
+[ext_resource type="Script" path="res://tests/test_performance_simple.gd" id="1_0lg53"]
+
+[node name="SimplePerformanceTest" type="Node"]
+script = ExtResource("1_0lg53")
