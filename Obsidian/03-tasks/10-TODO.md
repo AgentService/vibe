@@ -26,24 +26,21 @@ Card System enhancen
 Menu from Godot or self?
 soundeffect on xp gain, higher pitch closer to lvl up
 
-<<<<<<< HEAD
-review the abilty system\
-  remove proectiles and its cards and all references.\
-  review the melee attack.\
+review the abilty system
+  remove proectiles and its cards and all references.
+  review the melee attack.
   make sure it matches  the curent enemy spawn behavior
   @changelogs\features\21_08_2025-ENEMY_RENDER_TIER_SYSTEM.md
-  @changelogs\features\21_08_2025-MELEE_COMBAT_SYSTEM.md \
-  \
+  @changelogs\features\21_08_2025-MELEE_COMBAT_SYSTEM.md
+  
   check if theses system work well togheter, i want to take 1 hit for small enemies, two for
-  bigger and 3 for big etc.\
-  \
+  bigger and 3 for big etc.
+  
   add more some more basic cards for melee only. base damage, attack speed, angle, range(how long      
-  is cone)\
-=======
+  is cone)
+
 each enemy needs its own (waves.json rules)
 
-
->>>>>>> fix-enemy-behavior
 ### Immediate — Architecture Assessment Priority Order
 
 **Architecture State:** EventBus has comprehensive signals, RNG uses proper streams, BalanceDB has hot-reload + schema validation. Missing: enforcement layers for EventBus contracts and dependency boundaries. Core systems are now robust with validation bulletproofing in place.
