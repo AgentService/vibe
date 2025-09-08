@@ -13,6 +13,7 @@ var max_hp: float
 var alive: bool
 var speed: float
 var size: Vector2
+var direction: Vector2 = Vector2.ZERO  # Movement direction for sprite flipping
 
 static func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null) -> EnemyEntity:
 	var entity := EnemyEntity.new()
@@ -28,6 +29,7 @@ static func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null
 	entity.max_hp = enemy_dict.get("max_hp", entity.hp)
 	entity.speed = enemy_dict.get("speed", 60.0)
 	entity.size = enemy_dict.get("size", Vector2(24, 24))
+	entity.direction = enemy_dict.get("direction", Vector2.ZERO)
 	
 	# If enemy type provided, use it to set defaults
 	if enemy_type != null:
@@ -46,7 +48,8 @@ func to_dictionary() -> Dictionary:
 		"alive": alive,
 		"type_id": type_id,
 		"speed": speed,
-		"size": size
+		"size": size,
+		"direction": direction
 	}
 
 func update_dictionary(enemy_dict: Dictionary) -> void:
@@ -58,6 +61,7 @@ func update_dictionary(enemy_dict: Dictionary) -> void:
 	enemy_dict["type_id"] = type_id
 	enemy_dict["speed"] = speed
 	enemy_dict["size"] = size
+	enemy_dict["direction"] = direction
 
 static func setup_dictionary_with_type(enemy_dict: Dictionary, enemy_type: EnemyType, spawn_pos: Vector2, velocity: Vector2) -> void:
 	enemy_dict["pos"] = spawn_pos

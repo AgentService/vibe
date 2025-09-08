@@ -114,9 +114,25 @@ func _on_balance_reloaded() -> void:
 
 
 func _preload_boss_scenes() -> void:
-	_preloaded_boss_scenes["ancient_lich"] = load("res://scenes/bosses/AncientLich.tscn")
-	_preloaded_boss_scenes["dragon_lord"] = load("res://scenes/bosses/DragonLord.tscn")
-	Logger.info("Boss scenes preloaded for performance", "waves")
+	# Load boss scenes dynamically from EnemyFactory templates
+	const EnemyFactory = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	# Ensure templates are loaded
+	if not EnemyFactory._templates_loaded:
+		EnemyFactory.load_all_templates()
+	
+	# Load all boss templates with scene paths
+	for template_id in EnemyFactory._templates:
+		var template = EnemyFactory._templates[template_id]
+		if template.render_tier == "boss" and not template.boss_scene_path.is_empty():
+			var scene_resource = load(template.boss_scene_path)
+			if scene_resource:
+				_preloaded_boss_scenes[template_id] = scene_resource
+				Logger.debug("Preloaded boss scene: %s -> %s" % [template_id, template.boss_scene_path], "waves")
+			else:
+				Logger.warn("Failed to load boss scene: %s" % template.boss_scene_path, "waves")
+	
+	Logger.info("Boss scenes preloaded for performance: %d bosses" % _preloaded_boss_scenes.size(), "waves")
 
 func _initialize_pool() -> void:
 	enemies.resize(max_enemies)
@@ -415,6 +431,9 @@ func _update_enemies(dt: float) -> void:
 			# Simple chase behavior - move toward player
 			var direction: Vector2 = (target_pos - enemy.pos).normalized()
 			enemy.vel = direction * enemy.speed
+			
+			# Store direction for sprite flipping
+			enemy.direction = direction
 			
 			# Update enemy position based on current velocity
 			var old_pos = enemy.pos

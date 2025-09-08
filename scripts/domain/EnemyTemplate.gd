@@ -19,6 +19,9 @@ class_name EnemyTemplate
 # Render tier for pooling system compatibility
 @export var render_tier: String = "regular"  # swarm, regular, elite, boss
 
+# Boss scene path (only used for render_tier = "boss")
+@export var boss_scene_path: String = ""
+
 # Optional visual config for backwards compatibility
 @export var visual_config: Dictionary = {}
 
@@ -62,6 +65,12 @@ func validate() -> Array[String]:
 	if not render_tier in valid_tiers:
 		errors.append("Render tier must be one of: " + str(valid_tiers))
 	
+	# Validate boss scene path for boss enemies
+	if render_tier == "boss" and boss_scene_path.is_empty():
+		errors.append("Boss enemies must have a boss_scene_path")
+	elif render_tier == "boss" and not boss_scene_path.begins_with("res://"):
+		errors.append("Boss scene path must start with 'res://'")
+	
 	return errors
 
 ## Resolve inheritance by loading and flattening parent template
@@ -92,6 +101,7 @@ func resolve_inheritance() -> EnemyTemplate:
 	flattened.tags = resolved_parent.tags.duplicate()
 	flattened.weight = resolved_parent.weight
 	flattened.render_tier = resolved_parent.render_tier
+	flattened.boss_scene_path = resolved_parent.boss_scene_path
 	flattened.visual_config = resolved_parent.visual_config.duplicate()
 	
 	# Override with child values (only if they differ from defaults)
@@ -111,6 +121,8 @@ func resolve_inheritance() -> EnemyTemplate:
 		flattened.weight = self.weight
 	if self.render_tier != "regular":
 		flattened.render_tier = self.render_tier
+	if not self.boss_scene_path.is_empty():
+		flattened.boss_scene_path = self.boss_scene_path
 	if not self.visual_config.is_empty():
 		flattened.visual_config = self.visual_config.duplicate()
 	

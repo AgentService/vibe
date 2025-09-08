@@ -1,9 +1,9 @@
 extends CharacterBody2D
 
-## Ancient Lich Boss - V2 Enemy System Integration
+## Banana Lord Boss - V2 Enemy System Integration
 ## Scene-based boss with AnimatedSprite2D for proper visual workflow
 
-class_name AncientLich
+class_name BananaLord
 
 signal died
 
@@ -31,7 +31,7 @@ var is_taking_damage: bool = false
 var is_aggroed: bool = false
 
 func _ready() -> void:
-	Logger.info("AncientLich boss ready", "bosses")
+	Logger.info("BananaLord boss ready", "bosses")
 	
 	# Start with wake_up animation and pause it on first frame
 	var animated_sprite_node = $AnimatedSprite2D
@@ -39,7 +39,7 @@ func _ready() -> void:
 		animated_sprite_node.play("wake_up")
 		animated_sprite_node.pause()  # Stay on first frame until aggroed
 		animated_sprite_node.connect("animation_finished", _on_animation_finished)
-		Logger.debug("AncientLich spawned in dormant state", "bosses")
+		Logger.debug("BananaLord spawned in dormant state", "bosses")
 	
 	# Connect to combat step for deterministic behavior
 	if EventBus:
@@ -63,7 +63,7 @@ func _ready() -> void:
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
-	Logger.debug("AncientLich registered with DamageService and EntityTracker as " + entity_id, "bosses")
+	Logger.debug("BananaLord registered with DamageService and EntityTracker as " + entity_id, "bosses")
 	
 	# Initialize health bar
 	_update_health_bar()
@@ -96,7 +96,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	# Apply visual config (removed color tint functionality)
 	scale = Vector2.ONE * config.size_scale
 	
-	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
+	Logger.info("BananaLord boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
 
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
@@ -179,7 +179,7 @@ func _update_ai(dt: float) -> void:
 				last_attack_time = 0.0
 
 func _perform_attack() -> void:
-	Logger.debug("AncientLich attacks for %.1f damage!" % attack_damage, "bosses")
+	Logger.debug("BananaLord attacks for %.1f damage!" % attack_damage, "bosses")
 	
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
@@ -196,7 +196,7 @@ func _perform_attack() -> void:
 # Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync
 
 func _die() -> void:
-	Logger.info("AncientLich has been defeated!", "bosses")
+	Logger.info("BananaLord has been defeated!", "bosses")
 	died.emit()  # Signal for integration
 	queue_free()
 
@@ -232,14 +232,14 @@ func _aggro() -> void:
 	if is_aggroed:
 		return
 	is_aggroed = true
-	Logger.debug("AncientLich aggroed - beginning wake up sequence!", "bosses")
+	Logger.debug("BananaLord aggroed - beginning wake up sequence!", "bosses")
 	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
 
 func _on_animation_finished() -> void:
 	if animated_sprite.animation == "wake_up":
 		has_woken_up = true
 		animated_sprite.play("default")
-		Logger.debug("AncientLich fully awakened", "bosses")
+		Logger.debug("BananaLord fully awakened", "bosses")
 	elif animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")

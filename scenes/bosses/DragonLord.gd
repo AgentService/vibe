@@ -6,6 +6,7 @@ extends CharacterBody2D
 
 signal died
 
+@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: BossHealthBar = $BossHealthBar
 
 var spawn_config: SpawnConfig
@@ -128,6 +129,9 @@ func _update_ai(dt: float) -> void:
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 			move_and_slide()
+			
+			# Flip sprite to face movement direction
+			EnemySpriteFlipping.flip_sprite_for_direction(animated_sprite, direction)
 			
 			# Update EntityTracker and DamageService positions
 			var entity_id = "boss_" + str(get_instance_id())

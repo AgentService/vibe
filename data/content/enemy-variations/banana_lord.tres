@@ -1,26 +1,26 @@
-[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://bfyjq04ipm4kg"]
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://y4ekmf4udy3n"]
 
 [ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_9h0i1"]
 
 [resource]
 script = ExtResource("1_9h0i1")
-id = &"ancient_lich"
+id = &"banana_lord"
 parent_path = "res://data/content/enemy-templates/boss_base.tres"
-health_range = Vector2(150, 200)
+health_range = Vector2(5000, 6000)
 damage_range = Vector2(35, 50)
-speed_range = Vector2(25, 40)
-size_factor = 1.8
+speed_range = Vector2(200, 300)
+size_factor = 1.0
 hue_range = Vector2(0.7, 0.9)
-tags = Array[StringName]([&"lich", &"boss", &"undead", &"magic"])
+tags = Array[StringName]([&"banana", &"lord", &"boss", &"fruit", &"potassium"])
 weight = 22.0
 render_tier = "boss"
-boss_scene_path = "res://scenes/bosses/AncientLich.tscn"
+boss_scene_path = "res://scenes/bosses/BananaLord.tscn"
 visual_config = {
 "animation_speed": 1.0,
 "frame_count": 1,
 "frame_regions": [Rect2(0, 0, 24, 24)],
-"frame_size": Vector2(24, 24),
+"frame_size": Vector2(32, 32),
 "loop": false,
 "scale": Vector2(3, 3),
-"sprite_path": "res://assets/sprites/slime_purple.png"
+"sprite_path": "res://assets/sprites/banana_lord.png"
 }
