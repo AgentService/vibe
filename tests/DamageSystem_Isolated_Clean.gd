@@ -3,6 +3,7 @@ extends Node2D
 ## Isolated DamageSystem test - tests ONLY damage calculation and application.
 ## Tests: damage requests -> damage calculations -> enemy health changes
 ## No UI, no input, no game mechanics - pure system testing.
+## Uses direct DamageService.apply_damage() calls following single entry point architecture.
 
 var damage_system: DamageSystem
 var test_enemies: Array[EnemyEntity] = []
@@ -30,49 +31,8 @@ func _setup_test_environment():
 	# Connect to damage signals for verification
 	EventBus.damage_applied.connect(_on_damage_applied)
 	EventBus.enemy_killed.connect(_on_enemy_killed)
-	EventBus.damage_requested.connect(_on_damage_requested_direct)
 	
-	print("✓ Test environment ready (bypassing DamageSystem, testing logic directly)")
-
-# Direct damage processing - simulates what DamageSystem._on_damage_requested() does
-func _on_damage_requested_direct(payload):
-	print("Processing damage request: ", payload.base_damage, " to ", payload.target_id)
-	
-	if payload.target_id.type != EntityId.Type.ENEMY:
-		return
-	
-	var enemy_index = payload.target_id.index
-	if enemy_index < 0 or enemy_index >= test_enemies.size():
-		print("Invalid enemy index: ", enemy_index)
-		return
-	
-	var enemy = test_enemies[enemy_index]
-	if not enemy.alive:
-		print("Enemy already dead: ", enemy_index)
-		return
-	
-	# Simulate damage calculation (basic + crit)
-	var is_crit: bool = RNG.randf("crit") < 0.1  # 10% crit chance
-	var final_damage: float = payload.base_damage * (2.0 if is_crit else 1.0)
-	
-	# Apply damage
-	enemy.hp -= final_damage
-	print("Enemy[%d] took %.1f damage (HP: %.1f/%.1f)" % [enemy_index, final_damage, enemy.hp, enemy.max_hp])
-	
-	# Emit damage applied
-	var applied_payload = EventBus.DamageAppliedPayload_Type.new(payload.target_id, final_damage, is_crit, payload.tags)
-	EventBus.damage_applied.emit(applied_payload)
-	
-	# Check for death
-	if enemy.hp <= 0:
-		enemy.alive = false
-		var rewards = {"type": enemy.type_id, "xp": 10}
-		var kill_payload = EventBus.EntityKilledPayload_Type.new(
-			EntityId.enemy(enemy_index), 
-			enemy.pos, 
-			rewards
-		)
-		EventBus.enemy_killed.emit(kill_payload)
+	print("✓ Test environment ready - using DamageService.apply_damage() directly")
 
 func _run_test_scenarios():
 	print("\n--- Running Test Scenarios ---")
@@ -105,54 +65,69 @@ func _test_basic_damage():
 	print("\nTest 1: Basic Damage Application")
 	test_results["basic_damage"] = {"expected": 25.0, "actual": 0.0}
 	
-	# Send damage request to enemy[0] (100 HP)
-	var source_id = EntityId.player()
-	var target_id = EntityId.enemy(0)
-	var damage = 25.0
-	var tags = PackedStringArray(["test", "basic"])
+	# Register test entity with DamageService for direct testing
+	var entity_id = "enemy_0"
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": 100.0,
+		"max_hp": 100.0,
+		"alive": true,
+		"pos": Vector2.ZERO
+	}
+	DamageService.register_entity(entity_id, entity_data)
 	
-	var payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, damage, tags)
-	EventBus.damage_requested.emit(payload)
+	# Apply damage directly through DamageService (single entry point)
+	var damage = 25.0
+	var source = "player"
+	var tags = ["test", "basic"]
+	DamageService.apply_damage(entity_id, damage, source, tags)
 
 func _test_critical_hits():
 	print("\nTest 2: Critical Hit Testing (multiple attempts)")
 	test_results["crit_found"] = false
 	
-	# Send multiple damage requests to increase crit chance
+	# Register test entity with DamageService
+	var entity_id = "enemy_1"
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": 150.0,
+		"max_hp": 150.0,
+		"alive": true,
+		"pos": Vector2(50, 0)
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	
+	# Apply damage multiple times to test for crits
 	for i in range(10):
-		var payload = EventBus.DamageRequestPayload_Type.new(
-			EntityId.player(),
-			EntityId.enemy(1),  # Enemy[1] has 150 HP
-			10.0,
-			PackedStringArray(["test", "crit_test"])
-		)
-		EventBus.damage_requested.emit(payload)
+		DamageService.apply_damage(entity_id, 10.0, "player", ["test", "crit_test"])
 
 func _test_enemy_death():
 	print("\nTest 3: Enemy Death on Lethal Damage")
 	test_results["death_test"] = {"enemy_alive": true, "death_triggered": false}
 	
-	# Deal massive damage to enemy[2] (200 HP)
-	var payload = EventBus.DamageRequestPayload_Type.new(
-		EntityId.player(),
-		EntityId.enemy(2),
-		250.0,  # More than 200 HP
-		PackedStringArray(["test", "lethal"])
-	)
-	EventBus.damage_requested.emit(payload)
+	# Register test entity with DamageService
+	var entity_id = "enemy_2"
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": 200.0,
+		"max_hp": 200.0,
+		"alive": true,
+		"pos": Vector2(100, 0)
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	
+	# Deal massive damage to kill the enemy
+	DamageService.apply_damage(entity_id, 250.0, "player", ["test", "lethal"])
 
 func _test_invalid_targets():
 	print("\nTest 4: Invalid Target Handling")
 	test_results["invalid_target"] = {"error_handled": true}
 	
-	# Try to damage non-existent enemy
-	var payload = EventBus.DamageRequestPayload_Type.new(
-		EntityId.player(),
-		EntityId.enemy(999),  # Invalid index
-		50.0,
-		PackedStringArray(["test", "invalid"])
-	)
-	EventBus.damage_requested.emit(payload)
+	# Try to damage non-existent enemy (should handle gracefully)
+	DamageService.apply_damage("enemy_999", 50.0, "player", ["test", "invalid"])
 
 func _on_damage_applied(payload):
 	print("  ✓ Damage Applied: %.1f to %s (crit: %s)" % [payload.final_damage, payload.target_id, payload.is_crit])

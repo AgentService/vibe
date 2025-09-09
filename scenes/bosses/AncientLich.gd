@@ -181,16 +181,12 @@ func _update_ai(_dt: float) -> void:
 func _perform_attack() -> void:
 	Logger.debug("AncientLich attacks for %.1f damage!" % attack_damage, "bosses")
 	
-	# Emit damage to player if in range
+	# Apply damage to player directly via DamageService (single entry point)
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# Use EventBus to damage player with proper payload
-		if EventBus:
-			var source_id = EntityId.enemy(-1)  # Special boss ID
-			var target_id = EntityId.player()
-			var damage_tags = PackedStringArray(["magic", "boss"])
-			var damage_payload = EventBus.DamageRequestPayload_Type.new(source_id, target_id, attack_damage, damage_tags)
-			EventBus.damage_requested.emit(damage_payload)
+		var source_name = "boss_ancient_lich"
+		var damage_tags = ["magic", "boss"]
+		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
 
 # DAMAGE V3: take_damage() method removed - damage handled via unified pipeline
 # Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync

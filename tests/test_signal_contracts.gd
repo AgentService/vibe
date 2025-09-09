@@ -51,12 +51,13 @@ static func _run_minimal_simulation(tracker: SignalTracker) -> void:
 		var combat_payload: CombatStepPayload = CombatStepPayload.new(1.0 / 30.0)
 		EventBus.combat_step.emit(combat_payload)
 		
-		# Simulate some damage
+		# Simulate some damage using DamageService directly (single entry point)
 		if i % 3 == 0:
-			var source_id := EntityId.projectile(0)
-			var target_id := EntityId.enemy(0)
-			var damage_payload: DamageRequestPayload = DamageRequestPayload.new(source_id, target_id, 10.0, PackedStringArray(["projectile"]))
-			EventBus.damage_requested.emit(damage_payload)
+			var target_id = "enemy_0"
+			var damage_amount = 10.0
+			var source_name = "projectile_0"
+			var damage_tags = ["projectile"]
+			DamageService.apply_damage(target_id, damage_amount, source_name, damage_tags)
 		
 		# Simulate XP gain
 		if i % 5 == 0:
@@ -104,7 +105,6 @@ class SignalTracker:
 	func connect_to_eventbus() -> void:
 		# Connect to all documented signals
 		EventBus.combat_step.connect(_on_combat_step)
-		EventBus.damage_requested.connect(_on_damage_requested)
 		EventBus.damage_applied.connect(_on_damage_applied)
 		EventBus.damage_batch_applied.connect(_on_damage_batch_applied)
 		EventBus.entity_killed.connect(_on_entity_killed)
@@ -120,7 +120,6 @@ class SignalTracker:
 	
 	func disconnect_from_eventbus() -> void:
 		EventBus.combat_step.disconnect(_on_combat_step)
-		EventBus.damage_requested.disconnect(_on_damage_requested)
 		EventBus.damage_applied.disconnect(_on_damage_applied)
 		EventBus.damage_batch_applied.disconnect(_on_damage_batch_applied)
 		EventBus.entity_killed.disconnect(_on_entity_killed)
@@ -146,14 +145,6 @@ class SignalTracker:
 		_track_signal("combat_step", [payload])
 		_validate_arg_type("combat_step", 0, payload, TYPE_OBJECT)
 		_validate_arg_type("combat_step_dt", 0, payload.dt, TYPE_FLOAT)
-	
-	func _on_damage_requested(payload) -> void:
-		_track_signal("damage_requested", [payload])
-		_validate_arg_type("damage_requested", 0, payload, TYPE_OBJECT)
-		_validate_arg_type("damage_requested_source", 0, payload.source_id, TYPE_OBJECT)
-		_validate_arg_type("damage_requested_target", 0, payload.target_id, TYPE_OBJECT)
-		_validate_arg_type("damage_requested_damage", 0, payload.base_damage, TYPE_FLOAT)
-		_validate_arg_type("damage_requested_tags", 0, payload.tags, TYPE_PACKED_STRING_ARRAY)
 	
 	func _on_damage_applied(payload) -> void:
 		_track_signal("damage_applied", [payload])
@@ -291,7 +282,7 @@ class SignalTracker:
 		
 		# Validate expected signals were emitted
 		var required_signals := [
-			"combat_step", "damage_requested", "damage_applied", "entity_killed", 
+			"combat_step", "damage_applied", "entity_killed", 
 			"xp_changed", "level_up", "game_paused_changed", "arena_bounds_changed",
 			"player_position_changed", "damage_dealt", "interaction_prompt_changed", 
 			"loot_generated"
@@ -323,13 +314,6 @@ class SignalTracker:
 				print("  ✗ CombatStepPayload missing 'dt' property")
 				tests_passed = false
 		
-		# Test DamageRequestPayload structure
-		if signal_args.has("damage_requested") and signal_args["damage_requested"].size() > 0:
-			var damage_payload = signal_args["damage_requested"][0][0]
-			for prop in ["source_id", "target_id", "base_damage", "tags"]:
-				if not _has_property(damage_payload, prop):
-					print("  ✗ DamageRequestPayload missing '%s' property" % prop)
-					tests_passed = false
 		
 		# Test XpChangedPayload structure
 		if signal_args.has("xp_changed") and signal_args["xp_changed"].size() > 0:

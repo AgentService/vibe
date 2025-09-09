@@ -52,3 +52,6 @@ dist/
 
 # Large sprite asset packages
 assets/sprites/craftpix-net-*/
+
+# Test baseline files (performance test outputs)
+tests/baselines/
