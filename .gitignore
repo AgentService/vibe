@@ -49,3 +49,6 @@ dist/
 # Obsidian notes
 .obsidian/
 *.uid
+
+# Large sprite asset packages
+assets/sprites/craftpix-net-*/

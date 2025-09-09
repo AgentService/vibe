@@ -1053,7 +1053,7 @@ player_type = ExtResource("2_jkhsn")
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_jkhsn")
 animation = &"attack_down"
-frame_progress = 0.261109
+frame_progress = 0.816853
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
