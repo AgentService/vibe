@@ -1,4 +1,4 @@
-extends Node2D
+extends BaseArena
 
 ## Arena scene managing MultiMesh rendering and receiving injected game systems.
 ## Renders projectile pool via MultiMeshInstance2D.
@@ -49,6 +49,8 @@ var system_injection_manager: SystemInjectionManager
 var arena_input_handler: ArenaInputHandler
 var entity_selector: EntitySelector
 var debug_system_controls: DebugSystemControls
+
+# Death state management now handled in BaseArena
 
 @export_group("Boss Hit Feedback Settings")
 @export var boss_knockback_force: float = 12.0: ## Multiplier for boss knockback force
@@ -215,6 +217,7 @@ func _ready() -> void:
 	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
+	# Player death connection now handled in BaseArena._ready()
 	_setup_enemy_animation_system()
 	_setup_enemy_transforms()
 	
@@ -407,6 +410,8 @@ func _on_card_selected(card: CardResource) -> void:
 
 func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 	pass
+
+# _on_player_died() method now handled in BaseArena
 
 
 

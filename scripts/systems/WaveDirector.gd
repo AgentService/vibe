@@ -47,6 +47,16 @@ signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
 func _ready() -> void:
 	add_to_group("wave_directors")  # For DamageRegistry sync access
+	
+	
+	# Safety check: Only allow WaveDirector to run in Arena scenes
+	if not _is_in_arena_scene():
+		Logger.warn("WaveDirector: Not in Arena scene, disabling spawning", "waves")
+		set_process(false)
+		set_physics_process(false)
+		return
+	
+	
 	_load_balance_values()
 	EventBus.combat_step.connect(_on_combat_step)
 	
@@ -55,19 +65,19 @@ func _ready() -> void:
 	
 	# Connect to cheat toggle events for AI pause functionality
 	EventBus.cheat_toggled.connect(_on_cheat_toggled)
+	
+	# Connect to player death for immediate spawning stop
+	EventBus.player_died.connect(_on_player_died)
 
 	_initialize_pool()
 	_preload_boss_scenes()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
-
-
+	
 
 func set_arena_system(injected_arena_system) -> void:
 	arena_system = injected_arena_system
 	Logger.info("ArenaSystem injected into WaveDirector", "waves")
-
-
 
 func _load_balance_values() -> void:
 	max_enemies = BalanceDB.get_waves_value("max_enemies")
@@ -80,7 +90,6 @@ func _load_balance_values() -> void:
 	spawn_count_max = BalanceDB.get_waves_value("spawn_count_max")
 	arena_bounds = BalanceDB.get_waves_value("arena_bounds")
 	target_distance = BalanceDB.get_waves_value("target_distance")
-
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -95,23 +104,27 @@ func _exit_tree() -> void:
 	Logger.debug("WaveDirector: Cleaned up signal connections", "systems")
 
 func _get_arena_root() -> Node2D:
-	# Find ArenaRoot in the current scene for proper enemy parenting
+	# Find ArenaRoot - check current scene and BaseArena children
 	var current_scene = get_tree().current_scene
-	if current_scene and current_scene.has_node("ArenaRoot"):
+	if not current_scene:
+		return null
+	
+	# First check if current scene has ArenaRoot directly
+	if current_scene.has_node("ArenaRoot"):
 		return current_scene.get_node("ArenaRoot")
-	else:
-		Logger.warn("ArenaRoot not found, falling back to current_scene", "waves")
-		return current_scene
+	
+	# Check if any BaseArena child has ArenaRoot (for dynamic loading)
+	for child in current_scene.get_children():
+		if child is BaseArena and child.has_node("ArenaRoot"):
+			return child.get_node("ArenaRoot")
+	
+	Logger.warn("ArenaRoot not found in current scene or BaseArena children, falling back to current_scene", "waves")
+	return current_scene
 
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	_initialize_pool()
 	Logger.info("Reloaded wave balance values", "waves")
-
-
-
-
-
 
 func _preload_boss_scenes() -> void:
 	# Load boss scenes dynamically from EnemyFactory templates
@@ -149,10 +162,13 @@ func _initialize_pool() -> void:
 		enemies[i] = entity
 
 func _on_combat_step(payload) -> void:
+	# Safety check: Don't process if not in Arena scene or if player is dead
+	if not _is_in_arena_scene():
+		return
+	
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
 	var alive_enemies := get_alive_enemies()
-	#Logger.debug("WaveDirector emitting enemies_updated with " + str(alive_enemies.size()) + " enemies", "waves")
 	enemies_updated.emit(alive_enemies)
 
 ## DAMAGE V3: Handle unified damage sync events for pooled enemies
@@ -199,7 +215,7 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 
 func _handle_spawning(dt: float) -> void:
 	# Check for spawn disabled cheat
-	if CheatSystem and CheatSystem.is_spawn_disabled():
+	if CheatSystem and CheatSystem.has_method("is_spawn_disabled") and CheatSystem.is_spawn_disabled():
 		return
 	
 	spawn_timer += dt
@@ -389,8 +405,6 @@ func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	EventBus.enemy_killed.emit(payload)
 	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
-
-
 func _find_enemy_index(target_enemy: EnemyEntity) -> int:
 	for i in range(enemies.size()):
 		if enemies[i] == target_enemy:
@@ -445,11 +459,6 @@ func _update_enemies(dt: float) -> void:
 				var entity_id = "enemy_" + str(enemy_index)
 				EntityTracker.update_entity_position(entity_id, enemy.pos)
 				DamageService.update_entity_position(entity_id, enemy.pos)
-		
-		# Kill enemy if it reaches target or goes out of bounds - DISABLED
-		# if dist_to_target < target_distance or _is_out_of_bounds(enemy["pos"]):
-		#	enemy["alive"] = false
-		#	_cache_dirty = true  # Mark cache as dirty when enemy dies
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
@@ -472,11 +481,6 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 	_last_cache_frame = current_frame
 	return _alive_enemies_cache
 
-# Player reference no longer needed - using PlayerState autoload for position
-
-# damage_enemy() method removed - enemies damaged via DamageService
-# Enemy HP updates handled by DamageRegistry sync system (_sync_damage_to_game_entity)
-
 func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	if enemy_index < 0 or enemy_index >= max_enemies:
 		return
@@ -486,10 +490,6 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 		return
 	
 	enemy["vel"] = velocity
-
-
-
-
 
 func clear_all_enemies() -> void:
 	# DEPRECATED: Use DebugManager.clear_all_entities() for unified damage-based clearing
@@ -537,9 +537,60 @@ func reset() -> void:
 	
 	Logger.info("WaveDirector: Reset completed", "waves")
 
-# AI methods removed - back to simple chase behavior
-
 func _on_cheat_toggled(payload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
+
+func _on_player_died() -> void:
+	"""Handle player death - immediately stop spawning and clear all enemies"""
+	Logger.info("WaveDirector: Player died, stopping spawning and clearing enemies", "waves")
+	
+	# Stop spawning immediately
+	stop()
+	
+	# Clear all active enemies
+	_clear_all_enemies()
+	
+	# Pause AI for any remaining enemies
+	ai_paused = true
+
+func _clear_all_enemies() -> void:
+	"""Clear all enemies from the pool and scene"""
+	Logger.info("WaveDirector: Clearing all enemies", "waves")
+	
+	# Clear all pooled enemies - EnemyEntity doesn't have nodes, only data
+	for enemy in enemies:
+		if enemy and enemy.alive:
+			enemy.alive = false
+			enemy.hp = 0.0
+	
+	# Clear cache
+	_alive_enemies_cache.clear()
+	_cache_dirty = true
+	
+	# Emit empty enemies list to clear MultiMesh rendering
+	var empty_enemies: Array[EnemyEntity] = []
+	enemies_updated.emit(empty_enemies)
+	
+	Logger.info("WaveDirector: All enemies cleared", "waves")
+
+func _is_in_arena_scene() -> bool:
+	"""Check if WaveDirector is running in an Arena scene to prevent spawning in other scenes
+	Uses type-safe BaseArena class detection - future-proof for all arena types
+	Also handles dynamic scene loading where Arena is loaded as child of Main"""
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		return false
+	
+	# Check if current scene is directly a BaseArena
+	if current_scene is BaseArena:
+		return true
+	
+	# Check if any child of current scene is a BaseArena (for dynamic loading)
+	for child in current_scene.get_children():
+		if child is BaseArena:
+				return true
+	
+
+	return false

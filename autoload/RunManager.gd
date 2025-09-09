@@ -21,6 +21,11 @@ func _ready() -> void:
 	if run_seed == 0:
 		run_seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
+	
+	# Connect to EventBus for stat tracking
+	EventBus.enemy_killed.connect(_on_enemy_killed)
+	EventBus.damage_dealt.connect(_on_damage_dealt)
+	
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_load_player_stats)
 		# Load stats after BalanceDB is ready
@@ -34,6 +39,10 @@ func _exit_tree() -> void:
 	# Cleanup signal connections
 	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_load_player_stats):
 		BalanceDB.balance_reloaded.disconnect(_load_player_stats)
+	if EventBus.enemy_killed.is_connected(_on_enemy_killed):
+		EventBus.enemy_killed.disconnect(_on_enemy_killed)
+	if EventBus.damage_dealt.is_connected(_on_damage_dealt):
+		EventBus.damage_dealt.disconnect(_on_damage_dealt)
 
 func _try_load_player_stats() -> void:
 	if BalanceDB and BalanceDB._data.has("player"):
@@ -48,6 +57,8 @@ func _load_player_stats() -> void:
 		"has_projectiles": false,
 		"level": 1,
 		"melee_damage_add": 0.0,
+		"enemies_killed": 0,
+		"total_damage_dealt": 0.0,
 		"melee_attack_speed_add": 0.0,
 		"melee_range_add": 0.0,
 		"melee_cone_angle_add": 0.0,
@@ -74,3 +85,13 @@ func pause_game(v: bool) -> void:
 func _seed_rng() -> void:
 	if RNG:
 		RNG.seed_run(run_seed)
+
+func _on_enemy_killed(payload) -> void:
+	"""Track enemy kills for run statistics"""
+	stats["enemies_killed"] = stats.get("enemies_killed", 0) + 1
+
+func _on_damage_dealt(payload) -> void:
+	"""Track total damage dealt for run statistics"""
+	# Only track player damage, not enemy damage
+	if payload.has("source_type") and payload.source_type == "player":
+		stats["total_damage_dealt"] = stats.get("total_damage_dealt", 0.0) + payload.get("damage", 0.0)

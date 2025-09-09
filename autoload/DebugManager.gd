@@ -88,10 +88,19 @@ func _input(event: InputEvent) -> void:
 		
 	var key_event := event as InputEventKey
 	
-	# F12: Toggle debug mode
+	# F12: Toggle debug mode (only if debug panels were enabled at startup)
 	if key_event.keycode == KEY_F12:
-		toggle_debug_mode()
-		get_viewport().set_input_as_handled()
+		# Check if debug panels are enabled in config before allowing toggle
+		var config_path: String = "res://config/debug.tres"
+		if ResourceLoader.exists(config_path):
+			var debug_config: DebugConfig = load(config_path) as DebugConfig
+			if debug_config and debug_config.debug_panels_enabled:
+				toggle_debug_mode()
+				get_viewport().set_input_as_handled()
+			else:
+				Logger.debug("F12 ignored - debug panels disabled in config", "debug")
+		else:
+			Logger.debug("F12 ignored - no debug config found", "debug")
 
 func toggle_debug_mode() -> void:
 	debug_enabled = !debug_enabled

@@ -352,21 +352,8 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		_play_hurt_animation()
 		EventBus.player_died.emit()
 		
-		# End run through StateManager with death result
-		var death_result = {
-			"result_type": "death",
-			"death_cause": "Killed by enemy",
-			"time_survived": Time.get_ticks_msec() / 1000.0,
-			"level_reached": PlayerProgression.get_level() if PlayerProgression else 1,
-			"enemies_killed": 0,
-			"damage_dealt": 0,
-			"damage_taken": get_max_health() - current_health,
-			"xp_gained": 0,
-			"arena_id": StringName("arena")
-		}
-		
-		await get_tree().create_timer(0.1).timeout
-		StateManager.end_run(death_result)
+		# Start death sequence with proper cleanup and delay
+		_handle_death_sequence()
 	else:
 		_play_hurt_animation()
 
@@ -448,3 +435,30 @@ func _get_attack_direction() -> String:
 			return "up"
 		else:
 			return "down"
+
+func _handle_death_sequence() -> void:
+	"""Handle the complete death sequence with proper cleanup and timing"""
+	Logger.info("Player: Starting death sequence", "player")
+	
+	# Prepare death result data
+	var death_result = {
+		"result_type": "death",
+		"death_cause": "Killed by enemy",
+		"time_survived": Time.get_ticks_msec() / 1000.0,
+		"level_reached": PlayerProgression.level if PlayerProgression else 1,
+		"enemies_killed": RunManager.stats.get("enemies_killed", 0),
+		"damage_dealt": int(RunManager.stats.get("total_damage_dealt", 0.0)),
+		"damage_taken": get_max_health() - current_health,
+		"xp_gained": 0,
+		"arena_id": StringName("arena")
+	}
+	
+	# Wait for systems to properly clean up (WaveDirector stops spawning, enemies cleared)
+	Logger.info("Player: Waiting for systems cleanup...", "player")
+	await get_tree().create_timer(0.5).timeout
+	
+	# Now transition to results screen
+	Logger.info("Player: Death sequence complete, transitioning to results", "player")
+	StateManager.end_run(death_result)
+
+# Death overlay method removed - no longer blocking result screen buttons

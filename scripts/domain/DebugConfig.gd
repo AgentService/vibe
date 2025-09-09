@@ -4,7 +4,6 @@ class_name DebugConfig
 ## Debug configuration resource for controlling game startup modes and settings.
 ## Used by Main.gd to determine which scene to load and how to configure the game.
 
-@export var debug_mode: bool = true
 @export var debug_panels_enabled: bool = false  # Default: debug panels disabled for performance
 @export_enum("menu", "arena", "hideout", "map", "map_test") var start_mode: String = "menu"
 @export var skip_main_menu: bool = false
@@ -13,14 +12,12 @@ class_name DebugConfig
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
 func _init(
-	p_debug_mode: bool = true,
 	p_debug_panels_enabled: bool = false,
 	p_start_mode: String = "arena", 
 	p_skip_main_menu: bool = false,
 	p_map_scene: String = "",
 	p_character_selection: String = "auto"
 ) -> void:
-	debug_mode = p_debug_mode
 	debug_panels_enabled = p_debug_panels_enabled
 	start_mode = p_start_mode
 	skip_main_menu = p_skip_main_menu

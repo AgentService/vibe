@@ -55,3 +55,4 @@ func _on_xp_collected(amount: int) -> void:
 	else:
 		# ERROR - PlayerProgression not available!
 		# PlayerProgression not available, XP collection ignored
+		pass

@@ -4,7 +4,6 @@
 
 [resource]
 script = ExtResource("1_xkk1l")
-debug_mode = false
 debug_panels_enabled = false
 start_mode = "arena"
 skip_main_menu = true
