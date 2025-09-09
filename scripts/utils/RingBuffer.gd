@@ -14,9 +14,9 @@ var _count: int = 0
 
 ## Setup the ring buffer with the given capacity.
 ## Capacity is rounded up to next power of two for efficient masking.
-func setup(capacity: int) -> void:
+func setup(initial_capacity: int) -> void:
 	# Use next power-of-two for simple masking
-	_capacity = max(2, _next_pow2(capacity))
+	_capacity = max(2, _next_pow2(initial_capacity))
 	_mask = _capacity - 1
 	_buf = []
 	_buf.resize(_capacity)
