@@ -52,3 +52,7 @@ dist/
 
 # Large sprite asset packages
 assets/sprites/craftpix-net-*/
+
+# Test baseline files - prevent CSV auto-import as translations
+tests/baselines/*.translation
+tests/baselines/*.import
