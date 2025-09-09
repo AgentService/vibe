@@ -59,7 +59,7 @@ func handle_projectile_attack(target_pos: Vector2) -> void:
 
 # Handle auto-attack if enabled
 func handle_auto_attack() -> void:
-	if not melee_system.auto_attack_enabled or not player:
+	if not melee_system or not melee_system.auto_attack_enabled or not player:
 		return
 	
 	var player_pos = player.global_position

@@ -131,7 +131,17 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
 			continue
 		
-		var entity_id = "enemy_" + str(enemy_pool_index)
+		# PHASE 4 OPTIMIZATION: Use WaveDirector's pre-generated entity IDs if available
+		var entity_id: String
+		var game_orchestrator = get_node_or_null("/root/GameOrchestrator")
+		if game_orchestrator:
+			var wd = game_orchestrator.get_wave_director()
+			if wd and wd.has_method("get_enemy_entity_id"):
+				entity_id = wd.get_enemy_entity_id(enemy_pool_index)
+			else:
+				entity_id = "enemy_" + str(enemy_pool_index)
+		else:
+			entity_id = "enemy_" + str(enemy_pool_index)
 		
 		# AUTO-REGISTER: Register enemy if not already registered
 		if not DamageService.get_entity(entity_id).has("id"):

@@ -19,9 +19,18 @@ var enemy_render_tier: EnemyRenderTier
 # Shared dummy texture to avoid null texture errors in headless/textureless runs
 var _shared_dummy_tex: ImageTexture
 
+# PHASE 4 OPTIMIZATION: Pre-allocated MultiMesh and QuadMesh pools for reuse
+# Target: 10-20MB reduction from MultiMesh instances, 5-10MB from QuadMesh objects
+var _multimesh_pool: Array[MultiMesh] = []
+var _quadmesh_pool: Dictionary = {}  # size_key -> QuadMesh
+var _pool_initialized: bool = false
+
 func _get_shared_dummy_texture() -> Texture2D:
 	if _shared_dummy_tex:
 		return _shared_dummy_tex
+	# In headless mode, return null to avoid texture errors
+	if DisplayServer.get_name() == "headless":
+		return null
 	var img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
 	img.set_pixel(0, 0, Color(1, 1, 1, 1))
 	_shared_dummy_tex = ImageTexture.create_from_image(img)
@@ -36,25 +45,97 @@ func setup(projectiles: MultiMeshInstance2D, swarm: MultiMeshInstance2D, regular
 	mm_enemies_boss = boss
 	enemy_render_tier = tier_helper
 	
+	# PHASE 4 OPTIMIZATION: Initialize pools before setup
+	_initialize_pools()
+	
 	_setup_projectile_multimesh()
 	_setup_tier_multimeshes()
 	
-	Logger.info("MultiMeshManager initialized", "enemies")
+	Logger.info("MultiMeshManager initialized with optimized pools", "enemies")
+
+# PHASE 4 OPTIMIZATION: Initialize MultiMesh and QuadMesh pools for reuse
+func _initialize_pools() -> void:
+	if _pool_initialized:
+		return
+	
+	# Pre-allocate MultiMesh instances for reuse (typically need 5-6 instances)
+	for i in range(10):  # Pre-allocate more than needed for safety
+		var multimesh = MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_2D
+		multimesh.use_colors = true
+		multimesh.instance_count = 0
+		_multimesh_pool.append(multimesh)
+	
+	# Pre-allocate common QuadMesh sizes for reuse
+	var common_sizes = [
+		Vector2(8, 8),    # Projectiles
+		Vector2(32, 32),  # Swarm, Regular enemies
+		Vector2(48, 48),  # Elite enemies
+		Vector2(56, 56)   # Boss enemies
+	]
+	
+	for size in common_sizes:
+		var size_key = "%dx%d" % [size.x, size.y]
+		var quad_mesh = QuadMesh.new()
+		quad_mesh.size = size
+		_quadmesh_pool[size_key] = quad_mesh
+	
+	_pool_initialized = true
+	Logger.debug("MultiMesh and QuadMesh pools initialized (%d MultiMesh, %d QuadMesh)" % [
+		_multimesh_pool.size(), _quadmesh_pool.size()
+	], "enemies")
+
+# PHASE 4 OPTIMIZATION: Get reusable MultiMesh from pool
+func _get_pooled_multimesh() -> MultiMesh:
+	if not _pool_initialized:
+		_initialize_pools()
+	
+	if _multimesh_pool.size() > 0:
+		var multimesh = _multimesh_pool.pop_back()
+		# Reset to clean state
+		multimesh.instance_count = 0
+		multimesh.mesh = null
+		return multimesh
+	else:
+		# Pool exhausted, create new one (fallback)
+		Logger.warn("MultiMesh pool exhausted, creating new instance", "enemies")
+		var multimesh = MultiMesh.new()
+		multimesh.transform_format = MultiMesh.TRANSFORM_2D
+		multimesh.use_colors = true
+		multimesh.instance_count = 0
+		return multimesh
+
+# PHASE 4 OPTIMIZATION: Get reusable QuadMesh from pool
+func _get_pooled_quadmesh(size: Vector2) -> QuadMesh:
+	if not _pool_initialized:
+		_initialize_pools()
+	
+	var size_key = "%dx%d" % [size.x, size.y]
+	if _quadmesh_pool.has(size_key):
+		return _quadmesh_pool[size_key]
+	else:
+		# Size not in pool, create and cache it
+		Logger.debug("Creating new QuadMesh for size %s" % size_key, "enemies")
+		var quad_mesh = QuadMesh.new()
+		quad_mesh.size = size
+		_quadmesh_pool[size_key] = quad_mesh
+		return quad_mesh
 
 func _setup_projectile_multimesh() -> void:
-	var multimesh := MultiMesh.new()
+	# PHASE 4 OPTIMIZATION: Use pooled MultiMesh and QuadMesh instead of creating new ones
+	var multimesh := _get_pooled_multimesh()
 	multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	multimesh.instance_count = 0
 
-	var quad_mesh := QuadMesh.new()
-	quad_mesh.size = Vector2(8, 8)
+	var quad_mesh := _get_pooled_quadmesh(Vector2(8, 8))
 	multimesh.mesh = quad_mesh
 
-	# Basic projectile texture for visual feedback
-	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 1.0, 0.0, 1.0))  # Yellow projectiles
-	var tex := ImageTexture.create_from_image(img)
-	mm_projectiles.texture = tex
+	# Basic projectile texture for visual feedback - skip in headless mode
+	if DisplayServer.get_name() != "headless":
+		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+		img.fill(Color(1.0, 1.0, 0.0, 1.0))  # Yellow projectiles
+		var tex := ImageTexture.create_from_image(img)
+		mm_projectiles.texture = tex
 	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
@@ -62,17 +143,20 @@ func _setup_projectile_multimesh() -> void:
 		mm_projectiles.texture = _get_shared_dummy_texture()
 
 func _setup_tier_multimeshes() -> void:
-	# Setup SWARM tier MultiMesh (small squares)
-	var swarm_multimesh := MultiMesh.new()
+	# Load knight sprite once - skip entirely in headless mode to avoid texture errors
+	var knight_texture: Texture2D = null
+	if DisplayServer.get_name() != "headless":
+		knight_texture = load("res://assets/sprites/knight.png") as Texture2D
+	
+	# Setup SWARM tier MultiMesh (small squares) - PHASE 4 OPTIMIZED
+	var swarm_multimesh := _get_pooled_multimesh()
 	swarm_multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	swarm_multimesh.use_colors = true
 	swarm_multimesh.instance_count = 0
-	var swarm_mesh := QuadMesh.new()
-	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
+	var swarm_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
 	
 	# Load knight sprite for swarm enemies (static frame)
-	var knight_texture := load("res://assets/sprites/knight.png") as Texture2D
 	if knight_texture:
 		# Extract first frame (32x32) from knight spritesheet
 		var knight_image := knight_texture.get_image()
@@ -85,13 +169,12 @@ func _setup_tier_multimeshes() -> void:
 		mm_enemies_swarm.texture = _get_shared_dummy_texture()
 	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
-	# Setup REGULAR tier MultiMesh (medium rectangles)
-	var regular_multimesh := MultiMesh.new()
+	# Setup REGULAR tier MultiMesh (medium rectangles) - PHASE 4 OPTIMIZED
+	var regular_multimesh := _get_pooled_multimesh()
 	regular_multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	regular_multimesh.use_colors = true
 	regular_multimesh.instance_count = 0
-	var regular_mesh := QuadMesh.new()
-	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
+	var regular_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
 	# Load knight sprite for regular enemies (static frame)
 	if knight_texture:
@@ -106,13 +189,12 @@ func _setup_tier_multimeshes() -> void:
 		mm_enemies_regular.texture = _get_shared_dummy_texture()
 	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
-	# Setup ELITE tier MultiMesh (large diamonds)
-	var elite_multimesh := MultiMesh.new()
+	# Setup ELITE tier MultiMesh (large diamonds) - PHASE 4 OPTIMIZED
+	var elite_multimesh := _get_pooled_multimesh()
 	elite_multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	elite_multimesh.use_colors = true
 	elite_multimesh.instance_count = 0
-	var elite_mesh := QuadMesh.new()
-	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
+	var elite_mesh := _get_pooled_quadmesh(Vector2(48, 48))  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
 	# Load knight sprite for elite enemies (static frame)
 	if knight_texture:
@@ -128,13 +210,12 @@ func _setup_tier_multimeshes() -> void:
 		mm_enemies_elite.texture = _get_shared_dummy_texture()
 	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
-	# Setup BOSS tier MultiMesh (large diamonds)
-	var boss_multimesh := MultiMesh.new()
+	# Setup BOSS tier MultiMesh (large diamonds) - PHASE 4 OPTIMIZED
+	var boss_multimesh := _get_pooled_multimesh()
 	boss_multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	boss_multimesh.use_colors = true
 	boss_multimesh.instance_count = 0
-	var boss_mesh := QuadMesh.new()
-	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
+	var boss_mesh := _get_pooled_quadmesh(Vector2(56, 56))  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
 	# Load knight sprite for boss enemies (static frame)
 	if knight_texture:

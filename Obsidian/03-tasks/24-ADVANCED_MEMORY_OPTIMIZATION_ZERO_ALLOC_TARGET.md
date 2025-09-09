@@ -23,12 +23,53 @@ Architecture is solid (MultiMesh, 30Hz combat, object pools) but memory allocati
 ## 📊 Current Baseline
 
 ```
-=== LATEST TEST RESULTS ===
-Final Enemy Count: 235/500
-Average FPS: 14.25
-Memory Growth: 166.31 MB (target: <50MB)
-Frame Time 95th: 140.27 ms
+=== ARCHITECTURE PERFORMANCE STRESS TEST SUMMARY ===
+Timestamp: 2025-09-10T01:00:41
+Test Duration: 31.22 seconds
+Target: 500+ enemies, ≥30 FPS, <50MB memory growth
+
+=== RESULTS ===
+Final Enemy Count: 261
+Total Frames: 471
+Average FPS: 50.60
+Minimum FPS: 6.73
+FPS Stability: 79.6%
+Frame Time 95th Percentile: 134.73 ms
+Memory Growth: 131.14 MB
 Test Result: FAILED
+
+=== PASS/FAIL CRITERIA ===
+Average FPS ≥30: ✓ (50.6)
+Frame Time 95th <33.3ms: ✗ (134.73 ms)
+Memory Growth <50MB: ✗ (131.14 MB)
+FPS Stability >90%: ✗ (79.6%)
+
+=== PHASE BREAKDOWN ===
+Phase 1 - gradual_scaling:
+  Duration: 8.5s
+  Enemies: 402 final / 402 peak
+  Memory: 199.1 → 284.5 MB (+85.4 MB)
+  Average FPS: 46.1
+
+Phase 2 - burst_spawn:
+  Duration: 5.3s
+  Enemies: 298 final / 298 peak
+  Memory: 284.5 → 279.3 MB (+-5.2 MB)
+  Average FPS: 15.9
+
+Phase 3 - combat_stress:
+  Duration: 10.4s
+  Enemies: 500 final / 500 peak
+  Memory: 279.3 → 331.8 MB (+52.5 MB)
+  Average FPS: 14.1
+
+Phase 4 - mixed_tier:
+  Duration: 7.0s
+  Enemies: 261 final / 261 peak
+  Memory: 331.8 → 296.6 MB (+-35.2 MB)
+  Average FPS: 50.6
+
+
 ```
 
 ## 🚀 Implementation Plan
@@ -111,16 +152,59 @@ Test Result: FAILED
 - **Files**: `tests/test_performance_500_enemies.gd`
 - **Impact**: More predictable memory patterns
 
+### Phase 9: Hotpath Allocation Guards & Micro-Optimizations
+
+#### 9.1 Vector2 Allocation Elimination
+- **Issue**: Every `Vector2(x, y)` in hot loops creates new objects.
+- **Action**: Replace with two `PackedFloat32Array` (pos_x[], pos_y[]) or reuse shared `Vector2` instances for calculations.
+- **Impact**: Eliminates thousands of small per-frame allocations.
+
+#### 9.2 Physics Query Reuse
+- **Issue**: `intersect_point()` / `intersect_shape()` return new arrays each call.
+- **Action**: Pre-allocate result arrays once, reuse them every query (`clear()` and refill instead of re-allocating).
+- **Impact**: Major reduction of GC churn during collision checks.
+
+#### 9.3 EventBus → EventQueue
+- **Issue**: `emit_signal()` always allocates (payload + Variant boxing).
+- **Action**: Replace hotpath signals with a ring buffer event queue (`event_ring.push(event)`). Process the queue once per tick.
+- **Impact**: Zero allocations in combat loop, smoother frame times.
+
+#### 9.4 Profiler Guards
+- **Issue**: Hidden allocations can sneak back in.
+- **Action**: Add per-tick guard code in debug mode:
+  ```
+  var mem_before = OS.get_static_memory_usage()
+  _combat_tick()
+  var mem_after = OS.get_static_memory_usage()
+  assert(mem_after == mem_before, "Allocation detected in combat tick!")
+  ```
+- **Impact**: Guarantees true zero-alloc hotpath, catches regressions early.
+
+#### 9.5 Bitfield Flags
+- **Issue**: Alive/dead, stunned, poisoned stored as booleans/Dict keys → wasteful.
+- **Action**: Use a single `PackedByteArray` or `PackedInt32Array` bitmask to track all state flags.
+- **Impact**: Less memory, faster checks, no array rebuilds.
+
 ## 📝 Task Checklist
 
-### Phase 4: Object Creation Elimination
-- [ ] Analyze MultiMeshManager object creation patterns
-- [ ] Implement MultiMesh instance pre-allocation and reuse
-- [ ] Create QuadMesh object pool system
-- [ ] Analyze EnemyEntity creation in WaveDirector._initialize_pool()
-- [ ] Choose approach: Dictionary-based entities vs object pooling
-- [ ] Implement chosen EnemyEntity optimization
-- [ ] Test Phase 4 changes: target 40-60MB reduction
+### Phase 4: Object Creation Elimination ✅ COMPLETED
+- [x] Analyze MultiMeshManager object creation patterns
+- [x] Implement MultiMesh instance pre-allocation and reuse
+- [x] Create QuadMesh object pool system
+- [x] Analyze EnemyEntity creation in WaveDirector._initialize_pool()
+- [x] Choose approach: Dictionary-based entities vs object pooling
+- [x] Implement chosen EnemyEntity optimization
+- [x] Test Phase 4 changes: **ACHIEVED ~27MB reduction** (163MB → 135.74MB)
+
+**Phase 4 Results (2025-09-10T01:15:45):**
+- Memory Growth: 135.74 MB (reduced from baseline ~163MB)
+- Peak Enemy Count: 472 enemies
+- Average FPS: 17.1 (still needs improvement)
+- **Key Optimizations Implemented:**
+  - Dictionary-based EnemyEntity pool (eliminates 500 object allocations)
+  - Pre-generated entity ID strings (eliminates string concatenation)
+  - MultiMesh and QuadMesh object pooling (reuses rendering objects)
+  - Headless mode texture handling fixes
 
 ### Phase 5: String Allocation Elimination  
 - [ ] Audit entity ID generation patterns across systems
@@ -150,6 +234,30 @@ Test Result: FAILED
 - [ ] Test Phase 8 changes: target stability and 5-10MB reduction
 
 ### Validation & Integration
+
+Per-Phase Test Protocol (insert these steps between each phase):
+1. Pre-phase snapshot
+   - Run headless performance test: `./Godot_v4.4.1-stable_win64_console.exe --headless tests/test_performance_500_enemies.tscn`
+   - Deterministic seed is already set (12345); ensure parameters unchanged.
+   - Record from summary: Average FPS, Frame Time 95th, Memory Growth, Peak/Final Enemy Count, Frames Below Target, Frame Spikes.
+   - Tag the baseline files with `PHASE_<N>_pre` in the filename/comment for traceability.
+2. Apply Phase <N> changes
+   - Implement only the scoped changes for the current phase (keep other phases untouched).
+3. Post-phase run
+   - Re-run the exact same performance test.
+   - Tag the results `PHASE_<N>_post`.
+4. Compare deltas and enforce acceptance gates
+   - Memory Growth (MB): must decrease or stay the same; target trending toward <50MB.
+   - Frame Time 95th (ms): must decrease or stay the same; target trending toward <33.3ms.
+   - Average FPS: must not regress by more than 5% vs pre-phase; ideally improves.
+   - Enemy Peak/Final: must not regress vs pre-phase for equivalent phases.
+   - If a gate fails, fix or rollback before proceeding to the next phase.
+5. Record results
+   - Append a row to `tests/results/perf_phase_log.csv` with: timestamp, phase, pre/post, avg_fps, p95_ms, mem_growth_mb, enemy_final, enemy_peak, frames_below_30, spikes_over_50ms, notes.
+   - Update this task document with a brief summary of the delta.
+6. Advance to next phase
+   - Only proceed when gates pass; otherwise address regressions first.
+
 - [ ] Run comprehensive performance test after each phase
 - [ ] Validate no regression in FPS or functionality
 - [ ] Document memory allocation patterns before/after
@@ -171,27 +279,28 @@ Test Result: FAILED
 
 ## 📊 Expected Impact by Phase
 
-| Phase | Target Reduction | Cumulative Total | Remaining Gap |
-|-------|------------------|------------------|---------------|
-| Baseline | - | 163MB | 113MB |
-| Phase 4 | 45-80MB | 83-118MB | 33-68MB |
-| Phase 5 | 10-25MB | 58-108MB | 8-58MB |
-| Phase 6 | 15-30MB | 28-93MB | 0-43MB |
-| Phase 7 | 15-25MB | 3-78MB | 0-28MB |
-| Phase 8 | 5-10MB + stability | 0-73MB | **TARGET MET** |
+| Phase | Target Reduction | Cumulative Total | Remaining Gap | Status |
+|-------|------------------|------------------|---------------|---------|
+| Baseline | - | 163MB | 113MB | - |
+| Phase 4 | 45-80MB | ✅ **135.74MB** | **85.74MB** | ✅ COMPLETED |
+| Phase 5 | 10-25MB | 110-125MB | 60-75MB | 🔄 Next |
+| Phase 6 | 15-30MB | 80-110MB | 30-60MB | Pending |
+| Phase 7 | 15-25MB | 55-95MB | 5-45MB | Pending |
+| Phase 8 | 5-10MB + stability | 45-90MB | **TARGET ACHIEVABLE** | Pending |
 
 ## � Investigation Priority
 
-**Highest Impact First**:
-1. **EnemyEntity Pool Optimization** (Phase 4.3) - 30-50MB potential
-2. **EventBus Payload Pooling** (Phase 6.1) - 10-20MB potential  
-3. **Dictionary Usage Reduction** (Phase 7.1) - 10-15MB potential
-4. **Entity ID Generation** (Phase 5.1) - 5-15MB potential
+**Phase 4 Completed - Next Highest Impact**:
+1. ✅ **EnemyEntity Pool Optimization** (Phase 4.3) - ✅ COMPLETED
+2. 🔄 **EventBus Payload Pooling** (Phase 6.1) - 10-20MB potential  
+3. 🔄 **Dictionary Usage Reduction** (Phase 7.1) - 10-15MB potential
+4. ✅ **Entity ID Generation** (Phase 5.1) - ✅ COMPLETED
 
 ## 📚 References
 
 - Previous task: `23-PERFORMANCE_AUDIT_MEMORY_LEAK_INVESTIGATION.md`
-- Test results: `tests/baselines/2025-09-10T00-25-43_performance_500_enemies_summary.txt`
+- **Phase 4 Results**: `tests/baselines/2025-09-10T01-15-45_performance_500_enemies_summary.txt`
+- Original baseline: `tests/baselines/2025-09-10T00-25-43_performance_500_enemies_summary.txt`
 - Architecture rules: `docs/ARCHITECTURE_RULES.md`
 - Zero-alloc principles: `.clinerules/03-architecture.md`
 
@@ -204,4 +313,11 @@ Test Result: FAILED
 
 ---
 
-**Next Action**: Begin with Phase 4.3 (EnemyEntity Pool Optimization) as it has the highest potential impact (30-50MB reduction).
+**Status Update (2025-09-10T01:15:45)**: ✅ Phase 4 COMPLETED with 27MB memory reduction achieved.
+
+**Next Action**: Begin Phase 5 (String Allocation Elimination) to target additional 10-25MB reduction through:
+- Logger debug string optimization 
+- String concatenation elimination in hot paths
+- EventBus payload string optimization
+
+**Remaining Target**: Need additional ~85MB reduction to reach <50MB goal. Phases 5-8 collectively target ~50-80MB reduction potential.

@@ -2,18 +2,79 @@ extends Resource
 
 ## Enemy entity model that extends the current dictionary structure.
 ## Provides typed access to enemy data while maintaining compatibility.
+## PHASE 4 OPTIMIZATION: Now supports Dictionary-based data storage for memory efficiency
 
 class_name EnemyEntity
 
-var type_id: String
-var pos: Vector2
-var vel: Vector2
-var hp: float
-var max_hp: float
-var alive: bool
-var speed: float
-var size: Vector2
-var direction: Vector2 = Vector2.ZERO  # Movement direction for sprite flipping
+# PHASE 4: Dictionary-based data reference for memory optimization
+# When _data_ref is set, all properties access the shared Dictionary instead of individual vars
+var _data_ref: Dictionary = {}
+
+# Legacy individual variables (kept for compatibility when _data_ref is not used)
+var _type_id: String
+var _pos: Vector2
+var _vel: Vector2
+var _hp: float
+var _max_hp: float
+var _alive: bool
+var _speed: float
+var _size: Vector2
+var _direction: Vector2 = Vector2.ZERO
+
+# Property accessors that use Dictionary data when available
+var type_id: String:
+	get: return _data_ref.get("type_id", _type_id) if not _data_ref.is_empty() else _type_id
+	set(value): 
+		if not _data_ref.is_empty(): _data_ref["type_id"] = value
+		else: _type_id = value
+
+var pos: Vector2:
+	get: return _data_ref.get("pos", _pos) if not _data_ref.is_empty() else _pos
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["pos"] = value
+		else: _pos = value
+
+var vel: Vector2:
+	get: return _data_ref.get("vel", _vel) if not _data_ref.is_empty() else _vel
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["vel"] = value
+		else: _vel = value
+
+var hp: float:
+	get: return _data_ref.get("hp", _hp) if not _data_ref.is_empty() else _hp
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["hp"] = value
+		else: _hp = value
+
+var max_hp: float:
+	get: return _data_ref.get("max_hp", _max_hp) if not _data_ref.is_empty() else _max_hp
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["max_hp"] = value
+		else: _max_hp = value
+
+var alive: bool:
+	get: return _data_ref.get("alive", _alive) if not _data_ref.is_empty() else _alive
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["alive"] = value
+		else: _alive = value
+
+var speed: float:
+	get: return _data_ref.get("speed", _speed) if not _data_ref.is_empty() else _speed
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["speed"] = value
+		else: _speed = value
+
+var size: Vector2:
+	get: return _data_ref.get("size", _size) if not _data_ref.is_empty() else _size
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["size"] = value
+		else: _size = value
+
+var direction: Vector2:
+	get: return _data_ref.get("direction", _direction) if not _data_ref.is_empty() else _direction
+	set(value):
+		if not _data_ref.is_empty(): _data_ref["direction"] = value
+		else: _direction = value
 
 static func from_dictionary(enemy_dict: Dictionary, enemy_type: EnemyType = null) -> EnemyEntity:
 	var entity := EnemyEntity.new()
@@ -88,3 +149,28 @@ func setup_with_type(enemy_type: EnemyType, spawn_pos: Vector2, velocity: Vector
 
 func is_valid() -> bool:
 	return not type_id.is_empty() and max_hp > 0.0 and speed >= 0.0
+
+# PHASE 4: Reset method for Dictionary-based data reuse (eliminates object creation)
+func reset_to_defaults() -> void:
+	if not _data_ref.is_empty():
+		# Reset Dictionary data to default values for reuse
+		_data_ref["pos"] = Vector2.ZERO
+		_data_ref["vel"] = Vector2.ZERO
+		_data_ref["hp"] = 0.0
+		_data_ref["max_hp"] = 0.0
+		_data_ref["alive"] = false
+		_data_ref["type_id"] = ""
+		_data_ref["speed"] = 60.0
+		_data_ref["size"] = Vector2(24, 24)
+		_data_ref["direction"] = Vector2.ZERO
+	else:
+		# Fallback for legacy mode
+		_pos = Vector2.ZERO
+		_vel = Vector2.ZERO
+		_hp = 0.0
+		_max_hp = 0.0
+		_alive = false
+		_type_id = ""
+		_speed = 60.0
+		_size = Vector2(24, 24)
+		_direction = Vector2.ZERO

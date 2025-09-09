@@ -498,7 +498,12 @@ func debug_register_all_existing_entities() -> void:
 		for i in range(wave_director.enemies.size()):
 			var enemy = wave_director.enemies[i]
 			if enemy.alive:
-				var entity_id = "enemy_" + str(i)
+				# PHASE 4 OPTIMIZATION: Use WaveDirector's pre-generated entity IDs if available
+				var entity_id: String
+				if wave_director.has_method("get_enemy_entity_id"):
+					entity_id = wave_director.get_enemy_entity_id(i)
+				else:
+					entity_id = "enemy_" + str(i)
 				if not _entities.has(entity_id):
 					var entity_data = {
 						"id": entity_id,
