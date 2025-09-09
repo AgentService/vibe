@@ -58,6 +58,11 @@ func _run_test_scenarios():
 	
 	await get_tree().process_frame
 	
+	# Test 5: A/B testing queue vs direct processing
+	_test_ab_queue_consistency()
+	
+	await get_tree().process_frame
+	
 	print("\n--- Test Results ---")
 	_print_results()
 
@@ -129,6 +134,102 @@ func _test_invalid_targets():
 	# Try to damage non-existent enemy (should handle gracefully)
 	DamageService.apply_damage("enemy_999", 50.0, "player", ["test", "invalid"])
 
+func _test_ab_queue_consistency():
+	print("\nTest 5: A/B Testing - Queue vs Direct Processing")
+	test_results["ab_test"] = {"identical_results": false, "queue_tests": 0, "direct_tests": 0}
+	
+	# Test identical damage sequences with queue OFF and ON
+	var test_sequence = [
+		{"damage": 15.0, "expected_hp": 85.0},
+		{"damage": 20.0, "expected_hp": 65.0},
+		{"damage": 10.0, "expected_hp": 55.0}
+	]
+	
+	# Test with queue DISABLED (direct processing)
+	print("  Testing with queue DISABLED...")
+	DamageService.set_queue_enabled(false)
+	var direct_results = await _run_damage_sequence("ab_direct", test_sequence)
+	
+	# Wait for any queued processing to complete
+	await get_tree().create_timer(0.2).timeout
+	
+	# Test with queue ENABLED (batched processing) 
+	print("  Testing with queue ENABLED...")
+	DamageService.set_queue_enabled(true)
+	var queue_results = await _run_damage_sequence("ab_queue", test_sequence)
+	
+	# Wait for queue processing (30Hz = ~33ms per tick)
+	await get_tree().create_timer(0.2).timeout
+	
+	# Compare results
+	var identical = _compare_damage_results(direct_results, queue_results)
+	test_results["ab_test"]["identical_results"] = identical
+	test_results["ab_test"]["queue_tests"] = queue_results.size()
+	test_results["ab_test"]["direct_tests"] = direct_results.size()
+	
+	if identical:
+		print("  ✓ Queue and direct processing produce IDENTICAL results")
+	else:
+		print("  ✗ Queue and direct processing produce DIFFERENT results!")
+		print("    Direct: %s" % str(direct_results))
+		print("    Queue:  %s" % str(queue_results))
+	
+	# Reset to default state
+	DamageService.set_queue_enabled(false)
+
+func _run_damage_sequence(entity_prefix: String, sequence: Array) -> Array:
+	var results = []
+	
+	# Register test entity
+	var entity_id = entity_prefix + "_test"
+	var entity_data = {
+		"id": entity_id,
+		"type": "enemy",
+		"hp": 100.0,
+		"max_hp": 100.0,
+		"alive": true,
+		"pos": Vector2.ZERO
+	}
+	DamageService.register_entity(entity_id, entity_data)
+	
+	# Apply damage sequence
+	for i in sequence.size():
+		var step = sequence[i]
+		var damage = step["damage"]
+		DamageService.apply_damage(entity_id, damage, "test_source", ["ab_test"])
+		
+		# Record result - wait a frame for queue processing
+		await get_tree().process_frame
+		
+		var entity = DamageService.get_entity(entity_id)
+		var actual_hp = entity.get("hp", -1.0)
+		results.append({
+			"step": i,
+			"damage": damage,
+			"expected_hp": step["expected_hp"],
+			"actual_hp": actual_hp
+		})
+	
+	return results
+
+func _compare_damage_results(direct: Array, queue: Array) -> bool:
+	if direct.size() != queue.size():
+		return false
+	
+	for i in direct.size():
+		var d = direct[i]
+		var q = queue[i]
+		
+		# Compare final HP values (allow small floating point tolerance)
+		if abs(d["actual_hp"] - q["actual_hp"]) > 0.001:
+			return false
+		
+		# Compare damage values
+		if abs(d["damage"] - q["damage"]) > 0.001:
+			return false
+	
+	return true
+
 func _on_damage_applied(payload):
 	print("  ✓ Damage Applied: %.1f to %s (crit: %s)" % [payload.final_damage, payload.target_id, payload.is_crit])
 	
@@ -181,6 +282,15 @@ func _print_results():
 	total += 1
 	passed += 1  # If we got here, no crash occurred
 	print("✓ Invalid Targets: PASS (no crash)")
+	
+	# Check A/B testing
+	total += 1
+	var ab_test = test_results.get("ab_test", {})
+	if ab_test.get("identical_results", false):
+		passed += 1
+		print("✓ A/B Testing: PASS (queue and direct produce identical results)")
+	else:
+		print("✗ A/B Testing: FAIL (queue and direct produce different results)")
 	
 	print("\nFinal Score: %d/%d tests passed" % [passed, total])
 	

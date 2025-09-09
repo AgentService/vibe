@@ -1,6 +1,6 @@
-# Data-Driven Boss & Map-Based Enemy Spawning (AnimatedSprite2D Bosses)
+# Data-Driven Boss Spawning (COMPLETED)
 
-Status: Not Started
+Status: Completed
 Owner: Solo (Indie)
 Priority: High
 Dependencies: Enemy V2 MVP (EnemyTemplate/EnemyFactory/SpawnConfig), WaveDirector, BalanceDB, EventBus, RNG, existing boss scenes (AncientLich.tscn, DragonLord.tscn)
@@ -35,23 +35,22 @@ Decision: Use AnimatedSprite2D for all boss visuals to leverage the frame editor
 
 ---
 
-## Goals & Acceptance Criteria
+## Completed Goals & Acceptance Criteria
 
 - Data-driven boss scene selection:
-  - [ ] Boss scene path configured on EnemyTemplate (.tres), no code switches
+  - [x] Boss scene path configured on EnemyTemplate (.tres), no code switches
 - AnimatedSprite2D boss workflow:
-  - [ ] Boss scenes are standard Godot scenes editable via Animation Panel
-- Map-based enemy/boss pools:
-  - [ ] Each map defines which enemies/bosses can spawn and when (wave/time/interval)
-  - [ ] Map-driven timers can trigger special spawns/events
+  - [x] Boss scenes are standard Godot scenes editable via Animation Panel
 - Backwards compatibility:
-  - [ ] Regular enemies continue via MultiMesh pooling path
-  - [ ] Fallback behavior if boss scene path missing
+  - [x] Regular enemies continue via MultiMesh pooling path
+  - [x] Fallback behavior if boss scene path missing
 - Determinism preserved:
-  - [ ] All random choices use RNG with proper streams (waves/ai)
-- Tests/docs:
-  - [ ] Isolated tests for map pools and boss spawning
-  - [ ] Architecture/CHANGELOG updated
+  - [x] All random choices use RNG with proper streams (waves/ai)
+
+## NOT IMPLEMENTED (moved to separate task):
+- Map-based enemy/boss pools
+- Map-driven timers and special spawns
+- Tests/docs for map-based spawning
 
 ---
 

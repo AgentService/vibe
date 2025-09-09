@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://bhj7x4frfengd"]
+[gd_scene load_steps=5 format=3 uid="uid://cfbuui3krgxqg"]
 
 [ext_resource type="PackedScene" uid="uid://c2jp4u6jcugam" path="res://scenes/arena/Player.tscn" id="1_5whuv"]
 [ext_resource type="Script" path="res://test_hurt_animations_scene.gd" id="1_uu3qj"]

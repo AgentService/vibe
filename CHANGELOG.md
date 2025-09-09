@@ -4,6 +4,18 @@
 
 ## [Current Week - In Progress]
 
+### Added
+- **Zero-Allocation Damage Queue System**: Implemented batched damage processing with preallocated buffers for performance optimization
+  - **RingBuffer Utility**: Lock-free circular buffer using power-of-two masking for efficient wraparound
+  - **ObjectPool Utility**: Generic object pool for reusing Dictionary payloads and Array instances
+  - **PayloadReset Utility**: Shape-preserving cleanup functions to maintain zero-allocation behavior
+  - **30Hz Batch Processing**: Timer-based queue processor aligned with combat tick rate 
+  - **Drop-Oldest Overflow Policy**: Graceful queue overflow handling with metrics tracking
+  - **Feature Flag Integration**: Runtime toggle via BalanceDB configuration and console commands
+  - **Debug Console Commands**: damage_queue_toggle, damage_queue_stats, damage_queue_reset, damage_queue_enable/disable
+  - **A/B Testing Framework**: Validates identical behavior between queue and direct processing paths
+  - **Comprehensive Testing**: Unit tests for queue components and integration tests for damage consistency
+
 ### Fixed
 - **Damage System Single Entry Point**: Consolidated damage requests to use DamageService.apply_damage() exclusively
   - **Complete Signal Removal**: Removed EventBus.damage_requested signal and all backwards compatibility adapters
