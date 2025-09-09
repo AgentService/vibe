@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_xkk1l")
-debug_mode = true
+debug_panels_enabled = true
 start_mode = "arena"
 skip_main_menu = true
 map_scene = "res://scenes/arena/Arena.tscn"

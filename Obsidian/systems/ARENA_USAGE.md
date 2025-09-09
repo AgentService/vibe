@@ -123,6 +123,132 @@ arena_system.arena_loaded.connect(_on_arena_loaded)
 EventBus.loot_generated.emit(chest_id, "chest", loot_data)
 ```
 
+## 🏟️ Adding New Arenas (BaseArena System)
+
+The new **BaseArena** architecture provides type-safe, future-proof arena creation:
+
+### Creating a New Arena Scene
+
+1. **Create the scene file**: `scenes/arena/CityArena.tscn`
+2. **Create the script**: `scenes/arena/CityArena.gd`
+3. **Extend BaseArena**:
+
+```gdscript
+extends BaseArena
+
+## City-themed arena with urban combat environments
+## Supports rooftop battles and destructible environment
+
+# Override BaseArena properties for this arena type
+func _ready() -> void:
+    arena_id = "city_arena"
+    arena_name = "Urban Battleground"
+    spawn_radius = 450.0  # Larger for urban sprawl
+    arena_bounds = 600.0
+    
+    # Call parent _ready() for BaseArena initialization
+    super._ready()
+    
+    # City-specific initialization
+    _setup_urban_environment()
+    _configure_destructible_buildings()
+
+func _setup_urban_environment() -> void:
+    # Custom urban setup logic
+    Logger.info("Setting up urban environment", "arena")
+    
+func get_arena_center() -> Vector2:
+    # Override for custom center point
+    return Vector2(50, -25)  # Offset for urban layout
+```
+
+### Scene Structure Requirements
+
+Your new arena scene must include:
+- **ArenaRoot** node (Node2D) - for enemy/boss spawning
+- **MultiMeshInstance2D nodes** for rendering (enemies, projectiles)
+- **Ground layers** (TileMapLayer nodes)
+
+```
+CityArena (extends BaseArena)
+├── MM_Projectiles (MultiMeshInstance2D)
+├── MM_Enemies_Swarm (MultiMeshInstance2D)
+├── MM_Enemies_Regular (MultiMeshInstance2D)
+├── MM_Enemies_Elite (MultiMeshInstance2D)  
+├── MM_Enemies_Boss (MultiMeshInstance2D)
+├── Ground (TileMapLayer)
+├── Buildings (TileMapLayer)
+├── ArenaRoot (Node2D)
+└── CitySpawnPoint (Marker2D)
+```
+
+### Arena-Specific Features
+
+```gdscript
+extends BaseArena
+
+# Custom arena properties
+@export var building_destruction_enabled: bool = true
+@export var rooftop_access: bool = true
+@export var weather_effects: bool = false
+
+func _ready() -> void:
+    arena_id = "city_arena"
+    arena_name = "Urban Battleground"
+    super._ready()
+    
+    if building_destruction_enabled:
+        _setup_destructible_buildings()
+
+func _setup_destructible_buildings() -> void:
+    # Connect to damage events for building destruction
+    EventBus.area_damage_dealt.connect(_on_building_damage)
+
+func _on_building_damage(position: Vector2, damage: float) -> void:
+    # Handle building destruction logic
+    pass
+```
+
+### Automatic System Integration
+
+Once you extend BaseArena, your arena automatically works with:
+- ✅ **WaveDirector** - Enemy spawning detection
+- ✅ **Player death handling** - Pause systems on death  
+- ✅ **Scene transitions** - StateManager compatibility
+- ✅ **Dynamic loading** - Works with Main.tscn wrapper
+- ✅ **Future arenas** - Arena2, DesertArena, SpaceStation, etc.
+
+### Loading Your New Arena
+
+```gdscript
+# In scene transition or debug code
+SceneTransitionManager.load_scene("res://scenes/arena/CityArena.tscn")
+
+# Or via StateManager
+StateManager.transition_to_arena("city_arena")
+```
+
+### Arena Configuration Data
+
+Create matching JSON configs:
+```json
+// /data/arena/layouts/city_arena.json
+{
+  "id": "city_arena",
+  "name": "Urban Battleground", 
+  "spawn_radius": 450,
+  "arena_bounds": 600,
+  "theme": "urban",
+  "special_features": ["building_destruction", "rooftop_access"]
+}
+```
+
+### Testing Your Arena
+
+1. **Direct testing**: Open your `.tscn` file and play scene
+2. **Main game testing**: Launch with F5, enemies will spawn automatically
+3. **Debug verification**: Check logs for "BaseArena initialized: Urban Battleground (city_arena)"
+
 ## 🎯 Vibe Coding Principles Applied
 
 1. **Data-Driven**: All configuration in JSON, hot-reloadable
@@ -131,6 +257,7 @@ EventBus.loot_generated.emit(chest_id, "chest", loot_data)
 4. **Mechanics-First**: Collision working before visuals perfected
 5. **Fallback Systems**: Procedural generation when assets missing
 6. **Expandable Architecture**: Easy addition of new systems/content
+7. **Type-Safe Arenas**: BaseArena inheritance for robust arena creation
 
 ## 🔍 Debugging Tools
 

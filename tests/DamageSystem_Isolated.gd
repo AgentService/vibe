@@ -54,8 +54,8 @@ func _setup_systems():
 	damage_system = DamageSystem.new()
 	add_child(damage_system)
 	
-	# Set up system references using the proper method
-	damage_system.set_references(null, wave_director)  # AbilitySystem=null, WaveDirector=wave_director
+	# Set up system references (Phase 1: AbilitySystem removed)
+	damage_system.set_references(wave_director)  # WaveDirector only after Phase 1 removal
 	
 	# Connect signals
 	if wave_director.has_signal("enemies_updated"):

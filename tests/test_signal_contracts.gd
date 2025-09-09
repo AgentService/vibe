@@ -36,13 +36,14 @@ static func run_test() -> void:
 static func _run_minimal_simulation(tracker: SignalTracker) -> void:
 	# Create minimal systems for signal generation
 	var run_manager: Node = load("res://autoload/RunManager.gd").new()
-	var ability_system: Node = load("res://scripts/systems/AbilitySystem.gd").new()
+	# TODO: Phase 2 - Replace with AbilityModule autoload testing
+	# var ability_system: Node = load("res://scripts/systems/AbilitySystem.gd").new()
 	var wave_director: Node = load("res://scripts/systems/WaveDirector.gd").new()
 	var damage_system: Node = load("res://scripts/systems/DamageSystem.gd").new()
 	var player_state: Node = load("res://autoload/PlayerState.gd").new()
 	
-	# Set up basic dependencies
-	damage_system.set_references(ability_system, wave_director)
+	# Set up basic dependencies (AbilitySystem removed in Phase 1)
+	damage_system.set_references(wave_director)
 	player_state.position = Vector2(400, 300)
 	
 	# Simulate a few combat steps

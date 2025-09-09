@@ -35,13 +35,14 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 		arena_ref.ui_manager.setup_card_system(arena_ref.card_system)
 		Logger.debug("Card system connected to ArenaUIManager", "cards")
 
-func set_ability_system(injected_ability_system: AbilitySystem) -> void:
-	arena_ref.ability_system = injected_ability_system
-	_injected["AbilitySystem"] = injected_ability_system
-	Logger.info("AbilitySystem injected into Arena", "systems")
-	
-	injected_ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	injected_ability_system.projectiles_updated.connect(arena_ref.multimesh_manager.update_projectiles)
+# TODO: Phase 2 - Remove this function entirely when AbilityModule is autoload
+# func set_ability_system(injected_ability_system: AbilitySystem) -> void:
+#	arena_ref.ability_system = injected_ability_system
+#	_injected["AbilitySystem"] = injected_ability_system
+#	Logger.info("AbilitySystem injected into Arena", "systems")
+#	
+#	injected_ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
+#	injected_ability_system.projectiles_updated.connect(arena_ref.multimesh_manager.update_projectiles)
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_ref.arena_system = injected_arena_system

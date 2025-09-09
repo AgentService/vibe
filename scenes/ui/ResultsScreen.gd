@@ -101,14 +101,14 @@ func display_run_results(result: Dictionary) -> void:
 	stats_text += "Enemies Defeated: %d\n" % enemies_killed
 	
 	var damage_dealt = result.get("damage_dealt", 0)
-	stats_text += "Total Damage: %,d\n" % damage_dealt
+	stats_text += "Total Damage: %d\n" % damage_dealt
 	
 	var damage_taken = result.get("damage_taken", 0)
-	stats_text += "Damage Taken: %,d\n" % damage_taken
+	stats_text += "Damage Taken: %d\n" % damage_taken
 	
 	# XP and progression
 	var xp_gained = result.get("xp_gained", 0)
-	stats_text += "XP Gained: %,d\n" % xp_gained
+	stats_text += "XP Gained: %d\n" % xp_gained
 	
 	# Special achievements or notes
 	var death_cause = result.get("death_cause", "")

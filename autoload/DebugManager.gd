@@ -11,10 +11,11 @@ signal entity_selected(entity_id: String)
 signal entity_inspected(entity_data: Dictionary)
 signal spawning_requested(enemy_type: String, position: Vector2, count: int)
 
-var debug_enabled: bool = true
+var debug_enabled: bool = false  # Start disabled, check config in _ready()
 var selected_entity_id: String = ""
 var debug_ui: Control
 var boss_scaling: BossScaling
+
 
 # System references for debug operations
 var wave_director: WaveDirector
@@ -34,14 +35,34 @@ func _ready() -> void:
 	ability_trigger = DebugAbilityTrigger.new()
 	add_child(ability_trigger)
 	
-	Logger.info("DebugManager initialized with debug mode enabled by default", "debug")
+	# Check debug configuration to determine initial state
+	_check_debug_config()
 	
-	# Since debug is enabled by default, we need to call _enter_debug_mode during initialization
-	# Wait a frame to ensure all systems are ready
-	call_deferred("_initialize_debug_mode")
+	# Initialize debug mode if enabled by configuration
+	if debug_enabled:
+		# Wait a frame to ensure all systems are ready
+		call_deferred("_initialize_debug_mode")
+		Logger.info("DebugManager initialized with debug mode enabled", "debug")
+	else:
+		Logger.info("DebugManager initialized with debug mode disabled", "debug")
 	
 	# Register console commands
 	call_deferred("_register_console_commands")
+
+func _check_debug_config() -> void:
+	"""Check debug configuration to determine if F12 debug panels should be enabled by default."""
+	var config_path: String = "res://config/debug.tres"
+	
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config:
+			# F12 debug panel functionality is controlled by debug_panels_enabled only
+			# debug_mode is separate and only controls menu skipping, arena direct start etc
+			debug_enabled = debug_config.debug_panels_enabled
+		else:
+			debug_enabled = false
+	else:
+		debug_enabled = false
 
 func _load_boss_scaling() -> void:
 	"""Load boss scaling configuration from data-driven resource."""
@@ -67,10 +88,19 @@ func _input(event: InputEvent) -> void:
 		
 	var key_event := event as InputEventKey
 	
-	# F12: Toggle debug mode
+	# F12: Toggle debug mode (only if debug panels were enabled at startup)
 	if key_event.keycode == KEY_F12:
-		toggle_debug_mode()
-		get_viewport().set_input_as_handled()
+		# Check if debug panels are enabled in config before allowing toggle
+		var config_path: String = "res://config/debug.tres"
+		if ResourceLoader.exists(config_path):
+			var debug_config: DebugConfig = load(config_path) as DebugConfig
+			if debug_config and debug_config.debug_panels_enabled:
+				toggle_debug_mode()
+				get_viewport().set_input_as_handled()
+			else:
+				Logger.debug("F12 ignored - debug panels disabled in config", "debug")
+		else:
+			Logger.debug("F12 ignored - no debug config found", "debug")
 
 func toggle_debug_mode() -> void:
 	debug_enabled = !debug_enabled
@@ -221,6 +251,7 @@ func get_selected_entity() -> String:
 
 func is_debug_mode_active() -> bool:
 	return debug_enabled
+
 
 # Enemy spawning methods
 func spawn_enemy_at_position(enemy_type: String, position: Vector2, count: int = 1) -> void:

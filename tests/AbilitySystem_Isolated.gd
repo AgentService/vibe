@@ -1,7 +1,9 @@
 extends Node2D
 
-## Isolated ability system test - projectile spawning and management.
-## Tests projectile pooling, MultiMesh rendering, and lifecycle management.
+## TODO: Phase 2 - Replace with AbilityModule_Isolated test
+## This file is disabled during Phase 1 removal - will be replaced with AbilityModule equivalent
+## Original: Isolated ability system test - projectile spawning and management.
+## Original: Tests projectile pooling, MultiMesh rendering, and lifecycle management.
 
 @onready var player: CharacterBody2D = $Player
 @onready var projectile_multimesh: MultiMeshInstance2D = $ProjectileMultiMesh
@@ -18,12 +20,17 @@ var fire_rate: float = 5.0  # projectiles per second
 var fire_timer: float = 0.0
 
 func _ready():
-	print("=== AbilitySystem_Isolated Test Started ===")
-	print("Controls: WASD to move, Click to fire, Space to toggle auto-fire")
+	print("=== AbilitySystem_Isolated Test DISABLED (Phase 1) ===")
+	print("This test is temporarily disabled during AbilitySystem removal")
+	print("Will be replaced with AbilityModule_Isolated in Phase 2")
 	
-	_setup_player()
-	_setup_ability_system()
-	_setup_projectile_multimesh()
+	# Disable test functionality during Phase 1
+	# _setup_player()
+	# _setup_ability_system()
+	# _setup_projectile_multimesh()
+	
+	# Show message and quit
+	get_tree().create_timer(2.0).timeout.connect(func(): get_tree().quit())
 
 func _setup_player():
 	var player_sprite = player.get_node("Sprite2D")

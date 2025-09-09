@@ -1,11 +1,29 @@
 # Map-Based Enemy Spawning System
 
-Status: Not Started
+Status: **SUPERSEDED** by 21-SPAWN_SYSTEM_V2_CONSOLIDATED.md
 Owner: Solo (Indie)
-Priority: High
+Priority: ~~High~~ **SUPERSEDED**
 Dependencies: Data-Driven Boss Spawning (completed), EnemyFactory V2, WaveDirector, EventBus, RNG
 Risk: Medium (new resource system and spawning logic)
 Complexity: 7/10
+
+---
+
+## ⚠️ SUPERSEDED NOTICE
+
+This task has been **merged and superseded** by:
+- **21-SPAWN_SYSTEM_V2_CONSOLIDATED.md** - Consolidated spawn system that combines this task with 02-6-DATA_DRIVEN_SPAWN_SYSTEM
+- **19-MAP_ARENA_SYSTEM_FOUNDATION_V1.md** - Provides the foundational MapDef/MapInstance/SpawnProfile resources
+
+**Reason for supersession:** To avoid duplication and create a unified spawn system that builds on the new Map/Arena Foundation.
+
+**Key elements preserved in consolidated task:**
+- Map-based enemy pools and spawn filtering
+- WaveDirector integration with map configs
+- Deterministic RNG usage
+- Designer-friendly .tres workflow
+
+---
 
 ---
 

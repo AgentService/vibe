@@ -34,15 +34,26 @@ func setup() -> void:
 
 	# Note: Pause menu is now handled by PauseUI autoload
 
-	# Instantiate debug panel
-	debug_panel = DEBUG_PANEL_SCENE.instantiate()
-	ui_layer.add_child(debug_panel)
-	debug_panel.visible = false  # Hidden by default
-	Logger.info("ArenaUIManager: DebugPanel instantiated", "ui")
+	# Check debug configuration before instantiating debug panel
+	var config_path: String = "res://config/debug.tres"
+	var should_create_debug_panel: bool = true
+	
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config and not debug_config.debug_panels_enabled:
+			should_create_debug_panel = false
+			Logger.info("ArenaUIManager: DebugPanel disabled via debug.tres configuration", "ui")
+	
+	if should_create_debug_panel:
+		# Instantiate debug panel
+		debug_panel = DEBUG_PANEL_SCENE.instantiate()
+		ui_layer.add_child(debug_panel)
+		debug_panel.visible = false  # Hidden by default
+		Logger.info("ArenaUIManager: DebugPanel instantiated", "ui")
 
-	# Register debug panel with DebugManager
-	if DebugManager:
-		DebugManager.register_debug_ui(debug_panel)
+		# Register debug panel with DebugManager
+		if DebugManager:
+			DebugManager.register_debug_ui(debug_panel)
 
 	# Bubble card selection events through manager
 	card_selection.card_selected.connect(func(card): card_selected.emit(card))

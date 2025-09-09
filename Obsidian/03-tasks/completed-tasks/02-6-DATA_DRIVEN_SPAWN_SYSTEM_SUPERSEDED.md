@@ -1,11 +1,31 @@
 # 6-DATA_DRIVEN_SPAWN_SYSTEM
 
-**Status:** Ready to Start  
+**Status:** **SUPERSEDED** by 21-SPAWN_SYSTEM_V2_CONSOLIDATED.md
 **Owner:** Solo (Indie)  
-**Priority:** Medium  
+**Priority:** ~~Medium~~ **SUPERSEDED**  
 **Dependencies:** Enemy V2 MVP Complete (see completed-tasks), BalanceDB, ArenaConfig, EventBus  
 **Risk:** Low (additive enhancements to working system)  
-**Complexity:** 6/10 (Medium - extends existing V2 foundation)  
+**Complexity:** 6/10 (Medium - extends existing V2 foundation)
+
+---
+
+## ⚠️ SUPERSEDED NOTICE
+
+This task has been **merged and superseded** by:
+- **21-SPAWN_SYSTEM_V2_CONSOLIDATED.md** - Consolidated spawn system that combines this task with 01-5-5_MAP_BASED_ENEMY_SPAWNING
+- **19-MAP_ARENA_SYSTEM_FOUNDATION_V1.md** - Provides the foundational MapDef/MapInstance/SpawnProfile resources
+- **17-RUN_CLOCK_AND_PHASES_SERVICE.md** - Provides centralized time/phase tracking
+
+**Reason for supersession:** To avoid duplication and create a unified spawn system that builds on the new Map/Arena Foundation and RunClock services.
+
+**Key elements preserved in consolidated task:**
+- SpawnDirector for phase-based scheduling
+- BaseBoss framework with telegraph system
+- Dynamic scaling (time + tier-based)
+- Zone-based spawning and boss events
+- Arena-specific spawn configuration
+
+---
 
 ---
 

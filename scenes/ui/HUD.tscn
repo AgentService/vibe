@@ -1,14 +1,16 @@
 [gd_scene load_steps=4 format=3 uid="uid://bhj1oq2rnkdlc"]
 
-[ext_resource type="Script" path="res://scenes/ui/HUD.gd" id="1_7k4pc"]
-[ext_resource type="Script" path="res://scenes/ui/EnemyRadar.gd" id="2_radar"]
-[ext_resource type="Script" path="res://scenes/ui/KeybindingsDisplay.gd" id="3_keybindings"]
+[ext_resource type="Script" uid="uid://dkpv8l7rsjk2n" path="res://scenes/ui/HUD.gd" id="1_7k4pc"]
+[ext_resource type="Script" uid="uid://bq0eo3t8lmiuu" path="res://scenes/ui/EnemyRadar.gd" id="2_radar"]
+[ext_resource type="Script" uid="uid://b4fessnjbfgup" path="res://scenes/ui/KeybindingsDisplay.gd" id="3_keybindings"]
 
 [node name="HUD" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_7k4pc")
 
 [node name="FPSLabel" type="Label" parent="."]
@@ -20,6 +22,7 @@ offset_left = 10.0
 offset_top = -80.0
 offset_right = 100.0
 offset_bottom = -60.0
+grow_vertical = 0
 text = "FPS: 60"
 
 [node name="HealthBar" type="ProgressBar" parent="."]
@@ -33,7 +36,8 @@ offset_left = -150.0
 offset_top = -40.0
 offset_right = 150.0
 offset_bottom = -15.0
-max_value = 100.0
+grow_horizontal = 2
+grow_vertical = 0
 value = 100.0
 show_percentage = false
 
@@ -48,6 +52,8 @@ offset_left = -50.0
 offset_top = -65.0
 offset_right = 50.0
 offset_bottom = -45.0
+grow_horizontal = 2
+grow_vertical = 0
 text = "Level: 1"
 horizontal_alignment = 1
 
@@ -60,6 +66,7 @@ offset_left = 10.0
 offset_top = -40.0
 offset_right = 200.0
 offset_bottom = -10.0
+grow_vertical = 0
 
 [node name="XPBar" type="ProgressBar" parent="VBoxContainer"]
 layout_mode = 2
@@ -75,8 +82,8 @@ offset_left = -170.0
 offset_top = 20.0
 offset_right = -20.0
 offset_bottom = 170.0
+grow_horizontal = 0
 script = ExtResource("2_radar")
-
 
 [node name="KeybindingsDisplay" type="Panel" parent="."]
 layout_mode = 1
@@ -87,6 +94,7 @@ offset_left = -170.0
 offset_top = 270.0
 offset_right = -20.0
 offset_bottom = 410.0
+grow_horizontal = 0
 script = ExtResource("3_keybindings")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="KeybindingsDisplay"]
@@ -98,38 +106,5 @@ offset_left = 8.0
 offset_top = 8.0
 offset_right = -8.0
 offset_bottom = -8.0
-
-[node name="DeathScreen" type="Control" parent="."]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="Background" type="ColorRect" parent="DeathScreen"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-color = Color(0, 0, 0, 0.7)
-
-[node name="CenterContainer" type="CenterContainer" parent="DeathScreen"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-
-[node name="VBoxContainer" type="VBoxContainer" parent="DeathScreen/CenterContainer"]
-layout_mode = 2
-
-[node name="DeathLabel" type="Label" parent="DeathScreen/CenterContainer/VBoxContainer"]
-layout_mode = 2
-text = "YOU DIED"
-horizontal_alignment = 1
-
-[node name="RestartLabel" type="Label" parent="DeathScreen/CenterContainer/VBoxContainer"]
-layout_mode = 2
-text = "Press F5 to restart"
-horizontal_alignment = 1
-
-
+grow_horizontal = 2
+grow_vertical = 2

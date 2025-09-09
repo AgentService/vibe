@@ -9,6 +9,15 @@ var ai_paused: bool = false
 var collision_shapes_visible: bool = false
 
 func _ready() -> void:
+	# Check debug configuration to see if panels should be disabled
+	var config_path: String = "res://config/debug.tres"
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config and not debug_config.debug_panels_enabled:
+			Logger.info("DebugSystemControls disabled via debug.tres configuration", "debug")
+			queue_free()  # Remove the entire node
+			return
+	
 	# Try to find WaveDirector reference
 	wave_director = get_node_or_null("/root/WaveDirector")
 	if not wave_director:

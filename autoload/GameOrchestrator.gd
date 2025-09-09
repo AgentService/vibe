@@ -7,7 +7,8 @@ extends Node
 const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
 const WaveDirector_Type = preload("res://scripts/systems/WaveDirector.gd")
 const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
-const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
+# TODO: Phase 2 - Remove when replaced with AbilityModule autoload
+# const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
 const DamageSystem_Type = preload("res://scripts/systems/DamageSystem.gd")
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
@@ -26,7 +27,8 @@ var initialization_phase: String = "idle"
 var card_system: CardSystem_Type
 var wave_director: WaveDirector_Type
 var radar_system: RadarSystem_Type
-var ability_system: AbilitySystem_Type
+# TODO: Phase 2 - Remove ability_system when replaced with AbilityModule autoload
+# var ability_system: AbilitySystem_Type
 var melee_system: MeleeSystem_Type
 var damage_system: DamageSystem_Type
 var arena_system: ArenaSystem
@@ -96,11 +98,12 @@ func _initialize_systems() -> void:
 	
 	# Phase C: Non-dependent systems
 	
+	# TODO: Phase 2 - Remove AbilitySystem initialization when replaced with AbilityModule autoload
 	# 4. AbilitySystem (no deps)
-	ability_system = AbilitySystem_Type.new()
-	add_child(ability_system)
-	systems["AbilitySystem"] = ability_system
-	Logger.info("AbilitySystem initialized by GameOrchestrator", "orchestrator")
+	# ability_system = AbilitySystem_Type.new()
+	# add_child(ability_system)
+	# systems["AbilitySystem"] = ability_system
+	# Logger.info("AbilitySystem initialized by GameOrchestrator", "orchestrator")
 	
 	# 7. ArenaSystem (no deps)
 	arena_system = ArenaSystem.new()
@@ -152,13 +155,13 @@ func _initialize_systems() -> void:
 	else:
 		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
 	
-	# 6. DamageSystem (needs AbilitySystem, WaveDirector refs)
+	# 6. DamageSystem (needs WaveDirector ref only after Phase 1 removal)
 	damage_system = DamageSystem_Type.new()
 	add_child(damage_system)
 	systems["DamageSystem"] = damage_system
-	if damage_system.has_method("set_references") and ability_system and wave_director:
-		damage_system.set_references(ability_system, wave_director)
-		Logger.info("DamageSystem initialized with AbilitySystem and WaveDirector dependencies", "orchestrator")
+	if damage_system.has_method("set_references") and wave_director:
+		damage_system.set_references(wave_director)
+		Logger.info("DamageSystem initialized with WaveDirector dependency (AbilitySystem removed)", "orchestrator")
 	else:
 		Logger.warn("DamageSystem dependency injection failed", "orchestrator")
 
@@ -173,8 +176,9 @@ func get_wave_director() -> WaveDirector_Type:
 func get_radar_system() -> RadarSystem_Type:
 	return radar_system
 
-func get_ability_system() -> AbilitySystem_Type:
-	return ability_system
+# TODO: Phase 2 - Remove when AbilityModule becomes autoload
+# func get_ability_system() -> AbilitySystem_Type:
+#	return ability_system
 
 func get_melee_system() -> MeleeSystem_Type:
 	return melee_system
@@ -205,9 +209,10 @@ func inject_systems_to_arena(arena) -> void:
 	
 	# Phase C: Inject non-dependent systems
 	
-	if ability_system and arena.has_method("set_ability_system"):
-		arena.set_ability_system(ability_system)
-		Logger.debug("AbilitySystem injected to Arena", "orchestrator")
+	# TODO: Phase 2 - Remove AbilitySystem injection when replaced with AbilityModule autoload
+	# if ability_system and arena.has_method("set_ability_system"):
+	#	arena.set_ability_system(ability_system)
+	#	Logger.debug("AbilitySystem injected to Arena", "orchestrator")
 	
 	if arena_system and arena.has_method("set_arena_system"):
 		arena.set_arena_system(arena_system)

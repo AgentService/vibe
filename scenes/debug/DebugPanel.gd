@@ -4,27 +4,32 @@ extends Control
 ## Handles user interactions with the debug interface
 ## Communicates with DebugManager for actual debug operations
 
-# Proper Godot UI structure - simple and clean node paths
-@onready var enemy_type_dropdown: OptionButton = $PanelContainer/MarginContainer/VBoxContainer/EnemyTypeDropdown
-@onready var spawn_at_cursor_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SpawnButtons/SpawnAtCursor  
-@onready var spawn_at_player_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SpawnButtons/SpawnAtPlayer
-@onready var count1_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/CountButtons/Count1
-@onready var count5_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/CountButtons/Count5
-@onready var count10_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/CountButtons/Count10
+# Updated paths for new column layout
+@onready var enemy_type_dropdown: OptionButton = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EnemyTypeDropdown
+@onready var spawn_at_cursor_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/SpawnButtons/SpawnAtCursor  
+@onready var spawn_at_player_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/SpawnButtons/SpawnAtPlayer
+@onready var count1_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count1
+@onready var count5_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count5
+@onready var count10_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count10
 
 # Entity Inspector UI elements
-@onready var entity_info: RichTextLabel = $PanelContainer/MarginContainer/VBoxContainer/EntityInfo
-@onready var kill_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/EntityActions/KillButton
-@onready var heal_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/EntityActions/HealButton
-@onready var damage_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/EntityActions/DamageButton
+@onready var entity_info: RichTextLabel = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityInfo
+@onready var kill_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions/KillButton
+@onready var heal_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions/HealButton
+@onready var damage_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions/DamageButton
 
-# System Controls UI elements  
-@onready var pause_ai_button: Button = $PanelContainer/MarginContainer/VBoxContainer/PauseAIButton
-@onready var clear_all_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ClearAllButton
-@onready var reset_session_btn: Button = $PanelContainer/MarginContainer/VBoxContainer/SystemButtons/ResetSessionButton
+# System Controls UI elements (moved to cheat section)
+@onready var pause_ai_button: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/PauseAIButton
+@onready var kill_player_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/KillPlayerButton
+@onready var clear_all_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/ClearAllButton
+@onready var reset_session_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/ResetSessionButton
 
-# Performance Stats UI elements
-@onready var performance_info: RichTextLabel = $PanelContainer/MarginContainer/VBoxContainer/PerformanceInfo
+# Performance Stats UI elements (moved to left column)
+@onready var performance_info: RichTextLabel = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/PerformanceInfo
+
+# Cheat Controls UI elements
+@onready var god_mode_checkbox: CheckBox = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/GodModeCheckBox
+@onready var spawn_disabled_checkbox: CheckBox = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/SpawnDisabledCheckBox
 
 var selected_count: int = 1
 var selected_spawn_method: String = "cursor"  # "cursor" or "player"
@@ -47,6 +52,15 @@ var cached_enemy_count: int = 0
 var cached_boss_count: int = 0
 
 func _ready() -> void:
+	# Check debug configuration to see if panels should be disabled
+	var config_path: String = "res://config/debug.tres"
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config and not debug_config.debug_panels_enabled:
+			Logger.info("DebugPanel disabled via debug.tres configuration", "debug")
+			queue_free()  # Remove the entire node
+			return
+	
 	# Create and setup background panel
 	_create_background_panel()
 	
@@ -68,12 +82,18 @@ func _ready() -> void:
 	
 	# Connect system controls signals
 	pause_ai_button.toggled.connect(_on_pause_ai_toggled)
+	kill_player_btn.pressed.connect(_on_kill_player_pressed)
 	clear_all_btn.pressed.connect(_on_clear_all_pressed)
 	reset_session_btn.pressed.connect(_on_reset_session_pressed)
+	
+	# Connect cheat controls signals
+	god_mode_checkbox.toggled.connect(_on_god_mode_toggled)
+	spawn_disabled_checkbox.toggled.connect(_on_spawn_disabled_toggled)
 	
 	# Connect to DebugManager signals
 	if DebugManager:
 		DebugManager.entity_inspected.connect(_on_entity_inspected)
+		DebugManager.debug_mode_toggled.connect(_on_debug_mode_toggled)
 	
 	# Subscribe to damage sync for real-time HP updates
 	EventBus.damage_entity_sync.connect(_on_entity_damage_sync)
@@ -91,9 +111,10 @@ func _ready() -> void:
 	entity_info.text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
 	_set_entity_buttons_enabled(false)
 	
-	# Update button text to show shortcuts (shortened for better layout)
-	spawn_at_cursor_btn.text = "At Cursor (V)"
-	spawn_at_player_btn.text = "At Player (B)"
+	# Button text is now set in editor - no hardcoded overrides needed
+	
+	# Initialize cheat system checkboxes with current state
+	_update_cheat_checkboxes()
 	
 	# Auto-enable performance stats (always visible now)
 	_set_performance_stats_visible(true)
@@ -102,8 +123,11 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections to prevent memory leaks
-	if DebugManager and DebugManager.entity_inspected.is_connected(_on_entity_inspected):
-		DebugManager.entity_inspected.disconnect(_on_entity_inspected)
+	if DebugManager:
+		if DebugManager.entity_inspected.is_connected(_on_entity_inspected):
+			DebugManager.entity_inspected.disconnect(_on_entity_inspected)
+		if DebugManager.debug_mode_toggled.is_connected(_on_debug_mode_toggled):
+			DebugManager.debug_mode_toggled.disconnect(_on_debug_mode_toggled)
 	
 	# Cleanup damage sync connection
 	if EventBus.damage_entity_sync.is_connected(_on_entity_damage_sync):
@@ -524,18 +548,18 @@ func _apply_proper_styling() -> void:
 		
 		panel_container.add_theme_stylebox_override("panel", panel_style)
 		
-	# Apply margin to MarginContainer (proper padding) - more generous for modern look
+	# Apply margin to MarginContainer (compact padding)
 	var margin_container = get_node("PanelContainer/MarginContainer")
 	if margin_container:
-		margin_container.add_theme_constant_override("margin_left", 16)
-		margin_container.add_theme_constant_override("margin_right", 16)
-		margin_container.add_theme_constant_override("margin_top", 16)
-		margin_container.add_theme_constant_override("margin_bottom", 16)
+		margin_container.add_theme_constant_override("margin_left", 8)
+		margin_container.add_theme_constant_override("margin_right", 8)
+		margin_container.add_theme_constant_override("margin_top", 8)
+		margin_container.add_theme_constant_override("margin_bottom", 8)
 		
-	# Apply separation to VBoxContainer (spacing between elements) - more breathing room
-	var vbox_container = get_node("PanelContainer/MarginContainer/VBoxContainer")
+	# Apply separation to VBoxContainer (spacing between elements) - compact spacing
+	var vbox_container = get_node("PanelContainer/MarginContainer/MainVBoxContainer")
 	if vbox_container:
-		vbox_container.add_theme_constant_override("separation", 8)
+		vbox_container.add_theme_constant_override("separation", 4)
 	
 	# Apply modern button styling for better visibility
 	_apply_button_styling()
@@ -584,8 +608,7 @@ func _apply_button_styling() -> void:
 		spawn_at_cursor_btn, spawn_at_player_btn,
 		count1_btn, count5_btn, count10_btn,
 		kill_btn, heal_btn, damage_btn,
-		clear_all_btn, reset_session_btn,
-		pause_ai_button
+		pause_ai_button, kill_player_btn, clear_all_btn, reset_session_btn
 	]
 	
 	for button in all_buttons:
@@ -765,7 +788,7 @@ func _update_performance_stats() -> void:
 	var total_enemies = cached_enemy_count + cached_boss_count
 	
 	# Build new stats string using cached values and minimal string operations
-	# Build new stats using modern 2-column table format (like entity inspector)
+	# Build new stats using 2-column table format
 	var new_stats_text := "[table=2]"
 	new_stats_text += "[cell][color=#4A90E2]FPS[/color][/cell][cell]%d[/cell]" % fps
 	new_stats_text += "[cell][color=#4A90E2]Total Enemies[/color][/cell][cell]%d[/cell]" % total_enemies
@@ -837,3 +860,90 @@ func _count_bosses_from_entity_tracker() -> int:
 	# Use EntityTracker's efficient type-based lookup
 	var boss_entities = EntityTracker.get_entities_by_type("boss")
 	return boss_entities.size()
+
+# Cheat System Controls
+func _update_cheat_checkboxes() -> void:
+	if CheatSystem:
+		god_mode_checkbox.button_pressed = CheatSystem.is_god_mode_active()
+		# Auto Spawn is the inverse of spawn_disabled
+		# Check if we're in debug mode - if so, spawning is disabled regardless of CheatSystem state
+		var is_auto_spawn_active: bool = true
+		if DebugManager and DebugManager.is_debug_mode_active():
+			# In debug mode, normal spawning is disabled, so auto spawn is off
+			is_auto_spawn_active = false
+		else:
+			# Not in debug mode, check CheatSystem state
+			is_auto_spawn_active = not CheatSystem.is_spawn_disabled()
+		
+		spawn_disabled_checkbox.button_pressed = is_auto_spawn_active
+		Logger.debug("Updated cheat checkboxes: god_mode=%s, auto_spawn=%s (debug_mode=%s)" % [CheatSystem.is_god_mode_active(), is_auto_spawn_active, DebugManager.is_debug_mode_active() if DebugManager else false], "debug")
+	else:
+		Logger.warn("CheatSystem not available for checkbox update", "debug")
+
+func _on_god_mode_toggled(pressed: bool) -> void:
+	Logger.info("God mode toggled: %s" % pressed, "debug")
+	
+	if CheatSystem:
+		# Only toggle if the state is different from current
+		if CheatSystem.is_god_mode_active() != pressed:
+			CheatSystem.toggle_god_mode()
+	else:
+		Logger.warn("CheatSystem not available for god mode toggle", "debug")
+
+func _on_spawn_disabled_toggled(pressed: bool) -> void:
+	Logger.info("Auto spawn toggled: %s" % pressed, "debug")
+	
+	if CheatSystem:
+		# Auto spawn is inverse of spawn_disabled
+		var should_disable_spawn: bool = not pressed
+		
+		# Only change CheatSystem state if it's different from what we want
+		if CheatSystem.is_spawn_disabled() != should_disable_spawn:
+			CheatSystem.toggle_spawn_disabled()
+		
+		# If enabling auto spawn while in debug mode, exit debug mode to allow normal spawning
+		if pressed and DebugManager and DebugManager.is_debug_mode_active():
+			Logger.info("Exiting debug mode to enable auto spawn", "debug")
+			DebugManager.toggle_debug_mode()
+	else:
+		Logger.warn("CheatSystem not available for auto spawn toggle", "debug")
+
+func _on_debug_mode_toggled(enabled: bool) -> void:
+	Logger.debug("Debug mode toggled: %s - updating checkboxes" % enabled, "debug")
+	# Update checkboxes to reflect new debug mode state
+	_update_cheat_checkboxes()
+
+func _on_kill_player_pressed() -> void:
+	Logger.info("Kill player button pressed", "debug")
+	
+	# Remove focus from button for better UX
+	kill_player_btn.release_focus()
+	
+	# Temporarily disable god mode to ensure kill works
+	var was_god_mode_active: bool = false
+	if CheatSystem and CheatSystem.is_god_mode_active():
+		was_god_mode_active = true
+		CheatSystem.toggle_god_mode()
+		Logger.debug("Temporarily disabled god mode for debug kill", "debug")
+	
+	# Apply massive damage to the player to kill them
+	if DamageService:
+		DamageService.apply_damage("player", 999999, "debug_system", ["debug", "kill_player"])
+		Logger.info("Applied lethal damage to player", "debug")
+		
+		# Re-enable god mode after a short delay if it was active
+		if was_god_mode_active:
+			# Use a timer to re-enable god mode after damage is processed
+			get_tree().create_timer(0.1).timeout.connect(func():
+				if CheatSystem and not CheatSystem.is_god_mode_active():
+					CheatSystem.toggle_god_mode()
+					Logger.debug("Re-enabled god mode after debug kill", "debug")
+					# Update checkbox to reflect restored god mode state
+					_update_cheat_checkboxes()
+			)
+	else:
+		Logger.warn("DamageService not available for kill player", "debug")
+		# Re-enable god mode immediately if damage service failed
+		if was_god_mode_active and CheatSystem and not CheatSystem.is_god_mode_active():
+			CheatSystem.toggle_god_mode()
+			_update_cheat_checkboxes()

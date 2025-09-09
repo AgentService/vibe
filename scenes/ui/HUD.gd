@@ -8,12 +8,10 @@ class_name HUD
 @onready var xp_bar: ProgressBar = $VBoxContainer/XPBar
 @onready var enemy_radar: Panel = $EnemyRadar
 @onready var fps_label: Label = $FPSLabel
-@onready var death_screen: Control = $DeathScreen
 
 var fps_update_timer: float = 0.0
 const FPS_UPDATE_INTERVAL: float = 0.5
 var debug_overlay_visible: bool = true
-var is_game_over: bool = false
 
 
 func _ready() -> void:
@@ -24,7 +22,6 @@ func _ready() -> void:
 	EventBus.progression_changed.connect(_on_progression_changed)
 	EventBus.leveled_up.connect(_on_leveled_up)
 	# Health display will be updated via _process polling
-	EventBus.player_died.connect(_on_player_died)
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -32,9 +29,6 @@ func _exit_tree() -> void:
 		EventBus.progression_changed.disconnect(_on_progression_changed)
 	if EventBus.leveled_up.is_connected(_on_leveled_up):
 		EventBus.leveled_up.disconnect(_on_leveled_up)
-	# Legacy damage_taken signal connection removed
-	if EventBus.player_died.is_connected(_on_player_died):
-		EventBus.player_died.disconnect(_on_player_died)
 	Logger.debug("HUD: Cleaned up signal connections", "ui")
 	
 	# Initialize display
@@ -75,24 +69,7 @@ func _on_leveled_up(new_level: int, prev_level: int) -> void:
 
 # Legacy _on_player_damage_taken removed - health updates via _process polling
 
-func _unhandled_key_input(event: InputEvent) -> void:
-	if is_game_over and event is InputEventKey and event.pressed:
-		if event.physical_keycode == KEY_F5:
-			_restart_game()
 
-func _on_player_died() -> void:
-	is_game_over = true
-	death_screen.visible = true
-
-	get_tree().paused = true
-	Logger.info("Player died - game paused", "ui")
-
-func _restart_game() -> void:
-	is_game_over = false
-	death_screen.visible = false
-	get_tree().paused = false
-	get_tree().reload_current_scene()
-	Logger.info("Game restarted", "ui")
 
 func _update_level_display(level: int) -> void:
 	if level_label:
