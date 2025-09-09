@@ -143,6 +143,10 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
 		return false
 	
+	# Check god mode for player damage (queue path)
+	if target_id == "player" and CheatSystem and CheatSystem.is_god_mode_active():
+		return false
+	
 	# Acquire pooled payload
 	var d: Dictionary = _payload_pool.acquire()
 	d["target"] = target_id
@@ -195,6 +199,10 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	var entity: Dictionary = _entities[target_id]
 	if not entity.get("alive", true):
 		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
+		return false
+	
+	# Check god mode for player damage
+	if target_id == "player" and CheatSystem and CheatSystem.is_god_mode_active():
 		return false
 	
 	# Calculate final damage (add crit, modifiers, etc. here)

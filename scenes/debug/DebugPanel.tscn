@@ -1,133 +1,149 @@
 [gd_scene load_steps=2 format=3 uid="uid://d34gq241ftrpa"]
 
-[ext_resource type="Script" path="res://scenes/debug/DebugPanel.gd" id="1_ruq43"]
+[ext_resource type="Script" uid="uid://b5uygiyntthfk" path="res://scenes/debug/DebugPanel.gd" id="1_ruq43"]
 
 [node name="DebugPanel" type="Control"]
-custom_minimum_size = Vector2(350, 400)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_ruq43")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
 layout_mode = 0
+offset_right = 309.0
+offset_bottom = 327.0
 
 [node name="MarginContainer" type="MarginContainer" parent="PanelContainer"]
 layout_mode = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer"]
+[node name="MainVBoxContainer" type="VBoxContainer" parent="PanelContainer/MarginContainer"]
 layout_mode = 2
 
-[node name="Title" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Debug Panel"
-
-[node name="Separator1" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="MainHBoxContainer" type="HBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer"]
 layout_mode = 2
 
-[node name="SpawnerTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="LeftColumn" type="VBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer"]
+layout_mode = 2
+
+[node name="SpawnerTitle" type="Label" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 text = "Enemy Spawner"
+uppercase = true
 
-[node name="EnemyTypeDropdown" type="OptionButton" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="EnemyTypeDropdown" type="OptionButton" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="SpawnButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="SpawnButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="SpawnAtCursor" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
+[node name="SpawnAtCursor" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/SpawnButtons"]
 layout_mode = 2
-text = "At Cursor (V)"
 toggle_mode = true
+text = "Cursor"
 
-[node name="SpawnAtPlayer" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SpawnButtons"]
+[node name="SpawnAtPlayer" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/SpawnButtons"]
 layout_mode = 2
-text = "At Player (B)"
 toggle_mode = true
+text = "Player"
 
-[node name="CountButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="CountButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="CountLabel" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
+[node name="Count1" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons"]
 layout_mode = 2
-text = "Count:"
-
-[node name="Count1" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
-layout_mode = 2
+toggle_mode = true
 text = "1"
-toggle_mode = true
 
-[node name="Count5" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
+[node name="Count5" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons"]
 layout_mode = 2
+toggle_mode = true
 text = "5"
-toggle_mode = true
 
-[node name="Count10" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/CountButtons"]
+[node name="Count10" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons"]
 layout_mode = 2
+toggle_mode = true
 text = "10"
-toggle_mode = true
 
-[node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="InspectorTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="InspectorTitle" type="Label" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 text = "Entity Inspector"
+uppercase = true
 
-[node name="EntityInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 140)
+[node name="EntityInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
+clip_contents = false
+custom_minimum_size = Vector2(180, 80)
 layout_mode = 2
 bbcode_enabled = true
 text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"
 
-[node name="EntityActions" type="HBoxContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="EntityActions" type="HBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="KillButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
+[node name="KillButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Kill"
 
-[node name="HealButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
+[node name="HealButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Heal"
 
-[node name="DamageButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/EntityActions"]
+[node name="DamageButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityActions"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Damage"
 
-[node name="SystemButtons" type="GridContainer" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-columns = 2
-
-[node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SystemButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Clear All"
-
-[node name="ResetSessionButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/SystemButtons"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Reset Session"
-
-[node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="Separator3" type="HSeparator" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="SystemTitle" type="Label" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="PerformanceTitle" type="Label" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
-text = "System Controls"
+text = "Performance	"
+uppercase = true
 
-[node name="PauseAIButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer"]
+[node name="PerformanceInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
-text = "Pause AI"
-toggle_mode = true
-
-[node name="Separator4" type="HSeparator" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
-
-[node name="PerformanceInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/VBoxContainer"]
-layout_mode = 2
+theme_override_font_sizes/normal_font_size = 12
 bbcode_enabled = true
 text = "[color=white]Loading performance stats...[/color]"
 fit_content = true
+
+[node name="ColumnSeparator" type="VSeparator" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer"]
+layout_mode = 2
+
+[node name="RightColumn" type="VBoxContainer" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer"]
+layout_mode = 2
+
+[node name="CheatTitle" type="Label" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "Cheats"
+uppercase = true
+
+[node name="GodModeCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+button_pressed = true
+text = "GodMode"
+
+[node name="SpawnDisabledCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "AutoSpawn"
+
+[node name="PauseAIButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+toggle_mode = true
+text = "Pause AI"
+
+[node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "Clear All"
+
+[node name="ResetSessionButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "Reset Session"
+
+[node name="KillPlayerButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "Kill Player"
