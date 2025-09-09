@@ -93,6 +93,7 @@ func _ready() -> void:
 	# Connect to DebugManager signals
 	if DebugManager:
 		DebugManager.entity_inspected.connect(_on_entity_inspected)
+		DebugManager.debug_mode_toggled.connect(_on_debug_mode_toggled)
 	
 	# Subscribe to damage sync for real-time HP updates
 	EventBus.damage_entity_sync.connect(_on_entity_damage_sync)
@@ -122,8 +123,11 @@ func _ready() -> void:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections to prevent memory leaks
-	if DebugManager and DebugManager.entity_inspected.is_connected(_on_entity_inspected):
-		DebugManager.entity_inspected.disconnect(_on_entity_inspected)
+	if DebugManager:
+		if DebugManager.entity_inspected.is_connected(_on_entity_inspected):
+			DebugManager.entity_inspected.disconnect(_on_entity_inspected)
+		if DebugManager.debug_mode_toggled.is_connected(_on_debug_mode_toggled):
+			DebugManager.debug_mode_toggled.disconnect(_on_debug_mode_toggled)
 	
 	# Cleanup damage sync connection
 	if EventBus.damage_entity_sync.is_connected(_on_entity_damage_sync):
@@ -862,8 +866,17 @@ func _update_cheat_checkboxes() -> void:
 	if CheatSystem:
 		god_mode_checkbox.button_pressed = CheatSystem.is_god_mode_active()
 		# Auto Spawn is the inverse of spawn_disabled
-		spawn_disabled_checkbox.button_pressed = not CheatSystem.is_spawn_disabled()
-		Logger.debug("Updated cheat checkboxes: god_mode=%s, auto_spawn=%s" % [CheatSystem.is_god_mode_active(), not CheatSystem.is_spawn_disabled()], "debug")
+		# Check if we're in debug mode - if so, spawning is disabled regardless of CheatSystem state
+		var is_auto_spawn_active: bool = true
+		if DebugManager and DebugManager.is_debug_mode_active():
+			# In debug mode, normal spawning is disabled, so auto spawn is off
+			is_auto_spawn_active = false
+		else:
+			# Not in debug mode, check CheatSystem state
+			is_auto_spawn_active = not CheatSystem.is_spawn_disabled()
+		
+		spawn_disabled_checkbox.button_pressed = is_auto_spawn_active
+		Logger.debug("Updated cheat checkboxes: god_mode=%s, auto_spawn=%s (debug_mode=%s)" % [CheatSystem.is_god_mode_active(), is_auto_spawn_active, DebugManager.is_debug_mode_active() if DebugManager else false], "debug")
 	else:
 		Logger.warn("CheatSystem not available for checkbox update", "debug")
 
@@ -881,11 +894,24 @@ func _on_spawn_disabled_toggled(pressed: bool) -> void:
 	Logger.info("Auto spawn toggled: %s" % pressed, "debug")
 	
 	if CheatSystem:
-		# Auto spawn is inverse of spawn_disabled, so toggle if they match
-		if CheatSystem.is_spawn_disabled() == pressed:
+		# Auto spawn is inverse of spawn_disabled
+		var should_disable_spawn: bool = not pressed
+		
+		# Only change CheatSystem state if it's different from what we want
+		if CheatSystem.is_spawn_disabled() != should_disable_spawn:
 			CheatSystem.toggle_spawn_disabled()
+		
+		# If enabling auto spawn while in debug mode, exit debug mode to allow normal spawning
+		if pressed and DebugManager and DebugManager.is_debug_mode_active():
+			Logger.info("Exiting debug mode to enable auto spawn", "debug")
+			DebugManager.toggle_debug_mode()
 	else:
 		Logger.warn("CheatSystem not available for auto spawn toggle", "debug")
+
+func _on_debug_mode_toggled(enabled: bool) -> void:
+	Logger.debug("Debug mode toggled: %s - updating checkboxes" % enabled, "debug")
+	# Update checkboxes to reflect new debug mode state
+	_update_cheat_checkboxes()
 
 func _on_kill_player_pressed() -> void:
 	Logger.info("Kill player button pressed", "debug")
@@ -893,9 +919,31 @@ func _on_kill_player_pressed() -> void:
 	# Remove focus from button for better UX
 	kill_player_btn.release_focus()
 	
+	# Temporarily disable god mode to ensure kill works
+	var was_god_mode_active: bool = false
+	if CheatSystem and CheatSystem.is_god_mode_active():
+		was_god_mode_active = true
+		CheatSystem.toggle_god_mode()
+		Logger.debug("Temporarily disabled god mode for debug kill", "debug")
+	
 	# Apply massive damage to the player to kill them
 	if DamageService:
 		DamageService.apply_damage("player", 999999, "debug_system", ["debug", "kill_player"])
 		Logger.info("Applied lethal damage to player", "debug")
+		
+		# Re-enable god mode after a short delay if it was active
+		if was_god_mode_active:
+			# Use a timer to re-enable god mode after damage is processed
+			get_tree().create_timer(0.1).timeout.connect(func():
+				if CheatSystem and not CheatSystem.is_god_mode_active():
+					CheatSystem.toggle_god_mode()
+					Logger.debug("Re-enabled god mode after debug kill", "debug")
+					# Update checkbox to reflect restored god mode state
+					_update_cheat_checkboxes()
+			)
 	else:
 		Logger.warn("DamageService not available for kill player", "debug")
+		# Re-enable god mode immediately if damage service failed
+		if was_god_mode_active and CheatSystem and not CheatSystem.is_god_mode_active():
+			CheatSystem.toggle_god_mode()
+			_update_cheat_checkboxes()

@@ -72,15 +72,19 @@ func _ready() -> void:
 	# Initialize deterministic RNG for reproducible tests
 	_setup_deterministic_rng()
 	
-	# Initialize performance tracking
+	# Initialize performance tracking (but don't start measuring yet)
 	performance_metrics = PerformanceMetrics.new()
-	performance_metrics.start_test()
 	
 	# Find and setup system references
 	_setup_system_references()
 	
 	# Initialize systems with dependencies
 	_initialize_systems()
+	
+	# NOW establish memory baseline after arena is loaded but before enemies spawn
+	print("Establishing memory baseline after arena load...")
+	await get_tree().process_frame  # Allow one frame for full initialization
+	performance_metrics.start_test()  # Start measuring from empty arena baseline
 	
 	# Start first test phase
 	test_start_time = Time.get_unix_time_from_system()

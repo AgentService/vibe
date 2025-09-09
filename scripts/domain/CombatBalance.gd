@@ -10,7 +10,6 @@ class_name CombatBalance
 @export_range(1.0, 10.0) var crit_multiplier: float = 2.0
 
 ## Zero-allocation damage queue configuration
-@export var use_zero_alloc_damage_queue: bool = false
 @export var damage_queue_capacity: int = 4096
 @export var damage_pool_size: int = 4096
 @export var damage_queue_max_per_tick: int = 2048
