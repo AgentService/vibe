@@ -49,6 +49,8 @@
    - MultiMeshInstance2D for high-count rendering
    - Fixed-step combat accumulator
    - Entity tracking system
+   - Headless performance test harness (500+ enemies)
+   - CLI debug disable flags (--no-debug)
 
 #### 🚧 **Partially Implemented**
 1. **Player Systems**

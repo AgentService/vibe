@@ -11,7 +11,8 @@ const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowe
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 var knight_animation_config: AnimationConfig_Type
-var current_animation: String = "idle"
+var current_animation: String = "idle_down"
+var current_direction: String = "down"  # Track facing direction for animations
 var current_health: int
 
 var is_rolling: bool = false
@@ -98,8 +99,11 @@ func _setup_editor_animation_fallback() -> void:
 	# Ensure editor animations are playing
 	var animation_names = animated_sprite.sprite_frames.get_animation_names()
 	if animation_names.size() > 0:
-		# Try to play "idle" if it exists, otherwise play the first animation
-		if animated_sprite.sprite_frames.has_animation("idle"):
+		# Try to play "idle_down" if it exists, otherwise fallback
+		if animated_sprite.sprite_frames.has_animation("idle_down"):
+			animated_sprite.play("idle_down")
+			current_animation = "idle_down"
+		elif animated_sprite.sprite_frames.has_animation("idle"):
 			animated_sprite.play("idle")
 			current_animation = "idle"
 		else:
@@ -142,13 +146,10 @@ func _start_roll() -> void:
 	is_rolling = true
 	roll_timer = 0.0
 	invulnerable = true
-	_play_animation("roll")
 	
-	# Face the roll direction
-	if roll_direction.x > 0:
-		animated_sprite.flip_h = false  # Face right
-	elif roll_direction.x < 0:
-		animated_sprite.flip_h = true   # Face left
+	# Get roll direction for animation
+	var roll_anim_direction := _get_direction_from_vector(roll_direction)
+	_play_animation("roll_" + roll_anim_direction)
 
 func _update_roll(delta: float) -> void:
 	if is_rolling:
@@ -177,6 +178,23 @@ func _handle_movement(_delta: float) -> void:
 		if Input.is_action_pressed("move_down"):
 			input_vector.y += 1.0
 	
+	# Update direction based on movement input (WASD)
+	if input_vector != Vector2.ZERO and not is_rolling:
+		var new_direction: String
+		if abs(input_vector.x) > abs(input_vector.y):
+			if input_vector.x > 0:
+				new_direction = "right"
+			else:
+				new_direction = "left"
+		else:
+			if input_vector.y < 0:
+				new_direction = "up"
+			else:
+				new_direction = "down"
+		
+		if new_direction != current_direction:
+			current_direction = new_direction
+	
 	if is_rolling:
 		# Continue dashing in roll direction
 		velocity = roll_direction * get_roll_speed()
@@ -185,12 +203,12 @@ func _handle_movement(_delta: float) -> void:
 		velocity = input_vector * get_move_speed()
 		# Don't override attack animation with run animation
 		if not is_attacking:
-			_play_animation("run")
+			_play_animation("run_" + current_direction)
 	else:
 		velocity = Vector2.ZERO
 		# Don't override attack animation with idle animation
 		if not is_attacking:
-			_play_animation("idle")
+			_play_animation("idle_" + current_direction)
 	
 	move_and_slide()
 
@@ -239,7 +257,10 @@ func _setup_sprite_frames() -> void:
 		sprite_frames.set_animation_loop(anim_name, anim_data.loop)
 	
 	animated_sprite.sprite_frames = sprite_frames
-	if sprite_frames.has_animation("idle"):
+	if sprite_frames.has_animation("idle_down"):
+		animated_sprite.play("idle_down")
+		current_animation = "idle_down"
+	elif sprite_frames.has_animation("idle"):
 		animated_sprite.play("idle")
 		current_animation = "idle"
 	else:
@@ -248,21 +269,19 @@ func _setup_sprite_frames() -> void:
 		if animation_names.size() > 0:
 			animated_sprite.play(animation_names[0])
 			current_animation = animation_names[0]
-			Logger.warn("No 'idle' animation found, using: " + animation_names[0], "player")
+			Logger.warn("No 'idle_down' or 'idle' animation found, using: " + animation_names[0], "player")
 	Logger.info("Knight sprite frames setup complete", "player")
 
+func _update_animation_direction() -> void:
+	# Update current animation to match new direction
+	var base_anim := current_animation.split("_")[0]  # Get "idle", "run", etc.
+	var new_anim := base_anim + "_" + current_direction
+	_play_animation(new_anim)
+
 func _handle_facing() -> void:
-	# Don't change facing during roll - let roll direction control it
-	if is_rolling:
-		return
-		
-	var mouse_pos := get_global_mouse_position()
-	var player_pos := global_position
-	
-	if mouse_pos.x > player_pos.x:
-		animated_sprite.flip_h = false
-	else:
-		animated_sprite.flip_h = true
+	# Direction is now controlled by movement input in _handle_movement()
+	# This function can be used for attack-specific facing logic
+	pass
 
 func _on_damage_taken(damage: int) -> void:
 	# Check for god mode cheat
@@ -275,7 +294,7 @@ func _on_damage_taken(damage: int) -> void:
 	current_health = max(0, current_health - damage)
 	
 	if current_health <= 0:
-		_play_animation("death")
+		_play_animation("hurt_" + current_direction)
 		EventBus.player_died.emit()
 		
 		# End run through StateManager with death result
@@ -295,7 +314,7 @@ func _on_damage_taken(damage: int) -> void:
 		await get_tree().create_timer(0.1).timeout
 		StateManager.end_run(death_result)
 	else:
-		_play_animation("hit")
+		_play_animation("hurt_" + current_direction)
 
 func get_health() -> int:
 	return current_health
@@ -323,15 +342,51 @@ func _play_animation(anim_name: String) -> void:
 			Logger.info("Player: Successfully started playing attack_1 animation", "player")
 	elif not animated_sprite.sprite_frames.has_animation(anim_name):
 		Logger.warn("Player: Animation '" + anim_name + "' does not exist", "player")
-		# Fallback: if specific animation doesn't exist, try to stay on current or use "idle"
-		if animated_sprite.sprite_frames.has_animation("idle") and current_animation != "idle":
+		# Fallback: if specific animation doesn't exist, try directional idle or basic idle
+		if animated_sprite.sprite_frames.has_animation("idle_" + current_direction) and current_animation != "idle_" + current_direction:
+			current_animation = "idle_" + current_direction
+			animated_sprite.play("idle_" + current_direction)
+		elif animated_sprite.sprite_frames.has_animation("idle") and current_animation != "idle":
 			current_animation = "idle"
 			animated_sprite.play("idle")
 		# If no "idle", just keep playing current animation
 
 func _on_melee_attack_started(_payload: Dictionary) -> void:
-	# Play attack_1 animation when melee attack is triggered
-	Logger.info("Player: Melee attack started, playing attack_1 animation", "player")
+	# Play attack animation when melee attack is triggered
+	Logger.info("Player: Melee attack started, playing attack animation", "player")
 	is_attacking = true
 	attack_timer = 0.0
-	_play_animation("attack_1")
+	
+	# Temporarily face attack direction (mouse position)
+	var attack_direction := _get_attack_direction()
+	_play_animation("attack_" + attack_direction)
+
+func _get_direction_from_vector(direction_vector: Vector2) -> String:
+	# Convert a Vector2 direction to animation direction string
+	if abs(direction_vector.x) > abs(direction_vector.y):
+		if direction_vector.x > 0:
+			return "right"
+		else:
+			return "left"
+	else:
+		if direction_vector.y < 0:
+			return "up"
+		else:
+			return "down"
+
+func _get_attack_direction() -> String:
+	# Get attack direction from mouse position for attacks only
+	var mouse_pos := get_global_mouse_position()
+	var player_pos := global_position
+	var direction_vector := mouse_pos - player_pos
+	
+	if abs(direction_vector.x) > abs(direction_vector.y):
+		if direction_vector.x > 0:
+			return "right"
+		else:
+			return "left"
+	else:
+		if direction_vector.y < 0:
+			return "up"
+		else:
+			return "down"
