@@ -59,10 +59,8 @@ Located in `data/balance/combat.tres`:
 ### Debug Commands Available
 - `damage_queue_stats` - Show current queue metrics and performance
 - `damage_queue_reset` - Clear queue and reset metrics (for testing)
-- `damage_queue_enable` - Enable zero-allocation queue
-- `damage_queue_disable` - Disable queue (use direct processing)
 
-**Note**: Toggle commands are primarily for debugging. The zero-allocation queue is the primary and recommended mode.
+**Note**: Zero-allocation queue is always enabled - it's the only damage processing mode.
 
 ### Usage Examples
 ```

@@ -478,27 +478,10 @@ func _register_console_commands() -> void:
 		return
 	
 	# Register damage queue commands
-	LimboConsole.register_command(cmd_damage_queue_toggle, "damage_queue_toggle", "Toggle zero-alloc damage queue on/off")
-	LimboConsole.register_command(cmd_damage_queue_stats, "damage_queue_stats", "Show damage queue metrics")
-	LimboConsole.register_command(cmd_damage_queue_reset, "damage_queue_reset", "Reset damage queue metrics")
-	LimboConsole.register_command(cmd_damage_queue_enable, "damage_queue_enable", "Enable zero-alloc damage queue")
-	LimboConsole.register_command(cmd_damage_queue_disable, "damage_queue_disable", "Disable zero-alloc damage queue")
+	LimboConsole.register_command(cmd_damage_queue_stats, "damage_queue_stats", "Show damage queue metrics and performance")
+	LimboConsole.register_command(cmd_damage_queue_reset, "damage_queue_reset", "Reset damage queue metrics (for testing)")
 	
 	Logger.info("Damage queue console commands registered", "debug")
-
-## Console command: Toggle damage queue on/off
-func cmd_damage_queue_toggle() -> void:
-	if not DamageService:
-		LimboConsole.error("DamageService not available")
-		return
-	
-	var stats = DamageService.get_queue_stats()
-	var was_enabled = stats.get("enabled", false)
-	DamageService.set_queue_enabled(not was_enabled)
-	
-	var new_state = "enabled" if not was_enabled else "disabled"
-	LimboConsole.info("Damage queue %s" % new_state)
-	Logger.info("Console toggled damage queue: %s" % new_state, "debug")
 
 ## Console command: Show damage queue statistics
 func cmd_damage_queue_stats() -> void:
@@ -530,23 +513,3 @@ func cmd_damage_queue_reset() -> void:
 	DamageService.reset_queue_metrics()
 	LimboConsole.info("Damage queue metrics reset")
 	Logger.info("Console reset damage queue metrics", "debug")
-
-## Console command: Enable damage queue
-func cmd_damage_queue_enable() -> void:
-	if not DamageService:
-		LimboConsole.error("DamageService not available")
-		return
-	
-	DamageService.set_queue_enabled(true)
-	LimboConsole.info("Damage queue enabled")
-	Logger.info("Console enabled damage queue", "debug")
-
-## Console command: Disable damage queue
-func cmd_damage_queue_disable() -> void:
-	if not DamageService:
-		LimboConsole.error("DamageService not available")
-		return
-	
-	DamageService.set_queue_enabled(false)
-	LimboConsole.info("Damage queue disabled")
-	Logger.info("Console disabled damage queue", "debug")

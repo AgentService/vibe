@@ -81,7 +81,7 @@ func _setup_queue_if_enabled() -> void:
 
 ## Handle pause state changes
 func _on_paused_changed(payload) -> void:
-	var is_paused = payload.paused if payload else false
+	var is_paused = payload.is_paused if payload else false
 	_apply_pause_state(is_paused)
 
 ## Apply pause state to queue processor

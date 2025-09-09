@@ -65,11 +65,8 @@ func balance_command(system: String, value: float) -> void:
 ## Current Damage System Commands
 
 ### Available Commands
-- `damage_queue_stats` - **Primary command**: Show current queue metrics, performance, and capacity usage
+- `damage_queue_stats` - Show current queue metrics, performance, and capacity usage
 - `damage_queue_reset` - Reset queue metrics and counters (for testing)
-- `damage_queue_enable` - Enable zero-allocation queue processing
-- `damage_queue_disable` - Disable queue (fallback to direct processing)
-- `damage_queue_toggle` - Toggle between enabled/disabled states
 
 ### Usage Examples
 ```
@@ -86,8 +83,8 @@ Queue metrics reset. Total processed: 0, Overflows: 0
 
 ### Recommended Usage
 - **Primary**: Use `damage_queue_stats` for monitoring performance and capacity
-- **Debugging**: Toggle commands available but zero-allocation queue is the recommended mode
 - **Testing**: Reset command useful for clean metric collection during performance tests
+- **Note**: Zero-allocation queue is always active - it's the only damage processing mode
 
 ## Future Enhancements
 - Balance preset loading/saving
