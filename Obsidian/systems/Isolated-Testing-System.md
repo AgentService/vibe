@@ -137,13 +137,22 @@ Create a new isolated test when:
 
 ### Running Tests
 ```bash
-# Headless testing
+# Headless testing (short duration)
 "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/SystemName_Isolated.tscn --quit-after 5
+
+# Performance testing (full duration, no quit-after)
+"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_performance_500_enemies.tscn
 
 # Visual testing via MCP
 mcp__godot-mcp__open_scene("res://tests/SystemName_Isolated.tscn")
 mcp__godot-mcp__play_scene("current")
 ```
+
+### Performance Test Configuration
+- **CRITICAL**: `--quit-after` values are interpreted as FRAMES, not seconds
+- For 30-second tests, omit `--quit-after` entirely or use high values (2000+)
+- Configure debug system via `config/debug.tres` with `debug_panels_enabled = false`
+- See `Debug-System-Configuration.md` for complete configuration details
 
 ### Architecture Consistency
 - All tests use WaveDirector/EnemyEntity pattern (not legacy EnemyRegistry)

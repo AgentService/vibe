@@ -80,7 +80,7 @@ func gain_exp(amount: float) -> void:
 	var level_ups: int = 0
 	while not _max_level_reached:
 		var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)
-		
+		 
 		# Check if we can level up
 		if next_level_total_xp == -1 or experience < float(next_level_total_xp):
 			break

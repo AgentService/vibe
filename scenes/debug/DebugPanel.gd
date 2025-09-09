@@ -47,6 +47,15 @@ var cached_enemy_count: int = 0
 var cached_boss_count: int = 0
 
 func _ready() -> void:
+	# Check debug configuration to see if panels should be disabled
+	var config_path: String = "res://config/debug.tres"
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config and not debug_config.debug_panels_enabled:
+			Logger.info("DebugPanel disabled via debug.tres configuration", "debug")
+			queue_free()  # Remove the entire node
+			return
+	
 	# Create and setup background panel
 	_create_background_panel()
 	

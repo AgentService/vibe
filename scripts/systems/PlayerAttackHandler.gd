@@ -9,7 +9,6 @@ extends Node
 # Dependencies injected from Arena
 var player: Player
 var melee_system: MeleeSystem
-var ability_system: AbilitySystem
 var wave_director: WaveDirector
 var melee_effects_node: Node2D
 var arena_viewport: Viewport
@@ -21,10 +20,9 @@ var base_spawn_interval: float = 0.25
 # Visual configuration
 var visual_config: MeleeVisualConfig
 
-func setup(player_ref: Player, melee_sys: MeleeSystem, ability_sys: AbilitySystem, wave_dir: WaveDirector, melee_fx: Node2D, viewport: Viewport) -> void:
+func setup(player_ref: Player, melee_sys: MeleeSystem, wave_dir: WaveDirector, melee_fx: Node2D, viewport: Viewport) -> void:
 	player = player_ref
 	melee_system = melee_sys
-	ability_system = ability_sys
 	wave_director = wave_dir
 	melee_effects_node = melee_fx
 	arena_viewport = viewport
@@ -49,9 +47,14 @@ func handle_melee_attack(target_pos: Vector2) -> void:
 
 # Handle projectile attack toward target position  
 func handle_projectile_attack(target_pos: Vector2) -> void:
-	if not player or not ability_system:
+	if not player:
 		return
 	
+	# TODO: Phase 2 - Replace with AbilityModule.cast_ability()
+	# AbilityModule.cast_ability(&"ranged_basic", {
+	#   "origin": player.global_position,
+	#   "target": target_pos
+	# })
 	spawn_debug_projectile(target_pos)
 
 # Handle auto-attack if enabled
@@ -102,7 +105,14 @@ func spawn_debug_projectile(target_pos: Vector2 = Vector2.ZERO) -> void:
 			spread = RNG.randf_range("waves", -spread_range, spread_range) * (i - projectile_count / 2.0)
 		
 		var final_direction: Vector2 = direction.rotated(spread)
-		ability_system.spawn_projectile(spawn_pos, final_direction, base_speed, 2.0)
+		# TODO: Phase 2 - Replace with AbilityModule.cast_ability()
+		# AbilityModule.cast_ability(&"ranged_basic", {
+		#   "origin": spawn_pos,
+		#   "direction": final_direction,
+		#   "speed": base_speed,
+		#   "lifetime": 2.0
+		# })
+		Logger.debug("Projectile spawn disabled - waiting for AbilityModule (Phase 2)", "player")
 
 # Handle melee attack started signal from MeleeSystem
 func _on_melee_attack_signal(player_pos: Vector2, target_pos: Vector2) -> void:

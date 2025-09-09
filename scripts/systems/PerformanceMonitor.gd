@@ -6,7 +6,7 @@ extends Node
 
 class_name PerformanceMonitor
 
-func get_debug_stats(arena_ref: Node, wave_director: WaveDirector, ability_system: AbilitySystem) -> Dictionary:
+func get_debug_stats(arena_ref: Node, wave_director: WaveDirector) -> Dictionary:
 	var stats: Dictionary = {}
 	
 	# Enemy count from WaveDirector
@@ -15,11 +15,11 @@ func get_debug_stats(arena_ref: Node, wave_director: WaveDirector, ability_syste
 		stats["enemy_count"] = alive_enemies.size()
 		Logger.debug("Performance Monitor: " + str(alive_enemies.size()) + " alive enemies", "performance")
 	
-	# Projectile count from AbilitySystem
-	if ability_system:
-		var alive_projectiles: Array[Dictionary] = ability_system._get_alive_projectiles()
-		stats["projectile_count"] = alive_projectiles.size()
-		Logger.debug("Performance Monitor: " + str(alive_projectiles.size()) + " active projectiles", "performance")
+	# TODO: Phase 2 - Add projectile count from AbilityModule
+	# if AbilityModule:
+	#	var alive_projectiles = AbilityModule.get_projectile_snapshot()
+	#	stats["projectile_count"] = alive_projectiles.size()
+	stats["projectile_count"] = 0  # Placeholder until AbilityModule
 	
 	# Engine performance metrics
 	stats["fps"] = Engine.get_frames_per_second()

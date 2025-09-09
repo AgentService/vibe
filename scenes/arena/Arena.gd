@@ -29,7 +29,6 @@ const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelecto
 @onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
 @onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
 @onready var melee_effects: Node2D = $MeleeEffects
-var ability_system: AbilitySystem
 var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
@@ -100,7 +99,6 @@ var card_system: CardSystem
 # UI elements now managed by ArenaUIManager
 
 var _enemy_transforms: Array[Transform2D] = []
-
 
 
 func _ready() -> void:
@@ -179,26 +177,41 @@ func _ready() -> void:
 	boss_spawn_manager.setup(wave_director, player)
 	
 	# Setup Player Attack Handler with dependencies
-	player_attack_handler.setup(player, melee_system, ability_system, wave_director, melee_effects, get_viewport())
+	player_attack_handler.setup(player, melee_system, wave_director, melee_effects, get_viewport())
 	
-	# Setup DebugSystemControls from scene node
-	debug_system_controls = $DebugSystemControls
+	# Setup DebugSystemControls from scene node if it exists
+	debug_system_controls = get_node_or_null("DebugSystemControls")
 	
 	# Register systems with DebugManager for debug functionality
 	if DebugManager:
 		DebugManager.register_wave_director(wave_director)
 		DebugManager.register_boss_spawn_manager(boss_spawn_manager)
 		DebugManager.register_arena_ui_manager(ui_manager)
-		DebugManager.register_debug_system_controls(debug_system_controls)
+		if debug_system_controls:
+			DebugManager.register_debug_system_controls(debug_system_controls)
+		else:
+			Logger.info("DebugSystemControls not available - debug system registration skipped", "debug")
 	
 	# Setup Arena Input Handler
 	arena_input_handler = ArenaInputHandlerScript.new()
 	add_child(arena_input_handler)
 	arena_input_handler.setup(ui_manager, melee_system, player_attack_handler, self)
 	
-	# Setup Entity Selector for debug functionality
-	entity_selector = EntitySelectorScript.new()
-	add_child(entity_selector)
+	# Setup Entity Selector for debug functionality (only if debug panels enabled)
+	var config_path: String = "res://config/debug.tres"
+	var should_create_entity_selector: bool = false
+	
+	if ResourceLoader.exists(config_path):
+		var debug_config: DebugConfig = load(config_path) as DebugConfig
+		if debug_config and debug_config.debug_panels_enabled:
+			should_create_entity_selector = true
+	
+	if should_create_entity_selector:
+		entity_selector = EntitySelectorScript.new()
+		add_child(entity_selector)
+		Logger.debug("EntitySelector created for debug functionality", "debug")
+	else:
+		Logger.debug("EntitySelector disabled - debug panels not enabled", "debug")
 	
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
@@ -308,9 +321,10 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_card_system(injected_card_system)
 
-func set_ability_system(injected_ability_system: AbilitySystem) -> void:
-	if system_injection_manager:
-		system_injection_manager.set_ability_system(injected_ability_system)
+# TODO: Phase 2 - Remove this function when AbilityModule becomes autoload
+# func set_ability_system(injected_ability_system: AbilitySystem) -> void:
+#	if system_injection_manager:
+#		system_injection_manager.set_ability_system(injected_ability_system)
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	if system_injection_manager:
@@ -434,8 +448,9 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 
 func _exit_tree() -> void:
 	# Cleanup signal connections with guards to prevent double disconnection
-	if ability_system and multimesh_manager and ability_system.projectiles_updated.is_connected(multimesh_manager.update_projectiles):
-		ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
+	# TODO: Phase 2 - Remove ability_system cleanup when replaced with AbilityModule
+	# if ability_system and multimesh_manager and ability_system.projectiles_updated.is_connected(multimesh_manager.update_projectiles):
+	#	ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
 	if wave_director and multimesh_manager and wave_director.enemies_updated.is_connected(multimesh_manager.update_enemies):
 		wave_director.enemies_updated.disconnect(multimesh_manager.update_enemies)
 	if arena_system and arena_system.arena_loaded.is_connected(_on_arena_loaded):

@@ -24,11 +24,12 @@ func _setup_test_systems() -> void:
 			"script": preload("res://scripts/systems/WaveDirector.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
-		{
-			"name": "AbilitySystem",
-			"script": preload("res://scripts/systems/AbilitySystem.gd"),
-			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
-		},
+		# TODO: Phase 2 - Replace with AbilityModule autoload testing
+		# {
+		#	"name": "AbilitySystem",
+		#	"script": preload("res://scripts/systems/AbilitySystem.gd"),
+		#	"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
+		# },
 		{
 			"name": "MeleeSystem",
 			"script": preload("res://scripts/systems/MeleeSystem.gd"),

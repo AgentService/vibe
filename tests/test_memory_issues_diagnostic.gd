@@ -35,7 +35,9 @@ func test_signal_connection_leaks() -> void:
 	
 	# Check if systems properly disconnect BalanceDB signals
 	var systems_with_balance_connections = [
-		"XpSystem", "WaveDirector", "AbilitySystem", 
+		"XpSystem", "WaveDirector", 
+		# TODO: Phase 2 - Replace AbilitySystem with AbilityModule autoload
+		# "AbilitySystem", 
 		"MeleeSystem", "EnemyRegistry"
 	]
 	

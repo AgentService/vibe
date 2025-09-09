@@ -6,18 +6,19 @@ extends SceneTree
 func _initialize() -> void:
 	print("=== Testing Melee Damage Flow ===")
 	
-	# Create minimal systems
+	# Create minimal systems (Phase 1: AbilitySystem removed)
 	var melee_system = load("res://scripts/systems/MeleeSystem.gd").new()
 	var wave_director = load("res://scripts/systems/WaveDirector.gd").new() 
 	var damage_system = load("res://scripts/systems/DamageSystem.gd").new()
-	var ability_system = load("res://scripts/systems/AbilitySystem.gd").new()
+	# TODO: Phase 2 - Replace with AbilityModule autoload
+	# var ability_system = load("res://scripts/systems/AbilitySystem.gd").new()
 	
 	# Initialize systems
 	melee_system._ready()
 	wave_director._ready()
-	ability_system._ready()
+	# ability_system._ready()
 	damage_system._ready()
-	damage_system.set_references(ability_system, wave_director)
+	damage_system.set_references(wave_director)  # AbilitySystem dependency removed
 	
 	# Manually spawn an enemy at known position
 	var enemy_pos = Vector2(100, 100)

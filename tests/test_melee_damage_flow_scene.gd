@@ -17,20 +17,21 @@ func _ready() -> void:
 	test_timer.start()
 
 func _run_test() -> void:
-	# Create minimal systems
+	# Create minimal systems (Phase 1: AbilitySystem removed)
 	var melee_system = MeleeSystem.new()
 	var wave_director = WaveDirector.new() 
 	var damage_system = DamageSystem.new()
-	var ability_system = AbilitySystem.new()
+	# TODO: Phase 2 - Replace with AbilityModule autoload
+	# var ability_system = AbilitySystem.new()
 	
 	# Add systems as children so their _ready() gets called
-	add_child(ability_system)
+	# add_child(ability_system)
 	add_child(wave_director)
 	add_child(melee_system)
 	add_child(damage_system)
 	
-	# Set up references
-	damage_system.set_references(ability_system, wave_director)
+	# Set up references (AbilitySystem dependency removed)
+	damage_system.set_references(wave_director)
 	
 	# Wait a frame for systems to initialize
 	await get_tree().process_frame
