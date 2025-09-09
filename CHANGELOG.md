@@ -24,6 +24,10 @@
   - **Test System Updates**: Updated all test files to use direct DamageService calls, removed signal-based testing
   - **Payload Cleanup**: Removed unused DamageRequestPayload class and all references
   - **Clean Architecture**: No backwards compatibility - pure single entry point implementation
+- **Technical Debt Cleanup**: Removed legacy damage system components and outdated references
+  - **Documentation Updates**: Updated ARCHITECTURE.md and architecture rules to reflect single entry point pattern
+  - **Debug Log Cleanup**: Removed development debug logging from damage queue system
+  - **Reference Cleanup**: Removed all documentation references to deprecated damage_requested signal
 - **RadarSystem Boss Visibility**: Fixed radar only showing goblins but not bosses due to incomplete enemy detection
   - **EntityTracker Integration**: RadarSystem now queries EntityTracker.get_entities_by_type("boss") to include scene-based bosses
   - **Fallback Robustness**: Added EntityTracker fallback for enemies when WaveDirector is unavailable

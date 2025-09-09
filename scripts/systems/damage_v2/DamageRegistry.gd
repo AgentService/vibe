@@ -45,7 +45,6 @@ func _ready() -> void:
 func _setup_queue_if_enabled() -> void:
 	_queue_enabled = BalanceDB.get_combat_value("use_zero_alloc_damage_queue")
 	if not _queue_enabled:
-		Logger.debug("Zero-alloc damage queue disabled", "combat")
 		return
 		
 	# Initialize queue components

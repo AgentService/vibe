@@ -86,8 +86,8 @@ const Arena = preload("res://scenes/arena/Arena.tscn")  # FORBIDDEN
 
 #### Signal-Based Communication
 ```gdscript
-# ✅ Systems emit to EventBus
-EventBus.damage_requested.emit(source_id, target_id, damage, ["fire"])
+# ✅ Systems use DamageService for single entry point
+DamageService.apply_damage(source_id, target_id, damage, ["fire"])
 
 # ✅ Scenes listen to EventBus
 EventBus.health_changed.connect(_on_health_changed)
@@ -112,7 +112,7 @@ static func calculate_crit_damage(base: float, crit_mult: float) -> float:
 
 ### EventBus — what it IS for
 - Cross-system, decoupled broadcasting of domain events (transport only).
-- Examples: damage_requested/applied/taken, xp_gained/leveled_up, ability_requested/started/finished, enemy_spawned, debug toggles, pause state changed.
+- Examples: damage_applied/taken, xp_gained/leveled_up, ability_requested/started/finished, enemy_spawned, debug toggles, pause state changed.
 - Characteristics: fire-and-forget, many listeners, no ordering guarantees beyond signal semantics, no orchestration logic inside.
 
 ### EventBus — what it is NOT for

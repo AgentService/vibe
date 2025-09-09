@@ -31,7 +31,7 @@ Godot 4.2 roguelike — mechanics-first, data-driven, deterministic.
   ```gdscript
   # AbilitySystem.gd - system layer  
   EventBus.combat_step.connect(_on_combat_step)
-  EventBus.damage_requested.emit(source_id, target_id, damage, tags)
+  DamageService.apply_damage(source_id, target_id, damage, tags)
   ```
 - **Domain (Models):** Item/Affix/Skill/Support/TreeNode; pure data/helpers only.
   ```gdscript
@@ -72,7 +72,6 @@ Systems subscribe to `combat_step(dt)` and update in lockstep (DoT, AI, cooldown
 | **TIMING** |
 | `combat_step` | RunManager | `CombatStepPayload` | 30Hz Fixed | Drives deterministic combat updates. |
 | **DAMAGE** |
-| `damage_requested` | AbilitySystem, Projectiles | `DamageRequestPayload` | Per Hit | Requests a damage calculation from the `DamageSystem`. |
 | `damage_applied` | DamageSystem | `DamageAppliedPayload` | Per Hit | Confirms a single damage instance was applied. |
 | `damage_batch_applied` | DamageSystem | `DamageBatchAppliedPayload` | Per AoE | Confirms multiple damage instances for AoE attacks. |
 | `damage_dealt` | DamageSystem | `DamageDealtPayload` | Per Hit | Signals damage was dealt, used for camera shake, etc. |

@@ -1,4 +1,4 @@
-# 6-ENEMY_V2_ENHANCEMENTS
+# 6-DATA_DRIVEN_SPAWN_SYSTEM
 
 **Status:** Ready to Start  
 **Owner:** Solo (Indie)  
@@ -11,7 +11,7 @@
 
 ## Context & Purpose
 
-The Enemy V2 MVP is complete and working excellently. This task implements the remaining enhancements to create a fully data-driven enemy spawning system with scaling mechanics and arena-specific spawn plans.
+The Enemy V2 MVP is complete and working excellently. This task implements the missing data-driven components to create a fully configurable enemy spawning system with phase-based scheduling, scaling mechanics, and arena-specific spawn plans.
 
 **What's already done (MVP):**
 - ✅ EnemyFactory with template system
