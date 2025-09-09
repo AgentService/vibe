@@ -149,10 +149,8 @@ func _perform_attack() -> void:
 	# Emit damage to player if in range
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# Use DamageService for player damage (when implemented)
-		# For now, use old EventBus.damage_taken signal for player damage
-		if EventBus:
-			EventBus.damage_taken.emit(attack_damage)
+		# Use unified damage system for player damage
+		DamageService.apply_damage("player", float(attack_damage))
 
 # take_damage() method removed - damage handled via unified pipeline
 # Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync

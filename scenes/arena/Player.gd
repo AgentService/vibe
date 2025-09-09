@@ -22,6 +22,9 @@ var invulnerable: bool = false
 
 var is_attacking: bool = false
 var attack_timer: float = 0.0
+var is_hurt: bool = false
+var hurt_timer: float = 0.0
+var hurt_duration: float = 0.6  # Duration to play hurt animation
 
 func _ready() -> void:
 	# Player should pause with the game
@@ -30,7 +33,9 @@ func _ready() -> void:
 	current_health = get_max_health()
 	_setup_collision()
 	_setup_animations()
-	EventBus.damage_taken.connect(_on_damage_taken)
+	
+	# DAMAGE V3: Register with unified damage system
+	_register_with_damage_system()
 	
 	# Connect to melee attack signals for animation
 	if EventBus.has_signal("melee_attack_started"):
@@ -115,6 +120,7 @@ func _physics_process(delta: float) -> void:
 	_handle_roll_input()
 	_update_roll(delta)
 	_update_attack(delta)
+	_update_hurt(delta)
 	_handle_movement(delta)
 	_handle_facing()
 
@@ -165,6 +171,13 @@ func _update_attack(delta: float) -> void:
 			is_attacking = false
 			attack_timer = 0.0
 
+func _update_hurt(delta: float) -> void:
+	if is_hurt:
+		hurt_timer += delta
+		if hurt_timer >= hurt_duration:
+			is_hurt = false
+			hurt_timer = 0.0
+
 func _handle_movement(_delta: float) -> void:
 	var input_vector: Vector2 = Vector2.ZERO
 	
@@ -201,16 +214,20 @@ func _handle_movement(_delta: float) -> void:
 	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		velocity = input_vector * get_move_speed()
-		# Don't override attack animation with run animation
-		if not is_attacking:
+		# Don't override attack or hurt animation with run animation
+		if not is_attacking and not is_hurt:
 			_play_animation("run_" + current_direction)
 	else:
 		velocity = Vector2.ZERO
-		# Don't override attack animation with idle animation
-		if not is_attacking:
+		# Don't override attack or hurt animation with idle animation
+		if not is_attacking and not is_hurt:
 			_play_animation("idle_" + current_direction)
 	
 	move_and_slide()
+	
+	# Update damage system with new position
+	DamageService.update_entity_position("player", global_position)
+	EntityTracker.update_entity_position("player", global_position)
 
 func get_pos() -> Vector2:
 	return global_position
@@ -283,42 +300,83 @@ func _handle_facing() -> void:
 	# This function can be used for attack-specific facing logic
 	pass
 
-func _on_damage_taken(damage: int) -> void:
-	# Check for god mode cheat
-	if CheatSystem and CheatSystem.is_god_mode_active():
+
+func get_health() -> int:
+	return current_health
+
+# DAMAGE V3: Register player with unified damage system
+func _register_with_damage_system() -> void:
+	var entity_data = {
+		"id": "player",
+		"type": "player",
+		"hp": float(current_health),
+		"max_hp": float(get_max_health()),
+		"alive": true,
+		"pos": global_position
+	}
+	
+	# Register with both systems for unified damage V3
+	DamageService.register_entity("player", entity_data)
+	EntityTracker.register_entity("player", entity_data)
+	
+	# Connect to damage sync events
+	if EventBus.has_signal("damage_entity_sync"):
+		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+	
+	Logger.info("Player registered with unified damage system", "player")
+
+# DAMAGE V3: Handle unified damage sync events
+func _on_damage_entity_sync(payload: Dictionary) -> void:
+	var entity_id: String = payload.get("entity_id", "")
+	var entity_type: String = payload.get("entity_type", "")
+	var damage: float = payload.get("damage", 0.0)
+	var new_hp: float = payload.get("new_hp", 0.0)
+	var is_death: bool = payload.get("is_death", false)
+	
+	# Only handle player entity
+	if entity_id != "player" or entity_type != "player":
 		return
 	
-	if invulnerable:
-		return  # No damage during dodge roll
-		
-	current_health = max(0, current_health - damage)
+	Logger.info("Player received damage sync: %.1f damage, HP: %.1f" % [damage, new_hp], "player")
 	
-	if current_health <= 0:
-		_play_animation("hurt_" + current_direction)
+	# Update player HP
+	current_health = int(new_hp)
+	
+	# Update EntityTracker data
+	var tracker_data = EntityTracker.get_entity("player")
+	if tracker_data.has("id"):
+		tracker_data["hp"] = new_hp
+	
+	# Handle death or damage animation
+	if is_death:
+		_play_hurt_animation()
 		EventBus.player_died.emit()
 		
 		# End run through StateManager with death result
 		var death_result = {
 			"result_type": "death",
-			"death_cause": "Health reached zero",
-			"time_survived": Time.get_ticks_msec() / 1000.0,  # Convert to seconds
+			"death_cause": "Killed by enemy",
+			"time_survived": Time.get_ticks_msec() / 1000.0,
 			"level_reached": PlayerProgression.get_level() if PlayerProgression else 1,
-			"enemies_killed": 0,  # TODO: Track this in a combat stats system
-			"damage_dealt": 0,    # TODO: Track this in a combat stats system
+			"enemies_killed": 0,
+			"damage_dealt": 0,
 			"damage_taken": get_max_health() - current_health,
-			"xp_gained": 0,       # TODO: Track XP gained this run
+			"xp_gained": 0,
 			"arena_id": StringName("arena")
 		}
 		
-		# Delay end_run call to allow death animation to start
 		await get_tree().create_timer(0.1).timeout
 		StateManager.end_run(death_result)
 	else:
-		_play_animation("hurt_" + current_direction)
+		_play_hurt_animation()
 
-func get_health() -> int:
-	return current_health
 
+func _play_hurt_animation() -> void:
+	# Trigger hurt animation with proper state management
+	is_hurt = true
+	hurt_timer = 0.0
+	_play_animation("hurt_" + current_direction)
+	Logger.info("Player: Playing hurt animation hurt_" + current_direction, "player")
 
 func _play_animation(anim_name: String) -> void:
 	# Guard against empty animation names

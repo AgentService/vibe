@@ -44,9 +44,7 @@ signal damage_batch_applied(payload)
 @warning_ignore("unused_signal")
 signal damage_entity_sync(payload)
 
-## Player takes damage - emitted when enemies hit player
-@warning_ignore("unused_signal")
-signal damage_taken(damage: int)
+## Legacy damage_taken signal removed - damage handled via unified DamageService system
 
 ## Player died - emitted when HP reaches 0
 @warning_ignore("unused_signal")

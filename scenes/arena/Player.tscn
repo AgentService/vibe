@@ -676,7 +676,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"hurt_down",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -696,7 +696,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"hurt_left",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -716,7 +716,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"hurt_right",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -736,7 +736,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"hurt_up",
-"speed": 5.0
+"speed": 8.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -1052,8 +1052,7 @@ player_type = ExtResource("2_jkhsn")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_jkhsn")
-animation = &"attack_down"
-frame_progress = 0.816853
+animation = &"idle_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false

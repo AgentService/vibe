@@ -4,7 +4,7 @@ extends Node
 # Handles player input to attack system conversion
 # Manages melee attacks, projectile attacks, auto-attacks, and debug spawning
 
-const MeleeVisualConfig = preload("res://scripts/domain/MeleeVisualConfig.gd")
+# MeleeVisualConfig class loaded via class_name - no preload needed
 
 # Dependencies injected from Arena
 var player: Player
