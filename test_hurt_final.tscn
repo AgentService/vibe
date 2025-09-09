@@ -1,0 +1,14 @@
+[gd_scene load_steps=5 format=3 uid="uid://dkug3nj73j5y2"]
+
+[ext_resource type="Script" uid="uid://bm2lc2xx5b5yp" path="res://test_hurt_final.gd" id="1_oo1iy"]
+[ext_resource type="PackedScene" uid="uid://c2jp4u6jcugam" path="res://scenes/arena/Player.tscn" id="1_skq7o"]
+[ext_resource type="Script" uid="uid://uougsht51b6u" path="res://scenes/arena/Player.gd" id="2_oo1iy"]
+[ext_resource type="Resource" uid="uid://bqepe3g45r6ij" path="res://data/content/default_player.tres" id="3_ryg4r"]
+
+[node name="FinalHurtTest" type="Node2D"]
+script = ExtResource("1_oo1iy")
+
+[node name="Player" type="CharacterBody2D" parent="." groups=["player"] instance=ExtResource("1_skq7o")]
+scale = Vector2(0.8, 0.8)
+script = ExtResource("2_oo1iy")
+player_type = ExtResource("3_ryg4r")

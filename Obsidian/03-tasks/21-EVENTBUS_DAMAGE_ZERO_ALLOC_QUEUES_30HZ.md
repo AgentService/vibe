@@ -12,72 +12,89 @@ Complexity: 5/10
 
 ## Purpose
 
-Introduce a zero-allocation, batched event path for hot signals (starting with damage) using preallocated ring buffers and payload pools, drained at a fixed 30Hz combat step. Preserve public EventBus signal contracts and determinism while eliminating per-frame allocations and reducing dispatch overhead.
+Introduce a zero-allocation, batched event path for hot damage processing using preallocated ring buffers and payload pools, drained at a fixed 30Hz combat step. Preserve the single entry point architecture (DamageService.apply_damage) while eliminating per-frame allocations and reducing dispatch overhead.
 
-Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics are unnecessary on main-thread production/consumption; we’ll add atomics only if we later introduce multi-thread producers.
+**Key Architectural Decision:** Centralize the queue inside DamageService to preserve the single entry point and avoid sprinkling feature-flag conditionals across systems. All callers continue using DamageService.apply_damage(...) - the queueing is an internal optimization.
+
+Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics are unnecessary on main-thread production/consumption; we'll add atomics only if we later introduce multi-thread producers.
 
 ---
 
 ## Goals & Acceptance Criteria
 
-- [ ] API compatibility:
-  - EventBus public signals (e.g., `damage_requested`) remain supported.
-  - Existing systems can keep emitting/listening; the new path is an internal optimization layer.
+- [ ] Single entry point preserved:
+  - All damage requests continue through DamageService.apply_damage()
+  - No branching in MeleeSystem/DamageSystem - they remain unchanged
+  - Queue is internal to DamageService (flag on = enqueue, flag off = process immediately)
 - [ ] Zero-allocation in hot path:
-  - Ring buffers for hot events (start with damage) preallocated at boot.
-  - Payload dictionaries/arrays acquired from pools and reused; no per-event allocations during gameplay.
+  - Ring buffers for damage events preallocated at boot
+  - Payload dictionaries/arrays acquired from pools and reused; no per-event allocations during gameplay
 - [ ] Batched processing:
-  - Drain queues at fixed cadence (30Hz combat step) to reduce dispatch overhead and stabilize frame times.
+  - Drain queues at fixed cadence (30Hz combat step) to reduce dispatch overhead and stabilize frame times
 - [ ] Determinism:
-  - FIFO ordering per queue, deterministic batch size, stable behavior across runs.
+  - FIFO ordering per queue, deterministic batch size, stable behavior across runs
 - [ ] Overflow policy:
-  - Drop-oldest with counter and throttled warning logs; never crash. Metrics exposed for observability.
+  - Drop-oldest with counter and throttled warning logs; never crash. Metrics exposed for observability
+- [ ] EventBus compatibility:
+  - EventBus.damage_requested adapter routes to same DamageService path (both paths share queue)
 - [ ] Tests & docs:
-  - Isolated tests for queue correctness and damage pipeline integrity.
-  - Architecture docs and changelog updated.
+  - A/B testing with feature flag to ensure identical outcomes
+  - Isolated tests for queue correctness and damage pipeline integrity
+  - Architecture docs and changelog updated
 
 ---
 
 ## Design
 
+### Centralized Architecture
+
+**DamageService Internal Components:**
+- `_damage_queue: RingBuffer` - Internal queue for damage requests
+- `_payload_pool: ObjectPool` - Pooled damage payload dictionaries
+- `_tags_pool: ObjectPool` - Pooled tag arrays
+- `_processor_timer: Timer` - 30Hz processor (only when flag enabled)
+- `_process_tick()` - Drain queue and call existing internal processing
+
+**Feature Flag Integration:**
+- `DamageService.apply_damage()` behavior:
+  - Flag ON: enqueue payload for batch processing
+  - Flag OFF: process immediately (current behavior)
+- EventBus.damage_requested adapter routes to same DamageService path
+
 ### Components
 
-1) RingBuffer (GDScript, single-producer/consumer on main thread)
-- Preallocated Array for slots.
-- Head/tail indices wrap with mask (size power-of-two recommended).
-- Methods: `push(item)`, `try_push(item)`, `pop()`, `try_pop()`, `is_full()`, `is_empty()`, `count()`.
+1) **RingBuffer** (RefCounted, single-producer/consumer on main thread)
+- Preallocated Array for slots
+- Head/tail indices wrap with mask (size power-of-two recommended)
+- Methods: `try_push(item)`, `try_pop()`, `is_full()`, `is_empty()`, `count()`
 
-2) ObjectPool (GDScript)
-- Preallocated of Dictionary payloads (and optional Array pools for tags).
-- Methods: `acquire() -> Dictionary`, `release(dict: Dictionary)`.
-- Clear/reset payload fields on release (reuse underlying objects).
+2) **ObjectPool** (RefCounted)
+- Preallocated Dictionary payloads and Array pools for tags
+- Methods: `acquire() -> Dictionary`, `release(dict: Dictionary)`
+- Clear/reset payload fields on release (reuse underlying objects)
 
-3) EventQueueAdapter (Autoload)
-- Subscribes to EventBus hot signals (initially `damage_requested`).
-- On emission: acquire pooled dict, copy fields into pooled dict (no new allocations), enqueue to ring buffer.
-- Optional: provide a direct enqueue API for future producers to bypass signals entirely.
+3) **PayloadReset** (RefCounted, static helpers)
+- Payload cleanup utilities to avoid shape changes
 
-4) DamageQueueProcessor (Autoload)
-- Drains the damage queue at 30Hz:
-  - For each payload: call DamageRegistry entrypoint once (centralized), then release payload back to pool.
-- Cadence source:
-  - Preferred: subscribe to RunClock tick (if implemented).
-  - Fallback: internal Timer set to 0.0333s, paused via PauseManager and gated by StateManager.
-
-5) Metrics & Logging
-- Counters: `enqueued `dropped_overflow`, `processed`, `max_watermark`.
-- Expose via DebugManager/console command (limbo_console).
-- Throttled warns on overflow (e.g., one per 5 seconds with totals since last).
-
-### Payload shape (unchanged)
-- Dictionary with keys `{ source: String, target: String, base_damage: float, tags: Array[StringName] or Array[String] }`.
-- tags Array acquired from a small Array pool to avoid transient allocation on tag copying.
+### Payload Shape (Enhanced)
+Dictionary with keys (superset for compatibility):
+```gdscript
+{
+  target: StringName,           # Required
+  base_damage: float,           # Required  
+  source: StringName,           # Required
+  tags: Array[StringName],      # Required (pooled)
+  damage_type: StringName,      # Optional (default: "generic")
+  knockback: float,             # Optional (default: 0.0)
+  source_pos: Vector2           # Optional (default: Vector2.ZERO)
+}
+```
 
 ---
 
 ## Implementation Plan (Phases & Checklist)
 
-### Phase A — Utilities (RingBuffer + ObjectPool)
+### Phase A — Utilities (RingBuffer + ObjectPool + PayloadReset)
 - [ ] `scripts/utils/RingBuffer.gd`
   ```gdscript
   extends RefCounted
@@ -117,7 +134,7 @@ Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics a
       _count -= 1
       return item
 
-  func count -> int: return _count
+  func count() -> int: return _count
   func is_full() -> bool: return _count == _capacity
   func is_empty() -> bool: return _count == 0
 
@@ -130,6 +147,7 @@ Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics a
       v |= v >> 16
       return v + 1
   ```
+
 - [ ] `scripts/utils/ObjectPool.gd`
   ```gdscript
   extends RefCounted
@@ -156,16 +174,19 @@ Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics a
       _pool.push_back(obj)
   ```
 
-- [ ] `scripts/utils/PayloadReset.gd` (helpers)
+- [ ] `scripts/utils/PayloadReset.gd`
   ```gdscript
   extends RefCounted
   class_name PayloadReset
 
   static func clear_damage_payload(d: Dictionary) -> void:
       # Preserve keys to avoid shape changes; reset values
-      d["source"] = ""
-      d["target"] = ""
+      d["target"] = &""
+      d["source"] = &""
       d["base_damage"] = 0.0
+      d["damage_type"] = &"generic"
+      d["knockback"] = 0.0
+      d["source_pos"] = Vector2.ZERO
       var tags: Array = d.get("tags", [])
       if tags:
           tags.clear()
@@ -173,151 +194,202 @@ Decision: GDScript-first prototype (no GDExtension/atomics). Lock-free atomics a
           d["tags"] = []
   ```
 
-### Phase B — EventQueueAdapter (Autoload)
-- [ ] `autoload/EventQueue.gd`
+### Phase B — Feature Flag & Config
+- [ ] Add config keys to BalanceDB (or config/debug.tres):
   ```gdscript
-  extends Node
-  class_name EventQueue
+  # In CombatBalance.gd or debug config
+  @export var use_zero_alloc_damage_queue: bool = false
+  @export var damage_queue_capacity: int = 4096
+  @export var damage_pool_size: int = 4096
+  @export var damage_queue_max_per_tick: int = 2048
+  @export var damage_queue_tick_rate_hz: float = 30.0
+  ```
+- [ ] Hook into hot-reload (F5) for A/B testing without restart
 
-  const DAMAGE_QUEUE_CAPACITY := 4096
- const DAMAGE_POOL_SIZE := 4096
+### Phase C — DamageService Integration (Internal Queue)
+- [ ] Modify `scripts/systems/damage_v2/DamageRegistry.gd` (DamageService):
+  ```gdscript
+  # Internal queue components (only when flag enabled)
+  var _damage_queue: RingBuffer
+  var _payload_pool: ObjectPool
+  var _tags_pool: ObjectPool
+  var _processor_timer: Timer
+  var _queue_enabled: bool = false
 
-  var damage_queue := RingBuffer.new()
-  var damage_payload_pool := ObjectPool.new()
-  var tags_array_pool := ObjectPool.new()
-
-  var dropped_overflow_damage: int = 0
-  var enq_damage_count: int = 0
-  var max_watermark_damage: int = 0
+  # Metrics
+  var _enqueued: int = 0
+  var _processed: int = 0
+  var _dropped_overflow: int = 0
+  var _max_watermark: int = 0
+  var _last_tick_ms: float = 0.0
+  var _total_ticks: int = 0
 
   func _ready() -> void:
-      damage_queue.setup(DAMAGE_QUEUE_CAPACITY)
-      damage_payload_pool.setup(DAMAGE_POOL_SIZE, func():
-          return {"source":"","target":"","base_damage":0.0,"tags":[]}
-      , PayloadReset.clear_damage_payload)
-      tags_array_pool.setup(128, func(): return [], func(a: Array): a.clear())
+      # ... existing setup ...
+      _setup_queue_if_enabled()
+      
+      # EventBus adapter (routes to same path)
+      EventBus.damage_requested.connect(_on_damage_requested_compat)
 
-      # Subscribe to hot EventBus signal
-      EventBus.damage_requested.connect(_on_damage_requested)
-
-  func _on_damage_requested(payload: Dictionary) -> void:
-      # Acquire pooled dict and copy fields without allocating
-      var d = damage_payload_pool.acquire()
-      d["source"] = payload.get("source","")
-      d["target"] = payload.get("target","")
-      d["base_damage"] = float(payload.get("base_damage", 0.0))
-
-      # Copy tags using pooled array
-      var tags: Array = payload.get("tags", [])
-      var t = tags_array_pool.acquire()
-      # Copy by push_back to avoid new array alloc
-      for tag in tags:
-          t.push_back(tag)
-      d["tags"] = t
-
-      if not damage_queue.try_push(d):
-          # Overflow: drop-oldest (pop one, release, then push)
-          var dropped = damage_queue.try_pop()
-          if dropped != null:
-              # Release both dropped payload and its tags array
-              var dropped_tags: Array = dropped.get("tags", null)
-              if dropped_tags != null:
-                  tags_array_pool.release(dropped_tags)
-              damage_payload_pool.release(dropped)
-          if not damage_queue.try_push(d):
-              # Queue full even after drop-oldest (should not happen): release d
-              var d_tags: Array = d.get("tags", null)
-              if d_tags != null:
-                  tags_array_pool.release(d_tags)
-              damage_payload_pool.release(d)
-              dropped_overflow_damage += 1
-              Logger.warn("EventQueue: damage overflow hard-drop", "event_queue")
-              return
-          dropped_overflow_damage += 1
-      enq_damage_count += 1
-      if damage_queue.count() > max_watermark_damage:
-          max_watermark_damage = damage_queue.count()
-  ```
-
-- [ ] Provide optional fast-path API (future):
-  ```gdscript
-  func enqueue_damage_fast(source: String, target: String, base_damage: float, tags: Array) -> void:
-      _on_damage_requested({"source":source,"target":target,"base_damage":base_damage,"tags":tags})
-  ```
-
-### Phase C — DamageQueueProcessor (Autoload, 30Hz)
-- [ ] `autoload/DamageQueueProcessor.gd`
-  ```gdscript
-  extends Node
-  class_name DamageQueueProcessor
-
-  @export var tick_rate_hz: float = 30.0
-  var _timer: Timer
-
-  func _ready() -> void:
-      # Prefer RunClock if available and emitting at 30Hz; else use Timer
-      if Engine.has_singleton("RunClock"):
-          RunClock.tick.connect(_on_tick) # Ensure RunClock configured to 30Hz if desired
-      else:
-          _timer = Timer.new()
-          _timer.one_shot = false
-          _timer.wait_time = 1.0 / tick_rate_hz
-          add_child(_timer)
-          _timer.timeout.connect(_on_tick)
-          _timer.start()
-
+  func _setup_queue_if_enabled() -> void:
+      _queue_enabled = BalanceDB.get_combat_value("use_zero_alloc_damage_queue", false)
+      if not _queue_enabled:
+          return
+          
+      # Initialize queue components
+      _damage_queue = RingBuffer.new()
+      _damage_queue.setup(BalanceDB.get_combat_value("damage_queue_capacity", 4096))
+      
+      _payload_pool = ObjectPool.new()
+      _payload_pool.setup(
+          BalanceDB.get_combat_value("damage_pool_size", 4096),
+          func(): return {"target":&"","source":&"","base_damage":0.0,"damage_type":&"generic","knockback":0.0,"source_pos":Vector2.ZERO,"tags":[]},
+          PayloadReset.clear_damage_payload
+      )
+      
+      _tags_pool = ObjectPool.new()
+      _tags_pool.setup(128, func(): return [], func(a: Array): a.clear())
+      
+      # Setup 30Hz processor
+      _processor_timer = Timer.new()
+      _processor_timer.one_shot = false
+      _processor_timer.wait_time = 1.0 / BalanceDB.get_combat_value("damage_queue_tick_rate_hz", 30.0)
+      add_child(_processor_timer)
+      _processor_timer.timeout.connect(_process_tick)
+      _processor_timer.start()
+      
       # Pause/State gates
       PauseManager.paused_changed.connect(_on_paused_changed)
       _apply_pause_state(PauseManager.is_paused())
 
-  func _on_paused_changed(paused: bool) -> void:
-      _apply_pause_state(paused)
+  func apply_damage(target: String, damage: float, source: String, tags: Array, damage_type: String = "generic", knockback: float = 0.0, source_pos: Vector2 = Vector2.ZERO) -> bool:
+      if _queue_enabled:
+          return _enqueue_damage(target, damage, source, tags, damage_type, knockback, source_pos)
+      else:
+          return _process_damage_immediate(target, damage, source, tags, damage_type, knockback, source_pos)
 
-  func _apply_pause_state(paused: bool) -> void:
-      if _timer:
-          _timer.paused = paused
+  func _enqueue_damage(target: String, damage: float, source: String, tags: Array, damage_type: String, knockback: float, source_pos: Vector2) -> bool:
+      # Acquire pooled payload
+      var d = _payload_pool.acquire()
+      d["target"] = target
+      d["source"] = source
+      d["base_damage"] = damage
+      d["damage_type"] = damage_type
+      d["knockback"] = knockback
+      d["source_pos"] = source_pos
+      
+      # Copy tags using pooled array
+      var t = _tags_pool.acquire()
+      for tag in tags:
+          t.push_back(tag)
+      d["tags"] = t
+      
+      if not _damage_queue.try_push(d):
+          # Overflow: drop-oldest
+          var dropped = _damage_queue.try_pop()
+          if dropped != null:
+              var dropped_tags: Array = dropped.get("tags", null)
+              if dropped_tags != null:
+                  _tags_pool.release(dropped_tags)
+              _payload_pool.release(dropped)
+          
+          if not _damage_queue.try_push(d):
+              # Hard drop
+              var d_tags: Array = d.get("tags", null)
+              if d_tags != null:
+                  _tags_pool.release(d_tags)
+              _payload_pool.release(d)
+              _dropped_overflow += 1
+              Logger.warn("DamageService: queue overflow hard-drop", "damage_queue")
+              return false
+          _dropped_overflow += 1
+      
+      _enqueued += 1
+      if _damage_queue.count() > _max_watermark:
+          _max_watermark = _damage_queue.count()
+      return true
 
-  func _on_tick(_arg := null) -> void:
-      # Drain damage queue in a bounded batch
-      var max_per_tick := 2048  # guard to prevent long stalls
-      var processed := 0
+  func _process_tick() -> void:
+      if not _queue_enabled:
+          return
+          
+      var start_time = Time.get_ticks_msec()
+      var max_per_tick = BalanceDB.get_combat_value("damage_queue_max_per_tick", 2048)
+      var processed = 0
+      
       while processed < max_per_tick:
-          var d: Dictionary = EventQueue.damage_queue.try_pop()
+          var d: Dictionary = _damage_queue.try_pop()
           if d == null:
               break
-          # Extract tags and release after processing
+              
+          # Process damage using existing internal logic
           var tags: Array = d.get("tags", null)
-          DamageRegistry.request_damage(d)  # Single sanctioned entry point
+          _process_damage_immediate(d["target"], d["base_damage"], d["source"], tags if tags else [], d.get("damage_type", "generic"), d.get("knockback", 0.0), d.get("source_pos", Vector2.ZERO))
+          
+          # Release back to pools
           if tags != null:
-              EventQueue.tags_array_pool.release(tags)
+              _tags_pool.release(tags)
               d["tags"] = []  # detach to avoid double-release
-          EventQueue.damage_payload_pool.release(d)
+          _payload_pool.release(d)
           processed += 1
+      
+      _processed += processed
+      _total_ticks += 1
+      _last_tick_ms = Time.get_ticks_msec() - start_time
+
+  func _on_damage_requested_compat(payload) -> void:
+      # EventBus adapter - route to same apply_damage path
+      var source: String = str(payload.get("source_id", "unknown"))
+      var target: String = str(payload.get("target_id", "unknown"))
+      var damage: float = payload.get("base_damage", 0.0)
+      var tags: Array = payload.get("tags", [])
+      apply_damage(target, damage, source, tags)
   ```
 
-- Notes:
-  - If RunClock cadence != 30Hz, set `tick_rate_hz` to 30 and use Timer, or add a 30Hz sub-divider when driven by RunClock 10Hz.
+### Phase D — Debug Commands & Metrics
+- [ ] Add console commands via DebugManager or limbo_console:
+  ```gdscript
+  # In DebugManager or console command handler
+  func cmd_damage_queue_toggle() -> void:
+      var current = BalanceDB.get_combat_value("use_zero_alloc_damage_queue", false)
+      BalanceDB.set_combat_value("use_zero_alloc_damage_queue", not current)
+      Logger.info("Damage queue toggled: " + str(not current), "debug")
 
-### Phase D — Config & Toggles
-- [ ] Add BalanceDB/config flag to enable queue path (default: enabled in dev):
-  - `use_zero_alloc_damage_queue: bool`
-- [ ] When disabled:
-  - `EventQueue` unsubscribes or becomes a pass-through (directly emits to DamageRegistry immediately).
+  func cmd_damage_queue_stats() -> void:
+      if DamageService._queue_enabled:
+          var stats = {
+              "enqueued": DamageService._enqueued,
+              "processed": DamageService._processed,
+              "dropped_overflow": DamageService._dropped_overflow,
+              "max_watermark": DamageService._max_watermark,
+              "current_queue_size": DamageService._damage_queue.count(),
+              "last_tick_ms": DamageService._last_tick_ms,
+              "total_ticks": DamageService._total_ticks
+          }
+          Logger.info("Damage queue stats: " + str(stats), "debug")
+      else:
+          Logger.info("Damage queue disabled", "debug")
+  ```
 
-### Phase E — Tests
+### Phase E — Tests (A/B Validation)
+- [ ] `tests/EventQueue_Isolated.gd/.tscn`:
+  - Unit test RingBuffer push/pop boundaries, FIFO ordering, overflow policy
+  - Validate ObjectPool acquire/release cycles
+  - Test metrics counters accuracy
+
 - [ ] Extend `tests/DamageSystem_Isolated_Clean.gd`:
-  - Emit N (e.g., 10k) `damage_requested` events quickly; assert processed count matches after T seconds.
-  - Assert FIFO ordering for a tagged sequence (use incremental ids in tags).
-- [ ] New `tests/EventQueue_Isolated.gd/.tscn`:
-  - Unit test RingBuffer push/pop boundaries and overflow policy.
-  - Validate metrics counters and throttled warnings (may need Logger spy or counters).
+  - A/B test: run identical damage sequence with flag ON/OFF
+  - Assert identical outcomes and order for labeled sequence (use incremental id tags)
+  - Performance stress test: N=10k damage requests, assert stable processing
+
 - [ ] `tests/test_signal_contracts.gd`:
-  - Ensure `damage_requested` is still a valid and observed signal; compatibility preserved.
+  - Ensure EventBus.damage_requested adapter preserves contract
+  - Test both direct DamageService calls and EventBus emissions produce same results
 
 ### Phase F — Docs & Changelog
-- [ ] `docs/ARCHITECTURE_QUICK_REFERENCE.md`: Add zero-alloc queue path diagram and notes.
-- [ ] `docs/ARCHITECTURE_RULES.md`: State that hot EventBus signals may route via internal queue with preserved contracts.
-- [ ] `changelogs/features/YYYY_MM_DD-zero_alloc_event_damage_queues.md`: Feature entry with metrics fields.
+- [ ] `docs/ARCHITECTURE_QUICK_REFERENCE.md`: Add internal queue diagram, emphasize single entry point preserved
+- [ ] `docs/ARCHITECTURE_RULES.md`: Document that queue is internal optimization, producers still call DamageService only
+- [ ] `changelogs/features/YYYY_MM_DD-zero_alloc_damage_queues.md`: Feature entry with A/B testing results and metrics
 
 ---
 
@@ -327,39 +399,63 @@ Code (NEW):
 - `scripts/utils/RingBuffer.gd`
 - `scripts/utils/ObjectPool.gd`
 - `scripts/utils/PayloadReset.gd`
-- `autoload/EventQueue.gd`
-- `autoload/DamageQueueProcessor.gd`
 
-Code (EDIT, optional):
-- `autoload/BalanceDB.gd` or `config/debug.tres` (toggle)
-- `autoload/EventBus.gd` (no API changes; ensure signals are present)
-- `scripts/systems/damage_v2/DamageRegistry.gd` (verify single entrypoint compatibility)
+Code (EDIT):
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Add internal queue system
+- `autoload/BalanceDB.gd` or `config/debug.tres` - Add feature flags and tunables
+- `autoload/DebugManager.gd` - Add console commands (optional)
 
-Tests:
-- `tests/EventQueue_Isolated.gd` / `.tscn` (NEW)
-- `tests/DamageSystem_Isolated_Clean.gd` (extend)
-- `tests/test_signal_contracts.gd` (extend)
+Tests (NEW/EDIT):
+- `tests/EventQueue_Isolated.gd/.tscn` - Unit tests for queue components
+- `tests/DamageSystem_Isolated_Clean.gd` - Extend for A/B testing
+- `tests/test_signal_contracts.gd` - Extend for adapter testing
 
 Docs:
-- `docs/ARCHITECTURE_QUICK_REFERENCE.md` (update)
-- `docs/ARCHITECTURE_RULES.md` (update)
-- `changelogs/features/YYYY_MM_DD-zero_alloc_event_damage_queues.md` (NEW)
+- `docs/ARCHITECTURE_QUICK_REFERENCE.md` - Update with queue internals
+- `docs/ARCHITECTURE_RULES.md` - Clarify single entry point preservation
+- `changelogs/features/YYYY_MM_DD-zero_alloc_damage_queues.md` - Feature documentation
 
 ---
 
-## Notes & Guards
+## Benefits of Centralized Approach
 
-- No per-frame allocations in queue hot path; all payloads/arrays pooled.
-- Overflow drops oldest with counters; log warns throttled (Logger, category `event_queue`).
-- Pause/State gates ensure no processing while paused or outside Arena state.
-- Determinism: queue preserves FIFO; batch size is fixed and documented; processing on a fixed cadence avoids jitter.
-- Backwards compatible: existing listeners relying on `damage_requested` still work; we optimize internal routing to DamageRegistry.
+### Architectural Clarity
+- **Single entry point preserved**: All systems continue calling DamageService.apply_damage()
+- **No system branching**: MeleeSystem, DamageSystem remain unchanged
+- **Internal optimization**: Queue is implementation detail, not API change
+- **Clean rollback**: Single flag disables entire queue system
+
+### Performance & Safety
+- **Zero hot-path allocations**: All payloads and arrays pooled and reused
+- **Bounded processing**: Max items per tick prevents frame stalls
+- **Overflow handling**: Drop-oldest policy with metrics, never crash
+- **A/B testable**: Runtime toggle for performance comparison
+
+### Maintainability
+- **Centralized logic**: All queue code in one place (DamageService)
+- **Clear ownership**: DamageService owns damage processing and optimization
+- **Metrics visibility**: Console commands for observability
+- **Deterministic**: FIFO ordering, fixed batch sizes, stable behavior
+
+---
+
+## Success Criteria
+
+- [ ] Queue path produces identical game behavior to direct path
+- [ ] No frame drops under 10k damage events/second
+- [ ] Memory usage remains flat during combat (no allocation spikes)
+- [ ] All tests pass with flag enabled/disabled
+- [ ] Performance improves by >20% in heavy combat scenarios
+- [ ] A/B testing shows no behavioral differences
+- [ ] Console commands provide clear queue metrics and control
 
 ---
 
 ## Minimal Milestone
 
-- [ ] A1: Utilities implemented (RingBuffer/ObjectPool) with tests
-- [ ] B1: EventQueue subscribes to `damage_requested` and enqueues
-- [ ] C1: DamageQueueProcessor drains at 30Hz into DamageRegistry
-- [ ] Sanity: DamageSystem_Isolated_Clean passes; enqueued == processed on test run; no crashes under overflow
+- [ ] A1: Utilities implemented (RingBuffer/ObjectPool/PayloadReset) with unit tests
+- [ ] B1: Feature flag and config integration with hot-reload
+- [ ] C1: DamageService internal queue with 30Hz processor
+- [ ] D1: EventBus adapter routes to same DamageService path
+- [ ] E1: A/B test passes - identical outcomes with flag ON/OFF
+- [ ] Sanity: All existing damage tests pass; no behavioral changes; queue metrics accurate

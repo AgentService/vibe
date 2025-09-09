@@ -39,6 +39,7 @@ func unregister_entity(id: String) -> void:
 		_entities.erase(id)
 		entity_unregistered.emit(id)
 
+
 ## Apply damage to an entity
 ## @param target_id: String ID of target entity
 ## @param amount: Base damage amount
