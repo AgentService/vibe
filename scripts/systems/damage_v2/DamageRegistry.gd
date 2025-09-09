@@ -246,10 +246,29 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	)
 	EventBus.damage_applied.emit(damage_payload)
 	
+	# Emit damage_dealt signal for camera shake and stats tracking
+	var damage_dealt_payload = EventBus.DamageDealtPayload_Type.new(
+		final_damage,
+		_map_source_for_damage_dealt(source),
+		target_id
+	)
+	EventBus.damage_dealt.emit(damage_dealt_payload)
+	
 	# Legacy signal for backward compatibility
 	damage_applied.emit(target_id, final_damage, was_killed)
 	
 	return was_killed
+
+## Map damage source to player/enemy for damage_dealt signal
+func _map_source_for_damage_dealt(source: String) -> String:
+	# Map various player damage sources to "player" for stats tracking
+	if source in ["melee", "projectile", "ability", "player"]:
+		return "player"
+	elif source in ["enemy", "boss", "environment"]:
+		return source
+	else:
+		# Default unknown sources to "unknown"
+		return "unknown"
 
 ## Process queued damage at fixed 30Hz rate
 func _process_damage_queue_tick() -> void:

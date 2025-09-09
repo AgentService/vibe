@@ -25,6 +25,7 @@ func _ready() -> void:
 	# Connect to EventBus for stat tracking
 	EventBus.enemy_killed.connect(_on_enemy_killed)
 	EventBus.damage_dealt.connect(_on_damage_dealt)
+	EventBus.xp_gained.connect(_on_xp_gained)
 	
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_load_player_stats)
@@ -43,6 +44,8 @@ func _exit_tree() -> void:
 		EventBus.enemy_killed.disconnect(_on_enemy_killed)
 	if EventBus.damage_dealt.is_connected(_on_damage_dealt):
 		EventBus.damage_dealt.disconnect(_on_damage_dealt)
+	if EventBus.xp_gained.is_connected(_on_xp_gained):
+		EventBus.xp_gained.disconnect(_on_xp_gained)
 
 func _try_load_player_stats() -> void:
 	if BalanceDB and BalanceDB._data.has("player"):
@@ -59,6 +62,7 @@ func _load_player_stats() -> void:
 		"melee_damage_add": 0.0,
 		"enemies_killed": 0,
 		"total_damage_dealt": 0.0,
+		"xp_gained": 0,
 		"melee_attack_speed_add": 0.0,
 		"melee_range_add": 0.0,
 		"melee_cone_angle_add": 0.0,
@@ -93,5 +97,9 @@ func _on_enemy_killed(payload) -> void:
 func _on_damage_dealt(payload) -> void:
 	"""Track total damage dealt for run statistics"""
 	# Only track player damage, not enemy damage
-	if payload.has("source_type") and payload.source_type == "player":
-		stats["total_damage_dealt"] = stats.get("total_damage_dealt", 0.0) + payload.get("damage", 0.0)
+	if payload.source == "player":
+		stats["total_damage_dealt"] = stats.get("total_damage_dealt", 0.0) + payload.damage
+
+func _on_xp_gained(amount: float, _new_total: float) -> void:
+	"""Track total XP gained for run statistics"""
+	stats["xp_gained"] = stats.get("xp_gained", 0) + int(amount)

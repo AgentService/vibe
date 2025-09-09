@@ -449,7 +449,7 @@ func _handle_death_sequence() -> void:
 		"enemies_killed": RunManager.stats.get("enemies_killed", 0),
 		"damage_dealt": int(RunManager.stats.get("total_damage_dealt", 0.0)),
 		"damage_taken": get_max_health() - current_health,
-		"xp_gained": 0,
+		"xp_gained": RunManager.stats.get("xp_gained", 0),
 		"arena_id": StringName("arena")
 	}
 	
