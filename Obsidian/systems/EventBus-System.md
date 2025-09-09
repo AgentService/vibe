@@ -17,7 +17,6 @@ This section reflects the signals currently defined in `autoload/EventBus.gd`.
 - `signal combat_step(payload)`: Drives deterministic combat updates.
 
 **DAMAGE**
-- `signal damage_requested(payload)`: Requests a damage calculation.
 - `signal damage_applied(payload)`: Confirms a single damage instance was applied.
 - `signal damage_batch_applied(payload)`: Confirms multiple damage instances for AoE attacks.
 - `signal damage_dealt(payload)`: Signals damage was dealt, used for effects like camera shake.
@@ -159,7 +158,7 @@ EnemyEntity.hp -= damage → EventBus.enemy_killed → XpSystem._on_enemy_killed
 
 ### EventBus → Systems → EventBus  
 ```
-Input → EventBus.ability_cast → AbilitySystem → EventBus.damage_requested → DamageSystem
+Input → EventBus.ability_cast → AbilitySystem → DamageService.apply_damage() → EventBus.damage_applied
 ```
 
 ## Signal Lifecycle Management
@@ -177,7 +176,7 @@ EventBus.signal_name.disconnect(_on_signal_name)
 - **Arena.gd**: Lines 61, 367 (main signal hub) - now processes enemies_updated with Array[EnemyEntity]
 - **HUD.gd**: Lines 11-12 (UI updates) - unchanged, uses typed payloads
 - **WaveDirector.gd**: Line 35 (enemies_updated signal) - emits typed Array[EnemyEntity]
-- **DamageSystem.gd**: Lines 18-19 (combat_step, damage_requested) - enhanced object identity collision
+- **DamageSystem.gd**: Lines 18-19 (combat_step) - enhanced object identity collision
 - **MeleeSystem.gd**: Line 32 (combat_step) - now references WaveDirector for pool indexing
 
 ## Performance Considerations

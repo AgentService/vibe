@@ -12,7 +12,7 @@
   - **30Hz Batch Processing**: Timer-based queue processor aligned with combat tick rate 
   - **Drop-Oldest Overflow Policy**: Graceful queue overflow handling with metrics tracking
   - **Feature Flag Integration**: Runtime toggle via BalanceDB configuration and console commands
-  - **Debug Console Commands**: damage_queue_toggle, damage_queue_stats, damage_queue_reset, damage_queue_enable/disable
+  - **Debug Console Commands**: damage_queue_stats (primary monitoring), damage_queue_reset, damage_queue_enable/disable/toggle (debugging)
   - **A/B Testing Framework**: Validates identical behavior between queue and direct processing paths
   - **Comprehensive Testing**: Unit tests for queue components and integration tests for damage consistency
 
