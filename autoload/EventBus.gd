@@ -10,7 +10,6 @@ extends Node
 
 # Preload all payload classes - using _Type suffix to avoid conflicts with class names
 const CombatStepPayload_Type = preload("res://scripts/domain/signal_payloads/CombatStepPayload.gd")
-const DamageRequestPayload_Type = preload("res://scripts/domain/signal_payloads/DamageRequestPayload.gd")
 const DamageAppliedPayload_Type = preload("res://scripts/domain/signal_payloads/DamageAppliedPayload.gd")
 const DamageBatchAppliedPayload_Type = preload("res://scripts/domain/signal_payloads/DamageBatchAppliedPayload.gd")
 const EntityKilledPayload_Type = preload("res://scripts/domain/signal_payloads/EntityKilledPayload.gd")
@@ -31,9 +30,7 @@ const CheatTogglePayload_Type = preload("res://scripts/domain/signal_payloads/Ch
 signal combat_step(payload)
 
 # DAMAGE SIGNALS
-## Request damage calculation - emitted by projectile/ability systems
-@warning_ignore("unused_signal")
-signal damage_requested(payload)
+# NOTE: damage_requested signal removed - use DamageService.apply_damage() directly
 
 ## Single damage instance applied - emitted by DamageSystem after calculation
 @warning_ignore("unused_signal")
@@ -47,9 +44,7 @@ signal damage_batch_applied(payload)
 @warning_ignore("unused_signal")
 signal damage_entity_sync(payload)
 
-## Player takes damage - emitted when enemies hit player
-@warning_ignore("unused_signal")
-signal damage_taken(damage: int)
+## Legacy damage_taken signal removed - damage handled via unified DamageService system
 
 ## Player died - emitted when HP reaches 0
 @warning_ignore("unused_signal")

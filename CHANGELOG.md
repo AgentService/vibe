@@ -5,6 +5,13 @@
 ## [Current Week - In Progress]
 
 ### Fixed
+- **Damage System Single Entry Point**: Consolidated damage requests to use DamageService.apply_damage() exclusively
+  - **Complete Signal Removal**: Removed EventBus.damage_requested signal and all backwards compatibility adapters
+  - **Boss Attack Updates**: Updated AncientLich and BananaLord boss attacks to use direct DamageService.apply_damage() calls
+  - **Architecture Cleanup**: Established single entry point pattern - all damage now flows through DamageService with no legacy paths
+  - **Test System Updates**: Updated all test files to use direct DamageService calls, removed signal-based testing
+  - **Payload Cleanup**: Removed unused DamageRequestPayload class and all references
+  - **Clean Architecture**: No backwards compatibility - pure single entry point implementation
 - **RadarSystem Boss Visibility**: Fixed radar only showing goblins but not bosses due to incomplete enemy detection
   - **EntityTracker Integration**: RadarSystem now queries EntityTracker.get_entities_by_type("boss") to include scene-based bosses
   - **Fallback Robustness**: Added EntityTracker fallback for enemies when WaveDirector is unavailable

@@ -121,8 +121,9 @@ func _check_enemy_player_collisions() -> void:
 		var collision_distance := enemy_radius + player_radius
 		
 		if distance <= collision_distance:
-			# Enemy hits player - deal 1 damage
-			EventBus.damage_taken.emit(1)
+			# Enemy hits player - use unified damage system
+			var damage_amount: float = 1.0  # Standard enemy collision damage
+			DamageService.apply_damage("player", damage_amount)
 			break  # Only one damage per frame
 
 # Old damage_requested handler removed - replaced by DamageService

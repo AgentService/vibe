@@ -23,7 +23,7 @@ func _ready() -> void:
 	# Connect to new PlayerProgression signals
 	EventBus.progression_changed.connect(_on_progression_changed)
 	EventBus.leveled_up.connect(_on_leveled_up)
-	EventBus.damage_taken.connect(_on_player_damage_taken)
+	# Health display will be updated via _process polling
 	EventBus.player_died.connect(_on_player_died)
 
 func _exit_tree() -> void:
@@ -32,8 +32,7 @@ func _exit_tree() -> void:
 		EventBus.progression_changed.disconnect(_on_progression_changed)
 	if EventBus.leveled_up.is_connected(_on_leveled_up):
 		EventBus.leveled_up.disconnect(_on_leveled_up)
-	if EventBus.damage_taken.is_connected(_on_player_damage_taken):
-		EventBus.damage_taken.disconnect(_on_player_damage_taken)
+	# Legacy damage_taken signal connection removed
 	if EventBus.player_died.is_connected(_on_player_died):
 		EventBus.player_died.disconnect(_on_player_died)
 	Logger.debug("HUD: Cleaned up signal connections", "ui")
@@ -51,8 +50,11 @@ func _process(delta: float) -> void:
 	if fps_update_timer >= FPS_UPDATE_INTERVAL:
 		fps_update_timer = 0.0
 		_update_fps_display()
-	
-	pass
+		
+		# Update health display by polling player
+		var player: Player = get_tree().get_first_node_in_group("player")
+		if player:
+			_update_health_display(player.get_health(), player.get_max_health())
 
 
 func _on_progression_changed(state: Dictionary) -> void:
@@ -71,11 +73,7 @@ func _on_leveled_up(new_level: int, prev_level: int) -> void:
 	print("HUD: Level up detected! %d -> %d" % [prev_level, new_level])
 	_update_level_display(new_level)
 
-func _on_player_damage_taken(_damage: int) -> void:
-	# Get current player health from player node
-	var player: Player = get_tree().get_first_node_in_group("player")
-	if player:
-		_update_health_display(player.get_health(), player.get_max_health())
+# Legacy _on_player_damage_taken removed - health updates via _process polling
 
 func _unhandled_key_input(event: InputEvent) -> void:
 	if is_game_over and event is InputEventKey and event.pressed:

@@ -188,9 +188,13 @@ func _perform_cone_attack():
 			var angle_diff = rad_to_deg(attack_direction.angle_to(enemy_direction))
 			
 			if abs(angle_diff) <= cone_angle / 2.0:
-				# Enemy is in cone - apply damage
+				# Enemy is in cone - apply damage via unified system
 				var old_hp = enemy.hp
-				enemy.hp -= 30.0
+				var enemy_id = "enemy_" + str(enemy_idx)
+				var damage_amount = 30.0
+				
+				# Use unified damage system
+				DamageService.apply_damage(enemy_id, damage_amount)
 				enemies_hit += 1
 				
 				print("  Hit enemy: ", enemy.type_id, " HP: ", old_hp, " -> ", enemy.hp)
