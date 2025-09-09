@@ -48,6 +48,7 @@ func balance_command(system: String, value: float) -> void:
 - **RNG:** Seed manipulation for testing
 - **EventBus:** Command-triggered events
 - **Logger:** Console output integration
+- **DamageSystem:** Zero-allocation queue monitoring and control
 
 ## Development Workflow
 1. Register commands for critical systems
@@ -61,8 +62,33 @@ func balance_command(system: String, value: float) -> void:
 - Preserves deterministic gameplay when not in use
 - Complements existing Logger/CheatSystem architecture
 
+## Current Damage System Commands
+
+### Available Commands
+- `damage_queue_stats` - Show current queue metrics, performance, and capacity usage
+- `damage_queue_reset` - Reset queue metrics and counters (for testing)
+
+### Usage Examples
+```
+> damage_queue_stats
+Queue enabled: true
+Current count: 12/4096 (0.3%)
+Total processed: 568
+Overflows: 0
+Processing rate: 30Hz (0.0ms avg)
+
+> damage_queue_reset
+Queue metrics reset. Total processed: 0, Overflows: 0
+```
+
+### Recommended Usage
+- **Primary**: Use `damage_queue_stats` for monitoring performance and capacity
+- **Testing**: Reset command useful for clean metric collection during performance tests
+- **Note**: Zero-allocation queue is always active - it's the only damage processing mode
+
 ## Future Enhancements
 - Balance preset loading/saving
 - Monte Carlo test triggers
 - System state inspection commands
 - Performance profiling integration
+- Real-time queue capacity visualization

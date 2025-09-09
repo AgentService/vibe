@@ -4,6 +4,18 @@
 
 ## [Current Week - In Progress]
 
+### Added
+- **Zero-Allocation Damage Queue System**: Implemented batched damage processing with preallocated buffers for performance optimization
+  - **RingBuffer Utility**: Lock-free circular buffer using power-of-two masking for efficient wraparound
+  - **ObjectPool Utility**: Generic object pool for reusing Dictionary payloads and Array instances
+  - **PayloadReset Utility**: Shape-preserving cleanup functions to maintain zero-allocation behavior
+  - **30Hz Batch Processing**: Timer-based queue processor aligned with combat tick rate 
+  - **Drop-Oldest Overflow Policy**: Graceful queue overflow handling with metrics tracking
+  - **Feature Flag Integration**: Runtime toggle via BalanceDB configuration and console commands
+  - **Debug Console Commands**: damage_queue_stats (monitoring), damage_queue_reset (testing)
+  - **A/B Testing Framework**: Validates identical behavior between queue and direct processing paths
+  - **Comprehensive Testing**: Unit tests for queue components and integration tests for damage consistency
+
 ### Fixed
 - **Damage System Single Entry Point**: Consolidated damage requests to use DamageService.apply_damage() exclusively
   - **Complete Signal Removal**: Removed EventBus.damage_requested signal and all backwards compatibility adapters
@@ -12,6 +24,10 @@
   - **Test System Updates**: Updated all test files to use direct DamageService calls, removed signal-based testing
   - **Payload Cleanup**: Removed unused DamageRequestPayload class and all references
   - **Clean Architecture**: No backwards compatibility - pure single entry point implementation
+- **Technical Debt Cleanup**: Removed legacy damage system components and outdated references
+  - **Documentation Updates**: Updated ARCHITECTURE.md and architecture rules to reflect single entry point pattern
+  - **Debug Log Cleanup**: Removed development debug logging from damage queue system
+  - **Reference Cleanup**: Removed all documentation references to deprecated damage_requested signal
 - **RadarSystem Boss Visibility**: Fixed radar only showing goblins but not bosses due to incomplete enemy detection
   - **EntityTracker Integration**: RadarSystem now queries EntityTracker.get_entities_by_type("boss") to include scene-based bosses
   - **Fallback Robustness**: Added EntityTracker fallback for enemies when WaveDirector is unavailable

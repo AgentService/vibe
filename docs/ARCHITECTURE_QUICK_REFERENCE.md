@@ -154,7 +154,7 @@ EventBus.character_selected.emit(StringName("knight_default"))
 ## ⚖️ EventBus vs StateManager (Quick)
 
 - EventBus (transport of domain events)
-  - Use for: damage_requested/applied/taken, xp_gained/leveled_up, ability_* signals, enemy_spawned, debug toggles, pause state changed.
+  - Use for: damage_applied/taken, xp_gained/leveled_up, ability_* signals, enemy_spawned, debug toggles, pause state changed.
   - Nature: broadcast, decoupled, no navigation logic or global state.
 
 - StateManager (orchestration facade)

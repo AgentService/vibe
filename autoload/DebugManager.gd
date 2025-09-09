@@ -39,6 +39,9 @@ func _ready() -> void:
 	# Since debug is enabled by default, we need to call _enter_debug_mode during initialization
 	# Wait a frame to ensure all systems are ready
 	call_deferred("_initialize_debug_mode")
+	
+	# Register console commands
+	call_deferred("_register_console_commands")
 
 func _load_boss_scaling() -> void:
 	"""Load boss scaling configuration from data-driven resource."""
@@ -467,3 +470,46 @@ func _initialize_debug_mode() -> void:
 		_enter_debug_mode()
 		# Emit the debug mode toggled signal to ensure all systems are notified
 		emit_signal("debug_mode_toggled", true)
+
+## Register damage queue console commands with LimboConsole
+func _register_console_commands() -> void:
+	if not LimboConsole:
+		Logger.warn("LimboConsole not available - damage queue commands not registered", "debug")
+		return
+	
+	# Register damage queue commands
+	LimboConsole.register_command(cmd_damage_queue_stats, "damage_queue_stats", "Show damage queue metrics and performance")
+	LimboConsole.register_command(cmd_damage_queue_reset, "damage_queue_reset", "Reset damage queue metrics (for testing)")
+	
+	Logger.info("Damage queue console commands registered", "debug")
+
+## Console command: Show damage queue statistics
+func cmd_damage_queue_stats() -> void:
+	if not DamageService:
+		LimboConsole.error("DamageService not available")
+		return
+	
+	var stats = DamageService.get_queue_stats()
+	
+	if not stats.get("enabled", false):
+		LimboConsole.info("Damage queue is DISABLED")
+		return
+	
+	# Format stats nicely
+	var output = "=== Damage Queue Statistics ===\n"
+	output += "Enqueued: %d | Processed: %d | Dropped: %d\n" % [stats.enqueued, stats.processed, stats.dropped_overflow]
+	output += "Queue: %d/%d (max watermark: %d)\n" % [stats.current_queue_size, stats.queue_capacity, stats.max_watermark]
+	output += "Pools: Payload=%d, Tags=%d available\n" % [stats.payload_pool_available, stats.tags_pool_available]
+	output += "Performance: %.1f ms/tick (%d ticks)" % [stats.last_tick_ms, stats.total_ticks]
+	
+	LimboConsole.info(output)
+
+## Console command: Reset damage queue metrics
+func cmd_damage_queue_reset() -> void:
+	if not DamageService:
+		LimboConsole.error("DamageService not available")
+		return
+	
+	DamageService.reset_queue_metrics()
+	LimboConsole.info("Damage queue metrics reset")
+	Logger.info("Console reset damage queue metrics", "debug")
