@@ -25,7 +25,18 @@ func _ready() -> void:
 	EventBus.leveled_up.connect(_on_leveled_up)
 	EventBus.damage_taken.connect(_on_player_damage_taken)
 	EventBus.player_died.connect(_on_player_died)
-	
+
+func _exit_tree() -> void:
+	# Cleanup signal connections
+	if EventBus.progression_changed.is_connected(_on_progression_changed):
+		EventBus.progression_changed.disconnect(_on_progression_changed)
+	if EventBus.leveled_up.is_connected(_on_leveled_up):
+		EventBus.leveled_up.disconnect(_on_leveled_up)
+	if EventBus.damage_taken.is_connected(_on_player_damage_taken):
+		EventBus.damage_taken.disconnect(_on_player_damage_taken)
+	if EventBus.player_died.is_connected(_on_player_died):
+		EventBus.player_died.disconnect(_on_player_died)
+	Logger.debug("HUD: Cleaned up signal connections", "ui")
 	
 	# Initialize display
 	_initialize_progression_display()
@@ -178,15 +189,19 @@ func _get_render_stats() -> String:
 	# Get performance statistics from the rendering server
 	var stats: Array[String] = []
 	
-	# Get draw calls from viewport
-	var viewport: Viewport = get_viewport()
-	if viewport:
-		var draw_calls: int = RenderingServer.viewport_get_render_info(
-			viewport.get_viewport_rid(), 
-			RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, 
-			RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
-		)
-		stats.append("Draw Calls: " + str(draw_calls))
+	# Skip RenderingServer calls in headless mode to prevent resource leaks
+	if DisplayServer.get_name() != "headless":
+		# Get draw calls from viewport
+		var viewport: Viewport = get_viewport()
+		if viewport:
+			var draw_calls: int = RenderingServer.viewport_get_render_info(
+				viewport.get_viewport_rid(), 
+				RenderingServer.VIEWPORT_RENDER_INFO_TYPE_VISIBLE, 
+				RenderingServer.VIEWPORT_RENDER_INFO_DRAW_CALLS_IN_FRAME
+			)
+			stats.append("Draw Calls: " + str(draw_calls))
+	else:
+		stats.append("Draw Calls: N/A (headless)")
 	
 	# Get memory usage
 	var memory_usage: int = OS.get_static_memory_usage()
