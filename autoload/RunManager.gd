@@ -90,7 +90,7 @@ func _seed_rng() -> void:
 	if RNG:
 		RNG.seed_run(run_seed)
 
-func _on_enemy_killed(_payload) -> void:
+func _on_enemy_killed(_pos: Vector2, _xp_value: int) -> void:
 	"""Track enemy kills for run statistics"""
 	stats["enemies_killed"] = stats.get("enemies_killed", 0) + 1
 

@@ -244,8 +244,9 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 		# Fallback for unknown entity types
 		entity_id = EntityId.new(EntityId.Type.ENEMY, 0)
 	
-	# Create and emit damage applied payload with knockback info
-	var damage_payload = EventBus.DamageAppliedPayload_Type.new(
+	# Create and emit damage applied payload with knockback info (using object pool)
+	var damage_payload = EventBus.acquire_damage_applied_payload()
+	damage_payload.setup(
 		entity_id,
 		final_damage,
 		is_crit,
@@ -254,6 +255,8 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 		source_position
 	)
 	EventBus.damage_applied.emit(damage_payload)
+	# Release payload back to pool after emission for reuse
+	EventBus.release_damage_applied_payload(damage_payload)
 	
 	# Emit damage_dealt signal for camera shake and stats tracking
 	var damage_dealt_payload = EventBus.DamageDealtPayload_Type.new(
@@ -428,14 +431,12 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 	# Emit appropriate death events based on entity type
 	match entity_type:
 		"enemy":
-			# Emit enemy killed event for XP/loot
-			var payload = EventBus.EnemyKilledPayload_Type.new(position, 1)
-			EventBus.enemy_killed.emit(payload)
+			# Emit enemy killed event for XP/loot (direct parameters - no allocation)
+			EventBus.enemy_killed.emit(position, 1)
 		"boss":
 			# Emit enemy killed event for XP/loot (bosses give more XP)
 			var boss_xp_value = 50  # Bosses give 50 XP vs regular enemies' 1 XP
-			var payload = EventBus.EnemyKilledPayload_Type.new(position, boss_xp_value)
-			EventBus.enemy_killed.emit(payload)
+			EventBus.enemy_killed.emit(position, boss_xp_value)
 			if Logger.is_level_enabled(Logger.LogLevel.INFO):
 				Logger.info("Boss defeated: " + entity_id + " (XP: %d)" % boss_xp_value, "combat")
 		"player":

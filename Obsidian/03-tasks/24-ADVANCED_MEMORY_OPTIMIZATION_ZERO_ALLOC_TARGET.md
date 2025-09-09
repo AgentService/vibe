@@ -237,7 +237,7 @@ Phase 4 - mixed_tier:
 
 Per-Phase Test Protocol (insert these steps between each phase):
 1. Pre-phase snapshot
-   - Run headless performance test: `./Godot_v4.4.1-stable_win64_console.exe --headless tests/test_performance_500_enemies.tscn`
+   - Run headless performance test: `./Godot_v4.4.1-stable_win64_console.exe --headless tests/test_performance_500_enemies.tscn` WITHOUT quit after flags!!!
    - Deterministic seed is already set (12345); ensure parameters unchanged.
    - Record from summary: Average FPS, Frame Time 95th, Memory Growth, Peak/Final Enemy Count, Frames Below Target, Frame Spikes.
    - Tag the baseline files with `PHASE_<N>_pre` in the filename/comment for traceability.

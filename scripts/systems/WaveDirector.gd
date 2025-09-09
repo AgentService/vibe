@@ -445,9 +445,8 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 			Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
 func _on_special_boss_died(enemy_type: EnemyType) -> void:
-	# Handle special boss death - emit via EventBus for XP/loot systems
-	var payload := EventBus.EnemyKilledPayload_Type.new(Vector2.ZERO, enemy_type.xp_value)
-	EventBus.enemy_killed.emit(payload)
+	# Handle special boss death - emit via EventBus for XP/loot systems (direct parameters - no allocation)
+	EventBus.enemy_killed.emit(Vector2.ZERO, enemy_type.xp_value)
 	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
 func _find_enemy_index(target_enemy: EnemyEntity) -> int:

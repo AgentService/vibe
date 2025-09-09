@@ -20,6 +20,22 @@ func _init(target_entity: EntityId, damage: float, critical_hit: bool, damage_ta
 	knockback_distance = knockback_dist
 	source_position = source_pos
 
+func reset() -> void:
+	target_id = null
+	final_damage = 0.0
+	is_crit = false
+	tags = PackedStringArray()
+	knockback_distance = 0.0
+	source_position = Vector2.ZERO
+
+func setup(target_entity: EntityId, damage: float, critical_hit: bool, damage_tags: PackedStringArray, knockback_dist: float = 0.0, source_pos: Vector2 = Vector2.ZERO) -> void:
+	target_id = target_entity
+	final_damage = damage
+	is_crit = critical_hit
+	tags = damage_tags
+	knockback_distance = knockback_dist
+	source_position = source_pos
+
 func _to_string() -> String:
 	# Only generate debug string when in debug mode to save memory
 	if Logger and Logger.is_debug():
