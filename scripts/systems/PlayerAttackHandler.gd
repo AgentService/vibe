@@ -4,6 +4,8 @@ extends Node
 # Handles player input to attack system conversion
 # Manages melee attacks, projectile attacks, auto-attacks, and debug spawning
 
+const MeleeVisualConfig = preload("res://scripts/domain/MeleeVisualConfig.gd")
+
 # Dependencies injected from Arena
 var player: Player
 var melee_system: MeleeSystem
@@ -16,6 +18,9 @@ var arena_viewport: Viewport
 var spawn_timer: float = 0.0
 var base_spawn_interval: float = 0.25
 
+# Visual configuration
+var visual_config: MeleeVisualConfig
+
 func setup(player_ref: Player, melee_sys: MeleeSystem, ability_sys: AbilitySystem, wave_dir: WaveDirector, melee_fx: Node2D, viewport: Viewport) -> void:
 	player = player_ref
 	melee_system = melee_sys
@@ -27,6 +32,9 @@ func setup(player_ref: Player, melee_sys: MeleeSystem, ability_sys: AbilitySyste
 	# Connect MeleeSystem's local signal to this handler for both visual effects and EventBus relay
 	if melee_system:
 		melee_system.melee_attack_started.connect(_on_melee_attack_signal)
+	
+	# Load visual configuration
+	_load_visual_config()
 	
 	Logger.info("PlayerAttackHandler initialized", "player")
 
@@ -113,32 +121,46 @@ func _on_melee_attack_signal(player_pos: Vector2, target_pos: Vector2) -> void:
 func on_melee_attack_started(player_pos: Vector2, target_pos: Vector2) -> void:
 	show_melee_cone_effect(player_pos, target_pos)
 
+func _load_visual_config() -> void:
+	var config_path = "res://data/content/melee_visual_config.tres"
+	visual_config = load(config_path) as MeleeVisualConfig
+	if not visual_config:
+		Logger.warn("Failed to load melee visual config, using defaults", "player")
+		visual_config = MeleeVisualConfig.new()
+
 # Show melee cone visual effect
 func show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
+	if not visual_config:
+		return
+		
 	# Use manually created polygon from the scene
 	var cone_polygon = melee_effects_node.get_node("MeleeCone")
 	if not cone_polygon:
 		return
 	
-	# Get effective melee stats to match the actual damage area
-	var effective_range = melee_system._get_effective_range()
-	var range_scale = effective_range / 100.0  # Assuming your cone is ~100 units long
-	
-	# Position and scale the cone at player position
+	# Position the cone at player position
 	cone_polygon.global_position = player_pos
-	cone_polygon.scale = Vector2(range_scale, range_scale)  # Scale to match damage range
 	
-	# Point the cone toward mouse/target position (where damage occurs)
+	# Scale cone based on effective range (if enabled)
+	if visual_config.scale_with_range:
+		var effective_range = melee_system._get_effective_range()
+		var range_scale = effective_range / visual_config.base_range_reference
+		cone_polygon.scale = Vector2(range_scale, range_scale)
+	else:
+		cone_polygon.scale = Vector2.ONE
+	
+	# Point the cone toward target position
 	var attack_dir = (target_pos - player_pos).normalized()
-	cone_polygon.rotation = attack_dir.angle() - PI/2  # Fix 90° offset (cone was 1/4 ahead)
+	cone_polygon.rotation = attack_dir.angle() + deg_to_rad(visual_config.rotation_offset)
 	
-	# Show the cone with transparency
+	# Apply visual config
 	cone_polygon.visible = true
-	cone_polygon.modulate.a = 0.3
+	cone_polygon.modulate = visual_config.cone_color
+	cone_polygon.modulate.a = visual_config.max_opacity
 	
-	# Hide after short duration
+	# Fade out based on config
 	var tween = create_tween()
-	tween.tween_property(cone_polygon, "modulate:a", 0.0, 0.2)
+	tween.tween_property(cone_polygon, "modulate:a", 0.0, visual_config.fade_duration)
 	tween.tween_callback(func(): 
 		if cone_polygon and is_instance_valid(cone_polygon):
 			cone_polygon.visible = false

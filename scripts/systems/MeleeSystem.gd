@@ -5,6 +5,7 @@ extends Node
 
 class_name MeleeSystem
 
+
 var attack_cooldown: float = 0.0
 var is_attacking: bool = false
 var attack_duration: float = 0.2  # Visual attack duration

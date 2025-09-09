@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="MeleeVisualConfig" load_steps=2 format=3 uid="uid://bvme3y4r2n5xh"]
+
+[ext_resource type="Script" uid="uid://gvufpyw4y20h" path="res://scripts/domain/MeleeVisualConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+cone_color = Color(0.960669, 0.954387, 0.954088, 0.3)
+fade_duration = 0.23
+max_opacity = 0.051
+scale_with_range = true
+base_range_reference = 100.0
+rotation_offset = -90.0

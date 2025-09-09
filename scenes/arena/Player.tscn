@@ -876,7 +876,7 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_56h08")
 }, {
-"duration": 0.51,
+"duration": 0.5,
 "texture": SubResource("AtlasTexture_wwh3p")
 }],
 "loop": true,
@@ -1052,9 +1052,11 @@ player_type = ExtResource("2_jkhsn")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_jkhsn")
-animation = &"roll_down"
+animation = &"attack_down"
+frame_progress = 0.261109
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
 scale = Vector2(1, 2)
 shape = SubResource("CapsuleShape2D_etesd")
 debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
