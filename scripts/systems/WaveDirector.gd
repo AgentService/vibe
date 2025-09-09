@@ -233,7 +233,8 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	
 	var enemy = enemies[enemy_index]
 	if not enemy.alive:
-		Logger.debug("V3: Damage sync on dead enemy %d ignored" % [enemy_index], "combat")
+		if Logger.is_debug():
+			Logger.debug("V3: Damage sync on dead enemy %d ignored" % [enemy_index], "combat")
 		return
 	
 	# Update enemy HP
@@ -244,7 +245,8 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		# PHASE 4 OPTIMIZATION: Use reset method instead of manual field clearing
 		enemy.reset_to_defaults()
 		_cache_dirty = true
-		Logger.debug("V3: Enemy %d killed and returned to pool" % [enemy_index], "combat")
+		if Logger.is_debug():
+			Logger.debug("V3: Enemy %d killed and returned to pool" % [enemy_index], "combat")
 		
 		# Update EntityTracker
 		EntityTracker.unregister_entity(entity_id)
@@ -336,7 +338,8 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
 	
-	Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
+	if Logger.is_debug():
+		Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
 
 # Boss scene spawning for V2 system
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
@@ -438,7 +441,8 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	DamageService.register_entity(entity_id, entity_data)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
+		if Logger.is_debug():
+			Logger.debug("Spawned pooled enemy: " + enemy_type.id + " (size: " + str(enemy_type.size) + ") registered as " + entity_id, "enemies")
 
 func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	# Handle special boss death - emit via EventBus for XP/loot systems
@@ -555,7 +559,8 @@ func clear_all_enemies() -> void:
 	# This method is kept for backward compatibility but routes to the unified system
 	if DebugManager and DebugManager.has_method("clear_all_entities"):
 		DebugManager.clear_all_entities()
-		Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
+		if Logger.is_debug():
+			Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
 	else:
 		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
 

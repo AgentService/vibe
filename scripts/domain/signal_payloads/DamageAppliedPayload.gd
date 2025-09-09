@@ -21,4 +21,8 @@ func _init(target_entity: EntityId, damage: float, critical_hit: bool, damage_ta
 	source_position = source_pos
 
 func _to_string() -> String:
-	return "DamageAppliedPayload(target=%s, damage=%s, crit=%s, tags=%s, knockback=%s)" % [target_id, final_damage, is_crit, tags, knockback_distance]
+	# Only generate debug string when in debug mode to save memory
+	if Logger and Logger.is_debug():
+		return "DamageAppliedPayload(target=%s, damage=%s, crit=%s, tags=%s, knockback=%s)" % [target_id, final_damage, is_crit, tags, knockback_distance]
+	else:
+		return "DamageAppliedPayload"

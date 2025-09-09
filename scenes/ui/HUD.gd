@@ -181,19 +181,19 @@ func _get_render_stats() -> String:
 	# Get memory usage
 	var memory_usage: int = OS.get_static_memory_usage()
 	var memory_mb: float = memory_usage / (1024.0 * 1024.0)
-	stats.append("Memory: " + str(int(memory_mb)) + " MB")
+	stats.append("Memory: %d MB" % int(memory_mb))
 	
 	# Get enemy/projectile counts from Arena if available
 	var arena: Node = get_tree().current_scene
 	if arena and arena.has_method("get_debug_stats"):
 		var debug_stats: Dictionary = arena.get_debug_stats()
 		if debug_stats.has("enemy_count"):
-			var enemy_text: String = "Enemies: " + str(debug_stats["enemy_count"])
+			var enemy_text: String = "Enemies: %d" % debug_stats["enemy_count"]
 			if debug_stats.has("visible_enemies"):
-				enemy_text += " (visible: " + str(debug_stats["visible_enemies"]) + ")"
+				enemy_text += " (visible: %d)" % debug_stats["visible_enemies"]
 			stats.append(enemy_text)
 		if debug_stats.has("projectile_count"):
-			stats.append("Projectiles: " + str(debug_stats["projectile_count"]))
+			stats.append("Projectiles: %d" % debug_stats["projectile_count"])
 	
 	return "\n".join(stats)
 

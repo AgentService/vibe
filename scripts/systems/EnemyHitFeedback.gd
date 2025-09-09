@@ -31,7 +31,8 @@ func _ready() -> void:
 	# Connect to damage signals
 	EventBus.damage_applied.connect(_on_damage_applied)
 	
-	Logger.debug("EnemyHitFeedback initialized for entity: " + entity_id, "visual")
+	if Logger.is_debug():
+		Logger.debug("EnemyHitFeedback initialized for entity: " + entity_id, "visual")
 
 func _exit_tree() -> void:
 	# Clean up signal connections
@@ -44,7 +45,8 @@ func _exit_tree() -> void:
 	if knockback_tween:
 		knockback_tween.kill()
 	
-	Logger.debug("EnemyHitFeedback cleaned up for entity: " + entity_id, "visual")
+	if Logger.is_debug():
+		Logger.debug("EnemyHitFeedback cleaned up for entity: " + entity_id, "visual")
 
 func setup(entity_identifier: String, sprite: Sprite2D, body: CharacterBody2D = null, is_boss: bool = false) -> void:
 	"""Setup the hit feedback component with target references"""
@@ -56,7 +58,8 @@ func setup(entity_identifier: String, sprite: Sprite2D, body: CharacterBody2D = 
 	if target_sprite:
 		original_modulate = target_sprite.modulate
 	
-	Logger.debug("EnemyHitFeedback setup for: " + entity_id, "visual")
+	if Logger.is_debug():
+		Logger.debug("EnemyHitFeedback setup for: " + entity_id, "visual")
 
 func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	"""Handle damage applied signal and trigger appropriate feedback"""
@@ -65,7 +68,8 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	if target_entity_id != entity_id:
 		return
 	
-	Logger.debug("Hit feedback triggered for: " + entity_id + " (damage: " + str(payload.final_damage) + ")", "visual")
+	if Logger.is_debug():
+		Logger.debug("Hit feedback triggered for: " + entity_id + " (damage: " + str(payload.final_damage) + ")", "visual")
 	
 	# Trigger flash effect
 	_trigger_flash_effect(payload.is_crit)
@@ -170,7 +174,8 @@ func _trigger_knockback_effect(knockback_distance: float, source_position: Vecto
 	knockback_tween.tween_method(_apply_knockback, 1.0, 0.0, feedback_config.knockback_duration)
 	knockback_tween.tween_callback(_reset_knockback)
 	
-	Logger.debug("Knockback applied to " + entity_id + ": " + str(knockback_distance) + " pixels", "visual")
+	if Logger.is_debug():
+		Logger.debug("Knockback applied to " + entity_id + ": " + str(knockback_distance) + " pixels", "visual")
 
 func _apply_knockback(intensity: float) -> void:
 	"""Apply knockback movement during tween"""
@@ -194,7 +199,8 @@ func _apply_knockback(intensity: float) -> void:
 func _reset_knockback() -> void:
 	"""Reset knockback state"""
 	knockback_velocity = Vector2.ZERO
-	Logger.debug("Knockback reset for entity: " + entity_id, "visual")
+	if Logger.is_debug():
+		Logger.debug("Knockback reset for entity: " + entity_id, "visual")
 
 func get_knockback_velocity() -> Vector2:
 	"""Get current knockback velocity for external systems"""

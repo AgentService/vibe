@@ -436,12 +436,14 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 			var boss_xp_value = 50  # Bosses give 50 XP vs regular enemies' 1 XP
 			var payload = EventBus.EnemyKilledPayload_Type.new(position, boss_xp_value)
 			EventBus.enemy_killed.emit(payload)
-			Logger.info("Boss defeated: " + entity_id + " (XP: %d)" % boss_xp_value, "combat")
+			if Logger.is_level_enabled(Logger.LogLevel.INFO):
+				Logger.info("Boss defeated: " + entity_id + " (XP: %d)" % boss_xp_value, "combat")
 		"player":
 			# TODO: Handle player death
 			Logger.info("Player defeated!", "combat")
 		_:
-			Logger.debug("Unknown entity type died: " + entity_type, "combat")
+			if Logger.is_debug():
+				Logger.debug("Unknown entity type died: " + entity_type, "combat")
 	
 	# Clean up: Unregister dead entity to prevent memory leaks
 	# Wait a frame to allow any final processing, then cleanup
@@ -490,7 +492,8 @@ func debug_register_all_existing_entities() -> void:
 					}
 					register_entity(entity_id, entity_data)
 					registered_count += 1
-					Logger.info("DEBUG: Registered existing boss: " + entity_id, "combat")
+					if Logger.is_level_enabled(Logger.LogLevel.INFO):
+						Logger.info("DEBUG: Registered existing boss: " + entity_id, "combat")
 	
 	# Register existing enemies from WaveDirector
 	var wave_director = get_tree().get_first_node_in_group("wave_directors")
@@ -515,9 +518,11 @@ func debug_register_all_existing_entities() -> void:
 					}
 					register_entity(entity_id, entity_data)
 					registered_count += 1
-					Logger.info("DEBUG: Registered existing enemy: " + entity_id, "combat")
+					if Logger.is_level_enabled(Logger.LogLevel.INFO):
+						Logger.info("DEBUG: Registered existing enemy: " + entity_id, "combat")
 	
-	Logger.info("DEBUG: Registered " + str(registered_count) + " existing entities", "combat")
+	if Logger.is_level_enabled(Logger.LogLevel.INFO):
+		Logger.info("DEBUG: Registered " + str(registered_count) + " existing entities", "combat")
 
 ## Cleanup dead entities to prevent memory leaks
 func cleanup_dead_entities() -> void:
@@ -534,7 +539,8 @@ func cleanup_dead_entities() -> void:
 		cleanup_count += 1
 	
 	if cleanup_count > 0:
-		Logger.debug("Cleaned up " + str(cleanup_count) + " dead entities", "combat")
+		if Logger.is_debug():
+			Logger.debug("Cleaned up " + str(cleanup_count) + " dead entities", "combat")
 
 ## Get queue metrics for debugging and monitoring
 func get_queue_stats() -> Dictionary:

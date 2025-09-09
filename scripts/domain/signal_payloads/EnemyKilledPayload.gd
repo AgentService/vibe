@@ -14,4 +14,8 @@ func _init(position: Vector2, xp: int) -> void:
 	xp_value = xp
 
 func _to_string() -> String:
-	return "EnemyKilledPayload(pos=%s, xp=%s)" % [pos, xp_value]
+	# Only generate debug string when in debug mode to save memory
+	if Logger and Logger.is_debug():
+		return "EnemyKilledPayload(pos=%s, xp=%s)" % [pos, xp_value]
+	else:
+		return "EnemyKilledPayload"
