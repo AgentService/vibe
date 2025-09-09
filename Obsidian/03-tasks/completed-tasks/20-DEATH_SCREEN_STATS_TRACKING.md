@@ -1,7 +1,7 @@
 # Death Screen Stats Tracking - Fix Total Damage and XP Gained
 
 **Priority:** Medium  
-**Status:** TODO  
+**Status:** ✅ COMPLETED  
 **Complexity:** Low-Medium  
 **Architecture Impact:** Minor - Stats tracking enhancement  
 
@@ -146,6 +146,36 @@ Death Flow
 1. **Direct System Queries**: Query XpSystem/DamageSystem directly instead of event tracking
 2. **Dedicated StatsTracker**: Create separate stats tracking system
 3. **Scene-level tracking**: Track stats in Arena.gd instead of RunManager
+
+---
+
+## ✅ COMPLETION SUMMARY
+
+**Completed:** January 2025  
+**Commit:** `092c759` - "fix: Complete death screen stats tracking - total damage and XP gained"
+
+### Issues Resolved:
+1. **✅ Total Damage Tracking Fixed**
+   - **Problem**: RunManager checked non-existent `payload.source_type` field
+   - **Solution**: Fixed to use `payload.source == "player"` matching DamageDealtPayload structure  
+   - **Root Cause**: DamageRegistry wasn't emitting `damage_dealt` signal; added signal emission with source mapping
+
+2. **✅ XP Gained Tracking Implemented** 
+   - **Problem**: Hardcoded 0 in death result, no XP accumulation
+   - **Solution**: Connected RunManager to `EventBus.xp_gained` signal to track cumulative XP
+   - **Flow**: XP Collection → PlayerProgression → EventBus.xp_gained → RunManager → Death Stats
+
+3. **✅ Signal Architecture Fixed**
+   - **Added**: `damage_dealt` signal emission in DamageRegistry._process_damage_immediate()
+   - **Added**: Source mapping function to convert "melee"/"projectile" → "player" for stats
+   - **Result**: Death screen now shows accurate damage dealt and XP gained values
+
+### Files Modified:
+- `autoload/RunManager.gd` - Fixed damage tracking, added XP tracking
+- `scenes/arena/Player.gd` - Use real XP data instead of hardcoded 0
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Added damage_dealt signal emission
+
+**Architecture Impact**: Minimal - Enhanced existing signal flow without breaking changes.
 
 ---
 *Task created after implementing BaseArena system and kill counter*
