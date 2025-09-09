@@ -20,6 +20,7 @@ var _damage_queue
 var _payload_pool
 var _tags_pool
 var _processor_timer: Timer
+var _queue_enabled: bool = false
 
 # Queue metrics
 var _enqueued: int = 0
@@ -35,13 +36,18 @@ signal entity_unregistered(entity_id: String)
 
 func _ready() -> void:
 	Logger.info("DamageRegistry initialized", "combat")
-	_setup_queue()
+	_setup_queue_if_enabled()
 	
 	# Connect to pause system for queue management
 	EventBus.game_paused_changed.connect(_on_paused_changed)
 
-## Setup zero-allocation damage queue
-func _setup_queue() -> void:
+## Setup zero-allocation damage queue if enabled by config
+func _setup_queue_if_enabled() -> void:
+	# For now, disable zero-allocation queue since config key doesn't exist
+	_queue_enabled = false
+	if not _queue_enabled:
+		return
+		
 	# Initialize queue components
 	_damage_queue = RingBufferUtil.new()
 	_damage_queue.setup(BalanceDB.get_combat_value("damage_queue_capacity"))
@@ -81,7 +87,7 @@ func _on_paused_changed(payload) -> void:
 
 ## Apply pause state to queue processor
 func _apply_pause_state(is_paused: bool) -> void:
-	if not _processor_timer:
+	if not _queue_enabled or not _processor_timer:
 		return
 		
 	if is_paused:
@@ -121,7 +127,10 @@ func unregister_entity(id: String) -> void:
 ## @param source_position: Position of damage source for knockback direction
 ## @return bool: True if entity was killed, false otherwise
 func apply_damage(target_id: String, amount: float, source: String = "unknown", tags: Array = [], knockback_distance: float = 0.0, source_position: Vector2 = Vector2.ZERO) -> bool:
-	return _enqueue_damage(target_id, amount, source, tags, knockback_distance, source_position)
+	if _queue_enabled:
+		return _enqueue_damage(target_id, amount, source, tags, knockback_distance, source_position)
+	else:
+		return _process_damage_immediate(target_id, amount, source, tags, knockback_distance, source_position)
 
 ## Enqueue damage for batched processing (zero-allocation path)
 func _enqueue_damage(target_id: String, amount: float, source: String, tags: Array, knockback_distance: float, source_position: Vector2) -> bool:
@@ -182,8 +191,7 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 		_max_watermark = _damage_queue.count()
 	return true
 
-## Core damage processing logic (used by both queue and direct paths)
-## Called by: queue processing batches + direct mode (testing only)
+## Process damage immediately (original path, used when queue disabled)
 func _process_damage_immediate(target_id: String, amount: float, source: String, tags: Array, knockback_distance: float, source_position: Vector2) -> bool:
 	if not _entities.has(target_id):
 		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
@@ -273,6 +281,8 @@ func _map_source_for_damage_dealt(source: String) -> String:
 
 ## Process queued damage at fixed 30Hz rate
 func _process_damage_queue_tick() -> void:
+	if not _queue_enabled:
+		return
 		
 	var start_time = Time.get_ticks_msec()
 	var max_per_tick = BalanceDB.get_combat_value("damage_queue_max_per_tick")
@@ -523,6 +533,8 @@ func cleanup_dead_entities() -> void:
 
 ## Get queue metrics for debugging and monitoring
 func get_queue_stats() -> Dictionary:
+	if not _queue_enabled:
+		return {"enabled": false}
 	
 	return {
 		"enabled": true,
@@ -538,6 +550,32 @@ func get_queue_stats() -> Dictionary:
 		"tags_pool_available": _tags_pool.available_count() if _tags_pool else 0
 	}
 
+## Toggle queue on/off at runtime for A/B testing
+func set_queue_enabled(enabled: bool) -> void:
+	if enabled == _queue_enabled:
+		return
+		
+	if enabled and not _queue_enabled:
+		# Enable queue
+		_setup_queue_if_enabled()
+	elif not enabled and _queue_enabled:
+		# Disable queue - process any remaining items
+		if _damage_queue:
+			while not _damage_queue.is_empty():
+				_process_damage_queue_tick()
+		
+		# Cleanup queue components
+		if _processor_timer:
+			_processor_timer.stop()
+			_processor_timer.queue_free()
+			_processor_timer = null
+		
+		_damage_queue = null
+		_payload_pool = null
+		_tags_pool = null
+		_queue_enabled = false
+		
+		Logger.info("Zero-alloc damage queue disabled", "combat")
 
 ## Reset queue metrics
 func reset_queue_metrics() -> void:

@@ -16,6 +16,17 @@ var mm_enemies_boss: MultiMeshInstance2D
 # Dependencies
 var enemy_render_tier: EnemyRenderTier
 
+# Shared dummy texture to avoid null texture errors in headless/textureless runs
+var _shared_dummy_tex: ImageTexture
+
+func _get_shared_dummy_texture() -> Texture2D:
+	if _shared_dummy_tex:
+		return _shared_dummy_tex
+	var img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
+	img.set_pixel(0, 0, Color(1, 1, 1, 1))
+	_shared_dummy_tex = ImageTexture.create_from_image(img)
+	return _shared_dummy_tex
+
 # Initialize MultiMeshManager with node references and configure all MultiMesh instances
 func setup(projectiles: MultiMeshInstance2D, swarm: MultiMeshInstance2D, regular: MultiMeshInstance2D, elite: MultiMeshInstance2D, boss: MultiMeshInstance2D, tier_helper: EnemyRenderTier) -> void:
 	mm_projectiles = projectiles
@@ -39,14 +50,16 @@ func _setup_projectile_multimesh() -> void:
 	quad_mesh.size = Vector2(8, 8)
 	multimesh.mesh = quad_mesh
 
-	# 8x8 yellow point as texture
+	# Basic projectile texture for visual feedback
 	var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-	img.fill(Color(1.0, 1.0, 0.0, 1.0))
+	img.fill(Color(1.0, 1.0, 0.0, 1.0))  # Yellow projectiles
 	var tex := ImageTexture.create_from_image(img)
 	mm_projectiles.texture = tex
 	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
+	if mm_projectiles.texture == null:
+		mm_projectiles.texture = _get_shared_dummy_texture()
 
 func _setup_tier_multimeshes() -> void:
 	# Setup SWARM tier MultiMesh (small squares)
@@ -58,8 +71,18 @@ func _setup_tier_multimeshes() -> void:
 	swarm_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
 	
-	# Texture will be set by EnemyAnimationSystem
+	# Load knight sprite for swarm enemies (static frame)
+	var knight_texture := load("res://assets/sprites/knight.png") as Texture2D
+	if knight_texture:
+		# Extract first frame (32x32) from knight spritesheet
+		var knight_image := knight_texture.get_image()
+		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(0, 0, 32, 32), Vector2i.ZERO)
+		var swarm_tex := ImageTexture.create_from_image(frame_image)
+		mm_enemies_swarm.texture = swarm_tex
 	mm_enemies_swarm.multimesh = swarm_multimesh
+	if mm_enemies_swarm.texture == null:
+		mm_enemies_swarm.texture = _get_shared_dummy_texture()
 	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
 	# Setup REGULAR tier MultiMesh (medium rectangles)
@@ -70,8 +93,17 @@ func _setup_tier_multimeshes() -> void:
 	var regular_mesh := QuadMesh.new()
 	regular_mesh.size = Vector2(32, 32)  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	# Texture will be set by EnemyAnimationSystem
+	# Load knight sprite for regular enemies (static frame)
+	if knight_texture:
+		# Extract second frame (32x32) from knight spritesheet
+		var knight_image := knight_texture.get_image()
+		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(32, 0, 32, 32), Vector2i.ZERO)
+		var regular_tex := ImageTexture.create_from_image(frame_image)
+		mm_enemies_regular.texture = regular_tex
 	mm_enemies_regular.multimesh = regular_multimesh
+	if mm_enemies_regular.texture == null:
+		mm_enemies_regular.texture = _get_shared_dummy_texture()
 	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
 	# Setup ELITE tier MultiMesh (large diamonds)
@@ -82,8 +114,18 @@ func _setup_tier_multimeshes() -> void:
 	var elite_mesh := QuadMesh.new()
 	elite_mesh.size = Vector2(48, 48)  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	# Texture will be set by EnemyAnimationSystem
+	# Load knight sprite for elite enemies (static frame)
+	if knight_texture:
+		# Extract third frame (32x32) from knight spritesheet, scale to 48x48
+		var knight_image := knight_texture.get_image()
+		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(64, 0, 32, 32), Vector2i.ZERO)
+		frame_image.resize(48, 48)  # Scale up for elite
+		var elite_tex := ImageTexture.create_from_image(frame_image)
+		mm_enemies_elite.texture = elite_tex
 	mm_enemies_elite.multimesh = elite_multimesh
+	if mm_enemies_elite.texture == null:
+		mm_enemies_elite.texture = _get_shared_dummy_texture()
 	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
 	# Setup BOSS tier MultiMesh (large diamonds)
@@ -94,8 +136,18 @@ func _setup_tier_multimeshes() -> void:
 	var boss_mesh := QuadMesh.new()
 	boss_mesh.size = Vector2(56, 56)  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	# Texture will be set by EnemyAnimationSystem
+	# Load knight sprite for boss enemies (static frame)
+	if knight_texture:
+		# Extract fourth frame (32x32) from knight spritesheet, scale to 56x56
+		var knight_image := knight_texture.get_image()
+		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+		frame_image.blit_rect(knight_image, Rect2i(96, 0, 32, 32), Vector2i.ZERO)
+		frame_image.resize(56, 56)  # Scale up for boss
+		var boss_tex := ImageTexture.create_from_image(frame_image)
+		mm_enemies_boss.texture = boss_tex
 	mm_enemies_boss.multimesh = boss_multimesh
+	if mm_enemies_boss.texture == null:
+		mm_enemies_boss.texture = _get_shared_dummy_texture()
 	mm_enemies_boss.z_index = 0  # Gameplay entities layer
 	
 	Logger.debug("Tier MultiMesh instances initialized", "enemies")
@@ -118,6 +170,22 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 	# Group enemies by tier
 	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
 	
+	# PHASE 1: Track MultiMesh instance counts for memory leak investigation
+	var total_instances = 0
+	for tier in tier_groups:
+		total_instances += tier_groups[tier].size()
+	
+	# Log instance counts every 60 updates (approximately every 2 seconds at 30fps)
+	var frame_count = Engine.get_process_frames()
+	if frame_count % 60 == 0:
+		Logger.debug("MultiMesh instances: Total=%d, Swarm=%d, Regular=%d, Elite=%d, Boss=%d" % [
+			total_instances,
+			tier_groups[EnemyRenderTier_Type.Tier.SWARM].size(),
+			tier_groups[EnemyRenderTier_Type.Tier.REGULAR].size(), 
+			tier_groups[EnemyRenderTier_Type.Tier.ELITE].size(),
+			tier_groups[EnemyRenderTier_Type.Tier.BOSS].size()
+		], "enemies")
+	
 	# Update each tier's MultiMesh with safety checks
 	if is_instance_valid(mm_enemies_swarm):
 		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.SWARM], mm_enemies_swarm, Vector2(24, 24), EnemyRenderTier_Type.Tier.SWARM)
@@ -136,7 +204,15 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 	
 	var count := tier_enemies.size()
 	if mm_instance and mm_instance.multimesh:
+		# PHASE 1: Track instance count changes for potential memory leaks
+		var previous_count = mm_instance.multimesh.instance_count
 		mm_instance.multimesh.instance_count = count
+		
+		# Log significant changes in instance count
+		if abs(count - previous_count) > 50:  # Log when changes > 50 instances
+			Logger.debug("MultiMesh %s: instance_count %d → %d (change: %+d)" % [
+				tier, previous_count, count, count - previous_count
+			], "enemies")
 		
 		for i in range(count):
 			var enemy := tier_enemies[i]

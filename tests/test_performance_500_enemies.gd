@@ -7,7 +7,7 @@ extends Node
 const PerformanceMetrics = preload("res://tests/tools/performance_metrics.gd")
 
 # Test configuration
-var test_duration: float = 30.0  # Test runs for 30 seconds (extended for better testing)
+var test_duration: float = 60.0  # Test runs for 60 seconds (extended for better enemy count analysis)
 var target_enemy_count: int = 500
 var max_projectiles: int = 200
 var combat_step_interval: float = 1.0 / 30.0  # 30Hz combat step
@@ -20,6 +20,11 @@ var current_test_phase: String = ""
 var test_start_time: float = 0.0
 var performance_metrics: PerformanceMetrics
 var combat_step_timer: float = 0.0
+
+# Phase-specific tracking
+var phase_metrics: Array[Dictionary] = []  # Track metrics per phase
+var phase_peak_enemies: int = 0
+var phase_start_memory: float = 0.0
 
 # Systems (injected from scene setup)
 var arena_root: Node2D
@@ -60,7 +65,7 @@ var test_completed: bool = false
 
 func _ready() -> void:
 	print("=== ARCHITECTURE PERFORMANCE STRESS TEST ===")
-	print("Target: 500+ enemies, 30 second duration")
+	print("Target: 500+ enemies, 60 second duration")
 	print("Success Criteria: ≥30 FPS, <50MB memory growth, <33.3ms frame time")
 	
 	# Check command line arguments for test parameters
@@ -84,6 +89,14 @@ func _ready() -> void:
 	# NOW establish memory baseline after arena is loaded but before enemies spawn
 	print("Establishing memory baseline after arena load...")
 	await get_tree().process_frame  # Allow one frame for full initialization
+	
+	# PHASE 0: Document memory measurement points for investigation
+	var game_start_memory = OS.get_static_memory_usage()
+	print("Memory measurement points:")
+	print("  - Game startup: %.2f MB" % (game_start_memory / 1024.0 / 1024.0))
+	print("  - Arena loaded: %.2f MB (baseline for test)" % (OS.get_static_memory_usage() / 1024.0 / 1024.0))
+	print("  - Arena load overhead: %.2f MB" % ((OS.get_static_memory_usage() - game_start_memory) / 1024.0 / 1024.0))
+	
 	performance_metrics.start_test()  # Start measuring from empty arena baseline
 	
 	# Start first test phase
@@ -103,13 +116,22 @@ func _process(delta: float) -> void:
 		_on_combat_step()
 		combat_step_timer = 0.0
 	
-	# Progress logging every 2 seconds
+	# Track peak enemy count for current phase
+	var current_enemy_count = _count_alive_enemies()
+	if current_enemy_count > phase_peak_enemies:
+		phase_peak_enemies = current_enemy_count
+	
+	# Progress logging every 2 seconds with memory tracking
 	var total_elapsed = Time.get_unix_time_from_system() - test_start_time
 	if int(total_elapsed * 2) % 4 == 0 and int(total_elapsed * 2) != int((total_elapsed - delta) * 2):
-		var enemy_count = _count_alive_enemies()
 		var current_fps = performance_metrics._calculate_average_fps()
-		print("Progress: %.1fs elapsed, %d enemies, %.1f FPS" % [total_elapsed, enemy_count, current_fps])
-		print("  Phase: %s (%d/%d), Phase elapsed: %.1fs" % [current_test_phase, current_phase_index + 1, test_phases.size(), Time.get_unix_time_from_system() - phase_start_time])
+		var current_memory = OS.get_static_memory_usage()
+		var memory_growth = current_memory - performance_metrics.initial_memory
+		print("Progress: %.1fs elapsed, %d enemies, %.1f FPS, Memory: %.1f MB (+%.1f MB growth)" % [
+			total_elapsed, current_enemy_count, current_fps, 
+			current_memory / 1024.0 / 1024.0, memory_growth / 1024.0 / 1024.0
+		])
+		print("  Phase: %s (%d/%d), Phase elapsed: %.1fs, Peak enemies: %d" % [current_test_phase, current_phase_index + 1, test_phases.size(), Time.get_unix_time_from_system() - phase_start_time, phase_peak_enemies])
 	
 	# Check if current phase is complete
 	var phase_elapsed = Time.get_unix_time_from_system() - phase_start_time
@@ -457,6 +479,10 @@ func _start_next_phase() -> void:
 	current_test_phase = phase.name
 	phase_start_time = Time.get_unix_time_from_system()
 	
+	# Reset phase-specific tracking
+	phase_peak_enemies = 0
+	phase_start_memory = OS.get_static_memory_usage()
+	
 	print("\n=== PHASE %d: %s ===" % [current_phase_index + 1, phase.description])
 	print("Duration: %.1f seconds" % phase.duration)
 	
@@ -473,8 +499,40 @@ func _start_next_phase() -> void:
 
 func _end_current_phase() -> void:
 	var phase = test_phases[current_phase_index]
-	var enemy_count = _count_alive_enemies()
-	print("Phase '%s' completed. Final enemy count: %d" % [phase.name, enemy_count])
+	var final_enemy_count = _count_alive_enemies()
+	var phase_end_time = Time.get_unix_time_from_system()
+	var phase_duration_actual = phase_end_time - phase_start_time
+	
+	# Track detailed phase metrics
+	var current_memory = OS.get_static_memory_usage()
+	var total_memory_growth = current_memory - performance_metrics.initial_memory
+	var phase_memory_growth = current_memory - phase_start_memory
+	var current_fps = performance_metrics._calculate_average_fps()
+	
+	# Store phase metrics for final summary
+	var phase_data = {
+		"name": phase.name,
+		"duration": phase_duration_actual,
+		"final_enemies": final_enemy_count,
+		"peak_enemies": phase_peak_enemies,
+		"memory_start_mb": phase_start_memory / 1024.0 / 1024.0,
+		"memory_end_mb": current_memory / 1024.0 / 1024.0,
+		"memory_growth_mb": phase_memory_growth / 1024.0 / 1024.0,
+		"total_memory_growth_mb": total_memory_growth / 1024.0 / 1024.0,
+		"avg_fps": current_fps
+	}
+	phase_metrics.append(phase_data)
+	
+	# Enhanced phase completion output
+	print("Phase '%s' completed:" % phase.name)
+	print("  Duration: %.1fs" % phase_duration_actual)
+	print("  Final enemies: %d (Peak: %d)" % [final_enemy_count, phase_peak_enemies])
+	print("  Memory: %.1f MB → %.1f MB (+%.1f MB phase growth)" % [
+		phase_start_memory / 1024.0 / 1024.0, current_memory / 1024.0 / 1024.0, phase_memory_growth / 1024.0 / 1024.0
+	])
+	print("  Total memory growth: +%.1f MB" % (total_memory_growth / 1024.0 / 1024.0))
+	print("  Average FPS: %.1f" % current_fps)
+	
 	current_phase_index += 1
 
 func _setup_gradual_scaling() -> void:
@@ -663,6 +721,9 @@ func _complete_test() -> void:
 	test_completed = true
 	print("\n=== STRESS TEST COMPLETED ===")
 	
+	# Print detailed phase breakdown
+	_print_phase_summary()
+	
 	# Get final test results
 	var results = performance_metrics.end_test()
 	
@@ -677,17 +738,25 @@ func _complete_test() -> void:
 			dir_access.make_dir("baselines")
 		print("✓ Created baseline directory")
 	
+	# Add phase-specific data to results for export
+	var enhanced_results = results.duplicate()
+	var overall_peak_enemies = 0
+	for phase_data in phase_metrics:
+		if phase_data.peak_enemies > overall_peak_enemies:
+			overall_peak_enemies = phase_data.peak_enemies
+	enhanced_results["peak_enemy_count"] = overall_peak_enemies
+	
 	# Export CSV with date+time prefix
 	var timestamp = Time.get_datetime_string_from_system().replace(":", "-").replace(" ", "_")
 	var baseline_file = baseline_dir + timestamp + "_performance_500_enemies.csv"
-	performance_metrics.export_baseline_csv(baseline_file, results)
+	performance_metrics.export_baseline_csv(baseline_file, enhanced_results)
 	
 	# Export detailed summary to same folder with date+time prefix
-	_export_test_summary(baseline_dir, timestamp, results)
+	_export_test_summary(baseline_dir, timestamp, enhanced_results)
 	
-	# Final enemy count report
+	# Final enemy count report with peak data
 	var final_enemy_count = _count_alive_enemies()
-	print("Final enemy count: %d" % final_enemy_count)
+	print("Final enemy count: %d (Peak across all phases: %d)" % [final_enemy_count, overall_peak_enemies])
 	
 	# Architecture validation summary
 	print("\n=== ARCHITECTURE VALIDATION ===")
@@ -733,9 +802,38 @@ func _export_test_summary(baseline_dir: String, timestamp: String, results: Dict
 	file.store_line("Frame Time 95th <33.3ms: %s (%.2f ms)" % ["✓" if results.frame_time_95th_percentile < 33.3 else "✗", results.frame_time_95th_percentile])
 	file.store_line("Memory Growth <50MB: %s (%.2f MB)" % ["✓" if results.memory_growth_mb < 50.0 else "✗", results.memory_growth_mb])
 	file.store_line("FPS Stability >90%%: %s (%.1f%%)" % ["✓" if results.fps_stability > 90.0 else "✗", results.fps_stability])
+	file.store_line("")
+	
+	# Add detailed phase breakdown to summary
+	file.store_line("=== PHASE BREAKDOWN ===")
+	for i in range(phase_metrics.size()):
+		var phase_data = phase_metrics[i]
+		file.store_line("Phase %d - %s:" % [i + 1, phase_data.name])
+		file.store_line("  Duration: %.1fs" % phase_data.duration)
+		file.store_line("  Enemies: %d final / %d peak" % [phase_data.final_enemies, phase_data.peak_enemies])
+		file.store_line("  Memory: %.1f → %.1f MB (+%.1f MB)" % [
+			phase_data.memory_start_mb, phase_data.memory_end_mb, phase_data.memory_growth_mb
+		])
+		file.store_line("  Average FPS: %.1f" % phase_data.avg_fps)
+		file.store_line("")
+	
 	file.close()
 	
 	print("✓ Test summary exported to: %s" % summary_file)
+
+func _print_phase_summary() -> void:
+	"""Print detailed breakdown of each test phase."""
+	print("\n=== PHASE BREAKDOWN ===")
+	for i in range(phase_metrics.size()):
+		var phase_data = phase_metrics[i]
+		print("Phase %d - %s:" % [i + 1, phase_data.name])
+		print("  Duration: %.1fs" % phase_data.duration)
+		print("  Enemies: %d final / %d peak" % [phase_data.final_enemies, phase_data.peak_enemies])
+		print("  Memory: %.1f → %.1f MB (+%.1f MB)" % [
+			phase_data.memory_start_mb, phase_data.memory_end_mb, phase_data.memory_growth_mb
+		])
+		print("  Avg FPS: %.1f" % phase_data.avg_fps)
+		print("")
 
 func _fail_test(reason: String) -> void:
 	print("TEST FAILED: " + reason)

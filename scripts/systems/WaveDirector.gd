@@ -40,6 +40,9 @@ var _last_cache_frame: int = -1
 # Free enemy slot tracking for faster spawning
 var _last_free_index: int = 0
 
+# PHASE 3: Pool utilization warning throttling to reduce allocation spam
+var _last_warned_threshold: int = -1
+
 # AI pause functionality for debug interface
 var ai_paused: bool = false
 
@@ -201,9 +204,15 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	
 	# Handle death
 	if is_death:
+		# PHASE 1 FIX: Proper pool return - reset enemy data for reuse
 		enemy.alive = false
+		enemy.hp = 0.0
+		enemy.max_hp = 0.0
+		enemy.pos = Vector2.ZERO
+		enemy.vel = Vector2.ZERO
+		enemy.type_id = ""
 		_cache_dirty = true
-		Logger.debug("V3: Enemy %d killed via damage sync" % [enemy_index], "combat")
+		Logger.debug("V3: Enemy %d killed and returned to pool" % [enemy_index], "combat")
 		
 		# Update EntityTracker
 		EntityTracker.unregister_entity(entity_id)
@@ -329,7 +338,7 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 		boss_hit_feedback.register_boss(boss_instance)
 		Logger.debug("Boss registered with hit feedback system", "waves")
 	else:
-		Logger.warn("BossHitFeedback not available for boss registration", "waves")
+		Logger.debug("BossHitFeedback not available for boss registration", "waves")
 	
 	Logger.info("V2 Boss spawned: " + spawn_config.template_id + " (" + boss_instance.name + ") at " + str(spawn_config.position), "waves")
 
@@ -412,6 +421,23 @@ func _find_enemy_index(target_enemy: EnemyEntity) -> int:
 	return -1
 
 func _find_free_enemy() -> int:
+	# PHASE 1: Track pool utilization for memory leak investigation
+	var alive_count = 0
+	for enemy in enemies:
+		if enemy.alive:
+			alive_count += 1
+	
+	# PHASE 3: Reduce pool utilization warning spam - only warn once at each threshold
+	var utilization_percent = (float(alive_count) / max_enemies) * 100.0
+	if alive_count >= max_enemies * 0.9:
+		# Only warn once per 5% threshold to reduce allocations
+		var threshold = int(utilization_percent / 5) * 5
+		if threshold != _last_warned_threshold:
+			Logger.warn("WaveDirector pool high utilization: %d/%d (%d%%)" % [
+				alive_count, max_enemies, threshold
+			], "waves")
+			_last_warned_threshold = threshold
+	
 	# Start search from last known free index for better performance
 	for i in range(_last_free_index, max_enemies):
 		if not enemies[i].alive:
@@ -424,6 +450,7 @@ func _find_free_enemy() -> int:
 			_last_free_index = i
 			return i
 	
+	Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
 	return -1
 
 func _update_enemies(dt: float) -> void:
@@ -592,5 +619,8 @@ func _is_in_arena_scene() -> bool:
 		if child is BaseArena:
 				return true
 	
+	# FIX: Allow performance test scenes to use WaveDirector 
+	if current_scene.name == "PerformanceTest":
+		return true
 
 	return false
