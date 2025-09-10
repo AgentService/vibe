@@ -8,7 +8,13 @@ This folder contains comprehensive documentation of the game's UI and scene mana
 **Main reference document** - Current implementation status, strengths, and areas for improvement compared to the original plan.
 
 ### 🎬 [[Scene-Management-System]]  
-Scene hierarchy, transitions, and the current Main → Arena flow. Includes proposed GameManager architecture.
+Scene hierarchy, StateManager-based transitions, and current implementation status. Updated with new state management architecture.
+
+### 🔄 [[Scene-Transition-System]]  
+NEW: Comprehensive guide to StateManager and SessionManager. Covers typed state transitions, entity cleanup, and production scene management patterns.
+
+### 🧹 [[Entity-Cleanup-System]]  
+NEW: Deep dive into entity lifecycle management, cleanup strategies, and multi-phase reset sequences. Production-ready entity clearing patterns.
 
 ### 🖼️ [[Canvas-Layer-Structure]]
 UI layering system, CanvasLayer setup, and the proposed multi-layer architecture for proper z-ordering.

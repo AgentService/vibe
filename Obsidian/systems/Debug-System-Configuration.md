@@ -17,12 +17,6 @@ skip_main_menu: bool = true           # Skip main menu flow
 
 ### Configuration Separation
 
-**`debug_mode`** - Development workflow controls:
-- Skips main menu when `true`
-- Goes directly to arena scene
-- Does NOT affect enemy spawning or game performance
-- Controls development convenience, not debug functionality
-
 **`debug_panels_enabled`** - Debug UI and functionality:
 - Enables/disables F12 debug panel creation
 - Controls entity tracking (Ctrl+Click)
@@ -47,7 +41,6 @@ func _check_debug_config() -> void:
 
 **Key Behavior**:
 - When `debug_enabled = false`: No debug UI functionality, normal game behavior
-- When `debug_enabled = true`: F12 toggles debug mode, entities can be spawned/controlled
 
 ### 2. DebugPanel (UI Component)
 **Location**: `scenes/debug/DebugPanel.gd`

@@ -22,6 +22,13 @@ func _ready() -> void:
 	EventBus.progression_changed.connect(_on_progression_changed)
 	EventBus.leveled_up.connect(_on_leveled_up)
 	# Health display will be updated via _process polling
+	
+	# Initialize display
+	_initialize_progression_display()
+	_update_health_display(100, 100)
+	_style_health_bar()
+	_style_level_label()
+	_update_fps_display()
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -30,13 +37,6 @@ func _exit_tree() -> void:
 	if EventBus.leveled_up.is_connected(_on_leveled_up):
 		EventBus.leveled_up.disconnect(_on_leveled_up)
 	Logger.debug("HUD: Cleaned up signal connections", "ui")
-	
-	# Initialize display
-	_initialize_progression_display()
-	_update_health_display(100, 100)
-	_style_health_bar()
-	_style_level_label()
-	_update_fps_display()
 	
 
 func _process(delta: float) -> void:

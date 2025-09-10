@@ -1,58 +1,95 @@
 # Scene Management System
 
-## Current Implementation
+## Current Implementation (UPDATED)
 
-### Scene Flow
+### Scene Flow with State Management
 ```
-Main.tscn (Node2D)
-├── Script: Main.gd (14 lines - minimal)
-└── Arena (instance of Arena.tscn)
+StateManager (Autoload) - Centralized state orchestration
+├── SessionManager (Autoload) - Entity cleanup & session resets  
+├── Main.tscn (Node2D) - Entry point
+└── Arena (instance of Arena.tscn) - Game content
 ```
 
-**Current Path**: `Main.tscn` → `Arena.tscn` (direct instantiation)
+**Current Path**: `StateManager` → Scene States → `Arena.tscn`
+**New Architecture**: Typed state transitions with validation and cleanup
 
-## Scene Hierarchy Detail
+## State Management Architecture
 
-### Main.tscn Structure
+### StateManager - Typed Scene States
+```gdscript
+enum State {
+    BOOT,           # Application startup
+    MENU,           # Main menu (not implemented)
+    CHARACTER_SELECT, # Character selection (not implemented)
+    HIDEOUT,        # Hub area (not implemented)
+    ARENA,          # Combat arena (current implementation)
+    RESULTS,        # Run results screen (not implemented)
+    EXIT            # Application shutdown
+}
+```
+
+### Scene Transition API
+```gdscript
+# Typed transitions with context
+StateManager.go_to_menu()
+StateManager.go_to_hideout()
+StateManager.start_run("arena_forest_1", {"difficulty": "normal"})
+StateManager.end_run({"success": true, "wave_count": 15})
+StateManager.return_to_menu("user_quit")
+```
+
+### SessionManager - Multi-Phase Cleanup
+```gdscript
+enum ResetReason {
+    DEBUG_RESET,     # Manual reset
+    PLAYER_DEATH,    # Player died (preserve enemies for results)
+    MAP_TRANSITION,  # Between arenas/maps
+    HIDEOUT_RETURN,  # Return to hub
+    RUN_END,         # Run completed
+    LEVEL_RESTART    # Restart same level
+}
+```
+
+## Current Scene Structure
+
+### Main.tscn Structure (Entry Point)
 - **Type**: `Node2D`
-- **Script**: `res://scenes/main/Main.gd`
+- **Script**: `res://scenes/main/Main.gd` (14 lines)
 - **Children**: Single `Arena` instance
-- **Responsibilities**: 
-  - Combat step signal connection (debugging)
-  - Minimal game state management
+- **New Role**: Bootstrap StateManager, minimal coordination
+- **Future**: Will be replaced by GameManager pattern
 
-### Arena.tscn Structure  
-- **Type**: `Node2D`
+### Arena.tscn Structure (Current Game Content)
+- **Type**: `Node2D`  
 - **Script**: `res://scenes/arena/Arena.gd` (378 lines)
-- **Children**: 6x `MultiMeshInstance2D` nodes for rendering
+- **Children**: 6x `MultiMeshInstance2D` nodes + UI layers
 - **Responsibilities**: 
   - Game logic coordination
-  - UI management via [[Canvas-Layer-Structure]]
-  - System initialization (9 different systems)
-  - Input handling (arena switching, debug controls)
+  - UI management via CanvasLayer structure
+  - System initialization (9+ systems)
+  - Input handling + debug controls
+- **Integration**: Responds to StateManager signals
 
-## Current Problems
+## Resolved Problems (NEW)
 
-### 1. Monolithic Arena Scene
-The Arena scene handles too many responsibilities:
-- Rendering setup (lines 79-168 in Arena.gd)
-- UI management (lines 213-224)
-- System coordination (lines 38-77)
-- Input handling (lines 178-199)
-- Debug functionality (lines 255-282)
+### ✅ 1. Scene Transition System Implemented
+- **StateManager**: Centralized state orchestration with typed enums
+- **Transition validation**: Invalid transitions are blocked and logged
+- **Context passing**: Rich context data flows between states
+- **Signal architecture**: Decoupled communication via EventBus
 
-### 2. No Scene Transition System
-- Hard-coded scene loading
-- No transition animations
-- No scene state preservation
-- No back/forward navigation
+### ✅ 2. Entity Cleanup System Implemented  
+- **SessionManager**: Multi-phase cleanup with different strategies
+- **EntityClearingService**: Production-ready entity management
+- **Context-aware cleanup**: Different reset types preserve different data
+- **Player registration validation**: Ensures systems remain consistent
 
-### 3. Missing Scene Types
-From original plan, missing:
-- `MainMenuScene`
-- `HideoutScene`
-- Scene transition management
-- Loading screens
+### ❌ 3. Missing Scene Types (Still Outstanding)
+From original plan, still missing:
+- `MainMenuScene` - Main menu interface
+- `HideoutScene` - Hub/town area  
+- `ResultsScene` - Run completion screen
+- `CharacterSelectScene` - Character creation/selection
 
 ## Proposed Architecture (From Original Plan)
 

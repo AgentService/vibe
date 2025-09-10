@@ -14,6 +14,29 @@
   - **Result**: Kill Player button now works consistently across multiple reset cycles with robust error handling
 
 ### Added
+- **Unified Overlay System V1 Task Created**: Comprehensive architectural plan for production-ready modal/overlay system
+  - **New Task**: `25-UNIFIED_OVERLAY_SYSTEM_V1.md` - Complete specification for unified overlay framework  
+  - **Architecture Design**: BaseOverlay class, OverlayManager autoload, theme system, animation framework
+  - **First Implementation**: ResultsScreen conversion from scene transition to arena overlay (preserving background)
+  - **Component Library**: Reusable UI components (OverlayButton, OverlayPanel, OverlayHeader) for rapid development
+  - **Future Foundation**: Framework for Inventory, CharScreen, Skill Tree, Settings, and all future modal UIs
+  - **4-Phase Implementation Plan**: Core foundation → Theme integration → Overlay stack → Component library
+
+- **Death Results Screen UI Redesign**: Transformed fullscreen results screen into centered popup overlay
+  - **Popup Design**: Medium-sized centered panel (600x500px) over semi-transparent background
+  - **Background Preservation**: Game remains visible behind 70% opacity dark overlay with stopped enemies
+  - **Enhanced Layout**: Improved visual hierarchy with centered stats, separated button rows, and consistent styling
+  - **Revive Button Placeholder**: Added disabled "🔄 Revive (Coming Soon)" button for future revive system implementation
+  - **Visual Polish**: Added emojis, better colors, and improved button organization (restart/hideout row, menu separate)
+  - **Modal Experience**: Non-fullscreen approach maintains game context while showing death results
+
+- **Comprehensive Scene Transition & Entity Cleanup Documentation**: Created production-ready documentation for StateManager and SessionManager systems
+  - **New Documentation**: `Scene-Transition-System.md` - Complete guide to typed state transitions, context passing, and validation rules
+  - **New Documentation**: `Entity-Cleanup-System.md` - Deep dive into multi-phase cleanup, context-aware entity clearing, and performance optimization
+  - **Updated Documentation**: `Scene-Management-System.md` - Reflects current StateManager architecture and resolved transition problems
+  - **System Coverage**: StateManager typed states, SessionManager reset strategies, EntityClearingService patterns, and integration points
+  - **Production Patterns**: Context-aware cleanup (player death vs debug reset), player registration validation, and performance monitoring
+
 - **MultiMesh Performance Investigation Framework**: Completed systematic 9-step investigation to identify rendering bottlenecks
   - **Investigation Steps 0-9**: Isolated specific optimizations (colors, preallocation, update frequency, grouping, textures, transforms)
   - **Performance Results**: Identified transform updates as primary bottleneck - static positioning provides +207% improvement
