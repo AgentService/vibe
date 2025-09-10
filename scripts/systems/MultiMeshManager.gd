@@ -450,7 +450,7 @@ func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: Multi
 		# INVESTIGATION STEP 2: Early preallocation to avoid mid-phase buffer resizes
 		if investigation_step_2_early_preallocation:
 			# Pre-grow to target capacity (500 divided among tiers)
-			var target_capacity = 200  # Rough estimate per tier for 500 total
+			var target_capacity = 1000  # Rough estimate per tier for 1000 total
 			if previous_count < target_capacity:
 				mm_instance.multimesh.instance_count = target_capacity
 				previous_count = target_capacity

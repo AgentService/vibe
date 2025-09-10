@@ -366,7 +366,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	# Use existing pooled spawn logic for regular enemies
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
-		Logger.warn("No free enemy slots available for V2 spawn", "waves")
+		# Logger.warn("No free enemy slots available for V2 spawn", "waves")  # Disabled for performance testing
 		return
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -470,7 +470,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
-		Logger.warn("No free enemy slots available", "waves")
+		# Logger.warn("No free enemy slots available", "waves")  # Disabled for performance testing
 		return
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -512,16 +512,16 @@ func _find_free_enemy() -> int:
 	# PHASE 7 OPTIMIZATION: Use bit-field for faster alive count tracking
 	var alive_count = _get_alive_count_fast()
 	
-	# PHASE 3: Reduce pool utilization warning spam - only warn once at each threshold
-	var utilization_percent = (float(alive_count) / max_enemies) * 100.0
-	if alive_count >= max_enemies * 0.9:
-		# Only warn once per 5% threshold to reduce allocations
-		var threshold = int(utilization_percent / 5) * 5
-		if threshold != _last_warned_threshold:
-			Logger.warn("WaveDirector pool high utilization: %d/%d (%d%%)" % [
-				alive_count, max_enemies, threshold
-			], "waves")
-			_last_warned_threshold = threshold
+	# PHASE 3: Pool utilization warnings disabled for performance testing
+	# var utilization_percent = (float(alive_count) / max_enemies) * 100.0
+	# if alive_count >= max_enemies * 0.9:
+	#	# Only warn once per 5% threshold to reduce allocations
+	#	var threshold = int(utilization_percent / 5) * 5
+	#	if threshold != _last_warned_threshold:
+	#		Logger.warn("WaveDirector pool high utilization: %d/%d (%d%%)" % [
+	#			alive_count, max_enemies, threshold
+	#		], "waves")
+	#		_last_warned_threshold = threshold
 	
 	# PHASE 7 OPTIMIZATION: Use bit-field for faster free slot finding
 	# Start search from last known free index for better performance
@@ -536,11 +536,11 @@ func _find_free_enemy() -> int:
 			_last_free_index = i
 			return i
 	
-	# Pool exhausted - throttle warning using timer to reduce spam during stress testing
-	var current_time = Time.get_ticks_msec() / 1000.0
-	if current_time - _pool_exhaustion_warning_timer >= POOL_EXHAUSTION_WARNING_COOLDOWN:
-		Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
-		_pool_exhaustion_warning_timer = current_time
+	# Pool exhausted warnings disabled for performance testing
+	# var current_time = Time.get_ticks_msec() / 1000.0
+	# if current_time - _pool_exhaustion_warning_timer >= POOL_EXHAUSTION_WARNING_COOLDOWN:
+	#	Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
+	#	_pool_exhaustion_warning_timer = current_time
 	return -1
 
 func _update_enemies(dt: float) -> void:

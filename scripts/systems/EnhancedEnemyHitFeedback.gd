@@ -210,7 +210,8 @@ func _apply_enhanced_flash_color(flash_data: Dictionary, progress: float) -> voi
 	var intensity = exp(-progress * 4.0)  # Fast fade with exponential curve
 	var current_color = Color.WHITE.lerp(flash_data.flash_color, intensity)
 	
-	mm_instance.multimesh.set_instance_color(instance_index, current_color)
+	# Use self_modulate for performance optimization
+	mm_instance.self_modulate = current_color
 
 func _apply_scale_transform(scale_data: Dictionary, progress: float) -> void:
 	var mm_instance: MultiMeshInstance2D = scale_data.mm_instance
@@ -234,7 +235,9 @@ func _reset_flash_effect(entity_id: String) -> void:
 	if flash_data.has("mm_instance"):
 		var mm_instance: MultiMeshInstance2D = flash_data.mm_instance
 		var instance_index: int = flash_data.instance_index
-		mm_instance.multimesh.set_instance_color(instance_index, Color.WHITE)
+		# Reset self_modulate to tier default color
+		var tier_color = _get_tier_default_color(mm_instance)
+		mm_instance.self_modulate = tier_color
 
 func _reset_scale_effect(entity_id: String) -> void:
 	var scale_data: Dictionary = scale_effects.get(entity_id, {})
@@ -242,6 +245,19 @@ func _reset_scale_effect(entity_id: String) -> void:
 		var mm_instance: MultiMeshInstance2D = scale_data.mm_instance
 		var instance_index: int = scale_data.instance_index
 		mm_instance.multimesh.set_instance_transform_2d(instance_index, scale_data.original_transform)
+
+func _get_tier_default_color(mm_instance: MultiMeshInstance2D) -> Color:
+	# Return appropriate tier color based on which MultiMesh this is
+	if mm_instance == mm_enemies_swarm:
+		return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red (Swarm)
+	elif mm_instance == mm_enemies_regular:
+		return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan (Regular)
+	elif mm_instance == mm_enemies_elite:
+		return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta (Elite)
+	elif mm_instance == mm_enemies_boss:
+		return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange (Boss)
+	else:
+		return Color.WHITE  # Fallback
 
 # Helper functions (similar to original implementation)
 func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:

@@ -1,6 +1,6 @@
 extends Node
 
-## Performance stress test for 500+ enemy architecture validation
+## Performance stress test for 1000+ enemy architecture validation
 ## Tests FPS stability, memory usage, and combat performance at scale
 ## Designed to establish baseline metrics before zero-allocation queue implementation
 
@@ -8,13 +8,13 @@ const PerformanceMetrics = preload("res://tests/tools/performance_metrics.gd")
 
 # Test configuration
 var test_duration: float = 60.0  # Test runs for 60 seconds (extended for better enemy count analysis)
-var target_enemy_count: int = 500
+var target_enemy_count: int = 1000
 var max_projectiles: int = 200
 var combat_step_interval: float = 1.0 / 30.0  # 30Hz combat step
 
 # Test parameters
 var verbose_output: bool = false        # Set to true for detailed logging, false for clean output
-var investigation_step: int = 0         # MultiMesh investigation step (0 = baseline, 1-9 = investigation steps)
+var investigation_step: int = 2         # MultiMesh investigation step (0 = baseline, 1-9 = investigation steps)
 
 # Test state
 var current_test_phase: String = ""
@@ -40,17 +40,17 @@ var test_phases: Array[Dictionary] = [
 	{
 		"name": "gradual_scaling",
 		"duration": 8.0,
-		"description": "Enemy rendering scaling: 100 → 300+ enemies (pure spawn/render test)"
+		"description": "Enemy rendering scaling: 100 → 600+ enemies (pure spawn/render test)"
 	},
 	{
 		"name": "burst_spawn", 
 		"duration": 5.0,
-		"description": "Instant spawn stress: 500 enemies immediately (memory allocation test)"
+		"description": "Instant spawn stress: 1000 enemies immediately (memory allocation test)"
 	},
 	{
 		"name": "combat_stress",
 		"duration": 10.0, 
-		"description": "Real combat load: 500 enemies + MeleeSystem attacks + DamageService processing"
+		"description": "Real combat load: 1000 enemies + MeleeSystem attacks + DamageService processing"
 	}
 ]
 
@@ -61,7 +61,7 @@ var test_completed: bool = false
 
 func _ready() -> void:
 	print("=== ARCHITECTURE PERFORMANCE STRESS TEST ===")
-	print("Target: 500+ enemies, 60 second duration")
+	print("Target: 1000+ enemies, 60 second duration")
 	print("Success Criteria: ≥30 FPS, <50MB memory growth, <33.3ms frame time")
 	
 	# Check command line arguments for test parameters
@@ -249,13 +249,13 @@ func _initialize_systems() -> void:
 	else:
 		print("⚠️  PlayerState not available - using default positioning")
 	
-	# Configure WaveDirector for 500 enemy capacity BEFORE other initialization
+	# Configure WaveDirector for 1000 enemy capacity BEFORE other initialization
 	if wave_director:
-		wave_director.max_enemies = 500  # Set capacity for all test phases
+		wave_director.max_enemies = 1000  # Set capacity for all test phases
 		wave_director.spawn_interval = 10.0  # Start with slow spawning (will be overridden)
 		# Force reinitialize the enemy pool with new size
 		wave_director._initialize_pool()
-		print("✓ WaveDirector configured for 500 enemy capacity and pool reinitialized")
+		print("✓ WaveDirector configured for 1000 enemy capacity and pool reinitialized")
 		
 	
 	# Create a basic ArenaSystem for WaveDirector dependency if needed
@@ -618,7 +618,7 @@ func _end_current_phase() -> void:
 	current_phase_index += 1
 
 func _setup_gradual_scaling() -> void:
-	print("Starting gradual scaling: 100 → 500+ enemies over 8 seconds")
+	print("Starting gradual scaling: 100 → 1000+ enemies over 8 seconds")
 	# Clear any existing enemies
 	_clear_all_enemies()
 	
@@ -870,7 +870,7 @@ func _complete_test() -> void:
 	# Architecture validation summary
 	print("\n=== ARCHITECTURE VALIDATION ===")
 	if results.test_passed:
-		print("✓ SUCCESS: Architecture meets 500+ enemy performance requirements")
+		print("✓ SUCCESS: Architecture meets 1000+ enemy performance requirements")
 		print("✓ Ready for zero-allocation queue optimization")
 	else:
 		print("✗ FAILURE: Architecture performance issues detected")
@@ -894,7 +894,7 @@ func _export_test_summary(baseline_dir: String, timestamp: String, results: Dict
 	file.store_line("=== ARCHITECTURE PERFORMANCE STRESS TEST SUMMARY ===")
 	file.store_line("Timestamp: " + Time.get_datetime_string_from_system())
 	file.store_line("Test Duration: %.2f seconds" % results.duration_seconds)
-	file.store_line("Target: 500+ enemies, ≥30 FPS, <50MB memory growth")
+	file.store_line("Target: 1000+ enemies, ≥30 FPS, <50MB memory growth")
 	file.store_line("")
 	file.store_line("=== RESULTS ===")
 	file.store_line("Final Enemy Count: %d" % _count_alive_enemies())
