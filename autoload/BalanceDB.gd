@@ -416,7 +416,9 @@ func _load_radar_config() -> void:
 		"radar_size": radar_config.get_radar_size(),
 		"radar_range": radar_config.radar_range,
 		"colors": radar_config.get_colors(),
-		"dot_sizes": radar_config.get_dot_sizes()
+		"dot_sizes": radar_config.get_dot_sizes(),
+		"emit_hz": radar_config.emit_hz,
+		"use_new_radar_system": radar_config.use_new_radar_system
 	}
 	
 	if not _data.has("ui"):

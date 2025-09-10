@@ -396,7 +396,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	# Use existing pooled spawn logic for regular enemies
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
-		# Logger.warn("No free enemy slots available for V2 spawn", "waves")  # Disabled for performance testing
+		Logger.warn("WaveDirector: No free enemy slots available for V2 spawn of %s" % spawn_config.template_id, "radar")
 		return
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -412,12 +412,14 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	var entity_id = get_enemy_entity_id(free_idx)
 	var entity_data = {
 		"id": entity_id,
-		"type": "enemy",
+		"type": "enemy", 
 		"hp": enemy.hp,
 		"max_hp": enemy.max_hp,
 		"alive": true,
-		"pos": enemy.pos
+		"pos": spawn_config.position  # Use spawn position directly for consistency with boss registration
 	}
+	
+	# Register enemy with systems
 	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
 	

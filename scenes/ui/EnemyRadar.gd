@@ -20,12 +20,14 @@ var min_boss_dot_size: float
 var player_position: Vector2
 var radar_entities: Array[EventBus.RadarEntity] = []
 
+# System indicator
+var radar_system_indicator: String = ""
+
 func _ready() -> void:
 	_load_configuration()
 	_setup_radar()
 	_connect_signals()
 	_update_visibility()  # Check radar disable state
-	Logger.debug("EnemyRadar: Initialized and connected to EventBus", "radar")
 
 func _setup_radar() -> void:
 	size = radar_size
@@ -45,6 +47,10 @@ func _setup_radar() -> void:
 
 func _load_configuration() -> void:
 	var config: Dictionary = BalanceDB.get_ui_value("radar")
+	
+	# Detect which radar system is active
+	var use_new_system: bool = config.get("use_new_radar_system", true)
+	radar_system_indicator = "NEW" if use_new_system else "OLD"
 	
 	# Load size
 	var size_data: Dictionary = config.get("radar_size", {"x": 150, "y": 150})
@@ -95,16 +101,6 @@ func _on_radar_data_updated(entities: Array, player_pos: Vector2) -> void:
 	radar_entities.assign(entities)  # Use assign for typed array conversion
 	player_position = player_pos
 	
-	# Count different entity types for logging
-	var enemy_count := 0
-	var boss_count := 0
-	for entity in radar_entities:
-		if entity.type == "enemy":
-			enemy_count += 1
-		elif entity.type == "boss":
-			boss_count += 1
-	
-	Logger.debug("EnemyRadar: Received radar data - %d enemies, %d bosses at player pos %s" % [enemy_count, boss_count, player_pos], "radar")
 	queue_redraw()
 
 func _draw() -> void:
@@ -113,6 +109,11 @@ func _draw() -> void:
 		return
 		
 	var radar_center := radar_size * 0.5
+	
+	# Draw system indicator in top-left corner
+	if radar_system_indicator:
+		var indicator_color = Color.YELLOW if radar_system_indicator == "NEW" else Color.CYAN
+		draw_string(get_theme_default_font(), Vector2(4, 12), radar_system_indicator, HORIZONTAL_ALIGNMENT_LEFT, -1, 10, indicator_color)
 	
 	# Draw player dot at center
 	draw_circle(radar_center, player_dot_size, player_color)

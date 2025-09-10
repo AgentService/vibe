@@ -1,41 +1,59 @@
 extends Node
 class_name RadarSystem
 
-## Radar system for providing enemy position data to UI components.
-## Decouples enemy scanning from UI rendering by emitting data via EventBus.
-## Only active in ARENA state and respects pause state.
-## Updates at throttled rate (10 Hz) to reduce performance impact.
+## Radar system coordination layer for RadarUpdateManager integration.
+## RADAR PERFORMANCE V3: Simplified to coordinate RadarUpdateManager instead of direct EntityTracker scans
+## Eliminates 60 Hz O(N) entity scanning bottleneck in favor of 30 Hz batched processing
+## RadarUpdateManager handles all zero-allocation batched processing; this provides setup/coordination
 
-# Dependencies
-var _wave_director: WaveDirector
+# Dependencies  
+var _radar_update_manager: RadarUpdateManager
 var _enabled: bool = false
-
-# Configuration - 60 Hz for perfectly smooth radar updates
-var _emit_hz: float = 60.0
-var _throttle_accum: float = 0.0
-
-# Data buffers (reused for performance)
-var _radar_entities_buf: Array[EventBus.RadarEntity] = []
-var _player_pos: Vector2 = Vector2.ZERO
 
 # State tracking
 var _current_state: StateManager.State
 var _is_paused: bool = false
 
+# Old radar system variables (used when new system is disabled)
+var _old_radar_timer: float = 0.0
+var _old_radar_frequency: float = 30.0
+var _wave_director: WaveDirector
+
 func _ready() -> void:
+	_setup_radar_update_manager()
 	_setup_connections()
-	_load_configuration()
 	_initialize_state()
-	Logger.info("RadarSystem initialized", "radar")
+	Logger.info("RadarSystem initialized with RadarUpdateManager integration", "radar")
 	Logger.debug("RadarSystem: _ready complete, enabled=%s, state=%s" % [_enabled, _current_state], "radar")
 
-func _setup_connections() -> void:
-	# Radar needs smooth visual updates - use _process instead of combat step
-	set_process(true)
+func _setup_radar_update_manager() -> void:
+	# Check configuration to determine which radar system to use
+	var config: Dictionary = BalanceDB.get_ui_value("radar")
+	var use_new_system: bool = config.get("use_new_radar_system", true)
 	
-	# Connect to player position updates
-	if PlayerState and PlayerState.player_position_changed:
-		PlayerState.player_position_changed.connect(_on_player_position_changed)
+	# DEBUG: Log the actual configuration values
+	Logger.info("RadarSystem: Configuration loaded - use_new_radar_system: %s, config keys: %s" % [use_new_system, config.keys()], "radar")
+	
+	if use_new_system:
+		# Create and setup RadarUpdateManager as child node (new system)
+		_radar_update_manager = RadarUpdateManager.new()
+		_radar_update_manager.name = "RadarUpdateManager"
+		add_child(_radar_update_manager)
+		Logger.info("RadarSystem: Using NEW radar system (RadarUpdateManager)", "radar")
+	else:
+		# Use old radar system - no RadarUpdateManager needed
+		_radar_update_manager = null
+		_old_radar_frequency = config.get("emit_hz", 30.0)
+		Logger.info("RadarSystem: Using OLD radar system (legacy direct EntityTracker) at %.0f Hz" % _old_radar_frequency, "radar")
+
+func _setup_connections() -> void:
+	# Set process based on which radar system is active
+	if _radar_update_manager:
+		# New system: RadarUpdateManager handles timing
+		set_process(false)
+	else:
+		# Old system: Use _process for direct EntityTracker scanning
+		set_process(true)
 	
 	# Connect to state changes for ARENA-only operation
 	if StateManager and StateManager.state_changed:
@@ -45,85 +63,82 @@ func _setup_connections() -> void:
 	if EventBus and EventBus.game_paused_changed:
 		EventBus.game_paused_changed.connect(_on_game_paused_changed)
 	
-	# Connect to balance reloads for configuration updates
-	if BalanceDB and BalanceDB.balance_reloaded:
-		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
+	Logger.debug("RadarSystem: Connected to state management signals", "radar")
 
-func setup(wave_director: WaveDirector) -> void:
+func setup(wave_director: WaveDirector = null) -> void:
+	# Store WaveDirector reference for both old and new systems
 	_wave_director = wave_director
+	
+	if _radar_update_manager:
+		# New system: Pass WaveDirector to RadarUpdateManager for hybrid approach fallback
+		_radar_update_manager.setup_wave_director(wave_director)
+	
 	_update_enabled_state()
-	Logger.info("RadarSystem setup with WaveDirector dependency", "radar")
+	Logger.info("RadarSystem setup completed", "radar")
 
 func set_enabled(enabled: bool) -> void:
 	_enabled = enabled
-	Logger.debug("RadarSystem enabled: %s" % enabled, "radar")
-
-func set_emit_rate_hz(hz: float) -> void:
-	_emit_hz = max(1.0, hz)  # Minimum 1 Hz
-	Logger.debug("RadarSystem emit rate set to %s Hz" % _emit_hz, "radar")
+	
+	if _radar_update_manager:
+		# New system: Forward enabled state to RadarUpdateManager
+		_radar_update_manager.set_enabled(enabled)
+		Logger.debug("RadarSystem enabled: %s (forwarded to RadarUpdateManager)" % enabled, "radar")
+	else:
+		# Old system: Handle enabled state directly
+		Logger.debug("RadarSystem enabled: %s (old system direct)" % enabled, "radar")
 
 func _process(delta: float) -> void:
-	if not _should_update():
+	# Old radar system: Direct EntityTracker scanning (only when new system is disabled)
+	if _radar_update_manager:
+		return  # New system active, skip old processing
+	
+	if not _enabled or not EntityTracker:
 		return
 	
-	# Throttle updates to configured rate for smooth visual updates
-	_throttle_accum += delta
-	var emit_interval := 1.0 / _emit_hz
+	# Performance optimization: Skip radar processing if disabled
+	if DebugManager and DebugManager.is_radar_disabled():
+		return
 	
-	if _throttle_accum >= emit_interval:
-		_throttle_accum = 0.0
-		_update_and_emit_radar_data()
+	# Update at configured frequency
+	_old_radar_timer += delta
+	var update_interval = 1.0 / _old_radar_frequency
+	
+	if _old_radar_timer >= update_interval:
+		_old_radar_timer = 0.0
+		_process_old_radar_update()
 
-func _should_update() -> bool:
-	# Allow updates if we have any data source (WaveDirector for pooled enemies or EntityTracker for bosses)
-	return _enabled and not _is_paused and (_wave_director != null or EntityTracker != null)
-
-func _update_and_emit_radar_data() -> void:
+func _process_old_radar_update() -> void:
+	# Old radar system implementation: Direct WaveDirector access (original system)
 	# Performance optimization: Skip radar calculations if disabled
 	if DebugManager.is_radar_disabled():
 		return
-		
-	# Clear buffer and gather entities from available sources
-	_radar_entities_buf.clear()
-
-	var enemy_count := 0
-	var boss_count := 0
-
-	# Gather pooled enemies from WaveDirector if available
+	
+	var radar_entities: Array[EventBus.RadarEntity] = []
+	
+	# Gather pooled enemies from WaveDirector (original old system approach)
 	if _wave_director:
 		var alive_enemies: Array[EnemyEntity] = _wave_director.get_alive_enemies()
 		for enemy in alive_enemies:
 			var radar_entity = EventBus.RadarEntity.new(enemy.pos, "enemy")
-			_radar_entities_buf.append(radar_entity)
-		enemy_count = alive_enemies.size()
-	elif EntityTracker:
-		# Fallback: gather enemies from EntityTracker (robust for future decoupling)
-		var enemy_ids = EntityTracker.get_entities_by_type("enemy")
-		for id in enemy_ids:
-			var data := EntityTracker.get_entity(id)
-			if data.has("pos"):
-				var radar_entity = EventBus.RadarEntity.new(data["pos"], "enemy")
-				_radar_entities_buf.append(radar_entity)
-		enemy_count = enemy_ids.size()
-
-	# Always include bosses registered as scenes via EntityTracker
+			radar_entities.append(radar_entity)
+	
+	# Gather boss entities from EntityTracker (bosses were always tracked this way)
 	if EntityTracker:
-		var boss_ids = EntityTracker.get_entities_by_type("boss")
-		boss_count = boss_ids.size()
-		for id in boss_ids:
-			var bdata := EntityTracker.get_entity(id)
-			if bdata.has("pos"):
-				var radar_entity = EventBus.RadarEntity.new(bdata["pos"], "boss")
-				_radar_entities_buf.append(radar_entity)
-
-	# Emit radar data via EventBus
+		var boss_ids = EntityTracker.get_entities_by_type_view("boss")
+		var temp_positions: PackedVector2Array = PackedVector2Array()
+		EntityTracker.get_positions_for(boss_ids, temp_positions)
+		for i in range(boss_ids.size()):
+			var radar_entity = EventBus.RadarEntity.new(temp_positions[i], "boss")
+			radar_entities.append(radar_entity)
+	
+	# Get player position
+	var player_position = Vector2.ZERO
+	if PlayerState:
+		player_position = PlayerState.position
+	
+	# Emit via EventBus
 	if EventBus:
-		EventBus.radar_data_updated.emit(_radar_entities_buf, _player_pos)
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("RadarSystem: Emitted radar data - %d enemies (+%d bosses) at player pos %s" % [enemy_count, boss_count, _player_pos], "radar")
-
-func _on_player_position_changed(position: Vector2) -> void:
-	_player_pos = position
+		EventBus.radar_data_updated.emit(radar_entities, player_position)
 
 func _on_state_changed(_prev: StateManager.State, next: StateManager.State, _context: Dictionary) -> void:
 	_current_state = next
@@ -139,21 +154,10 @@ func _on_game_paused_changed(payload) -> void:
 			_is_paused = payload.is_paused if "is_paused" in payload else false
 		Logger.debug("RadarSystem pause state: %s" % _is_paused, "radar")
 
-func _on_balance_reloaded() -> void:
-	_load_configuration()
-
 func _update_enabled_state() -> void:
 	var should_be_enabled = (_current_state == StateManager.State.ARENA)
 	Logger.debug("RadarSystem: State changed - current: %s, should_enable: %s" % [_current_state, should_be_enabled], "radar")
 	set_enabled(should_be_enabled)
-
-func _load_configuration() -> void:
-	if BalanceDB:
-		var config: Dictionary = BalanceDB.get_ui_value("radar")
-		_emit_hz = config.get("emit_hz", 10.0)
-		Logger.debug("RadarSystem configuration reloaded - emit rate: %s Hz" % _emit_hz, "radar")
-	else:
-		Logger.warn("RadarSystem: BalanceDB not available for configuration loading", "radar")
 
 func _initialize_state() -> void:
 	# Initialize current state from StateManager to handle startup scenarios
@@ -166,14 +170,33 @@ func _initialize_state() -> void:
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
-	# No longer using combat_step - using _process instead
-	if PlayerState and PlayerState.player_position_changed and PlayerState.player_position_changed.is_connected(_on_player_position_changed):
-		PlayerState.player_position_changed.disconnect(_on_player_position_changed)
 	if StateManager and StateManager.state_changed and StateManager.state_changed.is_connected(_on_state_changed):
 		StateManager.state_changed.disconnect(_on_state_changed)
 	if EventBus and EventBus.game_paused_changed and EventBus.game_paused_changed.is_connected(_on_game_paused_changed):
 		EventBus.game_paused_changed.disconnect(_on_game_paused_changed)
-	if BalanceDB and BalanceDB.balance_reloaded and BalanceDB.balance_reloaded.is_connected(_on_balance_reloaded):
-		BalanceDB.balance_reloaded.disconnect(_on_balance_reloaded)
 	
 	Logger.debug("RadarSystem: Cleaned up signal connections", "radar")
+
+## DEBUG: Get performance statistics from RadarUpdateManager
+func get_debug_info() -> Dictionary:
+	var base_info = {
+		"enabled": _enabled,
+		"current_state": _current_state,
+		"is_paused": _is_paused,
+		"radar_update_manager_attached": _radar_update_manager != null
+	}
+	
+	if _radar_update_manager:
+		var manager_info = _radar_update_manager.get_debug_info()
+		base_info["radar_update_manager"] = manager_info
+	
+	return base_info
+
+## DEPRECATED METHODS (kept for compatibility, but no longer used)
+func set_emit_rate_hz(hz: float) -> void:
+	# RadarUpdateManager uses 30Hz combat step alignment - emit rate no longer configurable
+	Logger.debug("RadarSystem: set_emit_rate_hz() deprecated - RadarUpdateManager uses 30Hz combat step", "radar")
+
+func _load_configuration() -> void:
+	# Configuration loading no longer needed - RadarUpdateManager handles its own setup
+	Logger.debug("RadarSystem: _load_configuration() deprecated - RadarUpdateManager handles configuration", "radar")
