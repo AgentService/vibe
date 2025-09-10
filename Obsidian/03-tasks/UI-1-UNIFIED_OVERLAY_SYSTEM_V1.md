@@ -4,11 +4,15 @@
 **Priority**: High  
 **Type**: UI Architecture Foundation  
 **Created**: 2025-09-10  
-**Context**: Build unified overlay system for all modal UIs (ResultsScreen, Inventory, CharScreen, Skill Tree, etc.)
+**Context**: Build unified overlay system for all modal UIs (ResultsScreen, Inventory, CharScreen, Skill Tree, etc.) - **Desktop-Optimized Design**
 
 ## Overview
 
-Create a production-ready unified overlay system that handles all modal/popup UIs with base classes, consistent theming, and standardized behavior. The ResultsScreen death overlay will serve as the first implementation test.
+Create a production-ready unified overlay system optimized for desktop gaming with scalable windowed design. Handles all modal/popup UIs with base classes, consistent theming, and standardized behavior. Optimized for mouse/keyboard interaction with rich tooltips and precise controls.
+
+**Target Platform**: Desktop Only (Windows/Linux/Mac)  
+**Resolution Strategy**: Scalable 1280x720 → 4K (base: 1920x1080)  
+**Input Methods**: Mouse + Keyboard (controller placeholder support)
 
 **Key Goal**: Replace ad-hoc modal implementations with a consistent, reusable overlay framework that works across the entire game.
 
@@ -32,9 +36,9 @@ Create a production-ready unified overlay system that handles all modal/popup UI
 ### Core Components
 
 ```gdscript
-# Unified overlay management
-class OverlayManager extends CanvasLayer:
-    enum OverlayType {
+# Unified modal management - Desktop-focused with mouse/keyboard optimization
+class UIManager extends CanvasLayer:
+    enum ModalType {
         RESULTS_SCREEN,
         INVENTORY,
         CHARACTER_SCREEN,
@@ -44,32 +48,40 @@ class OverlayManager extends CanvasLayer:
         SETTINGS
     }
     
-    var overlay_stack: Array[BaseOverlay] = []
-    var active_overlay: BaseOverlay = null
+    var modal_stack: Array[BaseModal] = []
+    var active_modal: BaseModal = null
     var background_dimmer: ColorRect
+    var tooltip_system: TooltipManager  # Rich desktop tooltips
+    var keyboard_nav: KeyboardNavigator  # Tab/Enter/ESC handling
 ```
 
 ```gdscript
-# Base class for all overlays
-class BaseOverlay extends Control:
-    @export var overlay_type: OverlayManager.OverlayType
+# Base class for all modals - Desktop interaction patterns
+class BaseModal extends Control:
+    @export var modal_type: UIManager.ModalType
     @export var dims_background: bool = true
     @export var pauses_game: bool = false
     @export var closeable_with_escape: bool = true
+    @export var keyboard_navigable: bool = true  # Tab navigation support
+    @export var has_tooltips: bool = true       # Rich tooltip support
+    @export var default_focus_control: Control  # First focused element
     
-    signal overlay_opened()
-    signal overlay_closed()
+    signal modal_opened()
+    signal modal_closed()
+    signal tooltip_requested(text: String, position: Vector2)
     
-    func open_overlay(context: Dictionary = {}) -> void
-    func close_overlay() -> void
-    func on_escape_pressed() -> bool  # Return true if handled
+    func open_modal(context: Dictionary = {}) -> void
+    func close_modal() -> void
+    func on_escape_pressed() -> bool
+    func on_tab_navigation(direction: int) -> bool  # 1 = forward, -1 = backward
+    func setup_keyboard_shortcuts() -> void  # I, C, etc. for quick access
 ```
 
 ### Theme System Foundation
 
 ```gdscript
-# Base theme for all overlays
-class OverlayTheme extends Resource:
+# Base theme for all modals
+class ModalTheme extends Resource:
     @export var background_color: Color = Color(0.2, 0.2, 0.2, 0.95)
     @export var dim_color: Color = Color(0.0, 0.0, 0.0, 0.7)
     @export var border_color: Color = Color(0.4, 0.4, 0.4)
@@ -82,11 +94,11 @@ class OverlayTheme extends Resource:
 ### Animation Framework
 
 ```gdscript
-# Standardized overlay animations
-class OverlayAnimator:
-    static func fade_in_overlay(overlay: Control, duration: float = 0.3)
-    static func scale_in_overlay(overlay: Control, from_scale: float = 0.8)
-    static func slide_in_overlay(overlay: Control, from_direction: Vector2)
+# Standardized modal animations
+class ModalAnimator:
+    static func fade_in_modal(modal: Control, duration: float = 0.3)
+    static func scale_in_modal(modal: Control, from_scale: float = 0.8)
+    static func slide_in_modal(modal: Control, from_direction: Vector2)
     static func dim_background(dimmer: ColorRect, target_alpha: float = 0.7)
 ```
 
@@ -151,22 +163,22 @@ add_theme_font_size_override("font_size", 32)  # → REPLACE with theme
 ### Phase 1: Core Foundation + Cleanup (Week 1)  
 **Goal**: Create base overlay system, convert ResultsScreen, clean up old implementations
 
-#### 1.1 Create OverlayManager System
-- [ ] `autoload/OverlayManager.gd` - Main overlay coordinator
-- [ ] `scripts/ui_framework/BaseOverlay.gd` - Base class for all overlays
-- [ ] `themes/overlay_theme.tres` - Base theme resource
-- [ ] Basic overlay stack management with proper z-ordering
+#### 1.1 Create UIManager System
+- [ ] `autoload/UIManager.gd` - Main modal coordinator
+- [ ] `scripts/ui_framework/BaseModal.gd` - Base class for all modals
+- [ ] `themes/modal_theme.tres` - Base theme resource
+- [ ] Basic modal stack management with proper z-ordering
 
-#### 1.2 Convert ResultsScreen to Overlay
-- [ ] Inherit ResultsScreen from BaseOverlay instead of Control
+#### 1.2 Convert ResultsScreen to Modal
+- [ ] Inherit ResultsScreen from BaseModal instead of Control
 - [ ] Remove scene transition logic from Player death sequence
-- [ ] Add ResultsScreen as overlay to Arena scene instead of separate scene
+- [ ] Add ResultsScreen as modal to Arena scene instead of separate scene
 - [ ] Preserve game background with stopped enemies (greyed out)
 - [ ] Test: Death shows popup over arena, buttons work for scene transitions
 
 #### 1.3 Animation & Polish Foundation
-- [ ] `scripts/ui_framework/OverlayAnimator.gd` - Animation utilities
-- [ ] Fade-in/scale-in animations for overlay appearance
+- [ ] `scripts/ui_framework/ModalAnimator.gd` - Animation utilities
+- [ ] Fade-in/scale-in animations for modal appearance
 - [ ] Background dimming with smooth transition
 - [ ] Test: ResultsScreen appears/disappears with smooth animations
 
@@ -217,11 +229,11 @@ add_theme_font_size_override("font_size", 32)  # → REPLACE with theme
 - [ ] **Migrate CardPicker to BaseOverlay**:
   ```gdscript
   # OLD: scenes/ui/CardPicker.gd extends Control
-  # NEW: extends BaseOverlay with OverlayManager integration
+  # NEW: extends BaseModal with UIManager integration
   ```
-  - Update `Arena.gd _on_level_up()` to use OverlayManager
-  - Remove direct pause management (handled by overlay system)
-  - Test: Card selection works with new overlay system
+  - Update `Arena.gd _on_level_up()` to use UIManager
+  - Remove direct pause management (handled by modal system)
+  - Test: Card selection works with new modal system
 
 - [ ] **Migrate PauseOverlay to unified system**:
   ```gdscript
@@ -287,25 +299,25 @@ add_theme_font_size_override("font_size", 32)  # → REPLACE with theme
 
 ```
 autoload/
-├── OverlayManager.gd          # Main overlay coordinator
+├── UIManager.gd               # Main modal coordinator
 
 scripts/ui_framework/
-├── BaseOverlay.gd             # Base class for all overlays
-├── OverlayAnimator.gd         # Animation utilities  
-├── OverlayTheme.gd            # Theme resource class
+├── BaseModal.gd               # Base class for all modals
+├── ModalAnimator.gd           # Animation utilities  
+├── ModalTheme.gd              # Theme resource class
 └── components/
-    ├── OverlayButton.gd/.tscn
-    ├── OverlayPanel.gd/.tscn
-    └── OverlayHeader.gd/.tscn
+    ├── ModalButton.gd/.tscn
+    ├── ModalPanel.gd/.tscn
+    └── ModalHeader.gd/.tscn
 
-scenes/ui/overlays/
-├── ResultsScreen.gd/.tscn     # CONVERTED: Now inherits BaseOverlay
-├── InventoryScreen.gd/.tscn   # FUTURE: Inventory overlay
-├── CharacterScreen.gd/.tscn   # FUTURE: Character sheet overlay
-└── SkillTreeScreen.gd/.tscn   # FUTURE: Skill tree overlay
+scenes/ui/modals/
+├── ResultsScreen.gd/.tscn     # CONVERTED: Now inherits BaseModal
+├── InventoryModal.gd/.tscn    # FUTURE: Inventory modal
+├── CharacterModal.gd/.tscn    # FUTURE: Character sheet modal
+└── SkillTreeModal.gd/.tscn    # FUTURE: Skill tree modal
 
 themes/
-├── overlay_theme.tres         # Base overlay theme
+├── modal_theme.tres           # Base modal theme
 ├── dark_theme.tres           # Dark mode variant
 └── component_styles.tres     # Component-specific styles
 ```
@@ -323,15 +335,15 @@ themes/
 ```gdscript
 # In Player.gd _handle_death_sequence()
 # OLD: StateManager.end_run(death_result)
-# NEW: OverlayManager.show_overlay(OverlayManager.OverlayType.RESULTS_SCREEN, death_result)
+# NEW: UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, death_result)
 ```
 
 #### Step 2: Convert ResultsScreen Structure
 ```gdscript
-# ResultsScreen.gd - Convert from Control to BaseOverlay
-extends BaseOverlay
+# ResultsScreen.gd - Convert from Control to BaseModal
+extends BaseModal
 
-@export var overlay_type: OverlayManager.OverlayType = OverlayManager.OverlayType.RESULTS_SCREEN
+@export var modal_type: UIManager.ModalType = UIManager.ModalType.RESULTS_SCREEN
 @export var dims_background: bool = true
 @export var pauses_game: bool = false  # Enemies already stopped on death
 @export var closeable_with_escape: bool = false  # Force user choice
@@ -339,7 +351,7 @@ extends BaseOverlay
 
 #### Step 3: Arena Integration
 - Arena keeps running with stopped enemies in background
-- OverlayManager dims the arena with semi-transparent overlay  
+- UIManager dims the arena with semi-transparent modal background
 - ResultsScreen appears centered over the dimmed arena
 - Button presses trigger scene transitions via StateManager
 
@@ -471,7 +483,7 @@ PauseManager.pause_game(false)  # In modal close
 get_tree().change_scene_to_file("res://scenes/ui/ResultsScreen.tscn")
 
 # REPLACE WITH:
-OverlayManager.show_overlay(OverlayManager.OverlayType.RESULTS_SCREEN, context)
+UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, context)
 ```
 
 ### ✅ **Cleanup Validation Tests**
@@ -517,10 +529,58 @@ static func show_results_screen(data: Dictionary) -> void:
 3. **Phase 3**: Migrate CardPicker and PauseOverlay (prove system scalability) 
 4. **Phase 4**: Complete cleanup and component library (production ready)
 
-### 📊 **Success Metrics**
+### 📊 **Success Metrics - Desktop-Optimized**
 - [ ] **Code reduction**: 50% reduction in modal-related code duplication
 - [ ] **Consistency**: All overlays use unified theme system
-- [ ] **Performance**: No frame rate impact during overlay operations
+- [ ] **Performance**: 60+ FPS on modest gaming PCs (GTX 1060+) during overlay operations
+- [ ] **Desktop UX**: Rich tooltips, keyboard shortcuts (I, C, ESC), precise mouse interaction
+- [ ] **Resolution scaling**: Perfect display from 1280x720 to 4K windowed/fullscreen
 - [ ] **Maintainability**: New overlays can be created in <1 hour using components
 
-This unified overlay system will provide a solid foundation for all modal UIs in the game while ensuring consistent user experience, maintainable code architecture, and proper cleanup of legacy implementations.
+## **Desktop-Specific Optimizations**
+
+### **Performance Budget (Desktop-Focused)**
+- **Target Hardware**: GTX 1060 / RX 580 equivalent or better
+- **Frame Budget**: 16.67ms (60 FPS) with 5ms UI allowance 
+- **Animation Budget**: 20+ simultaneous overlay animations
+- **Memory Budget**: 100MB+ for UI textures and components
+- **Loading Budget**: <200ms overlay open time (SSD assumed)
+
+### **Input & Interaction Patterns**
+```gdscript
+# Desktop-optimized input handling
+class DesktopInputManager:
+    # Keyboard shortcuts for quick overlay access
+    var shortcut_map: Dictionary = {
+        KEY_I: UIManager.ModalType.INVENTORY,
+        KEY_C: UIManager.ModalType.CHARACTER_SCREEN,
+        KEY_P: UIManager.ModalType.SKILL_TREE,
+        KEY_ESCAPE: "close_current_or_pause"
+    }
+    
+    # Rich tooltip system for desktop precision
+    func show_detailed_tooltip(item: ItemResource, mouse_pos: Vector2):
+        var tooltip = TooltipManager.create_rich_tooltip()
+        tooltip.add_title(item.name)
+        tooltip.add_stats_section(item.stats)
+        tooltip.add_description(item.description)
+        tooltip.show_at_position(mouse_pos + Vector2(10, -50))
+```
+
+### **Resolution Strategy Implementation**
+```gdscript
+# Project Settings for scalable desktop design
+# Display -> Window:
+# - Base Size: 1920x1080 (design target)
+# - Mode: Windowed (allow fullscreen toggle)
+# - Resizable: true
+# - Min Size: 1280x720
+# - Max Size: 3840x2160
+
+# Viewport Scaling:
+# - Mode: "canvas_items" (UI elements scale properly)
+# - Aspect: "keep" (maintain aspect ratio)
+# - Stretch Shrink: 1.0 (no automatic shrinking)
+```
+
+This unified overlay system provides a solid foundation for all modal UIs optimized for desktop gaming, with scalable windowed design, rich interaction patterns, and generous performance budgets suitable for modern gaming PCs.

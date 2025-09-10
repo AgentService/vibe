@@ -4,19 +4,25 @@
 **Priority**: Medium  
 **Type**: Architecture Improvement  
 **Created**: 2025-08-24  
-**Context**: Evolve current card system into production-ready UI framework
+**Context**: Evolve current card system into production-ready UI framework - **Desktop-Optimized Design**
 
 ## Overview
 
-Build on the successful modern card system to create a comprehensive UI framework following industry best practices for larger Godot games. Focus on reusability, maintainability, and designer-friendly workflows.
+Build on the successful modern card system and UI-1's UIManager foundation to create a comprehensive UI framework optimized for desktop gaming. Focus on reusability, maintainability, designer-friendly workflows, and rich desktop interaction patterns.
+
+**Target Platform**: Desktop Only (Windows/Linux/Mac)  
+**Foundation**: Builds upon UI-1's UIManager and BaseModal system  
+**Resolution Strategy**: Scalable 1280x720 → 4K (base: 1920x1080)  
+**Input Methods**: Mouse + Keyboard Primary (Controller placeholder support)
 
 ## Current State Analysis
 
 ### ✅ **What We Have (Good Foundation)**
+- **UI-1 Foundation**: UIManager and BaseModal system provides modal architecture
 - **Resource-based architecture**: CardResource/CardPoolResource pattern works well
 - **Component approach**: CardSelection as reusable modal component
 - **Signal architecture**: Clean event-driven communication via EventBus
-- **Responsive design**: MarginContainer spacing solution proven effective
+- **Desktop-optimized design**: Scalable windowed interface with precise controls
 - **Modern styling**: Professional visual design with animations
 
 ### 🔧 **What Needs Enhancement**
@@ -24,7 +30,7 @@ Build on the successful modern card system to create a comprehensive UI framewor
 - **No component library**: Can't reuse button/modal patterns elsewhere
 - **Manual styling**: Each UI element styled individually in code
 - **No animation framework**: Tween code duplicated across components
-- **No responsive layouts**: Fixed sizes don't adapt to different screens
+- **Missing desktop features**: No rich tooltips, keyboard shortcuts, or precision interactions
 
 ## Implementation Phases
 
@@ -46,29 +52,30 @@ Build on the successful modern card system to create a comprehensive UI framewor
 **Goal**: Build reusable UI components
 
 #### Core Components
-- [ ] **ModernButton.gd/.tscn** - Themed button with hover states
-- [ ] **ModalWindow.gd/.tscn** - Base modal with backdrop/animations  
+- [ ] **ModalButton.gd/.tscn** - Themed button with hover states (builds on UI-1's BaseModal)
+- [ ] **ModalPanel.gd/.tscn** - Enhanced panel component with theming
 - [ ] **CardWidget.gd/.tscn** - Reusable card component
-- [ ] **IconLabel.gd** - Icon + text combination widget
+- [ ] **IconLabel.gd/.tscn** - Icon + text combination widget
 
-#### Advanced Components  
-- [ ] **FlexLayout.gd** - CSS Flexbox-style container
-- [ ] **ResponsiveContainer.gd** - Adapts to screen sizes
-- [ ] **LoadingSpinner.gd** - Animated loading indicator
-- [ ] **TooltipSystem.gd** - Hover tooltips for any control
+#### Desktop-Optimized Components  
+- [ ] **TooltipSystem.gd** - Rich desktop tooltips with multi-line content
+- [ ] **KeyboardNavigator.gd** - Tab navigation and focus management
+- [ ] **ContextMenu.gd/.tscn** - Right-click context menus
+- [ ] **LoadingSpinner.gd/.tscn** - Animated loading indicator
 
 ### Phase 3: Animation Framework
 **Goal**: Standardize all UI animations
 
 #### Animation Utilities
-- [ ] **UIAnimator.gd** - Static animation helper class
-- [ ] Standard animation presets:
-  - `fade_in(control, duration, ease)`
-  - `slide_up(control, duration, distance)`  
-  - `scale_bounce(control, scale_factor)`
-  - `hover_lift(control, lift_amount)`
+- [ ] **ModalAnimator.gd** - Builds upon UI-1's modal animation system
+- [ ] Desktop-optimized animation presets:
+  - `fade_in_modal(modal, duration, ease)` - extends UI-1 foundation
+  - `slide_up_modal(modal, duration, distance)` - smooth modal transitions
+  - `scale_bounce_button(button, scale_factor)` - desktop button feedback
+  - `hover_lift_panel(panel, lift_amount)` - mouse hover effects
 
 #### Integration
+- [ ] Extend UI-1's ModalAnimator with additional presets
 - [ ] Replace manual tween code in CardSelection
 - [ ] Add animation presets to component library
 - [ ] Create animation config resource for easy tweaking
@@ -103,34 +110,39 @@ Build on the successful modern card system to create a comprehensive UI framewor
 ## File Structure Plan
 
 ```
+autoload/
+├── UIManager.gd             # From UI-1 (foundation)
+
 scenes/
 ├── ui/
 │   ├── components/          # Reusable widgets
-│   │   ├── ModernButton.gd/.tscn
+│   │   ├── ModalButton.gd/.tscn
 │   │   ├── CardWidget.gd/.tscn
-│   │   ├── ModalWindow.gd/.tscn
+│   │   ├── ModalPanel.gd/.tscn
 │   │   └── IconLabel.gd/.tscn
 │   ├── screens/            # Full screen UIs  
 │   │   ├── MainMenu.gd/.tscn
 │   │   ├── Settings.gd/.tscn
 │   │   └── GameHUD.gd/.tscn
-│   ├── overlays/           # Modal/popup UIs
-│   │   ├── CardSelection.gd/.tscn (existing)
+│   ├── modals/             # Modal/popup UIs (aligned with UI-1/UI-3)
+│   │   ├── CardSelection.gd/.tscn (migrated from overlays)
 │   │   ├── InventoryModal.gd/.tscn
-│   │   └── PauseMenu.gd/.tscn
-│   └── layouts/            # Custom containers
-│       ├── FlexLayout.gd
-│       └── ResponsiveContainer.gd
+│   │   └── PauseModal.gd/.tscn
+│   └── layouts/            # Desktop-optimized containers
+│       ├── TooltipSystem.gd/.tscn
+│       └── ContextMenu.gd/.tscn
 ├── themes/
-│   ├── main_theme.tres      # Master theme resource
+│   ├── modal_theme.tres     # Master theme resource (aligned with UI-1)
 │   ├── component_styles.tres # Component-specific styles
 │   └── animation_presets.tres # Animation configurations
 └── scripts/
     ├── ui_framework/        # Framework code
-    │   ├── UIAnimator.gd    # Animation utilities
+    │   ├── BaseModal.gd     # From UI-1 (foundation)
+    │   ├── ModalAnimator.gd # Enhanced animation utilities
     │   ├── UIBuilder.gd     # Data-driven UI builder
     │   ├── UIConfig.gd      # UI configuration resources
-    │   └── ThemeManager.gd  # Theme switching/management
+    │   ├── ThemeManager.gd  # Theme switching/management
+    │   └── KeyboardNavigator.gd # Desktop navigation
     └── resources/           # Existing
         ├── CardResource.gd
         └── CardPoolResource.gd
@@ -152,21 +164,22 @@ scenes/
 
 ### Production Readiness
 - [ ] **Scalability**: Framework supports 50+ different UI screens
-- [ ] **Localization**: Text/layout adapts to different languages
-- [ ] **Accessibility**: Basic keyboard/screen reader support
-- [ ] **Platform adaptation**: UI works on desktop/mobile/console
+- [ ] **Desktop Features**: Rich tooltips, keyboard shortcuts (I/C/ESC), context menus
+- [ ] **Resolution Scaling**: Perfect display from 1280x720 to 4K windowed/fullscreen
+- [ ] **Accessibility**: Desktop keyboard navigation and focus management
 
 ## Dependencies & Integration
 
 ### Current Systems to Enhance
+- **UI-1 Foundation** → Extend UIManager and BaseModal with theme system and component library
 - **CardSelection** → Migrate to use theme system and animation framework
 - **HUD/Arena UI** → Convert to component-based architecture
 - **EventBus** → Extend with UI-specific events and state management
 
 ### New Systems to Create
 - **ThemeManager** → Hot-swappable themes for different game modes/seasons
-- **UIState** → Centralized UI state management (open modals, focus, etc.)
-- **AccessibilityManager** → Handle keyboard navigation and screen readers
+- **KeyboardNavigator** → Desktop keyboard navigation and focus management
+- **TooltipSystem** → Rich desktop tooltips with multi-line content and positioning
 
 ## Timeline Estimate
 
@@ -186,11 +199,53 @@ scenes/
 
 ### Medium Risk  
 - **Component API design** - Getting reusable interfaces right is challenging
-- **Responsive layout complexity** - Different screen sizes add significant complexity
+- **Theme migration complexity** - Migrating existing hardcoded styles to centralized theme system
 
 ### Mitigation Strategies
+- **Build on UI-1 foundation** - Use proven UIManager and BaseModal architecture
 - **Incremental rollout** - Migrate one UI screen at a time
-- **Performance budgets** - Set limits on simultaneous animations
-- **Extensive testing** - Test on different screen sizes throughout development
+- **Performance budgets** - Set limits on simultaneous animations (desktop GPUs can handle 20+)
+- **Desktop-focused testing** - Test on 1280x720 to 4K resolutions with mouse/keyboard
 
-This framework will position the project for scalable UI development and provide a solid foundation for future game features requiring complex user interfaces.
+## **Desktop-Specific Optimizations**
+
+### **Performance Budget (Desktop-Focused)**
+- **Target Hardware**: GTX 1060 / RX 580 equivalent or better
+- **Frame Budget**: 16.67ms (60 FPS) with 8ms UI allowance (more generous than mobile)
+- **Animation Budget**: 20+ simultaneous UI animations
+- **Memory Budget**: 200MB+ for rich UI textures and components
+- **Tooltip Budget**: Complex multi-line tooltips with real-time positioning
+
+### **Desktop Interaction Patterns**
+```gdscript
+# Rich tooltip system for desktop precision
+class TooltipSystem:
+    func show_item_tooltip(item: ItemResource, mouse_pos: Vector2):
+        var tooltip = create_rich_tooltip()
+        tooltip.add_title(item.name, item.rarity_color)
+        tooltip.add_stats_section(item.stats)
+        tooltip.add_description(item.description)
+        tooltip.add_flavor_text(item.flavor)
+        tooltip.show_at_position(mouse_pos + Vector2(15, -10))
+
+# Keyboard shortcut system
+class KeyboardShortcuts:
+    var shortcut_map: Dictionary = {
+        KEY_I: "inventory_modal",
+        KEY_C: "character_modal",
+        KEY_P: "skill_tree_modal",
+        KEY_ESCAPE: "close_or_pause"
+    }
+```
+
+### **Resolution Strategy Implementation**
+```gdscript
+# Desktop scaling configuration
+# Project Settings optimized for desktop gaming:
+# - Base Size: 1920x1080 (design target)
+# - Viewport Scaling: "canvas_items" mode
+# - Window: Resizable with 1280x720 minimum
+# - Theme: Scalable UI elements using relative sizing
+```
+
+This framework will position the project for scalable desktop UI development, building upon UI-1's foundation to provide a comprehensive theme system, component library, and rich interaction patterns optimized for desktop gaming.
