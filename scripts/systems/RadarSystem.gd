@@ -79,6 +79,10 @@ func _should_update() -> bool:
 	return _enabled and not _is_paused and (_wave_director != null or EntityTracker != null)
 
 func _update_and_emit_radar_data() -> void:
+	# Performance optimization: Skip radar calculations if disabled
+	if DebugManager.is_radar_disabled():
+		return
+		
 	# Clear buffer and gather entities from available sources
 	_radar_entities_buf.clear()
 

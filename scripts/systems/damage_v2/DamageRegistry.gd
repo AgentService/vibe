@@ -268,8 +268,9 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 		return false
 	
 	if _entity_alive[index] == 0:
-		# Similar throttling for dead entity warnings during cleanup
-		if source != "debug_clear_all":
+		# Silently ignore damage to dead entities for melee attacks to avoid spam during cone attacks
+		# Only warn for non-melee damage sources to catch actual bugs
+		if source != "debug_clear_all" and source != "melee":
 			Logger.warn("Damage requested on dead entity: " + target_id, "combat")
 		return false
 	

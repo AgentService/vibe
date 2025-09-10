@@ -30,6 +30,7 @@ extends Control
 # Cheat Controls UI elements
 @onready var god_mode_checkbox: CheckBox = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/GodModeCheckBox
 @onready var spawn_disabled_checkbox: CheckBox = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/SpawnDisabledCheckBox
+@onready var radar_disabled_checkbox: CheckBox = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/RadarDisabledCheckBox
 
 var selected_count: int = 1
 var selected_spawn_method: String = "cursor"  # "cursor" or "player"
@@ -89,6 +90,7 @@ func _ready() -> void:
 	# Connect cheat controls signals
 	god_mode_checkbox.toggled.connect(_on_god_mode_toggled)
 	spawn_disabled_checkbox.toggled.connect(_on_spawn_disabled_toggled)
+	radar_disabled_checkbox.toggled.connect(_on_radar_disabled_toggled)
 	
 	# Connect to DebugManager signals
 	if DebugManager:
@@ -879,6 +881,12 @@ func _update_cheat_checkboxes() -> void:
 		Logger.debug("Updated cheat checkboxes: god_mode=%s, auto_spawn=%s (debug_mode=%s)" % [CheatSystem.is_god_mode_active(), is_auto_spawn_active, DebugManager.is_debug_mode_active() if DebugManager else false], "debug")
 	else:
 		Logger.warn("CheatSystem not available for checkbox update", "debug")
+	
+	# Update radar checkbox state
+	if DebugManager:
+		radar_disabled_checkbox.button_pressed = DebugManager.is_radar_disabled()
+	else:
+		radar_disabled_checkbox.button_pressed = false
 
 func _on_god_mode_toggled(pressed: bool) -> void:
 	Logger.info("God mode toggled: %s" % pressed, "debug")
@@ -907,6 +915,14 @@ func _on_spawn_disabled_toggled(pressed: bool) -> void:
 			DebugManager.toggle_debug_mode()
 	else:
 		Logger.warn("CheatSystem not available for auto spawn toggle", "debug")
+
+func _on_radar_disabled_toggled(pressed: bool) -> void:
+	Logger.info("Radar disabled toggled: %s" % pressed, "debug")
+	
+	if DebugManager:
+		DebugManager.toggle_radar(pressed)
+	else:
+		Logger.warn("DebugManager not available for radar toggle", "debug")
 
 func _on_debug_mode_toggled(enabled: bool) -> void:
 	Logger.debug("Debug mode toggled: %s - updating checkboxes" % enabled, "debug")

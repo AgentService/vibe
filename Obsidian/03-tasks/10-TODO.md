@@ -8,8 +8,7 @@ doublecheck changelogs\features\24_08_2025-DICTIONARY_TO_ENEMYENTITY_MIGRATION.m
 escpecially dictionary for mesh and enemytypes for rest question?
 
 
-Lock-free ring buffers ?? zero-allocation
-  designs achieve million+ ops/sec throughput
+>>> auto spawn should not close debug panel
 
 
 combat log
