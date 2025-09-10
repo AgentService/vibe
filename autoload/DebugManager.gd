@@ -523,6 +523,10 @@ func _register_console_commands() -> void:
 	LimboConsole.register_command(cmd_display_mode, "display_mode", "Set display mode for high refresh rate gaming (60hz, 144hz, 240hz, uncapped)")
 	LimboConsole.register_command(cmd_fps_info, "fps_info", "Show current FPS and display settings")
 	
+	# Register session management commands
+	if SessionManager and SessionManager.has_method("cmd_reset_session"):
+		LimboConsole.register_command(SessionManager.cmd_reset_session, "reset_session", "Reset game session (debug, death, transition, hideout)")
+	
 	Logger.info("Debug console commands registered", "debug")
 
 ## Set default 144Hz display mode at startup
