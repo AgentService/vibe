@@ -142,10 +142,16 @@ func _load_visual_config() -> void:
 func show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	if not visual_config:
 		return
+	
+	# Validate melee_effects_node before accessing
+	if not melee_effects_node or not is_instance_valid(melee_effects_node):
+		Logger.warn("MeleeEffects node is invalid or null, skipping cone effect", "combat")
+		return
 		
 	# Use manually created polygon from the scene
 	var cone_polygon = melee_effects_node.get_node("MeleeCone")
 	if not cone_polygon:
+		Logger.warn("MeleeCone node not found under MeleeEffects, skipping visual effect", "combat")
 		return
 	
 	# Position the cone at player position

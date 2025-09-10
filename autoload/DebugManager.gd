@@ -49,6 +49,9 @@ func _ready() -> void:
 	
 	# Register console commands
 	call_deferred("_register_console_commands")
+	
+	# Set default 144Hz mode for high refresh rate gaming
+	call_deferred("_set_default_display_mode")
 
 func _check_debug_config() -> void:
 	"""Check debug configuration to determine if F12 debug panels should be enabled by default."""
@@ -522,6 +525,13 @@ func _register_console_commands() -> void:
 	
 	Logger.info("Debug console commands registered", "debug")
 
+## Set default 144Hz display mode at startup
+func _set_default_display_mode() -> void:
+	# Configure 144Hz as default for high refresh rate gaming
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 144
+	Logger.info("Default display mode set to 144Hz (VSync disabled)", "debug")
+
 ## Console command: Show damage queue statistics
 func cmd_damage_queue_stats() -> void:
 	if not DamageService:
@@ -569,7 +579,7 @@ func cmd_display_mode(mode: String = "") -> void:
 		"144hz":
 			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 			Engine.max_fps = 144
-			LimboConsole.info("Display mode: 144Hz uncapped (high refresh)")
+			LimboConsole.info("Display mode: 144Hz uncapped (high refresh - DEFAULT)")
 		"240hz":
 			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 			Engine.max_fps = 240
