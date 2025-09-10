@@ -49,6 +49,9 @@ func _ready() -> void:
 	
 	# Register console commands
 	call_deferred("_register_console_commands")
+	
+	# Set default 144Hz mode for high refresh rate gaming
+	call_deferred("_set_default_display_mode")
 
 func _check_debug_config() -> void:
 	"""Check debug configuration to determine if F12 debug panels should be enabled by default."""
@@ -516,7 +519,23 @@ func _register_console_commands() -> void:
 	LimboConsole.register_command(cmd_damage_queue_stats, "damage_queue_stats", "Show damage queue metrics and performance")
 	LimboConsole.register_command(cmd_damage_queue_reset, "damage_queue_reset", "Reset damage queue metrics (for testing)")
 	
-	Logger.info("Damage queue console commands registered", "debug")
+	# Register display/performance commands
+	LimboConsole.register_command(cmd_display_mode, "display_mode", "Set display mode for high refresh rate gaming (60hz, 144hz, 240hz, uncapped)")
+	LimboConsole.register_command(cmd_fps_info, "fps_info", "Show current FPS and display settings")
+	
+	# TODO: Add session management commands after SessionManager is stable
+	# Register session management commands
+	#if SessionManager and SessionManager.has_method("cmd_reset_session"):
+	#	LimboConsole.register_command(SessionManager.cmd_reset_session, "reset_session", "Reset game session (debug, death, transition, hideout)")
+	
+	Logger.info("Debug console commands registered", "debug")
+
+## Set default 144Hz display mode at startup
+func _set_default_display_mode() -> void:
+	# Configure 144Hz as default for high refresh rate gaming
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 144
+	Logger.info("Default display mode set to 144Hz (VSync disabled)", "debug")
 
 ## Console command: Show damage queue statistics
 func cmd_damage_queue_stats() -> void:
@@ -548,6 +567,56 @@ func cmd_damage_queue_reset() -> void:
 	DamageService.reset_queue_metrics()
 	LimboConsole.info("Damage queue metrics reset")
 	Logger.info("Console reset damage queue metrics", "debug")
+
+## Console command: Set display mode for high refresh rate gaming
+func cmd_display_mode(mode: String = "") -> void:
+	if mode == "":
+		# Show current settings
+		cmd_fps_info()
+		LimboConsole.info("Usage: display_mode [60hz|144hz|240hz|uncapped]")
+		return
+	
+	match mode.to_lower():
+		"60hz":
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_ENABLED)
+			Engine.max_fps = 60
+			LimboConsole.info("Display mode: 60Hz with VSync (standard)")
+		"144hz":
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 144
+			LimboConsole.info("Display mode: 144Hz uncapped (high refresh - DEFAULT)")
+		"240hz":
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 240
+			LimboConsole.info("Display mode: 240Hz uncapped (ultra high refresh)")
+		"uncapped":
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 0  # No limit
+			LimboConsole.info("Display mode: Uncapped FPS (maximum performance)")
+		_:
+			LimboConsole.error("Unknown mode: %s" % mode)
+			LimboConsole.info("Available modes: 60hz, 144hz, 240hz, uncapped")
+
+## Console command: Show current FPS and display information
+func cmd_fps_info() -> void:
+	var current_fps = Engine.get_frames_per_second()
+	var max_fps = Engine.max_fps if Engine.max_fps > 0 else "Uncapped"
+	var vsync_mode = DisplayServer.window_get_vsync_mode()
+	var vsync_text = "Unknown"
+	
+	match vsync_mode:
+		DisplayServer.VSYNC_DISABLED:
+			vsync_text = "Disabled"
+		DisplayServer.VSYNC_ENABLED:
+			vsync_text = "Enabled"
+		DisplayServer.VSYNC_ADAPTIVE:
+			vsync_text = "Adaptive"
+	
+	LimboConsole.info("=== Display Performance Info ===")
+	LimboConsole.info("Current FPS: %d" % current_fps)
+	LimboConsole.info("Max FPS Limit: %s" % str(max_fps))
+	LimboConsole.info("VSync Mode: %s" % vsync_text)
+	LimboConsole.info("Window Mode: %s" % ("Fullscreen" if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else "Windowed"))
 
 ## Performance Optimization Methods
 

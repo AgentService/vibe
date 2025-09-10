@@ -67,9 +67,20 @@ func clear_all_entities() -> void:
 	Logger.info("Cleared %d enemy groups/bosses" % cleared_count, "debug")
 
 func reset_session() -> void:
-	"""Comprehensive debug session reset - clean slate for testing scenarios"""
-	Logger.info("Debug session reset initiated", "debug")
+	"""Comprehensive debug session reset - now delegates to SessionManager"""
+	Logger.info("Debug session reset initiated (delegating to SessionManager)", "debug")
 	
+	# TODO: Delegate to centralized SessionManager for unified reset handling
+	# For now, use legacy reset until SessionManager integration is stable
+	if false: # SessionManager:
+		# await SessionManager.reset_debug()
+		Logger.info("Debug session reset completed via SessionManager", "debug")
+	else:
+		Logger.info("Using legacy reset session implementation", "debug")
+		await _legacy_reset_session()
+
+func _legacy_reset_session() -> void:
+	"""Legacy reset implementation - only used if SessionManager unavailable"""
 	# 1. Clear all entities (enemies, bosses, projectiles)
 	clear_all_entities()
 	

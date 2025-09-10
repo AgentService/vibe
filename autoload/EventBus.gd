@@ -144,6 +144,11 @@ signal loot_generated(payload)
 @warning_ignore("unused_signal")
 signal cheat_toggled(payload)
 
+# SESSION MANAGEMENT SIGNALS
+## Session UI reset - emitted by SessionManager for UI systems to reset state
+@warning_ignore("unused_signal")
+signal session_ui_reset(payload)
+
 # SCENE TRANSITION SIGNALS
 ## Request to enter a map/arena - emitted by MapDevice or UI elements
 @warning_ignore("unused_signal")
