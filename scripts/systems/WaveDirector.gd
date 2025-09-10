@@ -672,14 +672,13 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	enemy["vel"] = velocity
 
 func clear_all_enemies() -> void:
-	# DEPRECATED: Use DebugManager.clear_all_entities() for unified damage-based clearing
-	# This method is kept for backward compatibility but routes to the unified system
-	if DebugManager and DebugManager.has_method("clear_all_entities"):
-		DebugManager.clear_all_entities()
+	"""Clear all enemies using the production entity clearing system"""
+	if EntityClearingService:
+		EntityClearingService.clear_all_entities()
 		if Logger.is_debug():
-			Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
+			Logger.debug("WaveDirector: Cleared enemies via production EntityClearingService", "waves")
 	else:
-		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
+		Logger.error("EntityClearingService not available - cannot clear enemies", "waves")
 
 func stop() -> void:
 	"""Stop WaveDirector - halt spawning and clear timers for scene transitions"""

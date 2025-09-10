@@ -158,19 +158,22 @@ func _validate_player_registration_post_reset() -> void:
 		Logger.info("Player registration validated successfully after reset", "session")
 
 func _clear_entities() -> void:
-	"""Clear all entities using the unified damage-based system"""
+	"""Clear all entities using the production entity clearing system"""
 	Logger.warn("🔴 SessionManager._clear_entities() called - this should not happen during player death!", "session")
 	
-	# Check if this is a player death scenario - if so, skip entity clearing to preserve enemies for results screen
-	if _is_player_death_scenario():
-		Logger.info("Skipping entity clearing for player death scenario - enemies preserved for results", "session")
+	if not EntityClearingService:
+		Logger.error("EntityClearingService not available - critical system failure!", "session")
 		return
 	
-	if DebugManager and DebugManager.has_method("clear_all_entities"):
-		Logger.debug("Clearing all entities via DebugManager", "session")
-		DebugManager.clear_all_entities()
+	# Check if this is a player death scenario - preserve enemies but always clean transients
+	if _is_player_death_scenario():
+		Logger.info("Player death scenario - preserving enemies but cleaning transient objects (XP orbs)", "session")
+		# Only clear transient objects (XP orbs, etc.) but preserve enemies for results screen
+		EntityClearingService.clear_transient_objects()
 	else:
-		Logger.warn("DebugManager.clear_all_entities not available", "session")
+		Logger.debug("Clearing all world objects via EntityClearingService", "session")
+		# Full clear - entities and transients
+		EntityClearingService.clear_all_world_objects()
 
 func _is_player_death_scenario() -> bool:
 	"""Check if current reset is due to player death rather than debug reset"""
