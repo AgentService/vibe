@@ -1,6 +1,8 @@
 # Boss Creation Guide
 
-Complete workflow for creating new bosses in the game using the Unified Damage System V2.
+Complete workflow for creating new bosses in the game using the Unified Damage System V3 and Boss Performance System V2.
+
+> **Performance Note**: All bosses use the centralized `BossUpdateManager` for optimal 500+ entity scaling with zero-allocation batch processing.
 
 ---
 
@@ -94,11 +96,12 @@ func _ready() -> void:
         animated_sprite.play("default")
         Logger.debug("YourBoss animation started", "bosses")
     
-    # Connect to combat step for deterministic behavior
-    if EventBus:
-        EventBus.combat_step.connect(_on_combat_step)
+    # BOSS PERFORMANCE V2: Register with centralized BossUpdateManager (replaces individual combat_step connection)
+    var boss_id = "boss_" + str(get_instance_id())
+    BossUpdateManager.register_boss(self, boss_id)
+    Logger.debug("YourBoss registered with BossUpdateManager as " + boss_id, "performance")
     
-    # DAMAGE V2: Register with DamageService
+    # DAMAGE V3: Register with both DamageService and EntityTracker
     var entity_id = "boss_" + str(get_instance_id())
     var entity_data = {
         "id": entity_id,
@@ -108,17 +111,20 @@ func _ready() -> void:
         "alive": true,
         "pos": global_position
     }
+    # Register with both systems for unified damage V3
     DamageService.register_entity(entity_id, entity_data)
-    Logger.debug("YourBoss registered with DamageService as " + entity_id, "bosses")
+    EntityTracker.register_entity(entity_id, entity_data)
+    Logger.debug("YourBoss registered with DamageService and EntityTracker as " + entity_id, "bosses")
 
 func _exit_tree() -> void:
-    # Clean up signal connections
-    if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
-        EventBus.combat_step.disconnect(_on_combat_step)
+    # BOSS PERFORMANCE V2: Unregister from BossUpdateManager
+    var boss_id = "boss_" + str(get_instance_id())
+    BossUpdateManager.unregister_boss(boss_id)
     
-    # DAMAGE V2: Unregister from DamageService
+    # DAMAGE V3: Unregister from both systems
     var entity_id = "boss_" + str(get_instance_id())
     DamageService.unregister_entity(entity_id)
+    EntityTracker.unregister_entity(entity_id)
 
 # Required setup method for spawn system
 func setup_from_spawn_config(config: SpawnConfig) -> void:
@@ -135,9 +141,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
     
     Logger.info("YourBoss configured: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, attack_damage, speed], "bosses")
 
-# Combat step integration
-func _on_combat_step(payload) -> void:
-    var dt: float = payload.dt
+# BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
+## Replaces individual _on_combat_step connections with centralized processing
+func _update_ai_batch(dt: float) -> void:
     _update_ai(dt)
     last_attack_time += dt
 
