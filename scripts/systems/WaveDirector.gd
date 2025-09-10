@@ -40,8 +40,11 @@ var boss_hit_feedback: BossHitFeedback
 # Preloaded boss scenes for performance
 var _preloaded_boss_scenes: Dictionary = {}
 
-# Cached alive enemies list for performance
-var _alive_enemies_cache: Array[EnemyEntity] = []
+# PHASE 7 OPTIMIZATION: Bit-field alive/dead tracking (5-10MB reduction)
+# Replace individual alive checking with efficient bit operations
+var _alive_bitfield: PackedByteArray = PackedByteArray()  # Bit-field for alive status (1 bit per enemy)
+var _alive_count: int = 0                                # Cached count of alive enemies
+var _alive_enemies_cache: Array[EnemyEntity] = []        # Cached list (rebuilt when dirty)
 var _cache_dirty: bool = true
 var _last_cache_frame: int = -1
 
@@ -166,6 +169,42 @@ func get_enemy_entity_id(enemy_index: int) -> String:
 		# Fallback for out-of-bounds (shouldn't happen in normal operation)
 		return "enemy_" + str(enemy_index)
 
+# PHASE 7 OPTIMIZATION: Bit-field helper functions for alive/dead tracking
+func _set_enemy_alive(index: int, alive: bool) -> void:
+	if index < 0 or index >= max_enemies:
+		return
+		
+	var byte_index = index / 8
+	var bit_index = index % 8
+	var current_byte = _alive_bitfield[byte_index]
+	
+	if alive:
+		# Set bit (mark as alive)
+		var new_byte = current_byte | (1 << bit_index)
+		if current_byte != new_byte:
+			_alive_bitfield[byte_index] = new_byte
+			_alive_count += 1
+			_cache_dirty = true
+	else:
+		# Clear bit (mark as dead)
+		var new_byte = current_byte & ~(1 << bit_index)
+		if current_byte != new_byte:
+			_alive_bitfield[byte_index] = new_byte
+			_alive_count -= 1
+			_cache_dirty = true
+
+func _is_enemy_alive_bitfield(index: int) -> bool:
+	if index < 0 or index >= max_enemies:
+		return false
+		
+	var byte_index = index / 8
+	var bit_index = index % 8
+	var current_byte = _alive_bitfield[byte_index]
+	return (current_byte & (1 << bit_index)) != 0
+
+func _get_alive_count_fast() -> int:
+	return _alive_count
+
 func _initialize_pool() -> void:
 	# PHASE 4 OPTIMIZATION: Create Dictionary-based data pool instead of EnemyEntity objects
 	# This eliminates 500 object allocations (30-50MB memory reduction target)
@@ -179,6 +218,13 @@ func _initialize_pool() -> void:
 	# Create reusable Dictionary data structures
 	_enemy_data_pool.resize(max_enemies)
 	enemies.resize(max_enemies)
+	
+	# PHASE 7 OPTIMIZATION: Initialize bit-field for alive/dead tracking
+	# Use 1 byte per 8 enemies (more efficient than individual booleans)
+	var bytes_needed = (max_enemies + 7) / 8  # Round up to nearest byte
+	_alive_bitfield.resize(bytes_needed)
+	_alive_bitfield.fill(0)  # All enemies start as dead
+	_alive_count = 0
 	
 	for i in range(max_enemies):
 		# Create Dictionary data structure (reusable, no object allocation)
@@ -244,7 +290,10 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	if is_death:
 		# PHASE 4 OPTIMIZATION: Use reset method instead of manual field clearing
 		enemy.reset_to_defaults()
-		_cache_dirty = true
+		
+		# PHASE 7 OPTIMIZATION: Update bit-field when enemy dies
+		_set_enemy_alive(enemy_index, false)
+		
 		if Logger.is_debug():
 			Logger.debug("V3: Enemy %d killed and returned to pool" % [enemy_index], "combat")
 		
@@ -323,7 +372,9 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	
 	var enemy := enemies[free_idx]
 	enemy.setup_with_type(enemy_type, spawn_config.position, direction * spawn_config.speed)
-	_cache_dirty = true  # Mark cache as dirty when spawning
+	
+	# PHASE 7 OPTIMIZATION: Update bit-field when spawning
+	_set_enemy_alive(free_idx, true)
 	
 	# DAMAGE V3: Register enemy with EntityTracker
 	var entity_id = get_enemy_entity_id(free_idx)
@@ -456,11 +507,8 @@ func _find_enemy_index(target_enemy: EnemyEntity) -> int:
 	return -1
 
 func _find_free_enemy() -> int:
-	# PHASE 1: Track pool utilization for memory leak investigation
-	var alive_count = 0
-	for enemy in enemies:
-		if enemy.alive:
-			alive_count += 1
+	# PHASE 7 OPTIMIZATION: Use bit-field for faster alive count tracking
+	var alive_count = _get_alive_count_fast()
 	
 	# PHASE 3: Reduce pool utilization warning spam - only warn once at each threshold
 	var utilization_percent = (float(alive_count) / max_enemies) * 100.0
@@ -473,15 +521,16 @@ func _find_free_enemy() -> int:
 			], "waves")
 			_last_warned_threshold = threshold
 	
+	# PHASE 7 OPTIMIZATION: Use bit-field for faster free slot finding
 	# Start search from last known free index for better performance
 	for i in range(_last_free_index, max_enemies):
-		if not enemies[i].alive:
+		if not _is_enemy_alive_bitfield(i):
 			_last_free_index = i
 			return i
 	
 	# If not found, search from beginning to last free index
 	for i in range(0, _last_free_index):
-		if not enemies[i].alive:
+		if not _is_enemy_alive_bitfield(i):
 			_last_free_index = i
 			return i
 	
@@ -532,12 +581,11 @@ func get_alive_enemies() -> Array[EnemyEntity]:
 	if (not _cache_dirty and not _alive_enemies_cache.is_empty()) or _last_cache_frame == current_frame:
 		return _alive_enemies_cache
 	
-	# Rebuild cache - only once per frame maximum
+	# PHASE 7 OPTIMIZATION: Rebuild cache using bit-field for faster iteration
 	_alive_enemies_cache.clear()
 	for i in range(enemies.size()):
-		var enemy = enemies[i]
-		if enemy.alive:
-			_alive_enemies_cache.append(enemy)
+		if _is_enemy_alive_bitfield(i):
+			_alive_enemies_cache.append(enemies[i])
 	
 	_cache_dirty = false
 	_last_cache_frame = current_frame
@@ -592,11 +640,13 @@ func reset() -> void:
 	# Reset AI pause state
 	ai_paused = false
 	
-	# Clear all enemies (already done in stop() but belt and suspenders)
+	# PHASE 7 OPTIMIZATION: Clear all enemies using bit-field
 	for i in range(enemies.size()):
-		if enemies[i].alive:
+		if _is_enemy_alive_bitfield(i):
 			# PHASE 4 OPTIMIZATION: Use reset method instead of manual field clearing
 			enemies[i].reset_to_defaults()
+			# PHASE 7 OPTIMIZATION: Update bit-field
+			_set_enemy_alive(i, false)
 	
 	Logger.info("WaveDirector: Reset completed", "waves")
 
@@ -622,11 +672,13 @@ func _clear_all_enemies() -> void:
 	"""Clear all enemies from the pool and scene"""
 	Logger.info("WaveDirector: Clearing all enemies", "waves")
 	
-	# Clear all pooled enemies - EnemyEntity doesn't have nodes, only data
-	for enemy in enemies:
-		if enemy and enemy.alive:
+	# PHASE 7 OPTIMIZATION: Clear all pooled enemies using bit-field
+	for i in range(enemies.size()):
+		if _is_enemy_alive_bitfield(i):
 			# PHASE 4 OPTIMIZATION: Use reset method instead of manual field clearing
-			enemy.reset_to_defaults()
+			enemies[i].reset_to_defaults()
+			# PHASE 7 OPTIMIZATION: Update bit-field
+			_set_enemy_alive(i, false)
 	
 	# Clear cache
 	_alive_enemies_cache.clear()

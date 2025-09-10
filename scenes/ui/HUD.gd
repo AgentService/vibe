@@ -59,12 +59,12 @@ func _on_progression_changed(state: Dictionary) -> void:
 	# Calculate the total XP needed for the current level
 	var total_xp_for_level = current_xp + xp_to_next
 	
-	print("HUD: Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, total_xp_for_level])
+	Logger.debug("Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, total_xp_for_level], "ui")
 	_update_xp_display(current_xp, total_xp_for_level)
 	_update_level_display(level)
 
 func _on_leveled_up(new_level: int, prev_level: int) -> void:
-	print("HUD: Level up detected! %d -> %d" % [prev_level, new_level])
+	Logger.debug("Level up detected! %d -> %d" % [prev_level, new_level], "ui")
 	_update_level_display(new_level)
 
 # Legacy _on_player_damage_taken removed - health updates via _process polling
@@ -140,12 +140,12 @@ func _initialize_progression_display() -> void:
 	if PlayerProgression:
 		var state = PlayerProgression.get_progression_state()
 		_on_progression_changed(state)
-		print("HUD: Initialized with PlayerProgression state")
+		Logger.debug("Initialized with PlayerProgression state", "ui")
 	else:
 		# Fallback values
 		_update_level_display(1)
 		_update_xp_display(0, 100)
-		print("HUD: PlayerProgression not available, using fallback values")
+		Logger.debug("PlayerProgression not available, using fallback values", "ui")
 
 func _update_fps_display() -> void:
 	if fps_label:

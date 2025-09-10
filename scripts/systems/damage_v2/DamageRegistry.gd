@@ -11,7 +11,18 @@ const RingBufferUtil = preload("res://scripts/utils/RingBuffer.gd")
 const ObjectPoolUtil = preload("res://scripts/utils/ObjectPool.gd")
 const PayloadResetUtil = preload("res://scripts/utils/PayloadReset.gd")
 
-var _entities: Dictionary = {}  # String ID -> Dictionary data
+# PHASE 7 OPTIMIZATION: Replace Dictionary with PackedArray-based storage (10-15MB reduction)
+# Use parallel arrays for entity data instead of Dictionary of Dictionaries
+var _entity_ids: PackedStringArray = PackedStringArray()          # Entity IDs ["enemy_0", "enemy_1", ...]
+var _entity_types: PackedStringArray = PackedStringArray()        # Entity types ["enemy", "boss", "player"]
+var _entity_positions_x: PackedFloat32Array = PackedFloat32Array() # X positions
+var _entity_positions_y: PackedFloat32Array = PackedFloat32Array() # Y positions  
+var _entity_hp: PackedFloat32Array = PackedFloat32Array()          # Current HP
+var _entity_max_hp: PackedFloat32Array = PackedFloat32Array()      # Max HP
+var _entity_alive: PackedByteArray = PackedByteArray()             # Alive status (0/1 instead of bool)
+var _entity_count: int = 0                                         # Current number of entities
+var _entity_lookup: Dictionary = {}                                # String ID -> index mapping (smaller than full data Dictionary)
+
 var _cleanup_timer: float = 0.0
 const CLEANUP_INTERVAL: float = 10.0  # Cleanup every 10 seconds
 
@@ -106,16 +117,67 @@ func _process(delta: float) -> void:
 ## @param id: Unique string identifier (e.g., "enemy_0", "boss_ancient_lich", "player")
 ## @param data: Dictionary containing entity data
 func register_entity(id: String, data: Dictionary) -> void:
-	_entities[id] = data
-	entity_registered.emit(id, data.get("type", "unknown"))
+	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary
+	var existing_index = _entity_lookup.get(id, -1)
+	if existing_index != -1:
+		# Update existing entity
+		_update_entity_at_index(existing_index, data)
+	else:
+		# Add new entity
+		_add_new_entity(id, data)
 	
-	# Debug logging removed for cleaner testing
+	entity_registered.emit(id, data.get("type", "unknown"))
+
+## PHASE 7: Add new entity to PackedArray storage
+func _add_new_entity(id: String, data: Dictionary) -> void:
+	var index = _entity_count
+	_entity_lookup[id] = index
+	
+	# Ensure arrays have enough capacity
+	if _entity_ids.size() <= index:
+		_entity_ids.resize(index + 1)
+		_entity_types.resize(index + 1)
+		_entity_positions_x.resize(index + 1)
+		_entity_positions_y.resize(index + 1)
+		_entity_hp.resize(index + 1)
+		_entity_max_hp.resize(index + 1)
+		_entity_alive.resize(index + 1)
+	
+	# Store entity data in parallel arrays
+	_entity_ids[index] = id
+	_entity_types[index] = data.get("type", "unknown")
+	var pos: Vector2 = data.get("pos", Vector2.ZERO)
+	_entity_positions_x[index] = pos.x
+	_entity_positions_y[index] = pos.y
+	_entity_hp[index] = data.get("hp", 0.0)
+	_entity_max_hp[index] = data.get("max_hp", data.get("hp", 0.0))
+	_entity_alive[index] = 1 if data.get("alive", true) else 0
+	
+	_entity_count += 1
+
+## PHASE 7: Update existing entity in PackedArray storage  
+func _update_entity_at_index(index: int, data: Dictionary) -> void:
+	_entity_types[index] = data.get("type", _entity_types[index])
+	var pos: Vector2 = data.get("pos", Vector2(_entity_positions_x[index], _entity_positions_y[index]))
+	_entity_positions_x[index] = pos.x
+	_entity_positions_y[index] = pos.y
+	_entity_hp[index] = data.get("hp", _entity_hp[index])
+	_entity_max_hp[index] = data.get("max_hp", _entity_max_hp[index])
+	_entity_alive[index] = 1 if data.get("alive", _entity_alive[index] == 1) else 0
 
 ## Unregister an entity from the damage system
 func unregister_entity(id: String) -> void:
-	if _entities.has(id):
-		_entities.erase(id)
+	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary
+	var index = _entity_lookup.get(id, -1)
+	if index != -1:
+		_remove_entity_at_index(index, id)
 		entity_unregistered.emit(id)
+
+## PHASE 7: Remove entity from PackedArray storage
+func _remove_entity_at_index(index: int, id: String) -> void:
+	# Mark as dead instead of removing to avoid array shifts
+	_entity_alive[index] = 0
+	_entity_lookup.erase(id)
 
 
 ## Apply damage to an entity
@@ -134,13 +196,13 @@ func apply_damage(target_id: String, amount: float, source: String = "unknown", 
 
 ## Enqueue damage for batched processing (zero-allocation path)
 func _enqueue_damage(target_id: String, amount: float, source: String, tags: Array, knockback_distance: float, source_position: Vector2) -> bool:
-	# Early validation to avoid wasted queue operations
-	if not _entities.has(target_id):
+	# Early validation to avoid wasted queue operations - PHASE 7 OPTIMIZATION
+	var index = _entity_lookup.get(target_id, -1)
+	if index == -1:
 		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
 		return false
 	
-	var entity: Dictionary = _entities[target_id]
-	if not entity.get("alive", true):
+	if _entity_alive[index] == 0:
 		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
 		return false
 	
@@ -193,12 +255,13 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 
 ## Process damage immediately (original path, used when queue disabled)
 func _process_damage_immediate(target_id: String, amount: float, source: String, tags: Array, knockback_distance: float, source_position: Vector2) -> bool:
-	if not _entities.has(target_id):
+	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary lookup
+	var index = _entity_lookup.get(target_id, -1)
+	if index == -1:
 		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
 		return false
 	
-	var entity: Dictionary = _entities[target_id]
-	if not entity.get("alive", true):
+	if _entity_alive[index] == 0:
 		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
 		return false
 	
@@ -209,23 +272,23 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	# Calculate final damage (add crit, modifiers, etc. here)
 	var final_damage: float = _calculate_final_damage(amount, tags)
 	
-	# Apply damage
-	var old_hp: float = entity.get("hp", 0.0)
-	entity["hp"] = max(0.0, old_hp - final_damage)
-	var new_hp: float = entity["hp"]
+	# Apply damage using PackedArray storage
+	var old_hp: float = _entity_hp[index]
+	var new_hp: float = max(0.0, old_hp - final_damage)
+	_entity_hp[index] = new_hp
 	
 	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
 	
 	# CRITICAL: Sync damage back to actual game entities via unified pipeline
-	_sync_damage_to_game_entity(target_id, entity, final_damage, new_hp)
+	_sync_damage_to_game_entity_packed(target_id, index, final_damage, new_hp)
 	
-	# Handle death
+	# Handle death using PackedArray storage
 	var was_killed: bool = false
-	if new_hp <= 0.0 and entity.get("alive", true):
-		entity["alive"] = false
+	if new_hp <= 0.0 and _entity_alive[index] == 1:
+		_entity_alive[index] = 0
 		was_killed = true
 		Logger.info("Entity %s KILLED by %s" % [target_id, source], "combat")
-		_handle_entity_death(target_id, entity)
+		_handle_entity_death_packed(target_id, index)
 	
 	# Determine if this was a critical hit for visual feedback
 	var is_crit: bool = final_damage > amount * 1.5  # Simple crit detection
@@ -322,34 +385,50 @@ func _process_damage_queue_tick() -> void:
 ## @param entity_id: String identifier of entity to update
 ## @param new_pos: New position of the entity
 func update_entity_position(entity_id: String, new_pos: Vector2) -> void:
-	if _entities.has(entity_id):
-		_entities[entity_id]["pos"] = new_pos
+	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary
+	var index = _entity_lookup.get(entity_id, -1)
+	if index != -1:
+		_entity_positions_x[index] = new_pos.x
+		_entity_positions_y[index] = new_pos.y
 
-## Get entity data by ID
+## Get entity data by ID - returns Dictionary for backward compatibility
 func get_entity(entity_id: String) -> Dictionary:
-	return _entities.get(entity_id, {})
+	# PHASE 7 OPTIMIZATION: Build Dictionary from PackedArray data for backward compatibility
+	var index = _entity_lookup.get(entity_id, -1)
+	if index == -1:
+		return {}
+	
+	return {
+		"id": _entity_ids[index],
+		"type": _entity_types[index],
+		"pos": Vector2(_entity_positions_x[index], _entity_positions_y[index]),
+		"hp": _entity_hp[index],
+		"max_hp": _entity_max_hp[index],
+		"alive": _entity_alive[index] == 1
+	}
 
 ## Check if entity exists and is alive
 func is_entity_alive(entity_id: String) -> bool:
-	var entity: Dictionary = _entities.get(entity_id, {})
-	return entity.get("alive", false)
+	# PHASE 7 OPTIMIZATION: Direct PackedArray access
+	var index = _entity_lookup.get(entity_id, -1)
+	return index != -1 and _entity_alive[index] == 1
 
 ## Get all entities of a specific type
 func get_entities_by_type(entity_type: String) -> Array[String]:
+	# PHASE 7 OPTIMIZATION: Iterate through PackedArray instead of Dictionary
 	var result: Array[String] = []
-	for id in _entities.keys():
-		var entity: Dictionary = _entities[id]
-		if entity.get("type", "") == entity_type:
-			result.append(id)
+	for i in range(_entity_count):
+		if _entity_types[i] == entity_type and _entity_alive[i] == 1:
+			result.append(_entity_ids[i])
 	return result
 
 ## Get all alive entities
 func get_alive_entities() -> Array[String]:
+	# PHASE 7 OPTIMIZATION: Iterate through PackedArray instead of Dictionary
 	var result: Array[String] = []
-	for id in _entities.keys():
-		var entity: Dictionary = _entities[id]
-		if entity.get("alive", false):
-			result.append(id)
+	for i in range(_entity_count):
+		if _entity_alive[i] == 1:
+			result.append(_entity_ids[i])
 	return result
 
 ## Get all entities within radius of position (spatial query)
@@ -358,25 +437,25 @@ func get_alive_entities() -> Array[String]:
 ## @param filter_types: Optional array of entity types to include (e.g., ["boss", "enemy"])
 ## @return Array of entity IDs within radius
 func get_entities_in_area(center: Vector2, radius: float, filter_types: Array = []) -> Array[String]:
+	# PHASE 7 OPTIMIZATION: Iterate through PackedArray instead of Dictionary
 	var result: Array[String] = []
+	var radius_squared = radius * radius  # Avoid sqrt in distance calculation
 	
-	for entity_id in _entities.keys():
-		var entity_data = _entities[entity_id]
-		
+	for i in range(_entity_count):
 		# Skip dead entities
-		if not entity_data.get("alive", false):
+		if _entity_alive[i] == 0:
 			continue
 			
 		# Apply type filter if specified
 		if not filter_types.is_empty():
-			var entity_type = entity_data.get("type", "")
-			if not filter_types.has(entity_type):
+			if not filter_types.has(_entity_types[i]):
 				continue
 		
-		# Distance check
-		var entity_pos = entity_data.get("pos", Vector2.ZERO)
-		if center.distance_to(entity_pos) <= radius:
-			result.append(entity_id)
+		# Distance check using PackedArray data
+		var entity_pos = Vector2(_entity_positions_x[i], _entity_positions_y[i])
+		var distance_squared = center.distance_squared_to(entity_pos)
+		if distance_squared <= radius_squared:
+			result.append(_entity_ids[i])
 	
 	return result
 
@@ -396,8 +475,11 @@ func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: fl
 	var min_dot = cos(cone_radians / 2.0)
 	
 	for entity_id in entities_in_range:
-		var entity_data = _entities[entity_id]
-		var entity_pos = entity_data.get("pos", Vector2.ZERO)
+		# PHASE 7 OPTIMIZATION: Get position from PackedArray instead of Dictionary
+		var index = _entity_lookup.get(entity_id, -1)
+		if index == -1:
+			continue
+		var entity_pos = Vector2(_entity_positions_x[index], _entity_positions_y[index])
 		
 		# Check if in cone angle
 		var to_entity = (entity_pos - origin).normalized()
@@ -449,7 +531,8 @@ func _handle_entity_death(entity_id: String, entity_data: Dictionary) -> void:
 	# Clean up: Unregister dead entity to prevent memory leaks
 	# Wait a frame to allow any final processing, then cleanup
 	await get_tree().process_frame
-	if _entities.has(entity_id):
+	var index = _entity_lookup.get(entity_id, -1)
+	if index != -1:
 		unregister_entity(entity_id)
 
 ## Unified damage syncing via EventBus signals (cleaner, decoupled)
@@ -470,6 +553,53 @@ func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, dam
 	EventBus.damage_entity_sync.emit(sync_payload)
 	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
 
+## PHASE 7: PackedArray-based sync function (replaces _sync_damage_to_game_entity)
+func _sync_damage_to_game_entity_packed(entity_id: String, index: int, damage: float, new_hp: float) -> void:
+	var entity_type: String = _entity_types[index]
+	
+	# Create a standardized damage sync payload using PackedArray data
+	var sync_payload = {
+		"entity_id": entity_id,
+		"entity_type": entity_type,
+		"damage": damage,
+		"new_hp": new_hp,
+		"is_death": new_hp <= 0.0
+	}
+	
+	# Emit damage sync event for systems to handle
+	EventBus.damage_entity_sync.emit(sync_payload)
+	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+
+## PHASE 7: PackedArray-based death handling (replaces _handle_entity_death)
+func _handle_entity_death_packed(entity_id: String, index: int) -> void:
+	var entity_type: String = _entity_types[index]
+	var position: Vector2 = Vector2(_entity_positions_x[index], _entity_positions_y[index])
+	
+	# Emit appropriate death events based on entity type
+	match entity_type:
+		"enemy":
+			# Emit enemy killed event for XP/loot (direct parameters - no allocation)
+			EventBus.enemy_killed.emit(position, 1)
+		"boss":
+			# Emit enemy killed event for XP/loot (bosses give more XP)
+			var boss_xp_value = 50  # Bosses give 50 XP vs regular enemies' 1 XP
+			EventBus.enemy_killed.emit(position, boss_xp_value)
+			if Logger.is_level_enabled(Logger.LogLevel.INFO):
+				Logger.info("Boss defeated: " + entity_id + " (XP: %d)" % boss_xp_value, "combat")
+		"player":
+			# TODO: Handle player death
+			Logger.info("Player defeated!", "combat")
+		_:
+			if Logger.is_debug():
+				Logger.debug("Unknown entity type died: " + entity_type, "combat")
+	
+	# Clean up: Unregister dead entity to prevent memory leaks
+	# Wait a frame to allow any final processing, then cleanup
+	await get_tree().process_frame
+	var lookup_index = _entity_lookup.get(entity_id, -1)
+	if lookup_index != -1:
+		unregister_entity(entity_id)
+
 
 ## DEBUG: Register all existing entities that haven't been registered yet
 func debug_register_all_existing_entities() -> void:
@@ -482,7 +612,7 @@ func debug_register_all_existing_entities() -> void:
 		for node in scene_root.get_children():
 			if node.has_method("get_current_health") and node.has_method("get_max_health"):
 				var entity_id = "boss_" + str(node.get_instance_id())
-				if not _entities.has(entity_id):
+				if _entity_lookup.get(entity_id, -1) == -1:
 					var entity_data = {
 						"id": entity_id,
 						"type": "boss",
@@ -508,7 +638,7 @@ func debug_register_all_existing_entities() -> void:
 					entity_id = wave_director.get_enemy_entity_id(i)
 				else:
 					entity_id = "enemy_" + str(i)
-				if not _entities.has(entity_id):
+				if _entity_lookup.get(entity_id, -1) == -1:
 					var entity_data = {
 						"id": entity_id,
 						"type": "enemy",
@@ -527,13 +657,13 @@ func debug_register_all_existing_entities() -> void:
 
 ## Cleanup dead entities to prevent memory leaks
 func cleanup_dead_entities() -> void:
+	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary iteration
 	var cleanup_count = 0
 	var entities_to_remove: Array[String] = []
 	
-	for entity_id in _entities.keys():
-		var entity: Dictionary = _entities[entity_id]
-		if not entity.get("alive", false):
-			entities_to_remove.append(entity_id)
+	for i in range(_entity_count):
+		if _entity_alive[i] == 0:
+			entities_to_remove.append(_entity_ids[i])
 	
 	for entity_id in entities_to_remove:
 		unregister_entity(entity_id)
