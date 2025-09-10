@@ -688,9 +688,8 @@ func stop() -> void:
 	# Reset spawn timer to prevent immediate spawning
 	spawn_timer = 0.0
 	
-	# Clear all enemies via damage system (consistent approach)
-	if DebugManager and DebugManager.has_method("clear_all_entities"):
-		DebugManager.clear_all_entities()
+	# Stop method should only halt spawning, not clear entities
+	# Entity clearing happens during SessionManager resets, not during stop()
 	
 	# Mark as stopped (add is_running flag if needed)
 	Logger.info("WaveDirector: Stopped successfully", "waves")

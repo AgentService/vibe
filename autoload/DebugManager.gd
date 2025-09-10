@@ -124,12 +124,7 @@ func _enter_debug_mode() -> void:
 		CheatSystem.spawn_disabled = true
 		Logger.debug("Disabled normal enemy spawning", "debug")
 	
-	# Clear existing enemies via WaveDirector
-	if wave_director and wave_director.has_method("clear_all_enemies"):
-		wave_director.clear_all_enemies()
-	
-	# Clear existing entities via unified clear-all (includes bosses via damage pipeline)
-	clear_all_entities()
+	# Debug mode no longer automatically clears enemies - user can manually clear via Debug Panel if needed
 	
 	# Show debug UI
 	_show_debug_ui()
@@ -152,6 +147,7 @@ func _exit_debug_mode() -> void:
 
 func clear_all_entities() -> void:
 	# Central clear invoked by DebugPanel; uses damage-based clearing for consistency
+	Logger.warn("🔴 DebugManager.clear_all_entities() called - WHO CALLED THIS?", "debug")
 	var cleared_count := 0
 	
 	# Get all alive entities from EntityTracker
