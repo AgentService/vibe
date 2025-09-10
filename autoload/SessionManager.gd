@@ -202,10 +202,13 @@ func _reset_player_state(reason: ResetReason, context: Dictionary) -> void:
 	
 	Logger.debug("Player reference valid - proceeding with reset", "session")
 	
-	# Reset player position to spawn point or arena center
-	var spawn_pos = context.get("spawn_position", Vector2.ZERO)
-	player.global_position = spawn_pos
-	Logger.debug("Reset player position to %s" % spawn_pos, "session")
+	# Reset player position (only for respawn scenarios, not hideout returns)
+	if reason != ResetReason.HIDEOUT_RETURN:
+		var spawn_pos = context.get("spawn_position", Vector2.ZERO)
+		player.global_position = spawn_pos
+		Logger.debug("Reset player position to %s" % spawn_pos, "session")
+	else:
+		Logger.debug("Hideout return - preserving player position: %s" % player.global_position, "session")
 	
 	# Reset player health
 	if player.has_method("reset_health"):
