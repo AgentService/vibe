@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://dbigq5i0p6bmc"]
+
+[ext_resource type="Script" path="res://tests/test_radar_performance_1000_entities_scene.gd" id="1_1y5nj"]
+
+[node name="RadarPerformanceTest" type="Node"]
+script = ExtResource("1_1y5nj")

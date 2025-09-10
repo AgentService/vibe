@@ -86,3 +86,23 @@ static func clear_boss_batch_payload(d: Dictionary) -> void:
 	d["ids"] = PackedStringArray()
 	d["positions"] = PackedVector2Array()
 	d["ai_flags"] = PackedByteArray()
+
+## Factory function for creating radar batch payload dictionaries.
+## Used by RadarUpdateManager ObjectPool for zero-allocation radar processing.
+static func create_radar_batch_payload() -> Dictionary:
+	return {
+		"ids": PackedStringArray(),
+		"positions": PackedVector2Array(),
+		"types": PackedByteArray(),
+		"player_pos": Vector2.ZERO
+	}
+
+## Clear a radar batch payload dictionary to default values.
+## Preserves all keys to avoid shape changes and maintains zero-allocation.
+## @param d: Dictionary radar batch payload to reset
+static func clear_radar_batch_payload(d: Dictionary) -> void:
+	# Preserve keys to avoid shape changes; reset values to defaults
+	d["ids"] = PackedStringArray()
+	d["positions"] = PackedVector2Array()
+	d["types"] = PackedByteArray()
+	d["player_pos"] = Vector2.ZERO

@@ -45,6 +45,26 @@ func try_pop():
 	_count -= 1
 	return item
 
+## Pop latest/newest item and discard all older items.
+## Used for latest-only semantics where only the most recent data matters.
+## Returns the newest item if available, null if buffer is empty.
+func pop_latest_or_null():
+	if _count == 0:
+		return null
+	
+	# Get the newest item (head-1 position)
+	var latest_idx = (_head - 1) & _mask
+	var latest_item = _buf[latest_idx]
+	
+	# Clear entire buffer for GC and reset pointers
+	for i in range(_capacity):
+		_buf[i] = null
+	_head = 0
+	_tail = 0
+	_count = 0
+	
+	return latest_item
+
 ## Get current number of items in buffer.
 func count() -> int: 
 	return _count

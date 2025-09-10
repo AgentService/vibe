@@ -16,3 +16,4 @@ enemy_dot_max_size = 3.0
 enemy_dot_min_size = 1.5
 boss_dot_max_size = 4.0
 boss_dot_min_size = 2.0
+emit_hz = 60.0

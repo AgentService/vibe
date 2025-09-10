@@ -25,7 +25,6 @@ func _ready() -> void:
 	_setup_radar()
 	_connect_signals()
 	_update_visibility()  # Check radar disable state
-	Logger.debug("EnemyRadar: Initialized and connected to EventBus", "radar")
 
 func _setup_radar() -> void:
 	size = radar_size
@@ -95,16 +94,6 @@ func _on_radar_data_updated(entities: Array, player_pos: Vector2) -> void:
 	radar_entities.assign(entities)  # Use assign for typed array conversion
 	player_position = player_pos
 	
-	# Count different entity types for logging
-	var enemy_count := 0
-	var boss_count := 0
-	for entity in radar_entities:
-		if entity.type == "enemy":
-			enemy_count += 1
-		elif entity.type == "boss":
-			boss_count += 1
-	
-	Logger.debug("EnemyRadar: Received radar data - %d enemies, %d bosses at player pos %s" % [enemy_count, boss_count, player_pos], "radar")
 	queue_redraw()
 
 func _draw() -> void:

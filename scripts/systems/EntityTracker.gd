@@ -7,6 +7,9 @@ extends Node
 # Entity storage: ID -> Dictionary with entity data
 var _entities: Dictionary = {}
 
+# Type-indexed storage for O(1) lookups (no per-frame scans)
+var _entities_by_type: Dictionary = {} # String -> PackedStringArray
+
 # Spatial indexing for efficient radius queries
 var _spatial_grid: Dictionary = {}
 const GRID_SIZE: float = 100.0
@@ -32,23 +35,138 @@ func _process(delta: float) -> void:
 ## @param id: Unique string identifier
 ## @param data: Dictionary with "type", "pos", "alive", and other entity data
 func register_entity(id: String, data: Dictionary) -> void:
+	# RADAR DEBUG: Comprehensive logging to identify mesh enemy registration corruption
+	var entity_type: String = data.get("type", "unknown")
+	
+	# Minimal registration logging
+	
+	# Validate entity data
+	var pos = data.get("pos", Vector2.ZERO)
+	var alive = data.get("alive", false)
+	var hp = data.get("hp", 0.0)
+	
+	# Basic validation without spam
+	
+	# Check for invalid data that might corrupt EntityTracker
+	if typeof(pos) != TYPE_VECTOR2:
+		Logger.warn("EntityTracker: INVALID POSITION TYPE for %s - expected Vector2, got %s: %s" % [id, typeof(pos), pos], "radar")
+		pos = Vector2.ZERO  # Sanitize
+		data["pos"] = pos
+	
+	if typeof(entity_type) != TYPE_STRING or entity_type.is_empty():
+		Logger.warn("EntityTracker: INVALID ENTITY TYPE for %s - got %s" % [id, entity_type], "radar")
+		entity_type = "unknown"
+		data["type"] = entity_type
+	
+	# Store entity data
 	_entities[id] = data
-	_update_spatial_index(id, data.get("pos", Vector2.ZERO))
-	entity_registered.emit(id, data.get("type", "unknown"))
+	_update_spatial_index(id, pos)
+	
+	# Update type index 
+	if not _entities_by_type.has(entity_type):
+		# Pre-allocate reasonable capacity to avoid frequent resizing during burst spawning
+		var new_array = PackedStringArray()
+		# Pre-allocate space for common entity types to prevent resize overhead during waves
+		if entity_type == "enemy":
+			new_array.resize(200)  # Pre-allocate space for 200 enemies
+			new_array.resize(0)    # Reset to empty but keep capacity
+		elif entity_type == "boss":
+			new_array.resize(20)   # Pre-allocate space for 20 bosses
+			new_array.resize(0)    # Reset to empty but keep capacity
+		_entities_by_type[entity_type] = new_array
+	
+	# Direct reference to avoid reassignment overhead
+	_entities_by_type[entity_type].push_back(id)
+	
+	entity_registered.emit(id, entity_type)
+	
+
+## Batch register multiple entities of the same type (for burst spawning optimization)
+## @param entities: Array of dictionaries with entity data (id, type, pos, etc.)
+func batch_register_entities(entities: Array) -> void:
+	if entities.is_empty():
+		return
+	
+	# Group by entity type for efficient batch processing
+	var entities_by_type: Dictionary = {}
+	
+	for entity_data in entities:
+		var entity_id: String = entity_data.get("id", "")
+		var entity_type: String = entity_data.get("type", "unknown")
+		
+		if entity_id.is_empty():
+			Logger.warn("EntityTracker: Skipping entity with empty ID in batch registration", "combat")
+			continue
+		
+		# Store individual entity data
+		_entities[entity_id] = entity_data
+		_update_spatial_index(entity_id, entity_data.get("pos", Vector2.ZERO))
+		
+		# Group for batch type index update
+		if not entities_by_type.has(entity_type):
+			entities_by_type[entity_type] = []
+		entities_by_type[entity_type].append(entity_id)
+	
+	# Batch update type indexes to minimize array operations
+	for entity_type in entities_by_type.keys():
+		var ids: Array = entities_by_type[entity_type]
+		
+		# Ensure type array exists with pre-allocation
+		if not _entities_by_type.has(entity_type):
+			var new_array = PackedStringArray()
+			# Pre-allocate based on batch size + reasonable buffer
+			if entity_type == "enemy":
+				new_array.resize(max(200, ids.size() * 2))
+				new_array.resize(0)
+			elif entity_type == "boss":
+				new_array.resize(max(20, ids.size() * 2))
+				new_array.resize(0)
+			_entities_by_type[entity_type] = new_array
+		
+		# Batch append all IDs of this type at once
+		var type_array: PackedStringArray = _entities_by_type[entity_type]
+		for entity_id in ids:
+			type_array.push_back(entity_id)
+			entity_registered.emit(entity_id, entity_type)
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-		Logger.debug("EntityTracker: Registered %s (%s) at %s" % [id, data.get("type", "unknown"), data.get("pos", Vector2.ZERO)], "combat")
+		Logger.debug("EntityTracker: Batch registered %d entities across %d types" % [entities.size(), entities_by_type.size()], "combat")
 
 ## Unregister an entity
 func unregister_entity(id: String) -> void:
-	if _entities.has(id):
-		var entity_data = _entities[id]
-		_remove_from_spatial_index(id, entity_data.get("pos", Vector2.ZERO))
-		_entities.erase(id)
-		entity_unregistered.emit(id)
+	if not _entities.has(id):
+		return
 		
-		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("EntityTracker: Unregistered %s" % [id], "combat")
+	var entity_data = _entities[id]
+	var entity_type: String = entity_data.get("type", "unknown")
+	
+	# Remove from type index using swap-remove for O(1) performance
+	if _entities_by_type.has(entity_type):
+		var type_array: PackedStringArray = _entities_by_type[entity_type]
+		var idx: int = -1
+		for i in range(type_array.size()):
+			if type_array[i] == id:
+				idx = i
+				break
+		
+		if idx != -1:
+			# Swap-remove: move last element to this position, then resize
+			var last_idx: int = type_array.size() - 1
+			if idx != last_idx:
+				type_array[idx] = type_array[last_idx]
+			type_array.resize(last_idx) # Remove the last element
+			# Note: No reassignment needed - direct reference modification
+		
+		# Clean up empty type arrays
+		if type_array.is_empty():
+			_entities_by_type.erase(entity_type)
+	
+	_remove_from_spatial_index(id, entity_data.get("pos", Vector2.ZERO))
+	_entities.erase(id)
+	entity_unregistered.emit(id)
+	
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("EntityTracker: Unregistered %s (%s)" % [id, entity_type], "combat")
 
 ## Update entity position (important for spatial queries)
 func update_entity_position(id: String, new_pos: Vector2) -> void:
@@ -57,6 +175,10 @@ func update_entity_position(id: String, new_pos: Vector2) -> void:
 		
 	var entity_data = _entities[id]
 	var old_pos = entity_data.get("pos", Vector2.ZERO)
+	
+	# Skip update if position hasn't actually changed (prevents unnecessary spatial index churn)
+	if old_pos.is_equal_approx(new_pos):
+		return
 	
 	# Update spatial index
 	_remove_from_spatial_index(id, old_pos)
@@ -174,7 +296,7 @@ func is_entity_alive(entity_id: String) -> bool:
 	var entity_data = _entities.get(entity_id, {})
 	return entity_data.get("alive", false)
 
-## Get all entities of a specific type
+## Get all entities of a specific type (PERFORMANCE NOTE: O(N) scan - use get_entities_by_type_view() for better performance)
 func get_entities_by_type(entity_type: String) -> Array[String]:
 	var result: Array[String] = []
 	for id in _entities.keys():
@@ -182,6 +304,32 @@ func get_entities_by_type(entity_type: String) -> Array[String]:
 		if entity_data.get("type", "") == entity_type and entity_data.get("alive", false):
 			result.append(id)
 	return result
+
+## Read-only view: return internal array by reference (do not mutate)
+## RADAR PERFORMANCE V3: O(1) type-indexed lookup - no scanning, no copying
+func get_entities_by_type_view(entity_type: String) -> PackedStringArray:
+	# Check if the type exists in our index
+	if not _entities_by_type.has(entity_type):
+		return PackedStringArray()
+	
+	var result = _entities_by_type[entity_type]
+	return result
+
+## Fill positions for the given ids into out_positions without allocations
+## RADAR PERFORMANCE V3: Zero-allocation position fetching for batched processing
+func get_positions_for(ids: PackedStringArray, out_positions: PackedVector2Array) -> void:
+	out_positions.resize(0)
+	
+	for i in range(ids.size()):
+		var id: String = ids[i]
+		var entity_data = _entities.get(id)
+		if entity_data:
+			var pos = entity_data.get("pos", Vector2.ZERO)
+			out_positions.push_back(pos)
+		else:
+			# Handle missing entities gracefully - push zero position
+			out_positions.push_back(Vector2.ZERO)
+			Logger.debug("EntityTracker: Entity %s NOT FOUND - using Vector2.ZERO" % id, "radar")
 
 ## Get all alive entities
 func get_alive_entities() -> Array[String]:
@@ -276,8 +424,9 @@ func reset() -> void:
 	"""Reset all EntityTracker state - use during scene transitions"""
 	var entity_count = _entities.size()
 	
-	# Clear all entities
+	# Clear all entities and indexes
 	_entities.clear()
+	_entities_by_type.clear()
 	_spatial_grid.clear()
 	
 	# Reset cleanup timer

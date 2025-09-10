@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bvgw3k4nlpsac"]
+
+[ext_resource type="Script" path="res://tests/test_radar_timing.gd" id="1_test123"]
+
+[node name="RadarTimingTest" type="Node"]
+script = ExtResource("1_test123")
