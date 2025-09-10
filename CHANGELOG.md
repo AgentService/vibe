@@ -4,6 +4,15 @@
 
 ## [Current Week - In Progress]
 
+### Fixed
+- **Player Registration After Scene Reset**: Resolved issue where Kill Player debug button failed on subsequent uses after session resets
+  - **Problem**: "unknown entity: player" error occurred due to lost player registration with DamageService during reset operations
+  - **Solution**: Enhanced player registration with comprehensive logging, validation, and retry mechanisms
+  - **Features Added**: `is_registered_with_damage_system()`, `ensure_damage_registration()` helper functions
+  - **Reset Logic Improved**: Better timing, validation, and emergency fallbacks in SessionManager reset sequence
+  - **Emergency Recovery**: Automatic player re-registration when damage is requested but player is not found
+  - **Result**: Kill Player button now works consistently across multiple reset cycles with robust error handling
+
 ### Added
 - **MultiMesh Performance Investigation Framework**: Completed systematic 9-step investigation to identify rendering bottlenecks
   - **Investigation Steps 0-9**: Isolated specific optimizations (colors, preallocation, update frequency, grouping, textures, transforms)
