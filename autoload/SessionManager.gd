@@ -1,5 +1,4 @@
 extends Node
-class_name SessionManager
 
 ## Centralized Session Management System
 ## Handles all session resets for multiple scenarios: death, debug reset, map transitions, hideout returns
@@ -157,8 +156,9 @@ func _reset_systems(reason: ResetReason, context: Dictionary) -> void:
 	"""Reset various game systems based on the reset reason"""
 	
 	# Reset wave director
-	if WaveDirector and WaveDirector.has_method("reset"):
-		WaveDirector.reset()
+	var wave_director = get_node_or_null("/root/WaveDirector")
+	if wave_director and wave_director.has_method("reset"):
+		wave_director.reset()
 		Logger.debug("WaveDirector reset", "session")
 	
 	# Reset XP system (conditionally)

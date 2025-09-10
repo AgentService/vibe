@@ -241,10 +241,10 @@ func _on_state_changed(prev: StateManager.State, next: StateManager.State, conte
 		# Trigger session reset for map transitions
 		if next == StateManager.State.HIDEOUT and SessionManager:
 			# Don't await here to avoid blocking state transition
-			SessionManager.reset_hideout_return.call_deferred()
+			SessionManager.call_deferred("reset_hideout_return")
 		elif next == StateManager.State.MENU and SessionManager:
 			# Reset session when returning to menu
-			SessionManager.reset_session.call_deferred(SessionManager.ResetReason.RUN_END, {"preserve_character": false})
+			SessionManager.call_deferred("reset_session", SessionManager.ResetReason.RUN_END, {"preserve_character": false})
 	
 	# Emit mode change for global cleanup
 	var mode_name = _state_to_mode_name(next)
