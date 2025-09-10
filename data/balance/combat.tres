@@ -9,6 +9,7 @@ enemy_radius = 12.0
 base_damage = 25.0
 crit_chance = 0.1
 crit_multiplier = 2.0
+use_zero_alloc_damage_queue = true
 damage_queue_capacity = 4096
 damage_pool_size = 4096
 damage_queue_max_per_tick = 2048

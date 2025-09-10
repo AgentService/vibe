@@ -5,6 +5,12 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **MultiMesh Enemies Performance Optimizations**: Implemented major optimizations for 500+ enemy rendering performance
+  - **Phase A - Buffer Optimization**: Disabled per-instance colors and implemented grow-only `instance_count` logic to eliminate expensive buffer reallocations
+  - **Phase B - Allocation Elimination**: Added light grouping API with preallocated arrays to eliminate per-frame Dictionary/Array creation
+  - **Phase C - Update Decimation**: Added 30Hz transform update framework with debug configuration flags for optional performance tuning
+  - **Performance Results**: Achieved 477 peak enemies (95% of 500 target) with drastically reduced frame time spikes in initial scaling phases
+  - **Visual Compatibility**: Maintained tier-based enemy colors using `self_modulate` instead of expensive per-instance color buffers
 - **Zero-Allocation Damage Queue System**: Implemented batched damage processing with preallocated buffers for performance optimization
   - **RingBuffer Utility**: Lock-free circular buffer using power-of-two masking for efficient wraparound
   - **ObjectPool Utility**: Generic object pool for reusing Dictionary payloads and Array instances

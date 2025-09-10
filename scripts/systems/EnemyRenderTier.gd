@@ -12,6 +12,12 @@ enum Tier {
 	BOSS = 3        # <1% of enemies (animated) - Individual sprites
 }
 
+# PHASE B: Pre-allocated arrays for light grouping to eliminate per-frame allocations
+var _swarm_enemies_light: Array[EnemyEntity] = []
+var _regular_enemies_light: Array[EnemyEntity] = []
+var _elite_enemies_light: Array[EnemyEntity] = []
+var _boss_enemies_light: Array[EnemyEntity] = []
+
 
 func _ready() -> void:
 	Logger.info("Enemy render tier system initialized", "enemies")
@@ -54,6 +60,54 @@ func get_tier_name(tier: Tier) -> String:
 func should_use_multimesh(tier: Tier) -> bool:
 	return tier != Tier.BOSS
 
+## PHASE B: Light grouping API that avoids per-frame allocations
+## Returns Dictionary[Tier, Array[EnemyEntity]] using preallocated arrays
+func group_enemies_by_tier_light(alive_enemies: Array[EnemyEntity]) -> Dictionary:
+	# Clear preallocated arrays (reuse instead of recreate)
+	_swarm_enemies_light.clear()
+	_regular_enemies_light.clear()
+	_elite_enemies_light.clear()
+	_boss_enemies_light.clear()
+	
+	# Get tier from enemy template via EnemyFactory (same logic as original)
+	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	
+	for enemy in alive_enemies:
+		var tier: Tier = Tier.REGULAR  # Default tier
+		
+		# Get render tier from EnemyTemplate via the enemy's type_id
+		if not enemy.type_id.is_empty():
+			var template: EnemyTemplate = EnemyFactoryScript.get_template(enemy.type_id)
+			if template != null:
+				match template.render_tier:
+					"swarm":
+						tier = Tier.SWARM
+					"regular":
+						tier = Tier.REGULAR
+					"elite":
+						tier = Tier.ELITE
+					"boss":
+						tier = Tier.BOSS
+					_:
+						tier = Tier.REGULAR
+		
+		# Add EnemyEntity directly to preallocated arrays (no to_dictionary() call)
+		match tier:
+			Tier.SWARM:
+				_swarm_enemies_light.append(enemy)
+			Tier.REGULAR:
+				_regular_enemies_light.append(enemy)
+			Tier.ELITE:
+				_elite_enemies_light.append(enemy)
+			Tier.BOSS:
+				_boss_enemies_light.append(enemy)
+	
+	return {
+		Tier.SWARM: _swarm_enemies_light,
+		Tier.REGULAR: _regular_enemies_light,
+		Tier.ELITE: _elite_enemies_light,
+		Tier.BOSS: _boss_enemies_light
+	}
 
 ## Get all enemy instances grouped by tier (for Arena.gd)
 func group_enemies_by_tier(alive_enemies: Array[EnemyEntity]) -> Dictionary:

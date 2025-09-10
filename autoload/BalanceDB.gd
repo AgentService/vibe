@@ -77,6 +77,7 @@ func _setup_fallback_data() -> void:
 			"base_damage": 1.0,
 			"crit_chance": 0.1,
 			"crit_multiplier": 2.0,
+			"use_zero_alloc_damage_queue": true,
 			"damage_queue_capacity": 4096,
 			"damage_pool_size": 4096,
 			"damage_queue_max_per_tick": 2048,
@@ -167,6 +168,7 @@ func _create_fallback_resource(key: String) -> Resource:
 			combat.base_damage = fallback_data.get("base_damage", 1.0)
 			combat.crit_chance = fallback_data.get("crit_chance", 0.1)
 			combat.crit_multiplier = fallback_data.get("crit_multiplier", 2.0)
+			combat.use_zero_alloc_damage_queue = fallback_data.get("use_zero_alloc_damage_queue", true)
 			combat.damage_queue_capacity = fallback_data.get("damage_queue_capacity", 4096)
 			combat.damage_pool_size = fallback_data.get("damage_pool_size", 4096)
 			combat.damage_queue_max_per_tick = fallback_data.get("damage_queue_max_per_tick", 2048)
@@ -233,6 +235,8 @@ func get_combat_value(key: String) -> Variant:
 			return _combat_balance.crit_chance
 		"crit_multiplier":
 			return _combat_balance.crit_multiplier
+		"use_zero_alloc_damage_queue":
+			return _combat_balance.use_zero_alloc_damage_queue
 		"damage_queue_capacity":
 			return _combat_balance.damage_queue_capacity
 		"damage_pool_size":

@@ -54,8 +54,10 @@ func _ready() -> void:
 
 ## Setup zero-allocation damage queue if enabled by config
 func _setup_queue_if_enabled() -> void:
-	# For now, disable zero-allocation queue since config key doesn't exist
-	_queue_enabled = false
+	# Check config for zero-allocation damage queue
+	_queue_enabled = BalanceDB.get_combat_value("use_zero_alloc_damage_queue")
+	Logger.info("Zero-allocation damage queue: %s" % ("ENABLED" if _queue_enabled else "DISABLED"), "combat")
+	
 	if not _queue_enabled:
 		return
 		

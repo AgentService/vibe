@@ -8,7 +8,7 @@ const PerformanceMetrics = preload("res://tests/tools/performance_metrics.gd")
 
 # Test configuration - same scale as original test but with bosses
 var test_duration: float = 60.0  # Test runs for 60 seconds
-var target_boss_count: int = 500  # Same as original test for comparison
+var target_boss_count: int = 1000  # Same as original test for comparison
 var combat_step_interval: float = 1.0 / 30.0  # 30Hz combat step
 
 # Test parameters
@@ -34,22 +34,22 @@ var damage_service: Node
 var test_phases: Array[Dictionary] = [
 	{
 		"name": "gradual_boss_scaling",
-		"duration": 8.0,
+		"duration": 15.0,
 		"description": "Scale from 100 to 500+ banana bosses gradually"
 	},
 	{
 		"name": "burst_boss_spawn", 
-		"duration": 5.0,
+		"duration": 15.0,
 		"description": "Instant spawn of 500 banana bosses"
 	},
 	{
 		"name": "boss_combat_stress",
-		"duration": 10.0, 
+		"duration": 15.0, 
 		"description": "500 banana bosses + damage calculations + AI behavior"
 	},
 	{
 		"name": "mixed_boss_tier",
-		"duration": 7.0,
+		"duration": 15.0,
 		"description": "All boss types simultaneously"
 	}
 ]
@@ -407,14 +407,14 @@ func _setup_burst_boss_spawn() -> void:
 	_clear_all_bosses()
 	
 	# Force spawn 500 bosses as fast as possible
-	_force_spawn_bosses(500)
+	_force_spawn_bosses(1000)
 
 func _setup_boss_combat_stress() -> void:
 	print("Starting boss combat stress: 500 banana bosses + AI behavior + damage")
 	# Ensure we have max bosses spawning
 	var current_count = _count_alive_bosses()
 	if current_count < 400:  # If we don't have enough, trigger rapid spawning
-		_force_spawn_bosses(500)
+		_force_spawn_bosses(1000)
 
 func _setup_mixed_boss_tier() -> void:
 	print("Starting mixed boss tier: All boss types simultaneously")
@@ -439,8 +439,8 @@ func _update_gradual_boss_scaling() -> void:
 	var progress = phase_elapsed / phase_duration
 	
 	# Linearly scale from 100 to 500+ bosses
-	var target_count = int(100 + (400 * progress))
-	target_count = min(target_count, 500)
+	var target_count = int(100 + (900 * progress))
+	target_count = min(target_count, 1000)
 	
 	var current_count = _count_alive_bosses()
 	if current_count < target_count:
@@ -474,7 +474,7 @@ func _force_spawn_mixed_bosses() -> void:
 		return
 	
 	# Use the same aggressive approach for mixed boss spawning
-	_force_spawn_bosses(500)  # Reuse the improved force spawn logic
+	_force_spawn_bosses(1000)  # Reuse the improved force spawn logic
 
 func _spawn_single_boss() -> void:
 	if not debug_manager:

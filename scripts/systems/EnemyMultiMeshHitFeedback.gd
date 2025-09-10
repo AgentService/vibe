@@ -75,8 +75,8 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	
 	Logger.debug("Processing hit feedback for entity: " + target_id, "enemies")
 	
-	# Start flash effect
-	_start_flash_effect(target_id)
+	# Flash effects disabled for MultiMesh (use_colors = false)
+	# _start_flash_effect(target_id)
 	
 	# Start knockback effect if knockback distance > 0
 	if payload.knockback_distance > 0.0:
@@ -167,7 +167,8 @@ func _get_enemy_index_from_array(target_enemy: EnemyEntity, enemies: Array[Enemy
 	return -1
 
 func _process(delta: float) -> void:
-	_update_flash_effects(delta)
+	# Flash effects disabled for MultiMesh (use_colors = false)
+	# _update_flash_effects(delta)
 	_update_knockback_effects(delta)
 
 func _update_flash_effects(delta: float) -> void:
@@ -461,31 +462,23 @@ func _cleanup_oldest_effects() -> void:
 	for i in range(remove_count):
 		var entity_id = effect_ages[i].id
 		knockback_effects.erase(entity_id)
-		flash_effects.erase(entity_id)  # Also clean up flash effects
+		# Flash effects disabled for MultiMesh
+		# flash_effects.erase(entity_id)
 	
-	Logger.warn("Emergency cleanup removed " + str(remove_count) + " oldest effects", "performance")
+	Logger.warn("Emergency cleanup removed " + str(remove_count) + " oldest knockback effects", "performance")
 
 func cleanup_all_effects() -> void:
 	"""Public method to force cleanup of all effects"""
-	flash_effects.clear()
+	# Flash effects disabled for MultiMesh
+	# flash_effects.clear()
 	knockback_effects.clear()
 	Logger.info("All hit feedback effects cleared", "enemies")
 
 func _periodic_cleanup() -> void:
 	"""Periodic cleanup to prevent gradual accumulation of stale effects"""
-	var cleaned_flash = 0
 	var cleaned_knockback = 0
 	
-	# Clean up flash effects for invalid enemies
-	var flash_to_remove: Array[String] = []
-	for entity_id in flash_effects.keys():
-		if not _is_enemy_still_valid(entity_id):
-			flash_to_remove.append(entity_id)
-			cleaned_flash += 1
-	
-	for entity_id in flash_to_remove:
-		flash_effects.erase(entity_id)
-	
+	# Flash effects disabled for MultiMesh
 	# Clean up knockback effects for invalid enemies
 	var knockback_to_remove: Array[String] = []
 	for entity_id in knockback_effects.keys():
@@ -496,8 +489,8 @@ func _periodic_cleanup() -> void:
 	for entity_id in knockback_to_remove:
 		knockback_effects.erase(entity_id)
 	
-	if cleaned_flash > 0 or cleaned_knockback > 0:
-		Logger.debug("Periodic cleanup: removed " + str(cleaned_flash) + " flash effects, " + str(cleaned_knockback) + " knockback effects", "performance")
+	if cleaned_knockback > 0:
+		Logger.debug("Periodic cleanup: removed " + str(cleaned_knockback) + " knockback effects", "performance")
 
 func _exit_tree() -> void:
 	if EventBus.damage_applied.is_connected(_on_damage_applied):

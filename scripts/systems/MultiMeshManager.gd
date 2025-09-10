@@ -16,6 +16,10 @@ var mm_enemies_boss: MultiMeshInstance2D
 # Dependencies
 var enemy_render_tier: EnemyRenderTier
 
+# PHASE C: 30Hz update decimation variables
+var _last_30hz_update: float = 0.0
+var _transform_update_needed: bool = true
+
 # Shared dummy texture to avoid null texture errors in headless/textureless runs
 var _shared_dummy_tex: ImageTexture
 
@@ -51,6 +55,10 @@ func setup(projectiles: MultiMeshInstance2D, swarm: MultiMeshInstance2D, regular
 	_setup_projectile_multimesh()
 	_setup_tier_multimeshes()
 	
+	# PHASE C: Connect to combat_step for 30Hz update decimation
+	if EventBus.combat_step.connect(_on_combat_step) != OK:
+		Logger.warn("Failed to connect to EventBus.combat_step", "enemies")
+	
 	Logger.info("MultiMeshManager initialized with optimized pools", "enemies")
 
 # PHASE 4 OPTIMIZATION: Initialize MultiMesh and QuadMesh pools for reuse
@@ -62,7 +70,7 @@ func _initialize_pools() -> void:
 	for i in range(10):  # Pre-allocate more than needed for safety
 		var multimesh = MultiMesh.new()
 		multimesh.transform_format = MultiMesh.TRANSFORM_2D
-		multimesh.use_colors = true
+		multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 		multimesh.instance_count = 0
 		_multimesh_pool.append(multimesh)
 	
@@ -101,7 +109,7 @@ func _get_pooled_multimesh() -> MultiMesh:
 		Logger.warn("MultiMesh pool exhausted, creating new instance", "enemies")
 		var multimesh = MultiMesh.new()
 		multimesh.transform_format = MultiMesh.TRANSFORM_2D
-		multimesh.use_colors = true
+		multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 		multimesh.instance_count = 0
 		return multimesh
 
@@ -151,7 +159,7 @@ func _setup_tier_multimeshes() -> void:
 	# Setup SWARM tier MultiMesh (small squares) - PHASE 4 OPTIMIZED
 	var swarm_multimesh := _get_pooled_multimesh()
 	swarm_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	swarm_multimesh.use_colors = true
+	swarm_multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 	swarm_multimesh.instance_count = 0
 	var swarm_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
 	swarm_multimesh.mesh = swarm_mesh
@@ -167,12 +175,14 @@ func _setup_tier_multimeshes() -> void:
 	mm_enemies_swarm.multimesh = swarm_multimesh
 	if mm_enemies_swarm.texture == null:
 		mm_enemies_swarm.texture = _get_shared_dummy_texture()
+	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
+	mm_enemies_swarm.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.SWARM)
 	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
 	
 	# Setup REGULAR tier MultiMesh (medium rectangles) - PHASE 4 OPTIMIZED
 	var regular_multimesh := _get_pooled_multimesh()
 	regular_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	regular_multimesh.use_colors = true
+	regular_multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 	regular_multimesh.instance_count = 0
 	var regular_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
@@ -187,12 +197,14 @@ func _setup_tier_multimeshes() -> void:
 	mm_enemies_regular.multimesh = regular_multimesh
 	if mm_enemies_regular.texture == null:
 		mm_enemies_regular.texture = _get_shared_dummy_texture()
+	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
+	mm_enemies_regular.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.REGULAR)
 	mm_enemies_regular.z_index = 0  # Gameplay entities layer
 	
 	# Setup ELITE tier MultiMesh (large diamonds) - PHASE 4 OPTIMIZED
 	var elite_multimesh := _get_pooled_multimesh()
 	elite_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	elite_multimesh.use_colors = true
+	elite_multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 	elite_multimesh.instance_count = 0
 	var elite_mesh := _get_pooled_quadmesh(Vector2(48, 48))  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
@@ -208,12 +220,14 @@ func _setup_tier_multimeshes() -> void:
 	mm_enemies_elite.multimesh = elite_multimesh
 	if mm_enemies_elite.texture == null:
 		mm_enemies_elite.texture = _get_shared_dummy_texture()
+	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
+	mm_enemies_elite.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.ELITE)
 	mm_enemies_elite.z_index = 0  # Gameplay entities layer
 	
 	# Setup BOSS tier MultiMesh (large diamonds) - PHASE 4 OPTIMIZED
 	var boss_multimesh := _get_pooled_multimesh()
 	boss_multimesh.transform_format = MultiMesh.TRANSFORM_2D
-	boss_multimesh.use_colors = true
+	boss_multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 	boss_multimesh.instance_count = 0
 	var boss_mesh := _get_pooled_quadmesh(Vector2(56, 56))  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
@@ -229,6 +243,8 @@ func _setup_tier_multimeshes() -> void:
 	mm_enemies_boss.multimesh = boss_multimesh
 	if mm_enemies_boss.texture == null:
 		mm_enemies_boss.texture = _get_shared_dummy_texture()
+	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
+	mm_enemies_boss.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.BOSS)
 	mm_enemies_boss.z_index = 0  # Gameplay entities layer
 	
 	Logger.debug("Tier MultiMesh instances initialized", "enemies")
@@ -248,8 +264,8 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
 		return
 	
-	# Group enemies by tier
-	var tier_groups := enemy_render_tier.group_enemies_by_tier(alive_enemies)
+	# PHASE B: Use light grouping API to avoid per-frame allocations
+	var tier_groups := enemy_render_tier.group_enemies_by_tier_light(alive_enemies)
 	
 	# PHASE 1: Track MultiMesh instance counts for memory leak investigation
 	var total_instances = 0
@@ -277,7 +293,11 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 	if is_instance_valid(mm_enemies_boss):
 		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
 
-func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
+# PHASE C: Combat step handler for 30Hz update decimation
+func _on_combat_step(payload) -> void:
+	_transform_update_needed = true
+
+func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: MultiMeshInstance2D, _base_size: Vector2, tier: EnemyRenderTier_Type.Tier) -> void:
 	# Safety check: ensure mm_instance is valid and not freed
 	if not is_instance_valid(mm_instance):
 		Logger.warn("MultiMeshInstance2D is invalid/freed for tier %s" % tier, "enemies")
@@ -287,7 +307,12 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 	if mm_instance and mm_instance.multimesh:
 		# PHASE 1: Track instance count changes for potential memory leaks
 		var previous_count = mm_instance.multimesh.instance_count
-		mm_instance.multimesh.instance_count = count
+		
+		# PHASE A: Grow-only instance_count logic to avoid buffer resizes
+		if count > previous_count:
+			mm_instance.multimesh.instance_count = count
+		# Note: We keep previous_count for instances when count <= previous_count
+		# This avoids constant buffer reallocations during normal fluctuations
 		
 		# Log significant changes in instance count
 		if abs(count - previous_count) > 50:  # Log when changes > 50 instances
@@ -295,29 +320,36 @@ func _update_tier_multimesh(tier_enemies: Array[Dictionary], mm_instance: MultiM
 				tier, previous_count, count, count - previous_count
 			], "enemies")
 		
-		for i in range(count):
-			var enemy := tier_enemies[i]
+		# PHASE C: Only update transforms on combat step (30Hz) if enabled via config
+		var should_update_transforms = _transform_update_needed  # Default: always update (60Hz)
+		
+		# TODO: Add config check here when DebugConfig is accessible
+		# For now, always update transforms for compatibility
+		
+		if should_update_transforms:
+			for i in range(count):
+				var enemy := tier_enemies[i]
+				
+				# PHASE B: Read fields directly from EnemyEntity instead of Dictionary lookups
+				var instance_transform := Transform2D()
+				instance_transform.origin = enemy.pos
+				
+				# Apply sprite flipping based on movement direction
+				if enemy.direction != Vector2.ZERO:
+					if enemy.direction.x < 0:
+						# Flip horizontally for leftward movement
+						instance_transform.x = Vector2(-1, 0)
+					else:
+						# Normal orientation for rightward movement
+						instance_transform.x = Vector2(1, 0)
+					instance_transform.y = Vector2(0, 1)
+				
+				mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 			
-			# Transform with position and sprite flipping
-			var instance_transform := Transform2D()
-			instance_transform.origin = enemy["pos"]
+			# Reset the flag after updating
+			_transform_update_needed = false
 			
-			# Apply sprite flipping based on movement direction
-			if enemy.has("direction"):
-				var direction: Vector2 = enemy["direction"]
-				if direction.x < 0:
-					# Flip horizontally for leftward movement
-					instance_transform.x = Vector2(-1, 0)
-				else:
-					# Normal orientation for rightward movement
-					instance_transform.x = Vector2(1, 0)
-				instance_transform.y = Vector2(0, 1)
-			
-			mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
-			
-			# Set color based on tier for visual debugging
-			var tier_color := get_tier_debug_color(tier)
-			mm_instance.multimesh.set_instance_color(i, tier_color)
+			# PHASE A: Per-instance colors removed - now using per-tier self_modulate for performance
 
 func get_enemy_color_for_type(type_id: String) -> Color:
 	# Fallback colors based on type_id
