@@ -255,4 +255,3 @@ func reset() -> void:
 	
 	if entity_count > 0:
 		Logger.info("EntityTracker: Reset complete - cleared %d entities" % entity_count, "combat")
-

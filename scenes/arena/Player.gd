@@ -26,6 +26,9 @@ var is_hurt: bool = false
 var hurt_timer: float = 0.0
 var hurt_duration: float = 0.6  # Duration to play hurt animation
 
+# Registration state management
+var _registration_in_progress: bool = false
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -306,6 +309,12 @@ func get_health() -> int:
 
 # DAMAGE V3: Register player with unified damage system
 func _register_with_damage_system() -> void:
+	# Prevent concurrent registration attempts
+	if _registration_in_progress:
+		Logger.warn("Player registration already in progress - skipping duplicate attempt", "player")
+		return
+	
+	_registration_in_progress = true
 	Logger.info("Player registration starting - current_health: %d, max_health: %d, position: %s" % [current_health, get_max_health(), global_position], "player")
 	
 	# Validate player state before registration
@@ -324,18 +333,28 @@ func _register_with_damage_system() -> void:
 	
 	Logger.debug("Player entity_data: %s" % entity_data, "player")
 	
-	# Check if already registered to avoid duplicate registration
-	if DamageService.is_entity_alive("player"):
-		Logger.info("Player already registered with DamageService - updating existing registration", "player")
-		DamageService.unregister_entity("player")
+	# Check if already registered - if so, just update without unregistering
+	var damage_service_exists = DamageService.is_entity_alive("player")
+	var entity_tracker_exists = EntityTracker.is_entity_alive("player")
 	
-	if EntityTracker.is_entity_alive("player"):
-		Logger.info("Player already registered with EntityTracker - updating existing registration", "player")
-		EntityTracker.unregister_entity("player")
-	
-	# Register with both systems for unified damage V3
-	DamageService.register_entity("player", entity_data)
-	EntityTracker.register_entity("player", entity_data)
+	if damage_service_exists and entity_tracker_exists:
+		Logger.info("Player already fully registered - updating existing registration without unregistering", "player")
+		# Update existing registration (DamageService handles this gracefully)
+		DamageService.register_entity("player", entity_data)
+		EntityTracker.register_entity("player", entity_data)
+	else:
+		# Only unregister if partial registration exists
+		if damage_service_exists:
+			Logger.info("Player partially registered (DamageService only) - cleaning up for fresh registration", "player")
+			DamageService.unregister_entity("player")
+		if entity_tracker_exists:
+			Logger.info("Player partially registered (EntityTracker only) - cleaning up for fresh registration", "player")
+			EntityTracker.unregister_entity("player")
+		
+		# Fresh registration
+		Logger.debug("Performing fresh player registration", "player")
+		DamageService.register_entity("player", entity_data)
+		EntityTracker.register_entity("player", entity_data)
 	
 	# Validate successful registration
 	var damage_service_registered = DamageService.is_entity_alive("player")
@@ -356,6 +375,7 @@ func _register_with_damage_system() -> void:
 		Logger.debug("Player already connected to damage_entity_sync signal", "player")
 	
 	Logger.info("Player registered with unified damage system - SUCCESS", "player")
+	_registration_in_progress = false
 
 # Helper function to check if player is properly registered
 func is_registered_with_damage_system() -> bool:
@@ -365,10 +385,15 @@ func is_registered_with_damage_system() -> bool:
 
 # Auto-registration fallback for critical operations
 func ensure_damage_registration() -> bool:
+	# Skip if registration is already in progress
+	if _registration_in_progress:
+		Logger.debug("Player registration in progress - waiting for completion", "player")
+		return false  # Let the current registration complete first
+	
 	if is_registered_with_damage_system():
 		return true
 	
-	Logger.warn("Player not properly registered with damage systems - attempting auto-registration", "player")
+	Logger.info("Player not properly registered with damage systems - attempting auto-registration", "player")
 	_register_with_damage_system()
 	
 	# Verify registration succeeded
@@ -376,7 +401,7 @@ func ensure_damage_registration() -> bool:
 	if not success:
 		Logger.error("CRITICAL: Player auto-registration FAILED!", "player")
 	else:
-		Logger.info("Player auto-registration successful", "player")
+		Logger.debug("Player auto-registration successful", "player")
 	
 	return success
 

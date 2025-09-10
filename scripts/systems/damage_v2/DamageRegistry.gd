@@ -204,7 +204,7 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 	if index == -1:
 		# Special handling for player entity in queue path too
 		if target_id == "player":
-			Logger.warn("[PLAYER DEBUG] Queue: Damage requested on unknown entity: player", "combat")
+			Logger.debug("[PLAYER DEBUG] Queue: Damage requested on unknown entity: player", "combat")
 			# Try emergency registration for player
 			if PlayerState and PlayerState.has_player_reference():
 				var player = PlayerState._player_ref
@@ -214,7 +214,7 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 						# Update index after successful registration
 						index = _entity_lookup.get(target_id, -1)
 						if index != -1:
-							Logger.info("[PLAYER DEBUG] Queue: Emergency registration successful, proceeding with damage", "combat")
+							Logger.debug("[PLAYER DEBUG] Queue: Emergency registration successful, proceeding with damage", "combat")
 							# Continue with normal queue processing below
 						else:
 							Logger.error("[PLAYER DEBUG] Queue: Registration succeeded but player still not found in lookup!", "combat")
@@ -290,19 +290,16 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	if index == -1:
 		# Special handling for player entity - provide more context
 		if target_id == "player":
-			Logger.warn("[PLAYER DEBUG] Damage requested on unknown entity: player", "combat")
-			Logger.warn("[PLAYER DEBUG] - Source: %s, Amount: %.1f" % [source, amount], "combat")
-			Logger.warn("[PLAYER DEBUG] - Current registered entities: %d" % _entity_count, "combat")
-			Logger.warn("[PLAYER DEBUG] - Player in lookup table: %s" % _entity_lookup.has("player"), "combat")
+			Logger.debug("[PLAYER DEBUG] Damage requested on unknown entity: player (source: %s, amount: %.1f)" % [source, amount], "combat")
 			
 			# Try to get player reference and auto-register if possible
 			if PlayerState and PlayerState.has_player_reference():
 				var player = PlayerState._player_ref
 				if player and player.has_method("ensure_damage_registration"):
-					Logger.warn("[PLAYER DEBUG] - Attempting emergency player registration", "combat")
+					Logger.debug("[PLAYER DEBUG] - Attempting emergency player registration", "combat")
 					var registration_success = player.ensure_damage_registration()
 					if registration_success:
-						Logger.info("[PLAYER DEBUG] - Emergency registration successful, retrying damage", "combat")
+						Logger.debug("[PLAYER DEBUG] - Emergency registration successful, retrying damage", "combat")
 						# Retry the damage application now that player is registered
 						return _process_damage_immediate(target_id, amount, source, tags, knockback_distance, source_position)
 					else:
