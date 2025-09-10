@@ -6,12 +6,12 @@
 script = ExtResource("1_am23r")
 log_level = "DEBUG"
 balance = false
-combat = true
-waves = true
+combat = false
+waves = false
 player = true
 ui = true
 abilities = false
 signals = true
 performance = false
-debug = true
+debug = false
 radar = true

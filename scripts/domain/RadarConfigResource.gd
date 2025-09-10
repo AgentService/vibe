@@ -23,6 +23,10 @@ class_name RadarConfigResource
 @export var boss_dot_max_size: float = 4.0
 @export var boss_dot_min_size: float = 2.0
 
+@export_group("Performance")
+@export var emit_hz: float = 30.0
+@export var use_new_radar_system: bool = true  ## Toggle between old and new radar systems
+
 ## Get colors as dictionary for compatibility with existing radar system
 func get_colors() -> Dictionary:
 	return {
@@ -48,4 +52,15 @@ func get_radar_size() -> Dictionary:
 	return {
 		"x": int(radar_size.x),
 		"y": int(radar_size.y)
+	}
+
+## Get complete configuration as dictionary (includes all fields)
+func get_complete_config() -> Dictionary:
+	return {
+		"radar_size": get_radar_size(),
+		"radar_range": radar_range,
+		"colors": get_colors(),
+		"dot_sizes": get_dot_sizes(),
+		"emit_hz": emit_hz,
+		"use_new_radar_system": use_new_radar_system
 	}
