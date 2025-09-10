@@ -90,13 +90,9 @@ func _on_combat_step(_payload) -> void:
 #	# Will be replaced by AbilityModule projectile ID system
 #	return -1
 
-func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
-	for i in range(wave_director.enemies.size()):
-		var enemy := wave_director.enemies[i]
-		# Use object identity instead of position comparison for reliability
-		if enemy == target_enemy and enemy.alive:
-			return i
-	return -1
+# PERFORMANCE: _find_enemy_pool_index() eliminated - use enemy.index directly for O(1) access
+# func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
+#	return target_enemy.index
 
 func set_references(wave_dir: WaveDirector) -> void:
 	wave_director = wave_dir

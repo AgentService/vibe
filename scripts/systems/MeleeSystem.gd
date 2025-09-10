@@ -125,10 +125,11 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 	
 	# Apply damage to pooled enemies
 	for enemy in hit_enemies:
-		var enemy_pool_index = _find_enemy_pool_index(enemy)
+		# PERFORMANCE: Use direct index access instead of O(N) search
+		var enemy_pool_index = enemy.index
 		
 		if enemy_pool_index == -1:
-			Logger.warn("Failed to find enemy pool index for melee damage", "combat")
+			Logger.warn("Enemy has invalid index for melee damage", "combat")
 			continue
 		
 		# PHASE 4 OPTIMIZATION: Use WaveDirector's pre-generated entity IDs if available
@@ -307,20 +308,4 @@ func set_auto_attack_enabled(enabled: bool) -> void:
 func set_auto_attack_target(target_pos: Vector2) -> void:
 	auto_attack_target = target_pos
 
-## Find enemy pool index by searching through WaveDirector enemy array
-func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
-	# Get WaveDirector from GameOrchestrator or injection
-	var wave_director = get_node("/root/GameOrchestrator").get_wave_director()
-	if not wave_director:
-		Logger.warn("V4: No WaveDirector available for enemy pool lookup", "combat")
-		return -1
-	
-	# Search through the enemies array for a position match
-	var enemies = wave_director.enemies
-	for i in range(enemies.size()):
-		var enemy = enemies[i]
-		if enemy.alive and enemy.pos.distance_to(target_enemy.pos) < 0.1:
-			return i
-	
-	Logger.warn("V4: Could not find enemy index for position " + str(target_enemy.pos), "combat")
-	return -1
+# PERFORMANCE: _find_enemy_pool_index() eliminated - use enemy.index directly for O(1) access

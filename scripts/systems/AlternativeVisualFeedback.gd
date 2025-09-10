@@ -60,14 +60,14 @@ static func create_particle_burst(parent: Node2D, position: Vector2, color: Colo
 	
 	return particles
 
-# MultiMesh visibility enhancement using brightness instead of color
+# MultiMesh visibility enhancement using self_modulate for performance
 static func enhance_multimesh_visibility(mm_instance: MultiMeshInstance2D, instance_index: int, intensity: float = 2.0):
 	if not mm_instance or not mm_instance.multimesh:
 		return
 	
-	# Use bright colors that multiply well with sprites
+	# Use self_modulate for performance optimization
 	var bright_color = Color(intensity, intensity, intensity, 1.0)
-	mm_instance.multimesh.set_instance_color(instance_index, bright_color)
+	mm_instance.self_modulate = bright_color
 
 # Create floating damage number (alternative to just color flash)
 static func create_damage_number(parent: Node2D, position: Vector2, damage: float, is_crit: bool = false) -> Label:

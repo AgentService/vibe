@@ -48,10 +48,9 @@ func update_frame_metrics(delta: float) -> void:
 	var current_fps = 1.0 / delta if delta > 0 else 60.0
 	var frame_time_ms = delta * 1000.0
 	
-	# Track FPS
+	# Track FPS - keep all samples for phase-weighted averaging
 	fps_samples.append(current_fps)
-	if fps_samples.size() > fps_window_size:
-		fps_samples.pop_front()
+	# No window limit - keep all samples to properly average across all phases
 	
 	# Track frame times
 	frame_time_samples.append(frame_time_ms)

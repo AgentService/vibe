@@ -24,6 +24,7 @@ func _ready() -> void:
 	_load_configuration()
 	_setup_radar()
 	_connect_signals()
+	_update_visibility()  # Check radar disable state
 	Logger.debug("EnemyRadar: Initialized and connected to EventBus", "radar")
 
 func _setup_radar() -> void:
@@ -86,6 +87,10 @@ func _connect_signals() -> void:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
 func _on_radar_data_updated(entities: Array, player_pos: Vector2) -> void:
+	# Performance optimization: Skip radar updates if disabled
+	if DebugManager.is_radar_disabled():
+		return
+		
 	# Update radar data from RadarSystem via EventBus
 	radar_entities.assign(entities)  # Use assign for typed array conversion
 	player_position = player_pos
@@ -103,6 +108,10 @@ func _on_radar_data_updated(entities: Array, player_pos: Vector2) -> void:
 	queue_redraw()
 
 func _draw() -> void:
+	# Performance optimization: Skip drawing if radar is disabled
+	if DebugManager.is_radar_disabled():
+		return
+		
 	var radar_center := radar_size * 0.5
 	
 	# Draw player dot at center
@@ -184,3 +193,7 @@ func _is_within_radar_bounds(pos: Vector2) -> bool:
 	var margin: float = max(max_enemy_dot_size, max_boss_dot_size) * 1.5  # Account for boss diamond points
 	return pos.x >= margin and pos.x <= radar_size.x - margin and \
 		   pos.y >= margin and pos.y <= radar_size.y - margin
+
+func _update_visibility() -> void:
+	# Hide radar panel when disabled for performance
+	visible = not DebugManager.is_radar_disabled()

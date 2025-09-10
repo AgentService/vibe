@@ -52,3 +52,19 @@ static func create_damage_payload() -> Dictionary:
 ## Used by ObjectPool to create consistent tag array shapes.
 static func create_tags_array() -> Array:
 	return []
+
+## Factory function for creating entity update payload dictionaries.
+## Used by ObjectPool for zero-allocation entity position updates.
+static func create_entity_update_payload() -> Dictionary:
+	return {
+		"entity_id": &"",
+		"position": Vector2.ZERO
+	}
+
+## Clear an entity update payload dictionary to default values.
+## Preserves all keys to avoid shape changes and maintains zero-allocation.
+## @param d: Dictionary entity update payload to reset
+static func clear_entity_update_payload(d: Dictionary) -> void:
+	# Preserve keys to avoid shape changes; reset values to defaults
+	d["entity_id"] = &""
+	d["position"] = Vector2.ZERO

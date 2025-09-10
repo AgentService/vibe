@@ -10,7 +10,6 @@ const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
 # TODO: Phase 2 - Remove when replaced with AbilityModule autoload
 # const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
-const DamageSystem_Type = preload("res://scripts/systems/DamageSystem.gd")
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem = preload("res://scripts/systems/CameraSystem.gd")
 
@@ -30,7 +29,6 @@ var radar_system: RadarSystem_Type
 # TODO: Phase 2 - Remove ability_system when replaced with AbilityModule autoload
 # var ability_system: AbilitySystem_Type
 var melee_system: MeleeSystem_Type
-var damage_system: DamageSystem_Type
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 
@@ -155,15 +153,7 @@ func _initialize_systems() -> void:
 	else:
 		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
 	
-	# 6. DamageSystem (needs WaveDirector ref only after Phase 1 removal)
-	damage_system = DamageSystem_Type.new()
-	add_child(damage_system)
-	systems["DamageSystem"] = damage_system
-	if damage_system.has_method("set_references") and wave_director:
-		damage_system.set_references(wave_director)
-		Logger.info("DamageSystem initialized with WaveDirector dependency (AbilitySystem removed)", "orchestrator")
-	else:
-		Logger.warn("DamageSystem dependency injection failed", "orchestrator")
+	Logger.info("Using DamageService autoload (zero-allocation damage system)", "orchestrator")
 
 func get_card_system() -> CardSystem_Type:
 	return card_system
@@ -183,8 +173,6 @@ func get_radar_system() -> RadarSystem_Type:
 func get_melee_system() -> MeleeSystem_Type:
 	return melee_system
 
-func get_damage_system() -> DamageSystem_Type:
-	return damage_system
 
 func get_arena_system() -> ArenaSystem:
 	return arena_system
@@ -232,9 +220,7 @@ func inject_systems_to_arena(arena) -> void:
 		arena.set_melee_system(melee_system)
 		Logger.debug("MeleeSystem injected to Arena", "orchestrator")
 	
-	if damage_system and arena.has_method("set_damage_system"):
-		arena.set_damage_system(damage_system)
-		Logger.debug("DamageSystem injected to Arena", "orchestrator")
+	Logger.debug("Arena will use DamageService autoload (zero-allocation damage system)", "orchestrator")
 	
 	# Phase F: Setup DebugController (after all systems are injected)
 	if arena.has_method("setup_debug_controller"):

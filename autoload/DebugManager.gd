@@ -12,6 +12,7 @@ signal entity_inspected(entity_data: Dictionary)
 signal spawning_requested(enemy_type: String, position: Vector2, count: int)
 
 var debug_enabled: bool = false  # Start disabled, check config in _ready()
+var radar_disabled: bool = false  # Performance flag to disable radar calculation and display
 var selected_entity_id: String = ""
 var debug_ui: Control
 var boss_scaling: BossScaling
@@ -547,3 +548,14 @@ func cmd_damage_queue_reset() -> void:
 	DamageService.reset_queue_metrics()
 	LimboConsole.info("Damage queue metrics reset")
 	Logger.info("Console reset damage queue metrics", "debug")
+
+## Performance Optimization Methods
+
+func toggle_radar(disabled: bool = true) -> void:
+	"""Toggle radar calculation and display for performance optimization"""
+	radar_disabled = disabled
+	Logger.info("Radar %s for performance optimization" % ("disabled" if disabled else "enabled"), "debug")
+
+func is_radar_disabled() -> bool:
+	"""Check if radar is disabled for performance optimization"""
+	return radar_disabled

@@ -10,6 +10,9 @@ class_name EnemyEntity
 # When _data_ref is set, all properties access the shared Dictionary instead of individual vars
 var _data_ref: Dictionary = {}
 
+# PERFORMANCE OPTIMIZATION: Direct index for O(1) lookups (eliminates _find_enemy_index)
+var index: int = -1
+
 # Legacy individual variables (kept for compatibility when _data_ref is not used)
 var _type_id: String
 var _pos: Vector2
@@ -152,6 +155,9 @@ func is_valid() -> bool:
 
 # PHASE 4: Reset method for Dictionary-based data reuse (eliminates object creation)
 func reset_to_defaults() -> void:
+	# PERFORMANCE: Keep index intact for O(1) lookups
+	# index remains unchanged during reset
+	
 	if not _data_ref.is_empty():
 		# Reset Dictionary data to default values for reuse
 		_data_ref["pos"] = Vector2.ZERO

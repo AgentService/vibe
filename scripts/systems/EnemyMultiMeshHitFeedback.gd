@@ -271,8 +271,8 @@ func _apply_flash_to_multimesh(entity_id: String, progress: float, flash_data: D
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Flash progress %s: curve_value=%s, intensity=%s, color=%s" % [progress, curve_value, flash_intensity, current_color], "visual")
 	
-	# Apply color to MultiMesh instance
-	mm_instance.multimesh.set_instance_color(instance_index, current_color)
+	# Apply color via self_modulate for performance optimization
+	mm_instance.self_modulate = current_color
 
 func _apply_knockback_position(entity_id: String, _progress: float, knockback_data: Dictionary) -> void:
 	# Hit-stop effect for impact feel
@@ -422,8 +422,22 @@ func _reset_enemy_color(entity_id: String) -> void:
 		Logger.warn("Cannot reset color: instance index %d out of bounds (count: %d) for entity %s" % [instance_index, mm_instance.multimesh.instance_count, entity_id], "visual")
 		return
 	
-	# Reset to original color (white for default tinting)
-	mm_instance.multimesh.set_instance_color(instance_index, Color.WHITE)
+	# Reset to tier default color via self_modulate
+	var tier_color = _get_tier_default_color(mm_instance)
+	mm_instance.self_modulate = tier_color
+
+func _get_tier_default_color(mm_instance: MultiMeshInstance2D) -> Color:
+	# Return appropriate tier color based on which MultiMesh this is
+	if mm_instance == mm_enemies_swarm:
+		return Color(1.5, 0.3, 0.3, 1.0)  # Bright Red (Swarm)
+	elif mm_instance == mm_enemies_regular:
+		return Color(0.3, 1.5, 1.5, 1.0)  # Bright Cyan (Regular)
+	elif mm_instance == mm_enemies_elite:
+		return Color(1.5, 0.3, 1.5, 1.0)  # Bright Magenta (Elite)
+	elif mm_instance == mm_enemies_boss:
+		return Color(1.8, 0.9, 0.2, 1.0)  # Very Bright Orange (Boss)
+	else:
+		return Color.WHITE  # Fallback
 
 func _is_enemy_still_valid(entity_id: String) -> bool:
 	"""Check if enemy still exists and is alive"""

@@ -10,6 +10,11 @@ class_name WaveDirector
 # Import ArenaSystem for dependency injection
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
 
+# ZERO-ALLOC: Import ring buffer utilities for entity update queue
+const RingBufferUtil = preload("res://scripts/utils/RingBuffer.gd")
+const ObjectPoolUtil = preload("res://scripts/utils/ObjectPool.gd")
+const PayloadResetUtil = preload("res://scripts/utils/PayloadReset.gd")
+
 # PHASE 4 OPTIMIZATION: Use Dictionary-based entities to eliminate object allocation
 # Keep Array[EnemyEntity] type for compatibility, but use pre-allocated EnemyEntity instances
 # that wrap reusable Dictionary data structures
@@ -59,6 +64,10 @@ const POOL_EXHAUSTION_WARNING_COOLDOWN: float = 2.0  # Only warn every 2 seconds
 # AI pause functionality for debug interface
 var ai_paused: bool = false
 
+# ZERO-ALLOC: Entity update queue for batch processing (eliminates Dictionary allocations)
+var _entity_update_queue: RingBufferUtil
+var _update_payload_pool: ObjectPoolUtil
+
 signal enemies_updated(alive_enemies: Array[EnemyEntity])
 
 func _ready() -> void:
@@ -86,6 +95,7 @@ func _ready() -> void:
 	EventBus.player_died.connect(_on_player_died)
 
 	_initialize_pool()
+	_initialize_entity_update_queue()
 	_preload_boss_scenes()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
@@ -140,6 +150,7 @@ func _get_arena_root() -> Node2D:
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	_initialize_pool()
+	_initialize_entity_update_queue()  # Reinitialize with new max_enemies value
 	Logger.info("Reloaded wave balance values", "waves")
 
 func _preload_boss_scenes() -> void:
@@ -247,7 +258,26 @@ func _initialize_pool() -> void:
 		# This reduces object allocations from 500 to minimal wrapper objects
 		var entity = EnemyEntity.new()
 		entity._data_ref = data_dict  # Link to reusable data
+		entity.index = i  # PERFORMANCE: Set direct index for O(1) lookups
 		enemies[i] = entity
+
+## ZERO-ALLOC: Initialize entity update queue and payload pool
+func _initialize_entity_update_queue() -> void:
+	# Initialize ring buffer for entity updates (capacity = max possible updates per frame)
+	_entity_update_queue = RingBufferUtil.new()
+	_entity_update_queue.setup(max_enemies)  # Worst case: all enemies need updates
+	
+	# Initialize payload pool for entity update payloads
+	_update_payload_pool = ObjectPoolUtil.new()
+	_update_payload_pool.setup(
+		max_enemies / 2,  # Reasonable estimate: ~50% of enemies in update range per frame
+		PayloadResetUtil.create_entity_update_payload,
+		PayloadResetUtil.clear_entity_update_payload
+	)
+	
+	Logger.info("Zero-alloc entity update queue initialized (capacity: %d, pool: %d)" % [
+		_entity_update_queue.capacity(), _update_payload_pool.available_count()
+	], "waves")
 
 func _on_combat_step(payload) -> void:
 	# Safety check: Don't process if not in Arena scene or if player is dead
@@ -366,7 +396,7 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 	# Use existing pooled spawn logic for regular enemies
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
-		Logger.warn("No free enemy slots available for V2 spawn", "waves")
+		# Logger.warn("No free enemy slots available for V2 spawn", "waves")  # Disabled for performance testing
 		return
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -470,7 +500,7 @@ func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED
 	var free_idx := _find_free_enemy()
 	if free_idx == -1:
-		Logger.warn("No free enemy slots available", "waves")
+		# Logger.warn("No free enemy slots available", "waves")  # Disabled for performance testing
 		return
 	
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
@@ -502,26 +532,22 @@ func _on_special_boss_died(enemy_type: EnemyType) -> void:
 	EventBus.enemy_killed.emit(Vector2.ZERO, enemy_type.xp_value)
 	Logger.info("Special boss killed: " + enemy_type.id + " (XP: " + str(enemy_type.xp_value) + ")", "combat")
 
-func _find_enemy_index(target_enemy: EnemyEntity) -> int:
-	for i in range(enemies.size()):
-		if enemies[i] == target_enemy:
-			return i
-	return -1
+# PERFORMANCE: _find_enemy_index() eliminated - use enemy.index directly for O(1) access
 
 func _find_free_enemy() -> int:
 	# PHASE 7 OPTIMIZATION: Use bit-field for faster alive count tracking
 	var alive_count = _get_alive_count_fast()
 	
-	# PHASE 3: Reduce pool utilization warning spam - only warn once at each threshold
-	var utilization_percent = (float(alive_count) / max_enemies) * 100.0
-	if alive_count >= max_enemies * 0.9:
-		# Only warn once per 5% threshold to reduce allocations
-		var threshold = int(utilization_percent / 5) * 5
-		if threshold != _last_warned_threshold:
-			Logger.warn("WaveDirector pool high utilization: %d/%d (%d%%)" % [
-				alive_count, max_enemies, threshold
-			], "waves")
-			_last_warned_threshold = threshold
+	# PHASE 3: Pool utilization warnings disabled for performance testing
+	# var utilization_percent = (float(alive_count) / max_enemies) * 100.0
+	# if alive_count >= max_enemies * 0.9:
+	#	# Only warn once per 5% threshold to reduce allocations
+	#	var threshold = int(utilization_percent / 5) * 5
+	#	if threshold != _last_warned_threshold:
+	#		Logger.warn("WaveDirector pool high utilization: %d/%d (%d%%)" % [
+	#			alive_count, max_enemies, threshold
+	#		], "waves")
+	#		_last_warned_threshold = threshold
 	
 	# PHASE 7 OPTIMIZATION: Use bit-field for faster free slot finding
 	# Start search from last known free index for better performance
@@ -536,11 +562,11 @@ func _find_free_enemy() -> int:
 			_last_free_index = i
 			return i
 	
-	# Pool exhausted - throttle warning using timer to reduce spam during stress testing
-	var current_time = Time.get_ticks_msec() / 1000.0
-	if current_time - _pool_exhaustion_warning_timer >= POOL_EXHAUSTION_WARNING_COOLDOWN:
-		Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
-		_pool_exhaustion_warning_timer = current_time
+	# Pool exhausted warnings disabled for performance testing
+	# var current_time = Time.get_ticks_msec() / 1000.0
+	# if current_time - _pool_exhaustion_warning_timer >= POOL_EXHAUSTION_WARNING_COOLDOWN:
+	#	Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
+	#	_pool_exhaustion_warning_timer = current_time
 	return -1
 
 func _update_enemies(dt: float) -> void:
@@ -548,34 +574,72 @@ func _update_enemies(dt: float) -> void:
 	if ai_paused:
 		return
 	
-	# Use cached player position from PlayerState autoload  
+	# PERFORMANCE OPTIMIZATION: Pre-calculate values once
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
+	var update_distance_squared: float = update_distance * update_distance  # Eliminate sqrt calls
+	var target_x: float = target_pos.x
+	var target_y: float = target_pos.y
 	
-	# Only update alive enemies to improve performance
-	var alive_enemies = get_alive_enemies()
-	for enemy in alive_enemies:
-		var dist_to_target: float = enemy.pos.distance_to(target_pos)
+	# ZERO-ALLOC: Clear entity update queue for this frame
+	_entity_update_queue.clear()
+	
+	# PERFORMANCE: Direct bit-field iteration instead of get_alive_enemies() (eliminates array allocation)
+	for i in range(max_enemies):
+		if not _is_enemy_alive_bitfield(i):
+			continue
+			
+		var enemy: EnemyEntity = enemies[i]
+		var enemy_x: float = enemy.pos.x
+		var enemy_y: float = enemy.pos.y
 		
-		# Only update enemies within update distance for performance
-		if dist_to_target <= update_distance:
-			# Simple chase behavior - move toward player
-			var direction: Vector2 = (target_pos - enemy.pos).normalized()
-			enemy.vel = direction * enemy.speed
+		# ZERO-ALLOC: Direct distance calculation without Vector2 allocation
+		var dx: float = target_x - enemy_x
+		var dy: float = target_y - enemy_y
+		var dist_squared: float = dx * dx + dy * dy
+		
+		# Only update enemies within update distance (using squared distance)
+		if dist_squared <= update_distance_squared:
+			# ZERO-ALLOC: Direct normalization without Vector2 allocation
+			var dist: float = sqrt(dist_squared)
+			if dist > 0.001:  # Avoid division by zero
+				var inv_dist: float = 1.0 / dist
+				var norm_x: float = dx * inv_dist
+				var norm_y: float = dy * inv_dist
+				
+				# Update velocity components directly
+				enemy.vel.x = norm_x * enemy.speed
+				enemy.vel.y = norm_y * enemy.speed
+				
+				# Store direction for sprite flipping (reuse normalized values)
+				enemy.direction.x = norm_x
+				enemy.direction.y = norm_y
+				
+				# Update position directly
+				enemy.pos.x = enemy_x + enemy.vel.x * dt
+				enemy.pos.y = enemy_y + enemy.vel.y * dt
+				
+				# ZERO-ALLOC: Use pooled payload instead of Dictionary allocation
+				var entity_id: String = get_enemy_entity_id(i)  # Direct index access (O(1))
+				var update_payload = _update_payload_pool.acquire()
+				if update_payload:
+					update_payload["entity_id"] = entity_id
+					update_payload["position"] = enemy.pos
+					
+					# Queue for batch processing
+					if not _entity_update_queue.try_push(update_payload):
+						# Queue full - release payload back to pool and continue
+						_update_payload_pool.release(update_payload)
+	
+	# ZERO-ALLOC BATCH PROCESSING: Process ring buffer and release payloads back to pool
+	while not _entity_update_queue.is_empty():
+		var update_payload = _entity_update_queue.try_pop()
+		if update_payload:
+			EntityTracker.update_entity_position(update_payload["entity_id"], update_payload["position"])
+			DamageService.update_entity_position(update_payload["entity_id"], update_payload["position"])
 			
-			# Store direction for sprite flipping
-			enemy.direction = direction
-			
-			# Update enemy position based on current velocity
-			var _old_pos = enemy.pos  # Reserved for position delta calculations
-			enemy.pos += enemy.vel * dt
-			
-			# DAMAGE V4: Update EntityTracker and DamageService positions
-			var enemy_index = _find_enemy_index(enemy)
-			if enemy_index != -1:
-				var entity_id = get_enemy_entity_id(enemy_index)
-				EntityTracker.update_entity_position(entity_id, enemy.pos)
-				DamageService.update_entity_position(entity_id, enemy.pos)
+			# Release payload back to pool for reuse
+			_update_payload_pool.release(update_payload)
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
