@@ -361,11 +361,21 @@ func _update_single_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
 		mm_enemies_boss.multimesh.instance_count = 0
 
 # INVESTIGATION STEP 8: Set static transforms once for render-only baseline
-func _set_static_transforms(tier_enemies: Array[EnemyEntity], mm_instance: MultiMeshInstance2D, tier: EnemyRenderTier_Type.Tier) -> void:
+func _set_static_transforms_grid(tier_enemies: Array[EnemyEntity], mm_instance: MultiMeshInstance2D, tier: EnemyRenderTier_Type.Tier) -> void:
+	# INVESTIGATION STEP 8: Set enemies in a fixed grid pattern for consistent rendering performance test
+	# This eliminates per-frame position calculation overhead while still rendering all enemies
 	var count = tier_enemies.size()
+	var grid_size = ceil(sqrt(count))
+	var spacing = 64.0  # Fixed spacing between enemies
+	var start_pos = Vector2(200, 200)  # Start position in arena
+	
 	for i in range(count):
-		var enemy := tier_enemies[i]
-		var instance_transform := Transform2D(Vector2.RIGHT, Vector2.UP, enemy.pos)
+		var grid_x = i % int(grid_size)
+		var grid_y = i / int(grid_size)
+		var static_pos = start_pos + Vector2(grid_x * spacing, grid_y * spacing)
+		
+		# Simple transform with no rotation/scaling - just position
+		var instance_transform := Transform2D(Vector2.RIGHT, Vector2.UP, static_pos)
 		mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 
 # INVESTIGATION: Configure investigation step for testing
@@ -467,15 +477,11 @@ func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: Multi
 			should_update_transforms = true
 		
 		if should_update_transforms:
-			# INVESTIGATION STEP 8: Static transforms - skip updates entirely
+			# INVESTIGATION STEP 8: Static transforms - set transforms but don't update them each frame
 			if investigation_step_8_static_transforms:
-				# Only set transforms once, on first update
-				var current_instance_count = mm_instance.multimesh.instance_count
-				var stored_count_key = "static_count_" + str(tier)
-				if not has_meta(stored_count_key) or get_meta(stored_count_key) != current_instance_count:
-					# First time or instance count changed - set transforms once
-					_set_static_transforms(tier_enemies, mm_instance, tier)
-					set_meta(stored_count_key, current_instance_count)
+				# Set static transforms at fixed positions for all enemies (performance test)
+				# This tests rendering performance without the overhead of per-frame position updates
+				_set_static_transforms_grid(tier_enemies, mm_instance, tier)
 			else:
 				# Normal dynamic transform updates
 				for i in range(count):

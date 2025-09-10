@@ -87,25 +87,17 @@ static func _rebuild_weighted_pool() -> void:
 	for template in _templates.values():
 		var enemy_template := template as EnemyTemplate
 		
+		# Performance test override: Skip boss templates during testing
+		var effective_weight = enemy_template.weight
+		if enemy_template.render_tier == "boss" and _is_performance_test_active():
+			effective_weight = 0.0
+		
 		# Skip templates with zero or negative weight
-		if enemy_template.weight <= 0.0:
+		if effective_weight <= 0.0:
 			continue
 		
-		# Skip boss templates during performance testing if test flag is set
-		if enemy_template.render_tier == "boss":
-			# Simple check - look for global test flag
-			var main_loop = Engine.get_main_loop()
-			if main_loop and main_loop.has_method("get_root"):
-				var root = main_loop.get_root()
-				if root:
-					var game_orchestrator = root.get_node_or_null("/root/GameOrchestrator") 
-					if game_orchestrator:
-						var wave_director = game_orchestrator.get("wave_director")
-						if wave_director and wave_director.get("skip_boss_spawning_for_test") == true:
-							Logger.debug("Skipping boss template during performance test: " + str(enemy_template.id), "enemies")
-							continue
 		
-		var weight := int(enemy_template.weight * 10.0)
+		var weight := int(effective_weight * 10.0)
 		weight = min(weight, MAX_WEIGHT_PER_TEMPLATE)
 		
 		# Stop if we would exceed pool size
@@ -223,3 +215,28 @@ static func get_template_count() -> int:
 		load_all_templates()
 	
 	return _templates.size()
+
+# Check if performance testing is active to override boss weights
+static func _is_performance_test_active() -> bool:
+	# Check if the performance test scene is running
+	var main_loop = Engine.get_main_loop()
+	if not main_loop or not main_loop.has_method("get_root"):
+		return false
+	
+	var root = main_loop.get_root()
+	if not root:
+		return false
+	
+	# Look for the performance test scene node
+	var performance_test = root.get_node_or_null("PerformanceTest")
+	if performance_test:
+		return true
+	
+	# Alternative: Check if any child node has performance test script
+	for child in root.get_children():
+		if child.get_script():
+			var script_path = child.get_script().get_path()
+			if "test_performance" in script_path:
+				return true
+	
+	return false

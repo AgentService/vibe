@@ -257,15 +257,6 @@ func _initialize_systems() -> void:
 		wave_director._initialize_pool()
 		print("✓ WaveDirector configured for 500 enemy capacity and pool reinitialized")
 		
-		# Set global flag to prevent boss spawning during entire test duration
-		wave_director.set("skip_boss_spawning_for_test", true)
-		print("✓ Boss spawning globally disabled for performance testing")
-		
-		# Force rebuild EnemyFactory weighted pool to exclude boss templates
-		var enemy_factory_class = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-		# Force dirty flag to trigger rebuild on next spawn (static class, no force_rebuild_pool method)
-		enemy_factory_class._pool_dirty = true
-		print("✓ EnemyFactory pool marked dirty - will rebuild without boss templates on next spawn")
 	
 	# Create a basic ArenaSystem for WaveDirector dependency if needed
 	if wave_director and wave_director.has_method("set_arena_system"):
@@ -746,11 +737,10 @@ func _find_nearest_enemy_position(player_pos: Vector2) -> Vector2:
 
 func _force_spawn_multimesh_enemies_only(count: int) -> void:
 	# Force spawn only MultiMesh enemies (no scene bosses) for clean performance testing
-	# Note: Boss spawning is globally disabled via skip_boss_spawning_for_test flag
 	if not wave_director:
 		return
 	
-	# Call the regular force spawn function (bosses already disabled globally)
+	# Call the regular force spawn function (boss weight is 0.0 so no bosses will spawn)
 	_force_spawn_enemies(count)
 
 func _force_spawn_enemies(count: int) -> void:
