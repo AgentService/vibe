@@ -1,9 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://xc8tyu0xlql"]
+[gd_scene load_steps=5 format=3 uid="uid://xc8tyu0xlql"]
 
 [ext_resource type="Script" path="res://tests/test_performance_500_enemies.gd" id="1_csuvo"]
 [ext_resource type="Script" uid="uid://dnfhgitgrpt2o" path="res://scripts/systems/WaveDirector.gd" id="2_tq8sn"]
 [ext_resource type="Script" uid="uid://bwyks8f3u7gvk" path="res://scripts/systems/DamageSystem.gd" id="3_qaash"]
-[ext_resource type="Script" uid="uid://svexmhrnx640" path="res://scripts/systems/AbilitySystem.gd" id="4_as6ld"]
 [ext_resource type="Script" uid="uid://cpg85dlkeb83" path="res://scripts/systems/MultiMeshManager.gd" id="5_eifc1"]
 
 [node name="PerformanceTest" type="Node"]
@@ -26,9 +25,6 @@ script = ExtResource("2_tq8sn")
 
 [node name="DamageSystem" type="Node" parent="."]
 script = ExtResource("3_qaash")
-
-[node name="AbilitySystem" type="Node" parent="."]
-script = ExtResource("4_as6ld")
 
 [node name="MultiMeshManager" type="Node" parent="."]
 script = ExtResource("5_eifc1")

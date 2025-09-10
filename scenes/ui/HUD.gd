@@ -59,12 +59,12 @@ func _on_progression_changed(state: Dictionary) -> void:
 	# Calculate the total XP needed for the current level
 	var total_xp_for_level = current_xp + xp_to_next
 	
-	print("HUD: Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, total_xp_for_level])
+	Logger.debug("Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, total_xp_for_level], "ui")
 	_update_xp_display(current_xp, total_xp_for_level)
 	_update_level_display(level)
 
 func _on_leveled_up(new_level: int, prev_level: int) -> void:
-	print("HUD: Level up detected! %d -> %d" % [prev_level, new_level])
+	Logger.debug("Level up detected! %d -> %d" % [prev_level, new_level], "ui")
 	_update_level_display(new_level)
 
 # Legacy _on_player_damage_taken removed - health updates via _process polling
@@ -140,12 +140,12 @@ func _initialize_progression_display() -> void:
 	if PlayerProgression:
 		var state = PlayerProgression.get_progression_state()
 		_on_progression_changed(state)
-		print("HUD: Initialized with PlayerProgression state")
+		Logger.debug("Initialized with PlayerProgression state", "ui")
 	else:
 		# Fallback values
 		_update_level_display(1)
 		_update_xp_display(0, 100)
-		print("HUD: PlayerProgression not available, using fallback values")
+		Logger.debug("PlayerProgression not available, using fallback values", "ui")
 
 func _update_fps_display() -> void:
 	if fps_label:
@@ -181,19 +181,19 @@ func _get_render_stats() -> String:
 	# Get memory usage
 	var memory_usage: int = OS.get_static_memory_usage()
 	var memory_mb: float = memory_usage / (1024.0 * 1024.0)
-	stats.append("Memory: " + str(int(memory_mb)) + " MB")
+	stats.append("Memory: %d MB" % int(memory_mb))
 	
 	# Get enemy/projectile counts from Arena if available
 	var arena: Node = get_tree().current_scene
 	if arena and arena.has_method("get_debug_stats"):
 		var debug_stats: Dictionary = arena.get_debug_stats()
 		if debug_stats.has("enemy_count"):
-			var enemy_text: String = "Enemies: " + str(debug_stats["enemy_count"])
+			var enemy_text: String = "Enemies: %d" % debug_stats["enemy_count"]
 			if debug_stats.has("visible_enemies"):
-				enemy_text += " (visible: " + str(debug_stats["visible_enemies"]) + ")"
+				enemy_text += " (visible: %d)" % debug_stats["visible_enemies"]
 			stats.append(enemy_text)
 		if debug_stats.has("projectile_count"):
-			stats.append("Projectiles: " + str(debug_stats["projectile_count"]))
+			stats.append("Projectiles: %d" % debug_stats["projectile_count"])
 	
 	return "\n".join(stats)
 

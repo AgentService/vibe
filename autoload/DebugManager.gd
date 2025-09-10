@@ -161,12 +161,15 @@ func clear_all_entities() -> void:
 		# Skip player entities to avoid clearing the player
 		if entity_type == "player":
 			continue
-			
-		# Apply massive damage via DamageService (consistent with kill_entity)
-		DamageService.apply_damage(entity_id, 999999, "debug_clear_all", ["debug", "clear_all"])
-		cleared_count += 1
 		
-		Logger.debug("Clearing entity: %s (type: %s)" % [entity_id, entity_type], "debug")
+		# Verify entity still exists in DamageService before applying damage
+		if DamageService.is_entity_alive(entity_id):
+			# Apply massive damage via DamageService (consistent with kill_entity)
+			DamageService.apply_damage(entity_id, 999999, "debug_clear_all", ["debug", "clear_all"])
+			cleared_count += 1
+			Logger.debug("Clearing entity: %s (type: %s)" % [entity_id, entity_type], "debug")
+		else:
+			Logger.debug("Skipping already dead/unregistered entity: %s" % entity_id, "debug")
 	
 	Logger.info("DebugManager: Cleared %d entities via damage-based clearing" % cleared_count, "debug")
 

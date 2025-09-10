@@ -13,7 +13,8 @@ func get_debug_stats(arena_ref: Node, wave_director: WaveDirector) -> Dictionary
 	if wave_director:
 		var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
 		stats["enemy_count"] = alive_enemies.size()
-		Logger.debug("Performance Monitor: " + str(alive_enemies.size()) + " alive enemies", "performance")
+		if Logger.is_debug():
+			Logger.debug("Performance Monitor: %d alive enemies" % alive_enemies.size(), "performance")
 	
 	# TODO: Phase 2 - Add projectile count from AbilityModule
 	# if AbilityModule:
@@ -31,7 +32,8 @@ func get_debug_stats(arena_ref: Node, wave_director: WaveDirector) -> Dictionary
 		if camera_system:
 			stats["camera_zoom"] = camera_system.get_camera_zoom()
 	
-	Logger.debug("Performance Monitor: Collected " + str(stats.size()) + " performance metrics", "performance")
+	if Logger.is_debug():
+		Logger.debug("Performance Monitor: Collected %d performance metrics" % stats.size(), "performance")
 	return stats
 
 func print_stats(stats: Dictionary) -> void:
@@ -53,8 +55,8 @@ func print_stats(stats: Dictionary) -> void:
 
 func get_formatted_stats_string(stats: Dictionary) -> String:
 	var result: String = ""
-	result += "FPS: " + str(stats.get("fps", "N/A")) + " | "
-	result += "Memory: " + str(stats.get("memory_mb", "N/A")) + " MB | "
-	result += "Enemies: " + str(stats.get("enemy_count", "N/A")) + " | "
-	result += "Projectiles: " + str(stats.get("projectile_count", "N/A"))
+	result += "FPS: %s | " % stats.get("fps", "N/A")
+	result += "Memory: %s MB | " % stats.get("memory_mb", "N/A")
+	result += "Enemies: %s | " % stats.get("enemy_count", "N/A")
+	result += "Projectiles: %s" % stats.get("projectile_count", "N/A")
 	return result

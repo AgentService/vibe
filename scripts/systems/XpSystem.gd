@@ -28,9 +28,9 @@ func _exit_tree() -> void:
 func _on_combat_step(_payload) -> void:
 	pass
 
-func _on_enemy_killed(payload) -> void:
+func _on_enemy_killed(pos: Vector2, xp_value: int) -> void:
 	# Enemy killed, spawning XP orb
-	_spawn_xp_orb(payload.pos, payload.xp_value)
+	_spawn_xp_orb(pos, xp_value)
 
 func _spawn_xp_orb(pos: Vector2, xp_value: int) -> void:
 	# Creating XP orb

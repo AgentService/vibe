@@ -11,6 +11,12 @@ class_name DebugConfig
 @export_enum("auto", "custom_id", "create_new") var character_selection: String = "auto"
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
+# PHASE C: MultiMesh rendering performance flags
+@export_group("MultiMesh Rendering")
+@export var multimesh_use_colors: bool = false  # Default: disable per-instance colors for performance
+@export var multimesh_update_30hz: bool = false  # Default: disable 30Hz update decimation (use 60Hz)
+@export var multimesh_shrink_interval_sec: float = 3.0  # How often to shrink oversized MultiMesh buffers
+
 func _init(
 	p_debug_panels_enabled: bool = false,
 	p_start_mode: String = "arena", 

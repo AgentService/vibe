@@ -5,6 +5,12 @@
 ## [Current Week - In Progress]
 
 ### Added
+- **MultiMesh Enemies Performance Optimizations**: Implemented major optimizations for 500+ enemy rendering performance
+  - **Phase A - Buffer Optimization**: Disabled per-instance colors and implemented grow-only `instance_count` logic to eliminate expensive buffer reallocations
+  - **Phase B - Allocation Elimination**: Added light grouping API with preallocated arrays to eliminate per-frame Dictionary/Array creation
+  - **Phase C - Update Decimation**: Added 30Hz transform update framework with debug configuration flags for optional performance tuning
+  - **Performance Results**: Achieved 477 peak enemies (95% of 500 target) with drastically reduced frame time spikes in initial scaling phases
+  - **Visual Compatibility**: Maintained tier-based enemy colors using `self_modulate` instead of expensive per-instance color buffers
 - **Zero-Allocation Damage Queue System**: Implemented batched damage processing with preallocated buffers for performance optimization
   - **RingBuffer Utility**: Lock-free circular buffer using power-of-two masking for efficient wraparound
   - **ObjectPool Utility**: Generic object pool for reusing Dictionary payloads and Array instances
@@ -48,6 +54,10 @@
   - **Variable Shadowing**: Fixed animated_sprite shadowing in DragonLord.gd
   - **Type Conversions**: Fixed narrowing conversion and ternary operator type compatibility issues
   - **UID Warnings**: Fixed invalid UID references in Limbo Console theme and waves.tres files
+- **Manual Stress Testing Warning Spam**: Fixed excessive warning spam during debug manual spawning and cleanup operations
+  - **Entity Cleanup Race Conditions**: Added safety check in DebugManager.clear_all_entities() to verify entity exists before applying damage
+  - **Pool Exhaustion Warning Throttling**: Improved WaveDirector pool exhaustion warnings with 2-second timer-based throttling
+  - **Damage Registry Cleanup Warnings**: Suppressed "unknown entity" warnings during debug_clear_all operations to reduce noise
   - **Parsing Errors**: Resolved all script compilation errors - all systems now load successfully
   - **Complete Resolution**: Zero debugger warnings remain, all scripts compile successfully
 - **Debug Panel UX Improvements**: Enhanced debug interface usability and input handling

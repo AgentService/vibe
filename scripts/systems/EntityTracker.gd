@@ -83,7 +83,7 @@ func get_entities_in_radius(center: Vector2, radius: float, filter_type: String 
 	# Check surrounding grid cells
 	for x in range(center_grid_x - grid_radius, center_grid_x + grid_radius + 1):
 		for y in range(center_grid_y - grid_radius, center_grid_y + grid_radius + 1):
-			var grid_key = str(x) + "," + str(y)
+			var grid_key = "%d,%d" % [x, y]
 			if _spatial_grid.has(grid_key):
 				for entity_id in _spatial_grid[grid_key]:
 					if checked_entities.has(entity_id):
@@ -166,7 +166,7 @@ func get_alive_entities() -> Array[String]:
 func _update_spatial_index(entity_id: String, pos: Vector2) -> void:
 	var grid_x = int(floor(pos.x / GRID_SIZE))
 	var grid_y = int(floor(pos.y / GRID_SIZE))
-	var grid_key = str(grid_x) + "," + str(grid_y)
+	var grid_key = "%d,%d" % [grid_x, grid_y]
 	
 	if not _spatial_grid.has(grid_key):
 		_spatial_grid[grid_key] = []
@@ -178,7 +178,7 @@ func _update_spatial_index(entity_id: String, pos: Vector2) -> void:
 func _remove_from_spatial_index(entity_id: String, pos: Vector2) -> void:
 	var grid_x = int(floor(pos.x / GRID_SIZE))
 	var grid_y = int(floor(pos.y / GRID_SIZE))
-	var grid_key = str(grid_x) + "," + str(grid_y)
+	var grid_key = "%d,%d" % [grid_x, grid_y]
 	
 	if _spatial_grid.has(grid_key):
 		var grid_entities = _spatial_grid[grid_key]

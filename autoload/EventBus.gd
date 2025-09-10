@@ -24,6 +24,11 @@ const InteractionPromptChangedPayload_Type = preload("res://scripts/domain/signa
 const LootGeneratedPayload_Type = preload("res://scripts/domain/signal_payloads/LootGeneratedPayload.gd")
 const CheatTogglePayload_Type = preload("res://scripts/domain/signal_payloads/CheatTogglePayload.gd")
 
+# Object pools for high-frequency payloads to reduce allocations
+const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")
+var _damage_applied_pool: ObjectPool
+var _damage_dealt_pool: ObjectPool
+
 # TIMING SIGNALS
 ## Emitted by RunManager at fixed 30Hz for deterministic combat updates
 @warning_ignore("unused_signal")
@@ -64,9 +69,9 @@ signal melee_enemies_hit(payload)
 @warning_ignore("unused_signal")
 signal entity_killed(payload)
 
-## Legacy enemy killed signal - marked deprecated, migrate to entity_killed
+## Enemy killed signal - uses direct parameters for memory efficiency
 @warning_ignore("unused_signal")
-signal enemy_killed(payload)
+signal enemy_killed(pos: Vector2, xp_value: int)
 
 # PROGRESSION SIGNALS
 ## XP values changed - emitted by XpSystem
@@ -173,6 +178,13 @@ signal radar_data_updated(entities: Array[RadarEntity], player_pos: Vector2)
 
 
 func _ready() -> void:
+	# Initialize object pools for high-frequency payloads
+	_damage_applied_pool = ObjectPool.new()
+	_damage_applied_pool.setup(20, _create_damage_applied_payload, _reset_damage_applied_payload)
+	
+	_damage_dealt_pool = ObjectPool.new()
+	_damage_dealt_pool.setup(10, _create_damage_dealt_payload, _reset_damage_dealt_payload)
+	
 	# Connect debug logging to relevant signals only
 	level_up.connect(_log_level_up)
 	entity_killed.connect(_log_entity_killed)
@@ -190,3 +202,30 @@ func _log_interaction_prompt_changed(payload) -> void:
 
 func _log_loot_generated(payload) -> void:
 	Logger.debug("Loot generated: %s" % payload, "signals")
+
+# Object pool factory and reset functions
+func _create_damage_applied_payload() -> DamageAppliedPayload:
+	return DamageAppliedPayload_Type.new(EntityId.player(), 0.0, false, PackedStringArray())
+
+func _reset_damage_applied_payload(payload: DamageAppliedPayload) -> void:
+	payload.reset()
+
+func _create_damage_dealt_payload() -> DamageDealtPayload:
+	return DamageDealtPayload_Type.new(0.0, "", "")
+
+func _reset_damage_dealt_payload(payload: DamageDealtPayload) -> void:
+	if payload.has_method("reset"):
+		payload.reset()
+
+# Public payload pool access methods
+func acquire_damage_applied_payload() -> DamageAppliedPayload:
+	return _damage_applied_pool.acquire()
+
+func release_damage_applied_payload(payload: DamageAppliedPayload) -> void:
+	_damage_applied_pool.release(payload)
+
+func acquire_damage_dealt_payload() -> DamageDealtPayload:
+	return _damage_dealt_pool.acquire()
+
+func release_damage_dealt_payload(payload: DamageDealtPayload) -> void:
+	_damage_dealt_pool.release(payload)

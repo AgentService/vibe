@@ -70,7 +70,7 @@ func gain_exp(amount: float) -> void:
 	var old_total: float = experience
 	experience += amount
 	
-	print("PlayerProgression: Gained %.1f XP (%.1f -> %.1f), Level: %d, XP to next: %.1f" % [amount, old_total, experience, level, xp_to_next])
+	Logger.debug("Gained %.1f XP (%.1f -> %.1f), Level: %d, XP to next: %.1f" % [amount, old_total, experience, level, xp_to_next], "progression")
 	Logger.debug("Gained %.1f XP (%.1f -> %.1f)" % [amount, old_total, experience], "progression")
 	
 	# Emit XP gained signal
@@ -103,7 +103,7 @@ func _level_up() -> void:
 	# Move to next level
 	level += 1
 	
-	print("PlayerProgression: LEVEL UP! %d -> %d (current XP: %.1f)" % [prev_level, level, experience])
+	Logger.debug("LEVEL UP! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
 	Logger.info("Level up! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
 	
 	# Update XP requirement for next level

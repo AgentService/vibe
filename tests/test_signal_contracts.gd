@@ -167,11 +167,10 @@ class SignalTracker:
 		_validate_arg_type("entity_killed_pos", 0, payload.death_pos, TYPE_VECTOR2)
 		_validate_arg_type("entity_killed_rewards", 0, payload.rewards, TYPE_DICTIONARY)
 	
-	func _on_enemy_killed(payload) -> void:
-		_track_signal("enemy_killed", [payload])
-		_validate_arg_type("enemy_killed", 0, payload, TYPE_OBJECT)
-		_validate_arg_type("enemy_killed_pos", 0, payload.pos, TYPE_VECTOR2)
-		_validate_arg_type("enemy_killed_xp", 0, payload.xp_value, TYPE_INT)
+	func _on_enemy_killed(pos: Vector2, xp_value: int) -> void:
+		_track_signal("enemy_killed", [pos, xp_value])
+		_validate_arg_type("enemy_killed_pos", 0, pos, TYPE_VECTOR2)
+		_validate_arg_type("enemy_killed_xp", 1, xp_value, TYPE_INT)
 	
 	func _on_xp_changed(payload) -> void:
 		_track_signal("xp_changed", [payload])
