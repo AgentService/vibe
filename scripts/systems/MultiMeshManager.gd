@@ -20,6 +20,17 @@ var enemy_render_tier: EnemyRenderTier
 var _last_30hz_update: float = 0.0
 var _transform_update_needed: bool = true
 
+# MULTIMESH INVESTIGATION: Feature flags for stepwise performance testing
+var investigation_step_1_colors_disabled: bool = true  # Already implemented
+var investigation_step_2_early_preallocation: bool = false
+var investigation_step_3_30hz_only: bool = false  # false = 60Hz, true = 30Hz only
+var investigation_step_4_bypass_grouping: bool = false
+var investigation_step_5_single_multimesh: bool = false
+var investigation_step_6_no_textures: bool = false
+var investigation_step_7_position_only: bool = false
+var investigation_step_8_static_transforms: bool = false
+var investigation_step_9_minimal_baseline: bool = false
+
 # Shared dummy texture to avoid null texture errors in headless/textureless runs
 var _shared_dummy_tex: ImageTexture
 
@@ -161,20 +172,32 @@ func _setup_tier_multimeshes() -> void:
 	swarm_multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	swarm_multimesh.use_colors = false  # PHASE A: Disable per-instance colors for performance
 	swarm_multimesh.instance_count = 0
-	var swarm_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
+	
+	# INVESTIGATION STEP 6: Simplified mesh without textures
+	var swarm_mesh_size = Vector2(32, 32)
+	if investigation_step_6_no_textures or investigation_step_9_minimal_baseline:
+		swarm_mesh_size = Vector2(16, 16)  # Smaller for minimal baseline
+	var swarm_mesh := _get_pooled_quadmesh(swarm_mesh_size)
 	swarm_multimesh.mesh = swarm_mesh
 	
-	# Load knight sprite for swarm enemies (static frame)
-	if knight_texture:
-		# Extract first frame (32x32) from knight spritesheet
-		var knight_image := knight_texture.get_image()
-		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-		frame_image.blit_rect(knight_image, Rect2i(0, 0, 32, 32), Vector2i.ZERO)
-		var swarm_tex := ImageTexture.create_from_image(frame_image)
-		mm_enemies_swarm.texture = swarm_tex
-	mm_enemies_swarm.multimesh = swarm_multimesh
-	if mm_enemies_swarm.texture == null:
-		mm_enemies_swarm.texture = _get_shared_dummy_texture()
+	# INVESTIGATION STEP 6: Skip texture loading entirely
+	if not investigation_step_6_no_textures and not investigation_step_9_minimal_baseline:
+		# Load knight sprite for swarm enemies (static frame)
+		if knight_texture:
+			# Extract first frame (32x32) from knight spritesheet
+			var knight_image := knight_texture.get_image()
+			var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+			frame_image.blit_rect(knight_image, Rect2i(0, 0, 32, 32), Vector2i.ZERO)
+			var swarm_tex := ImageTexture.create_from_image(frame_image)
+			mm_enemies_swarm.texture = swarm_tex
+		mm_enemies_swarm.multimesh = swarm_multimesh
+		if mm_enemies_swarm.texture == null:
+			mm_enemies_swarm.texture = _get_shared_dummy_texture()
+	else:
+		# No textures for investigation steps
+		mm_enemies_swarm.texture = null
+		mm_enemies_swarm.multimesh = swarm_multimesh
+	
 	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
 	mm_enemies_swarm.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.SWARM)
 	mm_enemies_swarm.z_index = 0  # Gameplay entities layer
@@ -264,6 +287,11 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 		Logger.warn("EnemyRenderTier is null, skipping tier-based rendering", "enemies")
 		return
 	
+	# INVESTIGATION STEP 4: Bypass grouping overhead
+	if investigation_step_4_bypass_grouping:
+		_update_enemies_direct(alive_enemies)
+		return
+	
 	# PHASE B: Use light grouping API to avoid per-frame allocations
 	var tier_groups := enemy_render_tier.group_enemies_by_tier_light(alive_enemies)
 	
@@ -293,6 +321,102 @@ func update_enemies(alive_enemies: Array[EnemyEntity]) -> void:
 	if is_instance_valid(mm_enemies_boss):
 		_update_tier_multimesh(tier_groups[EnemyRenderTier_Type.Tier.BOSS], mm_enemies_boss, Vector2(64, 64), EnemyRenderTier_Type.Tier.BOSS)
 
+# INVESTIGATION STEP 4: Direct enemy update bypassing grouping overhead
+func _update_enemies_direct(alive_enemies: Array[EnemyEntity]) -> void:
+	# INVESTIGATION STEP 5: Single multimesh mode - use only mm_enemies_swarm
+	if investigation_step_5_single_multimesh:
+		_update_single_multimesh(alive_enemies)
+		return
+	
+	# Direct update without grouping - still use multiple tiers but skip allocation overhead
+	# For simplicity, just put all enemies in SWARM tier for this step
+	if is_instance_valid(mm_enemies_swarm):
+		_update_tier_multimesh(alive_enemies, mm_enemies_swarm, Vector2(32, 32), EnemyRenderTier_Type.Tier.SWARM)
+	
+	# Set other tiers to 0 instances
+	if is_instance_valid(mm_enemies_regular) and mm_enemies_regular.multimesh:
+		mm_enemies_regular.multimesh.instance_count = 0
+	if is_instance_valid(mm_enemies_elite) and mm_enemies_elite.multimesh:
+		mm_enemies_elite.multimesh.instance_count = 0 
+	if is_instance_valid(mm_enemies_boss) and mm_enemies_boss.multimesh:
+		mm_enemies_boss.multimesh.instance_count = 0
+
+# INVESTIGATION STEP 5: Single multimesh update for all enemies
+func _update_single_multimesh(alive_enemies: Array[EnemyEntity]) -> void:
+	# Use only mm_enemies_swarm for all enemies
+	if is_instance_valid(mm_enemies_swarm):
+		_update_tier_multimesh(alive_enemies, mm_enemies_swarm, Vector2(32, 32), EnemyRenderTier_Type.Tier.SWARM)
+	
+	# Zero out all other multimeshes
+	if is_instance_valid(mm_enemies_regular) and mm_enemies_regular.multimesh:
+		mm_enemies_regular.multimesh.instance_count = 0
+	if is_instance_valid(mm_enemies_elite) and mm_enemies_elite.multimesh:
+		mm_enemies_elite.multimesh.instance_count = 0
+	if is_instance_valid(mm_enemies_boss) and mm_enemies_boss.multimesh:
+		mm_enemies_boss.multimesh.instance_count = 0
+
+# INVESTIGATION STEP 8: Set static transforms once for render-only baseline
+func _set_static_transforms(tier_enemies: Array[EnemyEntity], mm_instance: MultiMeshInstance2D, tier: EnemyRenderTier_Type.Tier) -> void:
+	var count = tier_enemies.size()
+	for i in range(count):
+		var enemy := tier_enemies[i]
+		var instance_transform := Transform2D(Vector2.RIGHT, Vector2.UP, enemy.pos)
+		mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
+
+# INVESTIGATION: Configure investigation step for testing
+func set_investigation_step(step_number: int) -> void:
+	# Reset all flags first
+	investigation_step_1_colors_disabled = true  # Always true (already implemented)
+	investigation_step_2_early_preallocation = false
+	investigation_step_3_30hz_only = false
+	investigation_step_4_bypass_grouping = false
+	investigation_step_5_single_multimesh = false
+	investigation_step_6_no_textures = false
+	investigation_step_7_position_only = false
+	investigation_step_8_static_transforms = false
+	investigation_step_9_minimal_baseline = false
+	
+	# Enable specific step(s)
+	match step_number:
+		1:
+			# Colors already disabled (no additional flags needed)
+			pass
+		2:
+			investigation_step_2_early_preallocation = true
+		3:
+			investigation_step_3_30hz_only = true
+		4:
+			investigation_step_4_bypass_grouping = true
+		5:
+			investigation_step_4_bypass_grouping = true
+			investigation_step_5_single_multimesh = true
+		6:
+			investigation_step_4_bypass_grouping = true
+			investigation_step_5_single_multimesh = true
+			investigation_step_6_no_textures = true
+		7:
+			investigation_step_4_bypass_grouping = true
+			investigation_step_5_single_multimesh = true
+			investigation_step_6_no_textures = true
+			investigation_step_7_position_only = true
+		8:
+			investigation_step_4_bypass_grouping = true
+			investigation_step_5_single_multimesh = true
+			investigation_step_6_no_textures = true
+			investigation_step_7_position_only = true
+			investigation_step_8_static_transforms = true
+		9:
+			# Minimal baseline - all optimizations
+			investigation_step_2_early_preallocation = true
+			investigation_step_3_30hz_only = true
+			investigation_step_4_bypass_grouping = true
+			investigation_step_5_single_multimesh = true
+			investigation_step_6_no_textures = true
+			investigation_step_7_position_only = true
+			investigation_step_9_minimal_baseline = true
+	
+	Logger.info("Investigation step %d configured" % step_number, "enemies")
+
 # PHASE C: Combat step handler for 30Hz update decimation
 func _on_combat_step(payload) -> void:
 	_transform_update_needed = true
@@ -308,6 +432,14 @@ func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: Multi
 		# PHASE 1: Track instance count changes for potential memory leaks
 		var previous_count = mm_instance.multimesh.instance_count
 		
+		# INVESTIGATION STEP 2: Early preallocation to avoid mid-phase buffer resizes
+		if investigation_step_2_early_preallocation:
+			# Pre-grow to target capacity (500 divided among tiers)
+			var target_capacity = 200  # Rough estimate per tier for 500 total
+			if previous_count < target_capacity:
+				mm_instance.multimesh.instance_count = target_capacity
+				previous_count = target_capacity
+		
 		# PHASE A: Grow-only instance_count logic to avoid buffer resizes
 		if count > previous_count:
 			mm_instance.multimesh.instance_count = count
@@ -320,31 +452,51 @@ func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: Multi
 				tier, previous_count, count, count - previous_count
 			], "enemies")
 		
-		# PHASE C: Only update transforms on combat step (30Hz) if enabled via config
-		var should_update_transforms = _transform_update_needed  # Default: always update (60Hz)
+		# PHASE C & INVESTIGATION STEP 3: Transform update frequency control
+		var should_update_transforms = true  # Default: always update (60Hz)
 		
-		# TODO: Add config check here when DebugConfig is accessible
-		# For now, always update transforms for compatibility
+		if investigation_step_3_30hz_only:
+			# Only update when combat step triggered (30Hz decimation)
+			should_update_transforms = _transform_update_needed
+		else:
+			# Always update for 60Hz (default behavior)
+			should_update_transforms = true
 		
 		if should_update_transforms:
-			for i in range(count):
-				var enemy := tier_enemies[i]
-				
-				# PHASE B: Read fields directly from EnemyEntity instead of Dictionary lookups
-				var instance_transform := Transform2D()
-				instance_transform.origin = enemy.pos
-				
-				# Apply sprite flipping based on movement direction
-				if enemy.direction != Vector2.ZERO:
-					if enemy.direction.x < 0:
-						# Flip horizontally for leftward movement
-						instance_transform.x = Vector2(-1, 0)
+			# INVESTIGATION STEP 8: Static transforms - skip updates entirely
+			if investigation_step_8_static_transforms:
+				# Only set transforms once, on first update
+				var current_instance_count = mm_instance.multimesh.instance_count
+				var stored_count_key = "static_count_" + str(tier)
+				if not has_meta(stored_count_key) or get_meta(stored_count_key) != current_instance_count:
+					# First time or instance count changed - set transforms once
+					_set_static_transforms(tier_enemies, mm_instance, tier)
+					set_meta(stored_count_key, current_instance_count)
+			else:
+				# Normal dynamic transform updates
+				for i in range(count):
+					var enemy := tier_enemies[i]
+					
+					# PHASE B: Read fields directly from EnemyEntity instead of Dictionary lookups
+					var instance_transform := Transform2D()
+					instance_transform.origin = enemy.pos
+					
+					# INVESTIGATION STEP 7: Position-only transforms (no rotation/scaling)
+					if investigation_step_7_position_only or investigation_step_9_minimal_baseline:
+						# Only set position, keep basis as identity
+						instance_transform = Transform2D(Vector2.RIGHT, Vector2.UP, enemy.pos)
 					else:
-						# Normal orientation for rightward movement
-						instance_transform.x = Vector2(1, 0)
-					instance_transform.y = Vector2(0, 1)
-				
-				mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
+						# Apply sprite flipping based on movement direction
+						if enemy.direction != Vector2.ZERO:
+							if enemy.direction.x < 0:
+								# Flip horizontally for leftward movement
+								instance_transform.x = Vector2(-1, 0)
+							else:
+								# Normal orientation for rightward movement
+								instance_transform.x = Vector2(1, 0)
+							instance_transform.y = Vector2(0, 1)
+					
+					mm_instance.multimesh.set_instance_transform_2d(i, instance_transform)
 			
 			# Reset the flag after updating
 			_transform_update_needed = false

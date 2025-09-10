@@ -14,6 +14,7 @@ var combat_step_interval: float = 1.0 / 30.0  # 30Hz combat step
 
 # Test parameters
 var verbose_output: bool = false        # Set to true for detailed logging, false for clean output
+var investigation_step: int = 0         # MultiMesh investigation step (0 = baseline, 1-9 = investigation steps)
 
 # Test state
 var current_test_phase: String = ""
@@ -81,10 +82,19 @@ func _ready() -> void:
 	performance_metrics = PerformanceMetrics.new()
 	
 	# Find and setup system references
-	_setup_system_references()
+	await _setup_system_references()
 	
 	# Initialize systems with dependencies
 	_initialize_systems()
+	
+	# DEBUG: Print system status after initialization
+	print("=== SYSTEM STATUS AFTER INITIALIZATION ===")
+	print("WaveDirector: %s" % ("found" if wave_director else "NULL"))
+	print("DamageSystem: %s" % ("found" if damage_system else "NULL"))  
+	print("MultiMeshManager: %s" % ("found" if multimesh_manager else "NULL"))
+	if wave_director and wave_director.has_method("get_alive_enemies"):
+		print("WaveDirector enemy count: %d" % wave_director.get_alive_enemies().size())
+	print("==========================================")
 	
 	# NOW establish memory baseline after arena is loaded but before enemies spawn
 	print("Establishing memory baseline after arena load...")
@@ -151,10 +161,13 @@ func _process(delta: float) -> void:
 		_complete_test()
 
 func _setup_system_references() -> void:
+	print("=== SETTING UP SYSTEM REFERENCES ===")
 	_setup_full_arena()
 	
+	print("=== DISCOVERING ARENA SYSTEMS ===")
 	# Find systems from the arena or create placeholders
-	_discover_arena_systems()
+	await _discover_arena_systems()
+	print("=== SYSTEM DISCOVERY COMPLETE ===")
 
 func _setup_full_arena() -> void:
 	print("Loading full Arena scene...")
@@ -182,9 +195,12 @@ func _setup_full_arena() -> void:
 	add_child(arena_instance)
 	arena_root = arena_instance
 	
-	# Wait for initialization
+	# Wait for Arena initialization (including MultiMeshManager setup)
 	await get_tree().process_frame
 	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Additional wait to ensure Arena's _ready() has completed and systems are created
 	await get_tree().process_frame
 	
 	print("✓ Full Arena scene loaded successfully")
@@ -256,46 +272,91 @@ func _initialize_systems() -> void:
 	# Setup MultiMeshManager with Arena scene MultiMesh nodes
 	if multimesh_manager and arena_root:
 		_setup_arena_multimesh()
+		
+		# Configure investigation step if specified
+		if investigation_step > 0:
+			print("=== CONFIGURING INVESTIGATION STEP %d ===" % investigation_step)
+			multimesh_manager.set_investigation_step(investigation_step)
+			_print_investigation_step_description(investigation_step)
+		else:
+			print("✓ Using baseline MultiMesh configuration")
+		
 		print("✓ MultiMeshManager setup completed")
 	
-	# Set system references on DamageSystem if available (Phase 1: AbilitySystem removed)
-	if damage_system and damage_system.has_method("set_references"):
-		damage_system.set_references(wave_director)
-		print("✓ DamageSystem references configured (AbilitySystem removed)")
+	if damage_system:
+		print("✓ DamageService autoload is ready (zero-allocation damage system)")
 	
 	print("✓ Systems initialized with dependencies")
 
 
 func _discover_arena_systems() -> void:
 	"""Discover and setup references to systems from the loaded Arena scene."""
+	print("🔍 STARTING _discover_arena_systems() function")
 	print("Discovering systems from Arena scene...")
 	
-	# Try to find WaveDirector in the scene tree (may be in autoloads or as scene node)
+	# Initialize GameOrchestrator systems if needed
 	var root = get_tree().get_root()
-	wave_director = root.get_node_or_null("/root/WaveDirector")
+	var game_orchestrator = root.get_node_or_null("/root/GameOrchestrator")
+	
+	# DEBUG: GameOrchestrator status
+	if game_orchestrator:
+		print("✓ GameOrchestrator found")
+		print("  - Has initialize_core_loop method: %s" % game_orchestrator.has_method("initialize_core_loop"))
+		print("  - Current initialization_phase: %s" % game_orchestrator.initialization_phase)
+		
+		if game_orchestrator.has_method("initialize_core_loop"):
+			# Ensure GameOrchestrator systems are initialized
+			if game_orchestrator.initialization_phase == "idle":
+				print("Initializing GameOrchestrator systems...")
+				game_orchestrator.initialize_core_loop()
+				# Wait for initialization to complete
+				await get_tree().process_frame
+				await get_tree().process_frame
+				print("✓ GameOrchestrator systems initialized")
+				print("  - New initialization_phase: %s" % game_orchestrator.initialization_phase)
+			else:
+				print("GameOrchestrator already initialized (phase: %s)" % game_orchestrator.initialization_phase)
+	else:
+		print("⚠️  GameOrchestrator autoload not found!")
+	
+	# Try to find WaveDirector: GameOrchestrator should have created it
+	print("🔍 Looking for WaveDirector...")
+	if game_orchestrator:
+		print("  - Attempting to access GameOrchestrator.wave_director...")
+		# Use safer property access with get() instead of has_property()
+		wave_director = game_orchestrator.get("wave_director")
+		if wave_director:
+			print("✓ WaveDirector found in GameOrchestrator")
+		else:
+			print("⚠️  GameOrchestrator.wave_director is null or missing")
+	
+	# Fallback: search in scene tree or autoloads
+	print("  - Trying fallback lookups...")
 	if not wave_director:
-		# Search in Arena scene
-		wave_director = _find_node_recursive(arena_root, "WaveDirector")
+		wave_director = root.get_node_or_null("/root/WaveDirector")
+		if not wave_director:
+			# Search in Arena scene
+			wave_director = _find_node_recursive(arena_root, "WaveDirector")
 	
 	if wave_director:
-		print("✓ WaveDirector found")
+		if not game_orchestrator:
+			print("✓ WaveDirector found (fallback)")
 	else:
 		print("⚠️  WaveDirector not found - creating placeholder")
 		# Create a basic WaveDirector for testing
 		wave_director = preload("res://scripts/systems/WaveDirector.gd").new()
 		add_child(wave_director)
 	
-	# Try to find other systems
-	damage_system = root.get_node_or_null("/root/DamageSystem")
-	if not damage_system:
-		damage_system = _find_node_recursive(arena_root, "DamageSystem")
-	if not damage_system:
-		# Create placeholder
-		damage_system = preload("res://scripts/systems/DamageSystem.gd").new()
-		add_child(damage_system)
-		print("⚠️  DamageSystem not found - created placeholder")
+	print("✅ WaveDirector lookup complete")
+	
+	# Use DamageService autoload directly (zero-allocation system)
+	print("🔍 Looking for DamageService...")
+	var damage_service = root.get_node_or_null("/root/DamageService")
+	if damage_service:
+		damage_system = damage_service
+		print("✓ Using DamageService autoload (zero-allocation damage system)")
 	else:
-		print("✓ DamageSystem found")
+		print("⚠️  DamageService autoload not found - this may cause issues")
 	
 	# TODO: Phase 2 - Replace AbilitySystem lookup with AbilityModule autoload
 	# ability_system = root.get_node_or_null("/root/AbilitySystem")
@@ -310,16 +371,34 @@ func _discover_arena_systems() -> void:
 	#	print("✓ AbilitySystem found")
 	print("✓ AbilitySystem removed in Phase 1 - will be replaced with AbilityModule autoload")
 	
+	print("🔍 Looking for MultiMeshManager...")
 	multimesh_manager = root.get_node_or_null("/root/MultiMeshManager")
 	if not multimesh_manager:
+		print("  - Not found in autoloads, searching Arena scene...")
 		multimesh_manager = _find_node_recursive(arena_root, "MultiMeshManager")
-	if not multimesh_manager:
-		# Create placeholder
-		multimesh_manager = preload("res://scripts/systems/MultiMeshManager.gd").new()
-		add_child(multimesh_manager)
-		print("⚠️  MultiMeshManager not found - created placeholder")
+		if not multimesh_manager:
+			print("  - Not found as child node, checking Arena properties...")
+			# Wait a bit more for Arena's _ready() to complete if needed
+			var attempts = 0
+			while attempts < 10 and arena_root and arena_root.get("multimesh_manager") == null:
+				await get_tree().process_frame
+				attempts += 1
+			
+			# Check if Arena scene has MultiMeshManager property
+			if arena_root and arena_root.get("multimesh_manager") != null:
+				print("  - Arena has multimesh_manager property: true")
+				multimesh_manager = arena_root.get("multimesh_manager")
+				if multimesh_manager:
+					print("✓ MultiMeshManager found in Arena scene property")
+				else:
+					print("⚠️  Arena scene multimesh_manager property is null - Arena may not be initialized")
+			else:
+				print("⚠️  Arena scene missing multimesh_manager property after %d attempts" % attempts)
+				# For MultiMesh investigation, we might not need MultiMeshManager active initially
+				print("ℹ️  This is expected for Scene-based baseline testing (investigation step 0)")
+				multimesh_manager = null
 	else:
-		print("✓ MultiMeshManager found")
+		print("✓ MultiMeshManager found in autoloads")
 	
 	print("✓ System discovery complete")
 
@@ -342,19 +421,24 @@ func _find_node_recursive(node: Node, target_name: String) -> Node:
 
 func _setup_arena_multimesh() -> void:
 	"""Use MultiMesh nodes from the loaded Arena scene."""
-	var mm_projectiles = arena_root.get_node_or_null("MM_Projectiles")
-	var mm_swarm = arena_root.get_node_or_null("MM_Enemies_Swarm")
-	var mm_regular = arena_root.get_node_or_null("MM_Enemies_Regular")
-	var mm_elite = arena_root.get_node_or_null("MM_Enemies_Elite")
-	var mm_boss = arena_root.get_node_or_null("MM_Enemies_Boss")
-	
-	if mm_projectiles and mm_swarm and mm_regular and mm_elite and mm_boss:
-		# Create EnemyRenderTier helper and setup MultiMeshManager
-		var enemy_render_tier = preload("res://scripts/systems/EnemyRenderTier.gd").new()
-		multimesh_manager.setup(mm_projectiles, mm_swarm, mm_regular, mm_elite, mm_boss, enemy_render_tier)
-		print("✓ Using Arena scene MultiMesh nodes")
+	# The Arena should have already set up its MultiMeshManager, so we don't need to do it again
+	if multimesh_manager and multimesh_manager.has_method("set_investigation_step"):
+		print("✓ Using Arena's existing MultiMeshManager setup")
 	else:
-		print("⚠️  Some MultiMesh nodes missing from Arena scene - test may not work properly")
+		# Fallback: setup manually if needed
+		var mm_projectiles = arena_root.get_node_or_null("MM_Projectiles")
+		var mm_swarm = arena_root.get_node_or_null("MM_Enemies_Swarm")
+		var mm_regular = arena_root.get_node_or_null("MM_Enemies_Regular")
+		var mm_elite = arena_root.get_node_or_null("MM_Enemies_Elite")
+		var mm_boss = arena_root.get_node_or_null("MM_Enemies_Boss")
+		
+		if mm_projectiles and mm_swarm and mm_regular and mm_elite and mm_boss:
+			# Create EnemyRenderTier helper and setup MultiMeshManager
+			var enemy_render_tier = preload("res://scripts/systems/EnemyRenderTier.gd").new()
+			multimesh_manager.setup(mm_projectiles, mm_swarm, mm_regular, mm_elite, mm_boss, enemy_render_tier)
+			print("✓ Manual MultiMeshManager setup completed")
+		else:
+			print("⚠️  Some MultiMesh nodes missing from Arena scene - test may not work properly")
 
 func _disable_arena_debug_panels() -> void:
 	"""Find and disable any debug panels that loaded with the Arena scene."""
@@ -444,10 +528,14 @@ func _parse_test_parameters() -> void:
 	var args = OS.get_cmdline_args()
 	
 	# Parse command line arguments
-	for arg in args:
+	for i in range(args.size()):
+		var arg = args[i]
 		if arg == "--verbose":
 			verbose_output = true
 			print("✓ Verbose output enabled via command line flag")
+		elif arg == "--investigation-step" and i + 1 < args.size():
+			investigation_step = args[i + 1].to_int()
+			print("✓ Investigation step %d specified via command line" % investigation_step)
 
 func _setup_deterministic_rng() -> void:
 	"""Setup deterministic RNG seeding for reproducible test results."""
@@ -834,6 +922,29 @@ func _print_phase_summary() -> void:
 		])
 		print("  Avg FPS: %.1f" % phase_data.avg_fps)
 		print("")
+
+func _print_investigation_step_description(step_number: int) -> void:
+	match step_number:
+		1:
+			print("Step 1: Per-instance colors disabled (already implemented)")
+		2:
+			print("Step 2: Early preallocation to avoid mid-phase buffer resizes")
+		3:
+			print("Step 3: 30Hz transform update frequency (vs 60Hz)")
+		4:
+			print("Step 4: Bypass grouping overhead - direct flat array updates")
+		5:
+			print("Step 5: Single MultiMesh for all enemies (collapse tiers)")
+		6:
+			print("Step 6: No textures, simple QuadMesh geometry only")
+		7:
+			print("Step 7: Position-only transforms (no rotation/scaling)")
+		8:
+			print("Step 8: Static transforms (render-only, no per-frame updates)")
+		9:
+			print("Step 9: Minimal baseline (all optimizations combined)")
+		_:
+			print("Unknown step: %d" % step_number)
 
 func _fail_test(reason: String) -> void:
 	print("TEST FAILED: " + reason)

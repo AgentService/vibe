@@ -40,7 +40,6 @@ var player_spawner: PlayerSpawner
 
 
 var wave_director: WaveDirector
-var damage_system: DamageSystem
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
@@ -345,9 +344,6 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_melee_system(injected_melee_system)
 
-func set_damage_system(injected_damage_system: DamageSystem) -> void:
-	if system_injection_manager:
-		system_injection_manager.set_damage_system(injected_damage_system)
 
 func _input(event: InputEvent) -> void:
 	"""Handle arena-specific input events."""

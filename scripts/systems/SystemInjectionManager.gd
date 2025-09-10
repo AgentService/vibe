@@ -81,12 +81,6 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	injected_melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	injected_melee_system.melee_attack_started.connect(arena_ref.player_attack_handler.on_melee_attack_started)
 
-func set_damage_system(injected_damage_system: DamageSystem) -> void:
-	arena_ref.damage_system = injected_damage_system
-	_injected["DamageSystem"] = injected_damage_system
-	Logger.info("DamageSystem injected into Arena", "systems")
-	
-	injected_damage_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 # Provide access to injected systems for DebugController
 func get_injected_systems() -> Dictionary:
