@@ -12,7 +12,7 @@ func clear_all_entities() -> void:
 	Logger.info("EntityClearingService: Starting clean entity clear (no death events)", "system")
 	var cleared_count := 0
 	
-	# Method 1: Reset WaveDirector to properly clear all MultiMesh pool enemies
+	# Method 1: Reset WaveDirector to clear internal state (legacy pooled enemies if any remain)
 	var wave_directors := get_tree().get_nodes_in_group("wave_directors")
 	for wave_director in wave_directors:
 		if is_instance_valid(wave_director) and wave_director.has_method("reset"):

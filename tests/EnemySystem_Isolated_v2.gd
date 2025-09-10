@@ -97,13 +97,14 @@ func _input(event):
 			KEY_T:
 				_toggle_v2_system()
 			KEY_1:
-				_spawn_specific_template("goblin")
+				_spawn_specific_template("ancient_lich")
 			KEY_2:
-				_spawn_specific_template("archer")
+				_spawn_specific_template("banana_lord")
 			KEY_3:
-				_spawn_specific_template("orc_warrior")
+				_spawn_specific_template("dragon_lord")
 			KEY_4:
-				_spawn_specific_template("elite_knight")
+				# Spawn ancient_lich again as fallback
+				_spawn_specific_template("ancient_lich")
 			KEY_5:
 				_spawn_specific_template("ancient_lich")
 			KEY_S:

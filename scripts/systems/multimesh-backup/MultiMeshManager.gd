@@ -1,8 +1,33 @@
 class_name MultiMeshManager
 extends Node
 
-# Manages all MultiMesh instances for projectiles and enemy tiers
-# Handles initialization, configuration, and provides clean interface
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# ⚠️  DEPRECATED - ARCHIVED FOR REFERENCE ONLY ⚠️
+# ═══════════════════════════════════════════════════════════════════════════════════════
+# 
+# This MultiMeshManager system has been COMPLETELY DISABLED and archived.
+# 
+# CURRENT ARCHITECTURE:
+# - Scene-based enemies only (no MultiMesh enemies)
+# - Clean slate approach for projectiles (will rebuild when needed)
+# - All MultiMesh infrastructure removed from Arena.gd
+# 
+# REACTIVATION REQUIREMENTS:
+# - Only if >2000 simultaneous entities are needed
+# - Must restore Arena.gd MultiMesh infrastructure:
+#   * Add MultiMeshInstance2D nodes back to Arena.tscn
+#   * Restore MultiMeshManager instantiation and setup
+#   * Restore enemies_updated signal connections
+# - Must restore WaveDirector.enemies_updated.emit() calls
+# - Full testing required with >2000 entities
+#
+# FILES TO RESTORE FROM BACKUP (when needed):
+# - EnemyMultiMeshHitFeedback.gd
+# - EnhancedEnemyHitFeedback.gd
+# - MultiMeshHitFeedbackFix.gd
+# - EnemyAnimationSystem.gd MultiMesh functionality
+#
+# ═══════════════════════════════════════════════════════════════════════════════════════
 
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 

@@ -324,21 +324,8 @@ func _get_visual_position(entity_data: Dictionary, stored_pos: Vector2) -> Vecto
 	# Compensate for position offset differences between stored position and visual rendering
 	var entity_type: String = entity_data.get("type", "unknown")
 	
-	# MultiMesh entities appear to be rendered offset from their stored position
-	# Different entity types need different offset compensation based on their sprite size
-	if _is_multimesh_entity(entity_type):
-		var offset_x: float = _get_entity_visual_offset(entity_type)
-		return stored_pos + Vector2(offset_x, 0)
-	
-	# Boss entities (scene nodes) use stored position directly
+	# All entities are now scene-based, use stored position directly
 	return stored_pos
-
-func _get_entity_visual_offset(entity_type: String) -> float:
-	# All MultiMesh entities have generic "enemy" type
-	# Adjusting offset based on visual feedback - fine-tuning for goblin centering
-	if entity_type == "enemy":
-		return 28.0  # Increased from 24px for better centering on goblin sprites
-	return 0.0  # Fallback for other types
 
 # ============================================================================
 # SPRITE-BASED VISUAL EFFECTS
@@ -356,15 +343,9 @@ func _apply_sprite_effect(entity_id: String, effect_type: String) -> void:
 	var entity_type: String = entity_data["type"]
 	Logger.debug("Entity type: %s" % entity_type, "debug")
 	
-	# Different approaches for different entity types
-	if _is_multimesh_entity(entity_type):
-		Logger.debug("Applying multimesh effect", "debug")
-		_apply_multimesh_sprite_effect(entity_id, effect_type)
-	elif _is_boss_entity(entity_type):
-		Logger.debug("Applying boss effect", "debug")
-		_apply_boss_sprite_effect(entity_id, effect_type)
-	else:
-		Logger.debug("Unknown entity type for sprite effects: %s" % entity_type, "debug")
+	# All entities are now scene-based, use boss sprite effect approach
+	Logger.debug("Applying scene entity effect", "debug")
+	_apply_boss_sprite_effect(entity_id, effect_type)
 
 func _clear_sprite_effect(entity_id: String, effect_type: String) -> void:
 	var entity_data := EntityTracker.get_entity(entity_id)
@@ -373,28 +354,12 @@ func _clear_sprite_effect(entity_id: String, effect_type: String) -> void:
 		
 	var entity_type: String = entity_data["type"]
 	
-	if _is_multimesh_entity(entity_type):
-		_clear_multimesh_sprite_effect(entity_id, effect_type)
-	elif _is_boss_entity(entity_type):
-		_clear_boss_sprite_effect(entity_id, effect_type)
-
-func _is_multimesh_entity(entity_type: String) -> bool:
-	# MultiMesh entities are pooled enemies rendered via MultiMeshManager
-	# These have generic "enemy" type, not specific names like bosses
-	return entity_type == "enemy"
+	# All entities are now scene-based, use boss sprite clear approach
+	_clear_boss_sprite_effect(entity_id, effect_type)
 
 func _is_boss_entity(entity_type: String) -> bool:
-	# Boss entities are scene-based nodes
-	return entity_type in ["ancient_lich", "dragon_lord", "boss"]
-
-func _apply_multimesh_sprite_effect(entity_id: String, _effect_type: String) -> void:
-	# For MultiMesh entities, we'd need to modify the shader or find the specific instance
-	# This is more complex and would require MultiMeshManager integration
-	Logger.debug("MultiMesh sprite effect not yet implemented for: %s" % entity_id, "debug")
-
-func _clear_multimesh_sprite_effect(entity_id: String, _effect_type: String) -> void:
-	# Clear MultiMesh effect
-	Logger.debug("MultiMesh sprite effect clear not yet implemented for: %s" % entity_id, "debug")
+	# All entities are now scene-based nodes
+	return entity_type in ["enemy", "ancient_lich", "dragon_lord", "boss"]
 
 func _apply_boss_sprite_effect(entity_id: String, effect_type: String) -> void:
 	# For boss entities, find the actual scene node and modify its sprite

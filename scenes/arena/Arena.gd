@@ -1,7 +1,7 @@
 extends BaseArena
 
-## Arena scene managing MultiMesh rendering and receiving injected game systems.
-## Renders projectile pool via MultiMeshInstance2D.
+## Arena scene managing scene-based enemy rendering and receiving injected game systems.
+## Future projectile rendering system will be added when needed.
 ## Systems are initialized and managed by GameOrchestrator autoload.
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
@@ -12,8 +12,6 @@ const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
 const ArenaUIManagerScript := preload("res://scripts/systems/ArenaUIManager.gd")
-const EnemyAnimationSystemScript := preload("res://scripts/systems/EnemyAnimationSystem.gd")
-const MultiMeshManagerScript := preload("res://scripts/systems/MultiMeshManager.gd")
 const BossSpawnManagerScript := preload("res://scripts/systems/BossSpawnManager.gd")
 const PlayerAttackHandlerScript := preload("res://scripts/systems/PlayerAttackHandler.gd")
 const PlayerSpawnerScript := preload("res://scripts/systems/PlayerSpawner.gd")
@@ -22,18 +20,11 @@ const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjec
 const ArenaInputHandlerScript := preload("res://scripts/systems/ArenaInputHandler.gd")
 const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
 
-@onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
-# TIER-BASED ENEMY RENDERING SYSTEM
-@onready var mm_enemies_swarm: MultiMeshInstance2D = $MM_Enemies_Swarm
-@onready var mm_enemies_regular: MultiMeshInstance2D = $MM_Enemies_Regular
-@onready var mm_enemies_elite: MultiMeshInstance2D = $MM_Enemies_Elite
-@onready var mm_enemies_boss: MultiMeshInstance2D = $MM_Enemies_Boss
+# Scene-based rendering approach
 @onready var melee_effects: Node2D = $MeleeEffects
 var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
-var enemy_animation_system: EnemyAnimationSystem
-var multimesh_manager: MultiMeshManager
 var boss_spawn_manager: BossSpawnManager
 var player_attack_handler: PlayerAttackHandler
 var player_spawner: PlayerSpawner
@@ -141,10 +132,6 @@ func _ready() -> void:
 	_setup_xp_system()
 	_setup_ui()
 	
-	# Setup MultiMesh Manager BEFORE system injection
-	multimesh_manager = MultiMeshManagerScript.new()
-	add_child(multimesh_manager)
-	multimesh_manager.setup(mm_projectiles, mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss, enemy_render_tier)
 	
 	# Setup Boss Spawn Manager
 	boss_spawn_manager = BossSpawnManagerScript.new()
@@ -159,7 +146,7 @@ func _ready() -> void:
 	add_child(system_injection_manager)
 	system_injection_manager.setup(self)
 	
-	# Initialize GameOrchestrator systems and inject them AFTER MultiMesh Manager is ready
+	# Initialize GameOrchestrator systems and inject them
 	GameOrchestrator.initialize_core_loop()
 	GameOrchestrator.inject_systems_to_arena(self)
 
@@ -217,33 +204,13 @@ func _ready() -> void:
 	# System signals connected via GameOrchestrator injection
 	EventBus.level_up.connect(_on_level_up)
 	# Player death connection now handled in BaseArena._ready()
-	_setup_enemy_animation_system()
 	_setup_enemy_transforms()
 	
-	# Setup visual effects manager with MultiMesh references and dependencies
-	if visual_effects_manager:
-		visual_effects_manager.setup_enemy_feedback_references(mm_enemies_swarm, mm_enemies_regular, mm_enemies_elite, mm_enemies_boss)
-		# Configure dependencies if available
-		if enemy_render_tier or wave_director:
-			visual_effects_manager.configure_enemy_feedback_dependencies(enemy_render_tier, wave_director)
 	
 	# Debug help now provided by DebugController
 	Logger.info("Arena ready", "ui")
 
 
-func _setup_enemy_animation_system() -> void:
-	enemy_animation_system = EnemyAnimationSystemScript.new()
-	add_child(enemy_animation_system)
-	
-	var multimesh_refs = {
-		"swarm": mm_enemies_swarm,
-		"regular": mm_enemies_regular,
-		"elite": mm_enemies_elite,
-		"boss": mm_enemies_boss
-	}
-	
-	enemy_animation_system.setup(multimesh_refs)
-	Logger.info("EnemyAnimationSystem initialized", "animations")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -259,9 +226,7 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		player_attack_handler.handle_debug_spawning(delta)
 		player_attack_handler.handle_auto_attack()
-		# Animation handled by dedicated system
-		if enemy_animation_system:
-			enemy_animation_system.animate_frames(delta)
+		# Scene-based enemies handle their own animations
 	
 
 # PHASE 14: Input handling now managed by ArenaInputHandler
@@ -450,10 +415,6 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 func _exit_tree() -> void:
 	# Cleanup signal connections with guards to prevent double disconnection
 	# TODO: Phase 2 - Remove ability_system cleanup when replaced with AbilityModule
-	# if ability_system and multimesh_manager and ability_system.projectiles_updated.is_connected(multimesh_manager.update_projectiles):
-	#	ability_system.projectiles_updated.disconnect(multimesh_manager.update_projectiles)
-	if wave_director and multimesh_manager and wave_director.enemies_updated.is_connected(multimesh_manager.update_enemies):
-		wave_director.enemies_updated.disconnect(multimesh_manager.update_enemies)
 	if arena_system and arena_system.arena_loaded.is_connected(_on_arena_loaded):
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	

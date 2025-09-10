@@ -45,7 +45,8 @@ data/
 
 ### Enemy Definitions
 - `enemy-templates/` - Base enemy templates (boss_base.tres, melee_base.tres, ranged_base.tres)
-- `enemy-variations/` - Specific enemy variations (ancient_lich.tres, archer.tres, etc.)
+- `enemy-variations/` - Scene-based enemy variations (ancient_lich.tres, banana_lord.tres, dragon_lord.tres)
+- `enemy-variations-mesh-backup/` - Backup of MultiMesh enemy variations (archived)
 
 ### Cards & Items
 - `cards-melee/` - Melee upgrade cards (damage_boost.tres, attack_speed.tres, etc.)
