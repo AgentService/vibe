@@ -70,12 +70,13 @@ func reset_session() -> void:
 	"""Comprehensive debug session reset - now delegates to SessionManager"""
 	Logger.info("Debug session reset initiated (delegating to SessionManager)", "debug")
 	
-	# Delegate to centralized SessionManager for unified reset handling
-	if SessionManager:
-		await SessionManager.reset_debug()
+	# TODO: Delegate to centralized SessionManager for unified reset handling
+	# For now, use legacy reset until SessionManager integration is stable
+	if false: # SessionManager:
+		# await SessionManager.reset_debug()
 		Logger.info("Debug session reset completed via SessionManager", "debug")
 	else:
-		Logger.error("SessionManager not available - falling back to legacy reset", "debug")
+		Logger.info("Using legacy reset session implementation", "debug")
 		await _legacy_reset_session()
 
 func _legacy_reset_session() -> void:
