@@ -48,6 +48,10 @@
   - **Variable Shadowing**: Fixed animated_sprite shadowing in DragonLord.gd
   - **Type Conversions**: Fixed narrowing conversion and ternary operator type compatibility issues
   - **UID Warnings**: Fixed invalid UID references in Limbo Console theme and waves.tres files
+- **Manual Stress Testing Warning Spam**: Fixed excessive warning spam during debug manual spawning and cleanup operations
+  - **Entity Cleanup Race Conditions**: Added safety check in DebugManager.clear_all_entities() to verify entity exists before applying damage
+  - **Pool Exhaustion Warning Throttling**: Improved WaveDirector pool exhaustion warnings with 2-second timer-based throttling
+  - **Damage Registry Cleanup Warnings**: Suppressed "unknown entity" warnings during debug_clear_all operations to reduce noise
   - **Parsing Errors**: Resolved all script compilation errors - all systems now load successfully
   - **Complete Resolution**: Zero debugger warnings remain, all scripts compile successfully
 - **Debug Panel UX Improvements**: Enhanced debug interface usability and input handling

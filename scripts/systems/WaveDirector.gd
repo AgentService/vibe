@@ -53,6 +53,8 @@ var _last_free_index: int = 0
 
 # PHASE 3: Pool utilization warning throttling to reduce allocation spam
 var _last_warned_threshold: int = -1
+var _pool_exhaustion_warning_timer: float = 0.0
+const POOL_EXHAUSTION_WARNING_COOLDOWN: float = 2.0  # Only warn every 2 seconds when pool is full
 
 # AI pause functionality for debug interface
 var ai_paused: bool = false
@@ -534,7 +536,11 @@ func _find_free_enemy() -> int:
 			_last_free_index = i
 			return i
 	
-	Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
+	# Pool exhausted - throttle warning using timer to reduce spam during stress testing
+	var current_time = Time.get_ticks_msec() / 1000.0
+	if current_time - _pool_exhaustion_warning_timer >= POOL_EXHAUSTION_WARNING_COOLDOWN:
+		Logger.warn("WaveDirector pool exhausted: %d/%d enemies alive - no free slots" % [alive_count, max_enemies], "waves")
+		_pool_exhaustion_warning_timer = current_time
 	return -1
 
 func _update_enemies(dt: float) -> void:

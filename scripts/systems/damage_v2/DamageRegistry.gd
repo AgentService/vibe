@@ -178,6 +178,7 @@ func _remove_entity_at_index(index: int, id: String) -> void:
 	# Mark as dead instead of removing to avoid array shifts
 	_entity_alive[index] = 0
 	_entity_lookup.erase(id)
+	Logger.debug("Entity unregistered from DamageRegistry: %s" % id, "combat")
 
 
 ## Apply damage to an entity
@@ -258,11 +259,16 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary lookup
 	var index = _entity_lookup.get(target_id, -1)
 	if index == -1:
-		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
+		# During cleanup operations, many entities may be unregistered simultaneously
+		# Only warn if this isn't a debug clear operation to reduce cleanup spam
+		if source != "debug_clear_all":
+			Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
 		return false
 	
 	if _entity_alive[index] == 0:
-		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
+		# Similar throttling for dead entity warnings during cleanup
+		if source != "debug_clear_all":
+			Logger.warn("Damage requested on dead entity: " + target_id, "combat")
 		return false
 	
 	# Check god mode for player damage
