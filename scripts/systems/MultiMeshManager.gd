@@ -43,9 +43,7 @@ var _pool_initialized: bool = false
 func _get_shared_dummy_texture() -> Texture2D:
 	if _shared_dummy_tex:
 		return _shared_dummy_tex
-	# In headless mode, return null to avoid texture errors
-	if DisplayServer.get_name() == "headless":
-		return null
+	# Create minimal 1x1 texture even in headless mode to prevent null texture errors
 	var img := Image.create(1, 1, false, Image.FORMAT_RGBA8)
 	img.set_pixel(0, 0, Color(1, 1, 1, 1))
 	_shared_dummy_tex = ImageTexture.create_from_image(img)
@@ -158,13 +156,15 @@ func _setup_projectile_multimesh() -> void:
 	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
-	if mm_projectiles.texture == null:
+	# Skip all texture operations in headless mode to prevent console errors
+	if DisplayServer.get_name() != "headless" and mm_projectiles.texture == null:
 		mm_projectiles.texture = _get_shared_dummy_texture()
 
 func _setup_tier_multimeshes() -> void:
-	# Load knight sprite once - skip entirely in headless mode to avoid texture errors
+	# Skip all texture operations in headless mode to prevent errors
+	var is_headless = DisplayServer.get_name() == "headless"
 	var knight_texture: Texture2D = null
-	if DisplayServer.get_name() != "headless":
+	if not is_headless:
 		knight_texture = load("res://assets/sprites/knight.png") as Texture2D
 	
 	# Setup SWARM tier MultiMesh (small squares) - PHASE 4 OPTIMIZED
@@ -182,8 +182,8 @@ func _setup_tier_multimeshes() -> void:
 	
 	# INVESTIGATION STEP 6: Skip texture loading entirely
 	if not investigation_step_6_no_textures and not investigation_step_9_minimal_baseline:
-		# Load knight sprite for swarm enemies (static frame)
-		if knight_texture:
+		# Load knight sprite for swarm enemies (static frame) - skip in headless mode
+		if knight_texture and not is_headless:
 			# Extract first frame (32x32) from knight spritesheet
 			var knight_image := knight_texture.get_image()
 			var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -191,11 +191,13 @@ func _setup_tier_multimeshes() -> void:
 			var swarm_tex := ImageTexture.create_from_image(frame_image)
 			mm_enemies_swarm.texture = swarm_tex
 		mm_enemies_swarm.multimesh = swarm_multimesh
-		if mm_enemies_swarm.texture == null:
+		# Skip texture checks in headless mode to prevent console errors
+		if not is_headless and mm_enemies_swarm.texture == null:
 			mm_enemies_swarm.texture = _get_shared_dummy_texture()
 	else:
-		# No textures for investigation steps
-		mm_enemies_swarm.texture = null
+		# No textures for investigation steps or headless mode - skip texture assignment entirely in headless
+		if not is_headless:
+			mm_enemies_swarm.texture = null
 		mm_enemies_swarm.multimesh = swarm_multimesh
 	
 	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
@@ -209,8 +211,8 @@ func _setup_tier_multimeshes() -> void:
 	regular_multimesh.instance_count = 0
 	var regular_mesh := _get_pooled_quadmesh(Vector2(32, 32))  # 32x32 to match knight sprite frame
 	regular_multimesh.mesh = regular_mesh
-	# Load knight sprite for regular enemies (static frame)
-	if knight_texture:
+	# Load knight sprite for regular enemies (static frame) - skip in headless mode
+	if knight_texture and not is_headless:
 		# Extract second frame (32x32) from knight spritesheet
 		var knight_image := knight_texture.get_image()
 		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -218,7 +220,8 @@ func _setup_tier_multimeshes() -> void:
 		var regular_tex := ImageTexture.create_from_image(frame_image)
 		mm_enemies_regular.texture = regular_tex
 	mm_enemies_regular.multimesh = regular_multimesh
-	if mm_enemies_regular.texture == null:
+	# Skip texture checks in headless mode to prevent console errors
+	if not is_headless and mm_enemies_regular.texture == null:
 		mm_enemies_regular.texture = _get_shared_dummy_texture()
 	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
 	mm_enemies_regular.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.REGULAR)
@@ -231,8 +234,8 @@ func _setup_tier_multimeshes() -> void:
 	elite_multimesh.instance_count = 0
 	var elite_mesh := _get_pooled_quadmesh(Vector2(48, 48))  # Larger elite size 
 	elite_multimesh.mesh = elite_mesh
-	# Load knight sprite for elite enemies (static frame)
-	if knight_texture:
+	# Load knight sprite for elite enemies (static frame) - skip in headless mode
+	if knight_texture and not is_headless:
 		# Extract third frame (32x32) from knight spritesheet, scale to 48x48
 		var knight_image := knight_texture.get_image()
 		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -241,7 +244,8 @@ func _setup_tier_multimeshes() -> void:
 		var elite_tex := ImageTexture.create_from_image(frame_image)
 		mm_enemies_elite.texture = elite_tex
 	mm_enemies_elite.multimesh = elite_multimesh
-	if mm_enemies_elite.texture == null:
+	# Skip texture checks in headless mode to prevent console errors
+	if not is_headless and mm_enemies_elite.texture == null:
 		mm_enemies_elite.texture = _get_shared_dummy_texture()
 	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
 	mm_enemies_elite.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.ELITE)
@@ -254,8 +258,8 @@ func _setup_tier_multimeshes() -> void:
 	boss_multimesh.instance_count = 0
 	var boss_mesh := _get_pooled_quadmesh(Vector2(56, 56))  # Largest size for boss distinction (SWARM:32, REGULAR:32, ELITE:48, BOSS:56)
 	boss_multimesh.mesh = boss_mesh
-	# Load knight sprite for boss enemies (static frame)
-	if knight_texture:
+	# Load knight sprite for boss enemies (static frame) - skip in headless mode
+	if knight_texture and not is_headless:
 		# Extract fourth frame (32x32) from knight spritesheet, scale to 56x56
 		var knight_image := knight_texture.get_image()
 		var frame_image := Image.create(32, 32, false, Image.FORMAT_RGBA8)
@@ -264,7 +268,8 @@ func _setup_tier_multimeshes() -> void:
 		var boss_tex := ImageTexture.create_from_image(frame_image)
 		mm_enemies_boss.texture = boss_tex
 	mm_enemies_boss.multimesh = boss_multimesh
-	if mm_enemies_boss.texture == null:
+	# Skip texture checks in headless mode to prevent console errors
+	if not is_headless and mm_enemies_boss.texture == null:
 		mm_enemies_boss.texture = _get_shared_dummy_texture()
 	# PHASE A: Set per-tier color once via self_modulate instead of per-instance colors
 	mm_enemies_boss.self_modulate = get_tier_debug_color(EnemyRenderTier_Type.Tier.BOSS)
@@ -440,11 +445,10 @@ func _update_tier_multimesh(tier_enemies: Array[EnemyEntity], mm_instance: Multi
 				mm_instance.multimesh.instance_count = target_capacity
 				previous_count = target_capacity
 		
-		# PHASE A: Grow-only instance_count logic to avoid buffer resizes
-		if count > previous_count:
-			mm_instance.multimesh.instance_count = count
-		# Note: We keep previous_count for instances when count <= previous_count
-		# This avoids constant buffer reallocations during normal fluctuations
+		# PHASE A: Update instance_count to match actual alive enemies
+		# Always set to current count to ensure dead enemies are not rendered
+		mm_instance.multimesh.instance_count = count
+		# This ensures dead enemies are immediately removed from rendering
 		
 		# Log significant changes in instance count
 		if abs(count - previous_count) > 50:  # Log when changes > 50 instances

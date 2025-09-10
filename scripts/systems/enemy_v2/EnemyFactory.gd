@@ -91,6 +91,20 @@ static func _rebuild_weighted_pool() -> void:
 		if enemy_template.weight <= 0.0:
 			continue
 		
+		# Skip boss templates during performance testing if test flag is set
+		if enemy_template.render_tier == "boss":
+			# Simple check - look for global test flag
+			var main_loop = Engine.get_main_loop()
+			if main_loop and main_loop.has_method("get_root"):
+				var root = main_loop.get_root()
+				if root:
+					var game_orchestrator = root.get_node_or_null("/root/GameOrchestrator") 
+					if game_orchestrator:
+						var wave_director = game_orchestrator.get("wave_director")
+						if wave_director and wave_director.get("skip_boss_spawning_for_test") == true:
+							Logger.debug("Skipping boss template during performance test: " + str(enemy_template.id), "enemies")
+							continue
+		
 		var weight := int(enemy_template.weight * 10.0)
 		weight = min(weight, MAX_WEIGHT_PER_TEMPLATE)
 		

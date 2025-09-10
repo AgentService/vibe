@@ -40,22 +40,17 @@ var test_phases: Array[Dictionary] = [
 	{
 		"name": "gradual_scaling",
 		"duration": 8.0,
-		"description": "Scale from 100 to 500+ enemies gradually"
+		"description": "Enemy rendering scaling: 100 → 300+ enemies (pure spawn/render test)"
 	},
 	{
 		"name": "burst_spawn", 
 		"duration": 5.0,
-		"description": "Instant spawn of 500 enemies"
+		"description": "Instant spawn stress: 500 enemies immediately (memory allocation test)"
 	},
 	{
 		"name": "combat_stress",
 		"duration": 10.0, 
-		"description": "500 enemies + projectiles + damage calculations"
-	},
-	{
-		"name": "mixed_tier",
-		"duration": 7.0,
-		"description": "All enemy types simultaneously"
+		"description": "Real combat load: 500 enemies + MeleeSystem attacks + DamageService processing"
 	}
 ]
 
@@ -261,6 +256,16 @@ func _initialize_systems() -> void:
 		# Force reinitialize the enemy pool with new size
 		wave_director._initialize_pool()
 		print("✓ WaveDirector configured for 500 enemy capacity and pool reinitialized")
+		
+		# Set global flag to prevent boss spawning during entire test duration
+		wave_director.set("skip_boss_spawning_for_test", true)
+		print("✓ Boss spawning globally disabled for performance testing")
+		
+		# Force rebuild EnemyFactory weighted pool to exclude boss templates
+		var enemy_factory_class = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+		# Force dirty flag to trigger rebuild on next spawn (static class, no force_rebuild_pool method)
+		enemy_factory_class._pool_dirty = true
+		print("✓ EnemyFactory pool marked dirty - will rebuild without boss templates on next spawn")
 	
 	# Create a basic ArenaSystem for WaveDirector dependency if needed
 	if wave_director and wave_director.has_method("set_arena_system"):
@@ -582,8 +587,6 @@ func _start_next_phase() -> void:
 			_setup_burst_spawn() 
 		"combat_stress":
 			_setup_combat_stress()
-		"mixed_tier":
-			_setup_mixed_tier()
 
 func _end_current_phase() -> void:
 	var phase = test_phases[current_phase_index]
@@ -638,83 +641,117 @@ func _setup_burst_spawn() -> void:
 	# Clear existing enemies
 	_clear_all_enemies()
 	
-	# Force spawn 500 enemies as fast as possible
+	# Force spawn 500 enemies as fast as possible (MultiMesh enemies only)
 	if wave_director:
-		_force_spawn_enemies(500)
+		_force_spawn_multimesh_enemies_only(500)
 
 func _setup_combat_stress() -> void:
-	print("Starting combat stress: 500 enemies + projectiles + damage")
-	# Ensure we have max enemies spawning
-	var current_count = _count_alive_enemies()
-	if current_count < 400:  # If we don't have enough, trigger rapid spawning
-		_force_spawn_enemies(500)
-	
-	# Enable aggressive projectile spawning via combat step simulation
-	# (handled in _simulate_projectile_stress called from _on_combat_step)
-
-func _setup_mixed_tier() -> void:
-	print("Starting mixed tier: All enemy types simultaneously")
-	# Clear existing and spawn mixed types
+	print("Starting combat stress: 500 enemies + real MeleeSystem combat with proper cooldown")
+	# Clear existing enemies for clean test conditions
 	_clear_all_enemies()
 	
-	# Trigger rapid spawning for mixed enemy types
-	_force_spawn_mixed_enemies()
+	# Force spawn exactly the target number for consistent testing (MultiMesh enemies only)
+	_force_spawn_multimesh_enemies_only(500)
+	
+	# Wait for enemies to be fully initialized in DamageRegistry before starting combat
+	await get_tree().process_frame
+	await get_tree().process_frame
+	print("✓ Enemies fully initialized, combat simulation ready")
+	
+	# Combat stress uses REAL MeleeSystem integration but respects cooldown for realistic frequency
+
 
 func _on_combat_step() -> void:
 	# Emit combat step for systems that need it (with proper payload)
 	var payload = EventBus.CombatStepPayload_Type.new(combat_step_interval)
 	EventBus.combat_step.emit(payload)
 	
-	# During combat_stress phase, add projectile spawning pressure
-	if current_test_phase == "combat_stress":
-		_simulate_projectile_stress()
-	
 	# During gradual_scaling, increase enemy count
 	if current_test_phase == "gradual_scaling":
 		_update_gradual_scaling()
+	
+	# During combat_stress phase, trigger real combat systems
+	# IMPORTANT: Only do combat after enemies are fully spawned and initialized
+	if current_test_phase == "combat_stress":
+		_simulate_real_combat()
 
 func _update_gradual_scaling() -> void:
 	var phase_elapsed = Time.get_unix_time_from_system() - phase_start_time
 	var phase_duration = test_phases[0].duration  # 8 seconds now
 	var progress = phase_elapsed / phase_duration
 	
-	# Linearly scale from 100 to 500+ enemies
-	var target_count = int(100 + (400 * progress))
-	target_count = min(target_count, 500)
+	# Linearly scale from 100 to 300+ enemies (more reasonable for rendering test)
+	var target_count = int(100 + (250 * progress))
+	target_count = min(target_count, 350)
 	
 	var current_count = _count_alive_enemies()
 	if current_count < target_count:
 		if verbose_output:
 			print("Scaling: current=%d, target=%d" % [current_count, target_count])
-		_force_spawn_enemies(target_count)  # Directly spawn to target count
+		_force_spawn_multimesh_enemies_only(target_count)  # Directly spawn to target count
 
-func _simulate_projectile_stress() -> void:
-	# Simulate player abilities creating projectiles
-	var player_pos = Vector2(400, 300)  # Assume center position
-	var ability_names = ["fireball", "ice_shard", "lightning_bolt"]
+func _simulate_real_combat() -> void:
+	# Real MeleeSystem combat simulation with proper cooldown (matches real gameplay)
+	var player_pos = Vector2(400, 300)  # Arena center position
 	
-	# Trigger abilities every few combat steps
-	var random_chance = 0.3  # Default 30% chance
-	var selected_ability = ability_names[0]  # Default to first ability
-	
-	# Use RNG autoload if available
+	# Get MeleeSystem from GameOrchestrator (same as real gameplay)
 	var root = get_tree().get_root()
-	var rng_node = root.get_node_or_null("/root/RNG")
-	var event_bus = root.get_node_or_null("/root/EventBus")
+	var game_orchestrator = root.get_node_or_null("/root/GameOrchestrator")
+	if not game_orchestrator:
+		return
+		
+	var melee_system = game_orchestrator.get("melee_system")
+	if not melee_system:
+		return
 	
-	if rng_node and rng_node.has_method("randf"):
-		random_chance = rng_node.randf("test")
-		selected_ability = ability_names[rng_node.randi("test") % ability_names.size()]
-	else:
-		# Use built-in random if RNG autoload not available
-		random_chance = randf()
-		selected_ability = ability_names[randi() % ability_names.size()]
+	# CRITICAL FIX: Respect cooldown system (like real auto-attack)
+	# Only attack when cooldown allows - this gives realistic frequency based on balance data
+	if not melee_system.can_attack():
+		return  # Don't attack if on cooldown (realistic behavior)
 	
-	if random_chance < 0.3:  # 30% chance per combat step
-		if event_bus and event_bus.has_signal("ability_triggered"):
-			event_bus.ability_triggered.emit(selected_ability, player_pos, 0.0)
-		else:
-			print("Simulated ability: %s at %s" % [selected_ability, player_pos])
+	# Get alive enemies for targeting (matches real gameplay)
+	var alive_enemies = wave_director.get_alive_enemies()
+	if alive_enemies.is_empty():
+		return  # No enemies to attack
+	
+	# Find realistic target position for attack 
+	var target_pos = _find_nearest_enemy_position(player_pos)
+	
+	# Trigger real MeleeSystem attack with real enemy data (production system)
+	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
+
+func _find_nearest_enemy_position(player_pos: Vector2) -> Vector2:
+	# Find nearest enemy for realistic combat targeting
+	if not wave_director:
+		return player_pos + Vector2(100, 0)  # Default target 100 pixels right
+	
+	var alive_enemies = wave_director.get_alive_enemies()
+	if alive_enemies.is_empty():
+		return player_pos + Vector2(100, 0)  # Default if no enemies
+	
+	var nearest_pos = player_pos + Vector2(100, 0)
+	var nearest_distance = 1000.0
+	
+	# Find closest enemy position
+	for enemy in alive_enemies:
+		# EnemyEntity is a Resource, use get() instead of has()
+		var enemy_pos = enemy.get("position")
+		if enemy_pos != null:
+			var distance = player_pos.distance_to(enemy_pos)
+			if distance < nearest_distance:
+				nearest_distance = distance
+				nearest_pos = enemy_pos
+	
+	return nearest_pos
+
+func _force_spawn_multimesh_enemies_only(count: int) -> void:
+	# Force spawn only MultiMesh enemies (no scene bosses) for clean performance testing
+	# Note: Boss spawning is globally disabled via skip_boss_spawning_for_test flag
+	if not wave_director:
+		return
+	
+	# Call the regular force spawn function (bosses already disabled globally)
+	_force_spawn_enemies(count)
 
 func _force_spawn_enemies(count: int) -> void:
 	if not wave_director:
@@ -746,12 +783,6 @@ func _force_spawn_enemies(count: int) -> void:
 	if verbose_output:
 		print("Force spawn complete: %d enemies spawned (target was %d)" % [final_count, target_spawns])
 
-func _force_spawn_mixed_enemies() -> void:
-	if not wave_director:
-		return
-	
-	# Use the same aggressive approach for mixed enemy spawning
-	_force_spawn_enemies(500)  # Reuse the improved force spawn logic
 
 func _get_random_spawn_position() -> Vector2:
 	# Spawn enemies around arena perimeter

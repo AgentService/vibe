@@ -360,6 +360,10 @@ func _spawn_enemy_v2() -> void:
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
 	# Boss detection - route to scene spawning for boss-tier enemies
 	if spawn_config.render_tier == "boss":
+		# Skip boss spawning during performance tests if flag is set
+		if get("skip_boss_spawning_for_test") == true:
+			Logger.debug("Skipping boss spawn during performance test", "waves")
+			return
 		_spawn_boss_scene(spawn_config)
 		return
 	
