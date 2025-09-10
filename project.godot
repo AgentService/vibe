@@ -35,6 +35,7 @@ DebugManager="*res://autoload/DebugManager.gd"
 SessionManager="*res://autoload/SessionManager.gd"
 EntityTracker="*res://scripts/systems/EntityTracker.gd"
 DamageService="*res://scripts/systems/damage_v2/DamageRegistry.gd"
+BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
 LimboConsole="*res://addons/limbo_console/limbo_console.gd"
 GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 

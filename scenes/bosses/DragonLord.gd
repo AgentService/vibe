@@ -31,9 +31,13 @@ func _ready() -> void:
 		animated_sprite.play("default")  # Start playing the default animation
 		Logger.debug("Dragon Lord animation started", "bosses")
 	
-	# Connect to combat step for deterministic behavior
+	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager instead of individual combat_step connection
+	var boss_id = "boss_" + str(get_instance_id())
+	BossUpdateManager.register_boss(self, boss_id)
+	Logger.debug("DragonLord registered with BossUpdateManager as " + boss_id, "performance")
+	
+	# Connect to other signals (not combat_step)
 	if EventBus:
-		EventBus.combat_step.connect(_on_combat_step)
 		# Listen for unified damage sync events
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 		# DEBUG: Listen for cheat toggles (AI pause)
@@ -59,9 +63,11 @@ func _ready() -> void:
 	_update_health_bar()
 
 func _exit_tree() -> void:
-	# Clean up signal connections
-	if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
-		EventBus.combat_step.disconnect(_on_combat_step)
+	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
+	var boss_id = "boss_" + str(get_instance_id())
+	BossUpdateManager.unregister_boss(boss_id)
+	
+	# Clean up remaining signal connections
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
@@ -72,8 +78,9 @@ func _exit_tree() -> void:
 	DamageService.unregister_entity(entity_id)
 	EntityTracker.unregister_entity(entity_id)
 
-func _on_combat_step(payload) -> void:
-	var dt: float = payload.dt
+## BOSS PERFORMANCE V2: New batch AI interface called by BossUpdateManager
+## Replaces individual _on_combat_step connections with centralized processing
+func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
@@ -132,9 +139,9 @@ func _update_ai(_dt: float) -> void:
 			# Flip sprite to face movement direction
 			EnemySpriteFlipping.flip_sprite_for_direction(animated_sprite, direction)
 			
-			# Update EntityTracker and DamageService positions
+			# BOSS PERFORMANCE V2: Position updates now handled by BossUpdateManager batch processing
+			# Individual EntityTracker.update_entity_position calls removed for performance
 			var entity_id = "boss_" + str(get_instance_id())
-			EntityTracker.update_entity_position(entity_id, global_position)
 			DamageService.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
