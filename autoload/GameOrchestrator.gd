@@ -238,13 +238,7 @@ func _on_state_changed(prev: StateManager.State, next: StateManager.State, conte
 		wave_director.stop()
 		Logger.info("GameOrchestrator: Stopped combat systems on arena exit", "orchestrator")
 		
-		# Trigger session reset for map transitions
-		if next == StateManager.State.HIDEOUT and SessionManager:
-			SessionManager.call_deferred("reset_hideout_return")
-			Logger.info("GameOrchestrator: Triggered hideout return reset", "orchestrator")
-		elif next == StateManager.State.MENU and SessionManager:
-			SessionManager.call_deferred("reset_session", SessionManager.ResetReason.MAP_TRANSITION, {"preserve_character": false})
-			Logger.info("GameOrchestrator: Triggered menu transition reset", "orchestrator")
+		# Session resets are now handled directly by StateManager methods
 	
 	# Emit mode change for global cleanup
 	var mode_name = _state_to_mode_name(next)

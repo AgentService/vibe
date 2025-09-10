@@ -39,11 +39,25 @@ func go_to_character_select(context: Dictionary = {}) -> void:
 
 func go_to_hideout(context: Dictionary = {}) -> void:
 	"""Transition to hideout hub."""
+	# Reset session when returning to hideout from arena/results
+	if SessionManager and current_state == State.ARENA:
+		await SessionManager.reset_hideout_return()
+		Logger.info("Session reset completed for hideout return", "state")
+	
 	_transition_to_state(State.HIDEOUT, context)
 
 func start_run(arena_id: StringName, context: Dictionary = {}) -> void:
 	"""Start a new arena run."""
 	Logger.info("Starting run - arena_id: %s" % arena_id, "state")
+	
+	# Reset session before starting new run
+	if SessionManager:
+		var source = context.get("source", "unknown")
+		if source == "results_restart":
+			await SessionManager.reset_session(SessionManager.ResetReason.LEVEL_RESTART, context)
+		else:
+			await SessionManager.reset_session(SessionManager.ResetReason.MAP_TRANSITION, context)
+		Logger.info("Session reset completed before starting run", "state")
 	
 	# Generate unique run ID
 	var run_id = StringName("run_%d" % Time.get_ticks_msec())
@@ -69,6 +83,13 @@ func end_run(result: Dictionary) -> void:
 func return_to_menu(reason: StringName, context: Dictionary = {}) -> void:
 	"""Return to main menu from any state."""
 	Logger.info("Returning to menu - reason: %s" % reason, "state")
+	
+	# Reset session when returning to menu from arena/results/hideout
+	if SessionManager and current_state in [State.ARENA, State.RESULTS, State.HIDEOUT]:
+		context["preserve_character"] = false  # Full reset when going to menu
+		await SessionManager.reset_session(SessionManager.ResetReason.MAP_TRANSITION, context)
+		Logger.info("Session reset completed for menu return", "state")
+	
 	context["reason"] = reason
 	_transition_to_state(State.MENU, context)
 

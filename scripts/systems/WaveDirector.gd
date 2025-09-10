@@ -726,16 +726,14 @@ func _on_cheat_toggled(payload) -> void:
 		ai_paused = payload.enabled
 
 func _on_player_died() -> void:
-	"""Handle player death - immediately stop spawning and clear all enemies"""
-	Logger.info("WaveDirector: Player died, stopping spawning and clearing enemies", "waves")
+	"""Handle player death - stop spawning but keep enemies alive for results screen"""
+	Logger.info("WaveDirector: Player died, stopping spawning (enemies preserved for results)", "waves")
 	
 	# Stop spawning immediately
 	stop()
 	
-	# Clear all active enemies
-	_clear_all_enemies()
-	
-	# Pause AI for any remaining enemies
+	# Pause AI for dramatic effect but don't clear enemies yet
+	# Enemies will be cleared by SessionManager when user transitions from results screen
 	ai_paused = true
 
 func _clear_all_enemies() -> void:
