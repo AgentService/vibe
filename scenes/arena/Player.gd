@@ -26,6 +26,9 @@ var is_hurt: bool = false
 var hurt_timer: float = 0.0
 var hurt_duration: float = 0.6  # Duration to play hurt animation
 
+# Registration state management
+var _registration_in_progress: bool = false
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -306,6 +309,19 @@ func get_health() -> int:
 
 # DAMAGE V3: Register player with unified damage system
 func _register_with_damage_system() -> void:
+	# Prevent concurrent registration attempts
+	if _registration_in_progress:
+		Logger.warn("Player registration already in progress - skipping duplicate attempt", "player")
+		return
+	
+	_registration_in_progress = true
+	Logger.info("Player registration starting - current_health: %d, max_health: %d, position: %s" % [current_health, get_max_health(), global_position], "player")
+	
+	# Validate player state before registration
+	if current_health <= 0:
+		Logger.warn("Player registration attempted with invalid health: %d - resetting to max" % current_health, "player")
+		current_health = get_max_health()
+	
 	var entity_data = {
 		"id": "player",
 		"type": "player",
@@ -315,15 +331,79 @@ func _register_with_damage_system() -> void:
 		"pos": global_position
 	}
 	
-	# Register with both systems for unified damage V3
-	DamageService.register_entity("player", entity_data)
-	EntityTracker.register_entity("player", entity_data)
+	Logger.debug("Player entity_data: %s" % entity_data, "player")
 	
-	# Connect to damage sync events
-	if EventBus.has_signal("damage_entity_sync"):
+	# Check if already registered - if so, just update without unregistering
+	var damage_service_exists = DamageService.is_entity_alive("player")
+	var entity_tracker_exists = EntityTracker.is_entity_alive("player")
+	
+	if damage_service_exists and entity_tracker_exists:
+		Logger.info("Player already fully registered - updating existing registration without unregistering", "player")
+		# Update existing registration (DamageService handles this gracefully)
+		DamageService.register_entity("player", entity_data)
+		EntityTracker.register_entity("player", entity_data)
+	else:
+		# Only unregister if partial registration exists
+		if damage_service_exists:
+			Logger.info("Player partially registered (DamageService only) - cleaning up for fresh registration", "player")
+			DamageService.unregister_entity("player")
+		if entity_tracker_exists:
+			Logger.info("Player partially registered (EntityTracker only) - cleaning up for fresh registration", "player")
+			EntityTracker.unregister_entity("player")
+		
+		# Fresh registration
+		Logger.debug("Performing fresh player registration", "player")
+		DamageService.register_entity("player", entity_data)
+		EntityTracker.register_entity("player", entity_data)
+	
+	# Validate successful registration
+	var damage_service_registered = DamageService.is_entity_alive("player")
+	var entity_tracker_registered = EntityTracker.is_entity_alive("player")
+	
+	Logger.info("Player registration complete - DamageService: %s, EntityTracker: %s" % [damage_service_registered, entity_tracker_registered], "player")
+	
+	if not damage_service_registered:
+		Logger.error("CRITICAL: Player registration with DamageService FAILED!", "player")
+	if not entity_tracker_registered:
+		Logger.error("CRITICAL: Player registration with EntityTracker FAILED!", "player")
+	
+	# Connect to damage sync events (check if already connected to prevent errors)
+	if EventBus.has_signal("damage_entity_sync") and not EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
+		Logger.debug("Player connected to damage_entity_sync signal", "player")
+	else:
+		Logger.debug("Player already connected to damage_entity_sync signal", "player")
 	
-	Logger.info("Player registered with unified damage system", "player")
+	Logger.info("Player registered with unified damage system - SUCCESS", "player")
+	_registration_in_progress = false
+
+# Helper function to check if player is properly registered
+func is_registered_with_damage_system() -> bool:
+	var damage_service_ok = DamageService.is_entity_alive("player")
+	var entity_tracker_ok = EntityTracker.is_entity_alive("player")
+	return damage_service_ok and entity_tracker_ok
+
+# Auto-registration fallback for critical operations
+func ensure_damage_registration() -> bool:
+	# Skip if registration is already in progress
+	if _registration_in_progress:
+		Logger.debug("Player registration in progress - waiting for completion", "player")
+		return false  # Let the current registration complete first
+	
+	if is_registered_with_damage_system():
+		return true
+	
+	Logger.info("Player not properly registered with damage systems - attempting auto-registration", "player")
+	_register_with_damage_system()
+	
+	# Verify registration succeeded
+	var success = is_registered_with_damage_system()
+	if not success:
+		Logger.error("CRITICAL: Player auto-registration FAILED!", "player")
+	else:
+		Logger.debug("Player auto-registration successful", "player")
+	
+	return success
 
 # DAMAGE V3: Handle unified damage sync events
 func _on_damage_entity_sync(payload: Dictionary) -> void:

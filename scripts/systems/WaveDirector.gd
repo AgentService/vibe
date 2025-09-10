@@ -672,14 +672,13 @@ func set_enemy_velocity(enemy_index: int, velocity: Vector2) -> void:
 	enemy["vel"] = velocity
 
 func clear_all_enemies() -> void:
-	# DEPRECATED: Use DebugManager.clear_all_entities() for unified damage-based clearing
-	# This method is kept for backward compatibility but routes to the unified system
-	if DebugManager and DebugManager.has_method("clear_all_entities"):
-		DebugManager.clear_all_entities()
+	"""Clear all enemies using the production entity clearing system"""
+	if EntityClearingService:
+		EntityClearingService.clear_all_entities()
 		if Logger.is_debug():
-			Logger.debug("WaveDirector: Routed clear_all_enemies to unified damage-based clearing", "debug")
+			Logger.debug("WaveDirector: Cleared enemies via production EntityClearingService", "waves")
 	else:
-		Logger.warn("DebugManager.clear_all_entities() not available - cannot clear enemies", "debug")
+		Logger.error("EntityClearingService not available - cannot clear enemies", "waves")
 
 func stop() -> void:
 	"""Stop WaveDirector - halt spawning and clear timers for scene transitions"""
@@ -688,9 +687,8 @@ func stop() -> void:
 	# Reset spawn timer to prevent immediate spawning
 	spawn_timer = 0.0
 	
-	# Clear all enemies via damage system (consistent approach)
-	if DebugManager and DebugManager.has_method("clear_all_entities"):
-		DebugManager.clear_all_entities()
+	# Stop method should only halt spawning, not clear entities
+	# Entity clearing happens during SessionManager resets, not during stop()
 	
 	# Mark as stopped (add is_running flag if needed)
 	Logger.info("WaveDirector: Stopped successfully", "waves")
@@ -726,16 +724,14 @@ func _on_cheat_toggled(payload) -> void:
 		ai_paused = payload.enabled
 
 func _on_player_died() -> void:
-	"""Handle player death - immediately stop spawning and clear all enemies"""
-	Logger.info("WaveDirector: Player died, stopping spawning and clearing enemies", "waves")
+	"""Handle player death - stop spawning but keep enemies alive for results screen"""
+	Logger.info("WaveDirector: Player died, stopping spawning (enemies preserved for results)", "waves")
 	
 	# Stop spawning immediately
 	stop()
 	
-	# Clear all active enemies
-	_clear_all_enemies()
-	
-	# Pause AI for any remaining enemies
+	# Pause AI for dramatic effect but don't clear enemies yet
+	# Enemies will be cleared by SessionManager when user transitions from results screen
 	ai_paused = true
 
 func _clear_all_enemies() -> void:

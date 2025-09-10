@@ -202,8 +202,35 @@ func _enqueue_damage(target_id: String, amount: float, source: String, tags: Arr
 	# Early validation to avoid wasted queue operations - PHASE 7 OPTIMIZATION
 	var index = _entity_lookup.get(target_id, -1)
 	if index == -1:
-		Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
-		return false
+		# Special handling for player entity in queue path too
+		if target_id == "player":
+			Logger.debug("[PLAYER DEBUG] Queue: Damage requested on unknown entity: player", "combat")
+			# Try emergency registration for player
+			if PlayerState and PlayerState.has_player_reference():
+				var player = PlayerState._player_ref
+				if player and player.has_method("ensure_damage_registration"):
+					var registration_success = player.ensure_damage_registration()
+					if registration_success:
+						# Update index after successful registration
+						index = _entity_lookup.get(target_id, -1)
+						if index != -1:
+							Logger.debug("[PLAYER DEBUG] Queue: Emergency registration successful, proceeding with damage", "combat")
+							# Continue with normal queue processing below
+						else:
+							Logger.error("[PLAYER DEBUG] Queue: Registration succeeded but player still not found in lookup!", "combat")
+							return false
+					else:
+						Logger.error("[PLAYER DEBUG] Queue: Emergency registration failed!", "combat")
+						return false
+				else:
+					Logger.warn("[PLAYER DEBUG] Queue: No valid player reference for emergency registration", "combat")
+					return false
+			else:
+				Logger.warn("[PLAYER DEBUG] Queue: No PlayerState available for emergency registration", "combat")
+				return false
+		else:
+			Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
+			return false
 	
 	if _entity_alive[index] == 0:
 		Logger.warn("Damage requested on dead entity: " + target_id, "combat")
@@ -261,10 +288,31 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	# PHASE 7 OPTIMIZATION: Use PackedArray storage instead of Dictionary lookup
 	var index = _entity_lookup.get(target_id, -1)
 	if index == -1:
-		# During cleanup operations, many entities may be unregistered simultaneously
-		# Only warn if this isn't a debug clear operation to reduce cleanup spam
-		if source != "debug_clear_all":
-			Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
+		# Special handling for player entity - provide more context
+		if target_id == "player":
+			Logger.debug("[PLAYER DEBUG] Damage requested on unknown entity: player (source: %s, amount: %.1f)" % [source, amount], "combat")
+			
+			# Try to get player reference and auto-register if possible
+			if PlayerState and PlayerState.has_player_reference():
+				var player = PlayerState._player_ref
+				if player and player.has_method("ensure_damage_registration"):
+					Logger.debug("[PLAYER DEBUG] - Attempting emergency player registration", "combat")
+					var registration_success = player.ensure_damage_registration()
+					if registration_success:
+						Logger.debug("[PLAYER DEBUG] - Emergency registration successful, retrying damage", "combat")
+						# Retry the damage application now that player is registered
+						return _process_damage_immediate(target_id, amount, source, tags, knockback_distance, source_position)
+					else:
+						Logger.error("[PLAYER DEBUG] - Emergency registration failed!", "combat")
+				else:
+					Logger.warn("[PLAYER DEBUG] - Player reference invalid or missing registration method", "combat")
+			else:
+				Logger.warn("[PLAYER DEBUG] - No player reference available for emergency registration", "combat")
+		else:
+			# During cleanup operations, many entities may be unregistered simultaneously
+			# Only warn if this isn't a debug clear operation to reduce cleanup spam
+			if source != "debug_clear_all":
+				Logger.warn("Damage requested on unknown entity: " + target_id, "combat")
 		return false
 	
 	if _entity_alive[index] == 0:

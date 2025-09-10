@@ -238,12 +238,7 @@ func _on_state_changed(prev: StateManager.State, next: StateManager.State, conte
 		wave_director.stop()
 		Logger.info("GameOrchestrator: Stopped combat systems on arena exit", "orchestrator")
 		
-		# TODO: Add session reset integration after SessionManager is stable
-		# Trigger session reset for map transitions
-		#if next == StateManager.State.HIDEOUT and SessionManager:
-		#	SessionManager.call_deferred("reset_hideout_return")
-		#elif next == StateManager.State.MENU and SessionManager:
-		#	SessionManager.call_deferred("reset_session", 4, {"preserve_character": false})
+		# Session resets are now handled directly by StateManager methods
 	
 	# Emit mode change for global cleanup
 	var mode_name = _state_to_mode_name(next)
@@ -318,29 +313,8 @@ func go_to_arena() -> void:
 	Logger.warn("GameOrchestrator.go_to_arena() is deprecated - use StateManager.start_run()", "orchestrator")
 	StateManager.start_run(StringName("arena"))
 
-# GLOBAL CLEANUP SAFETY NET
+# MODE CHANGE HANDLING - Cleanup delegated to SessionManager
 
 func _on_mode_changed(mode: StringName) -> void:
-	"""Safety net - global purge of arena entities on mode change"""
-	Logger.info("GameOrchestrator: Mode changed to %s - applying global cleanup" % mode, "orchestrator")
-	
-	# Global purge of arena_owned group
-	var arena_owned_nodes = get_tree().get_nodes_in_group("arena_owned")
-	if arena_owned_nodes.size() > 0:
-		Logger.warn("GameOrchestrator: Found %d arena_owned nodes during mode change - purging" % arena_owned_nodes.size(), "orchestrator")
-		for node in arena_owned_nodes:
-			node.queue_free()
-	
-	# Global purge of enemies group
-	var enemy_nodes = get_tree().get_nodes_in_group("enemies")
-	if enemy_nodes.size() > 0:
-		Logger.warn("GameOrchestrator: Found %d enemy nodes during mode change - purging" % enemy_nodes.size(), "orchestrator")
-		for node in enemy_nodes:
-			node.queue_free()
-	
-	# Force EntityTracker cleanup if switching to hideout
-	if mode == "hideout" and EntityTracker:
-		EntityTracker.clear("enemy")
-		EntityTracker.clear("boss")
-	
-	Logger.info("GameOrchestrator: Global cleanup completed for mode %s" % mode, "orchestrator")
+	"""Handle mode changes - cleanup is now delegated to SessionManager"""
+	Logger.info("GameOrchestrator: Mode changed to %s - cleanup handled by SessionManager" % mode, "orchestrator")

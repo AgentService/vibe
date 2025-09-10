@@ -124,12 +124,7 @@ func _enter_debug_mode() -> void:
 		CheatSystem.spawn_disabled = true
 		Logger.debug("Disabled normal enemy spawning", "debug")
 	
-	# Clear existing enemies via WaveDirector
-	if wave_director and wave_director.has_method("clear_all_enemies"):
-		wave_director.clear_all_enemies()
-	
-	# Clear existing entities via unified clear-all (includes bosses via damage pipeline)
-	clear_all_entities()
+	# Debug mode no longer automatically clears enemies - user can manually clear via Debug Panel if needed
 	
 	# Show debug UI
 	_show_debug_ui()
@@ -148,36 +143,15 @@ func _exit_debug_mode() -> void:
 	# Clear selection
 	selected_entity_id = ""
 
-# REMOVED: _clear_all_bosses() - use clear_all_entities() for unified damage-based clearing
 
 func clear_all_entities() -> void:
-	# Central clear invoked by DebugPanel; uses damage-based clearing for consistency
-	var cleared_count := 0
-	
-	# Get all alive entities from EntityTracker
-	var all_entities := EntityTracker.get_alive_entities()
-	
-	# Apply massive damage to each entity (same approach as kill_entity)
-	for entity_id in all_entities:
-		var entity_data := EntityTracker.get_entity(entity_id)
-		var entity_type = entity_data.get("type", "unknown")
-		
-		# Skip player entities to avoid clearing the player
-		if entity_type == "player":
-			continue
-		
-		# Verify entity still exists in DamageService before applying damage
-		if DamageService.is_entity_alive(entity_id):
-			# Apply massive damage via DamageService (consistent with kill_entity)
-			DamageService.apply_damage(entity_id, 999999, "debug_clear_all", ["debug", "clear_all"])
-			cleared_count += 1
-			Logger.debug("Clearing entity: %s (type: %s)" % [entity_id, entity_type], "debug")
-		else:
-			Logger.debug("Skipping already dead/unregistered entity: %s" % entity_id, "debug")
-	
-	Logger.info("DebugManager: Cleared %d entities via damage-based clearing" % cleared_count, "debug")
+	"""Optional debug wrapper for entity clearing - delegates to production system"""
+	Logger.debug("Debug: Triggering entity clear via production system", "debug")
+	if EntityClearingService:
+		EntityClearingService.clear_all_world_objects()
+	else:
+		Logger.error("EntityClearingService not available - cannot clear entities", "debug")
 
-# REMOVED: _find_boss_nodes() - no longer needed with unified damage-based clearing
 
 func _show_debug_ui() -> void:
 	if debug_ui:
