@@ -584,3 +584,106 @@ class DesktopInputManager:
 ```
 
 This unified overlay system provides a solid foundation for all modal UIs optimized for desktop gaming, with scalable windowed design, rich interaction patterns, and generous performance budgets suitable for modern gaming PCs.
+
+## **Integration with Existing Architecture**
+
+### **Perfect Compatibility with Current Systems**
+
+Your existing architecture is **fully compatible** with the new UIManager system! The integration follows a clean layer separation:
+
+```gdscript
+# Application Layer (Existing - No Changes Needed)
+StateManager: BOOT → MENU → CHARACTER_SELECT → HIDEOUT → ARENA → RESULTS → EXIT
+SceneTransitionManager: Loads/unloads major scenes (Arena.tscn, Hideout.tscn, etc.)
+Main.gd: Root scene coordination with dynamic scene loading
+
+# UI Layer (New - Overlays within scenes)
+UIManager: Handles modals WITHIN each scene (inventory, character, pause, results)
+BaseModal: Foundation for all modal overlays
+ModalAnimator: UI animations and transitions
+```
+
+### **StateManager Integration**
+
+#### **Current ResultsScreen Flow (Scene-Based)**
+```gdscript
+# OLD: Full scene transition approach
+Player death → StateManager.end_run(result) → SceneTransitionManager → ResultsScreen.tscn
+# User loses sight of game background, feels disconnected
+```
+
+#### **New ResultsScreen Flow (Modal-Based)**
+```gdscript
+# NEW: Modal overlay approach  
+Player death → UIManager.show_modal(ModalType.RESULTS_SCREEN, death_result)
+# ResultsScreen appears as overlay over dimmed Arena background
+# Modal buttons trigger StateManager for scene transitions:
+
+# In ResultsScreen.gd (extends BaseModal)
+func _on_restart_button_pressed():
+    close_modal()  # Hide the modal first
+    StateManager.start_run("arena", {"source": "results_restart"})  # Then scene transition
+
+func _on_hideout_button_pressed():
+    close_modal()
+    StateManager.go_to_hideout()  # Uses existing StateManager API
+
+func _on_menu_button_pressed():
+    close_modal()
+    StateManager.return_to_menu("player_choice")  # Uses existing StateManager API
+```
+
+#### **State-Aware Modal Management**
+```gdscript
+# UIManager responds to StateManager changes
+class UIManager extends CanvasLayer:
+    func _ready():
+        StateManager.state_changed.connect(_on_state_changed)
+    
+    func _on_state_changed(prev: StateManager.State, next: StateManager.State):
+        match next:
+            StateManager.State.ARENA:
+                enable_game_modals()  # Allow inventory, character, pause
+            StateManager.State.MENU:
+                hide_all_modals()     # Different UI context
+            StateManager.State.HIDEOUT:
+                enable_hideout_modals()  # Different modal set
+```
+
+### **SceneTransitionManager Integration**
+
+#### **Minimal Required Changes**
+```gdscript
+# In SceneTransitionManager._resolve_map_path()
+# Simply remove or comment out the results scene mapping:
+# OLD:
+"results":
+    return "res://scenes/ui/ResultsScreen.tscn"  # ← Remove this line
+
+# The ResultsScreen will now be a modal overlay, not a separate scene
+```
+
+#### **Why This Works Perfectly**
+- **StateManager** continues handling major application flow (Menu ↔ Hideout ↔ Arena)
+- **SceneTransitionManager** continues loading scenes (Arena.tscn, Hideout.tscn, MainMenu.tscn)
+- **UIManager** adds the missing layer for in-scene overlays (modals within Arena, Hideout, etc.)
+- **No breaking changes** to existing state management or scene loading logic
+
+### **Integration Benefits**
+
+#### **Enhanced User Experience**
+- Player can see Arena background behind ResultsScreen (better context)
+- Smooth modal transitions without jarring scene changes
+- Consistent modal patterns across all game screens
+
+#### **Improved Architecture**
+- Clear separation: StateManager (app flow) + UIManager (UI overlays)
+- Existing pause/session management continues working perfectly
+- Modal buttons leverage proven StateManager transition logic
+- No duplication of scene management responsibility
+
+#### **Development Benefits**
+- Build upon existing, tested state management
+- Minimal refactoring required
+- Easy to add new modals (inventory, character screen) later
+- Debug modes and state validation preserved
