@@ -22,7 +22,7 @@ var _transform_update_needed: bool = true
 
 # MULTIMESH INVESTIGATION: Feature flags for stepwise performance testing
 var investigation_step_1_colors_disabled: bool = true  # Already implemented
-var investigation_step_2_early_preallocation: bool = false
+var investigation_step_2_early_preallocation: bool = true
 var investigation_step_3_30hz_only: bool = false  # false = 60Hz, true = 30Hz only
 var investigation_step_4_bypass_grouping: bool = false
 var investigation_step_5_single_multimesh: bool = false
