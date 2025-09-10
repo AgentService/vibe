@@ -929,6 +929,14 @@ func _on_debug_mode_toggled(enabled: bool) -> void:
 	# Update checkboxes to reflect new debug mode state
 	_update_cheat_checkboxes()
 
+func _re_enable_god_mode_after_kill() -> void:
+	"""Re-enable god mode after debug kill player - called via timer to avoid lambda capture issues"""
+	if CheatSystem and not CheatSystem.is_god_mode_active():
+		CheatSystem.toggle_god_mode()
+		Logger.debug("Re-enabled god mode after debug kill", "debug")
+		# Update checkbox to reflect restored god mode state
+		_update_cheat_checkboxes()
+
 func _on_kill_player_pressed() -> void:
 	Logger.info("Kill player button pressed", "debug")
 	
@@ -950,13 +958,7 @@ func _on_kill_player_pressed() -> void:
 		# Re-enable god mode after a short delay if it was active
 		if was_god_mode_active:
 			# Use a timer to re-enable god mode after damage is processed
-			get_tree().create_timer(0.1).timeout.connect(func():
-				if CheatSystem and not CheatSystem.is_god_mode_active():
-					CheatSystem.toggle_god_mode()
-					Logger.debug("Re-enabled god mode after debug kill", "debug")
-					# Update checkbox to reflect restored god mode state
-					_update_cheat_checkboxes()
-			)
+			get_tree().create_timer(0.1).timeout.connect(_re_enable_god_mode_after_kill)
 	else:
 		Logger.warn("DamageService not available for kill player", "debug")
 		# Re-enable god mode immediately if damage service failed

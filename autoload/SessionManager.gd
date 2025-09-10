@@ -108,8 +108,12 @@ func _perform_reset_sequence(reason: ResetReason, context: Dictionary) -> void:
 		Logger.debug("Reset step 4: Resetting progression", "session")
 		_reset_progression(reason, context)
 	
-	# Step 5: Reset UI state
-	Logger.debug("Reset step 5: Resetting UI", "session")
+	# Step 5: Clear temporary visual effects (preserve permanent nodes)
+	Logger.debug("Reset step 5: Clearing temporary effects", "session")
+	_clear_temporary_effects()
+	
+	# Step 6: Reset UI state
+	Logger.debug("Reset step 6: Resetting UI", "session")
 	_reset_ui_state(reason, context)
 	
 	# Wait one more frame for everything to settle
@@ -190,6 +194,87 @@ func _reset_ui_state(reason: ResetReason, context: Dictionary) -> void:
 	
 	# Emit event for UI systems to listen to
 	EventBus.session_ui_reset.emit({"reason": reason, "context": context})
+
+func _clear_temporary_effects() -> void:
+	"""Clear temporary visual effects while preserving permanent visual nodes like MeleeCone"""
+	var scene_tree = get_tree()
+	if not scene_tree or not scene_tree.current_scene:
+		return
+	
+	var cleared_count = 0
+	
+	# Clear MultiMesh projectiles (always temporary)
+	var multimesh_nodes = _find_multimesh_projectiles(scene_tree.current_scene)
+	for mm_node in multimesh_nodes:
+		if mm_node.multimesh and mm_node.multimesh.instance_count > 0:
+			mm_node.multimesh.instance_count = 0
+			cleared_count += 1
+			Logger.debug("Cleared MultiMesh projectiles: %s" % mm_node.name, "session")
+	
+	# Clear visual effects group (temporary effects only)
+	var effects_nodes = scene_tree.get_nodes_in_group("visual_effects")
+	for effect in effects_nodes:
+		if effect.has_method("clear_all"):
+			effect.clear_all()
+			cleared_count += 1
+		elif effect.has_method("reset"):
+			effect.reset()
+			cleared_count += 1
+	
+	# Clear temporary melee effects but preserve permanent visual nodes
+	var melee_effects = _find_melee_effects(scene_tree.current_scene)
+	if melee_effects:
+		for child in melee_effects.get_children():
+			# Only clear temporary effects, preserve permanent visual nodes like MeleeCone
+			if _is_temporary_effect_node(child):
+				child.queue_free()
+				cleared_count += 1
+				Logger.debug("Cleared temporary melee effect: %s" % child.name, "session")
+	
+	if cleared_count > 0:
+		Logger.debug("Cleared %d temporary effect systems" % cleared_count, "session")
+
+func _is_temporary_effect_node(node: Node) -> bool:
+	"""Determine if a node is a temporary effect that should be cleared during reset"""
+	var node_name = node.name.to_lower()
+	
+	# Preserve permanent visual nodes
+	if node_name.contains("meleecone") or node_name.contains("cone"):
+		return false
+	
+	# Clear temporary effect nodes (projectiles, particles, etc.)
+	if node_name.contains("projectile") or node_name.contains("particle") or node_name.contains("temp"):
+		return true
+	
+	# Default: preserve nodes unless explicitly temporary
+	return false
+
+func _find_multimesh_projectiles(node: Node) -> Array[MultiMeshInstance2D]:
+	"""Find MultiMesh projectile nodes for clearing"""
+	var result: Array[MultiMeshInstance2D] = []
+	
+	if node is MultiMeshInstance2D:
+		var mm_node = node as MultiMeshInstance2D
+		if mm_node.name.to_lower().contains("projectile") or mm_node.name.contains("MM_Projectiles"):
+			result.append(mm_node)
+	
+	for child in node.get_children():
+		var child_results = _find_multimesh_projectiles(child)
+		result.append_array(child_results)
+	
+	return result
+
+func _find_melee_effects(node: Node) -> Node2D:
+	"""Find the MeleeEffects node in the scene tree"""
+	if node.name == "MeleeEffects":
+		return node as Node2D
+	
+	for child in node.get_children():
+		var result = _find_melee_effects(child)
+		if result:
+			return result
+	
+	return null
 
 func _reason_to_string(reason: ResetReason) -> String:
 	"""Convert reset reason enum to readable string"""
