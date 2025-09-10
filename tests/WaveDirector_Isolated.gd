@@ -140,7 +140,7 @@ func _update_info_display():
 func _process(_delta):
 	_update_info_display()
 
-# Test entity registration validation for goblin registration task
+# Test entity registration validation for scene-based enemy registration
 func _test_entity_registration():
 	print("=== Testing Entity Registration ===")
 	
@@ -154,7 +154,7 @@ func _test_entity_registration():
 	var initial_debug := EntityTracker.get_debug_info()
 	print("Initial EntityTracker state: %d alive entities (%s)" % [initial_debug.alive_entities, str(initial_debug.types)])
 	
-	# Spawn several goblins manually through WaveDirector V2 spawn 
+	# Spawn several scene enemies manually through WaveDirector V2 spawn 
 	var spawn_count = 5
 	for i in range(spawn_count):
 		_spawn_test_enemy("basic")
@@ -162,7 +162,7 @@ func _test_entity_registration():
 	
 	await get_tree().process_frame  # Final processing frame
 	
-	# Check if all goblins registered correctly 
+	# Check if all scene enemies registered correctly 
 	var post_spawn_debug := EntityTracker.get_debug_info()
 	var enemy_count := EntityTracker.get_entities_by_type("enemy").size()
 	
@@ -171,9 +171,9 @@ func _test_entity_registration():
 	
 	# Validation
 	if enemy_count == spawn_count:
-		print("✓ PASS: All %d goblins registered in EntityTracker" % spawn_count)
+		print("✓ PASS: All %d scene enemies registered in EntityTracker" % spawn_count)
 	else:
-		print("✗ FAIL: Expected %d goblins, found %d in EntityTracker" % [spawn_count, enemy_count])
+		print("✗ FAIL: Expected %d scene enemies, found %d in EntityTracker" % [spawn_count, enemy_count])
 
 # Test unified clear-all functionality
 func _test_clear_all():

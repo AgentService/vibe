@@ -317,13 +317,7 @@ func _clear_temporary_effects() -> void:
 	
 	var cleared_count = 0
 	
-	# Clear MultiMesh projectiles (always temporary)
-	var multimesh_nodes = _find_multimesh_projectiles(scene_tree.current_scene)
-	for mm_node in multimesh_nodes:
-		if mm_node.multimesh and mm_node.multimesh.instance_count > 0:
-			mm_node.multimesh.instance_count = 0
-			cleared_count += 1
-			Logger.debug("Cleared MultiMesh projectiles: %s" % mm_node.name, "session")
+	# Clean slate approach for future projectile system
 	
 	# Clear visual effects group (temporary effects only)
 	var effects_nodes = scene_tree.get_nodes_in_group("visual_effects")
@@ -363,20 +357,6 @@ func _is_temporary_effect_node(node: Node) -> bool:
 	# Default: preserve nodes unless explicitly temporary
 	return false
 
-func _find_multimesh_projectiles(node: Node) -> Array[MultiMeshInstance2D]:
-	"""Find MultiMesh projectile nodes for clearing"""
-	var result: Array[MultiMeshInstance2D] = []
-	
-	if node is MultiMeshInstance2D:
-		var mm_node = node as MultiMeshInstance2D
-		if mm_node.name.to_lower().contains("projectile") or mm_node.name.contains("MM_Projectiles"):
-			result.append(mm_node)
-	
-	for child in node.get_children():
-		var child_results = _find_multimesh_projectiles(child)
-		result.append_array(child_results)
-	
-	return result
 
 func _find_melee_effects(node: Node) -> Node2D:
 	"""Find the MeleeEffects node in the scene tree"""

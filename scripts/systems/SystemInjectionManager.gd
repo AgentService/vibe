@@ -42,7 +42,7 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 #	Logger.info("AbilitySystem injected into Arena", "systems")
 #	
 #	injected_ability_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-#	injected_ability_system.projectiles_updated.connect(arena_ref.multimesh_manager.update_projectiles)
+#	# Future: Connect projectile updates when projectile system is rebuilt
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	arena_ref.arena_system = injected_arena_system
@@ -67,7 +67,6 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 	Logger.info("WaveDirector injected into Arena", "systems")
 	
 	injected_wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	injected_wave_director.enemies_updated.connect(arena_ref.multimesh_manager.update_enemies)
 	
 	# Inject WaveDirector into visual effects manager if it exists
 	if arena_ref.visual_effects_manager:

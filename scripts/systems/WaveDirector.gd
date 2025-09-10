@@ -286,8 +286,7 @@ func _on_combat_step(payload) -> void:
 	
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
-	var alive_enemies := get_alive_enemies()
-	enemies_updated.emit(alive_enemies)
+	# DECISION: No longer emit enemies_updated signal for MultiMesh - scene enemies self-manage
 
 ## DAMAGE V3: Handle unified damage sync events for pooled enemies
 func _on_damage_entity_sync(payload: Dictionary) -> void:
@@ -388,79 +387,49 @@ func _spawn_enemy_v2() -> void:
 	_spawn_from_config_v2(legacy_enemy_type, cfg)
 
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
-	# Boss detection - route to scene spawning for boss-tier enemies
-	if spawn_config.render_tier == "boss":
-		_spawn_boss_scene(spawn_config)
-		return
-	
-	# Use existing pooled spawn logic for regular enemies
-	var free_idx := _find_free_enemy()
-	if free_idx == -1:
-		Logger.warn("WaveDirector: No free enemy slots available for V2 spawn of %s" % spawn_config.template_id, "radar")
-		return
-	
-	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
-	var direction: Vector2 = (target_pos - spawn_config.position).normalized()
-	
-	var enemy := enemies[free_idx]
-	enemy.setup_with_type(enemy_type, spawn_config.position, direction * spawn_config.speed)
-	
-	# PHASE 7 OPTIMIZATION: Update bit-field when spawning
-	_set_enemy_alive(free_idx, true)
-	
-	# DAMAGE V3: Register enemy with EntityTracker
-	var entity_id = get_enemy_entity_id(free_idx)
-	var entity_data = {
-		"id": entity_id,
-		"type": "enemy", 
-		"hp": enemy.hp,
-		"max_hp": enemy.max_hp,
-		"alive": true,
-		"pos": spawn_config.position  # Use spawn position directly for consistency with boss registration
-	}
-	
-	# Register enemy with systems
-	EntityTracker.register_entity(entity_id, entity_data)
-	DamageService.register_entity(entity_id, entity_data)
-	
-	if Logger.is_debug():
-		Logger.debug("Spawned V2 enemy: " + str(spawn_config.template_id) + " " + spawn_config.debug_string(), "enemies")
+	# DECISION: Switch to scene-based enemies only - no more MultiMesh pooled enemies
+	# All enemies (boss, elite, regular, swarm) now use existing boss scene spawning logic
+	_spawn_boss_scene(spawn_config)
 
-# Boss scene spawning for V2 system
+# Scene-based spawning for all enemy types (bosses and regular enemies)
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	# Use preloaded boss scene for performance
-	var boss_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id, _preloaded_boss_scenes["ancient_lich"])
-	if not boss_scene:
-		Logger.warn("Failed to get preloaded boss scene: " + spawn_config.template_id, "waves")
+	# Try to get specific scene for this enemy type
+	var enemy_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id)
+	
+	# For boss-tier enemies, fall back to ancient_lich if no specific scene
+	if not enemy_scene and spawn_config.render_tier == "boss":
+		enemy_scene = _preloaded_boss_scenes.get("ancient_lich")
+	
+	if not enemy_scene:
+		Logger.warn("No scene available for enemy type: " + spawn_config.template_id + " (render_tier: " + spawn_config.render_tier + ")", "waves")
 		return
 	
-	# Instantiate boss scene
-	var boss_instance = boss_scene.instantiate()
-	if not boss_instance:
-		Logger.warn("Failed to instantiate boss scene", "waves")
+	# Instantiate enemy scene
+	var enemy_instance = enemy_scene.instantiate()
+	if not enemy_instance:
+		Logger.warn("Failed to instantiate enemy scene", "waves")
 		return
 	
-	# Setup boss with spawn config
-	if boss_instance.has_method("setup_from_spawn_config"):
-		boss_instance.spawn_config = spawn_config
-		boss_instance.setup_from_spawn_config(spawn_config)
+	# Setup enemy with spawn config
+	if enemy_instance.has_method("setup_from_spawn_config"):
+		enemy_instance.spawn_config = spawn_config
+		enemy_instance.setup_from_spawn_config(spawn_config)
 	
 	# Add to ArenaRoot for proper scene ownership
 	var arena_root = _get_arena_root()
-	arena_root.add_child(boss_instance)
+	arena_root.add_child(enemy_instance)
 	
 	# Add to groups for proper cleanup
-	boss_instance.add_to_group("arena_owned")
-	boss_instance.add_to_group("enemies")
+	enemy_instance.add_to_group("arena_owned")
+	enemy_instance.add_to_group("enemies")
 
-	# Register with boss hit feedback system
-	if boss_hit_feedback:
-		boss_hit_feedback.register_boss(boss_instance)
+	# Register with boss hit feedback system (only for actual bosses)
+	if spawn_config.render_tier == "boss" and boss_hit_feedback:
+		boss_hit_feedback.register_boss(enemy_instance)
 		Logger.debug("Boss registered with hit feedback system", "waves")
-	else:
-		Logger.debug("BossHitFeedback not available for boss registration", "waves")
 	
-	Logger.info("V2 Boss spawned: " + spawn_config.template_id + " (" + boss_instance.name + ") at " + str(spawn_config.position), "waves")
+	Logger.info("Scene enemy spawned: " + spawn_config.template_id + " (" + enemy_instance.name + ") at " + str(spawn_config.position), "waves")
+
 
 # HYBRID SPAWNING SYSTEM: Core routing logic
 func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:
@@ -752,9 +721,7 @@ func _clear_all_enemies() -> void:
 	_alive_enemies_cache.clear()
 	_cache_dirty = true
 	
-	# Emit empty enemies list to clear MultiMesh rendering
-	var empty_enemies: Array[EnemyEntity] = []
-	enemies_updated.emit(empty_enemies)
+	# DECISION: No longer emit enemies_updated for MultiMesh - scene enemies handled by EntityClearingService
 	
 	Logger.info("WaveDirector: All enemies cleared", "waves")
 
