@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://cls5g8pq1t2x1"]
+
+[ext_resource type="Script" path="res://tests/BossPerformance_integration_test.gd" id="1_46n7x"]
+
+[node name="BossPerformance_integration_test" type="Node"]
+script = ExtResource("1_46n7x")

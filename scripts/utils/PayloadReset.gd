@@ -68,3 +68,21 @@ static func clear_entity_update_payload(d: Dictionary) -> void:
 	# Preserve keys to avoid shape changes; reset values to defaults
 	d["entity_id"] = &""
 	d["position"] = Vector2.ZERO
+
+## Factory function for creating boss batch payload dictionaries.
+## Used by BossUpdateManager ObjectPool for zero-allocation batch processing.
+static func create_boss_batch_payload() -> Dictionary:
+	return {
+		"ids": PackedStringArray(),
+		"positions": PackedVector2Array(),
+		"ai_flags": PackedByteArray()
+	}
+
+## Clear a boss batch payload dictionary to default values.
+## Preserves all keys to avoid shape changes and maintains zero-allocation.
+## @param d: Dictionary boss batch payload to reset
+static func clear_boss_batch_payload(d: Dictionary) -> void:
+	# Preserve keys to avoid shape changes; reset values to defaults
+	d["ids"] = PackedStringArray()
+	d["positions"] = PackedVector2Array()
+	d["ai_flags"] = PackedByteArray()

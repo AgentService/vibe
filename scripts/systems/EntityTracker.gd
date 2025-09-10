@@ -65,6 +65,36 @@ func update_entity_position(id: String, new_pos: Vector2) -> void:
 	# Update entity data
 	entity_data["pos"] = new_pos
 
+## BOSS PERFORMANCE V2: Batch update entity positions for zero-allocation processing
+## Used by BossUpdateManager to replace individual position updates
+## @param ids: PackedStringArray of entity IDs
+## @param positions: PackedVector2Array of corresponding positions
+func batch_update_positions(ids: PackedStringArray, positions: PackedVector2Array) -> void:
+	var count = ids.size()
+	if count != positions.size():
+		Logger.warn("EntityTracker: batch_update_positions size mismatch - ids:%d positions:%d" % [count, positions.size()], "performance")
+		return
+	
+	for i in range(count):
+		var id: String = ids[i]
+		var new_pos: Vector2 = positions[i]
+		
+		if not _entities.has(id):
+			continue
+			
+		var entity_data = _entities[id]
+		var old_pos = entity_data.get("pos", Vector2.ZERO)
+		
+		# Update spatial index
+		_remove_from_spatial_index(id, old_pos)
+		_update_spatial_index(id, new_pos)
+		
+		# Update entity data
+		entity_data["pos"] = new_pos
+	
+	if Logger.is_level_enabled(Logger.LogLevel.DEBUG) and count > 0:
+		Logger.debug("EntityTracker: batch updated %d entity positions" % count, "performance")
+
 ## Get all entities within radius of position
 ## @param center: Center position for search
 ## @param radius: Search radius in pixels

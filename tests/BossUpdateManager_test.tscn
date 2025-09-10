@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bdxvvs2h3riq6"]
+
+[ext_resource type="Script" path="res://tests/BossUpdateManager_test.gd" id="1_kqxdg"]
+
+[node name="BossUpdateManager_test" type="Node"]
+script = ExtResource("1_kqxdg")
