@@ -34,8 +34,8 @@ var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary
 # Shadow configuration (override in child classes) - GLOBAL DEFAULTS FOR ALL BOSSES
 var shadow_enabled: bool = true
 var shadow_size_multiplier: float = 2.5  # Global default: 3.0x HitBox size (much bigger shadows)
-var shadow_opacity: float = 0.4  # Global default: 60% opacity
-var shadow_offset_y: float = 3.0  # Global default: 2px above HitBox bottom
+var shadow_opacity: float = 0.6  # Global default: 60% opacity
+var shadow_offset_y: float = -5.0  # Global default: 2px above HitBox bottom
 
 # Child classes should override these methods
 func get_boss_name() -> String:
@@ -116,19 +116,29 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	# Set position
 	global_position = config.position
 	
-	# Apply scaling only to visual and gameplay components (performance-friendly)
+	# Apply unified scaling system
 	var scale_factor = config.size_scale
+	apply_unified_scaling(scale_factor)
 	
-	# Apply sprite scaling regardless of scale factor (fixes 1.0x scaling issue)
-	# Try immediate sprite scaling first
+	# Apply shadow config if available (only override if explicitly configured)
+	if config.shadow_config and not config.shadow_config.is_empty():
+		configure_shadow(config.shadow_config)
+	
+	Logger.info(get_boss_name() + " configured: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2fx" % [max_health, damage, speed, scale_factor], "bosses")
+
+## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
+func apply_unified_scaling(scale_factor: float) -> void:
+	Logger.info("Applying unified scaling %.2fx to %s" % [scale_factor, get_boss_name()], "debug")
+	
+	# Step 1: Scale sprite (visual component)
 	if animated_sprite:
 		_apply_sprite_scaling(scale_factor)
 	else:
 		# Defer sprite scaling if animated_sprite isn't ready yet
-		Logger.debug("AnimatedSprite2D not ready, deferring sprite scaling", "bosses")
+		Logger.debug("AnimatedSprite2D not ready, deferring sprite scaling", "debug")
 		call_deferred("_apply_sprite_scaling", scale_factor)
 	
-	# Scale collision shape for movement/physics
+	# Step 2: Scale collision shape (physics/movement)
 	var collision_shape = get_node_or_null("CollisionShape2D")
 	if collision_shape:
 		var old_scale = collision_shape.scale
@@ -137,7 +147,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	else:
 		Logger.warn("CollisionShape2D not found for scaling", "debug")
 	
-	# Scale hitbox for combat detection (only scale the parent Area2D, not the child CollisionShape2D)
+	# Step 3: Scale hitbox (combat detection) - only parent Area2D, child inherits
 	var hitbox = get_node_or_null("HitBox")
 	if hitbox:
 		var old_scale = hitbox.scale
@@ -146,16 +156,30 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	else:
 		Logger.warn("HitBox not found for scaling", "debug")
 	
-	# Apply shadow config if available (only override if explicitly configured)
-	if config.shadow_config and not config.shadow_config.is_empty():
-		configure_shadow(config.shadow_config)
+	# Step 4: Notify all scalable components after scaling changes
+	call_deferred("_notify_components_scaled", scale_factor)
 	
-	# Trigger health bar readjustment after scaling (health bar needs to resize based on new HitBox scale)
+	Logger.info("Unified scaling applied: all components scaled to %.2fx" % scale_factor, "debug")
+
+## COMPONENT SCALING NOTIFICATION: Notify all components that boss has been scaled
+func _notify_components_scaled(scale_factor: float) -> void:
+	Logger.debug("Notifying components of %.2fx scaling" % scale_factor, "debug")
+	
+	# Notify health bar to readjust
 	var health_bar = get_node_or_null("BossHealthBar")
 	if health_bar and health_bar.has_method("auto_adjust_to_hitbox"):
-		call_deferred("_readjust_health_bar_after_scaling")
+		health_bar.auto_adjust_to_hitbox()
+		Logger.debug("Health bar readjusted after scaling", "debug")
 	
-	Logger.info(get_boss_name() + " configured: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
+	# Notify shadow to readjust (critical for shadow scaling fix)
+	if boss_shadow and boss_shadow.has_method("readjust_to_hitbox"):
+		boss_shadow.readjust_to_hitbox()
+		Logger.debug("Shadow readjusted after scaling", "debug")
+	
+	# Future: Add other scalable components here
+	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
+	
+	Logger.debug("All components notified of scaling", "debug")
 
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
 func _update_ai_batch(dt: float) -> void:
@@ -418,9 +442,12 @@ func get_scaling_debug_info() -> Dictionary:
 		"sprite_position": Vector2.ZERO,
 		"collision_scale": Vector2.ZERO,
 		"hitbox_scale": Vector2.ZERO,
+		"shadow_scale": Vector2.ZERO,
+		"shadow_position": Vector2.ZERO,
 		"has_sprite": false,
 		"has_collision": false,
-		"has_hitbox": false
+		"has_hitbox": false,
+		"has_shadow": false
 	}
 	
 	# Get sprite info
@@ -441,6 +468,12 @@ func get_scaling_debug_info() -> Dictionary:
 		info.hitbox_scale = hitbox.scale
 		info.has_hitbox = true
 	
+	# Get shadow info
+	if boss_shadow:
+		info.shadow_scale = boss_shadow.scale
+		info.shadow_position = boss_shadow.position
+		info.has_shadow = true
+	
 	return info
 
 ## DEBUG TOOLS: Print scaling debug info to console
@@ -450,14 +483,10 @@ func debug_print_scaling_info() -> void:
 	Logger.info("Sprite: scale=%v position=%v (present: %s)" % [info.sprite_scale, info.sprite_position, info.has_sprite], "debug")
 	Logger.info("Collision: scale=%v (present: %s)" % [info.collision_scale, info.has_collision], "debug")
 	Logger.info("HitBox: scale=%v (present: %s)" % [info.hitbox_scale, info.has_hitbox], "debug")
+	Logger.info("Shadow: scale=%v position=%v (present: %s)" % [info.shadow_scale, info.shadow_position, info.has_shadow], "debug")
 	
 	# HitBoxShape inherits scaling from parent HitBox Area2D (no separate scaling needed)
 	
-	Logger.info("=== END DEBUG ===", "debug")
+	Logger.info("=== UNIFIED SCALING DEBUG END ===", "debug")
 
-## HEALTH BAR SCALING FIX: Readjust health bar size after HitBox scaling
-func _readjust_health_bar_after_scaling() -> void:
-	var health_bar = get_node_or_null("BossHealthBar")
-	if health_bar and health_bar.has_method("auto_adjust_to_hitbox"):
-		health_bar.auto_adjust_to_hitbox()
-		Logger.info("Health bar readjusted after HitBox scaling for %s" % get_boss_name(), "debug")
+# REMOVED: Old fragmented health bar scaling fix - now handled by unified component notification system

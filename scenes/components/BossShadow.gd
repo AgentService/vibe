@@ -12,7 +12,7 @@ class_name BossShadow
 # Shadow configuration - can be overridden by parent boss
 @export var size_multiplier: float = 1.0: set = _set_size_multiplier  # Size relative to HitBox (neutral default)
 @export var opacity: float = 0.6: set = _set_opacity  # Shadow transparency
-@export var offset_y: float = 5.0: set = _set_offset_y  # Pixels above HitBox bottom
+@export var offset_y: float = -5.0: set = _set_offset_y  # Pixels above HitBox bottom
 @export var enabled: bool = true: set = _set_enabled  # Can disable shadows per-boss
 
 var auto_sized: bool = false
@@ -55,7 +55,7 @@ func auto_adjust_to_hitbox() -> void:
 	var width: float = 32.0  # Default fallback width
 	var height: float = 32.0  # Default fallback height
 	
-	# Calculate dimensions based on shape type
+	# Calculate BASE dimensions from shape (before scale transform)
 	if shape is CircleShape2D:
 		var circle = shape as CircleShape2D
 		width = circle.radius * 2.0
@@ -69,12 +69,20 @@ func auto_adjust_to_hitbox() -> void:
 		_apply_default_shadow_settings()
 		return
 	
-	# Calculate shadow dimensions with size multiplier - shadow should match HitBox width
-	var shadow_width = width * size_multiplier  # Match HitBox width with size multiplier
-	var shadow_height = width * size_multiplier * 0.3  # Height based on WIDTH for realistic ground shadow
+	# CRITICAL: Apply HitBox scale transform to get EFFECTIVE dimensions
+	# This accounts for boss scaling (e.g., 2.0x size_factor makes HitBox 2x larger)
+	var effective_width = width * hitbox_node.scale.x
+	var effective_height = height * hitbox_node.scale.y
 	
-	# Position shadow at the bottom of the HitBox with configurable offset
-	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (height * 0.5)
+	Logger.debug("Shadow calc: base=%.1fx%.1f, hitbox_scale=%v, effective=%.1fx%.1f" % [
+		width, height, hitbox_node.scale, effective_width, effective_height], "debug")
+	
+	# Calculate shadow dimensions using EFFECTIVE (scaled) dimensions
+	var shadow_width = effective_width * size_multiplier  # Match effective HitBox width with size multiplier  
+	var shadow_height = effective_width * size_multiplier * 0.3  # Height based on effective WIDTH for realistic ground shadow
+	
+	# Position shadow at the bottom of the EFFECTIVE HitBox with configurable offset
+	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (effective_height * 0.5)
 	var shadow_y = hitbox_world_bottom - offset_y  # Apply offset_y for positioning adjustment
 	
 	# Apply size and position (accounting for both HitBox and HitBoxShape positions)
@@ -84,7 +92,8 @@ func auto_adjust_to_hitbox() -> void:
 	scale.y = shadow_height / texture.get_height() if texture else 0.4
 	
 	auto_sized = true
-	Logger.debug("BossShadow auto-adjusted: width=%.1f, height=%.1f, y=%.1f" % [shadow_width, shadow_height, shadow_y], "bosses")
+	Logger.debug("BossShadow auto-adjusted: effective_hitbox=%.1fx%.1f, shadow=%.1fx%.1f, y=%.1f" % [
+		effective_width, effective_height, shadow_width, shadow_height, shadow_y], "debug")
 
 ## Apply default shadow settings when HitBox is not available
 func _apply_default_shadow_settings() -> void:
