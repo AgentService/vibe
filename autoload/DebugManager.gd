@@ -22,7 +22,6 @@ var boss_scaling: BossScaling
 var wave_director: WaveDirector
 var boss_spawn_manager: BossSpawnManager
 var arena_ui_manager: ArenaUIManager
-var ability_trigger: DebugAbilityTrigger
 var debug_system_controls: DebugSystemControls
 
 func _ready() -> void:
@@ -32,9 +31,6 @@ func _ready() -> void:
 	# Load boss scaling configuration
 	_load_boss_scaling()
 	
-	# Create and add DebugAbilityTrigger
-	ability_trigger = DebugAbilityTrigger.new()
-	add_child(ability_trigger)
 	
 	# Check debug configuration to determine initial state
 	_check_debug_config()
@@ -398,21 +394,6 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 	# If AI is currently paused, immediately apply paused state to all new enemies
 	_apply_ai_pause_to_new_entity()
 
-# Ability triggering methods
-func get_entity_abilities(entity_id: String) -> Array[String]:
-	if not debug_enabled or not ability_trigger:
-		return []
-	return ability_trigger.get_entity_abilities(entity_id)
-
-func trigger_entity_ability(entity_id: String, ability_name: String) -> bool:
-	if not debug_enabled or not ability_trigger:
-		return false
-	return ability_trigger.trigger_ability(entity_id, ability_name)
-
-func get_ability_cooldown(entity_id: String, ability_name: String) -> Dictionary:
-	if not debug_enabled or not ability_trigger:
-		return {"ready": false, "cooldown_remaining": 0.0}
-	return ability_trigger.get_ability_cooldown(entity_id, ability_name)
 
 func _apply_ai_pause_to_new_entity() -> void:
 	"""If AI is currently paused, immediately apply paused state to newly spawned entities"""

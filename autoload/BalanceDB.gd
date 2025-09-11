@@ -6,7 +6,7 @@ extends Node
 signal balance_reloaded()
 
 var _combat_balance: CombatBalance
-var _abilities_balance: AbilitiesBalance  
+  
 var _melee_balance: MeleeBalance
 var _player_balance: PlayerBalance
 var _waves_balance: WavesBalance
@@ -143,7 +143,6 @@ func load_all_balance_data() -> void:
 
 func _load_balance_resources() -> void:
 	_combat_balance = _load_resource("res://data/balance/combat.tres", "combat")
-	_abilities_balance = _load_resource("res://data/balance/abilities.tres", "abilities")
 	_melee_balance = _load_resource("res://data/balance/melee.tres", "melee") 
 	_player_balance = _load_resource("res://data/balance/player.tres", "player")
 	_waves_balance = _load_resource("res://data/balance/waves.tres", "waves")
@@ -174,14 +173,6 @@ func _create_fallback_resource(key: String) -> Resource:
 			combat.damage_queue_max_per_tick = fallback_data.get("damage_queue_max_per_tick", 2048)
 			combat.damage_queue_tick_rate_hz = fallback_data.get("damage_queue_tick_rate_hz", 30.0)
 			return combat
-		"abilities":
-			var abilities: AbilitiesBalance = AbilitiesBalance.new()
-			abilities.max_projectiles = fallback_data.get("max_projectiles", 1000)
-			abilities.projectile_speed = fallback_data.get("projectile_speed", 300.0)
-			abilities.projectile_ttl = fallback_data.get("projectile_ttl", 3.0)
-			abilities.arena_bounds = fallback_data.get("arena_bounds", 2000.0)
-			abilities.projectile_culling_distance = fallback_data.get("projectile_culling_distance", 1500.0)
-			return abilities
 		"melee":
 			var melee: MeleeBalance = MeleeBalance.new()
 			melee.damage = fallback_data.get("damage", 55.0)
@@ -249,24 +240,6 @@ func get_combat_value(key: String) -> Variant:
 			Logger.error("Unknown combat balance key: " + key, "balance")
 			return _get_fallback_value("combat", key)
 
-func get_abilities_value(key: String) -> Variant:
-	if _abilities_balance == null:
-		return _get_fallback_value("abilities", key)
-	
-	match key:
-		"max_projectiles":
-			return _abilities_balance.max_projectiles
-		"projectile_speed":
-			return _abilities_balance.projectile_speed
-		"projectile_ttl":
-			return _abilities_balance.projectile_ttl
-		"arena_bounds":
-			return _abilities_balance.arena_bounds
-		"projectile_culling_distance":
-			return _abilities_balance.projectile_culling_distance
-		_:
-			Logger.error("Unknown abilities balance key: " + key, "balance")
-			return _get_fallback_value("abilities", key)
 
 func get_waves_value(key: String) -> Variant:
 	if _waves_balance == null:
