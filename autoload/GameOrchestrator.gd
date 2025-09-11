@@ -46,6 +46,11 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	"""Handle global input - centralized escape handling for pause functionality."""
 	if event.is_action_pressed("ui_cancel") and event is InputEventKey:
+		# Check if UIManager has an active modal first
+		if UIManager and UIManager.has_active_modal():
+			Logger.debug("ESC blocked by GameOrchestrator - modal is active", "orchestrator")
+			return  # Let UIManager handle it
+		
 		Logger.info("ESC key detected in GameOrchestrator", "orchestrator")
 		_try_toggle_pause()
 		get_viewport().set_input_as_handled()  # Mark input as handled

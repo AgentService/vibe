@@ -1,8 +1,12 @@
-extends Control
+extends "res://scripts/ui_framework/BaseModal.gd"
 
 ## Results screen displayed after a run ends (death or victory).
-## Shows as a centered popup over the game background (greyed out).
+## Shows as a modal overlay over the arena background (dimmed).
 ## Provides options to revive (placeholder), restart, return to hideout, or main menu.
+## 
+## Integrated with UIManager for unified modal behavior and StateManager for scene transitions.
+
+# Modal configuration set in _ready() - Results screen is a system modal that doesn't pause
 
 @onready var background: ColorRect = $Background
 @onready var popup_panel: Panel = $PopupPanel
@@ -16,50 +20,79 @@ extends Control
 var run_result: Dictionary = {}
 
 func _ready() -> void:
-	Logger.info("ResultsScreen initialized", "ui")
+	# Configure modal properties
+	modal_type = UIManager.ModalType.RESULTS_SCREEN
+	dims_background = false  # We manage our own background dimming
+	pauses_game = true       # Pause the game when results are shown
+	closeable_with_escape = false  # Force user to make a choice
+	keyboard_navigable = true
+	default_focus_control = restart_button
+	
+	super._ready()  # Initialize BaseModal
+	
+	# Connect to session manager signals for debugging
+	if SessionManager:
+		SessionManager.session_reset_started.connect(_on_session_reset_started)
+		SessionManager.session_reset_completed.connect(_on_session_reset_completed)
+	
+	Logger.info("ResultsScreen modal initialized", "ui")
 	_setup_ui_elements()
 	_connect_button_signals()
 
+func _initialize_modal_content(data: Dictionary) -> void:
+	"""Initialize modal with run result data - defer until nodes are ready"""
+	if data.has("run_result"):
+		# Defer the display until @onready nodes are available
+		call_deferred("display_run_results", data.run_result)
+	else:
+		Logger.warn("ResultsScreen initialized without run_result data", "ui")
+
 func _setup_ui_elements() -> void:
-	"""Configure UI elements with default styling."""
+	"""Configure UI elements with modal theme styling."""
 	
-	# Configure popup background overlay (dark semi-transparent)
-	background.color = Color(0.0, 0.0, 0.0, 0.7)
+	# Hide our own background since UIManager handles dimming
+	background.visible = false
 	
-	# Configure popup panel styling
-	popup_panel.add_theme_color_override("panel", Color(0.2, 0.2, 0.2, 0.95))
+	# Ensure popup panel is visible and properly positioned
+	popup_panel.visible = true
+	popup_panel.modulate = Color.WHITE  # Ensure not transparent
+	
+	# Apply modal theme to the popup panel and controls
+	apply_modal_theme()
+	
+	Logger.info("ResultsScreen UI setup: popup_panel visible=%s, modulate=%s" % [popup_panel.visible, popup_panel.modulate], "ui")
 	
 	# Configure title
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 32)
-	title_label.add_theme_color_override("font_color", Color.WHITE)
 	
 	# Configure stats display
 	stats_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	stats_label.add_theme_font_size_override("font_size", 16)
-	stats_label.add_theme_color_override("font_color", Color.WHITE)
 	
 	# Configure buttons with consistent sizing
 	var button_min_size = Vector2(160, 45)
 	
-	# Revive button (disabled placeholder)
-	revive_button.text = "🔄 Revive (Coming Soon)"
+	# Revive button (disabled placeholder) - would respawn in current run state
+	revive_button.text = "💖 Revive Here (Coming Soon)"
 	revive_button.custom_minimum_size = Vector2(320, 50)
 	revive_button.disabled = true
-	revive_button.add_theme_color_override("font_color_disabled", Color(0.6, 0.6, 0.6))
 	
 	# Action buttons
-	restart_button.text = "🔄 Restart Run"
+	restart_button.text = "🔄 Restart Fresh"  # Make it clear this resets everything
 	restart_button.custom_minimum_size = button_min_size
+	restart_button.focus_mode = Control.FOCUS_ALL  # Ensure focusable
+	restart_button.disabled = false  # Ensure enabled
 	
 	hideout_button.text = "🏠 Return to Hideout"
 	hideout_button.custom_minimum_size = button_min_size
+	hideout_button.focus_mode = Control.FOCUS_ALL  # Ensure focusable
+	hideout_button.disabled = false  # Ensure enabled
 	
 	menu_button.text = "📱 Return to Menu"
 	menu_button.custom_minimum_size = Vector2(200, 45)
+	menu_button.focus_mode = Control.FOCUS_ALL  # Ensure focusable
+	menu_button.disabled = false  # Ensure enabled
 	
-	# Focus on restart by default (since revive is disabled)
-	restart_button.grab_focus()
+	Logger.debug("ResultsScreen UI elements configured with modal theme", "ui")
 
 func _connect_button_signals() -> void:
 	"""Connect button press signals to handler functions."""
@@ -70,16 +103,30 @@ func _connect_button_signals() -> void:
 	menu_button.pressed.connect(_on_menu_pressed)
 
 func _on_restart_pressed() -> void:
-	"""Handle Restart Run button press."""
-	Logger.info("Restart run requested from results screen", "ui")
+	"""Handle Restart Run button press - resets entire session and starts fresh."""
+	Logger.info("🔄 RESTART BUTTON PRESSED - Signal received!", "ui")
+	Logger.info("Restart run requested from results screen (full session reset)", "ui")
 	
-	# Start a new run with the same arena
+	# Close modal first
+	close_modal()
+	
+	# Debug: Show what's getting reset
+	Logger.info("RESTART DEBUG: preserve_progression=false, forcing fresh start", "ui")
+	
+	# Start a completely fresh run with session reset (level, XP, upgrades all reset)
 	var arena_id = run_result.get("arena_id", StringName("arena"))
-	StateManager.start_run(arena_id, {"source": "results_restart"})
+	StateManager.start_run(arena_id, {
+		"source": "results_restart",
+		"preserve_progression": false,  # CRITICAL: Force full reset
+		"reset_type": "fresh_start"
+	})
 
 func _on_hideout_pressed() -> void:
 	"""Handle Return to Hideout button press."""
 	Logger.info("Return to hideout requested from results screen", "ui")
+	
+	# Close modal first
+	close_modal()
 	
 	StateManager.go_to_hideout({"source": "results_screen"})
 
@@ -87,18 +134,28 @@ func _on_menu_pressed() -> void:
 	"""Handle Return to Menu button press."""
 	Logger.info("Return to menu requested from results screen", "ui")
 	
+	# Close modal first
+	close_modal()
+	
 	StateManager.return_to_menu(StringName("user_request"), {"source": "results_screen"})
 
 func _on_revive_pressed() -> void:
-	"""Handle Revive button press (placeholder for future implementation)."""
-	Logger.info("Revive requested from results screen (not implemented yet)", "ui")
+	"""Handle Revive button press - respawn in current run state without resetting progress."""
+	Logger.info("Revive requested from results screen", "ui")
+	
+	# Close modal first
+	close_modal()
 	
 	# TODO: Implement revive system
-	# This could:
-	# - Consume revive currency/items
-	# - Reset player health and position
-	# - Resume the current run
+	# This should:
+	# - Consume revive currency/items  
+	# - Reset player health to full
+	# - Reset player position to safe location
+	# - Resume the current run (keep level, XP, upgrades, enemy spawns)
 	# - Track revive usage for balance
+	# 
+	# For now, just unpause and let player continue (placeholder)
+	Logger.warn("Revive system not implemented yet - resuming game", "ui")
 
 func display_run_results(result: Dictionary) -> void:
 	"""Display the run results data in the UI."""
@@ -111,7 +168,7 @@ func display_run_results(result: Dictionary) -> void:
 			title_label.text = "💀 RUN FAILED"
 			title_label.modulate = Color(1.0, 0.4, 0.4)  # Light red
 			# For death, show revive option more prominently
-			revive_button.text = "💖 Revive (Coming Soon)"
+			revive_button.text = "💖 Revive Here (Coming Soon)"
 		"victory":
 			title_label.text = "🎉 RUN COMPLETE!"
 			title_label.modulate = Color(0.4, 1.0, 0.4)  # Light green
@@ -154,3 +211,14 @@ func display_run_results(result: Dictionary) -> void:
 	stats_label.text = stats_text
 	
 	Logger.info("Displayed run results: %s" % result, "ui")
+
+# Debug signal handlers for session reset monitoring
+func _on_session_reset_started(reason: SessionManager.ResetReason, context: Dictionary) -> void:
+	"""Monitor session reset start"""
+	var reason_name = SessionManager.ResetReason.keys()[reason]
+	Logger.info("🔄 SESSION RESET STARTED: %s with context: %s" % [reason_name, context], "ui")
+
+func _on_session_reset_completed(reason: SessionManager.ResetReason, duration_ms: float) -> void:
+	"""Monitor session reset completion"""
+	var reason_name = SessionManager.ResetReason.keys()[reason]
+	Logger.info("✅ SESSION RESET COMPLETED: %s in %.1fms" % [reason_name, duration_ms], "ui")

@@ -29,11 +29,34 @@ var hurt_duration: float = 0.6  # Duration to play hurt animation
 # Registration state management
 var _registration_in_progress: bool = false
 
+# Death state management
+var is_dead: bool = false
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
+	
+	# Reset all state variables on scene ready (critical for restart functionality)
+	is_dead = false
+	is_rolling = false
+	invulnerable = false
+	is_attacking = false
+	is_hurt = false
+	_registration_in_progress = false
+	
+	# Reset timers
+	roll_timer = 0.0
+	attack_timer = 0.0
+	hurt_timer = 0.0
+	
+	# Reset animation state
+	current_animation = "idle_down"
+	current_direction = "down"
+	
 	current_health = get_max_health()
+	Logger.info("Player reset: is_dead=%s, health=%d, all state cleared" % [is_dead, current_health], "player")
+	
 	_setup_collision()
 	_setup_animations()
 	
@@ -322,6 +345,11 @@ func _register_with_damage_system() -> void:
 		Logger.warn("Player registration attempted with invalid health: %d - resetting to max" % current_health, "player")
 		current_health = get_max_health()
 	
+	# CRITICAL: Ensure is_dead is false during registration (restart scenarios)
+	if is_dead:
+		Logger.warn("Player registration with is_dead=true - forcing reset to false", "player")
+		is_dead = false
+	
 	var entity_data = {
 		"id": "player",
 		"type": "player",
@@ -385,6 +413,11 @@ func is_registered_with_damage_system() -> bool:
 
 # Auto-registration fallback for critical operations
 func ensure_damage_registration() -> bool:
+	# Skip if player is dead - no need to re-register dead players
+	if is_dead:
+		Logger.debug("Player is dead - skipping damage registration", "player")
+		return false
+	
 	# Skip if registration is already in progress
 	if _registration_in_progress:
 		Logger.debug("Player registration in progress - waiting for completion", "player")
@@ -429,6 +462,12 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	
 	# Handle death or damage animation
 	if is_death:
+		# Prevent multiple death sequences
+		if is_dead:
+			Logger.debug("Player: Already dead, ignoring additional death damage", "player")
+			return
+		
+		is_dead = true
 		_play_hurt_animation()
 		EventBus.player_died.emit()
 		
@@ -537,8 +576,8 @@ func _handle_death_sequence() -> void:
 	Logger.info("Player: Waiting for systems cleanup...", "player")
 	await get_tree().create_timer(0.5).timeout
 	
-	# Now transition to results screen
-	Logger.info("Player: Death sequence complete, transitioning to results", "player")
-	StateManager.end_run(death_result)
+	# Now show results modal over arena background
+	Logger.info("Player: Death sequence complete, showing results modal", "player")
+	UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, {"run_result": death_result})
 
 # Death overlay method removed - no longer blocking result screen buttons

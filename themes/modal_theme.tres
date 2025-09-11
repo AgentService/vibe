@@ -1,0 +1,34 @@
+[gd_resource type="Resource" script_class="ModalTheme" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/ui_framework/ModalTheme.gd" id="1_modal_theme"]
+
+[resource]
+script = ExtResource("1_modal_theme")
+background_color = Color(0.2, 0.2, 0.2, 0.95)
+dim_color = Color(0, 0, 0, 0.7)
+border_color = Color(0.4, 0.4, 0.4, 1)
+accent_color = Color(0.3, 0.6, 1, 1)
+text_color = Color(1, 1, 1, 1)
+text_color_secondary = Color(0.8, 0.8, 0.8, 1)
+text_color_disabled = Color(0.5, 0.5, 0.5, 1)
+button_normal_color = Color(0.3, 0.3, 0.3, 1)
+button_hover_color = Color(0.4, 0.4, 0.4, 1)
+button_pressed_color = Color(0.2, 0.2, 0.2, 1)
+button_disabled_color = Color(0.25, 0.25, 0.25, 1)
+panel_color = Color(0.15, 0.15, 0.15, 0.98)
+panel_border_color = Color(0.4, 0.4, 0.4, 1)
+title_font_size = 24
+header_font_size = 18
+body_font_size = 14
+small_font_size = 12
+modal_margin = 40
+content_padding = 20
+element_spacing = 10
+section_spacing = 20
+corner_radius = 8
+border_width = 1
+animation_duration = 0.3
+fast_animation_duration = 0.15
+button_corner_radius = 6
+button_padding_horizontal = 16
+button_padding_vertical = 8

@@ -117,6 +117,15 @@ signal character_selected(profile: Dictionary)
 @warning_ignore("unused_signal")
 signal game_paused_changed(payload)
 
+# UI/MODAL SIGNALS
+## Modal displayed - emitted by UIManager when a modal is shown
+@warning_ignore("unused_signal")
+signal modal_displayed(modal_type, modal_instance)
+
+## Modal hidden - emitted by UIManager when a modal is closed
+@warning_ignore("unused_signal")
+signal modal_hidden(modal_instance)
+
 # CAMERA SIGNALS
 ## Arena bounds changed - emitted by ArenaSystem when new arena loads
 @warning_ignore("unused_signal")

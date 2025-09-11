@@ -71,14 +71,14 @@ func start_run(arena_id: StringName, context: Dictionary = {}) -> void:
 	_transition_to_state(State.ARENA, context)
 
 func end_run(result: Dictionary) -> void:
-	"""End current run and transition to results."""
+	"""End current run and emit signals - results are now shown via UIManager modal."""
 	Logger.info("Ending run - result: %s" % result, "state")
 	
-	# Emit run ended signal
+	# Emit run ended signal for other systems
 	run_ended.emit(result)
 	
-	# Transition to results with run data
-	_transition_to_state(State.RESULTS, result)
+	# Note: Results are now displayed via UIManager.show_modal() instead of scene transition
+	# State remains ARENA with results overlay - scene transitions triggered by user actions
 
 func return_to_menu(reason: StringName, context: Dictionary = {}) -> void:
 	"""Return to main menu from any state."""

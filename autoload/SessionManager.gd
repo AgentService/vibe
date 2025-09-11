@@ -88,7 +88,7 @@ func _perform_reset_sequence(reason: ResetReason, context: Dictionary) -> void:
 	
 	# Step 1: Clear all entities (enemies, bosses, projectiles) - but not for player death
 	Logger.debug("Reset step 1: Clearing entities", "session")
-	_clear_entities()
+	_clear_entities(reason, context)
 	entities_cleared.emit()
 	
 	# Wait for entity clearing to complete
@@ -157,22 +157,37 @@ func _validate_player_registration_post_reset() -> void:
 	else:
 		Logger.info("Player registration validated successfully after reset", "session")
 
-func _clear_entities() -> void:
+func _clear_entities(reason: ResetReason, context: Dictionary) -> void:
 	"""Clear all entities using the production entity clearing system"""
-	Logger.warn("🔴 SessionManager._clear_entities() called - this should not happen during player death!", "session")
+	Logger.debug("SessionManager._clear_entities() called for reason: %s" % _reason_to_string(reason), "session")
 	
 	if not EntityClearingService:
 		Logger.error("EntityClearingService not available - critical system failure!", "session")
 		return
 	
-	# Check if this is a player death scenario - preserve enemies but always clean transients
-	if _is_player_death_scenario():
-		Logger.info("Player death scenario - preserving enemies but cleaning transient objects (XP orbs)", "session")
-		# Only clear transient objects (XP orbs, etc.) but preserve enemies for results screen
+	# Determine clearing strategy based on reset reason and context
+	var preserve_progression = context.get("preserve_progression", true)
+	var should_preserve_enemies = false
+	
+	match reason:
+		ResetReason.PLAYER_DEATH:
+			# Death but not fresh restart - preserve enemies for results screen
+			should_preserve_enemies = preserve_progression
+		ResetReason.LEVEL_RESTART:
+			# Fresh restart should clear everything regardless of player state
+			should_preserve_enemies = preserve_progression
+		ResetReason.DEBUG_RESET, ResetReason.MAP_TRANSITION:
+			# These should always clear everything
+			should_preserve_enemies = false
+		_:
+			# Default to preserving based on context
+			should_preserve_enemies = preserve_progression
+	
+	if should_preserve_enemies:
+		Logger.info("Preserving enemies but clearing transient objects (XP orbs)", "session")
 		EntityClearingService.clear_transient_objects()
 	else:
-		Logger.debug("Clearing all world objects via EntityClearingService", "session")
-		# Full clear - entities and transients
+		Logger.info("Clearing ALL world objects (enemies + transients) for fresh start", "session")
 		EntityClearingService.clear_all_world_objects()
 
 func _is_player_death_scenario() -> bool:

@@ -38,6 +38,7 @@ DamageService="*res://scripts/systems/damage_v2/DamageRegistry.gd"
 BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
 LimboConsole="*res://addons/limbo_console/limbo_console.gd"
 GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
+UIManager="*res://autoload/UIManager.gd"
 
 [display]
 
