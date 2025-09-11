@@ -63,6 +63,9 @@ func _ready() -> void:
 	# DAMAGE V3: Register with unified damage system
 	_register_with_damage_system()
 	
+	# CAMERA: Setup player-following camera
+	CameraSystem.setup_camera(self)
+	
 	# Connect to melee attack signals for animation
 	if EventBus.has_signal("melee_attack_started"):
 		EventBus.melee_attack_started.connect(_on_melee_attack_started)

@@ -1,10 +1,10 @@
 extends "res://scripts/ui_framework/BaseModal.gd"
 
 ## Results screen displayed after a run ends (death or victory).
-## Shows as a modal overlay over the arena background (dimmed).
+## Shows as a modal overlay using BaseModal foundation and MainTheme styling.
 ## Provides options to revive (placeholder), restart, return to hideout, or main menu.
 ## 
-## Integrated with UIManager for unified modal behavior and StateManager for scene transitions.
+## Integrated with UIManager for modal behavior and MainTheme for consistent styling.
 
 # Modal configuration set in _ready() - Results screen is a system modal that doesn't pause
 
@@ -18,6 +18,7 @@ extends "res://scripts/ui_framework/BaseModal.gd"
 @onready var menu_button: Button = $PopupPanel/VBoxContainer/ButtonContainer/ButtonRow2/MenuButton
 
 var run_result: Dictionary = {}
+var main_theme: MainTheme
 
 func _ready() -> void:
 	# Configure modal properties
@@ -41,6 +42,9 @@ func _ready() -> void:
 
 func _initialize_modal_content(data: Dictionary) -> void:
 	"""Initialize modal with run result data - defer until nodes are ready"""
+	# Load theme from ThemeManager
+	_load_theme_from_manager()
+	
 	if data.has("run_result"):
 		# Defer the display until @onready nodes are available
 		call_deferred("display_run_results", data.run_result)
@@ -57,8 +61,8 @@ func _setup_ui_elements() -> void:
 	popup_panel.visible = true
 	popup_panel.modulate = Color.WHITE  # Ensure not transparent
 	
-	# Apply modal theme to the popup panel and controls
-	apply_modal_theme()
+	# Apply MainTheme styling to the popup panel and controls
+	_apply_main_theme()
 	
 	Logger.info("ResultsScreen UI setup: popup_panel visible=%s, modulate=%s" % [popup_panel.visible, popup_panel.modulate], "ui")
 	
@@ -92,7 +96,7 @@ func _setup_ui_elements() -> void:
 	menu_button.focus_mode = Control.FOCUS_ALL  # Ensure focusable
 	menu_button.disabled = false  # Ensure enabled
 	
-	Logger.debug("ResultsScreen UI elements configured with modal theme", "ui")
+	Logger.debug("ResultsScreen UI elements configured with MainTheme", "ui")
 
 func _connect_button_signals() -> void:
 	"""Connect button press signals to handler functions."""
@@ -211,6 +215,10 @@ func display_run_results(result: Dictionary) -> void:
 	stats_label.text = stats_text
 	
 	Logger.info("Displayed run results: %s" % result, "ui")
+	
+	# Reapply theme after updating content
+	if main_theme:
+		_apply_main_theme()
 
 # Debug signal handlers for session reset monitoring
 func _on_session_reset_started(reason: SessionManager.ResetReason, context: Dictionary) -> void:
@@ -222,3 +230,26 @@ func _on_session_reset_completed(reason: SessionManager.ResetReason, duration_ms
 	"""Monitor session reset completion"""
 	var reason_name = SessionManager.ResetReason.keys()[reason]
 	Logger.info("✅ SESSION RESET COMPLETED: %s in %.1fms" % [reason_name, duration_ms], "ui")
+
+func _load_theme_from_manager() -> void:
+	"""Load theme from ThemeManager."""
+	if ThemeManager:
+		main_theme = ThemeManager.get_theme()
+		Logger.debug("MainTheme loaded for ResultsScreen", "ui")
+	else:
+		Logger.error("ThemeManager autoload missing - critical UI framework dependency", "ui")
+
+func _apply_main_theme() -> void:
+	"""Apply MainTheme styling to ResultsScreen components."""
+	if not main_theme:
+		Logger.error("MainTheme not available - UI framework dependency missing", "ui")
+		return
+	
+	# Apply MainTheme to labels
+	main_theme.apply_label_theme(title_label, "title")
+	main_theme.apply_label_theme(stats_label, "")
+	
+	# EnhancedButton components auto-apply theme via their button_variant settings
+	# ThemedPanel component auto-applies theme via auto_theme = true
+	
+	Logger.debug("MainTheme applied to ResultsScreen components", "ui")

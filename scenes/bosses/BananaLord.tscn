@@ -61,7 +61,7 @@ animations = [{
 radius = 10.0499
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
-size = Vector2(14, 59)
+size = Vector2(24, 60)
 
 [node name="BananaLord" type="CharacterBody2D"]
 script = ExtResource("1_mjtd6")
@@ -79,7 +79,7 @@ shape = SubResource("CircleShape2D_vnul3")
 position = Vector2(-1.06667, -8.63333)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1.06667, 8.13333)
+position = Vector2(1.06667, 8.63333)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]

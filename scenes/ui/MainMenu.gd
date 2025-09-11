@@ -1,43 +1,52 @@
 extends Control
 
 ## MainMenu - Entry point for the game with navigation to character selection.
-## Provides basic menu options: Start Game, Options, and Quit.
+## Uses MainTheme system for consistent styling and enhanced button components.
 
-@onready var title_label: Label = $MenuContainer/TitleLabel
-@onready var continue_button: Button = $MenuContainer/ContinueButton
-@onready var start_game_button: Button = $MenuContainer/StartGameButton
-@onready var options_button: Button = $MenuContainer/OptionsButton
-@onready var quit_button: Button = $MenuContainer/QuitButton
+@onready var title_label: Label = $BackgroundPanel/MenuContainer/TitleLabel
+@onready var continue_button: Button = $BackgroundPanel/MenuContainer/ContinueButton
+@onready var start_game_button: Button = $BackgroundPanel/MenuContainer/StartGameButton
+@onready var options_button: Button = $BackgroundPanel/MenuContainer/OptionsButton
+@onready var quit_button: Button = $BackgroundPanel/MenuContainer/QuitButton
+
+# Theme system
+var main_theme: MainTheme
 
 func _ready() -> void:
 	Logger.info("MainMenu initialized", "mainmenu")
+	
+	# Load theme from ThemeManager
+	_load_theme_from_manager()
+	
 	_setup_ui_elements()
 	_connect_button_signals()
 	_update_button_visibility()
+	
+	# Register for theme changes
+	if ThemeManager:
+		ThemeManager.add_theme_listener(_on_theme_changed)
 	
 	# Set focus to appropriate button for keyboard navigation
 	_set_initial_focus()
 
 func _setup_ui_elements() -> void:
-	"""Configure UI elements with appropriate text and styling."""
+	"""Configure UI elements with MainTheme styling."""
 	
-	# Configure title
+	# Configure title with MainTheme
 	title_label.text = "VIBE ROGUELIKE"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 48)
 	
-	# Configure buttons
-	continue_button.text = "Continue"
-	start_game_button.text = "New Character"
-	options_button.text = "Options"
-	quit_button.text = "Quit"
+	# Apply MainTheme styling to title label
+	if main_theme:
+		main_theme.apply_label_theme(title_label, "title")
+		title_label.add_theme_font_size_override("font_size", main_theme.font_size_huge)
+		
+		Logger.debug("Applied MainTheme styling to MainMenu", "ui")
+	else:
+		Logger.error("MainTheme not available - UI framework dependency missing", "ui")
 	
-	# Set button sizes for consistency
-	var button_min_size = Vector2(200, 50)
-	continue_button.custom_minimum_size = button_min_size
-	start_game_button.custom_minimum_size = button_min_size
-	options_button.custom_minimum_size = button_min_size
-	quit_button.custom_minimum_size = button_min_size
+	# EnhancedButton components handle their own theming via button_variant
+	# ThemedPanel background handles its own theming via auto_theme = true
 
 func _connect_button_signals() -> void:
 	"""Connect button press signals to handler functions."""
@@ -143,6 +152,20 @@ func _update_button_visibility() -> void:
 	else:
 		Logger.debug("Continue button hidden - no characters available", "mainmenu")
 
+func _load_theme_from_manager() -> void:
+	"""Load theme from ThemeManager."""
+	if ThemeManager:
+		main_theme = ThemeManager.get_theme()
+		Logger.debug("MainTheme loaded from ThemeManager", "ui")
+	else:
+		Logger.error("ThemeManager autoload missing - critical UI framework dependency", "ui")
+
+func _on_theme_changed(new_theme: MainTheme) -> void:
+	"""Handle theme changes from ThemeManager."""
+	main_theme = new_theme
+	_setup_ui_elements()
+	Logger.debug("MainMenu updated with new theme", "ui")
+
 func _set_initial_focus() -> void:
 	"""Set initial focus to the most appropriate button."""
 	
@@ -151,3 +174,8 @@ func _set_initial_focus() -> void:
 		continue_button.grab_focus()
 	else:
 		start_game_button.grab_focus()
+
+func _exit_tree() -> void:
+	"""Clean up theme listener when node is removed."""
+	if ThemeManager:
+		ThemeManager.remove_theme_listener(_on_theme_changed)

@@ -1,0 +1,19 @@
+[gd_scene load_steps=5 format=3 uid="uid://bd7jet5t7enww"]
+
+[ext_resource type="PackedScene" uid="uid://1m8y72s2e63o" path="res://scenes/bosses/AncientLich.tscn" id="1_1d8uf"]
+[ext_resource type="PackedScene" uid="uid://8e6qf7vr1fh5" path="res://scenes/bosses/BananaLord.tscn" id="3_jtojs"]
+[ext_resource type="PackedScene" uid="uid://c5iwguoi5ujyi" path="res://scenes/bosses/DragonLord.tscn" id="5_us4kk"]
+[ext_resource type="PackedScene" uid="uid://cj52peu3ecx4l" path="res://scenes/bosses/DemonOverlord.tscn" id="7_xrprk"]
+
+[node name="ShadowTest" type="Node2D"]
+
+[node name="AncientLich" parent="." instance=ExtResource("1_1d8uf")]
+position = Vector2(-100, 0)
+
+[node name="BananaLord" parent="." instance=ExtResource("3_jtojs")]
+
+[node name="DragonLord" parent="." instance=ExtResource("5_us4kk")]
+position = Vector2(100, 0)
+
+[node name="DemonOverlord" parent="." instance=ExtResource("7_xrprk")]
+position = Vector2(165, -2)

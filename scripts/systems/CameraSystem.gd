@@ -39,6 +39,9 @@ func _ready() -> void:
 	# Lock zoom at default level - no zoom controls enabled
 	target_zoom = default_zoom
 	_connect_signals()
+	
+	# AUTO-SETUP: Only provide default camera for test scenes (no player)
+	call_deferred("_auto_setup_camera")
 
 func _connect_signals() -> void:
 	EventBus.arena_bounds_changed.connect(_on_arena_bounds_changed)
@@ -68,6 +71,12 @@ func setup_camera(player_node: Node2D) -> void:
 		push_error("CameraSystem: Cannot setup camera - player node is null")
 		return
 	
+	# Clean up any existing camera first (handles default camera switching)
+	if camera and is_instance_valid(camera):
+		camera.queue_free()
+		camera = null
+	
+	# Create new player-following camera
 	camera = Camera2D.new()
 	camera.name = "FollowCamera"
 	camera.zoom = Vector2(default_zoom, default_zoom)
@@ -82,6 +91,66 @@ func setup_camera(player_node: Node2D) -> void:
 	
 	# Initialize position tracking for signal optimization
 	last_camera_position = camera.global_position
+
+## AUTO-SETUP: Only provide default camera for test scenes (no player)
+func _auto_setup_camera() -> void:
+	# Skip if camera already exists (manual setup was called)
+	if camera:
+		return
+	
+	# Try to find player node
+	var player_node = _find_player_node()
+	if player_node:
+		# Player exists - do NOTHING, let player script handle camera setup
+		return
+	else:
+		# No player found - create centered default camera for test scenes
+		_create_default_camera()
+
+## Find player node in current scene
+func _find_player_node() -> Node2D:
+	# PlayerState doesn't expose the player reference directly
+	# Use scene tree search to find player node
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		return _search_for_player(current_scene)
+	
+	return null
+
+## Recursively search for player node
+func _search_for_player(node: Node) -> Node2D:
+	# Check common player node names
+	if node.name.to_lower().contains("player") and node is Node2D:
+		return node as Node2D
+	
+	# Search children
+	for child in node.get_children():
+		var result = _search_for_player(child)
+		if result:
+			return result
+	
+	return null
+
+## Create centered default camera for test scenes
+func _create_default_camera() -> void:
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		Logger.warn("CameraSystem: No current scene, cannot create default camera", "camera")
+		return
+	
+	camera = Camera2D.new()
+	camera.name = "DefaultCamera"
+	camera.position = Vector2.ZERO
+	camera.zoom = Vector2(default_zoom, default_zoom)
+	camera.enabled = true
+	
+	# Add to current scene root
+	current_scene.add_child(camera)
+	
+	# Initialize position tracking
+	last_camera_position = camera.global_position
+	
+	Logger.info("CameraSystem: Created default centered camera for scene: " + current_scene.name, "camera")
 
 func _process(delta: float) -> void:
 	if not camera:
