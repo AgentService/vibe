@@ -13,9 +13,6 @@ var wave_director: WaveDirector
 var melee_effects_node: Node2D
 var arena_viewport: Viewport
 
-# Internal state for debug projectile spawning
-var spawn_timer: float = 0.0
-var base_spawn_interval: float = 0.25
 
 # Visual configuration
 var visual_config: MeleeVisualConfig
@@ -45,17 +42,6 @@ func handle_melee_attack(target_pos: Vector2) -> void:
 	var alive_enemies = wave_director.get_alive_enemies()
 	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
 
-# Handle projectile attack toward target position  
-func handle_projectile_attack(target_pos: Vector2) -> void:
-	if not player:
-		return
-	
-	# TODO: Phase 2 - Replace with AbilityModule.cast_ability()
-	# AbilityModule.cast_ability(&"ranged_basic", {
-	#   "origin": player.global_position,
-	#   "target": target_pos
-	# })
-	spawn_debug_projectile(target_pos)
 
 # Handle auto-attack if enabled
 func handle_auto_attack() -> void:
@@ -69,50 +55,7 @@ func handle_auto_attack() -> void:
 	if alive_enemies.size() > 0:
 		melee_system.perform_attack(player_pos, melee_system.auto_attack_target, alive_enemies)
 
-# Update debug spawning (called from process)
-func handle_debug_spawning(delta: float) -> void:
-	# Only auto-shoot projectiles if player has projectile abilities
-	if not RunManager.stats.get("has_projectiles", false):
-		return
-		
-	spawn_timer += delta
-	var current_interval: float = base_spawn_interval / RunManager.stats.fire_rate_mult
-	
-	if spawn_timer >= current_interval:
-		spawn_timer = 0.0
-		spawn_debug_projectile()
 
-# Spawn a debug projectile toward mouse position
-func spawn_debug_projectile(target_pos: Vector2 = Vector2.ZERO) -> void:
-	if not player:
-		return
-	
-	var spawn_pos: Vector2 = player.global_position
-	var mouse_pos := target_pos
-	# If no target provided, get world mouse position from viewport
-	if mouse_pos == Vector2.ZERO and arena_viewport:
-		var screen_pos = arena_viewport.get_mouse_position()
-		mouse_pos = arena_viewport.get_camera_2d().get_global_transform() * screen_pos
-	var direction := (mouse_pos - spawn_pos).normalized()
-
-	var projectile_count: int = 1 + RunManager.stats.projectile_count_add
-	var base_speed: float = 480.0 * RunManager.stats.projectile_speed_mult
-	
-	for i in range(projectile_count):
-		var spread: float = 0.0
-		if projectile_count > 1:
-			var spread_range: float = 0.4
-			spread = RNG.randf_range("waves", -spread_range, spread_range) * (i - projectile_count / 2.0)
-		
-		var final_direction: Vector2 = direction.rotated(spread)
-		# TODO: Phase 2 - Replace with AbilityModule.cast_ability()
-		# AbilityModule.cast_ability(&"ranged_basic", {
-		#   "origin": spawn_pos,
-		#   "direction": final_direction,
-		#   "speed": base_speed,
-		#   "lifetime": 2.0
-		# })
-		Logger.debug("Projectile spawn disabled - waiting for AbilityModule (Phase 2)", "player")
 
 # Handle melee attack started signal from MeleeSystem
 func _on_melee_attack_signal(player_pos: Vector2, target_pos: Vector2) -> void:

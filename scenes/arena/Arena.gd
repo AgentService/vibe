@@ -224,7 +224,6 @@ func _setup_enemy_transforms() -> void:
 func _process(delta: float) -> void:
 	# Don't handle debug spawning when game is paused
 	if not get_tree().paused:
-		player_attack_handler.handle_debug_spawning(delta)
 		player_attack_handler.handle_auto_attack()
 		# Scene-based enemies handle their own animations
 	
@@ -288,10 +287,6 @@ func set_card_system(injected_card_system: CardSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_card_system(injected_card_system)
 
-# TODO: Phase 2 - Remove this function when AbilityModule becomes autoload
-# func set_ability_system(injected_ability_system: AbilitySystem) -> void:
-#	if system_injection_manager:
-#		system_injection_manager.set_ability_system(injected_ability_system)
 
 func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	if system_injection_manager:
@@ -414,7 +409,6 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 
 func _exit_tree() -> void:
 	# Cleanup signal connections with guards to prevent double disconnection
-	# TODO: Phase 2 - Remove ability_system cleanup when replaced with AbilityModule
 	if arena_system and arena_system.arena_loaded.is_connected(_on_arena_loaded):
 		arena_system.arena_loaded.disconnect(_on_arena_loaded)
 	
