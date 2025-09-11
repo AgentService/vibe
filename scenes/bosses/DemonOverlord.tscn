@@ -1,0 +1,328 @@
+[gd_scene load_steps=70 format=3 uid="uid://cj52peu3ecx4l"]
+
+[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
+[ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
+[ext_resource type="Texture2D" uid="uid://cj4li0w17cl0g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_000.png" id="3_south0"]
+[ext_resource type="Texture2D" uid="uid://chlnrlajhmk5g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_001.png" id="4_south1"]
+[ext_resource type="Texture2D" uid="uid://b457ceomq6ejn" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_002.png" id="5_south2"]
+[ext_resource type="Texture2D" uid="uid://rwionmxh8q5k" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_003.png" id="6_south3"]
+[ext_resource type="Texture2D" uid="uid://87aql55e4jsc" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_004.png" id="7_south4"]
+[ext_resource type="Texture2D" uid="uid://vpfhpnqnu7r0" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_005.png" id="8_south5"]
+[ext_resource type="Texture2D" uid="uid://cvm0e5o27ts5d" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_006.png" id="9_south6"]
+[ext_resource type="Texture2D" uid="uid://d1l2myef47ina" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_007.png" id="10_south7"]
+[ext_resource type="Texture2D" uid="uid://di566keyxjw3p" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_000.png" id="11_north0"]
+[ext_resource type="Texture2D" uid="uid://bfushsatdc1bj" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_001.png" id="12_north1"]
+[ext_resource type="Texture2D" uid="uid://bcstlxh5e10ft" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_002.png" id="13_north2"]
+[ext_resource type="Texture2D" uid="uid://cm3aup50l2fh4" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_003.png" id="14_north3"]
+[ext_resource type="Texture2D" uid="uid://cxfkkhxgduduy" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_004.png" id="15_north4"]
+[ext_resource type="Texture2D" uid="uid://f3b4wmhmfx3m" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_005.png" id="16_north5"]
+[ext_resource type="Texture2D" uid="uid://b2pnp5b1iku08" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_006.png" id="17_north6"]
+[ext_resource type="Texture2D" uid="uid://cpvwwcgmha6o4" path="res://assets/sprites/demon_overlord/animations/scary-walk/north/frame_007.png" id="18_north7"]
+[ext_resource type="Texture2D" uid="uid://b3x2njs3mtmac" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_000.png" id="19_east0"]
+[ext_resource type="Texture2D" uid="uid://fyphmwf3ask3" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_001.png" id="20_east1"]
+[ext_resource type="Texture2D" uid="uid://dy5w0wh38eces" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_002.png" id="21_east2"]
+[ext_resource type="Texture2D" uid="uid://c48k68hnxe53f" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_003.png" id="22_east3"]
+[ext_resource type="Texture2D" uid="uid://2iyu2ypyytgv" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_004.png" id="23_east4"]
+[ext_resource type="Texture2D" uid="uid://nfy33igxjpdk" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_005.png" id="24_east5"]
+[ext_resource type="Texture2D" uid="uid://i5h3ewnnfkju" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_006.png" id="25_east6"]
+[ext_resource type="Texture2D" uid="uid://b13yhbap44e61" path="res://assets/sprites/demon_overlord/animations/scary-walk/east/frame_007.png" id="26_east7"]
+[ext_resource type="Texture2D" uid="uid://yi8utjf8oar0" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_000.png" id="27_west0"]
+[ext_resource type="Texture2D" uid="uid://vq1tcarwldrs" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_001.png" id="28_west1"]
+[ext_resource type="Texture2D" uid="uid://df0ukka1y4now" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_002.png" id="29_west2"]
+[ext_resource type="Texture2D" uid="uid://d25dcf8hxyuju" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_003.png" id="30_west3"]
+[ext_resource type="Texture2D" uid="uid://c5g4h8g3stp2j" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_004.png" id="31_west4"]
+[ext_resource type="Texture2D" uid="uid://bwjy50uk8rfj4" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_005.png" id="32_west5"]
+[ext_resource type="Texture2D" uid="uid://dmn1lj4lbuy5p" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_006.png" id="33_west6"]
+[ext_resource type="Texture2D" uid="uid://cby3vo0johtlw" path="res://assets/sprites/demon_overlord/animations/scary-walk/west/frame_007.png" id="34_west7"]
+[ext_resource type="Texture2D" uid="uid://dt0qs10x4sxh6" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_000.png" id="35_ne0"]
+[ext_resource type="Texture2D" uid="uid://c7jpquvha64om" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_001.png" id="36_ne1"]
+[ext_resource type="Texture2D" uid="uid://2krrt12tigc" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_002.png" id="37_ne2"]
+[ext_resource type="Texture2D" uid="uid://dgunwx8kfjsi4" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_003.png" id="38_ne3"]
+[ext_resource type="Texture2D" uid="uid://djlmebjysbryk" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_004.png" id="39_ne4"]
+[ext_resource type="Texture2D" uid="uid://c6vvip5al6iee" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_005.png" id="40_ne5"]
+[ext_resource type="Texture2D" uid="uid://bnyg43668vpjc" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_006.png" id="41_ne6"]
+[ext_resource type="Texture2D" uid="uid://ci5t2t22gpv8t" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-east/frame_007.png" id="42_ne7"]
+[ext_resource type="Texture2D" uid="uid://ytfq0fgmevpe" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_000.png" id="43_se0"]
+[ext_resource type="Texture2D" uid="uid://bqdq702odlyfk" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_001.png" id="44_se1"]
+[ext_resource type="Texture2D" uid="uid://d1xbpcr0pxtla" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_002.png" id="45_se2"]
+[ext_resource type="Texture2D" uid="uid://dtkorsty7ptao" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_003.png" id="46_se3"]
+[ext_resource type="Texture2D" uid="uid://jqf0v0bbptkn" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_004.png" id="47_se4"]
+[ext_resource type="Texture2D" uid="uid://meerdlohedj0" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_005.png" id="48_se5"]
+[ext_resource type="Texture2D" uid="uid://85olxvbyw82d" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_006.png" id="49_se6"]
+[ext_resource type="Texture2D" uid="uid://vabixscw7g8n" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-east/frame_007.png" id="50_se7"]
+[ext_resource type="Texture2D" uid="uid://dy1ojii3tlus" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_000.png" id="51_nw0"]
+[ext_resource type="Texture2D" uid="uid://c3nglob1yqbs" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_001.png" id="52_nw1"]
+[ext_resource type="Texture2D" uid="uid://cpmcdgfmqshri" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_002.png" id="53_nw2"]
+[ext_resource type="Texture2D" uid="uid://soojuee1630f" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_003.png" id="54_nw3"]
+[ext_resource type="Texture2D" uid="uid://fgxjd6p6fgoc" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_004.png" id="55_nw4"]
+[ext_resource type="Texture2D" uid="uid://c8rmd6ijgtcmv" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_005.png" id="56_nw5"]
+[ext_resource type="Texture2D" uid="uid://cx6ei6ttk18wb" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_006.png" id="57_nw6"]
+[ext_resource type="Texture2D" uid="uid://di5cii8a5sh6l" path="res://assets/sprites/demon_overlord/animations/scary-walk/north-west/frame_007.png" id="58_nw7"]
+[ext_resource type="Texture2D" uid="uid://dt3jxlrym5lg1" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_000.png" id="59_sw0"]
+[ext_resource type="Texture2D" uid="uid://rxsh1tg18elc" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_001.png" id="60_sw1"]
+[ext_resource type="Texture2D" uid="uid://3o4p3n2mevfu" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_002.png" id="61_sw2"]
+[ext_resource type="Texture2D" uid="uid://cl850gprnokof" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_003.png" id="62_sw3"]
+[ext_resource type="Texture2D" uid="uid://by5og8jamcoau" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_004.png" id="63_sw4"]
+[ext_resource type="Texture2D" uid="uid://dnno4b188b51n" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_005.png" id="64_sw5"]
+[ext_resource type="Texture2D" uid="uid://jlhs0df3prd0" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_006.png" id="65_sw6"]
+[ext_resource type="Texture2D" uid="uid://ctqrptu7dbw6m" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_007.png" id="66_sw7"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_demon"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("19_east0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("20_east1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_east2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_east3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_east4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_east5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_east6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("26_east7")
+}],
+"loop": true,
+"name": &"scary_walk_east",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("11_north0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("12_north1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_north2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_north3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_north4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("16_north5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_north6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_north7")
+}],
+"loop": true,
+"name": &"scary_walk_north",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("35_ne0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_ne1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_ne2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("38_ne3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_ne4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_ne5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_ne6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42_ne7")
+}],
+"loop": true,
+"name": &"scary_walk_north_east",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("51_nw0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("52_nw1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("53_nw2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("54_nw3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("55_nw4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("56_nw5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("57_nw6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("58_nw7")
+}],
+"loop": true,
+"name": &"scary_walk_north_west",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_south0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_south1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_south2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_south3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_south4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("8_south5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_south6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_south7")
+}],
+"loop": true,
+"name": &"scary_walk_south",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("43_se0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("44_se1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("45_se2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("46_se3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("47_se4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("48_se5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("49_se6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("50_se7")
+}],
+"loop": true,
+"name": &"scary_walk_south_east",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("59_sw0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("60_sw1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("61_sw2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("62_sw3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("63_sw4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("64_sw5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("65_sw6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("66_sw7")
+}],
+"loop": true,
+"name": &"scary_walk_south_west",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("27_west0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_west1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_west2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_west3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_west4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("32_west5")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_west6")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_west7")
+}],
+"loop": true,
+"name": &"scary_walk_west",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_gki53"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
+size = Vector2(17, 28.75)
+
+[node name="DemonOverlord" type="CharacterBody2D"]
+script = ExtResource("1_kjm5n")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_demon")
+animation = &"scary_walk_south"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_gki53")
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+position = Vector2(0, 0.375)
+shape = SubResource("RectangleShape2D_04ech")
+
+[node name="AttackTimer" type="Timer" parent="."]
+
+[node name="BossHealthBar" parent="." instance=ExtResource("1_861tk")]

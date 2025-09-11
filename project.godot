@@ -39,6 +39,7 @@ BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
 LimboConsole="*res://addons/limbo_console/limbo_console.gd"
 GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
+ThemeManager="*res://autoload/ThemeManager.gd"
 
 [display]
 

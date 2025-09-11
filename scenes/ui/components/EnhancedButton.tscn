@@ -1,0 +1,16 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/components/EnhancedButton.gd" id="1_0"]
+
+[node name="EnhancedButton" type="Button"]
+process_mode = 3
+text = "Enhanced Button"
+script = ExtResource("1_0")
+button_variant = ""
+auto_theme = true
+hover_animation = true
+press_animation = true
+keyboard_shortcut = ""
+hover_scale = 1.05
+press_scale = 0.95
+animation_speed = 0.1

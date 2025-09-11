@@ -117,26 +117,21 @@ scale = Vector2(3, 3)
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -8.5)
+position = Vector2(0, -3)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -5)
 shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
 position = Vector2(-1, -8.5)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1, 3)
+position = Vector2(1, 8.5)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
-offset_left = -7.0
-offset_top = -15.0
-offset_right = 7.0
-offset_bottom = -13.0

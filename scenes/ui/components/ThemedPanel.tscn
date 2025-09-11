@@ -1,0 +1,15 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/components/ThemedPanel.gd" id="1_0"]
+
+[node name="ThemedPanel" type="Panel"]
+process_mode = 3
+custom_minimum_size = Vector2(200, 100)
+script = ExtResource("1_0")
+panel_variant = ""
+auto_theme = true
+show_border = true
+rounded_corners = true
+drop_shadow = false
+glow_effect = false
+hover_highlight = false

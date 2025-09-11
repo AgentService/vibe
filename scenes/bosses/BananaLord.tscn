@@ -61,33 +61,28 @@ animations = [{
 radius = 10.0499
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
-size = Vector2(14, 44.6667)
+size = Vector2(14, 59)
 
 [node name="BananaLord" type="CharacterBody2D"]
-scale = Vector2(3, 3)
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(1.66667, -2.66667)
+position = Vector2(1.6, -2.8)
 scale = Vector2(0.1, 0.1)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(-0.333333, 0.333333)
+position = Vector2(-0.400015, 0.200008)
 shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
-position = Vector2(-1, -8.5)
+position = Vector2(-1.06667, -8.63333)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0.666667, 14.1667)
+position = Vector2(1.06667, 8.13333)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
-offset_left = -7.0
-offset_top = -33.3333
-offset_right = 7.0
-offset_bottom = -31.3333

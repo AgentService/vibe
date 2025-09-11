@@ -13,10 +13,10 @@ class_name CardSelection
 @onready var card_margin: MarginContainer = $CenterContainer/VBoxContainer/CardMargin
 @onready var card_container: HBoxContainer = $CenterContainer/VBoxContainer/CardMargin/CardContainer
 
-# Theme and responsive properties
-var responsive_theme: Theme
+# Theme and responsive properties  
 var viewport_size: Vector2
 var scale_factor: float = 1.0
+var main_theme: MainTheme
 
 # Card system reference and data
 var card_system: CardSystem
@@ -37,12 +37,16 @@ func _ready() -> void:
 	# Setup responsive design
 	_setup_responsive_design()
 	
-	# Load theme
-	_load_theme()
+	# Load theme from ThemeManager
+	_load_theme_from_manager()
 	
 	# Setup UI styling
 	_setup_ui_styling()
 	
+	
+	# Register for theme changes
+	if ThemeManager:
+		ThemeManager.add_theme_listener(_on_theme_changed)
 	
 	Logger.info("CardSelection initialized with responsive design", "ui")
 
@@ -57,40 +61,42 @@ func _setup_responsive_design() -> void:
 	# Setup responsive margins
 	_setup_responsive_margins()
 
-func _load_theme() -> void:
-	"""Load and apply responsive theme."""
-	if ResourceLoader.exists("res://data/themes/card_selection_theme.tres"):
-		var base_theme = load("res://data/themes/card_selection_theme.tres") as Theme
-		responsive_theme = ThemeGenerator.create_responsive_theme(viewport_size) if base_theme else null
-		theme = responsive_theme
-		Logger.debug("Responsive theme loaded successfully", "ui")
+func _load_theme_from_manager() -> void:
+	"""Load theme from ThemeManager."""
+	if ThemeManager:
+		main_theme = ThemeManager.get_theme()
+		Logger.debug("MainTheme loaded from ThemeManager", "ui")
 	else:
-		Logger.warn("Card selection theme not found, using fallback styling", "ui")
+		Logger.warn("ThemeManager not available, using fallback styling", "ui")
 
 func _setup_ui_styling() -> void:
-	"""Apply styling to UI elements."""
-	# Background styling
-	background.color = Color(0.05, 0.05, 0.15, 0.85)  # Deep blue-black
-	
-	if responsive_theme:
-		# Apply themed styling with responsive font sizes
-		title_label.add_theme_font_size_override("font_size", ResponsiveUI.get_responsive_font_size(48, viewport_size))
-		instruction_label.add_theme_font_size_override("font_size", ResponsiveUI.get_responsive_font_size(20, viewport_size))
+	"""Apply styling to UI elements using MainTheme."""
+	if main_theme:
+		# Background styling with theme color
+		background.color = main_theme.background_overlay
 		
-		# Apply themed colors
-		title_label.add_theme_color_override("font_color", responsive_theme.get_color("font_color", "TitleLabel"))
-		title_label.add_theme_color_override("font_shadow_color", responsive_theme.get_color("font_shadow_color", "TitleLabel"))
-		instruction_label.add_theme_color_override("font_color", responsive_theme.get_color("font_color", "SubtitleLabel"))
+		# Apply MainTheme styling with responsive font sizes
+		var title_size = ResponsiveUI.get_responsive_font_size(main_theme.font_size_large, viewport_size)
+		var instruction_size = ResponsiveUI.get_responsive_font_size(main_theme.font_size_body, viewport_size)
 		
-		# Apply shadow constants
-		title_label.add_theme_constant_override("shadow_offset_x", responsive_theme.get_constant("shadow_offset_x", "TitleLabel"))
-		title_label.add_theme_constant_override("shadow_offset_y", responsive_theme.get_constant("shadow_offset_y", "TitleLabel"))
+		# Title label - using "title" variant
+		main_theme.apply_label_theme(title_label, "title")
+		title_label.add_theme_font_size_override("font_size", title_size)
+		
+		# Instruction label - using "secondary" variant  
+		main_theme.apply_label_theme(instruction_label, "secondary")
+		instruction_label.add_theme_font_size_override("font_size", instruction_size)
+		
+		Logger.debug("Applied MainTheme styling to CardSelection", "ui")
 	else:
 		# Fallback styling
+		background.color = Color(0.05, 0.05, 0.15, 0.85)  # Deep blue-black
 		title_label.add_theme_font_size_override("font_size", int(48 * scale_factor))
 		instruction_label.add_theme_font_size_override("font_size", int(20 * scale_factor))
 		title_label.add_theme_color_override("font_color", Color.WHITE)
 		instruction_label.add_theme_color_override("font_color", Color(0.85, 0.85, 0.95, 1.0))
+		
+		Logger.warn("Using fallback styling for CardSelection", "ui")
 	
 	# Text content and alignment
 	title_label.text = "Choose Your Upgrade"
@@ -151,7 +157,7 @@ func _update_responsive_design() -> void:
 		scale_factor = ResponsiveUI.get_ui_scale_factor(viewport_size)
 		
 		_setup_responsive_design()
-		_load_theme()
+		_load_theme_from_manager()
 		_setup_ui_styling()
 		
 		# Update existing card items
@@ -174,7 +180,9 @@ func _populate_card_items() -> void:
 		var card_item = CARD_ITEM_SCENE.instantiate() as CardItem
 		card_item.card_resource = card
 		card_item.card_index = i
-		card_item.theme_override = responsive_theme
+		# Apply theme via ThemeManager instead of responsive_theme
+		if main_theme and card_item.has_method("apply_theme"):
+			card_item.apply_theme(main_theme)
 		
 		# Connect signals
 		card_item.card_selected.connect(_on_card_item_selected)
@@ -269,3 +277,20 @@ func close() -> void:
 	Logger.info("CardSelection closing", "ui")
 	_animate_out()
 	PauseManager.pause_game(false)
+
+func _on_theme_changed(new_theme: MainTheme) -> void:
+	"""Handle theme changes from ThemeManager."""
+	main_theme = new_theme
+	_setup_ui_styling()
+	
+	# Update existing card items with new theme
+	for card_item in card_items:
+		if card_item and card_item.has_method("apply_theme"):
+			card_item.apply_theme(main_theme)
+	
+	Logger.debug("CardSelection updated with new theme", "ui")
+
+func _exit_tree() -> void:
+	"""Clean up theme listener when node is removed."""
+	if ThemeManager:
+		ThemeManager.remove_theme_listener(_on_theme_changed)

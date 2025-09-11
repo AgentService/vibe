@@ -1,0 +1,18 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/components/KeyboardNavigator.gd" id="1_0"]
+
+[node name="KeyboardNavigator" type="Node"]
+process_mode = 3
+script = ExtResource("1_0")
+auto_focus_first = true
+wrap_navigation = true
+highlight_focused = true
+play_navigation_sounds = false
+tab_forward = "ui_focus_next"
+tab_backward = "ui_focus_prev"
+activate = "ui_accept"
+cancel = "ui_cancel"
+focus_outline_color = Color(0, 1, 1, 1)
+focus_outline_width = 2.0
+focus_animation_speed = 0.2

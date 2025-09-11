@@ -1,0 +1,61 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/components/TooltipSystem.gd" id="1_0"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_0"]
+
+[node name="TooltipSystem" type="Control"]
+process_mode = 3
+z_index = 1000
+custom_minimum_size = Vector2(200, 50)
+script = ExtResource("1_0")
+show_delay = 0.5
+hide_delay = 0.1
+follow_mouse = true
+smart_positioning = true
+max_width = 300
+fade_animations = true
+
+[node name="TooltipPanel" parent="." instance=ExtResource("2_0")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+panel_variant = ""
+auto_theme = true
+show_border = true
+rounded_corners = true
+
+[node name="ContentMargin" type="MarginContainer" parent="TooltipPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 6
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 6
+
+[node name="TooltipVBox" type="VBoxContainer" parent="TooltipPanel/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="TitleLabel" type="Label" parent="TooltipPanel/ContentMargin/TooltipVBox"]
+layout_mode = 2
+text = "Tooltip Title"
+autowrap_mode = 2
+
+[node name="Separator" type="HSeparator" parent="TooltipPanel/ContentMargin/TooltipVBox"]
+layout_mode = 2
+
+[node name="BodyLabel" type="RichTextLabel" parent="TooltipPanel/ContentMargin/TooltipVBox"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+text = "Tooltip body content with [b]rich text[/b] support."
+fit_content = true
+
+[node name="FooterLabel" type="Label" parent="TooltipPanel/ContentMargin/TooltipVBox"]
+layout_mode = 2
+text = "Footer text"
+autowrap_mode = 2

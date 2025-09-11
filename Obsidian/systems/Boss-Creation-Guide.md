@@ -49,157 +49,251 @@ func setup_from_spawn_config(config: SpawnConfig) -> void
 
 1. **Create new scene**: `scenes/bosses/YourBoss.tscn`
 2. **Add CharacterBody2D as root** with your boss name
-3. **Add CollisionShape2D child** with appropriate collision shape
-4. **Add visual child** (AnimatedSprite2D, Sprite2D, or custom setup)
-5. **Configure collision layers/masks** for enemy detection
+3. **Add CollisionShape2D child** with **CircleShape2D** collision shape
+4. **Add AnimatedSprite2D child** for directional animations
+5. **Add HitBox (Area2D)** with CollisionShape2D child for damage detection
+6. **Add AttackTimer (Timer)** for attack cooldowns
+7. **Add BossHealthBar scene instance** from `res://scenes/components/BossHealthBar.tscn`
 
-**Example scene structure:**
+**Required scene structure:**
 ```
 YourBoss (CharacterBody2D)
-├── CollisionShape2D
-│   └── AnimatedSprite2D
-└── [Optional: Additional visual/audio components]
+├── AnimatedSprite2D (scale: 2x2)
+├── CollisionShape2D (CircleShape2D, centered at origin 0,0)
+├── HitBox (Area2D)
+│   └── HitBoxShape (CollisionShape2D, CircleShape2D, centered at origin 0,0)
+├── AttackTimer (Timer)
+└── BossHealthBar (BossHealthBar scene instance)
 ```
+
+**⚠️ Important Collision Setup:**
+- **Always use CircleShape2D** for boss collision instead of RectangleShape2D
+- **Keep collision shapes centered** at (0, 0) for smooth movement and rotation
+- **Circle collision provides** better AI pathfinding and natural movement around obstacles
+- **Set appropriate radius** based on your boss sprite size (typically 24-48 pixels for 2x scaled sprites)
+
+**✨ NEW: Flexible Auto-Adjusting Health Bar**
+
+The `BossHealthBar.tscn` scene now automatically:
+- **📏 Sizes itself** based on your boss's HitBox dimensions (width = 80% of HitBox width, no minimum size constraint)
+- **📍 Positions itself** 12px above the HitBox bounds automatically  
+- **🎯 Works with any shape** - CircleShape2D or RectangleShape2D HitBoxes supported
+- **🔄 Updates instantly** when you copy-paste the scene to any boss
+
+**⚠️ Requirements for Auto-Adjustment:**
+- Boss must have `HitBox/HitBoxShape` node structure
+- HitBoxShape must have a shape assigned (CircleShape2D or RectangleShape2D)
+- BossHealthBar will warn in console if requirements aren't met
 
 ### **Step 2: Create Boss Script**
 
+**✨ NEW: Inherit from BaseBoss for automatic directional animations and unified systems integration**
+
 **Create `scenes/bosses/YourBoss.gd`:**
 ```gdscript
-extends CharacterBody2D
+extends BaseBoss
 
-## Your Boss - Scene-based boss with unified damage integration
+## Your Boss - Inherits from BaseBoss with custom stats and attack behavior
+
 class_name YourBoss
 
-signal died
-
-@onready var animated_sprite: AnimatedSprite2D = $CollisionShape2D/AnimatedSprite2D
-
-# Boss configuration
-var spawn_config: SpawnConfig
-var max_health: float = 300.0
-var current_health: float = 300.0
-var speed: float = 50.0
-var attack_damage: float = 40.0
-var attack_cooldown: float = 2.0
-var last_attack_time: float = 0.0
-
-# AI configuration
-var target_position: Vector2
-var attack_range: float = 80.0
-var chase_range: float = 350.0
-
 func _ready() -> void:
-    Logger.info("YourBoss spawned with " + str(max_health) + " HP", "bosses")
+    # Set custom boss stats (override BaseBoss defaults)
+    max_health = 300.0
+    current_health = 300.0
+    damage = 40.0
+    speed = 60.0
+    attack_damage = 40.0
+    attack_cooldown = 2.0
+    attack_range = 80.0
+    chase_range = 350.0
+    animation_prefix = "walk"  # Uses walk_north, walk_south, etc.
     
-    # Start animation
-    if animated_sprite and animated_sprite.sprite_frames:
-        animated_sprite.play("default")
-        Logger.debug("YourBoss animation started", "bosses")
-    
-    # BOSS PERFORMANCE V2: Register with centralized BossUpdateManager (replaces individual combat_step connection)
-    var boss_id = "boss_" + str(get_instance_id())
-    BossUpdateManager.register_boss(self, boss_id)
-    Logger.debug("YourBoss registered with BossUpdateManager as " + boss_id, "performance")
-    
-    # DAMAGE V3: Register with both DamageService and EntityTracker
-    var entity_id = "boss_" + str(get_instance_id())
-    var entity_data = {
-        "id": entity_id,
-        "type": "boss",
-        "hp": current_health,
-        "max_hp": max_health,
-        "alive": true,
-        "pos": global_position
-    }
-    # Register with both systems for unified damage V3
-    DamageService.register_entity(entity_id, entity_data)
-    EntityTracker.register_entity(entity_id, entity_data)
-    Logger.debug("YourBoss registered with DamageService and EntityTracker as " + entity_id, "bosses")
+    # Call parent _ready() to handle all base initialization
+    super._ready()
 
-func _exit_tree() -> void:
-    # BOSS PERFORMANCE V2: Unregister from BossUpdateManager
-    var boss_id = "boss_" + str(get_instance_id())
-    BossUpdateManager.unregister_boss(boss_id)
-    
-    # DAMAGE V3: Unregister from both systems
-    var entity_id = "boss_" + str(get_instance_id())
-    DamageService.unregister_entity(entity_id)
-    EntityTracker.unregister_entity(entity_id)
+func get_boss_name() -> String:
+    return "YourBoss"
 
-# Required setup method for spawn system
-func setup_from_spawn_config(config: SpawnConfig) -> void:
-    spawn_config = config
-    max_health = config.health
-    current_health = config.health
-    speed = config.speed
-    attack_damage = config.damage
-    
-    # Set position and visual config
-    global_position = config.position
-    modulate = config.color_tint
-    scale = Vector2.ONE * config.size_scale
-    
-    Logger.info("YourBoss configured: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, attack_damage, speed], "bosses")
-
-# BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
-## Replaces individual _on_combat_step connections with centralized processing
-func _update_ai_batch(dt: float) -> void:
-    _update_ai(dt)
-    last_attack_time += dt
-
-# AI logic (customize for your boss behavior)
-func _update_ai(dt: float) -> void:
-    if not PlayerState.has_player_reference():
-        return
-        
-    target_position = PlayerState.position
-    var distance_to_player: float = global_position.distance_to(target_position)
-    
-    # Chase behavior
-    if distance_to_player <= chase_range:
-        if distance_to_player > attack_range:
-            # Move toward player
-            var direction: Vector2 = (target_position - global_position).normalized()
-            velocity = direction * speed
-            move_and_slide()
-        else:
-            # In attack range - stop and attack
-            velocity = Vector2.ZERO
-            if last_attack_time >= attack_cooldown:
-                _perform_attack()
-                last_attack_time = 0.0
-
-# Attack logic (customize for your boss attacks)
+# Required: Implement your boss's attack behavior
 func _perform_attack() -> void:
     Logger.debug("YourBoss attacks for %.1f damage!" % attack_damage, "bosses")
     
-    # Example: Damage player if in range
+    # Apply damage to player via unified DamageService
     var distance_to_player: float = global_position.distance_to(target_position)
     if distance_to_player <= attack_range:
-        if EventBus:
-            EventBus.damage_taken.emit(attack_damage)
+        var source_name = "boss_your_boss"
+        var damage_tags = ["physical", "boss"]  # Customize damage tags
+        DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
 
-# Death handling
-func _die() -> void:
-    Logger.info("YourBoss has been defeated!", "bosses")
-    died.emit()
-    queue_free()
-
-# Required interface methods for damage system
-func get_max_health() -> float:
-    return max_health
-
-func get_current_health() -> float:
-    return current_health
-
-func set_current_health(new_health: float) -> void:
-    current_health = new_health
-    if current_health <= 0:
-        _die()
-
-func is_alive() -> bool:
-    return current_health > 0.0
+# Optional: Override AI for custom behavior
+func _update_ai(dt: float) -> void:
+    # Call base AI first (handles chase, movement, directional animations)
+    super._update_ai(dt)
+    
+    # Add custom AI behavior here (special attacks, phase changes, etc.)
 ```
+
+**🎉 Benefits of BaseBoss Inheritance:**
+- ✅ **Automatic directional animations** - Just set `animation_prefix` and it works!
+- ✅ **Unified damage system integration** - All damage handling built-in
+- ✅ **Performance optimization** - BossUpdateManager registration included
+- ✅ **Health bar integration** - BossHealthBar automatically managed
+- ✅ **Consistent AI patterns** - Override only what you need to customize
+- ✅ **Signal management** - All EventBus connections handled automatically
+
+### **Step 2.5: Setup Directional Animations (For Bosses with 8-Direction Movement)**
+
+**⚠️ Animation Architecture:** 
+
+**✨ NEW: Hybrid Approach - BaseBoss with Boss-Specific Animations**
+
+The new system combines the best of both worlds:
+- **BaseBoss handles animation logic** - Automatic 8-directional animation switching
+- **Boss scenes define sprite assets** - Each boss has unique visual animations
+- **Simple animation_prefix setup** - Just set the prefix, BaseBoss handles the rest
+
+**Benefits:**
+- ✅ **Automatic directional logic** - No manual angle calculations needed
+- ✅ **Boss-specific visual identity** - Each boss uses unique sprite animations
+- ✅ **Consistent behavior** - All bosses use the same animation switching logic
+- ✅ **Easy setup** - Just set `animation_prefix = "your_animation_name"`
+- ✅ **Minimal code** - BaseBoss handles all the complex logic
+
+#### **A. Prepare Animation Assets**
+
+1. **Organize sprite assets** in this structure:
+   ```
+   assets/sprites/boss_name/animations/walk_animation/
+   ├── north/frame_000.png → frame_007.png
+   ├── north-east/frame_000.png → frame_007.png
+   ├── east/frame_000.png → frame_007.png
+   ├── south-east/frame_000.png → frame_007.png
+   ├── south/frame_000.png → frame_007.png
+   ├── south-west/frame_000.png → frame_007.png
+   ├── west/frame_000.png → frame_007.png
+   └── north-west/frame_000.png → frame_007.png
+   ```
+
+2. **Verify frame count**: Ensure consistent frame count across all 8 directions (typically 8 frames)
+
+#### **B. Create ExtResource Imports**
+
+Add texture imports to your boss `.tscn` file header (after existing ExtResources):
+
+```gdscript
+# Update load_steps count to accommodate all frames (typically 74 for 8x8 frames + other resources)
+[gd_scene load_steps=74 format=3 uid="uid://your_boss_uid"]
+
+# Add texture imports for all 8 directions x 8 frames = 64 textures
+[ext_resource type="Texture2D" path="res://assets/sprites/boss_name/animations/walk_animation/south/frame_000.png" id="3_s0"]
+[ext_resource type="Texture2D" path="res://assets/sprites/boss_name/animations/walk_animation/south/frame_001.png" id="4_s1"]
+# ... continue for all south frames (000-007)
+[ext_resource type="Texture2D" path="res://assets/sprites/boss_name/animations/walk_animation/north/frame_000.png" id="11_n0"]
+# ... continue for all directions: north, east, west, north-east, south-east, north-west, south-west
+```
+
+#### **C. Create SpriteFrames Resource**
+
+Add this SpriteFrames SubResource to your `.tscn` file:
+
+```gdscript
+[sub_resource type="SpriteFrames" id="SpriteFrames_boss"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("3_s0")
+}, {
+"duration": 1.0, 
+"texture": ExtResource("4_s1")
+# ... continue for all 8 south frames
+}],
+"loop": true,
+"name": &"walk_south", 
+"speed": 6.0
+}, {
+"frames": [/* north frames */],
+"loop": true,
+"name": &"walk_north",
+"speed": 6.0
+}, {
+"frames": [/* east frames */],
+"loop": true, 
+"name": &"walk_east",
+"speed": 6.0
+}, {
+"frames": [/* west frames */],
+"loop": true,
+"name": &"walk_west", 
+"speed": 6.0
+}, {
+"frames": [/* north_east frames */],
+"loop": true,
+"name": &"walk_north_east",
+"speed": 6.0
+}, {
+"frames": [/* south_east frames */],
+"loop": true,
+"name": &"walk_south_east", 
+"speed": 6.0
+}, {
+"frames": [/* north_west frames */],
+"loop": true,
+"name": &"walk_north_west",
+"speed": 6.0
+}, {
+"frames": [/* south_west frames */],
+"loop": true,
+"name": &"walk_south_west",
+"speed": 6.0
+}]
+```
+
+#### **D. Assign SpriteFrames to AnimatedSprite2D**
+
+Update your AnimatedSprite2D node in the `.tscn`:
+
+```gdscript
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+scale = Vector2(2, 2)
+sprite_frames = SubResource("SpriteFrames_boss")
+animation = &"walk_south"  # Default starting animation
+```
+
+#### **E. Set Animation Prefix in Boss Script**
+
+**✨ SIMPLIFIED: No manual animation logic needed!**
+
+Just set the `animation_prefix` in your boss script's `_ready()` method:
+
+```gdscript
+func _ready() -> void:
+    # Set your boss stats...
+    animation_prefix = "walk"  # For walk_north, walk_south, etc.
+    # OR
+    animation_prefix = "scary_walk"  # For scary_walk_north, scary_walk_south, etc.
+    
+    # Call parent _ready()
+    super._ready()
+```
+
+**🎉 That's it!** BaseBoss automatically handles:
+- Converting movement direction to animation names
+- Switching animations based on 8-directional movement  
+- Only updating animations when direction changes
+- Checking animation exists before playing
+
+**Animation Name Pattern:** 
+BaseBoss expects animations named: `{animation_prefix}_{direction}`
+- Example: `walk_north`, `walk_south_east`, `scary_walk_west`, etc.
+
+#### **F. Animation Testing Checklist**
+
+✅ All 8 animations load without errors in Godot editor  
+✅ Each direction has consistent frame count (8 frames)  
+✅ Animation speed (6.0 FPS) provides smooth movement  
+✅ Direction switching responds correctly to movement input  
+✅ Animations loop seamlessly during continuous movement  
 
 ### **Step 3: Create Boss Configuration**
 
@@ -329,8 +423,20 @@ func _on_player_reached_area() -> void:
 - ✅ Confirm `is_special_boss = true` and `boss_spawn_method = "scene"`
 - ✅ Check spawn position is within valid game area
 
+### **Boss Movement Issues:**
+- ✅ **Use CircleShape2D collision** - RectangleShape2D causes jerky movement
+- ✅ **Center collision shapes** at (0, 0) - Offset shapes cause rotation issues
+- ✅ **Set appropriate radius** - Too large causes wall sticking, too small allows clipping
+- ✅ **Match HitBox size** to collision shape for consistent damage detection
+
+### **Health Bar Issues:**
+- ✅ **Health bar not visible** - Appears only after first damage (performance feature)
+- ✅ **Health bar wrong size** - Check HitBox/HitBoxShape node structure exists
+- ✅ **Health bar wrong position** - Ensure HitBoxShape has assigned shape (Circle or Rectangle)
+- ✅ **Health bar not adjusting** - Check console for BossHealthBar warnings about missing nodes
+
 ### **Boss AI Not Working:**
-- ✅ Verify EventBus.combat_step connection in `_ready()`
+- ✅ Verify EventBus.combat_step connection in `_ready()` (or BaseBoss inheritance)
 - ✅ Check PlayerState.has_player_reference() returns true
 - ✅ Confirm collision detection and movement logic
 - ✅ Test with Logger.debug() statements in AI methods
