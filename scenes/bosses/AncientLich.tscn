@@ -141,5 +141,8 @@ wait_time = 2.5
 visible = false
 
 [node name="BossShadow" parent="." instance=ExtResource("4_o4kpg")]
-position = Vector2(0, 13)
-scale = Vector2(1.92188, 1.58951)
+position = Vector2(333, -25)
+scale = Vector2(1.52555, 1.51302)
+centered = false
+offset = Vector2(-226, 22)
+opacity = 0.8

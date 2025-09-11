@@ -73,7 +73,7 @@ uppercase = true
 
 [node name="EntityInfo" type="RichTextLabel" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 clip_contents = false
-custom_minimum_size = Vector2(180, 80)
+custom_minimum_size = Vector2(180, 120)
 layout_mode = 2
 bbcode_enabled = true
 text = "[center][color=#FFD700]Ctrl+Click[/color] on an entity to inspect[/center]"

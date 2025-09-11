@@ -1,8 +1,7 @@
-[gd_resource type="Resource" script_class="CharacterTypeDict" format=3]
+[gd_resource type="Resource" script_class="CharacterTypeDict" load_steps=5 format=3 uid="uid://t6tr0whuy6g5"]
 
-[ext_resource type="Script" path="res://scripts/resources/CharacterTypeDict.gd" id="1"]
-
-[ext_resource type="Script" path="res://scripts/domain/CharacterType.gd" id="2"]
+[ext_resource type="Script" uid="uid://c7j7m0upsaljp" path="res://scripts/resources/CharacterTypeDict.gd" id="1"]
+[ext_resource type="Script" uid="uid://c1q15x2d5udmx" path="res://scripts/domain/CharacterType.gd" id="2"]
 
 [sub_resource type="Resource" id="knight_char_type"]
 script = ExtResource("2")

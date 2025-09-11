@@ -333,3 +333,4 @@ shape = SubResource("RectangleShape2D_04ech")
 [node name="BossShadow" parent="." instance=ExtResource("67_qtjdy")]
 position = Vector2(0, 24)
 scale = Vector2(2.20097, 2.88673)
+opacity = 0.8

@@ -5,8 +5,8 @@ class_name KeybindingsComponent
 ## Styled to match radar panel with consistent UI theme
 ## Note: Extends Panel directly for background styling, implements BaseHUDComponent interface
 
-@onready var container: VBoxContainer = $VBoxContainer
-@onready var title_label: Label = $VBoxContainer/TitleLabel
+@onready var container: VBoxContainer = $VBoxContainer/VBoxContainer2
+@onready var title_label: Label = $VBoxContainer/VBoxContainer2/TitleLabel
 
 # BaseHUDComponent interface implementation
 @export var component_id: String = ""
@@ -16,9 +16,7 @@ class_name KeybindingsComponent
 signal component_ready(component_id: String)
 signal component_destroyed(component_id: String)
 
-# Keybinding data
-var key_bindings: Dictionary = {}
-var binding_labels: Array[Label] = []
+# Static keybinding display - labels are defined in scene
 
 func _ready() -> void:
 	if component_id.is_empty():
@@ -33,9 +31,9 @@ func _exit_tree() -> void:
 	component_destroyed.emit(component_id)
 
 func _setup_component() -> void:
-	_load_key_bindings()
-	_create_keybinding_display()
 	_style_panel()
+	# Defer label styling to ensure @onready variables are ready
+	call_deferred("_style_labels")
 
 func bind_events() -> void:
 	# Keybindings are static, no EventBus signals needed
@@ -55,17 +53,8 @@ func _unregister_from_hud_manager() -> void:
 		HUDManager.unregister_component(component_id)
 
 func apply_anchor_config(config: Dictionary) -> void:
-	var anchor_preset: int = config.get("anchor_preset", Control.PRESET_TOP_LEFT)
-	var offset: Vector2 = config.get("offset", Vector2.ZERO)
-	var component_size: Vector2 = config.get("size", Vector2.ZERO)
-	
-	set_anchors_and_offsets_preset(anchor_preset)
-	position += offset
-	
-	# Apply size if specified
-	if component_size != Vector2.ZERO:
-		custom_minimum_size = component_size
-		size = component_size
+	# No programmatic positioning - respect editor settings
+	pass
 
 func set_component_visible(visible_state: bool) -> void:
 	visible = visible_state
@@ -74,14 +63,22 @@ func set_component_scale(new_scale: Vector2) -> void:
 	scale = new_scale
 
 func _style_panel() -> void:
-	# Style the panel background to match radar theme
+	# Apply MainTheme styling for keybindings panel
+	if not ThemeManager or not ThemeManager.current_theme:
+		Logger.warn("KeybindingsComponent: MainTheme not available", "ui")
+		_apply_fallback_panel_styling()
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	
+	# Style the panel background using theme colors
 	var style_box := StyleBoxFlat.new()
-	style_box.bg_color = Color(0.1, 0.1, 0.1, 0.9)  # Dark background
+	style_box.bg_color = theme_res.background_overlay
 	style_box.border_width_left = 2
 	style_box.border_width_right = 2
 	style_box.border_width_top = 2
 	style_box.border_width_bottom = 2
-	style_box.border_color = Color(0.6, 0.5, 0.4, 1.0)  # Same border as radar
+	style_box.border_color = theme_res.border_color
 	style_box.corner_radius_top_left = 4
 	style_box.corner_radius_top_right = 4
 	style_box.corner_radius_bottom_left = 4
@@ -94,93 +91,73 @@ func _style_panel() -> void:
 	# Apply panel style
 	add_theme_stylebox_override("panel", style_box)
 
-func _load_key_bindings() -> void:
-	# Load key bindings from InputMap
-	key_bindings = {
-		"Movement": {
-			"W": "Move Up",
-			"A": "Move Left", 
-			"S": "Move Down",
-			"D": "Move Right"
-		},
-		"System": {
-			"ESC": "Pause/Menu",
-			"F5": "Refresh",
-			"`": "Console"
-		}
-	}
+func _apply_fallback_panel_styling() -> void:
+	# Fallback styling if MainTheme unavailable
+	var style_box := StyleBoxFlat.new()
+	style_box.bg_color = Color(0.1, 0.1, 0.1, 0.9)
+	style_box.border_width_left = 2
+	style_box.border_width_right = 2
+	style_box.border_width_top = 2
+	style_box.border_width_bottom = 2
+	style_box.border_color = Color(0.6, 0.5, 0.4, 1.0)
+	style_box.corner_radius_top_left = 4
+	style_box.corner_radius_top_right = 4
+	style_box.corner_radius_bottom_left = 4
+	style_box.corner_radius_bottom_right = 4
+	style_box.content_margin_left = 8
+	style_box.content_margin_right = 8
+	style_box.content_margin_top = 8
+	style_box.content_margin_bottom = 8
+	
+	add_theme_stylebox_override("panel", style_box)
 
-func _create_keybinding_display() -> void:
+func _style_labels() -> void:
+	# Check if container is ready
 	if not container:
-		Logger.warn("KeybindingsComponent: No VBoxContainer found", "ui")
+		Logger.warn("KeybindingsComponent: Container not ready for styling", "ui")
 		return
 		
-	# Clear existing children (except title)
-	for child in container.get_children():
-		if child != title_label:
-			child.queue_free()
-	
-	# Create title
+	# Style the title label
 	if title_label:
 		title_label.text = "CONTROLS"
 		title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_style_title_label(title_label)
 	
-	# Add movement section
-	_add_section_header("Movement:")
-	for key in key_bindings.Movement:
-		var action = key_bindings.Movement[key]
-		_add_keybinding_row(key, action)
-	
-	# Add spacing
-	_add_spacer()
-	
-	# Add system section
-	_add_section_header("System:")
-	for key in key_bindings.System:
-		var action = key_bindings.System[key]
-		_add_keybinding_row(key, action)
-
-func _add_section_header(text: String) -> void:
-	var header = Label.new()
-	header.text = text
-	header.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
-	_style_section_header(header)
-	container.add_child(header)
-
-func _add_keybinding_row(key: String, action: String) -> void:
-	var row = HBoxContainer.new()
-	container.add_child(row)
-	
-	# Key label
-	var key_label = Label.new()
-	key_label.text = key
-	key_label.custom_minimum_size.x = 30
-	_style_key_label(key_label)
-	row.add_child(key_label)
-	
-	# Separator
-	var separator = Label.new()
-	separator.text = ": "
-	_style_text_label(separator)
-	row.add_child(separator)
-	
-	# Action label
-	var action_label = Label.new()
-	action_label.text = action
-	action_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_style_text_label(action_label)
-	row.add_child(action_label)
-	
-	binding_labels.append(key_label)
-	binding_labels.append(action_label)
-
-func _add_spacer() -> void:
-	var spacer = Control.new()
-	spacer.custom_minimum_size.y = 8
-	container.add_child(spacer)
+	# Style all other labels in the container
+	for child in container.get_children():
+		if child != title_label and child is Label:
+			_style_keybinding_label(child as Label)
 
 func _style_title_label(label: Label) -> void:
+	# Apply MainTheme styling for title label
+	if not ThemeManager or not ThemeManager.current_theme:
+		_apply_fallback_title_styling(label)
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	var theme = Theme.new()
+	theme.set_color("font_color", "Label", theme_res.warning_color)  # Use warning color for title prominence
+	theme.set_constant("shadow_offset_x", "Label", 1)
+	theme.set_constant("shadow_offset_y", "Label", 1)
+	theme.set_color("font_shadow_color", "Label", theme_res.background_dark)
+	label.theme = theme
+
+func _style_keybinding_label(label: Label) -> void:
+	# Apply MainTheme styling for keybinding labels
+	if not ThemeManager or not ThemeManager.current_theme:
+		_apply_fallback_keybinding_styling(label)
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	var theme = Theme.new()
+	theme.set_color("font_color", "Label", theme_res.text_primary)
+	theme.set_constant("shadow_offset_x", "Label", 1)
+	theme.set_constant("shadow_offset_y", "Label", 1)
+	theme.set_color("font_shadow_color", "Label", theme_res.background_dark)
+	label.theme = theme
+
+func _apply_fallback_title_styling(label: Label) -> void:
+	# Fallback styling for title if MainTheme unavailable
 	var theme = Theme.new()
 	theme.set_color("font_color", "Label", Color.YELLOW)
 	theme.set_constant("shadow_offset_x", "Label", 1)
@@ -188,25 +165,10 @@ func _style_title_label(label: Label) -> void:
 	theme.set_color("font_shadow_color", "Label", Color.BLACK)
 	label.theme = theme
 
-func _style_section_header(label: Label) -> void:
-	var theme = Theme.new()
-	theme.set_color("font_color", "Label", Color.LIGHT_GRAY)
-	theme.set_constant("shadow_offset_x", "Label", 1)
-	theme.set_constant("shadow_offset_y", "Label", 1)
-	theme.set_color("font_shadow_color", "Label", Color.BLACK)
-	label.theme = theme
-
-func _style_key_label(label: Label) -> void:
+func _apply_fallback_keybinding_styling(label: Label) -> void:
+	# Fallback styling for keybinding labels if MainTheme unavailable
 	var theme = Theme.new()
 	theme.set_color("font_color", "Label", Color.WHITE)
-	theme.set_constant("shadow_offset_x", "Label", 1)
-	theme.set_constant("shadow_offset_y", "Label", 1)
-	theme.set_color("font_shadow_color", "Label", Color.BLACK)
-	label.theme = theme
-
-func _style_text_label(label: Label) -> void:
-	var theme = Theme.new()
-	theme.set_color("font_color", "Label", Color.LIGHT_GRAY)
 	theme.set_constant("shadow_offset_x", "Label", 1)
 	theme.set_constant("shadow_offset_y", "Label", 1)
 	theme.set_color("font_shadow_color", "Label", Color.BLACK)
@@ -215,8 +177,7 @@ func _style_text_label(label: Label) -> void:
 # Public API
 func refresh_keybindings() -> void:
 	"""Refresh keybinding display - useful if input map changes"""
-	_load_key_bindings()
-	_create_keybinding_display()
+	_style_labels()
 	Logger.debug("KeybindingsComponent: Refreshed keybinding display", "ui")
 
 func set_keybindings_visible(visible: bool) -> void:
@@ -228,8 +189,7 @@ func set_keybindings_visible(visible: bool) -> void:
 
 func get_keybinding_stats() -> Dictionary:
 	return {
-		"total_bindings": key_bindings.size(),
-		"movement_keys": key_bindings.Movement.size() if key_bindings.has("Movement") else 0,
-		"system_keys": key_bindings.System.size() if key_bindings.has("System") else 0,
-		"labels_created": binding_labels.size()
+		"total_labels": container.get_child_count(),
+		"visible": visible,
+		"component_id": component_id
 	}

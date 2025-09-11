@@ -5,9 +5,7 @@ class_name NewHUD
 ## Designed to coexist with and eventually replace the old HUD system
 
 # Layer 1 - Primary HUD (Game UI)
-@onready var level_label: Label = $Layer1_PrimaryHUD/GameUI/LevelLabel
-@onready var xp_bar: XPBarComponent = $Layer1_PrimaryHUD/GameUI/XPBar
-@onready var player_health: HealthBarComponent = $Layer1_PrimaryHUD/GameUI/PlayerHealthBar
+@onready var player_info_panel: PlayerInfoPanel = $Layer1_PrimaryHUD/GameUI/PlayerInfoPanel
 @onready var enemy_radar: RadarComponent = $Layer1_PrimaryHUD/GameUI/EnemyRadar
 @onready var keybindings_display: KeybindingsComponent = $Layer1_PrimaryHUD/GameUI/KeybindingsDisplay
 @onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/AbilityBar
@@ -35,12 +33,8 @@ func _initialize_new_hud() -> void:
 	
 	Logger.info("Initializing new component-based HUD system", "ui")
 	
-	# Ensure HUDManager has default layout
-	if not HUDManager.hud_config:
-		HUDManager.load_layout_preset(HUDConfigResource.LayoutPreset.DEFAULT)
-	
-	# Apply layout to non-component elements (level label)
-	_apply_hud_layout()
+	# No programmatic layout management - use editor positioning
+	# Components positioned via scene editor, not HUDManager config
 	
 	# Connect to progression signals
 	_connect_new_hud_signals()
@@ -67,35 +61,13 @@ func _connect_new_hud_signals() -> void:
 		HUDManager.layout_changed.connect(_on_layout_changed)
 
 func _style_legacy_elements() -> void:
-	# Style level label (similar to old HUD)
-	if level_label:
-		var label_theme := Theme.new()
-		var style_bg := StyleBoxFlat.new()
-		
-		style_bg.bg_color = Color(0.1, 0.1, 0.1, 0.9)
-		style_bg.border_width_left = 1
-		style_bg.border_width_right = 1
-		style_bg.border_width_top = 1
-		style_bg.border_width_bottom = 1
-		style_bg.border_color = Color(0.6, 0.6, 0.6, 1.0)
-		style_bg.corner_radius_top_left = 3
-		style_bg.corner_radius_top_right = 3
-		style_bg.corner_radius_bottom_left = 3
-		style_bg.corner_radius_bottom_right = 3
-		style_bg.content_margin_left = 8
-		style_bg.content_margin_right = 8
-		style_bg.content_margin_top = 4
-		style_bg.content_margin_bottom = 4
-		
-		label_theme.set_stylebox("normal", "Label", style_bg)
-		label_theme.set_color("font_color", "Label", Color.WHITE)
-		level_label.theme = label_theme
+	# No legacy elements to style - everything now handled by components
+	# PlayerInfoPanel handles level label styling via MainTheme
+	pass
 
 func _initialize_component_states() -> void:
-	# Initialize health bar with current player state
-	if player_health and PlayerProgression:
-		var initial_health := 100.0
-		player_health.update_health(initial_health, initial_health)
+	# Initialize player info panel (handles its own health/xp/level initialization)
+	# PlayerInfoPanel connects to EventBus and handles its own updates
 	
 	# Initialize progression display with current state
 	if PlayerProgression:
@@ -107,58 +79,26 @@ func _initialize_component_states() -> void:
 		keybindings_display.refresh_keybindings()
 
 func _apply_hud_layout() -> void:
-	# Apply layout configuration to level label (non-component element)
-	# All other components are handled by HUDManager registration
-	
-	if not HUDManager.hud_config:
-		return
-	
-	# Apply level label positioning
-	if level_label:
-		var config = HUDManager.hud_config.get_component_position("level_label")
-		var anchor_preset = config.get("anchor_preset", Control.PRESET_CENTER_BOTTOM)
-		var offset = config.get("offset", Vector2(0, -65))
-		var component_size = config.get("size", Vector2.ZERO)
-		
-		level_label.set_anchors_and_offsets_preset(anchor_preset)
-		level_label.position += offset
-		
-		# Apply size if specified
-		if component_size != Vector2.ZERO:
-			level_label.custom_minimum_size = component_size
-			level_label.size = component_size
-			
-		var scale_config = HUDManager.hud_config.get_component_scale("level_label")
-		level_label.scale = scale_config
-		var visibility_config = HUDManager.hud_config.get_component_visibility("level_label")
-		level_label.visible = visibility_config
+	# No programmatic layout - respect editor positioning for all elements
+	pass
 
-# Signal handlers
+# Signal handlers - PlayerInfoPanel handles health/xp/level updates internally
 func _on_health_changed(current_health: float, max_health: float) -> void:
-	if player_health:
-		player_health.update_health(current_health, max_health)
+	# PlayerInfoPanel handles health updates via its own EventBus connections
+	pass
 
 func _on_progression_changed(state: Dictionary) -> void:
-	var current_xp = int(state.get("exp", 0))
-	var xp_to_next = int(state.get("xp_to_next", 100))
+	# PlayerInfoPanel handles progression updates via its own EventBus connections
 	var level = int(state.get("level", 1))
-	
-	Logger.debug("New HUD: Progression changed - Level: %d, XP: %d/%d" % [level, current_xp, xp_to_next], "ui")
-	
-	# Update level display
-	if level_label:
-		level_label.text = "Level: " + str(level)
-	
-	# XP bar component handles its own updates via EventBus signals
+	Logger.debug("New HUD: Progression changed - Level: %d (handled by PlayerInfoPanel)" % [level], "ui")
 
 func _on_leveled_up(new_level: int, prev_level: int) -> void:
-	Logger.debug("New HUD: Level up detected! %d -> %d" % [prev_level, new_level], "ui")
-	if level_label:
-		level_label.text = "Level: " + str(new_level)
+	# PlayerInfoPanel handles level updates via its own EventBus connections
+	Logger.debug("New HUD: Level up detected! %d -> %d (handled by PlayerInfoPanel)" % [prev_level, new_level], "ui")
 
 func _on_layout_changed(new_config: HUDConfigResource) -> void:
-	Logger.debug("New HUD: Layout configuration changed", "ui")
-	_apply_hud_layout()
+	Logger.debug("New HUD: Layout configuration changed (ignored - using editor positioning)", "ui")
+	# No action - components positioned via editor, not programmatically
 
 # Public API for switching between HUD systems
 func set_hud_visible(visible: bool) -> void:
@@ -176,17 +116,14 @@ func get_hud_performance_stats() -> Dictionary:
 	}
 	
 	# Gather stats from all components
-	if player_health and player_health.has_method("get_health_stats"):
-		stats.components["health"] = player_health.get_health_stats()
+	if player_info_panel:
+		stats.components["player_info"] = {"active": true, "consolidated": true}
 	
 	if enemy_radar and enemy_radar.has_method("get_radar_stats"):
 		stats.components["radar"] = enemy_radar.get_radar_stats()
 	
 	if performance_display and performance_display.has_method("get_current_performance_stats"):
 		stats.components["performance"] = performance_display.get_current_performance_stats()
-	
-	if xp_bar and xp_bar.has_method("get_xp_stats"):
-		stats.components["xp_bar"] = xp_bar.get_xp_stats()
 	
 	if keybindings_display and keybindings_display.has_method("get_keybinding_stats"):
 		stats.components["keybindings"] = keybindings_display.get_keybinding_stats()

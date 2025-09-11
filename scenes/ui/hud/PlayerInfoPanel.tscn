@@ -1,0 +1,96 @@
+[gd_scene load_steps=2 format=3 uid="uid://c4418k01htn2s"]
+
+[ext_resource type="Script" uid="uid://b6j2sw2x7le6p" path="res://scenes/ui/hud/PlayerInfoPanel.gd" id="1_tsfq8"]
+
+[node name="PlayerInfoPanel" type="Panel"]
+script = ExtResource("1_tsfq8")
+
+[node name="PlayerInfoContainer" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = -1
+offset_left = -150.0
+offset_top = -67.0
+offset_right = 150.0
+grow_horizontal = 2
+grow_vertical = 0
+alignment = 1
+
+[node name="DamageFlash" type="ColorRect" parent="PlayerInfoContainer"]
+visible = false
+custom_minimum_size = Vector2(200, 24)
+layout_mode = 2
+size_flags_horizontal = 4
+color = Color(1, 0, 0, 0)
+
+[node name="HealthContainer" type="VBoxContainer" parent="PlayerInfoContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="HealthProgressBar" type="ProgressBar" parent="PlayerInfoContainer/HealthContainer"]
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+value = 80.0
+show_percentage = false
+
+[node name="HealthTextContainer" type="Control" parent="PlayerInfoContainer/HealthContainer/HealthProgressBar"]
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="HealthLabel" type="Label" parent="PlayerInfoContainer/HealthContainer/HealthProgressBar/HealthTextContainer"]
+clip_contents = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="XPContainer" type="VBoxContainer" parent="PlayerInfoContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="XPProgressBar" type="ProgressBar" parent="PlayerInfoContainer/XPContainer"]
+custom_minimum_size = Vector2(200, 30)
+layout_mode = 2
+size_flags_horizontal = 4
+max_value = 1000.0
+show_percentage = false
+
+[node name="XPTextContainer" type="Control" parent="PlayerInfoContainer/XPContainer/XPProgressBar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="XPLabel" type="Label" parent="PlayerInfoContainer/XPContainer/XPProgressBar/XPTextContainer"]
+visible = false
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "35/100"
+horizontal_alignment = 2
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="LevelLabel" type="Label" parent="PlayerInfoContainer/XPContainer/XPProgressBar/XPTextContainer"]
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "Level: 3"
+horizontal_alignment = 1
+vertical_alignment = 1
+text_overrun_behavior = 3

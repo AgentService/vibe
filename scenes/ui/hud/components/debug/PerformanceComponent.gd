@@ -10,9 +10,9 @@ extends BaseHUDComponent
 @export var show_entity_counts: bool = true
 @export var compact_display: bool = false
 
-# UI Components
-var _performance_label: Label
-var _background_panel: Panel
+# Scene node references
+@onready var _performance_label: Label = $PerformanceLabel
+@onready var _background_panel: Panel = $PerformanceBackground
 
 # Performance tracking
 var _fps_history: Array[int] = []
@@ -30,7 +30,7 @@ func _init() -> void:
 	enable_performance_monitoring = true
 
 func _setup_component() -> void:
-	_create_performance_ui()
+	_setup_existing_nodes()
 	_style_performance_display()
 	_connect_performance_signals()
 
@@ -40,14 +40,10 @@ func _update_component(delta: float) -> void:
 		_performance_update_timer = 0.0
 		_update_performance_display()
 
-func _create_performance_ui() -> void:
-	# Create background panel
-	_background_panel = Panel.new()
-	_background_panel.name = "PerformanceBackground"
-	add_child(_background_panel)
-	
-	# Create performance label
-	_performance_label = Label.new()
+func _setup_existing_nodes() -> void:
+	# Configure existing performance label
+	if _performance_label:
+		_performance_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_performance_label.name = "PerformanceLabel"
 	_performance_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_performance_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT

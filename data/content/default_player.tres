@@ -6,7 +6,7 @@
 script = ExtResource("1_0000")
 id = "default_player"
 display_name = "Player"
-max_health = 50
+max_health = 500
 move_speed = 111.0
 pickup_radius = 12.0
 roll_duration = 0.5

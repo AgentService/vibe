@@ -20,10 +20,13 @@ var min_enemy_dot_size: float = 1.5
 var max_boss_dot_size: float = 6.0
 var min_boss_dot_size: float = 4.0
 
+# Scene node references
+@onready var _panel_background: Panel = $RadarBackground
+@onready var _radar_drawing: Control = $RadarDrawing
+
 # Internal state
 var player_position: Vector2
 var radar_entities: Array[EventBus.RadarEntity] = []
-var _panel_background: Panel
 var radar_system_indicator: String = ""
 
 # Performance optimization
@@ -36,15 +39,12 @@ func _init() -> void:
 	update_frequency = 30.0  # 30 FPS for radar updates
 
 func _setup_component() -> void:
-	# Create panel background
-	_panel_background = Panel.new()
-	_panel_background.name = "RadarBackground"
-	_panel_background.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_panel_background)
+	# Configure existing panel background
+	if _panel_background:
+		_setup_radar_display()
 	
 	# Load configuration
 	_load_configuration()
-	_setup_radar_display()
 	_connect_radar_signals()
 
 func _update_component(delta: float) -> void:
@@ -58,10 +58,42 @@ func _cleanup_component() -> void:
 	radar_entities.clear()
 
 func _setup_radar_display() -> void:
-	custom_minimum_size = radar_size
-	size = radar_size
+	# Respect editor sizing instead of forcing programmatic size
+	# custom_minimum_size = radar_size
+	# size = radar_size
 	
-	# Setup panel background styling
+	# Apply MainTheme styling for radar background
+	if not ThemeManager or not ThemeManager.current_theme:
+		Logger.warn("RadarComponent: MainTheme not available", "ui")
+		_setup_fallback_radar_styling()
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	
+	# Setup panel background styling using theme colors
+	var style_box := StyleBoxFlat.new()
+	style_box.bg_color = theme_res.background_overlay
+	style_box.border_width_left = 2
+	style_box.border_width_right = 2
+	style_box.border_width_top = 2
+	style_box.border_width_bottom = 2
+	style_box.border_color = theme_res.border_color
+	style_box.corner_radius_top_left = 4
+	style_box.corner_radius_top_right = 4
+	style_box.corner_radius_bottom_left = 4
+	style_box.corner_radius_bottom_right = 4
+	
+	# Update radar colors to use theme colors
+	background_color = theme_res.background_overlay
+	border_color = theme_res.border_color
+	player_color = theme_res.success_color
+	enemy_color = theme_res.error_color
+	boss_color = theme_res.warning_color
+	
+	_panel_background.add_theme_stylebox_override("panel", style_box)
+
+func _setup_fallback_radar_styling() -> void:
+	# Fallback styling if MainTheme unavailable
 	var style_box := StyleBoxFlat.new()
 	style_box.bg_color = background_color
 	style_box.border_width_left = 2
@@ -90,22 +122,12 @@ func _load_configuration() -> void:
 	# Load range
 	radar_range = config.get("radar_range", 1500.0)
 	
-	# Load colors
-	var colors: Dictionary = config.get("colors", {})
-	var bg: Dictionary = colors.get("background", {"r": 0.1, "g": 0.1, "b": 0.2, "a": 0.7})
-	background_color = Color(bg.get("r", 0.1), bg.get("g", 0.1), bg.get("b", 0.2), bg.get("a", 0.7))
-	
-	var border: Dictionary = colors.get("border", {"r": 0.4, "g": 0.4, "b": 0.6, "a": 1.0})
-	border_color = Color(border.get("r", 0.4), border.get("g", 0.4), border.get("b", 0.6), border.get("a", 1.0))
-	
-	var player: Dictionary = colors.get("player", {"r": 0.2, "g": 0.8, "b": 0.2, "a": 1.0})
-	player_color = Color(player.get("r", 0.2), player.get("g", 0.8), player.get("b", 0.2), player.get("a", 1.0))
-	
-	var enemy: Dictionary = colors.get("enemy", {"r": 0.8, "g": 0.2, "b": 0.2, "a": 1.0})
-	enemy_color = Color(enemy.get("r", 0.8), enemy.get("g", 0.2), enemy.get("b", 0.2), enemy.get("a", 1.0))
-	
-	var boss: Dictionary = colors.get("boss", {"r": 1.0, "g": 0.4, "b": 0.0, "a": 1.0})
-	boss_color = Color(boss.get("r", 1.0), boss.get("g", 0.4), boss.get("b", 0.0), boss.get("a", 1.0))
+	# Set default colors - MainTheme will override these in _setup_radar_display()
+	background_color = Color(0.1, 0.1, 0.2, 0.7)
+	border_color = Color(0.4, 0.4, 0.6, 1.0)
+	player_color = Color(0.2, 0.8, 0.2, 1.0)
+	enemy_color = Color(0.8, 0.2, 0.2, 1.0)
+	boss_color = Color(1.0, 0.4, 0.0, 1.0)
 	
 	# Load dot sizes
 	var dot_sizes: Dictionary = config.get("dot_sizes", {})
@@ -237,9 +259,10 @@ func set_radar_range(new_range: float) -> void:
 	_should_redraw = true
 
 func set_radar_size(new_size: Vector2) -> void:
+	# Size controlled by editor, not programmatically
 	radar_size = Vector2(max(50, new_size.x), max(50, new_size.y))
-	custom_minimum_size = radar_size
-	size = radar_size
+	# custom_minimum_size = radar_size
+	# size = radar_size
 	_setup_radar_display()
 	_should_redraw = true
 

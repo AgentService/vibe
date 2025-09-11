@@ -1,8 +1,42 @@
 [gd_scene load_steps=3 format=3 uid="uid://bep1l6d5gtsxt"]
 
-[ext_resource type="PackedScene" uid="uid://b8qx1qr4rqwyk" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
-[ext_resource type="Script" path="res://scenes/ui/hud/components/debug/PerformanceComponent.gd" id="2_performance_script"]
+[ext_resource type="PackedScene" uid="uid://v6sna08o3j3f" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" uid="uid://ctteqa2ai65fj" path="res://scenes/ui/hud/components/debug/PerformanceComponent.gd" id="2_performance_script"]
 
 [node name="PerformanceComponent" instance=ExtResource("1_base_component")]
+custom_minimum_size = Vector2(100, 30)
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -100.0
+offset_bottom = 30.0
+grow_horizontal = 0
 script = ExtResource("2_performance_script")
+show_fps = true
+show_memory = true
+show_draw_calls = true
+show_entity_counts = true
+compact_display = true
 component_id = "performance"
+
+[node name="PerformanceBackground" type="Panel" parent="." index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PerformanceLabel" type="Label" parent="." index="1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 5.0
+offset_right = -5.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "FPS: 60"
+vertical_alignment = 1

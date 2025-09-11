@@ -2,135 +2,23 @@ class_name AbilityBarComponent
 extends BaseHUDComponent
 
 ## Ability bar component showing player abilities with cooldowns and hotkeys
-## Displays up to 6 abilities with visual cooldown indicators and key bindings
+## Uses scene-defined ability buttons for easy editor customization
 
-@export var max_abilities: int = 6
-@export var ability_button_size: Vector2 = Vector2(48, 48)
-@export var spacing: int = 8
+@export var max_abilities: int = 4
 @export var show_hotkeys: bool = true
 @export var show_cooldown_text: bool = true
 
-# UI Elements
-var _ability_container: HBoxContainer
-var _ability_buttons: Array = []
+# Scene node references
+@onready var ability_container: HBoxContainer = $AbilityContainer
+@onready var ability_nodes: Array[Control] = []
+var ability_buttons: Array[Button] = []
+var cooldown_overlays: Array[ColorRect] = []
+var cooldown_labels: Array[Label] = []
+var hotkey_labels: Array[Label] = []
 
 # State tracking
 var _abilities: Array = []
 var _cooldowns: Dictionary = {}
-
-# Inner class for individual ability buttons
-class AbilityButton extends Control:
-	var button: Button
-	var cooldown_overlay: ColorRect
-	var cooldown_label: Label
-	var hotkey_label: Label
-	var ability_data: Dictionary = {}
-	var cooldown_progress: float = 0.0
-	var is_on_cooldown: bool = false
-	
-	func _init(ability_info: Dictionary, button_size: Vector2, show_hotkey: bool, show_cooldown: bool):
-		ability_data = ability_info
-		custom_minimum_size = button_size
-		size = button_size
-		
-		_create_ability_button(button_size, show_hotkey, show_cooldown)
-	
-	func _create_ability_button(button_size: Vector2, show_hotkey: bool, show_cooldown: bool):
-		# Main button
-		button = Button.new()
-		button.name = "AbilityButton"
-		button.custom_minimum_size = button_size
-		button.size = button_size
-		button.flat = true
-		button.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		add_child(button)
-		
-		# Apply ability icon if available
-		var icon_path = ability_data.get("icon_path", "")
-		if icon_path != "" and ResourceLoader.exists(icon_path):
-			button.icon = load(icon_path)
-		else:
-			# Fallback: create simple colored background
-			var style = StyleBoxFlat.new()
-			style.bg_color = ability_data.get("color", Color.BLUE)
-			style.corner_radius_top_left = 4
-			style.corner_radius_top_right = 4
-			style.corner_radius_bottom_left = 4
-			style.corner_radius_bottom_right = 4
-			button.add_theme_stylebox_override("normal", style)
-		
-		# Cooldown overlay
-		cooldown_overlay = ColorRect.new()
-		cooldown_overlay.name = "CooldownOverlay"
-		cooldown_overlay.color = Color(0.0, 0.0, 0.0, 0.6)
-		cooldown_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		cooldown_overlay.visible = false
-		cooldown_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		add_child(cooldown_overlay)
-		
-		# Cooldown text
-		if show_cooldown:
-			cooldown_label = Label.new()
-			cooldown_label.name = "CooldownLabel"
-			cooldown_label.text = "0"
-			cooldown_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			cooldown_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			cooldown_label.add_theme_color_override("font_color", Color.WHITE)
-			cooldown_label.add_theme_color_override("font_shadow_color", Color.BLACK)
-			cooldown_label.add_theme_constant_override("shadow_offset_x", 1)
-			cooldown_label.add_theme_constant_override("shadow_offset_y", 1)
-			cooldown_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			cooldown_label.visible = false
-			cooldown_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			add_child(cooldown_label)
-		
-		# Hotkey label
-		if show_hotkey:
-			hotkey_label = Label.new()
-			hotkey_label.name = "HotkeyLabel"
-			hotkey_label.text = ability_data.get("hotkey", "")
-			hotkey_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-			hotkey_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-			hotkey_label.add_theme_color_override("font_color", Color.WHITE)
-			hotkey_label.add_theme_color_override("font_shadow_color", Color.BLACK)
-			hotkey_label.add_theme_constant_override("shadow_offset_x", 1)
-			hotkey_label.add_theme_constant_override("shadow_offset_y", 1)
-			hotkey_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			hotkey_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			hotkey_label.offset_right = -4
-			hotkey_label.offset_bottom = -4
-			add_child(hotkey_label)
-	
-	func update_cooldown(current_time: float, total_time: float):
-		if total_time <= 0:
-			_clear_cooldown()
-			return
-		
-		cooldown_progress = 1.0 - (current_time / total_time)
-		is_on_cooldown = current_time > 0
-		
-		# Update visual indicators
-		cooldown_overlay.visible = is_on_cooldown
-		if cooldown_label:
-			cooldown_label.visible = is_on_cooldown
-			cooldown_label.text = str(ceil(current_time))
-		
-		# Update overlay height based on cooldown progress
-		if is_on_cooldown:
-			var overlay_height = size.y * cooldown_progress
-			cooldown_overlay.size.y = overlay_height
-			cooldown_overlay.position.y = size.y - overlay_height
-	
-	func _clear_cooldown():
-		is_on_cooldown = false
-		cooldown_progress = 0.0
-		cooldown_overlay.visible = false
-		if cooldown_label:
-			cooldown_label.visible = false
-	
-	func set_ability_enabled(enabled: bool):
-		button.disabled = not enabled
-		modulate.a = 1.0 if enabled else 0.5
 
 func _init() -> void:
 	super._init()
@@ -138,56 +26,82 @@ func _init() -> void:
 	update_frequency = 30.0  # Frequent updates for smooth cooldown animations
 
 func _setup_component() -> void:
-	_create_ability_bar_ui()
+	_setup_existing_ability_nodes()
 	_load_default_abilities()
 	_connect_ability_signals()
 
 func _update_component(delta: float) -> void:
 	_update_cooldowns(delta)
 
-func _create_ability_bar_ui() -> void:
-	# Create horizontal container for abilities
-	_ability_container = HBoxContainer.new()
-	_ability_container.name = "AbilityContainer"
-	_ability_container.add_theme_constant_override("separation", spacing)
-	_ability_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(_ability_container)
+func _setup_existing_ability_nodes() -> void:
+	# Find all ability nodes in the container
+	if ability_container:
+		for i in range(ability_container.get_child_count()):
+			var ability_node = ability_container.get_child(i) as Control
+			if ability_node:
+				ability_nodes.append(ability_node)
+				
+				# Get child components
+				var button = ability_node.get_node_or_null("AbilityButton") as Button
+				var overlay = ability_node.get_node_or_null("CooldownOverlay") as ColorRect
+				var cooldown_label = ability_node.get_node_or_null("CooldownLabel") as Label
+				var hotkey_label = ability_node.get_node_or_null("HotkeyLabel") as Label
+				
+				if button:
+					ability_buttons.append(button)
+					# Connect button signal
+					button.pressed.connect(_on_ability_button_pressed.bind(i))
+				
+				if overlay:
+					cooldown_overlays.append(overlay)
+					overlay.visible = false  # Hidden by default
+				
+				if cooldown_label:
+					cooldown_labels.append(cooldown_label)
+					cooldown_label.visible = false  # Hidden by default
+				
+				if hotkey_label:
+					hotkey_labels.append(hotkey_label)
+					hotkey_label.visible = show_hotkeys
 
 func _load_default_abilities() -> void:
-	# Default abilities with placeholder data
-	# In a real game, this would load from player data or ability system
+	# Default abilities matching the scene structure
 	var default_abilities = [
 		{
 			"id": "primary_attack",
 			"name": "Primary Attack",
 			"hotkey": "LMB",
-			"cooldown": 0.0,
-			"color": Color.RED
+			"cooldown": 0.0
 		},
 		{
 			"id": "secondary_attack", 
 			"name": "Secondary Attack",
 			"hotkey": "RMB",
-			"cooldown": 2.0,
-			"color": Color.BLUE
+			"cooldown": 2.0
 		},
 		{
 			"id": "dash",
 			"name": "Dash",
 			"hotkey": "SPACE",
-			"cooldown": 3.0,
-			"color": Color.GREEN
+			"cooldown": 3.0
 		},
 		{
 			"id": "special_ability",
 			"name": "Special",
 			"hotkey": "Q",
-			"cooldown": 8.0,
-			"color": Color.PURPLE
+			"cooldown": 8.0
 		}
 	]
 	
-	set_abilities(default_abilities)
+	_abilities = default_abilities
+	
+	# Initialize ability data for existing buttons
+	for i in range(min(_abilities.size(), ability_buttons.size())):
+		var ability_data = _abilities[i]
+		
+		# Set hotkey text
+		if i < hotkey_labels.size() and hotkey_labels[i]:
+			hotkey_labels[i].text = ability_data.get("hotkey", "")
 
 func _connect_ability_signals() -> void:
 	# Connect to ability-related EventBus signals
@@ -198,36 +112,6 @@ func _connect_ability_signals() -> void:
 		if EventBus.has_signal("ability_cooldown_updated"):
 			connect_to_signal(EventBus.ability_cooldown_updated, _on_ability_cooldown_updated)
 
-# Public API
-func set_abilities(abilities: Array) -> void:
-	_abilities = abilities
-	_rebuild_ability_buttons()
-
-func _rebuild_ability_buttons() -> void:
-	# Clear existing buttons
-	for button in _ability_buttons:
-		if is_instance_valid(button):
-			button.queue_free()
-	_ability_buttons.clear()
-	
-	# Create new buttons
-	for i in range(min(_abilities.size(), max_abilities)):
-		var ability_data = _abilities[i]
-		var ability_button = AbilityButton.new(ability_data, ability_button_size, show_hotkeys, show_cooldown_text)
-		_ability_container.add_child(ability_button)
-		_ability_buttons.append(ability_button)
-		
-		# Connect button signals
-		if ability_button.button:
-			ability_button.button.pressed.connect(_on_ability_button_pressed.bind(i))
-	
-	# Update component size based on content
-	_update_component_size()
-
-func _update_component_size() -> void:
-	var total_width = (_ability_buttons.size() * ability_button_size.x) + (((_ability_buttons.size() - 1) * spacing))
-	custom_minimum_size = Vector2(total_width, ability_button_size.y)
-
 func _update_cooldowns(delta: float) -> void:
 	# Update cooldown timers and visuals
 	for ability_id in _cooldowns:
@@ -237,10 +121,36 @@ func _update_cooldowns(delta: float) -> void:
 			cooldown_data.current = max(0, cooldown_data.current)
 			
 			# Find and update corresponding button
-			for i in range(_ability_buttons.size()):
-				if _ability_buttons[i].ability_data.get("id") == ability_id:
-					_ability_buttons[i].update_cooldown(cooldown_data.current, cooldown_data.total)
+			for i in range(_abilities.size()):
+				if _abilities[i].get("id") == ability_id:
+					_update_ability_cooldown_visual(i, cooldown_data.current, cooldown_data.total)
 					break
+
+func _update_ability_cooldown_visual(ability_index: int, current_time: float, total_time: float) -> void:
+	if ability_index >= ability_nodes.size():
+		return
+	
+	var is_on_cooldown = current_time > 0
+	
+	# Update cooldown overlay
+	if ability_index < cooldown_overlays.size() and cooldown_overlays[ability_index]:
+		var overlay = cooldown_overlays[ability_index]
+		overlay.visible = is_on_cooldown
+		
+		if is_on_cooldown and total_time > 0:
+			# Update overlay height based on cooldown progress
+			var progress = 1.0 - (current_time / total_time)
+			var full_height = ability_nodes[ability_index].size.y
+			var overlay_height = full_height * progress
+			overlay.size.y = overlay_height
+			overlay.position.y = full_height - overlay_height
+	
+	# Update cooldown text
+	if ability_index < cooldown_labels.size() and cooldown_labels[ability_index]:
+		var label = cooldown_labels[ability_index]
+		label.visible = is_on_cooldown and show_cooldown_text
+		if is_on_cooldown:
+			label.text = str(ceil(current_time))
 
 func start_ability_cooldown(ability_id: String, cooldown_time: float) -> void:
 	_cooldowns[ability_id] = {
@@ -275,6 +185,11 @@ func _on_ability_button_pressed(ability_index: int) -> void:
 			if EventBus and EventBus.has_signal("ability_triggered"):
 				EventBus.ability_triggered.emit(ability_id)
 			Logger.debug("Ability triggered: " + ability_id, "ui")
+			
+			# Start cooldown for demo purposes
+			var cooldown_time = ability_data.get("cooldown", 0.0)
+			if cooldown_time > 0:
+				start_ability_cooldown(ability_id, cooldown_time)
 		else:
 			Logger.debug("Ability on cooldown: " + ability_id, "ui")
 

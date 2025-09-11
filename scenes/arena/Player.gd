@@ -405,6 +405,10 @@ func _register_with_damage_system() -> void:
 	else:
 		Logger.debug("Player already connected to damage_entity_sync signal", "player")
 	
+	# Emit initial health signal for UI initialization
+	EventBus.health_changed.emit(float(current_health), float(get_max_health()))
+	Logger.debug("Player: Emitted initial health_changed signal - %d/%d HP" % [current_health, get_max_health()], "player")
+	
 	Logger.info("Player registered with unified damage system - SUCCESS", "player")
 	_registration_in_progress = false
 
@@ -457,6 +461,10 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	
 	# Update player HP
 	current_health = int(new_hp)
+	
+	# Emit health changed signal for UI updates
+	EventBus.health_changed.emit(float(current_health), float(get_max_health()))
+	Logger.debug("Player: Emitted health_changed signal - %d/%d HP" % [current_health, get_max_health()], "player")
 	
 	# Update EntityTracker data
 	var tracker_data = EntityTracker.get_entity("player")

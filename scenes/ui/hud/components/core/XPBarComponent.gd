@@ -14,6 +14,7 @@ var current_level: int = 1
 
 func _setup_component() -> void:
 	_style_xp_bar()
+	_style_xp_label()
 	_initialize_xp_display()
 
 func bind_events() -> void:
@@ -24,26 +25,33 @@ func bind_events() -> void:
 func _style_xp_bar() -> void:
 	if not xp_bar:
 		return
-		
-	# Create theme matching old HUD system
+	
+	# Apply MainTheme styling for XP bar
+	if not ThemeManager or not ThemeManager.current_theme:
+		Logger.warn("XPBarComponent: MainTheme not available", "ui")
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	
+	# Create XP bar theme using MainTheme colors
 	var xp_theme := Theme.new()
 	var style_bg := StyleBoxFlat.new()
 	var style_fill := StyleBoxFlat.new()
 	
-	# Background (empty XP)
-	style_bg.bg_color = Color(0.2, 0.2, 0.4, 0.8)  # Dark blue-gray
+	# Background using theme colors
+	style_bg.bg_color = theme_res.background_medium
 	style_bg.border_width_left = 2
 	style_bg.border_width_right = 2
 	style_bg.border_width_top = 2
 	style_bg.border_width_bottom = 2
-	style_bg.border_color = Color(0.4, 0.4, 0.6, 1.0)  # Light blue-gray border
+	style_bg.border_color = theme_res.border_color
 	style_bg.corner_radius_top_left = 3
 	style_bg.corner_radius_top_right = 3
 	style_bg.corner_radius_bottom_left = 3
 	style_bg.corner_radius_bottom_right = 3
 	
-	# Fill (current XP)
-	style_fill.bg_color = Color(0.4, 0.6, 1.0, 1.0)  # Bright blue
+	# Fill using primary color for XP
+	style_fill.bg_color = theme_res.primary_color
 	style_fill.corner_radius_top_left = 2
 	style_fill.corner_radius_top_right = 2
 	style_fill.corner_radius_bottom_left = 2
@@ -58,11 +66,18 @@ func _style_xp_bar() -> void:
 func _style_xp_label() -> void:
 	if not xp_label:
 		return
-		
-	# Style label to be readable over the XP bar
+	
+	# Apply MainTheme styling for XP label
+	if not ThemeManager or not ThemeManager.current_theme:
+		Logger.warn("XPBarComponent: MainTheme not available for label styling", "ui")
+		return
+	
+	var theme_res = ThemeManager.current_theme
+	
+	# Style label to be readable over the XP bar using theme colors
 	var label_theme := Theme.new()
-	label_theme.set_color("font_color", "Label", Color.WHITE)
-	label_theme.set_color("font_shadow_color", "Label", Color.BLACK)
+	label_theme.set_color("font_color", "Label", theme_res.text_primary)
+	label_theme.set_color("font_shadow_color", "Label", theme_res.background_dark)
 	label_theme.set_constant("shadow_offset_x", "Label", 1)
 	label_theme.set_constant("shadow_offset_y", "Label", 1)
 	
