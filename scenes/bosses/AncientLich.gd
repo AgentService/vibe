@@ -24,9 +24,9 @@ func _ready() -> void:
 	
 	# Configure shadow (larger shadow for DragonLord)
 	shadow_enabled = true
-	shadow_size_multiplier = 2.2  # Dragon-specific override: bigger shadow
+	# shadow_size_multiplier = 4.2  # Dragon-specific override: bigger shadow
 	# shadow_opacity = 0.8         # Uncomment for darker shadow
-	shadow_offset_y = 2.0         # Dragon-specific override: much lower shadow
+	# shadow_offset_y = 0.0         # Dragon-specific override: much lower shadow
 	
 	# Call parent _ready() to handle base initialization (damage system, shadow setup, etc.)
 	super._ready()
@@ -55,11 +55,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	super.setup_from_spawn_config(config)
 	
 	# AncientLich specific spawn config handling
-	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f" % [max_health, damage, speed, config.size_scale], "bosses")
+	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2fx" % [max_health, damage, speed, config.size_scale], "bosses")
 	
-	# Ensure scaling is applied after our specific sprite setup
-	if config.size_scale != 1.0 and animated_sprite:
-		call_deferred("_validate_sprite_scaling", config.size_scale)
+	# Note: Scaling is handled by unified scaling system in parent - no additional calls needed
 
 # Override parent _on_damage_entity_sync to add AncientLich specific damage handling
 func _on_damage_entity_sync(payload: Dictionary) -> void:

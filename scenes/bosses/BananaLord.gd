@@ -24,9 +24,9 @@ func _ready() -> void:
 	
 	# Configure shadow (smaller shadow for BananaLord)
 	shadow_enabled = true
-	# shadow_size_multiplier = 0.8  # Size relative to HitBox (COMMENTED: using global default 1.5)
+	#  shadow_size_multiplier = 5.8  # Size relative to HitBox (COMMENTED: using global default 1.5)
 	# shadow_opacity = 0.6  # COMMENTED: using global default 0.6
-	# shadow_offset_y = 1.5  # Closer shadow for grounded banana (COMMENTED: using global default 2.0)
+	shadow_offset_y = 11.5  # Closer shadow for grounded banana (COMMENTED: using global default 2.0)
 	
 	# Call parent _ready() to handle base initialization (including shadow setup)
 	super._ready()
@@ -56,11 +56,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	super.setup_from_spawn_config(config)
 	
 	# BananaLord specific spawn config handling
-	Logger.info("BananaLord boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f" % [max_health, damage, speed, config.size_scale], "bosses")
+	Logger.info("BananaLord boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2fx" % [max_health, damage, speed, config.size_scale], "bosses")
 	
-	# Ensure scaling is applied after our specific sprite setup
-	if config.size_scale != 1.0 and animated_sprite:
-		call_deferred("_validate_sprite_scaling", config.size_scale)
+	# Note: Scaling is handled by unified scaling system in parent - no additional calls needed
 
 # Override parent AI with BananaLord-specific wake-up behavior
 func _update_ai(_dt: float) -> void:
