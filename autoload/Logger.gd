@@ -58,7 +58,6 @@ func _log(level: LogLevel, msg: String, category: String) -> void:
 
 func _get_prefix(level: LogLevel, category: String) -> String:
 	var level_str: String = ["DEBUG", "INFO", "WARN", "ERROR", "NONE"][level]
-	
 	if category != "":
 		return "[%s:%s] " % [level_str, category.to_upper()]
 	else:
