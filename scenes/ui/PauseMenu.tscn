@@ -1,0 +1,88 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/ui/components/ThemedPanel.tscn" id="1_themed_panel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/EnhancedButton.tscn" id="2_enhanced_button"]
+
+[node name="PauseMenu" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="PausePanel" parent="." instance=ExtResource("1_themed_panel")]
+process_mode = 3
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_right = 200.0
+offset_bottom = 200.0
+grow_horizontal = 2
+grow_vertical = 2
+panel_variant = "modal"
+auto_theme = true
+show_border = true
+rounded_corners = true
+
+[node name="MenuVBox" type="VBoxContainer" parent="PausePanel"]
+process_mode = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 16
+
+[node name="TitleLabel" type="Label" parent="PausePanel/MenuVBox"]
+process_mode = 3
+layout_mode = 2
+text = "GAME PAUSED"
+horizontal_alignment = 1
+
+[node name="TopSpacer" type="Control" parent="PausePanel/MenuVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ResumeButton" parent="PausePanel/MenuVBox" instance=ExtResource("2_enhanced_button")]
+process_mode = 3
+layout_mode = 2
+text = "▶ Resume"
+button_variant = "primary"
+custom_minimum_size = Vector2(200, 40)
+
+[node name="SettingsButton" parent="PausePanel/MenuVBox" instance=ExtResource("2_enhanced_button")]
+process_mode = 3
+layout_mode = 2
+text = "⚙ Settings"
+button_variant = ""
+custom_minimum_size = Vector2(200, 40)
+
+[node name="HideoutButton" parent="PausePanel/MenuVBox" instance=ExtResource("2_enhanced_button")]
+process_mode = 3
+layout_mode = 2
+text = "🏠 Return to Hideout"
+button_variant = "secondary"
+custom_minimum_size = Vector2(200, 40)
+
+[node name="MenuButton" parent="PausePanel/MenuVBox" instance=ExtResource("2_enhanced_button")]
+process_mode = 3
+layout_mode = 2
+text = "📱 Return to Menu"
+button_variant = "error"
+custom_minimum_size = Vector2(200, 40)
+
+[node name="BottomSpacer" type="Control" parent="PausePanel/MenuVBox"]
+layout_mode = 2
+size_flags_vertical = 3

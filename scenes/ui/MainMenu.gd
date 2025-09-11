@@ -3,11 +3,11 @@ extends Control
 ## MainMenu - Entry point for the game with navigation to character selection.
 ## Uses MainTheme system for consistent styling and enhanced button components.
 
-@onready var title_label: Label = $BackgroundPanel/MenuContainer/TitleLabel
-@onready var continue_button: Button = $BackgroundPanel/MenuContainer/ContinueButton
-@onready var start_game_button: Button = $BackgroundPanel/MenuContainer/StartGameButton
-@onready var options_button: Button = $BackgroundPanel/MenuContainer/OptionsButton
-@onready var quit_button: Button = $BackgroundPanel/MenuContainer/QuitButton
+@onready var title_label: Label = $BackgroundPanel/CenterContainer/MenuContainer/TitleLabel
+@onready var continue_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/ContinueButton
+@onready var start_game_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/StartGameButton
+@onready var options_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/OptionsButton
+@onready var quit_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/QuitButton
 
 # Theme system
 var main_theme: MainTheme

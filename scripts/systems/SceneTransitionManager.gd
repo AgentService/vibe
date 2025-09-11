@@ -51,6 +51,17 @@ func _on_request_return_hideout(data: Dictionary = {}) -> void:
 	transition_data = data
 	transition_to_scene("res://scenes/core/Hideout.tscn", "hideout")
 
+func _cleanup_camera_for_transition(from_scene_name: String, to_scene_type: String) -> void:
+	"""Cleanup camera system when transitioning from gameplay to menu scenes."""
+	
+	# Check if transitioning from arena/hideout to menu scenes
+	var is_from_gameplay = from_scene_name.to_lower().contains("arena") or from_scene_name.to_lower().contains("hideout")
+	var is_to_menu = to_scene_type in ["main_menu", "character_select"]
+	
+	if is_from_gameplay and is_to_menu and CameraSystem:
+		Logger.debug("SceneTransitionManager: Triggering camera cleanup for %s → %s" % [from_scene_name, to_scene_type], "transition")
+		CameraSystem.cleanup_arena_camera()
+
 func transition_to_scene(scene_path: String, scene_type: String) -> void:
 	"""
 	Performs the actual scene transition.
@@ -78,6 +89,9 @@ func transition_to_scene(scene_path: String, scene_type: String) -> void:
 		if current_scene_node.has_method("on_teardown"):
 			current_scene_node.on_teardown()
 			Logger.debug("SceneTransitionManager: Called teardown on " + current_scene_node.name, "transition")
+		
+		# Cleanup camera system if transitioning from arena to menu scenes
+		_cleanup_camera_for_transition(current_scene_node.name, scene_type)
 		
 		current_scene_node.queue_free()
 		current_scene_node = null

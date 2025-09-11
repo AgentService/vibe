@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://d128c4kosb2vl"]
 
-[ext_resource type="Script" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
+[ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
 [ext_resource type="PackedScene" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
 [ext_resource type="PackedScene" path="res://scenes/ui/components/EnhancedButton.tscn" id="3_enhanced_button"]
 
@@ -14,65 +14,52 @@ grow_vertical = 2
 script = ExtResource("1_vjtqc")
 
 [node name="BackgroundPanel" parent="." instance=ExtResource("2_themed_panel")]
+custom_minimum_size = Vector2(0, 0)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-panel_variant = ""
-auto_theme = true
 show_border = false
 rounded_corners = false
 
-[node name="MenuContainer" type="VBoxContainer" parent="BackgroundPanel"]
+[node name="CenterContainer" type="CenterContainer" parent="BackgroundPanel"]
 layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -250.0
-offset_right = 200.0
-offset_bottom = 250.0
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="MenuContainer" type="VBoxContainer" parent="BackgroundPanel/CenterContainer"]
+layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TopSpacer" type="Control" parent="BackgroundPanel/MenuContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-
-[node name="TitleLabel" type="Label" parent="BackgroundPanel/MenuContainer"]
+[node name="TitleLabel" type="Label" parent="BackgroundPanel/CenterContainer/MenuContainer"]
 layout_mode = 2
 text = "VIBE ROGUELIKE"
 horizontal_alignment = 1
 
-[node name="MiddleSpacer" type="Control" parent="BackgroundPanel/MenuContainer"]
+[node name="MiddleSpacer" type="Control" parent="BackgroundPanel/CenterContainer/MenuContainer"]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
-custom_minimum_size = Vector2(0, 40)
 
-[node name="ContinueButton" parent="BackgroundPanel/MenuContainer" instance=ExtResource("3_enhanced_button")]
+[node name="ContinueButton" parent="BackgroundPanel/CenterContainer/MenuContainer" instance=ExtResource("3_enhanced_button")]
 layout_mode = 2
 text = "Continue"
 button_variant = "primary"
 
-[node name="StartGameButton" parent="BackgroundPanel/MenuContainer" instance=ExtResource("3_enhanced_button")]
+[node name="StartGameButton" parent="BackgroundPanel/CenterContainer/MenuContainer" instance=ExtResource("3_enhanced_button")]
 layout_mode = 2
 text = "New Character"
 button_variant = "secondary"
 
-[node name="OptionsButton" parent="BackgroundPanel/MenuContainer" instance=ExtResource("3_enhanced_button")]
+[node name="OptionsButton" parent="BackgroundPanel/CenterContainer/MenuContainer" instance=ExtResource("3_enhanced_button")]
 layout_mode = 2
 text = "Options"
-button_variant = ""
 
-[node name="QuitButton" parent="BackgroundPanel/MenuContainer" instance=ExtResource("3_enhanced_button")]
+[node name="QuitButton" parent="BackgroundPanel/CenterContainer/MenuContainer" instance=ExtResource("3_enhanced_button")]
 layout_mode = 2
 text = "Quit"
 button_variant = "error"
-
-[node name="BottomSpacer" type="Control" parent="BackgroundPanel/MenuContainer"]
-layout_mode = 2
-size_flags_vertical = 3

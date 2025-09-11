@@ -51,6 +51,15 @@
   - **Foundation Ready**: Clean slate prepared for ABILITY-1 modular AbilityService implementation
 
 ### Fixed
+- **MainMenu Centering Camera Interference**: Resolved MainMenu appearing off-center when transitioning from arena scenes
+  - **Problem**: Arena Camera2D parented to player persisted across scene transitions, interfering with MainMenu layout
+  - **Root Cause**: CameraSystem autoload retained arena camera state during ARENA→MENU transitions
+  - **Solution**: Dual-layer camera reset system with StateManager integration and SceneTransitionManager safety cleanup
+  - **StateManager Integration**: `_on_state_changed()` automatically resets camera when leaving ARENA/HIDEOUT for menu states  
+  - **Camera Reset Logic**: `reset_camera_for_menu()` destroys arena camera and creates clean, centered default camera
+  - **Logging Added**: Camera category added to LogConfigResource with detailed reset logging for debugging
+  - **Result**: MainMenu now appears perfectly centered whether accessed directly or via arena→pause→menu transition
+
 - **Player Registration After Scene Reset**: Resolved issue where Kill Player debug button failed on subsequent uses after session resets
   - **Problem**: "unknown entity: player" error occurred due to lost player registration with DamageService during reset operations
   - **Solution**: Enhanced player registration with comprehensive logging, validation, and retry mechanisms
