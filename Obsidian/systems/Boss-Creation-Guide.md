@@ -63,7 +63,8 @@ YourBoss (CharacterBody2D)
 ├── HitBox (Area2D)
 │   └── HitBoxShape (CollisionShape2D, CircleShape2D, centered at origin 0,0)
 ├── AttackTimer (Timer)
-└── BossHealthBar (BossHealthBar scene instance)
+├── BossHealthBar (BossHealthBar scene instance)
+└── BossShadow (BossShadow scene instance) [AUTO-CREATED by BaseBoss]
 ```
 
 **⚠️ Important Collision Setup:**
@@ -84,6 +85,64 @@ The `BossHealthBar.tscn` scene now automatically:
 - Boss must have `HitBox/HitBoxShape` node structure
 - HitBoxShape must have a shape assigned (CircleShape2D or RectangleShape2D)
 - BossHealthBar will warn in console if requirements aren't met
+
+**✨ NEW: Automatic Shadow System**
+
+The new shadow system provides realistic ground shadows for all bosses:
+
+- **🔄 Auto-created** - Shadows are automatically generated when using BaseBoss inheritance
+- **📏 Auto-sized** - Shadow size matches HitBox dimensions with configurable multiplier 
+- **📍 Auto-positioned** - Shadows appear below the boss with configurable offset
+- **🎨 Configurable** - Opacity, size, and position can be customized per-boss
+- **⚡ Performance optimized** - Uses single sprite with alpha modulation
+
+**Shadow Configuration:**
+```gdscript
+# In your boss _ready() method - customize before calling super._ready()
+shadow_enabled = true          # Enable/disable shadows
+shadow_size_multiplier = 0.8   # Size relative to HitBox (0.8 = 80% of HitBox size)
+shadow_opacity = 0.6           # Shadow transparency (0.0 = invisible, 1.0 = opaque)
+shadow_offset_y = 2.0          # Pixels below HitBox bottom
+```
+
+**✨ NEW: Real-Time Shadow Hot-Reload System**
+
+The shadow system now supports real-time updates during development:
+
+- **🔄 Single Source of Truth**: BaseBoss.gd contains global defaults for all bosses
+- **📝 Boss Script Overrides**: Individual bosses can override specific shadow properties
+- **⚡ Instant Updates**: Changes to shadow values update immediately in both test scenes and gameplay
+- **🎯 Clean Architecture**: No duplicate defaults across multiple files
+
+**Hot-Reload Architecture:**
+```gdscript
+# BaseBoss.gd - GLOBAL defaults for ALL bosses (single source of truth)
+var shadow_size_multiplier: float = 2.5  # All bosses default to 2.5x HitBox size
+var shadow_opacity: float = 0.4          # All bosses default to 40% opacity  
+var shadow_offset_y: float = 3.0         # All bosses default to 3px below HitBox
+
+# Individual Boss Scripts - Override only when needed
+# DragonLord.gd - Example boss-specific customization
+shadow_size_multiplier = 2.2  # Dragon has slightly smaller shadow than global default
+shadow_offset_y = 2.0         # Dragon shadow closer to ground
+# shadow_opacity inherited from BaseBoss (0.4)
+```
+
+**Usage Patterns:**
+
+1. **Global Changes**: Modify BaseBoss.gd values to affect ALL bosses simultaneously
+2. **Boss-Specific Overrides**: Set values in individual boss scripts before `super._ready()`
+3. **Runtime Overrides**: Use SpawnConfig.shadow_config for dynamic variations
+
+**Testing Your Changes:**
+- **ShadowTestScene**: Direct scene instantiation - uses your exact script values
+- **F5 Gameplay**: Spawn pipeline - uses same values through unified system
+- **Both methods produce identical results** with the new architecture
+
+**Shadow Asset System:**
+- Uses existing shadow sprites from `assets/sprites/.../shadow_single.png`
+- Automatically applies dark modulation with configurable alpha
+- Z-index set to -1 to render below boss sprites
 
 ### **Step 2: Create Boss Script**
 
@@ -109,7 +168,13 @@ func _ready() -> void:
     chase_range = 350.0
     animation_prefix = "walk"  # Uses walk_north, walk_south, etc.
     
-    # Call parent _ready() to handle all base initialization
+    # Configure shadow properties (optional - defaults to enabled)
+    shadow_enabled = true
+    shadow_size_multiplier = 0.8  # 80% of HitBox size
+    shadow_opacity = 0.6          # Semi-transparent
+    shadow_offset_y = 2.0         # 2 pixels below HitBox
+    
+    # Call parent _ready() to handle all base initialization (including shadow setup)
     super._ready()
 
 func get_boss_name() -> String:
@@ -330,6 +395,12 @@ behavior_config = {
     "aggro_range": 350.0,
     "ai_type": "boss_custom"
 }
+shadow_config = {
+    "enabled": true,
+    "size_multiplier": 0.8,
+    "opacity": 0.6,
+    "offset_y": 2.0
+}
 boss_scene = ExtResource("2")
 is_special_boss = true
 boss_spawn_method = "scene"
@@ -435,6 +506,15 @@ func _on_player_reached_area() -> void:
 - ✅ **Health bar wrong position** - Ensure HitBoxShape has assigned shape (Circle or Rectangle)
 - ✅ **Health bar not adjusting** - Check console for BossHealthBar warnings about missing nodes
 
+### **Shadow Issues:**
+- ✅ **Shadow not appearing** - Check `shadow_enabled = true` in boss _ready() method
+- ✅ **Shadow wrong size** - Adjust `shadow_size_multiplier` (0.5-1.5 recommended range)
+- ✅ **Shadow too dark/light** - Modify `shadow_opacity` (0.3-0.8 for realistic shadows)
+- ✅ **Shadow wrong position** - Check HitBox/HitBoxShape structure, adjust `shadow_offset_y`
+- ✅ **Shadow appears above boss** - Verify BossShadow z_index is set to -1
+- ✅ **Multiple shadows** - Only one shadow per boss; check for manual BossShadow instances in scene
+- ✅ **Shadow asset not found** - Verify shadow_single.png exists in sprite assets directory
+
 ### **Boss AI Not Working:**
 - ✅ Verify EventBus.combat_step connection in `_ready()` (or BaseBoss inheritance)
 - ✅ Check PlayerState.has_player_reference() returns true
@@ -468,5 +548,12 @@ func _on_player_reached_area() -> void:
 - **Use SpawnConfig** for consistent configuration
 - **Test with unified damage system** to ensure compatibility
 - **Document custom behaviors** for team members
+
+### **Shadow System:**
+- **Use BaseBoss inheritance** for automatic shadow management
+- **Configure shadows in _ready()** before calling super._ready()
+- **Test shadow positioning** with different boss sizes and collision shapes
+- **Use consistent shadow settings** across similar boss types for visual coherence
+- **Disable shadows for flying bosses** by setting `shadow_enabled = false`
 
 With this guide, you can create complex, performant bosses that integrate seamlessly with the game's unified systems while maintaining flexibility for unique mechanics and behaviors.

@@ -1,147 +1,74 @@
-extends CharacterBody2D
+extends BaseBoss
 
-## Ancient Lich Boss - V2 Enemy System Integration
+## Ancient Lich Boss - V2 Enemy System Integration  
 ## Scene-based boss with AnimatedSprite2D for proper visual workflow
+## Now inherits from BaseBoss for automatic shadow and unified systems support
 
 class_name AncientLich
 
-signal died
-
-@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var health_bar: BossHealthBar = $BossHealthBar
-
-var spawn_config: SpawnConfig
-var max_health: float = 200.0
-var current_health: float = 200.0
-var damage: float = 25.0
-var speed: float = 60.0
-var attack_damage: float = 25.0
-var attack_cooldown: float = 1.5
-var last_attack_time: float = 0.0
-
-# AI state
-var target_position: Vector2
-var attack_range: float = 60.0
-var chase_range: float = 300.0
-var ai_paused: bool = false  # Debug AI pause state
-
-# Animation state
+# AncientLich specific properties
 var has_woken_up: bool = false
 var is_taking_damage: bool = false
 var is_aggroed: bool = false
 
 func _ready() -> void:
-	Logger.info("AncientLich boss ready", "bosses")
+	# Set AncientLich specific stats (override BaseBoss defaults)
+	max_health = 200.0
+	current_health = 200.0
+	damage = 25.0
+	speed = 60.0
+	attack_damage = 25.0
+	attack_cooldown = 1.5
+	attack_range = 60.0
+	chase_range = 300.0
 	
+	# Configure shadow (larger shadow for DragonLord)
+	shadow_enabled = true
+	shadow_size_multiplier = 2.2  # Dragon-specific override: bigger shadow
+	# shadow_opacity = 0.8         # Uncomment for darker shadow
+	shadow_offset_y = 2.0         # Dragon-specific override: much lower shadow
+	
+	# Call parent _ready() to handle base initialization (damage system, shadow setup, etc.)
+	super._ready()
+	
+	# AncientLich specific setup after base initialization
+	_setup_ancient_lich_specific_behavior()
+
+func get_boss_name() -> String:
+	return "AncientLich"
+
+func _setup_ancient_lich_specific_behavior() -> void:
 	# Start with wake_up animation and pause it on first frame
-	var animated_sprite_node = $AnimatedSprite2D
-	if animated_sprite_node and animated_sprite_node.sprite_frames:
-		animated_sprite_node.play("wake_up")
-		animated_sprite_node.pause()  # Stay on first frame until aggroed
-		animated_sprite_node.connect("animation_finished", _on_animation_finished)
+	if animated_sprite and animated_sprite.sprite_frames:
+		animated_sprite.play("wake_up")
+		animated_sprite.pause()  # Stay on first frame until aggroed
+		animated_sprite.connect("animation_finished", _on_animation_finished)
 		Logger.debug("AncientLich spawned in dormant state", "bosses")
-	
-	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager instead of individual combat_step connection
-	var boss_id = "boss_" + str(get_instance_id())
-	BossUpdateManager.register_boss(self, boss_id)
-	Logger.debug("AncientLich registered with BossUpdateManager as " + boss_id, "performance")
-	
-	# Connect to other signals (not combat_step)
-	if EventBus:
-		# DAMAGE V3: Listen for unified damage sync events
-		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
-		# DEBUG: Listen for cheat toggles (AI pause)
-		EventBus.cheat_toggled.connect(_on_cheat_toggled)
-	
-	# DAMAGE V3: Register with both DamageService and EntityTracker
-	var entity_id = "boss_" + str(get_instance_id())
-	var entity_data = {
-		"id": entity_id,
-		"type": "boss",
-		"hp": current_health,
-		"max_hp": max_health,
-		"alive": true,
-		"pos": global_position
-	}
-	
-	# Register with both systems for unified damage V3
-	DamageService.register_entity(entity_id, entity_data)
-	EntityTracker.register_entity(entity_id, entity_data)
-	Logger.debug("AncientLich registered with DamageService and EntityTracker as " + entity_id, "bosses")
-	
-	# Initialize health bar
-	_update_health_bar()
 
+# Override _exit_tree to call parent cleanup
 func _exit_tree() -> void:
-	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
-	var boss_id = "boss_" + str(get_instance_id())
-	BossUpdateManager.unregister_boss(boss_id)
-	
-	# Clean up remaining signal connections
-	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
-		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
-	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
-		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
-	
-	# DAMAGE V3: Unregister from both systems
-	var entity_id = "boss_" + str(get_instance_id())
-	DamageService.unregister_entity(entity_id)
-	EntityTracker.unregister_entity(entity_id)
+	super._exit_tree()
 
+# Override setup_from_spawn_config to call parent and add specific behavior
 func setup_from_spawn_config(config: SpawnConfig) -> void:
-	spawn_config = config
-	max_health = config.health
-	current_health = config.health
-	damage = config.damage  
-	speed = config.speed
-	attack_damage = config.damage
+	# Call parent setup first
+	super.setup_from_spawn_config(config)
 	
-	# Set position
-	global_position = config.position
-	
-	# Apply visual config (removed color tint functionality)
-	scale = Vector2.ONE * config.size_scale
-	
+	# AncientLich specific spawn config handling
 	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
 
-## BOSS PERFORMANCE V2: New batch AI interface called by BossUpdateManager
-## Replaces individual _on_combat_step connections with centralized processing
-func _update_ai_batch(dt: float) -> void:
-	_update_ai(dt)
-	last_attack_time += dt
-
-## DAMAGE V3: Handle unified damage sync events for scene bosses
+# Override parent _on_damage_entity_sync to add AncientLich specific damage handling
 func _on_damage_entity_sync(payload: Dictionary) -> void:
+	# Call parent damage sync handling first
+	super._on_damage_entity_sync(payload)
+	
+	# Add AncientLich specific damage response
 	var entity_id: String = payload.get("entity_id", "")
-	var entity_type: String = payload.get("entity_type", "")
-	var new_hp: float = payload.get("new_hp", 0.0)
-	var is_death: bool = payload.get("is_death", false)
-	
-	# Only handle boss entities matching this instance
-	if entity_type != "boss":
-		return
-	
 	var expected_entity_id = "boss_" + str(get_instance_id())
-	if entity_id != expected_entity_id:
-		return  # Not for this boss
-	
-	# Update boss HP
-	current_health = new_hp
-	_update_health_bar()
-	
-	# Handle death
-	if is_death:
-		Logger.info("V3: Boss %s killed via damage sync" % [entity_id], "combat")
-		_die()
-	else:
-		# Update EntityTracker health data
-		var tracker_data = EntityTracker.get_entity(entity_id)
-		if tracker_data.has("id"):
-			tracker_data["hp"] = new_hp
-		
-		# Visual feedback for taking damage
+	if entity_id == expected_entity_id and not payload.get("is_death", false):
 		_trigger_damage_animation()
 
+# Override parent AI with AncientLich-specific wake-up behavior
 func _update_ai(_dt: float) -> void:
 	# Skip AI updates if paused by debug system
 	if ai_paused:
@@ -163,73 +90,23 @@ func _update_ai(_dt: float) -> void:
 	if not has_woken_up:
 		return
 	
-	# Chase behavior when player is in range
-	if distance_to_player <= chase_range:
-		if distance_to_player > attack_range:
-			# Move toward player
-			var direction: Vector2 = (target_position - global_position).normalized()
-			velocity = direction * speed
-			move_and_slide()
-			
-			# Flip sprite to face movement direction
-			EnemySpriteFlipping.flip_sprite_for_direction(animated_sprite, direction)
-			
-			# BOSS PERFORMANCE V2: Position updates now handled by BossUpdateManager batch processing
-			# Individual EntityTracker.update_entity_position calls removed for performance
-			var entity_id = "boss_" + str(get_instance_id())
-			DamageService.update_entity_position(entity_id, global_position)
-		else:
-			# In attack range - stop and attack
-			velocity = Vector2.ZERO
-			if last_attack_time >= attack_cooldown:
-				_perform_attack()
-				last_attack_time = 0.0
+	# Call parent AI behavior for standard movement and attacks
+	super._update_ai(_dt)
+	
+	# Add AncientLich specific behavior here if needed
 
+# Override parent attack with AncientLich-specific magic damage
 func _perform_attack() -> void:
 	Logger.debug("AncientLich attacks for %.1f damage!" % attack_damage, "bosses")
 	
-	# Apply damage to player directly via DamageService (single entry point)
+	# Apply magic damage to player via unified DamageService
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
 		var source_name = "boss_ancient_lich"
-		var damage_tags = ["magic", "boss"]
+		var damage_tags = ["magic", "boss"]  # Magic damage type
 		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
 
-# DAMAGE V3: take_damage() method removed - damage handled via unified pipeline
-# Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync
-
-func _die() -> void:
-	Logger.info("AncientLich has been defeated!", "bosses")
-	died.emit()  # Signal for integration
-	queue_free()
-
-# Public interface for damage system integration  
-func get_max_health() -> float:
-	return max_health
-
-func get_current_health() -> float:
-	return current_health
-
-func set_current_health(new_health: float) -> void:
-	var old_health = current_health
-	current_health = new_health
-	_update_health_bar()
-	
-	# Play damage animation if health decreased and not already playing damage anim
-	if new_health < old_health and not is_taking_damage and has_woken_up:
-		is_taking_damage = true
-		animated_sprite.play("damage_taken")
-	
-	# Check for death
-	if current_health <= 0.0 and is_alive():
-		_die()
-
-func is_alive() -> bool:
-	return current_health > 0.0
-
-func _update_health_bar() -> void:
-	if health_bar:
-		health_bar.update_health(current_health, max_health)
+# AncientLich specific methods
 
 func _aggro() -> void:
 	if is_aggroed:
@@ -252,8 +129,3 @@ func _trigger_damage_animation() -> void:
 	if not is_taking_damage and has_woken_up:
 		is_taking_damage = true
 		animated_sprite.play("damage_taken")
-
-func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
-	# Handle AI pause/unpause cheat toggle
-	if payload.cheat_name == "ai_paused":
-		ai_paused = payload.enabled
