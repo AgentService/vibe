@@ -12,7 +12,7 @@ class_name BossShadow
 # Shadow configuration - can be overridden by parent boss
 @export var size_multiplier: float = 1.0: set = _set_size_multiplier  # Size relative to HitBox (neutral default)
 @export var opacity: float = 0.6: set = _set_opacity  # Shadow transparency
-@export var offset_y: float = -5.0: set = _set_offset_y  # Pixels above HitBox bottom
+@export var offset_y: float = 0.0: set = _set_offset_y  # Pixels above HitBox bottom
 @export var enabled: bool = true: set = _set_enabled  # Can disable shadows per-boss
 
 var auto_sized: bool = false
@@ -81,10 +81,9 @@ func auto_adjust_to_hitbox() -> void:
 	var shadow_width = effective_width * size_multiplier  # Match effective HitBox width with size multiplier  
 	var shadow_height = effective_width * size_multiplier * 0.3  # Height based on effective WIDTH for realistic ground shadow
 	
-	# Position shadow at the bottom of the BASE (unscaled) HitBox with configurable offset
-	# This ensures shadow offset_y remains consistent regardless of boss scale
-	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (height * 0.5)
-	var shadow_y = hitbox_world_bottom - offset_y  # Apply offset_y for positioning adjustment
+	# Position shadow using sprite-based positioning for consistency across different boss configurations
+	# This ensures shadows appear at the same ground level regardless of HitBox setup variations
+	var shadow_y = _calculate_sprite_based_shadow_position(parent_node)
 	
 	# Apply size and position (accounting for both HitBox and HitBoxShape positions)
 	position.x = hitbox_node.position.x + hitbox_shape_node.position.x  # Match HitBox center horizontally
@@ -153,3 +152,63 @@ func _set_enabled(value: bool) -> void:
 	# Re-enable and readjust if needed
 	if auto_sized:
 		call_deferred("auto_adjust_to_hitbox")
+
+## SPRITE-BASED SHADOW POSITIONING: Calculate shadow position based on sprite bounds for consistency
+func _calculate_sprite_based_shadow_position(parent_node: Node) -> float:
+	# Try to get the AnimatedSprite2D from the parent boss
+	var animated_sprite = parent_node.get_node_or_null("AnimatedSprite2D")
+	if not animated_sprite:
+		Logger.debug("No AnimatedSprite2D found, using fallback shadow positioning", "debug")
+		return _calculate_fallback_shadow_position(parent_node)
+	
+	# Calculate sprite bottom position (sprite center + half height)
+	var sprite_position = animated_sprite.position
+	var sprite_scale = animated_sprite.scale
+	
+	# Get sprite texture bounds
+	var sprite_height = 32.0  # Default fallback
+	if animated_sprite.sprite_frames and animated_sprite.animation:
+		var current_frame_texture = animated_sprite.sprite_frames.get_frame_texture(animated_sprite.animation, animated_sprite.frame)
+		if current_frame_texture:
+			sprite_height = current_frame_texture.get_height()
+	
+	# Calculate effective sprite bottom (considering scale and position)
+	var effective_sprite_height = sprite_height * sprite_scale.y
+	var sprite_bottom = sprite_position.y + (effective_sprite_height * 0.5)
+	
+	# Apply configurable offset
+	var shadow_y = sprite_bottom - offset_y
+	
+	Logger.debug("Sprite-based shadow positioning: sprite_pos=%v, sprite_h=%.1f, effective_h=%.1f, bottom=%.1f, final_y=%.1f" % [
+		sprite_position, sprite_height, effective_sprite_height, sprite_bottom, shadow_y], "debug")
+	
+	return shadow_y
+
+## FALLBACK SHADOW POSITIONING: Use HitBox method when sprite info unavailable
+func _calculate_fallback_shadow_position(parent_node: Node) -> float:
+	# Get HitBox information
+	var hitbox_node = parent_node.get_node_or_null("HitBox")
+	if not hitbox_node:
+		return 16.0  # Default fallback position
+	
+	var hitbox_shape_node = hitbox_node.get_node_or_null("HitBoxShape")
+	if not hitbox_shape_node or not hitbox_shape_node.shape:
+		return 16.0  # Default fallback position
+	
+	# Use original HitBox-based calculation
+	var shape = hitbox_shape_node.shape
+	var height = 32.0  # Default
+	
+	if shape is CircleShape2D:
+		var circle = shape as CircleShape2D
+		height = circle.radius * 2.0
+	elif shape is RectangleShape2D:
+		var rect = shape as RectangleShape2D
+		height = rect.size.y
+	
+	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (height * 0.5)
+	var shadow_y = hitbox_world_bottom - offset_y
+	
+	Logger.debug("Fallback HitBox shadow positioning: hitbox_bottom=%.1f, final_y=%.1f" % [hitbox_world_bottom, shadow_y], "debug")
+	
+	return shadow_y
