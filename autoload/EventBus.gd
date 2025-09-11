@@ -95,6 +95,47 @@ signal leveled_up(new_level: int, prev_level: int)
 @warning_ignore("unused_signal")
 signal progression_changed(state: Dictionary)
 
+# HUD COMPONENT SIGNALS
+## Health changed - emitted when player health changes
+@warning_ignore("unused_signal")
+signal health_changed(current_health: float, max_health: float)
+
+## Shield changed - emitted when player shield changes
+@warning_ignore("unused_signal")
+signal shield_changed(current_shield: float, max_shield: float)
+
+## Resource changed - emitted when player resources change (mana, energy, etc.)
+@warning_ignore("unused_signal")
+signal resource_changed(resource_type: String, current: float, max_value: float)
+
+## Ability cooldown started - emitted when ability goes on cooldown
+@warning_ignore("unused_signal")
+signal ability_cooldown_started(ability_id: String, duration: float)
+
+## Ability ready - emitted when ability cooldown finishes
+@warning_ignore("unused_signal")
+signal ability_ready(ability_id: String)
+
+## Damage numbers requested - emitted for floating damage text display
+@warning_ignore("unused_signal")
+signal damage_numbers_requested(amount: int, damage_type: String, position: Vector2)
+
+## Item picked up - emitted for pickup notifications
+@warning_ignore("unused_signal")
+signal item_picked_up(item: Resource, position: Vector2)
+
+## Wave started - emitted when new wave begins
+@warning_ignore("unused_signal")
+signal wave_started(wave_number: int, enemy_count: int)
+
+## Boss spawned - emitted when boss appears
+@warning_ignore("unused_signal")
+signal boss_spawned(boss_name: String)
+
+## Notification requested - emitted to show system messages
+@warning_ignore("unused_signal")
+signal notification_requested(message: String, type: String, duration: float)
+
 # CHARACTER MANAGEMENT SIGNALS
 ## Characters list changed - emitted when character list is updated (create/delete)
 @warning_ignore("unused_signal")

@@ -56,7 +56,11 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	super.setup_from_spawn_config(config)
 	
 	# BananaLord specific spawn config handling
-	Logger.info("BananaLord boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
+	Logger.info("BananaLord boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f" % [max_health, damage, speed, config.size_scale], "bosses")
+	
+	# Ensure scaling is applied after our specific sprite setup
+	if config.size_scale != 1.0 and animated_sprite:
+		call_deferred("_validate_sprite_scaling", config.size_scale)
 
 # Override parent AI with BananaLord-specific wake-up behavior
 func _update_ai(_dt: float) -> void:

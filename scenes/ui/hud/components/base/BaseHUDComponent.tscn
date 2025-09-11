@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8qx1qr4rqwyk"]
+
+[ext_resource type="Script" path="res://scenes/ui/hud/components/base/BaseHUDComponent.gd" id="1_base_script"]
+
+[node name="BaseHUDComponent" type="Control"]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_base_script")

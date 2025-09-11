@@ -41,6 +41,7 @@ GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 CameraSystem="*res://scripts/systems/CameraSystem.gd"
+HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
 
 [display]
 

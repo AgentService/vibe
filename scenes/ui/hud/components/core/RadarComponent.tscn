@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://c6m2bj7nxgxtn"]
+
+[ext_resource type="PackedScene" uid="uid://b8qx1qr4rqwyk" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" path="res://scenes/ui/hud/components/core/RadarComponent.gd" id="2_radar_script"]
+
+[node name="RadarComponent" instance=ExtResource("1_base_component")]
+script = ExtResource("2_radar_script")
+component_id = "radar"

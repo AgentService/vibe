@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://bg3x5qrr57mk1"]
+
+[ext_resource type="PackedScene" uid="uid://b8qx1qr4rqwyk" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" path="res://scenes/ui/hud/components/core/HealthBarComponent.gd" id="2_health_script"]
+
+[node name="HealthBarComponent" instance=ExtResource("1_base_component")]
+script = ExtResource("2_health_script")
+component_id = "health_bar"

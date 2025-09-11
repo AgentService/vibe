@@ -1,36 +1,58 @@
-[gd_scene load_steps=12 format=3 uid="uid://8e6qf7vr1fh5"]
+[gd_scene load_steps=16 format=3 uid="uid://8e6qf7vr1fh5"]
 
 [ext_resource type="Script" uid="uid://hjracmfrs5p3" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
 
+[sub_resource type="AtlasTexture" id="AtlasTexture_7b065"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(0, 0, 35, 66)
+
 [sub_resource type="AtlasTexture" id="AtlasTexture_bit24"]
 atlas = ExtResource("3_w5q7g")
-region = Rect2(768, 0, 384, 1024)
+region = Rect2(35, 0, 35, 66)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xt85e"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(70, 0, 35, 66)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_mqrpj"]
 atlas = ExtResource("3_w5q7g")
-region = Rect2(0, 0, 352, 1024)
+region = Rect2(0, 0, 35, 66)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_w5q7g"]
 atlas = ExtResource("3_w5q7g")
-region = Rect2(352, 0, 352, 1024)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_7b065"]
-atlas = ExtResource("3_w5q7g")
-region = Rect2(704, 0, 352, 1024)
+region = Rect2(35, 0, 35, 66)
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_uudk0"]
 atlas = ExtResource("3_w5q7g")
-region = Rect2(0, 0, 384, 1024)
+region = Rect2(70, 0, 35, 66)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8rpf6"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(0, 0, 35, 66)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_g14k7"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(35, 0, 35, 66)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_laran"]
+atlas = ExtResource("3_w5q7g")
+region = Rect2(70, 0, 35, 66)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_mjtd6"]
 animations = [{
 "frames": [{
 "duration": 1.0,
+"texture": SubResource("AtlasTexture_7b065")
+}, {
+"duration": 1.0,
 "texture": SubResource("AtlasTexture_bit24")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xt85e")
 }],
-"loop": false,
+"loop": true,
 "name": &"damage_taken",
 "speed": 10.0
 }, {
@@ -42,7 +64,7 @@ animations = [{
 "texture": SubResource("AtlasTexture_w5q7g")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_7b065")
+"texture": SubResource("AtlasTexture_uudk0")
 }],
 "loop": true,
 "name": &"default",
@@ -50,7 +72,13 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_uudk0")
+"texture": SubResource("AtlasTexture_8rpf6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_g14k7")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_laran")
 }],
 "loop": false,
 "name": &"wake_up",
@@ -61,15 +89,17 @@ animations = [{
 radius = 10.0499
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
-size = Vector2(24, 60)
+size = Vector2(24, 63)
 
 [node name="BananaLord" type="CharacterBody2D"]
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 position = Vector2(1.6, -2.8)
-scale = Vector2(0.1, 0.1)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
+animation = &"wake_up"
+frame = 2
+frame_progress = 1.0
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 position = Vector2(-0.400015, 0.200008)
@@ -79,7 +109,7 @@ shape = SubResource("CircleShape2D_vnul3")
 position = Vector2(-1.06667, -8.63333)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1.06667, 8.63333)
+position = Vector2(1.06667, 7.13333)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]

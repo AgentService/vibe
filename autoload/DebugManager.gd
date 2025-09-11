@@ -49,6 +49,7 @@ func _ready() -> void:
 	# Set default 144Hz mode for high refresh rate gaming
 	call_deferred("_set_default_display_mode")
 
+
 func _check_debug_config() -> void:
 	"""Check debug configuration to determine if F12 debug panels should be enabled by default."""
 	var config_path: String = "res://config/debug.tres"
@@ -87,6 +88,13 @@ func _input(event: InputEvent) -> void:
 		return
 		
 	var key_event := event as InputEventKey
+	
+	# F5: Hot-reload enemy templates for immediate size factor changes
+	if key_event.keycode == KEY_F5:
+		Logger.info("F5 pressed: Hot-reloading enemy templates", "debug")
+		EnemyFactory.force_reload_templates()
+		get_viewport().set_input_as_handled()
+		return
 	
 	# F12: Toggle debug mode (only if debug panels were enabled at startup)
 	if key_event.keycode == KEY_F12:

@@ -116,12 +116,53 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	# Set position
 	global_position = config.position
 	
-	# Apply visual config
-	scale = Vector2.ONE * config.size_scale
+	# Apply scaling only to visual and gameplay components (performance-friendly)
+	var scale_factor = config.size_scale
+	
+	# Apply sprite scaling regardless of scale factor (fixes 1.0x scaling issue)
+	# Try immediate sprite scaling first
+	if animated_sprite:
+		_apply_sprite_scaling(scale_factor)
+	else:
+		# Defer sprite scaling if animated_sprite isn't ready yet
+		Logger.debug("AnimatedSprite2D not ready, deferring sprite scaling", "bosses")
+		call_deferred("_apply_sprite_scaling", scale_factor)
+	
+	# Scale collision shape for movement/physics
+	var collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape:
+		var old_scale = collision_shape.scale
+		collision_shape.scale = Vector2.ONE * scale_factor
+		Logger.info("CollisionShape2D scaled: %.2f → %.2f" % [old_scale.x, collision_shape.scale.x], "debug")
+	else:
+		Logger.warn("CollisionShape2D not found for scaling", "debug")
+	
+	# Scale hitbox for combat detection  
+	var hitbox = get_node_or_null("HitBox")
+	if hitbox:
+		var old_scale = hitbox.scale
+		hitbox.scale = Vector2.ONE * scale_factor
+		Logger.info("HitBox scaled: %.2f → %.2f" % [old_scale.x, hitbox.scale.x], "debug")
+		
+		# Also scale the HitBoxShape child if it exists
+		var hitbox_shape = hitbox.get_node_or_null("HitBoxShape")
+		if hitbox_shape:
+			var old_shape_scale = hitbox_shape.scale
+			hitbox_shape.scale = Vector2.ONE * scale_factor
+			Logger.info("HitBoxShape scaled: %.2f → %.2f" % [old_shape_scale.x, hitbox_shape.scale.x], "debug")
+		else:
+			Logger.warn("HitBoxShape not found inside HitBox", "debug")
+	else:
+		Logger.warn("HitBox not found for scaling", "debug")
 	
 	# Apply shadow config if available (only override if explicitly configured)
 	if config.shadow_config and not config.shadow_config.is_empty():
 		configure_shadow(config.shadow_config)
+	
+	# Trigger health bar readjustment after scaling (health bar needs to resize based on new HitBox scale)
+	var health_bar = get_node_or_null("BossHealthBar")
+	if health_bar and health_bar.has_method("auto_adjust_to_hitbox"):
+		call_deferred("_readjust_health_bar_after_scaling")
 	
 	Logger.info(get_boss_name() + " configured: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
 
@@ -344,3 +385,95 @@ func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
+
+## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
+func _apply_sprite_scaling(scale_factor: float) -> void:
+	if not animated_sprite:
+		Logger.warn("Cannot apply sprite scaling: AnimatedSprite2D not found", "bosses")
+		return
+	
+	# Store original position offset to preserve it during scaling
+	var original_position = animated_sprite.position
+	
+	# Apply absolute scaling (not multiplicative)
+	animated_sprite.scale = Vector2.ONE * scale_factor
+	
+	# Preserve original position offset (important for sprites with positioning)
+	animated_sprite.position = original_position
+	
+	Logger.info("Sprite scaled to %.2fx for %s (position preserved: %v)" % [scale_factor, get_boss_name(), original_position], "debug")
+	
+	# Validate scaling was applied correctly
+	_validate_sprite_scaling(scale_factor)
+
+## SCALING VALIDATION: Verify sprite scaling matches expected scale
+func _validate_sprite_scaling(expected_scale: float) -> void:
+	if not animated_sprite:
+		return
+	
+	var actual_scale = animated_sprite.scale.x  # Assume uniform scaling
+	var scale_tolerance = 0.01  # Allow small floating point differences
+	
+	if abs(actual_scale - expected_scale) > scale_tolerance:
+		Logger.warn("Sprite scaling mismatch for %s: expected %.2f, got %.2f" % [get_boss_name(), expected_scale, actual_scale], "bosses")
+	else:
+		Logger.debug("Sprite scaling validated for %s: %.2f" % [get_boss_name(), actual_scale], "bosses")
+
+## DEBUG TOOLS: Get comprehensive scaling information for debugging
+func get_scaling_debug_info() -> Dictionary:
+	var info = {
+		"boss_name": get_boss_name(),
+		"sprite_scale": Vector2.ZERO,
+		"sprite_position": Vector2.ZERO,
+		"collision_scale": Vector2.ZERO,
+		"hitbox_scale": Vector2.ZERO,
+		"has_sprite": false,
+		"has_collision": false,
+		"has_hitbox": false
+	}
+	
+	# Get sprite info
+	if animated_sprite:
+		info.sprite_scale = animated_sprite.scale
+		info.sprite_position = animated_sprite.position
+		info.has_sprite = true
+	
+	# Get collision info
+	var collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape:
+		info.collision_scale = collision_shape.scale
+		info.has_collision = true
+	
+	# Get hitbox info
+	var hitbox = get_node_or_null("HitBox")
+	if hitbox:
+		info.hitbox_scale = hitbox.scale
+		info.has_hitbox = true
+	
+	return info
+
+## DEBUG TOOLS: Print scaling debug info to console
+func debug_print_scaling_info() -> void:
+	var info = get_scaling_debug_info()
+	Logger.info("=== SCALING DEBUG: %s ===" % info.boss_name, "debug")
+	Logger.info("Sprite: scale=%v position=%v (present: %s)" % [info.sprite_scale, info.sprite_position, info.has_sprite], "debug")
+	Logger.info("Collision: scale=%v (present: %s)" % [info.collision_scale, info.has_collision], "debug")
+	Logger.info("HitBox: scale=%v (present: %s)" % [info.hitbox_scale, info.has_hitbox], "debug")
+	
+	# Check HitBoxShape child separately
+	var hitbox = get_node_or_null("HitBox")
+	if hitbox:
+		var hitbox_shape = hitbox.get_node_or_null("HitBoxShape")
+		if hitbox_shape:
+			Logger.info("HitBoxShape: scale=%v (present: true)" % [hitbox_shape.scale], "debug")
+		else:
+			Logger.info("HitBoxShape: (not found)", "debug")
+	
+	Logger.info("=== END DEBUG ===", "debug")
+
+## HEALTH BAR SCALING FIX: Readjust health bar size after HitBox scaling
+func _readjust_health_bar_after_scaling() -> void:
+	var health_bar = get_node_or_null("BossHealthBar")
+	if health_bar and health_bar.has_method("auto_adjust_to_hitbox"):
+		health_bar.auto_adjust_to_hitbox()
+		Logger.info("Health bar readjusted after HitBox scaling for %s" % get_boss_name(), "debug")

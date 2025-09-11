@@ -14,6 +14,7 @@ static var _templates_loaded: bool = false
 static var _weighted_pool: Array[EnemyTemplate] = []
 static var _pool_dirty: bool = true
 
+
 ## Load all templates from the templates and variations directories
 static func load_all_templates() -> void:
 	Logger.info("EnemyFactory: Loading templates...", "enemies")
@@ -53,7 +54,9 @@ static func _load_templates_from_directory(dir_path: String) -> void:
 	dir.list_dir_end()
 
 static func _load_template_from_file(file_path: String) -> void:
-	var template: EnemyTemplate = load(file_path) as EnemyTemplate
+	# Use CACHE_MODE_IGNORE to always get the latest version from disk
+	# This enables hot-reloading when .tres files are edited
+	var template: EnemyTemplate = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE) as EnemyTemplate
 	if not template:
 		Logger.warn("Failed to load template: " + file_path, "enemies")
 		return
@@ -240,3 +243,15 @@ static func _is_performance_test_active() -> bool:
 				return true
 	
 	return false
+
+## HOT-RELOAD: Force reload all templates (F5 key support)
+static func force_reload_templates() -> void:
+	Logger.info("EnemyFactory: Force reloading templates for hot-reload", "enemies")
+	load_all_templates()
+
+## HOT-RELOAD: Clear template cache (makes next spawn load fresh from disk)  
+static func clear_template_cache() -> void:
+	_templates.clear()
+	_templates_loaded = false
+	_pool_dirty = true
+	Logger.info("EnemyFactory: Template cache cleared - next spawn will reload from disk", "enemies")

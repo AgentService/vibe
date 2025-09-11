@@ -113,7 +113,6 @@ radius = 4.0
 size = Vector2(14, 15)
 
 [node name="DragonLord" type="CharacterBody2D"]
-scale = Vector2(2, 2)
 script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

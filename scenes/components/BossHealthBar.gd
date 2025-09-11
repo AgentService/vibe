@@ -39,27 +39,32 @@ func auto_adjust_to_hitbox() -> void:
 		return
 	
 	var shape = hitbox_shape_node.shape
-	var width: float = 40.0  # Default fallback width
-	var height: float = 20.0  # Default fallback height
+	var hitbox_width: float = 40.0  # Default fallback width
+	var hitbox_height: float = 20.0  # Default fallback height
 	
-	# Calculate dimensions based on shape type
+	# Calculate HitBox dimensions based on shape type (unscaled collision shape dimensions)
 	if shape is CircleShape2D:
 		var circle = shape as CircleShape2D
-		width = circle.radius * 2.0
-		height = circle.radius * 2.0
+		hitbox_width = circle.radius * 2.0
+		hitbox_height = circle.radius * 2.0
 	elif shape is RectangleShape2D:
 		var rect = shape as RectangleShape2D
-		width = rect.size.x
-		height = rect.size.y
+		hitbox_width = rect.size.x
+		hitbox_height = rect.size.y
 	else:
 		Logger.warn("Unsupported HitBox shape type: " + str(shape.get_class()), "bosses")
 	
-	# Set health bar width to match HitBox width (with slight padding)
-	var health_bar_width = width * 0.8
-	var health_bar_height = 4.0  # Fixed height for health bars
+	# Account for HitBox scaling (since HitBox node is scaled individually)
+	var hitbox_scale = hitbox_node.scale if hitbox_node else Vector2.ONE
 	
-	# Position health bar 12px above the HitBox
-	var hitbox_top = hitbox_shape_node.position.y - (height * 0.5)
+	# Set health bar width to match scaled HitBox width (with slight padding)
+	var scaled_hitbox_width = hitbox_width * hitbox_scale.x
+	var health_bar_width = scaled_hitbox_width * 0.8
+	var health_bar_height = 3.0  # Fixed height - no scaling compensation needed
+	
+	# Position health bar 12px above the TOP of the scaled HitBox collision area
+	var scaled_hitbox_height = hitbox_height * hitbox_scale.y
+	var hitbox_top = hitbox_shape_node.position.y - (scaled_hitbox_height * 0.5)
 	var health_bar_y = hitbox_top - 12.0 - health_bar_height
 	
 	# Apply size and position
@@ -69,7 +74,7 @@ func auto_adjust_to_hitbox() -> void:
 	size.y = health_bar_height
 	
 	auto_sized = true
-	Logger.debug("BossHealthBar auto-adjusted: width=%.1f, y=%.1f" % [health_bar_width, health_bar_y], "bosses")
+	Logger.debug("BossHealthBar auto-adjusted: width=%.1f, y=%.1f (hitbox_scale: %.1fx%.1f)" % [health_bar_width, health_bar_y, hitbox_scale.x, hitbox_scale.y], "bosses")
 
 func update_health(current: float, max_health: float) -> void:
 	if max_health > 0.0:

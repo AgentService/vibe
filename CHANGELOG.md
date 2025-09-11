@@ -5,6 +5,21 @@
 ## [Current Week - In Progress]
 
 ### Added
+
+- **HUD Component System V1 - COMPLETE**: Modular, component-based HUD architecture replacing monolithic UI system
+  - **HUDManager Autoload**: Centralized HUD component coordinator managing lifecycle, positioning, and configuration
+  - **BaseHUDComponent Framework**: Performance-optimized base class with EventBus integration, update throttling, and component lifecycle
+  - **Core Components**: 
+    - **HealthBarComponent**: Universal health display supporting player, boss, and enemy health bars with damage flashing
+    - **RadarComponent**: Converted EnemyRadar with performance optimizations and configurable visual settings  
+    - **PerformanceComponent**: Extracted FPS counter with memory tracking, entity counts, and debug statistics
+  - **HUDConfigResource System**: Layout configuration with preset support (default, minimal, competitive) and player customization
+  - **EventBus Extensions**: Added HUD-specific signals for health_changed, resource_changed, ability cooldowns, and notifications
+  - **ArenaUIManager Integration**: Dual HUD support allowing runtime switching between legacy and new component systems
+  - **Performance Monitoring**: Built-in performance tracking with <5ms frame budget monitoring per task requirements
+  - **Legacy Compatibility**: New system coexists with existing HUD, enabling gradual migration and A/B testing
+
+### Added
 - **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
   - **UIManager Autoload**: Centralized modal coordinator with factory pattern and canvas layer management
   - **BaseModal Framework**: Desktop-optimized base class with keyboard navigation, tooltips, and lifecycle management
@@ -25,6 +40,31 @@
   - **Intelligent Animation**: Enhanced BaseBoss with sprite flipping for bosses without directional animations
   - **Global Camera Solution**: CameraManager autoload provides centered cameras for test scenes automatically
   - **Shadow Configuration**: Support for per-boss shadow customization via EnemyType.tres and SpawnConfig.gd
+
+### Fixed
+- **Boss Sprite Scaling System**: Fixed sprite scaling issues where visual scaling didn't match collision scaling
+  - **Core Issue Resolved**: Replaced multiplicative sprite scaling with absolute scaling to prevent compounding errors
+  - **Timing Fix**: Added deferred sprite scaling for cases where AnimatedSprite2D isn't ready during boss setup
+  - **Validation System**: Added comprehensive scaling validation with tolerance checking and detailed logging
+  - **Child Boss Updates**: Updated BananaLord and AncientLich to properly validate scaling after their specific initialization
+  - **Debug Tools**: Added runtime scaling debug methods (`get_scaling_debug_info()`, `debug_print_scaling_info()`)
+  - **Test Coverage**: Created comprehensive test suite validating scaling across all boss types and scale factors (0.5x - 2.5x)
+  - **Position Preservation**: Sprite position offsets are now preserved during scaling operations
+  - **Consistent Behavior**: All boss types now properly scale sprites to match their collision and hitbox areas
+
+- **Enemy Template Hot-Reload System**: Size factor changes now take immediate effect without restarting the game
+  - **CACHE_MODE_IGNORE**: EnemyFactory uses ResourceLoader with cache bypass to always load latest .tres files
+  - **F5 Hot-Reload**: Press F5 in-game to force reload all enemy templates for immediate size factor updates
+  - **Real-Time Balancing**: Edit enemy-variations/*.tres files and press F5 to see changes in newly spawned enemies
+  - **Zero Custom Code**: Leverages Godot's built-in resource system instead of custom file watchers
+  - **Debug Integration**: F5 key handling integrated into existing DebugManager input system
+
+- **Boss Health Bar Scaling Fix**: Health bars now correctly scale with boss size factors
+  - **Root Issue Fixed**: Health bar sizing was happening before HitBox scaling, causing size mismatches
+  - **Timing Solution**: Added deferred health bar readjustment after HitBox scaling is applied
+  - **Perfect Scaling**: Health bar width now scales proportionally with boss size (0.1x, 1.0x, 2.0x all tested ✓)
+  - **Enhanced Debugging**: Added detailed scaling debug logs with "debug" category for easier troubleshooting
+  - **Consistent Behavior**: Works across all boss types and size factors without manual intervention
 
 ### Changed
 - **MultiMesh Enemy System Disabled**: Completed transition to scene-based enemies only for consistent behavior

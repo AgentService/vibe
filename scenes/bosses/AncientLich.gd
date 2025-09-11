@@ -55,7 +55,11 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	super.setup_from_spawn_config(config)
 	
 	# AncientLich specific spawn config handling
-	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f" % [max_health, damage, speed], "bosses")
+	Logger.info("AncientLich boss spawned: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f" % [max_health, damage, speed, config.size_scale], "bosses")
+	
+	# Ensure scaling is applied after our specific sprite setup
+	if config.size_scale != 1.0 and animated_sprite:
+		call_deferred("_validate_sprite_scaling", config.size_scale)
 
 # Override parent _on_damage_entity_sync to add AncientLich specific damage handling
 func _on_damage_entity_sync(payload: Dictionary) -> void:

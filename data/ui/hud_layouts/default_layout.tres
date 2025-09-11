@@ -1,0 +1,48 @@
+[gd_resource type="Resource" script_class="HUDConfigResource" load_steps=0 format=3 uid="uid://ceqh8qk6d2stn"]
+
+[ext_resource type="Script" path="res://scripts/systems/ui_framework/HUDConfigResource.gd" id="1_config_script"]
+
+[resource]
+script = ExtResource("1_config_script")
+layout_name = "default"
+component_positions = {
+"health_bar": {
+"anchor_preset": 7,
+"offset": Vector2(0, -40)
+},
+"level_label": {
+"anchor_preset": 7,
+"offset": Vector2(0, -65)
+},
+"xp_bar": {
+"anchor_preset": 2,
+"offset": Vector2(10, -40)
+},
+"radar": {
+"anchor_preset": 1,
+"offset": Vector2(-170, 20)
+},
+"performance": {
+"anchor_preset": 2,
+"offset": Vector2(10, -80)
+}
+}
+component_scales = {
+"health_bar": Vector2(1, 1),
+"level_label": Vector2(1, 1),
+"xp_bar": Vector2(1, 1),
+"radar": Vector2(1, 1),
+"performance": Vector2(1, 1)
+}
+component_visibility = {
+"health_bar": true,
+"level_label": true,
+"xp_bar": true,
+"radar": true,
+"performance": true
+}
+hud_theme_name = "default"
+max_fps_updates_per_second = 2.0
+performance_monitoring_enabled = true
+animation_budget_ms = 2.0
+current_preset = 0

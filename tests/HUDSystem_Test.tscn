@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b8dwv2p8q5ch8"]
+
+[ext_resource type="Script" path="res://tests/HUDSystem_Test.gd" id="1_hud_test_script"]
+
+[node name="HUDSystemTest" type="Node"]
+script = ExtResource("1_hud_test_script")
