@@ -1,0 +1,239 @@
+[gd_scene load_steps=47 format=3 uid="uid://cyejk5ial4frs"]
+
+[ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
+[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
+[ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="3_shadow"]
+[ext_resource type="Texture2D" uid="uid://lh7fpy0feqr" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_000.png" id="4_s0"]
+[ext_resource type="Texture2D" uid="uid://dqm8ghk6etb87" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_001.png" id="5_s1"]
+[ext_resource type="Texture2D" uid="uid://wytltdgrewet" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_002.png" id="6_s2"]
+[ext_resource type="Texture2D" uid="uid://c3ds1nomwa1yk" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_003.png" id="7_s3"]
+[ext_resource type="Texture2D" uid="uid://bwrfvbi6n2miw" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/north/frame_000.png" id="8_n0"]
+[ext_resource type="Texture2D" uid="uid://cd60e8pno1we6" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/north/frame_001.png" id="9_n1"]
+[ext_resource type="Texture2D" uid="uid://cksqqpasl0fp4" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/north/frame_002.png" id="10_n2"]
+[ext_resource type="Texture2D" uid="uid://c05wqpe0vvgsp" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/north/frame_003.png" id="11_n3"]
+[ext_resource type="Texture2D" uid="uid://bjnovbjafhxd2" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/east/frame_000.png" id="12_e0"]
+[ext_resource type="Texture2D" uid="uid://btflh8aws8luc" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/east/frame_001.png" id="13_e1"]
+[ext_resource type="Texture2D" uid="uid://igb2jjw5tgds" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/east/frame_002.png" id="14_e2"]
+[ext_resource type="Texture2D" uid="uid://cu0m4y4ubpgmk" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/east/frame_003.png" id="15_e3"]
+[ext_resource type="Texture2D" uid="uid://e2x5ye8hhb6n" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/west/frame_000.png" id="16_w0"]
+[ext_resource type="Texture2D" uid="uid://derqy0fuixvvu" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/west/frame_001.png" id="17_w1"]
+[ext_resource type="Texture2D" uid="uid://jn6y7fo7nhs0" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/west/frame_002.png" id="18_w2"]
+[ext_resource type="Texture2D" uid="uid://b0641ina4a6wg" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/west/frame_003.png" id="19_w3"]
+[ext_resource type="Texture2D" uid="uid://dty3woxic75cg" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_000.png" id="20_as0"]
+[ext_resource type="Texture2D" uid="uid://b84wfwelu870" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_001.png" id="21_as1"]
+[ext_resource type="Texture2D" uid="uid://cnnevdc6o7ve1" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_002.png" id="22_as2"]
+[ext_resource type="Texture2D" uid="uid://c1vd8m2ljs6rg" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_003.png" id="23_as3"]
+[ext_resource type="Texture2D" uid="uid://bsj8ji1hn2yrk" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_004.png" id="24_as4"]
+[ext_resource type="Texture2D" uid="uid://beaxefco0lm0m" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/frame_005.png" id="25_as5"]
+[ext_resource type="Texture2D" uid="uid://ch71xiavf3hgd" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_000.png" id="26_an0"]
+[ext_resource type="Texture2D" uid="uid://ckppgaj5i4t1x" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_001.png" id="27_an1"]
+[ext_resource type="Texture2D" uid="uid://b8cxcsc828gu4" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_002.png" id="28_an2"]
+[ext_resource type="Texture2D" uid="uid://dgtmy0fuunn8a" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_003.png" id="29_an3"]
+[ext_resource type="Texture2D" uid="uid://dqfce68errbgk" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_004.png" id="30_an4"]
+[ext_resource type="Texture2D" uid="uid://ca6r8w51kugp7" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/frame_005.png" id="31_an5"]
+[ext_resource type="Texture2D" uid="uid://7ms3vpnqv4vr" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_000.png" id="32_ae0"]
+[ext_resource type="Texture2D" uid="uid://d3xoe2xya0vrg" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_001.png" id="33_ae1"]
+[ext_resource type="Texture2D" uid="uid://bdr75motd4xk" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_002.png" id="34_ae2"]
+[ext_resource type="Texture2D" uid="uid://bmdft5jvgaw06" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_003.png" id="35_ae3"]
+[ext_resource type="Texture2D" uid="uid://bxiewe4xtphrw" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_004.png" id="36_ae4"]
+[ext_resource type="Texture2D" uid="uid://burhcd86ti4uw" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/frame_005.png" id="37_ae5"]
+[ext_resource type="Texture2D" uid="uid://dq7amacs2ydkm" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_000.png" id="38_aw0"]
+[ext_resource type="Texture2D" uid="uid://cql56r78p4ouq" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_001.png" id="39_aw1"]
+[ext_resource type="Texture2D" uid="uid://nnjnm3kqhx00" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_002.png" id="40_aw2"]
+[ext_resource type="Texture2D" uid="uid://b1wajluww5ouo" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_003.png" id="41_aw3"]
+[ext_resource type="Texture2D" uid="uid://dsio5agv4jq17" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_004.png" id="42_aw4"]
+[ext_resource type="Texture2D" uid="uid://cfusmf6u2nj4y" path="res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/frame_005.png" id="43_aw5"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_slime"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("32_ae0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("33_ae1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("34_ae2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("35_ae3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("36_ae4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("37_ae5")
+}],
+"loop": false,
+"name": &"attack_east",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("26_an0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("27_an1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("28_an2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("29_an3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("30_an4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("31_an5")
+}],
+"loop": false,
+"name": &"attack_north",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("20_as0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("21_as1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("22_as2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("23_as3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("24_as4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("25_as5")
+}],
+"loop": false,
+"name": &"attack_south",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("38_aw0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("39_aw1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("40_aw2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("41_aw3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("42_aw4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("43_aw5")
+}],
+"loop": false,
+"name": &"attack_west",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_e0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_e1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_e2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_e3")
+}],
+"loop": true,
+"name": &"walking_east",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("8_n0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("9_n1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("10_n2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("11_n3")
+}],
+"loop": true,
+"name": &"walking_north",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_s0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_s1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_s2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("7_s3")
+}],
+"loop": true,
+"name": &"walking_south",
+"speed": 6.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("16_w0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("17_w1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("18_w2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("19_w3")
+}],
+"loop": true,
+"name": &"walking_west",
+"speed": 6.0
+}]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_83bbo"]
+size = Vector2(18, 37)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
+radius = 5.83095
+
+[node name="AncientSlime" type="CharacterBody2D"]
+script = ExtResource("1_slime")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_slime")
+animation = &"walking_east"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(1, -0.5)
+shape = SubResource("RectangleShape2D_83bbo")
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("CircleShape2D_hitbox")
+
+[node name="AttackTimer" type="Timer" parent="."]
+
+[node name="BossHealthBar" parent="." instance=ExtResource("2_hbar")]
+
+[node name="BossShadow" parent="." instance=ExtResource("3_shadow")]
+position = Vector2(1, 27)
+scale = Vector2(1.93333, 1.88571)
+opacity = 0.8

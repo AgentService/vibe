@@ -57,6 +57,10 @@ func _ready() -> void:
 	current_health = get_max_health()
 	Logger.info("Player reset: is_dead=%s, health=%d, all state cleared" % [is_dead, current_health], "player")
 	
+	# Emit initial health signal immediately for UI initialization
+	EventBus.health_changed.emit(float(current_health), float(get_max_health()))
+	Logger.debug("Player: Emitted early health_changed signal - %d/%d HP" % [current_health, get_max_health()], "player")
+	
 	_setup_collision()
 	_setup_animations()
 	

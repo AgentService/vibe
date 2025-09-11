@@ -59,6 +59,7 @@ grow_vertical = 0
 
 [node name="Layer100_Debug" type="CanvasLayer" parent="."]
 layer = 100
+visible = false
 
 [node name="DebugUI" type="Control" parent="Layer100_Debug"]
 visible = false

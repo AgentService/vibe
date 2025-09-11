@@ -54,6 +54,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void
 5. **Add HitBox (Area2D)** with CollisionShape2D child for damage detection
 6. **Add AttackTimer (Timer)** for attack cooldowns
 7. **Add BossHealthBar scene instance** from `res://scenes/components/BossHealthBar.tscn`
+8. **Add BossShadow scene instance** from `res://scenes/components/BossShadow.tscn` (position and scale manually)
 
 **⚠️ IMPORTANT: Sprite Scaling Best Practice**
 - **Always keep AnimatedSprite2D scale at (1.0, 1.0)** in the scene
@@ -70,7 +71,7 @@ YourBoss (CharacterBody2D)
 │   └── HitBoxShape (CollisionShape2D, CircleShape2D, centered at origin 0,0)
 ├── AttackTimer (Timer)
 ├── BossHealthBar (BossHealthBar scene instance)
-└── BossShadow (BossShadow scene instance) [AUTO-CREATED by BaseBoss]
+└── BossShadow (BossShadow scene instance) [MANUALLY POSITIONED]
 ```
 
 **⚠️ Important Collision Setup:**
@@ -94,63 +95,27 @@ The `BossHealthBar.tscn` scene now automatically:
 - HitBoxShape must have a shape assigned (CircleShape2D or RectangleShape2D)
 - BossHealthBar will warn in console if requirements aren't met
 
-**✨ NEW: Automatic Shadow System**
+**✨ NEW: Manual Shadow System**
 
-The new shadow system provides realistic ground shadows for all bosses:
+The new shadow system uses scene instances for maximum control and visual consistency:
 
-- **🔄 Auto-created** - Shadows are automatically generated when using BaseBoss inheritance
-- **📏 Auto-sized** - Shadow size matches HitBox dimensions with configurable multiplier 
-- **📍 Auto-positioned** - Shadows appear below the boss with configurable offset
-- **🎨 Configurable** - Opacity, size, and position can be customized per-boss
-- **⚡ Performance optimized** - Uses single sprite with alpha modulation
+- **🎨 Manual positioning** - Full control over shadow placement via 2D editor
+- **📐 Manual scaling** - Scale shadows independently using Transform properties
+- **⚙️ Configurable opacity** - Adjustable transparency per shadow instance
+- **🎯 Visual consistency** - Uses standard shadow texture across all bosses
+- **⚡ Performance optimized** - Simple Sprite2D with minimal overhead
 
-**Shadow Configuration:**
+**Shadow Scene Structure:**
+- **BossShadow.tscn**: Reusable scene with Sprite2D and BossShadow script
+- **Manual Transform**: Position and scale set directly in boss scene editor
+- **Inspector Properties**: Opacity and visibility configurable per instance
+
+**Key Features:**
 ```gdscript
-# In your boss _ready() method - customize before calling super._ready()
-shadow_enabled = true          # Enable/disable shadows
-shadow_size_multiplier = 0.8   # Size relative to HitBox (0.8 = 80% of HitBox size)
-shadow_opacity = 0.6           # Shadow transparency (0.0 = invisible, 1.0 = opaque)
-shadow_offset_y = 2.0          # Pixels below HitBox bottom
+# BossShadow properties (set in Inspector)
+@export var opacity: float = 0.6    # Shadow transparency (0.0-1.0)
+@export var enabled: bool = true     # Can disable shadows per-boss
 ```
-
-**✨ NEW: Real-Time Shadow Hot-Reload System**
-
-The shadow system now supports real-time updates during development:
-
-- **🔄 Single Source of Truth**: BaseBoss.gd contains global defaults for all bosses
-- **📝 Boss Script Overrides**: Individual bosses can override specific shadow properties
-- **⚡ Instant Updates**: Changes to shadow values update immediately in both test scenes and gameplay
-- **🎯 Clean Architecture**: No duplicate defaults across multiple files
-
-**Hot-Reload Architecture:**
-```gdscript
-# BaseBoss.gd - GLOBAL defaults for ALL bosses (single source of truth)
-var shadow_size_multiplier: float = 2.5  # All bosses default to 2.5x HitBox size
-var shadow_opacity: float = 0.4          # All bosses default to 40% opacity  
-var shadow_offset_y: float = 3.0         # All bosses default to 3px below HitBox
-
-# Individual Boss Scripts - Override only when needed
-# DragonLord.gd - Example boss-specific customization
-shadow_size_multiplier = 2.2  # Dragon has slightly smaller shadow than global default
-shadow_offset_y = 2.0         # Dragon shadow closer to ground
-# shadow_opacity inherited from BaseBoss (0.4)
-```
-
-**Usage Patterns:**
-
-1. **Global Changes**: Modify BaseBoss.gd values to affect ALL bosses simultaneously
-2. **Boss-Specific Overrides**: Set values in individual boss scripts before `super._ready()`
-3. **Runtime Overrides**: Use SpawnConfig.shadow_config for dynamic variations
-
-**Testing Your Changes:**
-- **ShadowTestScene**: Direct scene instantiation - uses your exact script values
-- **F5 Gameplay**: Spawn pipeline - uses same values through unified system
-- **Both methods produce identical results** with the new architecture
-
-**Shadow Asset System:**
-- Uses existing shadow sprites from `assets/sprites/.../shadow_single.png`
-- Automatically applies dark modulation with configurable alpha
-- Z-index set to -1 to render below boss sprites
 
 ### **Step 2: Create Boss Script**
 
@@ -176,13 +141,7 @@ func _ready() -> void:
     chase_range = 350.0
     animation_prefix = "walk"  # Uses walk_north, walk_south, etc.
     
-    # Configure shadow properties (optional - defaults to enabled)
-    shadow_enabled = true
-    shadow_size_multiplier = 0.8  # 80% of HitBox size
-    shadow_opacity = 0.6          # Semi-transparent
-    shadow_offset_y = 2.0         # 2 pixels below HitBox
-    
-    # Call parent _ready() to handle all base initialization (including shadow setup)
+    # Call parent _ready() to handle all base initialization
     super._ready()
 
 func get_boss_name() -> String:
@@ -215,7 +174,48 @@ func _update_ai(dt: float) -> void:
 - ✅ **Consistent AI patterns** - Override only what you need to customize
 - ✅ **Signal management** - All EventBus connections handled automatically
 
-### **Step 2.5: Setup Directional Animations (For Bosses with 8-Direction Movement)**
+### **Step 2.5: Setup Boss Shadow**
+
+**Adding Shadow to Your Boss:**
+
+1. **Instance BossShadow scene** in your boss scene:
+   - Right-click on boss root node → "Instantiate Child Scene"
+   - Select `res://scenes/components/BossShadow.tscn`
+   - The shadow will appear as a child of your boss
+
+2. **Position the shadow manually**:
+   - Use the **2D editor** to drag the shadow to the desired position
+   - Typically position shadows slightly below and offset from boss center
+   - **Example from BananaLord**: `position = Vector2(210, 15)` (right and down from center)
+
+3. **Scale the shadow appropriately**:
+   - Use **Transform → Scale** in the Inspector or drag handles in 2D editor
+   - **Example from BananaLord**: `scale = Vector2(3.6, 2.75)` (wider than tall for ground effect)
+   - Scale should match your boss size and visual style
+
+4. **Adjust shadow offset** (optional):
+   - Use **offset** property in Inspector for fine-tuning without affecting Transform
+   - **Example from BananaLord**: `offset = Vector2(-58.3, 10.2)` for precise positioning
+
+5. **Configure shadow appearance**:
+   - **Opacity**: Adjust in Inspector (0.0 = invisible, 1.0 = solid black)
+   - **Example from BananaLord**: `opacity = 0.8` for a prominent shadow
+   - **Enabled**: Toggle shadow visibility per boss if needed
+
+**Shadow Positioning Tips:**
+- **Ground shadows**: Position below boss with slight offset to simulate light source
+- **Scaling**: Make shadows wider than tall to simulate perspective on ground plane
+- **Opacity**: Use 0.4-0.8 range for realistic shadows (too low = invisible, too high = unnatural)
+- **Visual reference**: Look at BananaLord.tscn as example of good shadow placement
+
+**✨ Benefits of Manual Shadow System:**
+- ✅ **Full artistic control** - Position shadows exactly where they look best
+- ✅ **Per-boss customization** - Each boss can have unique shadow characteristics
+- ✅ **Visual consistency** - All shadows use same texture and rendering approach
+- ✅ **No code required** - Pure scene-based setup with Inspector configuration
+- ✅ **Performance optimized** - Simple Sprite2D with minimal computational overhead
+
+### **Step 2.6: Setup Directional Animations (For Bosses with 8-Direction Movement)**
 
 **⚠️ Animation Architecture:** 
 
@@ -403,12 +403,6 @@ behavior_config = {
     "aggro_range": 350.0,
     "ai_type": "boss_custom"
 }
-shadow_config = {
-    "enabled": true,
-    "size_multiplier": 0.8,
-    "opacity": 0.6,
-    "offset_y": 2.0
-}
 boss_scene = ExtResource("2")
 is_special_boss = true
 boss_spawn_method = "scene"
@@ -537,13 +531,13 @@ func _on_player_reached_area() -> void:
 - ✅ **Health bar not adjusting** - Check console for BossHealthBar warnings about missing nodes
 
 ### **Shadow Issues:**
-- ✅ **Shadow not appearing** - Check `shadow_enabled = true` in boss _ready() method
-- ✅ **Shadow wrong size** - Adjust `shadow_size_multiplier` (0.5-1.5 recommended range)
-- ✅ **Shadow too dark/light** - Modify `shadow_opacity` (0.3-0.8 for realistic shadows)
-- ✅ **Shadow wrong position** - Check HitBox/HitBoxShape structure, adjust `shadow_offset_y`
-- ✅ **Shadow appears above boss** - Verify BossShadow z_index is set to -1
-- ✅ **Multiple shadows** - Only one shadow per boss; check for manual BossShadow instances in scene
-- ✅ **Shadow asset not found** - Verify shadow_single.png exists in sprite assets directory
+- ✅ **Shadow not appearing** - Check BossShadow scene instance exists in boss scene tree
+- ✅ **Shadow wrong size** - Adjust Transform → Scale in Inspector or drag handles in 2D editor
+- ✅ **Shadow too dark/light** - Modify `opacity` property in BossShadow Inspector (0.4-0.8 recommended)
+- ✅ **Shadow wrong position** - Use 2D editor to drag shadow or adjust Transform → Position
+- ✅ **Shadow appears above boss** - BossShadow automatically sets z_index = -1 in _ready()
+- ✅ **Shadow not visible** - Check `enabled = true` in BossShadow Inspector properties
+- ✅ **Shadow texture missing** - BossShadow scene references shadow_single.png texture automatically
 
 ### **Boss AI Not Working:**
 - ✅ Verify EventBus.combat_step connection in `_ready()` (or BaseBoss inheritance)
@@ -580,10 +574,10 @@ func _on_player_reached_area() -> void:
 - **Document custom behaviors** for team members
 
 ### **Shadow System:**
-- **Use BaseBoss inheritance** for automatic shadow management
-- **Configure shadows in _ready()** before calling super._ready()
-- **Test shadow positioning** with different boss sizes and collision shapes
-- **Use consistent shadow settings** across similar boss types for visual coherence
-- **Disable shadows for flying bosses** by setting `shadow_enabled = false`
+- **Instance BossShadow scene** for all ground-based bosses
+- **Position shadows manually** using 2D editor for optimal visual placement
+- **Scale shadows appropriately** - typically wider than tall for ground perspective
+- **Use consistent opacity** across similar boss types for visual coherence (0.4-0.8 range)
+- **Skip shadows for flying bosses** - simply don't add BossShadow scene instance
 
 With this guide, you can create complex, performant bosses that integrate seamlessly with the game's unified systems while maintaining flexibility for unique mechanics and behaviors.

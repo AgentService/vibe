@@ -178,11 +178,48 @@ func has_unlock(unlock_id: StringName) -> bool:
 
 ## Get current progression state as dictionary
 func get_progression_state() -> Dictionary:
+	# Calculate current level progress for proper XP bar display
+	var current_level_xp: float = 0.0
+	var xp_required_for_current_level: float = 100.0  # Default fallback
+	
+	if xp_curve:
+		if level == 1:
+			# Level 1 - show progress toward level 2
+			current_level_xp = experience
+			var level_2_total_xp: int = xp_curve.get_xp_for_level(2)
+			if level_2_total_xp != -1:
+				xp_required_for_current_level = float(level_2_total_xp)
+			
+			# Debug logging for Level 1
+			Logger.debug("XP Calc - Level 1, Total XP: %.1f, Need for Level 2: %d" % [experience, level_2_total_xp], "progression")
+			Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
+		else:
+			# Level 2+ - show progress within current level
+			var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)  # XP needed for NEXT level
+			var current_level_total_xp: int = xp_curve.get_xp_for_level(level)   # XP needed for CURRENT level
+			
+			if next_level_total_xp != -1:
+				# We're not at max level - show progress toward next level
+				current_level_xp = experience - float(current_level_total_xp)
+				xp_required_for_current_level = float(next_level_total_xp - current_level_total_xp)
+				
+				# Debug logging
+				Logger.debug("XP Calc - Level: %d, Total XP: %.1f, Current Level Total: %d, Next Level Total: %d" % [level, experience, current_level_total_xp, next_level_total_xp], "progression")
+				Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
+				
+				# Ensure values are non-negative
+				if current_level_xp < 0.0:
+					current_level_xp = 0.0
+			else:
+				# Max level reached
+				current_level_xp = 0.0
+				xp_required_for_current_level = 1.0  # Prevent division by zero
+	
 	return {
 		"level": level,
-		"exp": experience,
-		"xp_to_next": xp_to_next,
-		"total_for_level": xp_to_next,  # For UI compatibility
+		"exp": int(current_level_xp),  # Current progress within level (0 to level requirement)
+		"xp_to_next": int(xp_required_for_current_level),  # Total XP required for current level
+		"total_for_level": int(xp_required_for_current_level),  # For UI compatibility
 		"max_level_reached": _max_level_reached
 	}
 

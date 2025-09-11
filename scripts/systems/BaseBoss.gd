@@ -201,9 +201,16 @@ func _update_ai(_dt: float) -> void:
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
+			
+			# Update facing direction for attacks (but don't override attack animations)
+			var direction_to_player: Vector2 = (target_position - global_position).normalized()
+			current_direction = direction_to_player
+			
 			if last_attack_time >= attack_cooldown:
 				_perform_attack()
 				last_attack_time = 0.0
+			# Note: Don't play walking animations during attack cooldown
+			# Let the attack animation from _perform_attack() play uninterrupted
 
 ## DIRECTIONAL ANIMATION SYSTEM
 ## Automatically converts movement direction to appropriate 8-directional animation
@@ -249,6 +256,22 @@ func _try_directional_animation(direction: Vector2) -> bool:
 		if animated_sprite.animation != animation_name:
 			animated_sprite.play(animation_name)
 		return true  # Return true because directional animation exists (whether we changed it or not)
+	
+	# Fallback: Try cardinal direction if diagonal doesn't exist (for 4-directional sprites)
+	var fallback_name = animation_prefix + "_"
+	if abs(direction.x) > abs(direction.y):
+		# Horizontal movement dominates
+		fallback_name += "east" if direction.x > 0 else "west"
+	else:
+		# Vertical movement dominates
+		fallback_name += "south" if direction.y > 0 else "north"
+	
+	# Check if cardinal fallback exists
+	if animated_sprite.sprite_frames.has_animation(fallback_name):
+		# Only change animation if it's different
+		if animated_sprite.animation != fallback_name:
+			animated_sprite.play(fallback_name)
+		return true  # Return true because we found a fallback animation
 	
 	return false  # No directional animation exists
 

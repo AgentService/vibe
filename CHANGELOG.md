@@ -28,6 +28,13 @@
   - **Performance Monitoring**: Built-in performance tracking with <5ms frame budget monitoring per task requirements
   - **Architecture Compliance**: Follows UI Framework Guidance with proper component separation and EventBus communication
 
+### Fixed
+
+- **PlayerInfoPanel Health Bar**: Fixed health bar not updating when player takes damage - Player script now properly emits EventBus.health_changed signals during damage sync events and initial registration
+- **XP Bar Progression Reset**: Fixed XP bar displaying cumulative values instead of current level progress - PlayerProgression now calculates proper within-level progress (e.g., 5/200 instead of 595/800)
+- **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization
+- **XP Progression Calculation**: Improved level-based XP calculation logic to properly handle both Level 1 (progress toward Level 2) and Level 2+ (progress within current level range)
+
 ### Added
 - **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
   - **UIManager Autoload**: Centralized modal coordinator with factory pattern and canvas layer management
