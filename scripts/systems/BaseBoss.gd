@@ -137,21 +137,12 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	else:
 		Logger.warn("CollisionShape2D not found for scaling", "debug")
 	
-	# Scale hitbox for combat detection  
+	# Scale hitbox for combat detection (only scale the parent Area2D, not the child CollisionShape2D)
 	var hitbox = get_node_or_null("HitBox")
 	if hitbox:
 		var old_scale = hitbox.scale
 		hitbox.scale = Vector2.ONE * scale_factor
-		Logger.info("HitBox scaled: %.2f → %.2f" % [old_scale.x, hitbox.scale.x], "debug")
-		
-		# Also scale the HitBoxShape child if it exists
-		var hitbox_shape = hitbox.get_node_or_null("HitBoxShape")
-		if hitbox_shape:
-			var old_shape_scale = hitbox_shape.scale
-			hitbox_shape.scale = Vector2.ONE * scale_factor
-			Logger.info("HitBoxShape scaled: %.2f → %.2f" % [old_shape_scale.x, hitbox_shape.scale.x], "debug")
-		else:
-			Logger.warn("HitBoxShape not found inside HitBox", "debug")
+		Logger.info("HitBox scaled: %.2f → %.2f (child HitBoxShape inherits scaling)" % [old_scale.x, hitbox.scale.x], "debug")
 	else:
 		Logger.warn("HitBox not found for scaling", "debug")
 	
@@ -460,14 +451,7 @@ func debug_print_scaling_info() -> void:
 	Logger.info("Collision: scale=%v (present: %s)" % [info.collision_scale, info.has_collision], "debug")
 	Logger.info("HitBox: scale=%v (present: %s)" % [info.hitbox_scale, info.has_hitbox], "debug")
 	
-	# Check HitBoxShape child separately
-	var hitbox = get_node_or_null("HitBox")
-	if hitbox:
-		var hitbox_shape = hitbox.get_node_or_null("HitBoxShape")
-		if hitbox_shape:
-			Logger.info("HitBoxShape: scale=%v (present: true)" % [hitbox_shape.scale], "debug")
-		else:
-			Logger.info("HitBoxShape: (not found)", "debug")
+	# HitBoxShape inherits scaling from parent HitBox Area2D (no separate scaling needed)
 	
 	Logger.info("=== END DEBUG ===", "debug")
 
