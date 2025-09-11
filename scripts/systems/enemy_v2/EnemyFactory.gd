@@ -169,8 +169,11 @@ static func spawn_from_template(template: EnemyTemplate, context: Dictionary) ->
 	config.damage = spawn_rng.randf_range(template.damage_range.x, template.damage_range.y)
 	config.speed = spawn_rng.randf_range(template.speed_range.x, template.speed_range.y)
 	
-	# Apply size variation
-	config.size_scale = template.size_factor * spawn_rng.randf_range(0.9, 1.1)
+	# Apply size variation (skip for bosses to prevent shadow misalignment)
+	if template.render_tier == "boss":
+		config.size_scale = template.size_factor  # No random variation for bosses
+	else:
+		config.size_scale = template.size_factor * spawn_rng.randf_range(0.9, 1.1)
 	
 	# Generate deterministic color variation within hue range
 	var hue := spawn_rng.randf_range(template.hue_range.x, template.hue_range.y)

@@ -199,9 +199,9 @@ func _get_entity_statistics() -> Array[String]:
 	
 	# Get stats from EntityTracker if available
 	if EntityTracker:
-		var entity_count: int = EntityTracker.get_active_entity_count()
-		if entity_count > 0:
-			stats.append("Total Entities: %d" % entity_count)
+		var alive_entities: Array[String] = EntityTracker.get_alive_entities()
+		if alive_entities.size() > 0:
+			stats.append("Total Entities: %d" % alive_entities.size())
 	
 	return stats
 

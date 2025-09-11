@@ -7,4 +7,6 @@
 modulate = Color(0, 0, 0, 0.6)
 z_index = -1
 texture = ExtResource("2_shadow_texture")
+region_enabled = true
+region_rect = Rect2(7.51945, 7.42487, 15.7895, 7.62776)
 script = ExtResource("1_shadow_script")

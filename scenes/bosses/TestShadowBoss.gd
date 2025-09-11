@@ -16,13 +16,9 @@ func _ready() -> void:
 	attack_range = 70.0
 	chase_range = 250.0
 	
-	# Configure shadow properties
-	shadow_enabled = true
-	# shadow_size_multiplier = 5.0  # COMMENTED: using global default 1.5
-	# shadow_opacity = 0.7  # COMMENTED: using global default 0.6
-	# shadow_offset_y = 3.0  # COMMENTED: using global default 2.0
+	# Shadow configured directly in scene tree - see BossShadow node in Inspector
 	
-	# Call parent _ready() to handle all base initialization including shadow setup
+	# Call parent _ready() to handle all base initialization
 	super._ready()
 
 func get_boss_name() -> String:

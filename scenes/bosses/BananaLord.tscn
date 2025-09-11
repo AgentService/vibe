@@ -1,8 +1,9 @@
-[gd_scene load_steps=16 format=3 uid="uid://8e6qf7vr1fh5"]
+[gd_scene load_steps=17 format=3 uid="uid://8e6qf7vr1fh5"]
 
 [ext_resource type="Script" uid="uid://hjracmfrs5p3" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
+[ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="4_7b065"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_7b065"]
 atlas = ExtResource("3_w5q7g")
@@ -86,7 +87,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
-radius = 10.0499
+radius = 12.4016
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(24, 63)
@@ -95,7 +96,6 @@ size = Vector2(24, 63)
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(1.6, -2.8)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
 animation = &"wake_up"
 frame = 2
@@ -116,3 +116,10 @@ shape = SubResource("RectangleShape2D_737yx")
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
+visible = false
+
+[node name="BossShadow" parent="." instance=ExtResource("4_7b065")]
+position = Vector2(210, 15)
+scale = Vector2(3.60203, 2.75435)
+offset = Vector2(-58.3291, 10.1517)
+opacity = 0.8

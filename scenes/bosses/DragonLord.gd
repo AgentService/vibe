@@ -2,7 +2,7 @@ extends BaseBoss
 
 ## DragonLord special boss - example scene-based enemy
 ## Demonstrates hybrid spawning system with complex boss behavior
-## Now inherits from BaseBoss for automatic shadow and unified systems support
+## Now inherits from BaseBoss for unified systems support
 
 class_name DragonLord
 
@@ -17,13 +17,7 @@ func _ready() -> void:
 	attack_range = 90.0
 	chase_range = 400.0
 	
-	# Configure shadow (larger shadow for DragonLord)
-	shadow_enabled = true
-	shadow_size_multiplier = 2.2  # Dragon-specific override: bigger shadow
-	# shadow_opacity = 0.8         # Uncomment for darker shadow
-	shadow_offset_y = 2.0         # Dragon-specific override: much lower shadow
-	
-	# Call parent _ready() to handle base initialization (including shadow setup)
+	# Call parent _ready() to handle base initialization
 	super._ready()
 
 func get_boss_name() -> String:

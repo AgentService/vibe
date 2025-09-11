@@ -32,7 +32,9 @@ func _ready() -> void:
 	
 	_setup_component()
 	_connect_base_signals()
-	_register_with_hud_manager()
+	
+	# Defer registration to avoid node tree busy state
+	call_deferred("_register_with_hud_manager")
 	
 	component_ready.emit(component_id)
 	Logger.debug("HUD component initialized: " + component_id, "ui")
@@ -118,9 +120,15 @@ func reset_performance_stats() -> void:
 func apply_anchor_config(config: Dictionary) -> void:
 	var anchor_preset: int = config.get("anchor_preset", Control.PRESET_TOP_LEFT)
 	var offset: Vector2 = config.get("offset", Vector2.ZERO)
+	var component_size: Vector2 = config.get("size", Vector2.ZERO)
 	
 	set_anchors_and_offsets_preset(anchor_preset)
 	position += offset
+	
+	# Apply size if specified
+	if component_size != Vector2.ZERO:
+		custom_minimum_size = component_size
+		size = component_size
 
 func get_anchor_config() -> Dictionary:
 	# Calculate the most appropriate preset for current anchors

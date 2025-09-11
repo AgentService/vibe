@@ -50,10 +50,16 @@ func setup_from_spawn_config(config: SpawnConfig) -> void
 1. **Create new scene**: `scenes/bosses/YourBoss.tscn`
 2. **Add CharacterBody2D as root** with your boss name
 3. **Add CollisionShape2D child** with **CircleShape2D** collision shape
-4. **Add AnimatedSprite2D child** for directional animations
+4. **Add AnimatedSprite2D child** for directional animations (scale: 1.0, 1.0 - no pre-scaling!)
 5. **Add HitBox (Area2D)** with CollisionShape2D child for damage detection
 6. **Add AttackTimer (Timer)** for attack cooldowns
 7. **Add BossHealthBar scene instance** from `res://scenes/components/BossHealthBar.tscn`
+
+**⚠️ IMPORTANT: Sprite Scaling Best Practice**
+- **Always keep AnimatedSprite2D scale at (1.0, 1.0)** in the scene
+- **Use size_factor in .tres template** for all scaling adjustments
+- **Resize sprite assets** if they appear too large/small at 1.0 scale
+- **Avoid pre-scaling sprites** in scenes as it complicates the scaling system
 
 **Required scene structure:**
 ```
@@ -73,13 +79,15 @@ YourBoss (CharacterBody2D)
 - **Circle collision provides** better AI pathfinding and natural movement around obstacles
 - **Set appropriate radius** based on your boss sprite size (typically 24-48 pixels for 2x scaled sprites)
 
-**✨ NEW: Flexible Auto-Adjusting Health Bar**
+**✨ NEW: Flexible Auto-Adjusting Health Bar with Perfect Scaling**
 
 The `BossHealthBar.tscn` scene now automatically:
 - **📏 Sizes itself** based on your boss's HitBox dimensions (width = 80% of HitBox width, no minimum size constraint)
 - **📍 Positions itself** 12px above the HitBox bounds automatically  
 - **🎯 Works with any shape** - CircleShape2D or RectangleShape2D HitBoxes supported
 - **🔄 Updates instantly** when you copy-paste the scene to any boss
+- **⚖️ Perfect scaling** - Health bar automatically readjusts after boss size factor changes
+- **🎮 Real-time updates** - Works with F5 hot-reload system for immediate size factor testing
 
 **⚠️ Requirements for Auto-Adjustment:**
 - Boss must have `HitBox/HitBoxShape` node structure
@@ -405,6 +413,28 @@ boss_scene = ExtResource("2")
 is_special_boss = true
 boss_spawn_method = "scene"
 ```
+
+**✨ NEW: F5 Hot-Reload System for Real-Time Balancing**
+
+The boss system now supports instant size factor updates without restarting the game:
+
+**Hot-Reload Workflow:**
+1. **Edit .tres file** - Change size_factor value (e.g., 1.0 → 2.0)
+2. **Press F5 in-game** - Forces reload of all enemy templates 
+3. **Spawn new enemies** - Immediately use updated size factors
+4. **Iterate quickly** - Perfect for real-time balancing and testing
+
+**Supported Template Properties:**
+- `size_factor` - Boss scaling (0.5x = half size, 2.0x = double size)
+- `health_range`, `damage_range`, `speed_range` - Combat stats
+- `shadow_config` - Shadow appearance settings
+- All other template properties reload instantly
+
+**Technical Details:**
+- Uses `CACHE_MODE_IGNORE` to bypass Godot's resource cache
+- Integrated with existing debug system (F5 key in DebugManager)
+- Works with both individual templates and inherited templates
+- Zero custom file watchers - leverages Godot's built-in resource system
 
 ### **Step 4: Test Your Boss**
 

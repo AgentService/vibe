@@ -1,9 +1,12 @@
-[gd_scene load_steps=5 format=3 uid="uid://drg8pj2xm7vkg"]
+[gd_scene load_steps=8 format=3 uid="uid://drg8pj2xm7vkg"]
 
-[ext_resource type="PackedScene" uid="uid://bg3x5qrr57mk1" path="res://scenes/ui/hud/components/core/HealthBarComponent.tscn" id="1_health_component"]
-[ext_resource type="PackedScene" uid="uid://c6m2bj7nxgxtn" path="res://scenes/ui/hud/components/core/RadarComponent.tscn" id="2_radar_component"]
-[ext_resource type="PackedScene" uid="uid://bep1l6d5gtsxt" path="res://scenes/ui/hud/components/debug/PerformanceComponent.tscn" id="3_performance_component"]
-[ext_resource type="Script" path="res://scenes/ui/NewHUD.gd" id="4_new_hud_script"]
+[ext_resource type="PackedScene" uid="uid://b5ej6al6ld768" path="res://scenes/ui/hud/components/core/HealthBarComponent.tscn" id="1_health_component"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/components/core/RadarComponent.tscn" id="2_radar_component"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/components/debug/PerformanceComponent.tscn" id="3_performance_component"]
+[ext_resource type="Script" uid="uid://cip182qtipura" path="res://scenes/ui/NewHUD.gd" id="4_new_hud_script"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/components/core/XPBarComponent.tscn" id="5_xp_component"]
+[ext_resource type="PackedScene" uid="uid://b7j8k3mam2p4q" path="res://scenes/ui/hud/components/core/AbilityBarComponent.tscn" id="6_aroin"]
+[ext_resource type="PackedScene" path="res://scenes/ui/hud/components/core/KeybindingsComponent.tscn" id="6_keybindings_component"]
 
 [node name="NewHUD" type="Control"]
 layout_mode = 3
@@ -14,70 +17,67 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("4_new_hud_script")
 
-[node name="PlayerHealthBar" parent="." instance=ExtResource("1_health_component")]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -40.0
-offset_right = 150.0
-offset_bottom = -15.0
-grow_horizontal = 2
-grow_vertical = 0
-component_id = "player_health"
+[node name="Layer1_PrimaryHUD" type="CanvasLayer" parent="."]
 
-[node name="EnemyRadar" parent="." instance=ExtResource("2_radar_component")]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
+[node name="GameUI" type="Control" parent="Layer1_PrimaryHUD"]
+layout_mode = 3
+anchors_preset = 15
 anchor_right = 1.0
-offset_left = -170.0
-offset_top = 20.0
-offset_right = -20.0
-offset_bottom = 170.0
-grow_horizontal = 0
-component_id = "enemy_radar"
-
-[node name="PerformanceDisplay" parent="." instance=ExtResource("3_performance_component")]
-layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -80.0
-offset_right = 160.0
-offset_bottom = -10.0
-grow_vertical = 0
-component_id = "performance_display"
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
 
-[node name="LevelLabel" type="Label" parent="."]
+[node name="PlayerHealthBar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("1_health_component")]
 layout_mode = 1
 anchors_preset = 7
 anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = -50.0
-offset_top = -65.0
-offset_right = 50.0
-offset_bottom = -45.0
 grow_horizontal = 2
 grow_vertical = 0
+show_percentage = true
+auto_hide_when_full = true
+
+[node name="EnemyRadar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("2_radar_component")]
+layout_mode = 1
+
+[node name="LevelLabel" type="Label" parent="Layer1_PrimaryHUD/GameUI"]
+layout_mode = 1
 text = "Level: 1"
 horizontal_alignment = 1
 
-[node name="XPBar" type="ProgressBar" parent="."]
+[node name="XPBar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("5_xp_component")]
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 1.0
+
+[node name="KeybindingsDisplay" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("6_keybindings_component")]
+layout_mode = 1
+component_id = "keybindings"
+
+[node name="AbilityBar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("6_aroin")]
+max_abilities = 6
+ability_button_size = Vector2(48, 48)
+spacing = 8
+show_hotkeys = true
+show_cooldown_text = true
+
+[node name="Layer100_Debug" type="CanvasLayer" parent="."]
+layer = 100
+
+[node name="DebugUI" type="Control" parent="Layer100_Debug"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 10.0
-offset_top = -40.0
-offset_right = 200.0
-offset_bottom = -15.0
-grow_vertical = 0
-max_value = 100.0
-show_percentage = false
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PerformanceDisplay" parent="Layer100_Debug/DebugUI" instance=ExtResource("3_performance_component")]
+layout_mode = 1
+show_fps = true
+show_memory = true
+show_draw_calls = true
+show_entity_counts = true
+compact_display = false

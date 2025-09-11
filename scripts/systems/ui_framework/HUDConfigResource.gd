@@ -29,14 +29,15 @@ func _init() -> void:
 	_setup_default_positions()
 
 func _setup_default_positions() -> void:
-	# Default positions using anchor-based positioning
+	# Default positions using anchor-based positioning with sizes
 	component_positions = {
-		"health_bar": {"anchor_preset": Control.PRESET_BOTTOM_WIDE, "offset": Vector2(0, -40)},
-		"level_label": {"anchor_preset": Control.PRESET_CENTER_BOTTOM, "offset": Vector2(0, -65)},
-		"xp_bar": {"anchor_preset": Control.PRESET_BOTTOM_LEFT, "offset": Vector2(10, -40)},
-		"radar": {"anchor_preset": Control.PRESET_TOP_RIGHT, "offset": Vector2(-170, 20)},
-		"keybindings": {"anchor_preset": Control.PRESET_TOP_RIGHT, "offset": Vector2(-170, 270)},
-		"fps_counter": {"anchor_preset": Control.PRESET_BOTTOM_LEFT, "offset": Vector2(10, -80)}
+		"health_bar": {"anchor_preset": Control.PRESET_CENTER_BOTTOM, "offset": Vector2(-150, -40), "size": Vector2(300, 25)},
+		"level_label": {"anchor_preset": Control.PRESET_CENTER_BOTTOM, "offset": Vector2(-50, -65), "size": Vector2(100, 20)},
+		"xp_bar": {"anchor_preset": Control.PRESET_BOTTOM_LEFT, "offset": Vector2(10, -40), "size": Vector2(190, 25)},
+		"radar": {"anchor_preset": Control.PRESET_TOP_RIGHT, "offset": Vector2(-170, 20), "size": Vector2(150, 150)},
+		"keybindings": {"anchor_preset": Control.PRESET_TOP_RIGHT, "offset": Vector2(-170, 180), "size": Vector2(150, 140)},
+		"fps_counter": {"anchor_preset": Control.PRESET_TOP_LEFT, "offset": Vector2(10, 10), "size": Vector2(180, 100)},
+		"ability_bar": {"anchor_preset": Control.PRESET_CENTER_BOTTOM, "offset": Vector2(-100, -80), "size": Vector2(200, 48)}
 	}
 	
 	# Default scales
@@ -46,7 +47,8 @@ func _setup_default_positions() -> void:
 		"xp_bar": Vector2(1.0, 1.0),
 		"radar": Vector2(1.0, 1.0),
 		"keybindings": Vector2(1.0, 1.0),
-		"fps_counter": Vector2(1.0, 1.0)
+		"fps_counter": Vector2(1.0, 1.0),
+		"ability_bar": Vector2(1.0, 1.0)
 	}
 	
 	# Default visibility
@@ -56,7 +58,8 @@ func _setup_default_positions() -> void:
 		"xp_bar": true,
 		"radar": true,
 		"keybindings": true,
-		"fps_counter": true
+		"fps_counter": true,
+		"ability_bar": true
 	}
 
 func get_component_position(component_id: String) -> Dictionary:

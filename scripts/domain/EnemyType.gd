@@ -19,7 +19,6 @@ class_name EnemyType
 @export var render_tier: String = "regular"
 @export var visual_config: Dictionary = {}
 @export var behavior_config: Dictionary = {}
-@export var shadow_config: Dictionary = {}  # Shadow system configuration
 
 # NEW: Boss scene support for hybrid spawning system
 @export var boss_scene: PackedScene  # For special bosses - editor-created scenes
@@ -45,16 +44,6 @@ func get_ai_type() -> String:
 func get_aggro_range() -> float:
 	return behavior_config.get("aggro_range", 300.0)
 
-func get_shadow_config() -> Dictionary:
-	# Return shadow configuration with sensible defaults
-	var defaults = {}  # Empty = let BaseBoss use its own defaults
-	
-	# Merge with any configured values
-	var config = defaults.duplicate()
-	for key in shadow_config:
-		config[key] = shadow_config[key]
-	
-	return config
 
 func validate() -> Array[String]:
 	var errors: Array[String] = []

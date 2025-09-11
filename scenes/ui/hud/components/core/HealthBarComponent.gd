@@ -49,8 +49,10 @@ func _create_health_bar_ui() -> void:
 	# Create main progress bar
 	_health_bar = ProgressBar.new()
 	_health_bar.name = "HealthProgressBar"
+	_health_bar.max_value = 100.0
 	_health_bar.value = 100.0
 	_health_bar.show_percentage = show_percentage
+	_health_bar.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(_health_bar)
 	
 	# Create damage flash overlay
@@ -63,15 +65,16 @@ func _create_health_bar_ui() -> void:
 		add_child(_damage_flash)
 		_damage_flash.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	
-	# Create health label for detailed display
+	# Create health label for detailed display (overlay on progress bar)
 	if health_bar_style == HealthBarStyle.PLAYER:
 		_health_label = Label.new()
 		_health_label.name = "HealthLabel" 
 		_health_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_health_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		_health_label.text = "100/100"
-		add_child(_health_label)
+		_health_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_health_label.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		add_child(_health_label)
 
 func _setup_health_bar_style() -> void:
 	match health_bar_style:
@@ -91,16 +94,24 @@ func _setup_player_health_style() -> void:
 	var style_bg := StyleBoxFlat.new()
 	var style_fill := StyleBoxFlat.new()
 	
-	# Background (empty health)
-	style_bg.bg_color = Color(0.2, 0.2, 0.2, 0.8)  # Dark gray
+	# Background (empty health) - Make it fully opaque
+	style_bg.bg_color = Color(0.15, 0.15, 0.15, 1.0)  # Dark gray, fully opaque
 	style_bg.border_width_left = 2
 	style_bg.border_width_right = 2
 	style_bg.border_width_top = 2
 	style_bg.border_width_bottom = 2
-	style_bg.border_color = Color(0.5, 0.5, 0.5, 1.0)  # Gray border
+	style_bg.border_color = Color(0.6, 0.6, 0.6, 1.0)  # Gray border
+	style_bg.corner_radius_top_left = 3
+	style_bg.corner_radius_top_right = 3
+	style_bg.corner_radius_bottom_left = 3
+	style_bg.corner_radius_bottom_right = 3
 	
-	# Fill (current health)
-	style_fill.bg_color = Color(0.8, 0.2, 0.2, 1.0)  # Red
+	# Fill (current health) - Bright red, fully opaque
+	style_fill.bg_color = Color(0.9, 0.1, 0.1, 1.0)  # Bright red
+	style_fill.corner_radius_top_left = 2
+	style_fill.corner_radius_top_right = 2
+	style_fill.corner_radius_bottom_left = 2
+	style_fill.corner_radius_bottom_right = 2
 	
 	health_theme.set_stylebox("background", "ProgressBar", style_bg)
 	health_theme.set_stylebox("fill", "ProgressBar", style_fill)
@@ -110,6 +121,10 @@ func _setup_player_health_style() -> void:
 	# Style health label if it exists
 	if _health_label:
 		_health_label.add_theme_color_override("font_color", Color.WHITE)
+		# Add slight shadow to make text more readable
+		_health_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		_health_label.add_theme_constant_override("shadow_offset_x", 1)
+		_health_label.add_theme_constant_override("shadow_offset_y", 1)
 
 func _setup_boss_health_style() -> void:
 	# Boss health bars start hidden and auto-size

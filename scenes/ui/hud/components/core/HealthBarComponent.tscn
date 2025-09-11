@@ -1,8 +1,12 @@
-[gd_scene load_steps=3 format=3 uid="uid://bg3x5qrr57mk1"]
+[gd_scene load_steps=3 format=3 uid="uid://b5ej6al6ld768"]
 
-[ext_resource type="PackedScene" uid="uid://b8qx1qr4rqwyk" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
-[ext_resource type="Script" path="res://scenes/ui/hud/components/core/HealthBarComponent.gd" id="2_health_script"]
+[ext_resource type="PackedScene" uid="uid://v6sna08o3j3f" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" uid="uid://r7746n8s58g2" path="res://scenes/ui/hud/components/core/HealthBarComponent.gd" id="2_health_script"]
 
 [node name="HealthBarComponent" instance=ExtResource("1_base_component")]
 script = ExtResource("2_health_script")
+health_bar_style = 0
+show_percentage = false
+show_damage_flash = true
+auto_hide_when_full = false
 component_id = "health_bar"

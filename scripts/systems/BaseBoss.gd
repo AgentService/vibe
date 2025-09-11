@@ -9,7 +9,6 @@ signal died
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: BossHealthBar = $BossHealthBar
-@onready var boss_shadow: BossShadow = null  # Will be created dynamically
 
 # Boss configuration (override in child classes)
 var spawn_config: SpawnConfig
@@ -30,12 +29,6 @@ var ai_paused: bool = false
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
-
-# Shadow configuration (override in child classes) - GLOBAL DEFAULTS FOR ALL BOSSES
-var shadow_enabled: bool = true
-var shadow_size_multiplier: float = 2.5  # Global default: 3.0x HitBox size (much bigger shadows)
-var shadow_opacity: float = 0.6  # Global default: 60% opacity
-var shadow_offset_y: float = -5.0  # Global default: 2px above HitBox bottom
 
 # Child classes should override these methods
 func get_boss_name() -> String:
@@ -86,8 +79,6 @@ func _ready() -> void:
 	# Initialize health bar
 	_update_health_bar()
 	
-	# Initialize shadow system
-	_setup_shadow()
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
@@ -120,9 +111,6 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	var scale_factor = config.size_scale
 	apply_unified_scaling(scale_factor)
 	
-	# Apply shadow config if available (only override if explicitly configured)
-	if config.shadow_config and not config.shadow_config.is_empty():
-		configure_shadow(config.shadow_config)
 	
 	Logger.info(get_boss_name() + " configured: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2fx" % [max_health, damage, speed, scale_factor], "bosses")
 
@@ -171,10 +159,6 @@ func _notify_components_scaled(scale_factor: float) -> void:
 		health_bar.auto_adjust_to_hitbox()
 		Logger.debug("Health bar readjusted after scaling", "debug")
 	
-	# Notify shadow to readjust (critical for shadow scaling fix)
-	if boss_shadow and boss_shadow.has_method("readjust_to_hitbox"):
-		boss_shadow.readjust_to_hitbox()
-		Logger.debug("Shadow readjusted after scaling", "debug")
 	
 	# Future: Add other scalable components here
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
@@ -341,60 +325,6 @@ func _update_health_bar() -> void:
 	if health_bar:
 		health_bar.update_health(current_health, max_health)
 
-## SHADOW SYSTEM: Setup and manage boss shadow
-func _setup_shadow() -> void:
-	if not shadow_enabled:
-		Logger.debug(get_boss_name() + " shadow disabled", "bosses")
-		return
-	
-	# Prevent duplicate shadow creation
-	if boss_shadow != null:
-		Logger.debug(get_boss_name() + " shadow already exists, skipping creation", "bosses")
-		return
-	
-	# Load BossShadow scene and instantiate
-	var shadow_scene = preload("res://scenes/components/BossShadow.tscn")
-	if not shadow_scene:
-		Logger.warn("Failed to load BossShadow scene - shadows disabled", "bosses")
-		return
-	
-	boss_shadow = shadow_scene.instantiate()
-	if not boss_shadow:
-		Logger.warn("Failed to instantiate BossShadow - shadows disabled", "bosses")
-		return
-	
-	# Configure shadow properties
-	var shadow_config = {
-		"enabled": shadow_enabled,
-		"size_multiplier": shadow_size_multiplier,
-		"opacity": shadow_opacity,
-		"offset_y": shadow_offset_y
-	}
-	
-	# Add shadow as child (will be positioned below boss automatically)
-	add_child(boss_shadow)
-	boss_shadow.configure_shadow(shadow_config)
-	
-	Logger.debug(get_boss_name() + " shadow created and configured", "bosses")
-
-## Update shadow configuration (useful for runtime changes)
-func configure_shadow(config: Dictionary) -> void:
-	if config.has("enabled"):
-		shadow_enabled = config.enabled
-	if config.has("size_multiplier"):
-		shadow_size_multiplier = config.size_multiplier
-	if config.has("opacity"):
-		shadow_opacity = config.opacity
-	if config.has("offset_y"):
-		shadow_offset_y = config.offset_y
-	
-	# Update existing shadow if available
-	if boss_shadow:
-		boss_shadow.configure_shadow(config)
-	else:
-		# Create shadow if it doesn't exist and is now enabled
-		if shadow_enabled:
-			_setup_shadow()
 
 func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	# Handle AI pause/unpause cheat toggle
@@ -442,12 +372,9 @@ func get_scaling_debug_info() -> Dictionary:
 		"sprite_position": Vector2.ZERO,
 		"collision_scale": Vector2.ZERO,
 		"hitbox_scale": Vector2.ZERO,
-		"shadow_scale": Vector2.ZERO,
-		"shadow_position": Vector2.ZERO,
 		"has_sprite": false,
 		"has_collision": false,
 		"has_hitbox": false,
-		"has_shadow": false
 	}
 	
 	# Get sprite info
@@ -468,11 +395,6 @@ func get_scaling_debug_info() -> Dictionary:
 		info.hitbox_scale = hitbox.scale
 		info.has_hitbox = true
 	
-	# Get shadow info
-	if boss_shadow:
-		info.shadow_scale = boss_shadow.scale
-		info.shadow_position = boss_shadow.position
-		info.has_shadow = true
 	
 	return info
 
@@ -483,7 +405,6 @@ func debug_print_scaling_info() -> void:
 	Logger.info("Sprite: scale=%v position=%v (present: %s)" % [info.sprite_scale, info.sprite_position, info.has_sprite], "debug")
 	Logger.info("Collision: scale=%v (present: %s)" % [info.collision_scale, info.has_collision], "debug")
 	Logger.info("HitBox: scale=%v (present: %s)" % [info.hitbox_scale, info.has_hitbox], "debug")
-	Logger.info("Shadow: scale=%v position=%v (present: %s)" % [info.shadow_scale, info.shadow_position, info.has_shadow], "debug")
 	
 	# HitBoxShape inherits scaling from parent HitBox Area2D (no separate scaling needed)
 	

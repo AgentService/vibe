@@ -2,7 +2,7 @@ extends BaseBoss
 
 ## Ancient Lich Boss - V2 Enemy System Integration  
 ## Scene-based boss with AnimatedSprite2D for proper visual workflow
-## Now inherits from BaseBoss for automatic shadow and unified systems support
+## Now inherits from BaseBoss for unified systems support
 
 class_name AncientLich
 
@@ -22,13 +22,7 @@ func _ready() -> void:
 	attack_range = 60.0
 	chase_range = 300.0
 	
-	# Configure shadow (larger shadow for DragonLord)
-	shadow_enabled = true
-	# shadow_size_multiplier = 4.2  # Dragon-specific override: bigger shadow
-	# shadow_opacity = 0.8         # Uncomment for darker shadow
-	# shadow_offset_y = 0.0         # Dragon-specific override: much lower shadow
-	
-	# Call parent _ready() to handle base initialization (damage system, shadow setup, etc.)
+	# Call parent _ready() to handle base initialization
 	super._ready()
 	
 	# AncientLich specific setup after base initialization

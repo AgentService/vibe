@@ -2,7 +2,7 @@ extends BaseBoss
 
 ## Banana Lord Boss - V2 Enemy System Integration
 ## Scene-based boss with AnimatedSprite2D for proper visual workflow
-## Now inherits from BaseBoss for automatic shadow and unified systems support
+## Now inherits from BaseBoss for unified systems support
 
 class_name BananaLord
 
@@ -22,13 +22,7 @@ func _ready() -> void:
 	attack_range = 60.0
 	chase_range = 300.0
 	
-	# Configure shadow (smaller shadow for BananaLord)
-	shadow_enabled = true
-	#  shadow_size_multiplier = 5.8  # Size relative to HitBox (COMMENTED: using global default 1.5)
-	# shadow_opacity = 0.6  # COMMENTED: using global default 0.6
-	shadow_offset_y = 11.5  # Closer shadow for grounded banana (COMMENTED: using global default 2.0)
-	
-	# Call parent _ready() to handle base initialization (including shadow setup)
+	# Call parent _ready() to handle base initialization
 	super._ready()
 	
 	# BananaLord specific setup after base initialization

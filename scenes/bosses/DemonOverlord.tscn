@@ -1,4 +1,4 @@
-[gd_scene load_steps=70 format=3 uid="uid://cj52peu3ecx4l"]
+[gd_scene load_steps=71 format=3 uid="uid://cj52peu3ecx4l"]
 
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
 [ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
@@ -66,6 +66,7 @@
 [ext_resource type="Texture2D" uid="uid://dnno4b188b51n" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_005.png" id="64_sw5"]
 [ext_resource type="Texture2D" uid="uid://jlhs0df3prd0" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_006.png" id="65_sw6"]
 [ext_resource type="Texture2D" uid="uid://ctqrptu7dbw6m" path="res://assets/sprites/demon_overlord/animations/scary-walk/south-west/frame_007.png" id="66_sw7"]
+[ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="67_qtjdy"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_demon"]
 animations = [{
@@ -312,6 +313,7 @@ size = Vector2(17, 39)
 script = ExtResource("1_kjm5n")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -3)
 sprite_frames = SubResource("SpriteFrames_demon")
 animation = &"scary_walk_south"
 
@@ -327,3 +329,7 @@ shape = SubResource("RectangleShape2D_04ech")
 [node name="AttackTimer" type="Timer" parent="."]
 
 [node name="BossHealthBar" parent="." instance=ExtResource("1_861tk")]
+
+[node name="BossShadow" parent="." instance=ExtResource("67_qtjdy")]
+position = Vector2(0, 24)
+scale = Vector2(2.20097, 2.88673)

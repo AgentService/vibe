@@ -61,9 +61,13 @@ func register_component(component_id: String, component: Control) -> bool:
 		component.set_component_scale(scale_config)
 		component.set_component_visible(visibility_config)
 	
-	# Add to HUD container if available
-	if _hud_container and component.get_parent() != _hud_container:
-		component.reparent(_hud_container, false)
+	# Only reparent if component doesn't have a proper parent already
+	# Components from NewHUD scene already have correct parent structure
+	if _hud_container and component.get_parent() == null:
+		_hud_container.add_child(component)
+	elif component.get_parent() != null:
+		# Component already has a parent (likely from scene), don't reparent
+		Logger.debug("Component %s already has parent, skipping reparent" % component_id, "ui")
 	
 	component_registered.emit(component_id)
 	Logger.debug("Registered HUD component: " + component_id, "ui")

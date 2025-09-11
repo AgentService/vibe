@@ -24,8 +24,6 @@ var render_tier: String
 var position: Vector2
 var velocity: Vector2
 
-# Shadow configuration
-var shadow_config: Dictionary
 
 func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0) -> void:
 	health = p_health
@@ -38,7 +36,6 @@ func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0)
 	render_tier = "regular"
 	position = Vector2.ZERO
 	velocity = Vector2.ZERO
-	shadow_config = {}  # Empty = let BaseBoss use its own defaults
 
 ## Convert to legacy EnemyType for existing systems (temporary compatibility)
 func to_enemy_type() -> EnemyType:
@@ -65,8 +62,6 @@ func to_enemy_type() -> EnemyType:
 		"shape": "square"  # Default shape
 	}
 	
-	# Set shadow config
-	enemy_type.shadow_config = shadow_config.duplicate()
 	
 	return enemy_type
 

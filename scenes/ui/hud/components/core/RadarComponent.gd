@@ -140,8 +140,6 @@ func _on_radar_data_updated(entities: Array, player_pos: Vector2) -> void:
 	else:
 		_should_redraw = true  # For now, always redraw when data updates
 	
-	Logger.debug("Radar updated: %d entities" % entities.size(), "ui")
-
 func _draw() -> void:
 	# Performance optimization: Skip drawing if radar is disabled
 	if DebugManager and DebugManager.is_radar_disabled():

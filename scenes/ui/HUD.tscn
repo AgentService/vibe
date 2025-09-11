@@ -1,8 +1,6 @@
-[gd_scene load_steps=4 format=3 uid="uid://bhj1oq2rnkdlc"]
+[gd_scene load_steps=2 format=3 uid="uid://bhj1oq2rnkdlc"]
 
-[ext_resource type="Script" uid="uid://dkpv8l7rsjk2n" path="res://scenes/ui/HUD.gd" id="1_7k4pc"]
 [ext_resource type="Script" uid="uid://bq0eo3t8lmiuu" path="res://scenes/ui/EnemyRadar.gd" id="2_radar"]
-[ext_resource type="Script" uid="uid://b4fessnjbfgup" path="res://scenes/ui/KeybindingsDisplay.gd" id="3_keybindings"]
 
 [node name="HUD" type="Control"]
 layout_mode = 3
@@ -11,7 +9,6 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_7k4pc")
 
 [node name="FPSLabel" type="Label" parent="."]
 layout_mode = 1
@@ -95,7 +92,6 @@ offset_top = 270.0
 offset_right = -20.0
 offset_bottom = 410.0
 grow_horizontal = 0
-script = ExtResource("3_keybindings")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="KeybindingsDisplay"]
 layout_mode = 1

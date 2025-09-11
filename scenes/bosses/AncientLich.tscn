@@ -1,8 +1,9 @@
-[gd_scene load_steps=19 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=20 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://c36wbfq653mki" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
+[ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="4_o4kpg"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_737yx"]
 atlas = ExtResource("2_vnul3")
@@ -121,12 +122,15 @@ sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+visible = false
 shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
+visible = false
 position = Vector2(-1, -8.5)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+visible = false
 position = Vector2(1, 8.5)
 shape = SubResource("RectangleShape2D_737yx")
 
@@ -134,3 +138,8 @@ shape = SubResource("RectangleShape2D_737yx")
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
+visible = false
+
+[node name="BossShadow" parent="." instance=ExtResource("4_o4kpg")]
+position = Vector2(0, 13)
+scale = Vector2(1.92188, 1.58951)

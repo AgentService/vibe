@@ -1,0 +1,8 @@
+[gd_scene load_steps=3 format=3 uid="uid://b7j8k3mam2p4q"]
+
+[ext_resource type="PackedScene" uid="uid://b8qx1qr4rqwyk" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" path="res://scenes/ui/hud/components/core/AbilityBarComponent.gd" id="2_ability_script"]
+
+[node name="AbilityBarComponent" instance=ExtResource("1_base_component")]
+script = ExtResource("2_ability_script")
+component_id = "ability_bar"

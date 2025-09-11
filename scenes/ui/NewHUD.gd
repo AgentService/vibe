@@ -4,11 +4,16 @@ class_name NewHUD
 ## New component-based HUD system using HUDManager for coordination
 ## Designed to coexist with and eventually replace the old HUD system
 
-@onready var level_label: Label = $LevelLabel
-@onready var xp_bar: ProgressBar = $XPBar
-@onready var player_health: HealthBarComponent = $PlayerHealthBar
-@onready var enemy_radar: RadarComponent = $EnemyRadar  
-@onready var performance_display: PerformanceComponent = $PerformanceDisplay
+# Layer 1 - Primary HUD (Game UI)
+@onready var level_label: Label = $Layer1_PrimaryHUD/GameUI/LevelLabel
+@onready var xp_bar: XPBarComponent = $Layer1_PrimaryHUD/GameUI/XPBar
+@onready var player_health: HealthBarComponent = $Layer1_PrimaryHUD/GameUI/PlayerHealthBar
+@onready var enemy_radar: RadarComponent = $Layer1_PrimaryHUD/GameUI/EnemyRadar
+@onready var keybindings_display: KeybindingsComponent = $Layer1_PrimaryHUD/GameUI/KeybindingsDisplay
+@onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/AbilityBar
+
+# Layer 100 - Debug UI
+@onready var performance_display: PerformanceComponent = $Layer100_Debug/DebugUI/PerformanceDisplay
 
 # State tracking
 var _is_initialized: bool = false
@@ -30,14 +35,14 @@ func _initialize_new_hud() -> void:
 	
 	Logger.info("Initializing new component-based HUD system", "ui")
 	
-	# Apply default HUD layout configuration
-	if HUDManager.hud_config:
-		_apply_hud_layout()
-	else:
-		# Load default layout
+	# Ensure HUDManager has default layout
+	if not HUDManager.hud_config:
 		HUDManager.load_layout_preset(HUDConfigResource.LayoutPreset.DEFAULT)
 	
-	# Connect to new progression signals
+	# Apply layout to non-component elements (level label)
+	_apply_hud_layout()
+	
+	# Connect to progression signals
 	_connect_new_hud_signals()
 	
 	# Style the remaining non-component elements
@@ -46,8 +51,9 @@ func _initialize_new_hud() -> void:
 	# Initialize component states
 	_initialize_component_states()
 	
+	# All components should now be positioned by HUDManager
 	_is_initialized = true
-	Logger.info("New HUD system initialization complete", "ui")
+	Logger.info("New HUD system initialization complete - Layer 1 (Game UI) + Layer 100 (Debug UI) architecture", "ui")
 
 func _connect_new_hud_signals() -> void:
 	# Connect to EventBus signals
@@ -84,19 +90,6 @@ func _style_legacy_elements() -> void:
 		label_theme.set_stylebox("normal", "Label", style_bg)
 		label_theme.set_color("font_color", "Label", Color.WHITE)
 		level_label.theme = label_theme
-	
-	# Style XP bar
-	if xp_bar:
-		var xp_theme := Theme.new()
-		var style_bg := StyleBoxFlat.new()
-		var style_fill := StyleBoxFlat.new()
-		
-		style_bg.bg_color = Color(0.2, 0.2, 0.4, 0.8)
-		style_fill.bg_color = Color(0.4, 0.6, 1.0, 1.0)
-		
-		xp_theme.set_stylebox("background", "ProgressBar", style_bg)
-		xp_theme.set_stylebox("fill", "ProgressBar", style_fill)
-		xp_bar.theme = xp_theme
 
 func _initialize_component_states() -> void:
 	# Initialize health bar with current player state
@@ -108,10 +101,14 @@ func _initialize_component_states() -> void:
 	if PlayerProgression:
 		var state = PlayerProgression.get_progression_state()
 		_on_progression_changed(state)
+	
+	# Initialize keybindings display
+	if keybindings_display:
+		keybindings_display.refresh_keybindings()
 
 func _apply_hud_layout() -> void:
-	# Apply layout configuration to non-component elements
-	# Components will be handled automatically by HUDManager
+	# Apply layout configuration to level label (non-component element)
+	# All other components are handled by HUDManager registration
 	
 	if not HUDManager.hud_config:
 		return
@@ -121,18 +118,20 @@ func _apply_hud_layout() -> void:
 		var config = HUDManager.hud_config.get_component_position("level_label")
 		var anchor_preset = config.get("anchor_preset", Control.PRESET_CENTER_BOTTOM)
 		var offset = config.get("offset", Vector2(0, -65))
+		var component_size = config.get("size", Vector2.ZERO)
 		
 		level_label.set_anchors_and_offsets_preset(anchor_preset)
 		level_label.position += offset
-	
-	# Apply XP bar positioning
-	if xp_bar:
-		var config = HUDManager.hud_config.get_component_position("xp_bar")
-		var anchor_preset = config.get("anchor_preset", Control.PRESET_BOTTOM_LEFT)
-		var offset = config.get("offset", Vector2(10, -40))
 		
-		xp_bar.set_anchors_and_offsets_preset(anchor_preset)
-		xp_bar.position += offset
+		# Apply size if specified
+		if component_size != Vector2.ZERO:
+			level_label.custom_minimum_size = component_size
+			level_label.size = component_size
+			
+		var scale_config = HUDManager.hud_config.get_component_scale("level_label")
+		level_label.scale = scale_config
+		var visibility_config = HUDManager.hud_config.get_component_visibility("level_label")
+		level_label.visible = visibility_config
 
 # Signal handlers
 func _on_health_changed(current_health: float, max_health: float) -> void:
@@ -150,10 +149,7 @@ func _on_progression_changed(state: Dictionary) -> void:
 	if level_label:
 		level_label.text = "Level: " + str(level)
 	
-	# Update XP bar
-	if xp_bar:
-		xp_bar.max_value = xp_to_next
-		xp_bar.value = current_xp
+	# XP bar component handles its own updates via EventBus signals
 
 func _on_leveled_up(new_level: int, prev_level: int) -> void:
 	Logger.debug("New HUD: Level up detected! %d -> %d" % [prev_level, new_level], "ui")
@@ -188,5 +184,14 @@ func get_hud_performance_stats() -> Dictionary:
 	
 	if performance_display and performance_display.has_method("get_current_performance_stats"):
 		stats.components["performance"] = performance_display.get_current_performance_stats()
+	
+	if xp_bar and xp_bar.has_method("get_xp_stats"):
+		stats.components["xp_bar"] = xp_bar.get_xp_stats()
+	
+	if keybindings_display and keybindings_display.has_method("get_keybinding_stats"):
+		stats.components["keybindings"] = keybindings_display.get_keybinding_stats()
+	
+	if ability_bar and ability_bar.has_method("get_ability_stats"):
+		stats.components["ability_bar"] = ability_bar.get_ability_stats()
 	
 	return stats
