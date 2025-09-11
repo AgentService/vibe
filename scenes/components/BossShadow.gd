@@ -81,8 +81,9 @@ func auto_adjust_to_hitbox() -> void:
 	var shadow_width = effective_width * size_multiplier  # Match effective HitBox width with size multiplier  
 	var shadow_height = effective_width * size_multiplier * 0.3  # Height based on effective WIDTH for realistic ground shadow
 	
-	# Position shadow at the bottom of the EFFECTIVE HitBox with configurable offset
-	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (effective_height * 0.5)
+	# Position shadow at the bottom of the BASE (unscaled) HitBox with configurable offset
+	# This ensures shadow offset_y remains consistent regardless of boss scale
+	var hitbox_world_bottom = hitbox_node.position.y + hitbox_shape_node.position.y + (height * 0.5)
 	var shadow_y = hitbox_world_bottom - offset_y  # Apply offset_y for positioning adjustment
 	
 	# Apply size and position (accounting for both HitBox and HitBoxShape positions)
