@@ -166,11 +166,15 @@ func _initialize_display() -> void:
 		_on_progression_changed(state)
 		Logger.debug("PlayerInfoPanel: Initialized with PlayerProgression state", "ui")
 	else:
-		# Fallback values
-		_update_health_display(100.0, 100.0)
+		# Fallback values for XP/level only
 		_update_xp_display(0, 100)
 		_update_level_display(1)
-		Logger.debug("PlayerInfoPanel: PlayerProgression not available, using fallback values", "ui")
+		Logger.debug("PlayerInfoPanel: PlayerProgression not available, using fallback XP/level values", "ui")
+	
+	# Initialize health display with default player values
+	# This will be overridden when Player emits health_changed signal
+	_update_health_display(500.0, 500.0)  # Match default_player.tres max_health
+	Logger.debug("PlayerInfoPanel: Initialized health display with default values", "ui")
 
 # Health management
 func _update_health_display(current: float, max_hp: float) -> void:
