@@ -7,6 +7,7 @@ extends Node
 # Type imports needed for system injection
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
+const XpSystem_Type := preload("res://scripts/systems/XpSystem.gd")
 
 # Arena references needed for system setup
 var arena_ref: Node
@@ -79,6 +80,13 @@ func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	
 	injected_melee_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	injected_melee_system.melee_attack_started.connect(arena_ref.player_attack_handler.on_melee_attack_started)
+
+func set_xp_system(injected_xp_system: XpSystem_Type) -> void:
+	arena_ref.xp_system = injected_xp_system
+	_injected["XpSystem"] = injected_xp_system
+	Logger.info("XpSystem injected into Arena", "debug")
+	
+	injected_xp_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 
 
 # Provide access to injected systems for DebugController

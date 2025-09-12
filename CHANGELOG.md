@@ -34,6 +34,7 @@
 - **XP Bar Progression Reset**: Fixed XP bar displaying cumulative values instead of current level progress - PlayerProgression now calculates proper within-level progress (e.g., 5/200 instead of 595/800)
 - **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization
 - **XP Progression Calculation**: Improved level-based XP calculation logic to properly handle both Level 1 (progress toward Level 2) and Level 2+ (progress within current level range)
+- **Health Bar Label Visibility**: Fixed health bar label not displaying immediately on startup - PlayerInfoPanel now shows "500/500 HP" text immediately rather than waiting for damage events
 
 ### Added
 - **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
@@ -81,6 +82,35 @@
   - **Perfect Scaling**: Health bar width now scales proportionally with boss size (0.1x, 1.0x, 2.0x all tested ✓)
   - **Enhanced Debugging**: Added detailed scaling debug logs with "debug" category for easier troubleshooting
   - **Consistent Behavior**: Works across all boss types and size factors without manual intervention
+
+- **PlayerProgression Sync Corruption Fix**: Resolved "Level X with 0.0 XP" warnings during normal gameplay
+  - **Root Cause**: PlayerProgression._emit_progression_changed() was emitting current level progress (0 XP after levelup) instead of total accumulated XP for character saving
+  - **Solution**: Created comprehensive state with both UI display data (current level progress) and character saving data (total accumulated XP) in single signal
+  - **UI Preservation**: Progress bars continue showing correct current level progress (e.g., 150/800 XP within Level 4)
+  - **Save Data Accuracy**: Character profiles now receive total accumulated XP (e.g., 1350.0 total XP) preventing corruption warnings
+  - **Single Signal Design**: Uses one EventBus.progression_changed signal with rich payload instead of multiple specialized signals
+  - **Zero Regression**: All existing UI components (PlayerInfoPanel, XPBarComponent) continue working without changes
+
+- **Code Cleanup After Progression Fix**: Removed excessive debugging and safety code added during troubleshooting
+  - **Simplified CharacterManager**: Removed complex backup/restore system that was masking the real sync issue - now uses basic save validation
+  - **Debug Logging Cleanup**: Removed verbose debug logs, call stack traces, and duplicate logging throughout PlayerProgression system
+  - **Streamlined Validation**: Simplified CharacterProfile sync logging while keeping essential corruption prevention checks
+  - **Architecture Restored**: Removed defensive programming that was working around the root cause instead of fixing it
+
+- **Legacy UI Component Cleanup**: Removed unused UI components after confirming active architecture
+  - **Removed XPBarUI.gd**: Legacy XP bar stub from development phase, replaced by PlayerInfoPanel integrated display
+  - **Removed XPBarComponent**: Unused component-based XP bar, redundant with PlayerInfoPanel XP display
+  - **Removed old HUD.tscn/HUD.gd.uid**: Legacy HUD system replaced by NewHUD with component architecture
+  - **Removed old EnemyRadar.gd**: Legacy radar implementation replaced by RadarComponent in component system
+  - **Cleaned up test files**: Removed EnemyRadar_View_Isolated tests that referenced obsolete EnemyRadar class
+  - **Active Architecture Confirmed**: NewHUD with PlayerInfoPanel + RadarComponent + AbilityBarComponent + KeybindingsComponent
+
+- **Continue Button Fix**: Resolved character selection issues when multiple characters played on same day
+  - **Root Issue**: last_played field only stored date (YYYY-MM-DD) causing ambiguous sorting when multiple characters played same day
+  - **Fixed Timestamp Precision**: Changed to full datetime (YYYY-MM-DDTHH:MM:SS) using Time.get_datetime_string_from_system()
+  - **Simplified Selection Logic**: Removed redundant manual character search loop, now uses pre-sorted array from CharacterManager
+  - **Added Debug Logging**: Continue button shows all characters with timestamps to verify correct selection
+  - **Updated All References**: CharacterManager.load_character() and sync_from_progression() now set precise timestamps
 
 ### Changed
 - **MultiMesh Enemy System Disabled**: Completed transition to scene-based enemies only for consistent behavior

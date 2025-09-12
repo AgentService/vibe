@@ -13,7 +13,7 @@ extends Control
 var main_theme: MainTheme
 
 func _ready() -> void:
-	Logger.info("MainMenu initialized", "mainmenu")
+	Logger.info("MainMenu initialized", "debug")
 	
 	# Load theme from ThemeManager
 	_load_theme_from_manager()
@@ -59,43 +59,39 @@ func _connect_button_signals() -> void:
 func _on_continue_pressed() -> void:
 	"""Handle Continue button press - load most recent character and go to hideout."""
 	
-	Logger.info("Continue pressed", "mainmenu")
+	Logger.info("Continue pressed", "debug")
 	
 	# Get most recent character
 	var characters = CharacterManager.list_characters()
 	if characters.is_empty():
-		Logger.warn("No characters available for continue", "mainmenu")
+		Logger.warn("No characters available for continue", "debug")
 		_show_placeholder_message("No characters found. Please create a new character first.")
 		return
 	
-	# Find most recent character by last_played
-	var most_recent_character: CharacterProfile = null
-	var most_recent_time: String = ""
+	# Debug: Show all characters and their last_played dates
+	Logger.info("Continue button - Available characters:", "debug")
+	for i in range(characters.size()):
+		var char = characters[i]
+		Logger.info("  [%d] %s (Level %d) - Last played: '%s'" % [i, char.name, char.level, char.last_played], "debug")
 	
-	for character in characters:
-		if most_recent_character == null or character.last_played > most_recent_time:
-			most_recent_character = character
-			most_recent_time = character.last_played
+	# Get most recent character (CharacterManager already sorts by last_played, most recent first)
+	var most_recent_character: CharacterProfile = characters[0]
 	
-	if not most_recent_character:
-		Logger.error("Failed to find most recent character", "mainmenu")
-		_show_placeholder_message("Error loading character. Please try again.")
-		return
-	
-	Logger.info("Loading most recent character: %s (Level %d)" % [most_recent_character.name, most_recent_character.level], "mainmenu")
+	Logger.info("Loading most recent character: %s (Level %d)" % [most_recent_character.name, most_recent_character.level], "debug")
 	
 	# Load character into CharacterManager as current
 	CharacterManager.load_character(most_recent_character.id)
 	
-	# Load character progression into PlayerProgression
-	PlayerProgression.load_from_profile(most_recent_character.progression)
+	# Load character progression into PlayerProgression (use fresh data to prevent staleness)
+	PlayerProgression.load_from_profile(most_recent_character.get_progression_data())
 	
 	# Prepare context for StateManager
 	var context = {
 		"character_id": most_recent_character.id,
 		"character_data": most_recent_character.get_character_data(),
 		"spawn_point": "PlayerSpawnPoint",
-		"source": "main_menu_continue"
+		"source": "main_menu_continue",
+		"preserve_progression": true  # CRITICAL: Preserve character progression when continuing
 	}
 	
 	# Use StateManager to transition to hideout
@@ -104,7 +100,7 @@ func _on_continue_pressed() -> void:
 func _on_start_game_pressed() -> void:
 	"""Handle New Character button press - navigate to character selection."""
 	
-	Logger.info("New Character pressed", "mainmenu")
+	Logger.info("New Character pressed", "debug")
 	
 	# Use StateManager for proper state transition
 	StateManager.go_to_character_select({"source": "main_menu"})
@@ -112,7 +108,7 @@ func _on_start_game_pressed() -> void:
 func _on_options_pressed() -> void:
 	"""Handle Options button press - placeholder for future options menu."""
 	
-	Logger.info("Options pressed (placeholder)", "mainmenu")
+	Logger.info("Options pressed (placeholder)", "debug")
 	
 	# TODO: Implement options menu
 	# For now, just show a simple notification
@@ -121,7 +117,7 @@ func _on_options_pressed() -> void:
 func _on_quit_pressed() -> void:
 	"""Handle Quit button press - exit the game."""
 	
-	Logger.info("Quit pressed - exiting game", "mainmenu")
+	Logger.info("Quit pressed - exiting game", "debug")
 	get_tree().quit()
 
 func _show_placeholder_message(message: String) -> void:
@@ -148,9 +144,9 @@ func _update_button_visibility() -> void:
 	continue_button.visible = has_characters
 	
 	if has_characters:
-		Logger.debug("Continue button enabled - %d characters available" % characters.size(), "mainmenu")
+		Logger.debug("Continue button enabled - %d characters available" % characters.size(), "debug")
 	else:
-		Logger.debug("Continue button hidden - no characters available", "mainmenu")
+		Logger.debug("Continue button hidden - no characters available", "debug")
 
 func _load_theme_from_manager() -> void:
 	"""Load theme from ThemeManager."""

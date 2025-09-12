@@ -92,6 +92,7 @@ signal xp_gained(amount: float, new_total: float)
 signal leveled_up(new_level: int, prev_level: int)
 
 ## Progression state changed - emitted when any progression state changes
+## Contains both UI display data (current level progress) and save data (total accumulated XP)
 @warning_ignore("unused_signal")
 signal progression_changed(state: Dictionary)
 

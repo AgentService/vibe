@@ -94,6 +94,7 @@ var _enemy_transforms: Array[Transform2D] = []
 
 
 func _ready() -> void:
+	Logger.info("=== ARENA._READY() STARTING ===", "debug")
 	Logger.info("Arena initializing", "ui")
 	
 	# Arena should pause game entities but allow debug controls
@@ -128,27 +129,34 @@ func _ready() -> void:
 	visual_effects_manager.setup_hit_feedback_systems()
 	
 	# Create and add new systems
+	Logger.info("Arena: About to setup player", "debug")
 	_setup_player()
-	_setup_xp_system()
+	Logger.info("Arena: Player setup complete, XP system will be injected by GameOrchestrator", "debug")
 	_setup_ui()
+	Logger.info("Arena: UI setup complete", "debug")
 	
-	
+	Logger.info("Arena: About to setup Boss Spawn Manager", "debug")
 	# Setup Boss Spawn Manager
 	boss_spawn_manager = BossSpawnManagerScript.new()
 	add_child(boss_spawn_manager)
 	
 	# Setup Player Attack Handler
+	Logger.info("Arena: About to setup Player Attack Handler", "debug")
 	player_attack_handler = PlayerAttackHandlerScript.new()
 	add_child(player_attack_handler)
 	
 	# Setup System Injection Manager
+	Logger.info("Arena: About to setup System Injection Manager", "debug")
 	system_injection_manager = SystemInjectionManagerScript.new()
 	add_child(system_injection_manager)
 	system_injection_manager.setup(self)
 	
 	# Initialize GameOrchestrator systems and inject them
+	Logger.info("Arena: About to call GameOrchestrator.initialize_core_loop()", "orchestrator")
 	GameOrchestrator.initialize_core_loop()
+	Logger.info("Arena: GameOrchestrator.initialize_core_loop() completed, now calling inject_systems_to_arena()", "orchestrator")
 	GameOrchestrator.inject_systems_to_arena(self)
+	Logger.info("Arena: GameOrchestrator.inject_systems_to_arena() completed", "orchestrator")
 
 	# Inject boss hit feedback system to WaveDirector for boss registration
 	if GameOrchestrator.wave_director:
@@ -249,10 +257,13 @@ func _setup_player() -> void:
 	
 	# Camera setup now handled in injection method
 
-func _setup_xp_system() -> void:
-	xp_system = XpSystem.new(self)
-	add_child(xp_system)
-	# XP system is created locally, not injected by GameOrchestrator
+# DEPRECATED: XP system setup moved to GameOrchestrator injection
+# func _setup_xp_system() -> void:
+#	Logger.info("Arena: Setting up XP system", "debug")
+#	xp_system = XpSystem.new(self)
+#	add_child(xp_system)
+#	Logger.info("Arena: XP system created and added as child", "debug")
+#	# XP system is now handled by GameOrchestrator.inject_systems_to_arena()
 
 func _setup_ui() -> void:
 	# Create and configure ArenaUIManager
@@ -303,6 +314,10 @@ func set_wave_director(injected_wave_director: WaveDirector) -> void:
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_melee_system(injected_melee_system)
+
+func set_xp_system(injected_xp_system: XpSystem) -> void:
+	if system_injection_manager:
+		system_injection_manager.set_xp_system(injected_xp_system)
 
 
 func _input(event: InputEvent) -> void:

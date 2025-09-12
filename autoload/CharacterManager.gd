@@ -39,6 +39,17 @@ func _ready() -> void:
 	_is_initialized = true
 	Logger.info("CharacterManager initialized with %d profiles" % profiles.size(), "characters")
 
+func _exit_tree() -> void:
+	"""Ensure any pending saves are completed before exit"""
+	Logger.info("CharacterManager shutting down - forcing immediate save of current profile", "characters")
+	
+	# Stop the timer to prevent it from running during shutdown
+	if _save_timer:
+		_save_timer.stop()
+	
+	# Force immediate save of current profile to prevent data loss during F5/exit
+	save_current_immediate()
+
 ## Ensure the profiles directory exists
 func _ensure_profiles_directory() -> void:
 	if not DirAccess.dir_exists_absolute(PROFILES_DIR):
@@ -93,6 +104,11 @@ func _load_profile_from_file(file_path: String) -> CharacterProfile:
 		Logger.warn("Invalid profile data in %s" % file_path, "characters")
 		return null
 	
+	# Repair corrupted progression data if needed
+	if profile.repair_progression_if_needed():
+		Logger.info("Repaired corrupted progression for %s, saving fixed data..." % profile.name, "debug")
+		_save_profile_to_disk(profile)
+	
 	return profile
 
 ## Sort profiles by last_played date (most recent first)
@@ -141,6 +157,11 @@ func load_character(character_id: StringName) -> void:
 		Logger.error("CharacterManager not initialized", "characters")
 		return
 	
+	# Check if this character is already loaded to prevent double initialization
+	if current_profile and current_profile.id == character_id:
+		Logger.info("Character %s is already loaded, skipping reload to prevent double initialization" % character_id, "characters")
+		return
+	
 	# Find profile by ID
 	var profile: CharacterProfile = null
 	for p in profiles:
@@ -154,7 +175,10 @@ func load_character(character_id: StringName) -> void:
 	
 	# Set as current profile
 	current_profile = profile
-	current_profile.last_played = Time.get_date_string_from_system()
+	current_profile.last_played = Time.get_datetime_string_from_system()
+	
+	# Re-sort profiles after updating last_played
+	profiles.sort_custom(_sort_profiles_by_last_played)
 	
 	Logger.info("Loaded character: %s (%s)" % [profile.name, profile.clazz], "characters")
 	
@@ -163,6 +187,9 @@ func load_character(character_id: StringName) -> void:
 	
 	# Auto-save the updated last_played date
 	_save_profile_to_disk(profile)
+	
+	# Emit updated character list since order may have changed
+	EventBus.characters_list_changed.emit(_get_profiles_summary())
 
 ## Delete a character by ID
 func delete_character(character_id: StringName) -> void:
@@ -249,10 +276,16 @@ func _save_profile_to_disk(profile: CharacterProfile) -> bool:
 		return false
 	
 	var file_path := profile.get_save_path()
+	
+	# Basic validation before saving
+	if not profile.is_valid():
+		Logger.error("Refusing to save invalid character profile: %s" % profile.name, "characters")
+		return false
+	
 	var result := ResourceSaver.save(profile, file_path)
 	
 	if result == OK:
-		Logger.debug("Saved character profile: %s" % profile.name, "characters")
+		Logger.debug("Saved character profile: %s (Level %d, XP %.1f)" % [profile.name, profile.level, profile.experience], "characters")
 		return true
 	else:
 		Logger.error("Failed to save character profile %s: %s" % [profile.name, error_string(result)], "characters")
@@ -263,8 +296,15 @@ func _on_progression_changed(state: Dictionary) -> void:
 	if not current_profile:
 		return
 	
-	# Update current profile with new progression state
-	current_profile.sync_from_progression(state)
+	# Extract character saving data from comprehensive state
+	var save_state = {
+		"level": state.get("save_level", state.get("level", 1)),
+		"exp": state.get("save_exp", state.get("exp", 0.0)),
+		"version": state.get("save_version", 1)
+	}
+	
+	# Update current profile with character saving data (total accumulated XP)
+	current_profile.sync_from_progression(save_state)
 	
 	# Trigger debounced save
 	save_current()

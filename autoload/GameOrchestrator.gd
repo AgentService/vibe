@@ -12,6 +12,7 @@ const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
 const CameraSystem = preload("res://scripts/systems/CameraSystem.gd")
+const XpSystem_Type = preload("res://scripts/systems/XpSystem.gd")
 
 # Core orchestration events
 signal systems_initialized()
@@ -31,6 +32,7 @@ var radar_system: RadarSystem_Type
 var melee_system: MeleeSystem_Type
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
+var xp_system: XpSystem_Type
 
 func _ready() -> void:
 	Logger.info("GameOrchestrator initializing", "orchestrator")
@@ -159,6 +161,10 @@ func _initialize_systems() -> void:
 		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
 	
 	Logger.info("Using DamageService autoload (zero-allocation damage system)", "orchestrator")
+	
+	# Phase F: XpSystem (needs arena reference - will be injected later)
+	# Note: XpSystem requires arena node in constructor, so it will be handled by SystemInjectionManager
+	Logger.info("XpSystem will be initialized by Arena via SystemInjectionManager", "orchestrator")
 
 func get_card_system() -> CardSystem_Type:
 	return card_system
@@ -191,7 +197,7 @@ func inject_systems_to_arena(arena) -> void:
 		Logger.error("Cannot inject systems: Arena is null", "orchestrator")
 		return
 	
-	Logger.info("Injecting systems to Arena", "orchestrator")
+	Logger.info("=== SYSTEM INJECTION STARTING === inject_systems_to_arena called", "orchestrator")
 	
 	# Phase B: Inject CardSystem
 	if card_system and arena.has_method("set_card_system"):
@@ -227,7 +233,35 @@ func inject_systems_to_arena(arena) -> void:
 	
 	Logger.debug("Arena will use DamageService autoload (zero-allocation damage system)", "orchestrator")
 	
-	# Phase F: Setup DebugController (after all systems are injected)
+	# Phase F: Create or update XpSystem (needs arena reference)
+	Logger.info("Phase F: Starting XpSystem creation/update and injection", "orchestrator")
+	
+	if not arena:
+		Logger.error("Arena reference is null for XpSystem creation", "orchestrator")
+	else:
+		Logger.info("Arena reference valid, handling XpSystem...", "orchestrator")
+		
+		if not xp_system or not is_instance_valid(xp_system):
+			# Create new XpSystem if it doesn't exist
+			Logger.info("Creating new XpSystem instance", "orchestrator")
+			xp_system = XpSystem_Type.new(arena)
+			add_child(xp_system)
+			systems["XpSystem"] = xp_system
+			Logger.info("XpSystem instance created and registered", "orchestrator")
+		else:
+			# Update existing XpSystem with new arena reference
+			Logger.info("Updating existing XpSystem arena reference", "orchestrator")
+			xp_system.update_arena_reference(arena)
+			Logger.info("XpSystem arena reference updated", "orchestrator")
+		
+		if arena.has_method("set_xp_system"):
+			Logger.info("Arena has set_xp_system method, calling it...", "orchestrator")
+			arena.set_xp_system(xp_system)
+			Logger.info("XpSystem successfully injected to Arena", "orchestrator")
+		else:
+			Logger.error("Arena doesn't have set_xp_system method - XpSystem injection failed!", "orchestrator")
+	
+	# Phase G: Setup DebugController (after all systems are injected)
 	if arena.has_method("setup_debug_controller"):
 		arena.setup_debug_controller()
 		Logger.debug("DebugController setup complete", "orchestrator")
