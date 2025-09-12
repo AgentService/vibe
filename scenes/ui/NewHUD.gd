@@ -8,7 +8,7 @@ class_name NewHUD
 @onready var player_info_panel: PlayerInfoPanel = $Layer1_PrimaryHUD/GameUI/PlayerInfoPanel
 @onready var enemy_radar: RadarComponent = $Layer1_PrimaryHUD/GameUI/EnemyRadar
 @onready var keybindings_display: KeybindingsComponent = $Layer1_PrimaryHUD/GameUI/KeybindingsDisplay
-@onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/AbilityBar
+@onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/PlayerInfoPanel/PlayerInfoContainer/AbilityBarContainer/AbilityBar2
 
 # Layer 100 - Debug UI
 # PerformanceDisplay temporarily removed due to node parenting issues

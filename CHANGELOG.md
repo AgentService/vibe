@@ -6,6 +6,17 @@
 
 ### Added
 
+- **Animation-to-Input Foundation System - COMPLETE**: Essential input-to-animation foundation bridging current character animations with future modular ability system
+  - **Input Actions Added**: RMB (`cast_bow`), Q key (`cast_magic`), E key (`cast_spear`) integrated into project input map
+  - **Player.gd Extensions**: New ability state management with `is_bow_attacking`, `is_magic_casting`, `is_spear_attacking` variables and timers
+  - **Animation Integration**: Directional animation support (`bow_[direction]`, `magic_[direction]`, `spear_[direction]`) with equipment layer synchronization
+  - **EventBus Signals**: Added `bow_attack_started`, `magic_cast_started`, `spear_attack_started` following existing signal patterns with proper payload structures
+  - **Ability Bar Integration**: Updated AbilityBarComponent with new 4-slot layout (LMB: Melee, RMB: Bow, SPACE: Dash, Q: Magic) and balanced cooldowns
+  - **Cooldown System**: Balanced ability cooldowns (Melee: 0.5s, Bow: 2.0s, Dash: 3.0s, Magic: 8.0s) with proper HUD integration
+  - **Architecture Ready**: Foundation layer creates exact interface that future ABILITY-1 AbilityService will hook into - zero breaking changes required
+  - **Input Pipeline**: Complete `_handle_new_ability_inputs()` → animation state management → EventBus signaling → HUD cooldown display flow
+  - **Future Migration Path**: Input bindings, HUD system, and animation integration will be reused by modular AbilityService without rework
+
 - **HUD Component System V1 - COMPLETE**: Modular, component-based HUD architecture replacing monolithic UI system
   - **HUDManager Autoload**: Centralized HUD component coordinator managing lifecycle, positioning, and configuration
   - **BaseHUDComponent Framework**: Performance-optimized base class with EventBus integration, update throttling, and component lifecycle
@@ -30,6 +41,16 @@
 
 ### Fixed
 
+- **LMB Ability Cooldown Consistency**: Fixed LMB melee attack cooldown only triggering on rapid clicks - synchronized internal attack timer (0.4s) with ability bar cooldown display (0.3s) for consistent behavior
+- **E Key Spear Attack UI Visibility**: Added missing 5th ability slot to AbilityBarComponent UI - extended scene from 4 to 5 ability slots to include E key spear attack with proper cooldown management and visual feedback
+- **Ability Bar Layout Adaptation**: Updated AbilityBarComponent container width (200px → 264px) to accommodate 5 ability slots with proper spacing and alignment
+- **LMB Swing Timer System**: Replaced LMB cooldown with swing timer system - removed artificial cooldown blocking, added circular progress indicator (TextureProgressBar) for visual swing feedback
+- **Ability Bar Visual Enhancement**: Comprehensive theming overhaul with proper backgrounds, borders, hover/pressed states, and 6px rounded corners for all ability slots
+- **Keybind Label Redesign**: Repositioned hotkey labels to bottom-center with smaller font (10px), allowing cooldown numbers to display clearly in slot centers without overlap
+- **Swing Timer Visual Implementation**: Fixed missing TextureProgressBar properties - added radial_fill_degrees, progress texture, and blue tint color for visible circular progress indicator on LMB slot
+- **Ability Bar Container Styling**: Added modern background panel with dark theme, 8px rounded corners, 3px borders, and proper padding around ability slots for professional appearance
+- **Background Panel Visibility Fix**: Fixed background panel not displaying by changing from anchor-based sizing to explicit dimensions (280x66px) and improved color scheme for better visibility
+- **HUD AbilityBar Positioning Fix**: Fixed misalignment when AbilityBarComponent is used in NewHUD - removed overriding custom_minimum_size and fixed zero-size offset values, implemented proper center-bottom anchoring
 - **PlayerInfoPanel Health Bar**: Fixed health bar not updating when player takes damage - Player script now properly emits EventBus.health_changed signals during damage sync events and initial registration
 - **XP Bar Progression Reset**: Fixed XP bar displaying cumulative values instead of current level progress - PlayerProgression now calculates proper within-level progress (e.g., 5/200 instead of 595/800)
 - **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization

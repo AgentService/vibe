@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://c4418k01htn2s"]
+[gd_scene load_steps=3 format=3 uid="uid://c4418k01htn2s"]
 
 [ext_resource type="Script" uid="uid://b6j2sw2x7le6p" path="res://scenes/ui/hud/PlayerInfoPanel.gd" id="1_tsfq8"]
+[ext_resource type="PackedScene" uid="uid://b7j8k3mam2p4q" path="res://scenes/ui/hud/components/core/AbilityBarComponent.tscn" id="2_ability_bar"]
 
 [node name="PlayerInfoPanel" type="Panel"]
 script = ExtResource("1_tsfq8")
@@ -9,10 +10,12 @@ script = ExtResource("1_tsfq8")
 layout_mode = 1
 anchors_preset = -1
 offset_left = -150.0
-offset_top = -67.0
+offset_top = -100.0
 offset_right = 150.0
+offset_bottom = 70.0
 grow_horizontal = 2
 grow_vertical = 0
+theme_override_constants/separation = 8
 alignment = 1
 
 [node name="DamageFlash" type="ColorRect" parent="PlayerInfoContainer"]
@@ -94,3 +97,11 @@ text = "Level: 3"
 horizontal_alignment = 1
 vertical_alignment = 1
 text_overrun_behavior = 3
+
+[node name="AbilityBarContainer" type="VBoxContainer" parent="PlayerInfoContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="AbilityBar2" parent="PlayerInfoContainer/AbilityBarContainer" instance=ExtResource("2_ability_bar")]
+layout_mode = 2
+size_flags_horizontal = 4

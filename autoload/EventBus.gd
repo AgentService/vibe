@@ -64,6 +64,22 @@ signal melee_attack_started(payload)
 @warning_ignore("unused_signal")
 signal melee_enemies_hit(payload)
 
+## Melee swing timer started - emitted by Player for swing duration indicator
+@warning_ignore("unused_signal")
+signal melee_swing_started(duration: float)
+
+## Bow attack started - emitted by Player when bow attack is triggered
+@warning_ignore("unused_signal")
+signal bow_attack_started(payload)
+
+## Magic cast started - emitted by Player when magic cast is triggered  
+@warning_ignore("unused_signal")
+signal magic_cast_started(payload)
+
+## Spear attack started - emitted by Player when spear attack is triggered
+@warning_ignore("unused_signal")
+signal spear_attack_started(payload)
+
 # ENTITY LIFECYCLE SIGNALS  
 ## Entity killed - emitted when HP reaches 0
 @warning_ignore("unused_signal")
