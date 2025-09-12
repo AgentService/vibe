@@ -1,7 +1,6 @@
-[gd_scene load_steps=7 format=3 uid="uid://drg8pj2xm7vkg"]
+[gd_scene load_steps=6 format=3 uid="uid://drg8pj2xm7vkg"]
 
 [ext_resource type="PackedScene" uid="uid://c6m2bj7nxgxtn" path="res://scenes/ui/hud/components/core/RadarComponent.tscn" id="2_radar_component"]
-[ext_resource type="PackedScene" uid="uid://bep1l6d5gtsxt" path="res://scenes/ui/hud/components/debug/PerformanceComponent.tscn" id="3_performance_component"]
 [ext_resource type="Script" uid="uid://cip182qtipura" path="res://scenes/ui/NewHUD.gd" id="4_new_hud_script"]
 [ext_resource type="PackedScene" uid="uid://c4418k01htn2s" path="res://scenes/ui/hud/PlayerInfoPanel.tscn" id="5_4184w"]
 [ext_resource type="PackedScene" uid="uid://b7j8k3mam2p4q" path="res://scenes/ui/hud/components/core/AbilityBarComponent.tscn" id="6_aroin"]
@@ -70,14 +69,3 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-
-[node name="PerformanceDisplay" parent="Layer100_Debug/DebugUI" instance=ExtResource("3_performance_component")]
-custom_minimum_size = Vector2(0, 0)
-layout_mode = 1
-anchors_preset = 6
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 0.0
-offset_top = -15.0
-offset_bottom = 0.0
-grow_vertical = 2

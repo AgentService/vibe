@@ -11,7 +11,7 @@ class_name NewHUD
 @onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/AbilityBar
 
 # Layer 100 - Debug UI
-@onready var performance_display: PerformanceComponent = $Layer100_Debug/DebugUI/PerformanceDisplay
+# PerformanceDisplay temporarily removed due to node parenting issues
 
 # State tracking
 var _is_initialized: bool = false
@@ -122,8 +122,9 @@ func get_hud_performance_stats() -> Dictionary:
 	if enemy_radar and enemy_radar.has_method("get_radar_stats"):
 		stats.components["radar"] = enemy_radar.get_radar_stats()
 	
-	if performance_display and performance_display.has_method("get_current_performance_stats"):
-		stats.components["performance"] = performance_display.get_current_performance_stats()
+	# Performance display temporarily removed
+	# if performance_display and performance_display.has_method("get_current_performance_stats"):
+	# 	stats.components["performance"] = performance_display.get_current_performance_stats()
 	
 	if keybindings_display and keybindings_display.has_method("get_keybinding_stats"):
 		stats.components["keybindings"] = keybindings_display.get_keybinding_stats()

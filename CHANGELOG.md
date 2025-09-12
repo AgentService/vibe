@@ -41,6 +41,7 @@
   - **BaseHUDComponent Cleaned**: Removed unused positioning methods (apply_anchor_config, _determine_anchor_preset) since components now use editor positioning (~40 lines removed)
   - **Total Reduction**: ~220 lines of unused code removed while preserving all active HUD functionality
   - **Signal References Fixed**: Updated NewHUD.gd to use hud_visibility_changed instead of removed layout_changed signal
+  - **PerformanceComponent Temporarily Removed**: Removed from NewHUD scene due to node parenting conflict - component was trying to add child nodes that already existed in scene tree
 
 ### Added
 - **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
