@@ -1,26 +1,17 @@
 extends Node
 class_name HUDManagerClass
 
-## Centralized HUD component coordinator managing lifecycle, positioning, and state
-## Integrates with EventBus for data-driven UI updates and supports player customization
+## Simplified HUD component coordinator managing lifecycle and performance
+## Components use editor-based positioning, no programmatic layout management
 
 var registered_components: Dictionary = {}
-var hud_config: HUDConfigResource
-var _hud_container: Control
 var _is_hud_visible: bool = true
 var _performance_monitor_timer: float = 0.0
 
-# Configuration paths
-const DEFAULT_CONFIG_PATH = "res://data/ui/hud_layouts/default_layout.tres"
-const USER_CONFIG_PATH = "user://hud_layout.tres"
-
 # Performance monitoring
 const PERFORMANCE_CHECK_INTERVAL = 5.0
-var _total_hud_update_time: float = 0.0
-var _hud_update_count: int = 0
 
 # Signals
-signal layout_changed(new_config: HUDConfigResource)
 signal component_registered(component_id: String)
 signal component_unregistered(component_id: String)
 signal hud_visibility_changed(visible: bool)
@@ -31,11 +22,8 @@ func _init() -> void:
 	add_to_group("autoload")
 
 func _ready() -> void:
-	_setup_hud_manager()
-	_load_configuration()
 	_connect_signals()
-	
-	Logger.info("HUDManager initialized with %d components" % registered_components.size(), "ui")
+	Logger.info("HUDManager initialized (simplified version)", "ui")
 
 func _process(delta: float) -> void:
 	_performance_monitor_timer += delta
@@ -50,25 +38,6 @@ func register_component(component_id: String, component: Control) -> bool:
 		return false
 	
 	registered_components[component_id] = component
-	
-	# Apply current configuration to new component
-	if hud_config and component.has_method("apply_anchor_config"):
-		var position_config := hud_config.get_component_position(component_id)
-		var scale_config := hud_config.get_component_scale(component_id)
-		var visibility_config := hud_config.get_component_visibility(component_id)
-		
-		component.apply_anchor_config(position_config)
-		component.set_component_scale(scale_config)
-		component.set_component_visible(visibility_config)
-	
-	# Only reparent if component doesn't have a proper parent already
-	# Components from NewHUD scene already have correct parent structure
-	if _hud_container and component.get_parent() == null:
-		_hud_container.add_child(component)
-	elif component.get_parent() != null:
-		# Component already has a parent (likely from scene), don't reparent
-		Logger.debug("Component %s already has parent, skipping reparent" % component_id, "ui")
-	
 	component_registered.emit(component_id)
 	Logger.debug("Registered HUD component: " + component_id, "ui")
 	return true
@@ -93,14 +62,12 @@ func get_all_components() -> Dictionary:
 func show_hud() -> void:
 	if not _is_hud_visible:
 		_is_hud_visible = true
-		_apply_hud_visibility()
 		hud_visibility_changed.emit(true)
 		Logger.info("HUD shown", "ui")
 
 func hide_hud() -> void:
 	if _is_hud_visible:
 		_is_hud_visible = false
-		_apply_hud_visibility()
 		hud_visibility_changed.emit(false)
 		Logger.info("HUD hidden", "ui")
 
@@ -113,65 +80,11 @@ func toggle_hud() -> void:
 func is_hud_visible() -> bool:
 	return _is_hud_visible
 
-# Configuration management
-func load_layout_preset(preset: HUDConfigResource.LayoutPreset) -> void:
-	if not hud_config:
-		hud_config = HUDConfigResource.new()
-	
-	hud_config.apply_preset(preset)
-	_apply_layout_configuration()
-	Logger.info("Applied HUD layout preset: " + str(preset), "ui")
-
-func set_component_position(component_id: String, anchor_preset: int, offset: Vector2) -> void:
-	if not hud_config:
-		hud_config = HUDConfigResource.new()
-	
-	hud_config.set_component_position(component_id, anchor_preset, offset)
-	
-	# Apply immediately if component exists
-	var component := get_component(component_id)
-	if component and component.has_method("apply_anchor_config"):
-		var position_config := hud_config.get_component_position(component_id)
-		component.apply_anchor_config(position_config)
-
-func set_component_scale(component_id: String, scale: Vector2) -> void:
-	if not hud_config:
-		hud_config = HUDConfigResource.new()
-	
-	hud_config.set_component_scale(component_id, scale)
-	
-	# Apply immediately if component exists
-	var component := get_component(component_id)
-	if component and component.has_method("set_component_scale"):
-		component.set_component_scale(scale)
-
+# Component visibility management (simplified)
 func set_component_visibility(component_id: String, visible: bool) -> void:
-	if not hud_config:
-		hud_config = HUDConfigResource.new()
-	
-	hud_config.set_component_visibility(component_id, visible)
-	
-	# Apply immediately if component exists
 	var component := get_component(component_id)
 	if component and component.has_method("set_component_visible"):
 		component.set_component_visible(visible)
-
-func save_layout() -> bool:
-	if not hud_config:
-		Logger.warn("No HUD configuration to save", "ui")
-		return false
-	
-	var error := ResourceSaver.save(hud_config, USER_CONFIG_PATH)
-	if error == OK:
-		Logger.info("HUD layout saved to: " + USER_CONFIG_PATH, "ui")
-		return true
-	else:
-		Logger.warn("Failed to save HUD layout: " + str(error), "ui")
-		return false
-
-func reset_to_default() -> void:
-	load_layout_preset(HUDConfigResource.LayoutPreset.DEFAULT)
-	Logger.info("HUD layout reset to default", "ui")
 
 # Debug functionality
 func toggle_debug_hud() -> void:
@@ -211,56 +124,12 @@ func get_performance_stats() -> Dictionary:
 	return stats
 
 # Private methods
-func _setup_hud_manager() -> void:
-	# Set up the HUD container
-	_hud_container = Control.new()
-	_hud_container.name = "HUDContainer"
-	_hud_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_hud_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	
-	# Add to current scene if possible
-	var current_scene := get_tree().current_scene
-	if current_scene:
-		current_scene.add_child(_hud_container)
-
-func _load_configuration() -> void:
-	# Try to load user configuration first
-	if FileAccess.file_exists(USER_CONFIG_PATH):
-		hud_config = load(USER_CONFIG_PATH)
-		Logger.debug("Loaded user HUD configuration", "ui")
-	elif FileAccess.file_exists(DEFAULT_CONFIG_PATH):
-		hud_config = load(DEFAULT_CONFIG_PATH)
-		Logger.debug("Loaded default HUD configuration", "ui")
-	else:
-		hud_config = HUDConfigResource.new()
-		Logger.debug("Created new HUD configuration", "ui")
 
 func _connect_signals() -> void:
 	# Connect to game state changes
 	if EventBus:
 		EventBus.game_paused_changed.connect(_on_game_paused_changed)
 		EventBus.player_died.connect(_on_player_died)
-
-func _apply_layout_configuration() -> void:
-	if not hud_config:
-		return
-	
-	for component_id in registered_components:
-		var component: Control = registered_components[component_id]
-		if component and component.has_method("apply_anchor_config"):
-			var position_config := hud_config.get_component_position(component_id)
-			var scale_config := hud_config.get_component_scale(component_id)
-			var visibility_config := hud_config.get_component_visibility(component_id)
-			
-			component.apply_anchor_config(position_config)
-			component.set_component_scale(scale_config)
-			component.set_component_visible(visibility_config)
-	
-	layout_changed.emit(hud_config)
-
-func _apply_hud_visibility() -> void:
-	if _hud_container:
-		_hud_container.visible = _is_hud_visible
 
 func _check_performance_budget() -> void:
 	var stats := get_performance_stats()
