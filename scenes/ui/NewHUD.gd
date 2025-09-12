@@ -11,7 +11,7 @@ class_name NewHUD
 @onready var ability_bar: AbilityBarComponent = $Layer1_PrimaryHUD/GameUI/AbilityBar
 
 # Layer 100 - Debug UI
-@onready var performance_display: PerformanceComponent = $Layer100_Debug/DebugUI/PerformanceDisplay
+# PerformanceDisplay temporarily removed due to node parenting issues
 
 # State tracking
 var _is_initialized: bool = false
@@ -56,9 +56,9 @@ func _connect_new_hud_signals() -> void:
 		EventBus.progression_changed.connect(_on_progression_changed)
 		EventBus.leveled_up.connect(_on_leveled_up)
 	
-	# Connect to HUDManager signals
+	# Connect to HUDManager signals (simplified - no layout management)
 	if HUDManager:
-		HUDManager.layout_changed.connect(_on_layout_changed)
+		HUDManager.hud_visibility_changed.connect(_on_hud_visibility_changed)
 
 func _style_legacy_elements() -> void:
 	# No legacy elements to style - everything now handled by components
@@ -96,9 +96,9 @@ func _on_leveled_up(new_level: int, prev_level: int) -> void:
 	# PlayerInfoPanel handles level updates via its own EventBus connections
 	Logger.debug("New HUD: Level up detected! %d -> %d (handled by PlayerInfoPanel)" % [prev_level, new_level], "ui")
 
-func _on_layout_changed(new_config: HUDConfigResource) -> void:
-	Logger.debug("New HUD: Layout configuration changed (ignored - using editor positioning)", "ui")
-	# No action - components positioned via editor, not programmatically
+func _on_hud_visibility_changed(visible: bool) -> void:
+	Logger.debug("New HUD: HUD visibility changed to %s" % visible, "ui")
+	# Could respond to global HUD visibility changes if needed
 
 # Public API for switching between HUD systems
 func set_hud_visible(visible: bool) -> void:
@@ -122,8 +122,9 @@ func get_hud_performance_stats() -> Dictionary:
 	if enemy_radar and enemy_radar.has_method("get_radar_stats"):
 		stats.components["radar"] = enemy_radar.get_radar_stats()
 	
-	if performance_display and performance_display.has_method("get_current_performance_stats"):
-		stats.components["performance"] = performance_display.get_current_performance_stats()
+	# Performance display temporarily removed
+	# if performance_display and performance_display.has_method("get_current_performance_stats"):
+	# 	stats.components["performance"] = performance_display.get_current_performance_stats()
 	
 	if keybindings_display and keybindings_display.has_method("get_keybinding_stats"):
 		stats.components["keybindings"] = keybindings_display.get_keybinding_stats()

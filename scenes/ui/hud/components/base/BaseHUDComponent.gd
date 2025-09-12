@@ -116,18 +116,7 @@ func reset_performance_stats() -> void:
 	average_update_time = 0.0
 	peak_update_time = 0.0
 
-# Position and layout helpers
-func apply_anchor_config(config: Dictionary) -> void:
-	# No programmatic positioning - respect editor settings for all components
-	pass
-
-func get_anchor_config() -> Dictionary:
-	# Calculate the most appropriate preset for current anchors
-	var preset := _determine_anchor_preset()
-	return {
-		"anchor_preset": preset,
-		"offset": position
-	}
+# Position and layout helpers removed - components use editor-based positioning
 
 # Private methods
 func _should_update() -> bool:
@@ -158,7 +147,6 @@ func _generate_component_id() -> String:
 
 func _connect_base_signals() -> void:
 	# Connect to HUD manager signals if available
-	# Note: HUDManager is a singleton, layout_changed signal will be available once connected
 	pass
 
 func _register_with_hud_manager() -> void:
@@ -180,32 +168,3 @@ func _cleanup_signal_connections() -> void:
 	_signal_connections.clear()
 	
 	_cleanup_component()
-
-func _on_layout_changed(new_config: HUDConfigResource) -> void:
-	# Apply new configuration from layout change
-	var position_config := new_config.get_component_position(component_id)
-	var scale_config := new_config.get_component_scale(component_id)
-	var visibility_config := new_config.get_component_visibility(component_id)
-	
-	apply_anchor_config(position_config)
-	set_component_scale(scale_config)
-	set_component_visible(visibility_config)
-
-func _determine_anchor_preset() -> int:
-	# Determine the closest anchor preset based on current anchor values
-	var left := anchor_left
-	var right := anchor_right
-	var top := anchor_top
-	var bottom := anchor_bottom
-	
-	# Check for common presets
-	if left == 0.0 and right == 1.0 and top == 1.0 and bottom == 1.0:
-		return Control.PRESET_BOTTOM_WIDE
-	elif left == 0.5 and right == 0.5 and top == 1.0 and bottom == 1.0:
-		return Control.PRESET_CENTER_BOTTOM
-	elif left == 1.0 and right == 1.0 and top == 0.0 and bottom == 0.0:
-		return Control.PRESET_TOP_RIGHT
-	elif left == 0.0 and right == 0.0 and top == 1.0 and bottom == 1.0:
-		return Control.PRESET_BOTTOM_LEFT
-	
-	return Control.PRESET_TOP_LEFT

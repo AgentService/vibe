@@ -35,6 +35,13 @@
 - **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization
 - **XP Progression Calculation**: Improved level-based XP calculation logic to properly handle both Level 1 (progress toward Level 2) and Level 2+ (progress within current level range)
 - **Health Bar Label Visibility**: Fixed health bar label not displaying immediately on startup - PlayerInfoPanel now shows "500/500 HP" text immediately rather than waiting for damage events
+- **HUD System Architecture Cleanup**: Removed unused positioning system since migration to editor-based component layout
+  - **HUDManager Simplified**: Removed ~100 lines of unused layout management code (save_layout, load_layout_preset, set_component_position methods)  
+  - **HUDConfigResource Streamlined**: Removed positioning dictionaries and layout presets, keeping only visibility and performance settings (~80 lines removed)
+  - **BaseHUDComponent Cleaned**: Removed unused positioning methods (apply_anchor_config, _determine_anchor_preset) since components now use editor positioning (~40 lines removed)
+  - **Total Reduction**: ~220 lines of unused code removed while preserving all active HUD functionality
+  - **Signal References Fixed**: Updated NewHUD.gd to use hud_visibility_changed instead of removed layout_changed signal
+  - **PerformanceComponent Temporarily Removed**: Removed from NewHUD scene due to node parenting conflict - component was trying to add child nodes that already existed in scene tree
 
 ### Added
 - **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
