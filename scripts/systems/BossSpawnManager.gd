@@ -44,15 +44,16 @@ func spawn_single_boss_fallback() -> void:
 		return
 	Logger.info("   ✓ Boss config generated successfully", "debug")
 	
-	# Apply boss scaling
+	# Apply boss scaling (keep size_factor from enemy variation)
 	Logger.info("4. Applying boss scaling...", "debug")
 	var original_health = boss_config.health
 	var original_damage = boss_config.damage
 	boss_config.health *= 5.0  # 5x stronger
 	boss_config.damage *= 2.0  # 2x damage
-	boss_config.size_scale *= 1.5  # Larger
+	# Note: size_scale now respects enemy variation size_factor
 	Logger.info("   Health: " + str(original_health) + " → " + str(boss_config.health), "debug")
 	Logger.info("   Damage: " + str(original_damage) + " → " + str(boss_config.damage), "debug")
+	Logger.info("   Size: Using variation size_factor (%.1f)" % boss_config.size_scale, "debug")
 	
 	# Spawn using existing V2 system
 	Logger.info("5. Checking WaveDirector...", "debug")
@@ -109,14 +110,15 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 		return
 	Logger.info("Boss config generated successfully", "debug")
 	
-	# Apply boss scaling
+	# Apply boss scaling (keep size_factor from enemy variation)
 	var original_health = boss_config.health
 	var original_damage = boss_config.damage
 	boss_config.health *= 5.0  # 5x stronger
 	boss_config.damage *= 2.0  # 2x damage
-	boss_config.size_scale *= 1.5  # Larger
+	# Note: size_scale now respects enemy variation size_factor
 	Logger.info("Scaled - Health: " + str(original_health) + " → " + str(boss_config.health), "debug")
 	Logger.info("Scaled - Damage: " + str(original_damage) + " → " + str(boss_config.damage), "debug")
+	Logger.info("Scaled - Size: Using variation size_factor (%.1f)" % boss_config.size_scale, "debug")
 	
 	# Spawn using existing V2 system
 	if not wave_director:

@@ -39,12 +39,21 @@ func _ready() -> void:
 	# Lock zoom at default level - no zoom controls enabled
 	target_zoom = default_zoom
 	_connect_signals()
+	
+	# AUTO-SETUP: Only provide default camera for test scenes (no player)
+	call_deferred("_auto_setup_camera")
 
 func _connect_signals() -> void:
 	EventBus.arena_bounds_changed.connect(_on_arena_bounds_changed)
 	EventBus.damage_dealt.connect(_on_damage_dealt)
 	EventBus.game_paused_changed.connect(_on_game_paused_changed)
 	BalanceDB.balance_reloaded.connect(_load_balance_values)
+	
+	# Connect to StateManager for scene transition camera management
+	if StateManager:
+		StateManager.state_changed.connect(_on_state_changed)
+		Logger.debug("CameraSystem: Connected to StateManager for scene transitions", "camera")
+	
 	# Camera follows player automatically as child - no position updates needed
 
 func _load_balance_values() -> void:
@@ -61,6 +70,8 @@ func _exit_tree() -> void:
 		EventBus.game_paused_changed.disconnect(_on_game_paused_changed)
 	if BalanceDB.balance_reloaded.is_connected(_load_balance_values):
 		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
+	if StateManager and StateManager.state_changed.is_connected(_on_state_changed):
+		StateManager.state_changed.disconnect(_on_state_changed)
 	Logger.debug("CameraSystem: Cleaned up signal connections", "systems")
 
 func setup_camera(player_node: Node2D) -> void:
@@ -68,6 +79,12 @@ func setup_camera(player_node: Node2D) -> void:
 		push_error("CameraSystem: Cannot setup camera - player node is null")
 		return
 	
+	# Clean up any existing camera first (handles default camera switching)
+	if camera and is_instance_valid(camera):
+		camera.queue_free()
+		camera = null
+	
+	# Create new player-following camera
 	camera = Camera2D.new()
 	camera.name = "FollowCamera"
 	camera.zoom = Vector2(default_zoom, default_zoom)
@@ -82,6 +99,66 @@ func setup_camera(player_node: Node2D) -> void:
 	
 	# Initialize position tracking for signal optimization
 	last_camera_position = camera.global_position
+
+## AUTO-SETUP: Only provide default camera for test scenes (no player)
+func _auto_setup_camera() -> void:
+	# Skip if camera already exists (manual setup was called)
+	if camera:
+		return
+	
+	# Try to find player node
+	var player_node = _find_player_node()
+	if player_node:
+		# Player exists - do NOTHING, let player script handle camera setup
+		return
+	else:
+		# No player found - create centered default camera for test scenes
+		_create_default_camera()
+
+## Find player node in current scene
+func _find_player_node() -> Node2D:
+	# PlayerState doesn't expose the player reference directly
+	# Use scene tree search to find player node
+	var current_scene = get_tree().current_scene
+	if current_scene:
+		return _search_for_player(current_scene)
+	
+	return null
+
+## Recursively search for player node
+func _search_for_player(node: Node) -> Node2D:
+	# Check common player node names
+	if node.name.to_lower().contains("player") and node is Node2D:
+		return node as Node2D
+	
+	# Search children
+	for child in node.get_children():
+		var result = _search_for_player(child)
+		if result:
+			return result
+	
+	return null
+
+## Create centered default camera for test scenes
+func _create_default_camera() -> void:
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		Logger.warn("CameraSystem: No current scene, cannot create default camera", "camera")
+		return
+	
+	camera = Camera2D.new()
+	camera.name = "DefaultCamera"
+	camera.position = Vector2.ZERO
+	camera.zoom = Vector2(default_zoom, default_zoom)
+	camera.enabled = true
+	
+	# Add to current scene root
+	current_scene.add_child(camera)
+	
+	# Initialize position tracking
+	last_camera_position = camera.global_position
+	
+	Logger.info("CameraSystem: Created default centered camera for scene: " + current_scene.name, "camera")
 
 func _process(delta: float) -> void:
 	if not camera:
@@ -173,6 +250,43 @@ func _on_game_paused_changed(payload) -> void:
 	if not payload.is_paused and camera:
 		# Re-sync camera when unpaused
 		camera.enabled = true
+
+func _on_state_changed(prev: StateManager.State, next: StateManager.State, _context: Dictionary) -> void:
+	"""Handle scene transitions by resetting camera for menu states."""
+	
+	# Reset camera when transitioning from gameplay states to menu states
+	if prev == StateManager.State.ARENA and next in [StateManager.State.MENU, StateManager.State.CHARACTER_SELECT]:
+		Logger.info("CameraSystem: Resetting arena camera for menu transition", "camera")
+		reset_camera_for_menu()
+	elif prev == StateManager.State.HIDEOUT and next in [StateManager.State.MENU, StateManager.State.CHARACTER_SELECT]:
+		Logger.info("CameraSystem: Resetting hideout camera for menu transition", "camera")
+		reset_camera_for_menu()
+
+func reset_camera_for_menu() -> void:
+	"""Reset camera for menu/UI scenes. Creates a clean, centered default camera."""
+	
+	# Clean up existing camera
+	if camera and is_instance_valid(camera):
+		Logger.debug("CameraSystem: Removing existing camera for menu reset", "camera")
+		camera.queue_free()
+		camera = null
+	
+	# Create new centered default camera immediately
+	_create_default_camera()
+	
+	Logger.info("CameraSystem: Camera reset completed for menu scene", "camera")
+
+func cleanup_arena_camera() -> void:
+	"""Explicit cleanup method for arena camera when transitioning away."""
+	
+	if camera and is_instance_valid(camera):
+		# Check if camera is parented to a player node (arena setup)
+		if camera.get_parent() and camera.get_parent().name.to_lower().contains("player"):
+			Logger.debug("CameraSystem: Cleaning up arena-parented camera", "camera")
+			camera.queue_free()
+			camera = null
+		else:
+			Logger.debug("CameraSystem: Camera not arena-parented, keeping current camera", "camera")
 
 func get_camera_position() -> Vector2:
 	if camera:

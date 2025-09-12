@@ -1,0 +1,73 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scenes/ui/components/CardWidget.gd" id="1_0"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_0"]
+
+[node name="CardWidget" type="Control"]
+custom_minimum_size = Vector2(180, 240)
+script = ExtResource("1_0")
+card_title = "Card Title"
+card_description = "Card description text"
+card_rarity = "common"
+selectable = true
+hoverable = true
+auto_theme = true
+show_rarity_glow = true
+hover_lift = -8.0
+hover_scale = 1.02
+animation_speed = 0.2
+
+[node name="CardPanel" parent="." instance=ExtResource("2_0")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+panel_variant = "card"
+show_border = true
+rounded_corners = true
+
+[node name="ContentMargin" type="MarginContainer" parent="CardPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="MainVBox" type="VBoxContainer" parent="CardPanel/ContentMargin"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="HeaderContainer" type="HBoxContainer" parent="CardPanel/ContentMargin/MainVBox"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="IconTexture" type="TextureRect" parent="CardPanel/ContentMargin/MainVBox/HeaderContainer"]
+layout_mode = 2
+custom_minimum_size = Vector2(32, 32)
+expand_mode = 3
+stretch_mode = 5
+
+[node name="TitleLabel" type="Label" parent="CardPanel/ContentMargin/MainVBox/HeaderContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Card Title"
+autowrap_mode = 2
+
+[node name="DescriptionLabel" type="Label" parent="CardPanel/ContentMargin/MainVBox"]
+layout_mode = 2
+size_flags_vertical = 3
+text = "Card description text"
+autowrap_mode = 3
+vertical_alignment = 1
+
+[node name="FooterContainer" type="HBoxContainer" parent="CardPanel/ContentMargin/MainVBox"]
+layout_mode = 2
+
+[node name="RarityLabel" type="Label" parent="CardPanel/ContentMargin/MainVBox/FooterContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Common"
+horizontal_alignment = 2

@@ -26,7 +26,6 @@ data/
 **All tuning values - primary focus for game designers:**
 
 - `combat.tres` - Combat balance parameters
-- `abilities.tres` - Ability damage, cooldowns, and effects
 - `melee.tres` - Melee combat specific balance
 - `player.tres` - Player stats and capabilities
 - `waves.tres` - Wave spawning and difficulty scaling
@@ -112,7 +111,6 @@ This structure was migrated from the previous nested organization to:
 Currently monitored files in BalanceDB:
 ```gdscript
 - res://data/balance/combat.tres
-- res://data/balance/abilities.tres  
 - res://data/balance/melee.tres
 - res://data/balance/player.tres
 - res://data/balance/waves.tres

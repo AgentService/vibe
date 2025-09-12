@@ -4,6 +4,114 @@
 
 ## [Current Week - In Progress]
 
+### Added
+
+- **HUD Component System V1 - COMPLETE**: Modular, component-based HUD architecture replacing monolithic UI system
+  - **HUDManager Autoload**: Centralized HUD component coordinator managing lifecycle, positioning, and configuration
+  - **BaseHUDComponent Framework**: Performance-optimized base class with EventBus integration, update throttling, and component lifecycle
+  - **Core Components**: 
+    - **HealthBarComponent**: Universal health display supporting player, boss, and enemy health bars with damage flashing - ✅ FIXED transparency and centering issues
+    - **RadarComponent**: Converted EnemyRadar with performance optimizations and configurable visual settings - ✅ INTEGRATED  
+    - **PerformanceComponent**: Extracted FPS counter with memory tracking, entity counts, and debug statistics
+    - **AbilityBarComponent**: NEW - Dynamic ability bar with cooldown animations, hotkey display, and 4 default abilities (LMB, RMB, SPACE, Q)
+    - **XPBarComponent**: Experience progress bar with blue styling and PlayerProgression integration
+    - **KeybindingsComponent**: Controls reference panel with styled background matching radar theme
+  - **CanvasLayer Architecture**: Proper UI layer separation (Layer 1: Primary HUD, Layer 100: Debug) following UI Framework Guidance
+  - **HUDConfigResource System**: Anchor-based positioning with layout presets (Default, Minimal, Competitive, Custom)
+  - **Component Registration**: All 6 core components successfully registering with HUDManager and applying correct positioning
+  - **Clean Architecture**: Removed old monolithic HUD system, fully replaced with component-based approach
+    - **XPBarComponent**: Experience progression display with blue theme and level-up flash effects
+    - **KeybindingsComponent**: Control reference panel showing WASD movement and system keys with radar-style theming
+  - **HUDConfigResource System**: Layout configuration with preset support and proper anchor-based positioning (no hardcoded values)
+  - **EventBus Extensions**: Added HUD-specific signals for health_changed, progression_changed, and leveled_up
+  - **ArenaUIManager Simplified**: Removed dual HUD complexity, now uses single clean component-based system
+  - **Performance Monitoring**: Built-in performance tracking with <5ms frame budget monitoring per task requirements
+  - **Architecture Compliance**: Follows UI Framework Guidance with proper component separation and EventBus communication
+
+### Fixed
+
+- **PlayerInfoPanel Health Bar**: Fixed health bar not updating when player takes damage - Player script now properly emits EventBus.health_changed signals during damage sync events and initial registration
+- **XP Bar Progression Reset**: Fixed XP bar displaying cumulative values instead of current level progress - PlayerProgression now calculates proper within-level progress (e.g., 5/200 instead of 595/800)
+- **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization
+- **XP Progression Calculation**: Improved level-based XP calculation logic to properly handle both Level 1 (progress toward Level 2) and Level 2+ (progress within current level range)
+- **Health Bar Label Visibility**: Fixed health bar label not displaying immediately on startup - PlayerInfoPanel now shows "500/500 HP" text immediately rather than waiting for damage events
+
+### Added
+- **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
+  - **UIManager Autoload**: Centralized modal coordinator with factory pattern and canvas layer management
+  - **BaseModal Framework**: Desktop-optimized base class with keyboard navigation, tooltips, and lifecycle management
+  - **ModalAnimator System**: Performance-optimized animations with tween pooling for smooth transitions
+  - **Default Modal Theme**: Consistent styling system with `ModalTheme` resource and desktop-focused design
+  - **ResultsScreen Conversion**: Converted from scene-based to modal overlay system
+    - **Shows for all run endings**: death, victory, failure, or completion
+    - **Visual Context**: Displays over dimmed arena background instead of jarring scene transition
+    - **Preserved Functionality**: All buttons work identically, triggering StateManager transitions
+    - **Perfect Integration**: Maintains compatibility with existing StateManager architecture
+  - **Architecture Updates**: Player death sequence, StateManager, and SceneTransitionManager updated for modal workflow
+  - **Testing Validated**: System loads cleanly with all autoloads and dependencies resolved
+
+- **Boss Shadow System V1 - COMPLETE**: Automatic shadow generation for all bosses with HitBox-based positioning
+  - **BossShadow Component**: Auto-sizing shadow component that matches HitBox dimensions and positions directly at HitBox bottom
+  - **BaseBoss Integration**: Automatic shadow creation during boss initialization with configurable properties
+  - **Boss Migration**: All existing bosses (AncientLich, BananaLord, DragonLord) migrated to BaseBoss inheritance
+  - **Intelligent Animation**: Enhanced BaseBoss with sprite flipping for bosses without directional animations
+  - **Global Camera Solution**: CameraManager autoload provides centered cameras for test scenes automatically
+  - **Shadow Configuration**: Support for per-boss shadow customization via EnemyType.tres and SpawnConfig.gd
+
+### Fixed
+- **Boss Sprite Scaling System**: Fixed sprite scaling issues where visual scaling didn't match collision scaling
+  - **Core Issue Resolved**: Replaced multiplicative sprite scaling with absolute scaling to prevent compounding errors
+  - **Timing Fix**: Added deferred sprite scaling for cases where AnimatedSprite2D isn't ready during boss setup
+  - **Validation System**: Added comprehensive scaling validation with tolerance checking and detailed logging
+  - **Child Boss Updates**: Updated BananaLord and AncientLich to properly validate scaling after their specific initialization
+  - **Debug Tools**: Added runtime scaling debug methods (`get_scaling_debug_info()`, `debug_print_scaling_info()`)
+  - **Test Coverage**: Created comprehensive test suite validating scaling across all boss types and scale factors (0.5x - 2.5x)
+  - **Position Preservation**: Sprite position offsets are now preserved during scaling operations
+  - **Consistent Behavior**: All boss types now properly scale sprites to match their collision and hitbox areas
+
+- **Enemy Template Hot-Reload System**: Size factor changes now take immediate effect without restarting the game
+  - **CACHE_MODE_IGNORE**: EnemyFactory uses ResourceLoader with cache bypass to always load latest .tres files
+  - **F5 Hot-Reload**: Press F5 in-game to force reload all enemy templates for immediate size factor updates
+  - **Real-Time Balancing**: Edit enemy-variations/*.tres files and press F5 to see changes in newly spawned enemies
+  - **Zero Custom Code**: Leverages Godot's built-in resource system instead of custom file watchers
+  - **Debug Integration**: F5 key handling integrated into existing DebugManager input system
+
+- **Boss Health Bar Scaling Fix**: Health bars now correctly scale with boss size factors
+  - **Root Issue Fixed**: Health bar sizing was happening before HitBox scaling, causing size mismatches
+  - **Timing Solution**: Added deferred health bar readjustment after HitBox scaling is applied
+  - **Perfect Scaling**: Health bar width now scales proportionally with boss size (0.1x, 1.0x, 2.0x all tested ✓)
+  - **Enhanced Debugging**: Added detailed scaling debug logs with "debug" category for easier troubleshooting
+  - **Consistent Behavior**: Works across all boss types and size factors without manual intervention
+
+- **PlayerProgression Sync Corruption Fix**: Resolved "Level X with 0.0 XP" warnings during normal gameplay
+  - **Root Cause**: PlayerProgression._emit_progression_changed() was emitting current level progress (0 XP after levelup) instead of total accumulated XP for character saving
+  - **Solution**: Created comprehensive state with both UI display data (current level progress) and character saving data (total accumulated XP) in single signal
+  - **UI Preservation**: Progress bars continue showing correct current level progress (e.g., 150/800 XP within Level 4)
+  - **Save Data Accuracy**: Character profiles now receive total accumulated XP (e.g., 1350.0 total XP) preventing corruption warnings
+  - **Single Signal Design**: Uses one EventBus.progression_changed signal with rich payload instead of multiple specialized signals
+  - **Zero Regression**: All existing UI components (PlayerInfoPanel, XPBarComponent) continue working without changes
+
+- **Code Cleanup After Progression Fix**: Removed excessive debugging and safety code added during troubleshooting
+  - **Simplified CharacterManager**: Removed complex backup/restore system that was masking the real sync issue - now uses basic save validation
+  - **Debug Logging Cleanup**: Removed verbose debug logs, call stack traces, and duplicate logging throughout PlayerProgression system
+  - **Streamlined Validation**: Simplified CharacterProfile sync logging while keeping essential corruption prevention checks
+  - **Architecture Restored**: Removed defensive programming that was working around the root cause instead of fixing it
+
+- **Legacy UI Component Cleanup**: Removed unused UI components after confirming active architecture
+  - **Removed XPBarUI.gd**: Legacy XP bar stub from development phase, replaced by PlayerInfoPanel integrated display
+  - **Removed XPBarComponent**: Unused component-based XP bar, redundant with PlayerInfoPanel XP display
+  - **Removed old HUD.tscn/HUD.gd.uid**: Legacy HUD system replaced by NewHUD with component architecture
+  - **Removed old EnemyRadar.gd**: Legacy radar implementation replaced by RadarComponent in component system
+  - **Cleaned up test files**: Removed EnemyRadar_View_Isolated tests that referenced obsolete EnemyRadar class
+  - **Active Architecture Confirmed**: NewHUD with PlayerInfoPanel + RadarComponent + AbilityBarComponent + KeybindingsComponent
+
+- **Continue Button Fix**: Resolved character selection issues when multiple characters played on same day
+  - **Root Issue**: last_played field only stored date (YYYY-MM-DD) causing ambiguous sorting when multiple characters played same day
+  - **Fixed Timestamp Precision**: Changed to full datetime (YYYY-MM-DDTHH:MM:SS) using Time.get_datetime_string_from_system()
+  - **Simplified Selection Logic**: Removed redundant manual character search loop, now uses pre-sorted array from CharacterManager
+  - **Added Debug Logging**: Continue button shows all characters with timestamps to verify correct selection
+  - **Updated All References**: CharacterManager.load_character() and sync_from_progression() now set precise timestamps
+
 ### Changed
 - **MultiMesh Enemy System Disabled**: Completed transition to scene-based enemies only for consistent behavior
   - **Decision**: Performance testing shows scene-based enemies handle 500-700 instances adequately  
@@ -29,6 +137,15 @@
   - **Foundation Ready**: Clean slate prepared for ABILITY-1 modular AbilityService implementation
 
 ### Fixed
+- **MainMenu Centering Camera Interference**: Resolved MainMenu appearing off-center when transitioning from arena scenes
+  - **Problem**: Arena Camera2D parented to player persisted across scene transitions, interfering with MainMenu layout
+  - **Root Cause**: CameraSystem autoload retained arena camera state during ARENA→MENU transitions
+  - **Solution**: Dual-layer camera reset system with StateManager integration and SceneTransitionManager safety cleanup
+  - **StateManager Integration**: `_on_state_changed()` automatically resets camera when leaving ARENA/HIDEOUT for menu states  
+  - **Camera Reset Logic**: `reset_camera_for_menu()` destroys arena camera and creates clean, centered default camera
+  - **Logging Added**: Camera category added to LogConfigResource with detailed reset logging for debugging
+  - **Result**: MainMenu now appears perfectly centered whether accessed directly or via arena→pause→menu transition
+
 - **Player Registration After Scene Reset**: Resolved issue where Kill Player debug button failed on subsequent uses after session resets
   - **Problem**: "unknown entity: player" error occurred due to lost player registration with DamageService during reset operations
   - **Solution**: Enhanced player registration with comprehensive logging, validation, and retry mechanisms

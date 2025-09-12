@@ -35,7 +35,6 @@ func _setup_auto_reload() -> void:
 	# TO ADD NEW AUTO-RELOAD FILES: Add file path to this dictionary
 	_balance_files = {
 		"res://data/balance/combat.tres": 0,
-		"res://data/balance/abilities.tres": 0,
 		"res://data/balance/melee.tres": 0,
 		"res://data/balance/player.tres": 0,
 		"res://data/balance/waves.tres": 0,
@@ -424,7 +423,6 @@ func _get_fallback_value(category: String, key: String) -> Variant:
 func reload_balance_data() -> void:
 	Logger.info("F5 pressed - Hot-reloading balance data...", "balance")
 	ResourceLoader.load("res://data/balance/combat.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
-	ResourceLoader.load("res://data/balance/abilities.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	ResourceLoader.load("res://data/balance/melee.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	ResourceLoader.load("res://data/balance/player.tres", "", ResourceLoader.CACHE_MODE_IGNORE)
 	ResourceLoader.load("res://data/balance/waves.tres", "", ResourceLoader.CACHE_MODE_IGNORE)

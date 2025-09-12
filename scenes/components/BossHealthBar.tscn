@@ -31,10 +31,10 @@ ProgressBar/styles/background = SubResource("StyleBoxFlat_bg")
 ProgressBar/styles/fill = SubResource("StyleBoxFlat_fill")
 
 [node name="BossHealthBar" type="ProgressBar"]
-offset_left = -21.0
-offset_top = -18.0
-offset_right = 23.0
-offset_bottom = -14.0
+offset_left = -5.0
+offset_top = -1.0
+offset_right = 5.0
+offset_bottom = 1.0
 theme = SubResource("Theme_boss_healthbar")
 value = 100.0
 show_percentage = false

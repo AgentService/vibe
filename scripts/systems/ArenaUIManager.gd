@@ -1,16 +1,16 @@
 extends Node
 
-## Arena UI Manager - Phase 4 Arena Refactoring
-## Manages HUD, CardSelection, and DebugPanel instantiation and UI-related signal wiring
+## Arena UI Manager - Simplified Clean HUD System
+## Manages component-based HUD, CardSelection, and DebugPanel instantiation
 ## Centralizes all UI management for the Arena scene
 
 class_name ArenaUIManager
 
-const HUD_SCENE: PackedScene = preload("res://scenes/ui/HUD.tscn")
+const HUD_SCENE: PackedScene = preload("res://scenes/ui/NewHUD.tscn")
 const CARD_SELECTION_SCENE: PackedScene = preload("res://scenes/ui/CardSelection.tscn")
 const DEBUG_PANEL_SCENE: PackedScene = preload("res://scenes/debug/DebugPanel.tscn")
 
-var hud: HUD
+var hud: NewHUD
 var card_selection: CardSelection
 var debug_panel: Control
 
@@ -22,10 +22,10 @@ func setup() -> void:
 	ui_layer.name = "UILayer"
 	add_child(ui_layer)
 
-	# Instantiate HUD
+	# Instantiate component-based HUD system
 	hud = HUD_SCENE.instantiate()
 	ui_layer.add_child(hud)
-	Logger.info("ArenaUIManager: HUD instantiated", "ui")
+	Logger.info("ArenaUIManager: Component-based HUD instantiated", "ui")
 
 	# Instantiate card selection
 	card_selection = CARD_SELECTION_SCENE.instantiate()
@@ -75,11 +75,17 @@ func open_card_selection(cards: Array[CardResource]) -> void:
 		card_selection.open_with_cards(cards)
 
 func try_toggle_debug_overlay() -> void:
-	if hud and hud.has_method("_toggle_debug_overlay"):
-		hud._toggle_debug_overlay()
+	# Debug overlay handled by PerformanceComponent in component-based HUD
+	if hud and hud.has_method("toggle_performance_display"):
+		hud.toggle_performance_display()
+	else:
+		Logger.info("Debug overlay toggle handled by PerformanceComponent", "ui")
 
 # Getter methods for Arena to access UI elements
-func get_hud() -> HUD:
+func get_hud() -> NewHUD:
+	return hud
+
+func get_active_hud() -> Control:
 	return hud
 
 func get_card_selection() -> CardSelection:
@@ -88,6 +94,14 @@ func get_card_selection() -> CardSelection:
 
 func get_debug_panel() -> Control:
 	return debug_panel
+
+
+func get_active_hud_stats() -> Dictionary:
+	"""Get performance stats from the component-based HUD system"""
+	if hud and hud.has_method("get_hud_performance_stats"):
+		return hud.get_hud_performance_stats()
+	else:
+		return {"system": "component_based", "active": hud != null, "visible": hud.visible if hud else false}
 
 func _exit_tree() -> void:
 	# Clean up any connections if needed

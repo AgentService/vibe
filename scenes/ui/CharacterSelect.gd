@@ -137,7 +137,7 @@ func _on_character_play_pressed(character_id: StringName) -> void:
 		return
 	
 	# Load character progression into PlayerProgression
-	PlayerProgression.load_from_profile(profile.progression)
+	PlayerProgression.load_from_profile(profile.get_progression_data())
 	
 	Logger.info("Character loaded: %s (ID: %s) Level: %d XP: %.1f" % [profile.name, profile.id, profile.level, profile.experience], "charselect")
 	
@@ -283,7 +283,7 @@ func _on_character_selected(character_id: String) -> void:
 	CharacterManager.load_character(profile.id)
 	
 	# Load character progression into PlayerProgression
-	PlayerProgression.load_from_profile(profile.progression)
+	PlayerProgression.load_from_profile(profile.get_progression_data())
 	
 	Logger.info("Character created and loaded: %s (ID: %s)" % [profile.name, profile.id], "charselect")
 	

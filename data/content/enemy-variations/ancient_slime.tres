@@ -1,0 +1,44 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://b8m4yaq5r2n7p"]
+
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_slime"]
+
+[resource]
+script = ExtResource("1_slime")
+id = &"ancient_slime"
+parent_path = "res://data/content/enemy-templates/boss_base.tres"
+health_range = Vector2(450, 550)
+damage_range = Vector2(35, 50)
+speed_range = Vector2(50, 70)
+size_factor = 1.5
+hue_range = Vector2(0.2, 0.4)
+tags = Array[StringName]([&"slime", &"boss", &"poison", &"ancient", &"acid"])
+weight = 12.0
+render_tier = "boss"
+boss_scene_path = "res://scenes/bosses/AncientSlime.tscn"
+visual_config = {
+"animation_speed": 1.0,
+"directional_animations": {
+"walking_north": "res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/north/",
+"walking_south": "res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/",
+"walking_east": "res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/east/",
+"walking_west": "res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/west/",
+"attack_north": "res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/north/",
+"attack_south": "res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/south/",
+"attack_east": "res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/east/",
+"attack_west": "res://assets/sprites/Ancient_Slime_Boss/animations/cross-punch/west/"
+},
+"frame_count_walking": 4,
+"frame_count_attack": 6,
+"frame_regions_walking": [Rect2(0, 0, 64, 64), Rect2(64, 0, 64, 64), Rect2(128, 0, 64, 64), Rect2(192, 0, 64, 64)],
+"frame_regions_attack": [Rect2(0, 0, 64, 64), Rect2(64, 0, 64, 64), Rect2(128, 0, 64, 64), Rect2(192, 0, 64, 64), Rect2(256, 0, 64, 64), Rect2(320, 0, 64, 64)],
+"frame_size": Vector2(64, 64),
+"loop": true,
+"scale": Vector2(1, 1),
+"sprite_path": "res://assets/sprites/Ancient_Slime_Boss/rotations/south.png"
+}
+shadow_config = {
+"enabled": true,
+"size_multiplier": 1.2,
+"opacity": 0.5,
+"offset_y": 4.0
+}

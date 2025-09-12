@@ -1,43 +1,52 @@
 extends Control
 
 ## MainMenu - Entry point for the game with navigation to character selection.
-## Provides basic menu options: Start Game, Options, and Quit.
+## Uses MainTheme system for consistent styling and enhanced button components.
 
-@onready var title_label: Label = $MenuContainer/TitleLabel
-@onready var continue_button: Button = $MenuContainer/ContinueButton
-@onready var start_game_button: Button = $MenuContainer/StartGameButton
-@onready var options_button: Button = $MenuContainer/OptionsButton
-@onready var quit_button: Button = $MenuContainer/QuitButton
+@onready var title_label: Label = $BackgroundPanel/CenterContainer/MenuContainer/TitleLabel
+@onready var continue_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/ContinueButton
+@onready var start_game_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/StartGameButton
+@onready var options_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/OptionsButton
+@onready var quit_button: Button = $BackgroundPanel/CenterContainer/MenuContainer/QuitButton
+
+# Theme system
+var main_theme: MainTheme
 
 func _ready() -> void:
-	Logger.info("MainMenu initialized", "mainmenu")
+	Logger.info("MainMenu initialized", "debug")
+	
+	# Load theme from ThemeManager
+	_load_theme_from_manager()
+	
 	_setup_ui_elements()
 	_connect_button_signals()
 	_update_button_visibility()
+	
+	# Register for theme changes
+	if ThemeManager:
+		ThemeManager.add_theme_listener(_on_theme_changed)
 	
 	# Set focus to appropriate button for keyboard navigation
 	_set_initial_focus()
 
 func _setup_ui_elements() -> void:
-	"""Configure UI elements with appropriate text and styling."""
+	"""Configure UI elements with MainTheme styling."""
 	
-	# Configure title
+	# Configure title with MainTheme
 	title_label.text = "VIBE ROGUELIKE"
 	title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title_label.add_theme_font_size_override("font_size", 48)
 	
-	# Configure buttons
-	continue_button.text = "Continue"
-	start_game_button.text = "New Character"
-	options_button.text = "Options"
-	quit_button.text = "Quit"
+	# Apply MainTheme styling to title label
+	if main_theme:
+		main_theme.apply_label_theme(title_label, "title")
+		title_label.add_theme_font_size_override("font_size", main_theme.font_size_huge)
+		
+		Logger.debug("Applied MainTheme styling to MainMenu", "ui")
+	else:
+		Logger.error("MainTheme not available - UI framework dependency missing", "ui")
 	
-	# Set button sizes for consistency
-	var button_min_size = Vector2(200, 50)
-	continue_button.custom_minimum_size = button_min_size
-	start_game_button.custom_minimum_size = button_min_size
-	options_button.custom_minimum_size = button_min_size
-	quit_button.custom_minimum_size = button_min_size
+	# EnhancedButton components handle their own theming via button_variant
+	# ThemedPanel background handles its own theming via auto_theme = true
 
 func _connect_button_signals() -> void:
 	"""Connect button press signals to handler functions."""
@@ -50,43 +59,39 @@ func _connect_button_signals() -> void:
 func _on_continue_pressed() -> void:
 	"""Handle Continue button press - load most recent character and go to hideout."""
 	
-	Logger.info("Continue pressed", "mainmenu")
+	Logger.info("Continue pressed", "debug")
 	
 	# Get most recent character
 	var characters = CharacterManager.list_characters()
 	if characters.is_empty():
-		Logger.warn("No characters available for continue", "mainmenu")
+		Logger.warn("No characters available for continue", "debug")
 		_show_placeholder_message("No characters found. Please create a new character first.")
 		return
 	
-	# Find most recent character by last_played
-	var most_recent_character: CharacterProfile = null
-	var most_recent_time: String = ""
+	# Debug: Show all characters and their last_played dates
+	Logger.info("Continue button - Available characters:", "debug")
+	for i in range(characters.size()):
+		var char = characters[i]
+		Logger.info("  [%d] %s (Level %d) - Last played: '%s'" % [i, char.name, char.level, char.last_played], "debug")
 	
-	for character in characters:
-		if most_recent_character == null or character.last_played > most_recent_time:
-			most_recent_character = character
-			most_recent_time = character.last_played
+	# Get most recent character (CharacterManager already sorts by last_played, most recent first)
+	var most_recent_character: CharacterProfile = characters[0]
 	
-	if not most_recent_character:
-		Logger.error("Failed to find most recent character", "mainmenu")
-		_show_placeholder_message("Error loading character. Please try again.")
-		return
-	
-	Logger.info("Loading most recent character: %s (Level %d)" % [most_recent_character.name, most_recent_character.level], "mainmenu")
+	Logger.info("Loading most recent character: %s (Level %d)" % [most_recent_character.name, most_recent_character.level], "debug")
 	
 	# Load character into CharacterManager as current
 	CharacterManager.load_character(most_recent_character.id)
 	
-	# Load character progression into PlayerProgression
-	PlayerProgression.load_from_profile(most_recent_character.progression)
+	# Load character progression into PlayerProgression (use fresh data to prevent staleness)
+	PlayerProgression.load_from_profile(most_recent_character.get_progression_data())
 	
 	# Prepare context for StateManager
 	var context = {
 		"character_id": most_recent_character.id,
 		"character_data": most_recent_character.get_character_data(),
 		"spawn_point": "PlayerSpawnPoint",
-		"source": "main_menu_continue"
+		"source": "main_menu_continue",
+		"preserve_progression": true  # CRITICAL: Preserve character progression when continuing
 	}
 	
 	# Use StateManager to transition to hideout
@@ -95,7 +100,7 @@ func _on_continue_pressed() -> void:
 func _on_start_game_pressed() -> void:
 	"""Handle New Character button press - navigate to character selection."""
 	
-	Logger.info("New Character pressed", "mainmenu")
+	Logger.info("New Character pressed", "debug")
 	
 	# Use StateManager for proper state transition
 	StateManager.go_to_character_select({"source": "main_menu"})
@@ -103,7 +108,7 @@ func _on_start_game_pressed() -> void:
 func _on_options_pressed() -> void:
 	"""Handle Options button press - placeholder for future options menu."""
 	
-	Logger.info("Options pressed (placeholder)", "mainmenu")
+	Logger.info("Options pressed (placeholder)", "debug")
 	
 	# TODO: Implement options menu
 	# For now, just show a simple notification
@@ -112,7 +117,7 @@ func _on_options_pressed() -> void:
 func _on_quit_pressed() -> void:
 	"""Handle Quit button press - exit the game."""
 	
-	Logger.info("Quit pressed - exiting game", "mainmenu")
+	Logger.info("Quit pressed - exiting game", "debug")
 	get_tree().quit()
 
 func _show_placeholder_message(message: String) -> void:
@@ -139,9 +144,23 @@ func _update_button_visibility() -> void:
 	continue_button.visible = has_characters
 	
 	if has_characters:
-		Logger.debug("Continue button enabled - %d characters available" % characters.size(), "mainmenu")
+		Logger.debug("Continue button enabled - %d characters available" % characters.size(), "debug")
 	else:
-		Logger.debug("Continue button hidden - no characters available", "mainmenu")
+		Logger.debug("Continue button hidden - no characters available", "debug")
+
+func _load_theme_from_manager() -> void:
+	"""Load theme from ThemeManager."""
+	if ThemeManager:
+		main_theme = ThemeManager.get_theme()
+		Logger.debug("MainTheme loaded from ThemeManager", "ui")
+	else:
+		Logger.error("ThemeManager autoload missing - critical UI framework dependency", "ui")
+
+func _on_theme_changed(new_theme: MainTheme) -> void:
+	"""Handle theme changes from ThemeManager."""
+	main_theme = new_theme
+	_setup_ui_elements()
+	Logger.debug("MainMenu updated with new theme", "ui")
 
 func _set_initial_focus() -> void:
 	"""Set initial focus to the most appropriate button."""
@@ -151,3 +170,8 @@ func _set_initial_focus() -> void:
 		continue_button.grab_focus()
 	else:
 		start_game_button.grab_focus()
+
+func _exit_tree() -> void:
+	"""Clean up theme listener when node is removed."""
+	if ThemeManager:
+		ThemeManager.remove_theme_listener(_on_theme_changed)

@@ -1,100 +1,74 @@
 extends CanvasLayer
 
 ## PauseUI autoload - persistent pause overlay that works across all scenes.
-## Shows pause menu when game is paused and only allows pausing in valid states.
+## Uses component-based PauseMenu scene with MainTheme integration.
 ## Subscribes to PauseManager events and checks StateManager for pause permissions.
 
+# Scene references
+const PAUSE_MENU_SCENE = preload("res://scenes/ui/PauseMenu.tscn")
+
+# UI components
 var pause_overlay: ColorRect
-var pause_menu: Control
+var pause_menu_instance: Control
+var title_label: Label
 var resume_button: Button
 var settings_button: Button
 var hideout_button: Button
 var menu_button: Button
+
+# Theme system
+var main_theme: MainTheme
 
 func _ready() -> void:
 	# Set up persistent CanvasLayer
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 100  # High layer to appear above everything
 	
+	# Load theme from ThemeManager
+	_load_theme_from_manager()
+	
 	_create_pause_ui()
 	_connect_signals()
 	_setup_initial_state()
 	
-	Logger.info("PauseUI initialized as persistent overlay", "ui")
+	# Register for theme changes
+	if ThemeManager:
+		ThemeManager.add_theme_listener(_on_theme_changed)
+	
+	Logger.info("PauseUI initialized with component-based scene", "ui")
 
 func _create_pause_ui() -> void:
-	"""Create the pause menu UI elements."""
+	"""Create the pause menu using component-based scene."""
 	
-	# Semi-transparent overlay
+	# Semi-transparent overlay for input blocking
 	pause_overlay = ColorRect.new()
 	pause_overlay.name = "PauseOverlay"
 	pause_overlay.color = Color(0, 0, 0, 0.7)
 	pause_overlay.mouse_filter = Control.MOUSE_FILTER_STOP  # Block input to game
-	pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
+	pause_overlay.process_mode = Node.PROCESS_MODE_WHEN_PAUSED
 	pause_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	add_child(pause_overlay)
 	
-	# Center container for menu
-	pause_menu = Control.new()
-	pause_menu.name = "PauseMenu"
-	pause_menu.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	pause_menu.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
-	pause_overlay.add_child(pause_menu)
+	# Instantiate component-based pause menu scene
+	pause_menu_instance = PAUSE_MENU_SCENE.instantiate()
+	pause_menu_instance.name = "PauseMenuInstance"
+	pause_overlay.add_child(pause_menu_instance)
 	
-	# VBox container for menu items
-	var vbox = VBoxContainer.new()
-	vbox.name = "MenuVBox"
-	vbox.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	vbox.position = Vector2(-100, -150)  # Center the menu
-	pause_menu.add_child(vbox)
+	# Get references to UI components
+	_get_component_references()
 	
-	# Title label
-	var title = Label.new()
-	title.name = "TitleLabel"
-	title.text = "GAME PAUSED"
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.add_theme_font_size_override("font_size", 32)
-	vbox.add_child(title)
+	# Apply MainTheme to non-component elements
+	_apply_main_theme()
 	
-	# Add some spacing
-	var spacer1 = Control.new()
-	spacer1.custom_minimum_size = Vector2(0, 20)
-	vbox.add_child(spacer1)
-	
-	# Resume button
-	resume_button = Button.new()
-	resume_button.name = "ResumeButton"
-	resume_button.text = "Resume"
-	resume_button.custom_minimum_size = Vector2(200, 40)
-	resume_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	vbox.add_child(resume_button)
-	
-	# Settings button
-	settings_button = Button.new()
-	settings_button.name = "SettingsButton"
-	settings_button.text = "Settings"
-	settings_button.custom_minimum_size = Vector2(200, 40)
-	settings_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	vbox.add_child(settings_button)
-	
-	# Hideout button (only shown in arena)
-	hideout_button = Button.new()
-	hideout_button.name = "HideoutButton"
-	hideout_button.text = "Return to Hideout"
-	hideout_button.custom_minimum_size = Vector2(200, 40)
-	hideout_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	vbox.add_child(hideout_button)
-	
-	# Menu button
-	menu_button = Button.new()
-	menu_button.name = "MenuButton"
-	menu_button.text = "Return to Menu"
-	menu_button.custom_minimum_size = Vector2(200, 40)
-	menu_button.process_mode = Node.PROCESS_MODE_WHEN_PAUSED  # Allow processing when paused
-	vbox.add_child(menu_button)
+	Logger.debug("Component-based pause menu created", "ui")
 
 func _connect_signals() -> void:
 	"""Connect button signals and system events."""
+	
+	# Verify button references exist before connecting
+	if not resume_button or not settings_button or not hideout_button or not menu_button:
+		Logger.error("Cannot connect signals - button references missing", "ui")
+		return
 	
 	# Button connections
 	resume_button.pressed.connect(_on_resume_pressed)
@@ -105,6 +79,8 @@ func _connect_signals() -> void:
 	# System connections
 	EventBus.game_paused_changed.connect(_on_game_paused_changed)
 	StateManager.state_changed.connect(_on_state_changed)
+	
+	Logger.debug("Pause menu signals connected successfully", "ui")
 
 func _setup_initial_state() -> void:
 	"""Set up initial UI state."""
@@ -192,6 +168,58 @@ func _on_menu_pressed() -> void:
 	# Return to menu via StateManager
 	StateManager.return_to_menu(StringName("pause_menu"), {"source": "pause_menu"})
 
+func _get_component_references() -> void:
+	"""Get references to UI components from instantiated scene."""
+	if not pause_menu_instance:
+		Logger.error("Pause menu instance not found", "ui")
+		return
+	
+	# Get component references with error checking
+	title_label = pause_menu_instance.get_node("PausePanel/MenuVBox/TitleLabel")
+	resume_button = pause_menu_instance.get_node("PausePanel/MenuVBox/ResumeButton")
+	settings_button = pause_menu_instance.get_node("PausePanel/MenuVBox/SettingsButton")
+	hideout_button = pause_menu_instance.get_node("PausePanel/MenuVBox/HideoutButton")
+	menu_button = pause_menu_instance.get_node("PausePanel/MenuVBox/MenuButton")
+	
+	# Verify all components were found
+	var missing_components = []
+	if not title_label: missing_components.append("TitleLabel")
+	if not resume_button: missing_components.append("ResumeButton")
+	if not settings_button: missing_components.append("SettingsButton")
+	if not hideout_button: missing_components.append("HideoutButton")
+	if not menu_button: missing_components.append("MenuButton")
+	
+	if not missing_components.is_empty():
+		Logger.error("Missing pause menu components: %s" % missing_components, "ui")
+		return
+	
+	Logger.debug("Component references obtained successfully", "ui")
+
+func _load_theme_from_manager() -> void:
+	"""Load theme from ThemeManager."""
+	if ThemeManager:
+		main_theme = ThemeManager.get_theme()
+		Logger.debug("MainTheme loaded for PauseUI", "ui")
+	else:
+		Logger.error("ThemeManager autoload missing - critical UI dependency", "ui")
+
+func _apply_main_theme() -> void:
+	"""Apply MainTheme to non-component elements."""
+	if not main_theme or not title_label:
+		return
+	
+	# Apply MainTheme to title label (EnhancedButton components handle themselves)
+	main_theme.apply_label_theme(title_label, "title")
+	title_label.add_theme_font_size_override("font_size", main_theme.font_size_huge)
+	
+	Logger.debug("MainTheme applied to PauseUI components", "ui")
+
+func _on_theme_changed(new_theme: MainTheme) -> void:
+	"""Handle theme changes from ThemeManager."""
+	main_theme = new_theme
+	_apply_main_theme()
+	Logger.debug("PauseUI updated with new theme", "ui")
+
 func _show_placeholder_message(message: String) -> void:
 	"""Show a temporary placeholder message for unimplemented features."""
 	
@@ -205,3 +233,8 @@ func _show_placeholder_message(message: String) -> void:
 	# Auto-remove after showing
 	popup.confirmed.connect(popup.queue_free)
 	popup.canceled.connect(popup.queue_free)
+
+func _exit_tree() -> void:
+	"""Clean up theme listener when autoload is removed."""
+	if ThemeManager:
+		ThemeManager.remove_theme_listener(_on_theme_changed)

@@ -44,6 +44,7 @@ func get_ai_type() -> String:
 func get_aggro_range() -> float:
 	return behavior_config.get("aggro_range", 300.0)
 
+
 func validate() -> Array[String]:
 	var errors: Array[String] = []
 	

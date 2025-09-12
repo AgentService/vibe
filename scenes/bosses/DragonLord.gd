@@ -1,207 +1,35 @@
-extends CharacterBody2D
+extends BaseBoss
 
 ## DragonLord special boss - example scene-based enemy
 ## Demonstrates hybrid spawning system with complex boss behavior
-## Emits "died" signal for integration with WaveDirector
+## Now inherits from BaseBoss for unified systems support
 
-signal died
-
-@onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
-@onready var health_bar: BossHealthBar = $BossHealthBar
-
-var spawn_config: SpawnConfig
-var max_health: float = 200.0
-var current_health: float = 200.0
-var speed: float = 80.0
-var attack_damage: float = 50.0
-var attack_cooldown: float = 2.0
-var last_attack_time: float = 0.0
-
-# AI state
-var target_position: Vector2
-var attack_range: float = 100.0
-var chase_range: float = 400.0
-var ai_paused: bool = false  # Debug AI pause state
+class_name DragonLord
 
 func _ready() -> void:
-	Logger.info("DragonLord boss spawned with " + str(max_health) + " HP", "bosses")
+	# Set DragonLord specific stats (override BaseBoss defaults)
+	max_health = 300.0  # DragonLord is stronger
+	current_health = 300.0
+	damage = 35.0
+	speed = 80.0
+	attack_damage = 35.0
+	attack_cooldown = 2.0
+	attack_range = 90.0
+	chase_range = 400.0
 	
-	# Start the animation
-	if animated_sprite and animated_sprite.sprite_frames:
-		animated_sprite.play("default")  # Start playing the default animation
-		Logger.debug("Dragon Lord animation started", "bosses")
-	
-	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager instead of individual combat_step connection
-	var boss_id = "boss_" + str(get_instance_id())
-	BossUpdateManager.register_boss(self, boss_id)
-	Logger.debug("DragonLord registered with BossUpdateManager as " + boss_id, "performance")
-	
-	# Connect to other signals (not combat_step)
-	if EventBus:
-		# Listen for unified damage sync events
-		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
-		# DEBUG: Listen for cheat toggles (AI pause)
-		EventBus.cheat_toggled.connect(_on_cheat_toggled)
-	
-	# Register with both DamageService and EntityTracker
-	var entity_id = "boss_" + str(get_instance_id())
-	var entity_data = {
-		"id": entity_id,
-		"type": "boss",
-		"hp": current_health,
-		"max_hp": max_health,
-		"alive": true,
-		"pos": global_position
-	}
-	
-	# Register with both systems for unified damage V3
-	DamageService.register_entity(entity_id, entity_data)
-	EntityTracker.register_entity(entity_id, entity_data)
-	Logger.debug("DragonLord registered with DamageService and EntityTracker as " + entity_id, "bosses")
-	
-	# Initialize health bar
-	_update_health_bar()
+	# Call parent _ready() to handle base initialization
+	super._ready()
 
-func _exit_tree() -> void:
-	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
-	var boss_id = "boss_" + str(get_instance_id())
-	BossUpdateManager.unregister_boss(boss_id)
-	
-	# Clean up remaining signal connections
-	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
-		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
-	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
-		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
-	
-	# Unregister from both systems
-	var entity_id = "boss_" + str(get_instance_id())
-	DamageService.unregister_entity(entity_id)
-	EntityTracker.unregister_entity(entity_id)
+func get_boss_name() -> String:
+	return "DragonLord"
 
-## BOSS PERFORMANCE V2: New batch AI interface called by BossUpdateManager
-## Replaces individual _on_combat_step connections with centralized processing
-func _update_ai_batch(dt: float) -> void:
-	_update_ai(dt)
-	last_attack_time += dt
-
-## Handle unified damage sync events for scene bosses
-func _on_damage_entity_sync(payload: Dictionary) -> void:
-	var entity_id: String = payload.get("entity_id", "")
-	var entity_type: String = payload.get("entity_type", "")
-	var new_hp: float = payload.get("new_hp", 0.0)
-	var is_death: bool = payload.get("is_death", false)
-	
-	# Only handle boss entities matching this instance
-	if entity_type != "boss":
-		return
-	
-	var expected_entity_id = "boss_" + str(get_instance_id())
-	if entity_id != expected_entity_id:
-		return  # Not for this boss
-	
-	# Update boss HP
-	current_health = new_hp
-	_update_health_bar()
-	
-	# Handle death
-	if is_death:
-		Logger.info("Boss %s killed via damage sync" % [entity_id], "combat")
-		_die()
-	else:
-		# Update EntityTracker health data
-		var tracker_data = EntityTracker.get_entity(entity_id)
-		if tracker_data.has("id"):
-			tracker_data["hp"] = new_hp
-		
-		# Visual feedback for taking damage (DragonLord doesn't have damage animation)
-		Logger.debug("DragonLord took %.1f damage, HP: %.1f/%.1f" % [payload.get("damage", 0.0), new_hp, max_health], "bosses")
-
-func _update_ai(_dt: float) -> void:
-	# Skip AI updates if paused by debug system
-	if ai_paused:
-		return
-		
-	# Get player position from PlayerState
-	if not PlayerState.has_player_reference():
-		return
-		
-	target_position = PlayerState.position
-	var distance_to_player: float = global_position.distance_to(target_position)
-	
-	# Chase behavior when player is in range
-	if distance_to_player <= chase_range:
-		if distance_to_player > attack_range:
-			# Move toward player
-			var direction: Vector2 = (target_position - global_position).normalized()
-			velocity = direction * speed
-			move_and_slide()
-			
-			# Flip sprite to face movement direction
-			EnemySpriteFlipping.flip_sprite_for_direction(animated_sprite, direction)
-			
-			# BOSS PERFORMANCE V2: Position updates now handled by BossUpdateManager batch processing
-			# Individual EntityTracker.update_entity_position calls removed for performance
-			var entity_id = "boss_" + str(get_instance_id())
-			DamageService.update_entity_position(entity_id, global_position)
-		else:
-			# In attack range - stop and attack
-			velocity = Vector2.ZERO
-			if last_attack_time >= attack_cooldown:
-				_perform_attack()
-				last_attack_time = 0.0
-
+# Override parent attack with DragonLord-specific fire attack
 func _perform_attack() -> void:
-	Logger.info("DragonLord attacks for " + str(attack_damage) + " damage!", "bosses")
+	Logger.debug("DragonLord breathes fire for %.1f damage!" % attack_damage, "bosses")
 	
-	# Emit damage to player if in range
+	# Apply fire damage to player via unified DamageService
 	var distance_to_player: float = global_position.distance_to(target_position)
 	if distance_to_player <= attack_range:
-		# Use unified damage system for player damage
-		DamageService.apply_damage("player", float(attack_damage))
-
-# take_damage() method removed - damage handled via unified pipeline
-# Bosses register with both DamageService and EntityTracker in _ready() and receive damage via EventBus sync
-
-func _die() -> void:
-	Logger.info("DragonLord has been defeated!", "bosses")
-	died.emit()  # Signal for WaveDirector to handle XP/loot
-	queue_free()  # Remove from scene
-
-# Public interface for damage system integration
-func get_max_health() -> float:
-	return max_health
-
-func get_current_health() -> float:
-	return current_health
-
-func set_current_health(new_health: float) -> void:
-	current_health = new_health
-	_update_health_bar()
-	
-	# Check for death
-	if current_health <= 0.0 and is_alive():
-		_die()
-
-func is_alive() -> bool:
-	return current_health > 0.0
-
-func _update_health_bar() -> void:
-	if health_bar:
-		health_bar.update_health(current_health, max_health)
-
-# V2 Enemy System Integration
-func setup_from_spawn_config(config: SpawnConfig) -> void:
-	spawn_config = config
-	max_health = config.health
-	current_health = config.health
-	attack_damage = config.damage
-	speed = config.speed
-	
-	# Set position
-	global_position = config.position
-	Logger.debug("DragonLord setup from spawn config: HP=" + str(max_health) + " damage=" + str(attack_damage) + " speed=" + str(speed), "bosses")
-
-func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
-	# Handle AI pause/unpause cheat toggle
-	if payload.cheat_name == "ai_paused":
-		ai_paused = payload.enabled
+		var source_name = "boss_dragon_lord"
+		var damage_tags = ["fire", "boss"]  # Fire damage type
+		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)

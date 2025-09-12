@@ -1,0 +1,251 @@
+[gd_scene load_steps=7 format=3 uid="uid://b7j8k3mam2p4q"]
+
+[ext_resource type="PackedScene" uid="uid://v6sna08o3j3f" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" uid="uid://duic8xjhudytg" path="res://scenes/ui/hud/components/core/AbilityBarComponent.gd" id="2_ability_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_primary_attack"]
+bg_color = Color(0.8, 0.2, 0.2, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Theme" id="Theme_ability_primary"]
+Button/styles/normal = SubResource("StyleBoxFlat_primary_attack")
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_ability_bg"]
+bg_color = Color(0.2, 0.2, 0.2, 0.8)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.5, 0.5, 0.5, 1)
+corner_radius_top_left = 4
+corner_radius_top_right = 4
+corner_radius_bottom_right = 4
+corner_radius_bottom_left = 4
+
+[sub_resource type="Theme" id="Theme_ability_button"]
+Button/styles/normal = SubResource("StyleBoxFlat_ability_bg")
+
+[node name="AbilityBarComponent" instance=ExtResource("1_base_component")]
+custom_minimum_size = Vector2(200, 50)
+script = ExtResource("2_ability_script")
+max_abilities = 4
+show_hotkeys = true
+show_cooldown_text = true
+component_id = "ability_bar"
+
+[node name="AbilityContainer" type="HBoxContainer" parent="." index="0"]
+layout_mode = 0
+offset_right = 216.0
+offset_bottom = 48.0
+theme_override_constants/separation = 8
+
+[node name="Ability1" type="Control" parent="AbilityContainer" index="0"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="AbilityButton" type="Button" parent="AbilityContainer/Ability1" index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ability_primary")
+flat = true
+
+[node name="CooldownOverlay" type="ColorRect" parent="AbilityContainer/Ability1" index="1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CooldownLabel" type="Label" parent="AbilityContainer/Ability1" index="2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotkeyLabel" type="Label" parent="AbilityContainer/Ability1" index="3"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -16.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "LMB"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="Ability2" type="Control" parent="AbilityContainer" index="1"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="AbilityButton" type="Button" parent="AbilityContainer/Ability2" index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ability_button")
+flat = true
+
+[node name="CooldownOverlay" type="ColorRect" parent="AbilityContainer/Ability2" index="1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CooldownLabel" type="Label" parent="AbilityContainer/Ability2" index="2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotkeyLabel" type="Label" parent="AbilityContainer/Ability2" index="3"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -16.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "RMB"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="Ability3" type="Control" parent="AbilityContainer" index="2"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="AbilityButton" type="Button" parent="AbilityContainer/Ability3" index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ability_button")
+flat = true
+
+[node name="CooldownOverlay" type="ColorRect" parent="AbilityContainer/Ability3" index="1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CooldownLabel" type="Label" parent="AbilityContainer/Ability3" index="2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotkeyLabel" type="Label" parent="AbilityContainer/Ability3" index="3"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -16.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "SPC"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="Ability4" type="Control" parent="AbilityContainer" index="3"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+
+[node name="AbilityButton" type="Button" parent="AbilityContainer/Ability4" index="0"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = SubResource("Theme_ability_button")
+flat = true
+
+[node name="CooldownOverlay" type="ColorRect" parent="AbilityContainer/Ability4" index="1"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="CooldownLabel" type="Label" parent="AbilityContainer/Ability4" index="2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+text = "0"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="HotkeyLabel" type="Label" parent="AbilityContainer/Ability4" index="3"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -20.0
+offset_top = -16.0
+offset_right = -4.0
+offset_bottom = -4.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "Q"
+horizontal_alignment = 2
+vertical_alignment = 2

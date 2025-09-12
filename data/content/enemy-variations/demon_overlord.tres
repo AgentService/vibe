@@ -1,0 +1,36 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://bfyjq04ipm4kg"]
+
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_demon"]
+
+[resource]
+script = ExtResource("1_demon")
+id = &"demon_overlord"
+parent_path = "res://data/content/enemy-templates/boss_base.tres"
+health_range = Vector2(350, 450)
+damage_range = Vector2(40, 60)
+speed_range = Vector2(70, 90)
+size_factor = 1.0
+hue_range = Vector2(0, 0.1)
+tags = Array[StringName]([&"demon", &"boss", &"fire", &"overlord"])
+weight = 15.0
+render_tier = "boss"
+boss_scene_path = "res://scenes/bosses/DemonOverlord.tscn"
+visual_config = {
+"animation_speed": 1.0,
+"directional_animations": {
+"scary_walk_east": "res://assets/sprites/demon_overlord/animations/scary-walk/east/",
+"scary_walk_north": "res://assets/sprites/demon_overlord/animations/scary-walk/north/",
+"scary_walk_north_east": "res://assets/sprites/demon_overlord/animations/scary-walk/north-east/",
+"scary_walk_north_west": "res://assets/sprites/demon_overlord/animations/scary-walk/north-west/",
+"scary_walk_south": "res://assets/sprites/demon_overlord/animations/scary-walk/south/",
+"scary_walk_south_east": "res://assets/sprites/demon_overlord/animations/scary-walk/south-east/",
+"scary_walk_south_west": "res://assets/sprites/demon_overlord/animations/scary-walk/south-west/",
+"scary_walk_west": "res://assets/sprites/demon_overlord/animations/scary-walk/west/"
+},
+"frame_count": 8,
+"frame_regions": [Rect2(0, 0, 32, 32), Rect2(32, 0, 32, 32), Rect2(64, 0, 32, 32), Rect2(96, 0, 32, 32), Rect2(128, 0, 32, 32), Rect2(160, 0, 32, 32), Rect2(192, 0, 32, 32), Rect2(224, 0, 32, 32)],
+"frame_size": Vector2(32, 32),
+"loop": true,
+"scale": Vector2(2, 2),
+"sprite_path": "res://assets/sprites/demon_overlord/rotations/south.png"
+}

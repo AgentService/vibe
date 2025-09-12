@@ -1,4 +1,4 @@
-[gd_scene load_steps=143 format=3 uid="uid://c2jp4u6jcugam"]
+[gd_scene load_steps=144 format=3 uid="uid://c2jp4u6jcugam"]
 
 [ext_resource type="Script" uid="uid://uougsht51b6u" path="res://scenes/arena/Player.gd" id="1_dn4kl"]
 [ext_resource type="Resource" uid="uid://bqepe3g45r6ij" path="res://data/content/default_player.tres" id="2_jkhsn"]
@@ -7,6 +7,7 @@
 [ext_resource type="Texture2D" uid="uid://bmv5apv5v6bqu" path="res://assets/sprites/craftpix-net-180537-free-swordsman-1-3-level-pixel-top-down-sprite-character/PNG/Swordsman_lvl3/With_shadow/Swordsman_lvl3_Hurt_with_shadow.png" id="3_iiuu2"]
 [ext_resource type="Texture2D" uid="uid://chgd617wssuaq" path="res://assets/sprites/craftpix-net-180537-free-swordsman-1-3-level-pixel-top-down-sprite-character/PNG/Swordsman_lvl3/With_shadow/Swordsman_lvl3_Idle_with_shadow.png" id="3_m76ws"]
 [ext_resource type="Texture2D" uid="uid://c7jvh7xtqmqm0" path="res://assets/sprites/craftpix-net-180537-free-swordsman-1-3-level-pixel-top-down-sprite-character/PNG/Swordsman_lvl3/With_shadow/Swordsman_lvl3_Death_with_shadow.png" id="6_fsprk"]
+[ext_resource type="Texture2D" uid="uid://ca2set0jptos0" path="res://assets/sprites/shadow.png" id="8_wdiha"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2vb30"]
 atlas = ExtResource("3_4xcit")
@@ -1059,3 +1060,12 @@ visible = false
 scale = Vector2(1, 2)
 shape = SubResource("CapsuleShape2D_etesd")
 debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
+
+[node name="PointLight2D" type="PointLight2D" parent="."]
+energy = 0.85
+shadow_enabled = true
+shadow_color = Color(0.0605303, 0.0605303, 0.0605303, 0)
+shadow_filter = 1
+shadow_filter_smooth = 1.9
+texture = ExtResource("8_wdiha")
+texture_scale = 2.98

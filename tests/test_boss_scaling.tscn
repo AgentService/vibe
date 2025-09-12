@@ -1,0 +1,112 @@
+[gd_scene load_steps=2 format=3]
+
+[sub_resource type="GDScript" id="GDScript_1"]
+script/source = "extends Node
+
+## Boss Sprite Scaling Validation Test Scene
+## Tests the new sprite scaling system to ensure visual scaling matches collision scaling
+
+func _ready() -> void:
+	print(\"=== Boss Sprite Scaling Test ===\")
+	print(\"Testing sprite scaling fixes for BaseBoss system\")
+	print()
+	
+	# Test different scale factors
+	var scale_factors = [0.5, 1.0, 1.5, 2.0, 2.5]
+	
+	for scale_factor in scale_factors:
+		print(\"Testing scale factor: %.1fx\" % scale_factor)
+		await _test_boss_scaling(\"BananaLord\", scale_factor)
+		await _test_boss_scaling(\"AncientLich\", scale_factor)
+		print()
+	
+	print(\"=== Test Complete ===\")
+	print(\"Check logs for detailed scaling validation results\")
+	print(\"Expected: All sprite scales should match collision scales\")
+	get_tree().quit()
+
+func _test_boss_scaling(boss_name: String, scale_factor: float):
+	print(\"  Testing %s at %.1fx scale:\" % [boss_name, scale_factor])
+	
+	# Load boss scene
+	var boss_scene_path = \"res://scenes/bosses/%s.tscn\" % boss_name
+	var boss_scene = load(boss_scene_path)
+	if not boss_scene:
+		print(\"    ERROR: Could not load boss scene: %s\" % boss_scene_path)
+		return
+	
+	# Instantiate boss
+	var boss_instance = boss_scene.instantiate()
+	if not boss_instance:
+		print(\"    ERROR: Could not instantiate boss: %s\" % boss_name)
+		return
+	
+	# Add to scene tree
+	add_child(boss_instance)
+	
+	# Wait for initialization
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Create test spawn config
+	var spawn_config = SpawnConfig.new(100.0, 25.0, 60.0)
+	spawn_config.size_scale = scale_factor
+	spawn_config.position = Vector2(100, 100)
+	
+	# Apply scaling
+	boss_instance.setup_from_spawn_config(spawn_config)
+	
+	# Wait for deferred scaling to complete
+	await get_tree().process_frame
+	await get_tree().process_frame
+	
+	# Validate results
+	_validate_boss_scaling(boss_instance, scale_factor, boss_name)
+	
+	# Cleanup
+	boss_instance.queue_free()
+	await get_tree().process_frame
+
+func _validate_boss_scaling(boss: BaseBoss, expected_scale: float, boss_name: String):
+	var animated_sprite = boss.get_node_or_null(\"AnimatedSprite2D\")
+	var collision_shape = boss.get_node_or_null(\"CollisionShape2D\")
+	var hitbox = boss.get_node_or_null(\"HitBox\")
+	
+	# Check sprite scaling
+	if animated_sprite:
+		var sprite_scale = animated_sprite.scale.x
+		var scale_match = abs(sprite_scale - expected_scale) < 0.01
+		print(\"    Sprite scale: %.2f %s\" % [sprite_scale, \"✓\" if scale_match else \"✗ (expected %.2f)\" % expected_scale])
+	else:
+		print(\"    Sprite scale: ✗ (AnimatedSprite2D not found)\")
+	
+	# Check collision scaling
+	if collision_shape:
+		var collision_scale = collision_shape.scale.x
+		var scale_match = abs(collision_scale - expected_scale) < 0.01
+		print(\"    Collision scale: %.2f %s\" % [collision_scale, \"✓\" if scale_match else \"✗ (expected %.2f)\" % expected_scale])
+	else:
+		print(\"    Collision scale: ✗ (CollisionShape2D not found)\")
+	
+	# Check hitbox scaling
+	if hitbox:
+		var hitbox_scale = hitbox.scale.x
+		var scale_match = abs(hitbox_scale - expected_scale) < 0.01
+		print(\"    HitBox scale: %.2f %s\" % [hitbox_scale, \"✓\" if scale_match else \"✗ (expected %.2f)\" % expected_scale])
+	else:
+		print(\"    HitBox scale: ✗ (HitBox not found)\")
+	
+	# Overall validation
+	var overall_valid = true
+	if animated_sprite and abs(animated_sprite.scale.x - expected_scale) > 0.01:
+		overall_valid = false
+	if collision_shape and abs(collision_shape.scale.x - expected_scale) > 0.01:
+		overall_valid = false
+	if hitbox and abs(hitbox.scale.x - expected_scale) > 0.01:
+		overall_valid = false
+	
+	print(\"    Overall: %s\" % (\"✓ PASS\" if overall_valid else \"✗ FAIL\"))
+"
+
+[node name="TestBossScaling" type="Node"]
+script = SubResource("GDScript_1")

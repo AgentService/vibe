@@ -1,0 +1,27 @@
+[gd_scene load_steps=4 format=3 uid="uid://cfssf41rwdwiy"]
+
+[ext_resource type="Script" uid="uid://dbkq6nvci6ttr" path="res://scenes/bosses/TestShadowBoss.gd" id="1_test_boss_script"]
+[ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_health_bar"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_test"]
+radius = 12.0
+
+[node name="TestShadowBoss" type="CharacterBody2D"]
+scale = Vector2(2, 2)
+script = ExtResource("1_test_boss_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(0, -3)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_test")
+
+[node name="HitBox" type="Area2D" parent="."]
+
+[node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
+shape = SubResource("CircleShape2D_test")
+
+[node name="AttackTimer" type="Timer" parent="."]
+wait_time = 2.5
+
+[node name="BossHealthBar" parent="." instance=ExtResource("3_health_bar")]

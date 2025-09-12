@@ -1,0 +1,50 @@
+[gd_scene load_steps=2 format=3 uid="uid://c7p38q5tnbn0y"]
+
+[ext_resource type="Script" uid="uid://dqbm67gh3y72w" path="res://scenes/ui/hud/components/core/KeybindingsComponent.gd" id="1_keybindings_script"]
+
+[node name="KeybindingsComponent" type="Panel"]
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 0
+grow_vertical = 0
+script = ExtResource("1_keybindings_script")
+component_id = "keybindings_display"
+
+[node name="VBoxContainer" type="AspectRatioContainer" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -98.0
+offset_top = -131.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="VBoxContainer"]
+layout_direction = 1
+layout_mode = 2
+
+[node name="TitleLabel" type="Label" parent="VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "Controls"
+
+[node name="WASDLabel" type="Label" parent="VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "WASD: Move"
+
+[node name="EscLabel2" type="Label" parent="VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "ESC: Pause"
+
+[node name="LeftClickLabel" type="Label" parent="VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "LMB: Attack"
+
+[node name="SpaceLabel" type="Label" parent="VBoxContainer/VBoxContainer2"]
+layout_mode = 2
+text = "Space: Dash"

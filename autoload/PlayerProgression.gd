@@ -70,8 +70,7 @@ func gain_exp(amount: float) -> void:
 	var old_total: float = experience
 	experience += amount
 	
-	Logger.debug("Gained %.1f XP (%.1f -> %.1f), Level: %d, XP to next: %.1f" % [amount, old_total, experience, level, xp_to_next], "progression")
-	Logger.debug("Gained %.1f XP (%.1f -> %.1f)" % [amount, old_total, experience], "progression")
+	Logger.debug("Gained %.1f XP (%.1f -> %.1f), Level: %d" % [amount, old_total, experience, level], "progression")
 	
 	# Emit XP gained signal
 	EventBus.xp_gained.emit(amount, experience)
@@ -103,7 +102,6 @@ func _level_up() -> void:
 	# Move to next level
 	level += 1
 	
-	Logger.debug("LEVEL UP! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
 	Logger.info("Level up! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
 	
 	# Update XP requirement for next level
@@ -151,23 +149,16 @@ func load_from_profile(profile: Dictionary) -> void:
 	if level < 1:
 		level = 1
 	if experience < 0.0:
+		Logger.warn("PlayerProgression: Clamping negative experience %.1f to 0.0" % experience, "progression")
 		experience = 0.0
 	
 	# Update dependent state
 	_update_xp_to_next()
 	
-	Logger.info("Loaded progression from profile - Level: %d (was %d), XP: %.1f (was %.1f)" % [level, old_level, experience, old_exp], "progression")
+	Logger.info("Loaded progression from profile - Level: %d, XP: %.1f" % [level, experience], "progression")
 	
 	# Emit progression changed
 	_emit_progression_changed()
-
-## Export progression state for saving
-func export_state() -> Dictionary:
-	return {
-		"level": level,
-		"exp": experience,
-		"version": 1  # For future migration compatibility
-	}
 
 ## Check if player has a specific unlock
 func has_unlock(unlock_id: StringName) -> bool:
@@ -178,14 +169,77 @@ func has_unlock(unlock_id: StringName) -> bool:
 
 ## Get current progression state as dictionary
 func get_progression_state() -> Dictionary:
+	# Calculate current level progress for proper XP bar display
+	var current_level_xp: float = 0.0
+	var xp_required_for_current_level: float = 100.0  # Default fallback
+	
+	if xp_curve:
+		if level == 1:
+			# Level 1 - show progress toward level 2
+			current_level_xp = experience
+			var level_2_total_xp: int = xp_curve.get_xp_for_level(2)
+			if level_2_total_xp != -1:
+				xp_required_for_current_level = float(level_2_total_xp)
+			
+			# Debug logging for Level 1
+			Logger.debug("XP Calc - Level 1, Total XP: %.1f, Need for Level 2: %d" % [experience, level_2_total_xp], "progression")
+			Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
+		else:
+			# Level 2+ - show progress within current level
+			var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)  # XP needed for NEXT level
+			var current_level_total_xp: int = xp_curve.get_xp_for_level(level)   # XP needed for CURRENT level
+			
+			if next_level_total_xp != -1:
+				# We're not at max level - show progress toward next level
+				current_level_xp = experience - float(current_level_total_xp)
+				xp_required_for_current_level = float(next_level_total_xp - current_level_total_xp)
+				
+				# Debug logging
+				Logger.debug("XP Calc - Level: %d, Total XP: %.1f, Current Level Total: %d, Next Level Total: %d" % [level, experience, current_level_total_xp, next_level_total_xp], "progression")
+				Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
+				
+				# Ensure values are non-negative
+				if current_level_xp < 0.0:
+					current_level_xp = 0.0
+			else:
+				# Max level reached
+				current_level_xp = 0.0
+				xp_required_for_current_level = 1.0  # Prevent division by zero
+	
 	return {
 		"level": level,
-		"exp": experience,
-		"xp_to_next": xp_to_next,
-		"total_for_level": xp_to_next,  # For UI compatibility
+		"exp": int(current_level_xp),  # Current progress within level (0 to level requirement)
+		"xp_to_next": int(xp_required_for_current_level),  # Total XP required for current level
+		"total_for_level": int(xp_required_for_current_level),  # For UI compatibility
 		"max_level_reached": _max_level_reached
+	}
+
+## Export progression state for character saving (total accumulated experience)
+func export_state() -> Dictionary:
+	return {
+		"level": level,
+		"exp": experience,  # Total accumulated experience, not current level progress
+		"version": 1
 	}
 
 ## Emit progression changed signal with current state
 func _emit_progression_changed() -> void:
-	EventBus.progression_changed.emit(get_progression_state())
+	# Create comprehensive progression data for both UI and character saving
+	var ui_data = get_progression_state()  # Current level progress for UI
+	var save_data = export_state()        # Total accumulated XP for saving
+	
+	var comprehensive_state = {
+		# UI display data (current level progress)
+		"level": ui_data.level,
+		"exp": ui_data.exp,                    # Current progress within level (0 to level requirement)
+		"xp_to_next": ui_data.xp_to_next,      # XP required for current level
+		"total_for_level": ui_data.total_for_level,
+		"max_level_reached": ui_data.max_level_reached,
+		
+		# Character saving data (total accumulated experience)
+		"save_level": save_data.level,
+		"save_exp": save_data.exp,             # Total accumulated experience across all levels
+		"save_version": save_data.version
+	}
+	
+	EventBus.progression_changed.emit(comprehensive_state)

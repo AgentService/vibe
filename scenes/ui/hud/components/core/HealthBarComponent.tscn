@@ -1,0 +1,44 @@
+[gd_scene load_steps=3 format=3 uid="uid://b5ej6al6ld768"]
+
+[ext_resource type="PackedScene" uid="uid://v6sna08o3j3f" path="res://scenes/ui/hud/components/base/BaseHUDComponent.tscn" id="1_base_component"]
+[ext_resource type="Script" uid="uid://r7746n8s58g2" path="res://scenes/ui/hud/components/core/HealthBarComponent.gd" id="2_health_script"]
+
+[node name="HealthBarComponent" instance=ExtResource("1_base_component")]
+custom_minimum_size = Vector2(300, 25)
+script = ExtResource("2_health_script")
+health_bar_style = 0
+show_percentage = false
+show_damage_flash = true
+auto_hide_when_full = false
+component_id = "health_bar"
+
+[node name="HealthProgressBar" type="ProgressBar" parent="." index="0"]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+value = 100.0
+show_percentage = false
+
+[node name="HealthLabel" type="Label" parent="." index="1"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -31.0
+offset_top = -11.5
+offset_right = 31.0
+offset_bottom = 11.5
+grow_horizontal = 2
+grow_vertical = 2
+text = "100/100"
+
+[node name="DamageFlash" type="ColorRect" parent="." index="2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0, 0, 0)
