@@ -208,7 +208,7 @@ animations = [{
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_83bbo"]
-size = Vector2(18, 37)
+size = Vector2(19, 44)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_hitbox"]
 radius = 5.83095
@@ -217,11 +217,13 @@ radius = 5.83095
 script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+position = Vector2(-132, -1)
 sprite_frames = SubResource("SpriteFrames_slime")
 animation = &"walking_east"
+offset = Vector2(132, 1)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(1, -0.5)
+position = Vector2(0.5, -3)
 shape = SubResource("RectangleShape2D_83bbo")
 
 [node name="HitBox" type="Area2D" parent="."]

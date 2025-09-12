@@ -10,6 +10,8 @@ const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowe
 @export var player_type: PlayerTypeScript
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+# Equipment layers for ranger character
+@onready var equipment_layers: Array[AnimatedSprite2D] = []
 var knight_animation_config: AnimationConfig_Type
 var current_animation: String = "idle_down"
 var current_direction: String = "down"  # Track facing direction for animations
@@ -54,8 +56,15 @@ func _ready() -> void:
 	current_animation = "idle_down"
 	current_direction = "down"
 	
+	# Initialize equipment layers for ranger character
+	_setup_equipment_layers()
+	
 	current_health = get_max_health()
 	Logger.info("Player reset: is_dead=%s, health=%d, all state cleared" % [is_dead, current_health], "player")
+	
+	# Ensure equipment layers start with the correct initial animation
+	# This fixes the sync issue where equipment doesn't animate until movement starts
+	call_deferred("_sync_initial_equipment_animation")
 	
 	# Emit initial health signal immediately for UI initialization
 	EventBus.health_changed.emit(float(current_health), float(get_max_health()))
@@ -517,6 +526,17 @@ func _play_animation(anim_name: String) -> void:
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)
+		
+		# Also play on equipment layers for synchronized animation
+		for layer in equipment_layers:
+			if layer.sprite_frames and layer.sprite_frames.has_animation(anim_name):
+				layer.play(anim_name)
+			else:
+				# If equipment layer doesn't have this animation, try to find a fallback
+				var fallback_anim := _find_fallback_animation(layer.sprite_frames, anim_name)
+				if fallback_anim != "":
+					layer.play(fallback_anim)
+		
 		if anim_name == "attack_1":
 			Logger.info("Player: Successfully started playing attack_1 animation", "player")
 	elif not animated_sprite.sprite_frames.has_animation(anim_name):
@@ -596,3 +616,70 @@ func _handle_death_sequence() -> void:
 	UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, {"run_result": death_result})
 
 # Death overlay method removed - no longer blocking result screen buttons
+
+## Setup equipment layers for multi-layer character rendering
+func _setup_equipment_layers() -> void:
+	equipment_layers.clear()
+	
+	# Find all AnimatedSprite2D nodes except the base one
+	for child in get_children():
+		if child is AnimatedSprite2D and child != animated_sprite:
+			equipment_layers.append(child)
+	
+	Logger.info("Found %d equipment layers for synchronization" % equipment_layers.size(), "player")
+
+## Find a fallback animation when equipment layer doesn't have the requested animation
+func _find_fallback_animation(sprite_frames: SpriteFrames, requested_anim: String) -> String:
+	if not sprite_frames:
+		return ""
+	
+	var available_anims = sprite_frames.get_animation_names()
+	if available_anims.is_empty():
+		return ""
+	
+	# Try to find a similar animation based on direction
+	var direction = ""
+	if "_down" in requested_anim:
+		direction = "_down"
+	elif "_left" in requested_anim:
+		direction = "_left" 
+	elif "_right" in requested_anim:
+		direction = "_right"
+	elif "_up" in requested_anim:
+		direction = "_up"
+	
+	# Look for walk or idle animation in same direction
+	for anim in available_anims:
+		if direction != "" and direction in anim and ("walk" in anim or "idle" in anim):
+			return anim
+	
+	# Fallback to first available animation
+	return available_anims[0]
+
+## Sync equipment layers with initial animation on startup
+func _sync_initial_equipment_animation() -> void:
+	# Wait for all nodes to be fully ready
+	if not animated_sprite:
+		return
+	
+	# Get the current animation that the base character is playing
+	var current_base_animation = animated_sprite.animation
+	if current_base_animation == "":
+		current_base_animation = "idle_down"  # Default fallback
+	
+	Logger.info("Syncing equipment layers with initial animation: " + current_base_animation, "player")
+	
+	# Force equipment layers to play the same animation as base character
+	for layer in equipment_layers:
+		if layer and layer.sprite_frames:
+			if layer.sprite_frames.has_animation(current_base_animation):
+				layer.play(current_base_animation)
+				Logger.debug("Equipment layer synced to: " + current_base_animation, "player")
+			else:
+				# Find fallback animation for equipment layer
+				var fallback_anim = _find_fallback_animation(layer.sprite_frames, current_base_animation)
+				if fallback_anim != "":
+					layer.play(fallback_anim)
+					Logger.debug("Equipment layer using fallback: " + fallback_anim, "player")
+	
+	Logger.info("Initial equipment synchronization complete", "player")

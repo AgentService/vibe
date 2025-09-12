@@ -5,9 +5,27 @@ class_name PlayerSpawner
 ## Handles spawning the player at specified spawn points across different scenes.
 ## Used by both Hideout and Arena to maintain consistent player setup.
 
-const PLAYER_SCENE_PATH: String = "res://scenes/arena/Player.tscn"
+# Character scene paths
+const PLAYER_SCENES: Dictionary = {
+	"Knight": "res://scenes/arena/Player.tscn",
+	"Ranger": "res://scenes/arena/PlayerRanger.tscn"
+}
+const DEFAULT_PLAYER_SCENE: String = "res://scenes/arena/Player.tscn"
 
 var player_instance: Node2D
+
+## Get the correct player scene path based on character class
+func _get_player_scene_path() -> String:
+	var current_profile := CharacterManager.get_current()
+	if not current_profile:
+		Logger.warn("No current character profile found, using default player scene", "spawner")
+		return DEFAULT_PLAYER_SCENE
+	
+	var character_class := str(current_profile.clazz)
+	var scene_path: String = PLAYER_SCENES.get(character_class, DEFAULT_PLAYER_SCENE)
+	
+	Logger.info("Using player scene: %s for class: %s" % [scene_path, character_class], "spawner")
+	return scene_path
 
 func spawn_player(spawn_point_id: String, parent_node: Node2D) -> Node2D:
 	"""
@@ -29,10 +47,11 @@ func spawn_player(spawn_point_id: String, parent_node: Node2D) -> Node2D:
 		Logger.error("Spawn point not found: " + spawn_point_id, "spawner")
 		return null
 	
-	# Load and instantiate player
-	var player_scene = load(PLAYER_SCENE_PATH)
+	# Load and instantiate player using character-specific scene
+	var scene_path: String = _get_player_scene_path()
+	var player_scene = load(scene_path)
 	if not player_scene:
-		Logger.error("Failed to load player scene: " + PLAYER_SCENE_PATH, "spawner")
+		Logger.error("Failed to load player scene: " + scene_path, "spawner")
 		return null
 	
 	player_instance = player_scene.instantiate()
@@ -115,10 +134,11 @@ func spawn_at(root: Node, spawn_name: String) -> Node2D:
 		Logger.error("Spawn marker not found: %s" % spawn_name, "PlayerSpawner")
 		return null
 	
-	# Load player scene
-	var player_scene = load(PLAYER_SCENE_PATH)
+	# Load player scene using character-specific path
+	var scene_path: String = _get_player_scene_path()
+	var player_scene = load(scene_path)
 	if not player_scene:
-		Logger.error("Failed to load player scene: " + PLAYER_SCENE_PATH, "PlayerSpawner")
+		Logger.error("Failed to load player scene: " + scene_path, "PlayerSpawner")
 		return null
 	
 	var player: Node2D = player_scene.instantiate()
