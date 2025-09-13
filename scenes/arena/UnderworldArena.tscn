@@ -1,4 +1,4 @@
-[gd_scene load_steps=6 format=3 uid="uid://d0t1kivumd48l"]
+[gd_scene load_steps=6 format=4 uid="uid://d0t1kivumd48l"]
 
 [ext_resource type="Script" uid="uid://b1hrimdv8rdls" path="res://scripts/arena/UnderworldArena.gd" id="1_npj6d"]
 [ext_resource type="Texture2D" uid="uid://2mle0vmaungi" path="res://assets/x-mark-64.png" id="2_s0j7r"]
@@ -47,6 +47,7 @@ sources/0 = SubResource("TileSetAtlasSource_q6of8")
 script = ExtResource("1_npj6d")
 
 [node name="TileMapLayer" type="TileMapLayer" parent="."]
+tile_map_data = PackedByteArray("AAAPAAAAAAAAAAAAAAAPAAEAAAAAAAEAAAAPAAIAAAAAAAIAAAAPAAMAAAAAAAMAAAAQAAAAAAABAAAAAAAQAAEAAAABAAEAAAAQAAIAAAABAAIAAAAQAAMAAAABAAMAAAARAAAAAAACAAAAAAARAAEAAAACAAEAAAARAAIAAAACAAIAAAARAAMAAAACAAMAAAASAAAAAAADAAAAAAASAAEAAAADAAEAAAASAAIAAAADAAIAAAASAAMAAAADAAMAAAA=")
 tile_set = SubResource("TileSet_lscl2")
 
 [node name="Water" type="TileMapLayer" parent="."]
