@@ -70,18 +70,17 @@ func _input(event: InputEvent) -> void:
 func _on_body_entered(body: Node2D) -> void:
 	"""Called when player enters interaction range."""
 	
-	if body.name == "Player":  # Assuming player node is named "Player"
-		player_in_range = true
-		player_reference = body
-		interaction_prompt.visible = true
-		Logger.debug("Player entered MapDevice range: " + map_display_name, "mapdevice")
-		
-		# Emit interaction prompt event
-		EventBus.interaction_prompt_changed.emit({
-			"visible": true,
-			"text": "[" + interaction_key + "] Enter " + map_display_name,
-			"position": global_position
-		})
+	player_in_range = true
+	player_reference = body
+	interaction_prompt.visible = true
+	Logger.debug("Player entered MapDevice range: " + map_display_name, "mapdevice")
+	
+	# Emit interaction prompt event
+	EventBus.interaction_prompt_changed.emit({
+		"visible": true,
+		"text": "[" + interaction_key + "] Enter " + map_display_name,
+		"position": global_position
+	})
 
 func _on_body_exited(body: Node2D) -> void:
 	"""Called when player exits interaction range."""

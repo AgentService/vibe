@@ -58,88 +58,105 @@ func _apply_main_theme() -> void:
 	add_theme_stylebox_override("panel", style_box)
 
 func _apply_ui_theming() -> void:
-	"""Apply MainTheme styling to UI elements without affecting layout"""
+	"""Apply enhanced AAA styling to match integrated AbilityBar theme"""
 	if not ThemeManager or not ThemeManager.current_theme:
 		return
 	
 	var theme = ThemeManager.current_theme
 	
-	# Setup Health Bar theming
+	# Apply enhanced styling to progress bars for visual harmony
+	_apply_enhanced_progress_bar_styling(theme)
+	
+func _apply_enhanced_progress_bar_styling(theme: MainTheme) -> void:
+	"""Apply AAA-quality styling to progress bars matching ability button theme"""
+	
+	# Setup Health Bar with enhanced AAA theming
 	if health_bar:
 		var health_theme := Theme.new()
-		var health_bg := StyleBoxFlat.new()
-		var health_fill := StyleBoxFlat.new()
-		
-		# Health bar background
-		health_bg.bg_color = theme.background_dark
-		health_bg.border_width_left = 1
-		health_bg.border_width_top = 1
-		health_bg.border_width_right = 1
-		health_bg.border_width_bottom = 1
-		health_bg.border_color = theme.border_color
-		health_bg.corner_radius_top_left = 2
-		health_bg.corner_radius_top_right = 2
-		health_bg.corner_radius_bottom_right = 2
-		health_bg.corner_radius_bottom_left = 2
-		
-		# Health bar fill
-		health_fill.bg_color = theme.success_color
-		health_fill.corner_radius_top_left = 2
-		health_fill.corner_radius_top_right = 2
-		health_fill.corner_radius_bottom_right = 2
-		health_fill.corner_radius_bottom_left = 2
+		var health_bg := _create_enhanced_progress_bg("health", theme)
+		var health_fill := _create_enhanced_progress_fill("health", theme)
 		
 		health_theme.set_stylebox("background", "ProgressBar", health_bg)
 		health_theme.set_stylebox("fill", "ProgressBar", health_fill)
 		health_bar.theme = health_theme
 		health_bar.show_percentage = false
 	
-	# Setup XP Bar theming
+	# Setup XP Bar with enhanced AAA theming
 	if xp_bar:
 		var xp_theme := Theme.new()
-		var xp_bg := StyleBoxFlat.new()
-		var xp_fill := StyleBoxFlat.new()
-		
-		# XP bar background
-		xp_bg.bg_color = theme.background_medium
-		xp_bg.border_width_left = 2
-		xp_bg.border_width_right = 2
-		xp_bg.border_width_top = 2
-		xp_bg.border_width_bottom = 2
-		xp_bg.border_color = theme.border_color
-		xp_bg.corner_radius_top_left = 3
-		xp_bg.corner_radius_top_right = 3
-		xp_bg.corner_radius_bottom_left = 3
-		xp_bg.corner_radius_bottom_right = 3
-		
-		# XP bar fill
-		xp_fill.bg_color = theme.primary_color
-		xp_fill.corner_radius_top_left = 2
-		xp_fill.corner_radius_top_right = 2
-		xp_fill.corner_radius_bottom_left = 2
-		xp_fill.corner_radius_bottom_right = 2
+		var xp_bg := _create_enhanced_progress_bg("xp", theme)
+		var xp_fill := _create_enhanced_progress_fill("xp", theme)
 		
 		xp_theme.set_stylebox("background", "ProgressBar", xp_bg)
 		xp_theme.set_stylebox("fill", "ProgressBar", xp_fill)
 		xp_bar.theme = xp_theme
 		xp_bar.show_percentage = false
 	
-	# Setup label styling (colors only, no positioning)
+	# Apply enhanced label styling to match AAA theme
+	_apply_enhanced_label_styling(theme)
+
+func _create_enhanced_progress_bg(bar_type: String, theme: MainTheme) -> StyleBoxFlat:
+	"""Create enhanced background StyleBox for progress bars matching ability button quality"""
+	var style := StyleBoxFlat.new()
+	
+	match bar_type:
+		"health":
+			# Health bar gets darker, more serious background
+			style.bg_color = Color(theme.background_dark.r + 0.02, theme.background_dark.g + 0.02, theme.background_dark.b + 0.02, 0.95)
+			style.border_color = Color(theme.success_color.r * 0.6, theme.success_color.g * 0.6, theme.success_color.b * 0.6, 0.8)
+		"xp":
+			# XP bar gets slightly brighter background
+			style.bg_color = Color(theme.background_medium.r + 0.05, theme.background_medium.g + 0.05, theme.background_medium.b + 0.05, 0.95)
+			style.border_color = Color(theme.primary_color.r * 0.7, theme.primary_color.g * 0.7, theme.primary_color.b * 0.7, 0.8)
+	
+	# Enhanced styling properties
+	style.set_border_width_all(theme.border_width_medium)
+	style.set_corner_radius_all(theme.corner_radius_small)
+	style.border_blend = true
+	style.anti_aliasing = true
+	
+	# Add subtle shadow for depth
+	style.shadow_color = Color(0, 0, 0, 0.4)
+	style.shadow_size = 2
+	style.shadow_offset = Vector2(0, 1)
+	
+	return style
+
+func _create_enhanced_progress_fill(bar_type: String, theme: MainTheme) -> StyleBoxFlat:
+	"""Create enhanced fill StyleBox for progress bars with premium look"""
+	var style := StyleBoxFlat.new()
+	
+	match bar_type:
+		"health":
+			# Health uses enhanced success color with brightness
+			style.bg_color = Color(theme.success_color.r + 0.1, theme.success_color.g + 0.1, theme.success_color.b * 0.9, 1.0)
+		"xp":
+			# XP uses enhanced primary color
+			style.bg_color = Color(theme.primary_color.r + 0.1, theme.primary_color.g + 0.1, theme.primary_color.b + 0.2, 1.0)
+	
+	# Professional corner radius matching ability buttons
+	style.set_corner_radius_all(theme.corner_radius_small - 1)  # Slightly smaller than background for clean look
+	style.anti_aliasing = true
+	
+	return style
+
+func _apply_enhanced_label_styling(theme: MainTheme) -> void:
+	"""Apply enhanced label styling with better shadows and colors"""
 	if health_label:
 		health_label.add_theme_color_override("font_color", theme.text_primary)
-		health_label.add_theme_color_override("font_shadow_color", theme.background_dark)
+		health_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 		health_label.add_theme_constant_override("shadow_offset_x", 1)
 		health_label.add_theme_constant_override("shadow_offset_y", 1)
 	
 	if xp_label:
 		xp_label.add_theme_color_override("font_color", theme.text_primary)
-		xp_label.add_theme_color_override("font_shadow_color", theme.background_dark)
+		xp_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.7))
 		xp_label.add_theme_constant_override("shadow_offset_x", 1)
 		xp_label.add_theme_constant_override("shadow_offset_y", 1)
 	
 	if level_label:
 		level_label.add_theme_color_override("font_color", theme.primary_light)
-		level_label.add_theme_color_override("font_shadow_color", Color.BLACK)
+		level_label.add_theme_color_override("font_shadow_color", Color(0, 0, 0, 0.8))
 		level_label.add_theme_constant_override("shadow_offset_x", 1)
 		level_label.add_theme_constant_override("shadow_offset_y", 1)
 	

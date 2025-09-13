@@ -1,9 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://drg8pj2xm7vkg"]
+[gd_scene load_steps=5 format=3 uid="uid://drg8pj2xm7vkg"]
 
 [ext_resource type="PackedScene" uid="uid://c6m2bj7nxgxtn" path="res://scenes/ui/hud/components/core/RadarComponent.tscn" id="2_radar_component"]
 [ext_resource type="Script" uid="uid://cip182qtipura" path="res://scenes/ui/NewHUD.gd" id="4_new_hud_script"]
 [ext_resource type="PackedScene" uid="uid://c4418k01htn2s" path="res://scenes/ui/hud/PlayerInfoPanel.tscn" id="5_4184w"]
-[ext_resource type="PackedScene" uid="uid://b7j8k3mam2p4q" path="res://scenes/ui/hud/components/core/AbilityBarComponent.tscn" id="6_aroin"]
 [ext_resource type="PackedScene" uid="uid://c7p38q5tnbn0y" path="res://scenes/ui/hud/components/core/KeybindingsComponent.tscn" id="6_keybindings_component"]
 
 [node name="NewHUD" type="Control"]
@@ -35,13 +34,6 @@ visible = false
 layout_mode = 1
 component_id = "keybindings"
 
-[node name="AbilityBar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("6_aroin")]
-custom_minimum_size = Vector2(0, 0)
-offset_left = 456.0
-offset_top = 664.0
-offset_right = 456.0
-offset_bottom = 664.0
-
 [node name="PlayerInfoPanel" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("5_4184w")]
 layout_mode = 1
 anchors_preset = 7
@@ -49,10 +41,10 @@ anchor_left = 0.5
 anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
-offset_left = 12.0
-offset_top = -70.0
-offset_right = 12.0
-offset_bottom = -70.0
+offset_left = 4.0
+offset_top = -75.0
+offset_right = 4.0
+offset_bottom = -75.0
 grow_horizontal = 2
 grow_vertical = 0
 

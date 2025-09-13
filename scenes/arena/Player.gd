@@ -10,6 +10,8 @@ const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowe
 @export var player_type: PlayerTypeScript
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
+# Equipment layers for ranger character
+@onready var equipment_layers: Array[AnimatedSprite2D] = []
 var knight_animation_config: AnimationConfig_Type
 var current_animation: String = "idle_down"
 var current_direction: String = "down"  # Track facing direction for animations
@@ -25,6 +27,14 @@ var attack_timer: float = 0.0
 var is_hurt: bool = false
 var hurt_timer: float = 0.0
 var hurt_duration: float = 0.6  # Duration to play hurt animation
+
+# New ability state variables
+var is_bow_attacking: bool = false
+var bow_attack_timer: float = 0.0
+var is_magic_casting: bool = false  
+var magic_cast_timer: float = 0.0
+var is_spear_attacking: bool = false
+var spear_attack_timer: float = 0.0
 
 # Registration state management
 var _registration_in_progress: bool = false
@@ -45,17 +55,32 @@ func _ready() -> void:
 	is_hurt = false
 	_registration_in_progress = false
 	
+	# Reset new ability states
+	is_bow_attacking = false
+	is_magic_casting = false
+	is_spear_attacking = false
+	
 	# Reset timers
 	roll_timer = 0.0
 	attack_timer = 0.0
 	hurt_timer = 0.0
+	bow_attack_timer = 0.0
+	magic_cast_timer = 0.0
+	spear_attack_timer = 0.0
 	
 	# Reset animation state
 	current_animation = "idle_down"
 	current_direction = "down"
 	
+	# Initialize equipment layers for ranger character
+	_setup_equipment_layers()
+	
 	current_health = get_max_health()
 	Logger.info("Player reset: is_dead=%s, health=%d, all state cleared" % [is_dead, current_health], "player")
+	
+	# Ensure equipment layers start with the correct initial animation
+	# This fixes the sync issue where equipment doesn't animate until movement starts
+	call_deferred("_sync_initial_equipment_animation")
 	
 	# Emit initial health signal immediately for UI initialization
 	EventBus.health_changed.emit(float(current_health), float(get_max_health()))
@@ -113,6 +138,16 @@ func get_attack_animation_duration() -> float:
 		return player_type.attack_animation_duration
 	return 0.4  # Fallback value
 
+# New ability duration getters
+func get_bow_attack_duration() -> float:
+	return 0.5  # Fast ranged attack
+
+func get_magic_cast_duration() -> float:
+	return 0.6  # Slightly longer for casting
+
+func get_spear_attack_duration() -> float:
+	return 0.5  # Similar to melee
+
 func _setup_collision() -> void:
 	var collision_shape := $CollisionShape2D
 	var circle_shape := CircleShape2D.new()
@@ -151,15 +186,18 @@ func _setup_editor_animation_fallback() -> void:
 
 func _physics_process(delta: float) -> void:
 	_handle_roll_input()
+	_handle_new_ability_inputs()
 	_update_roll(delta)
 	_update_attack(delta)
+	_update_new_abilities(delta)
 	_update_hurt(delta)
 	_handle_movement(delta)
 	_handle_facing()
 
 func _handle_roll_input() -> void:
-	if Input.is_action_just_pressed("ui_accept") and not is_rolling:
-		_start_roll()
+	if Input.is_action_just_pressed("ui_accept") and not is_rolling and not _is_any_ability_active():
+		if _is_ability_ready("dash"):
+			_start_roll()
 
 func _start_roll() -> void:
 	# Capture current movement direction for dash
@@ -186,6 +224,9 @@ func _start_roll() -> void:
 	roll_timer = 0.0
 	invulnerable = true
 	
+	# Start cooldown for dash ability
+	_start_ability_cooldown("dash", 1.0)
+	
 	# Get roll direction for animation
 	var roll_anim_direction := _get_direction_from_vector(roll_direction)
 	_play_animation("roll_" + roll_anim_direction)
@@ -200,9 +241,53 @@ func _update_roll(delta: float) -> void:
 func _update_attack(delta: float) -> void:
 	if is_attacking:
 		attack_timer += delta
-		if attack_timer >= get_attack_animation_duration():
+		if attack_timer >= 0.3:  # Match the ability bar cooldown
 			is_attacking = false
 			attack_timer = 0.0
+
+# New ability input handling
+func _handle_new_ability_inputs() -> void:
+	# Melee attack (LMB) - now uses swing timer instead of cooldown
+	if Input.is_action_just_pressed("cast_melee") and not is_attacking and not _is_any_ability_active():
+		_handle_melee_attack()
+	
+	# Bow attack (RMB)
+	if Input.is_action_just_pressed("cast_bow") and not is_bow_attacking and not _is_any_ability_active():
+		if _is_ability_ready("bow_attack"):
+			_handle_bow_attack()
+	
+	# Magic cast (Q key)
+	if Input.is_action_just_pressed("cast_magic") and not is_magic_casting and not _is_any_ability_active():
+		if _is_ability_ready("magic_cast"):
+			_handle_magic_cast()
+	
+	# Spear attack (E key)
+	if Input.is_action_just_pressed("cast_spear") and not is_spear_attacking and not _is_any_ability_active():
+		if _is_ability_ready("spear_attack"):
+			_handle_spear_attack()
+
+# Update new ability timers
+func _update_new_abilities(delta: float) -> void:
+	# Update bow attack
+	if is_bow_attacking:
+		bow_attack_timer += delta
+		if bow_attack_timer >= get_bow_attack_duration():
+			is_bow_attacking = false
+			bow_attack_timer = 0.0
+	
+	# Update magic cast
+	if is_magic_casting:
+		magic_cast_timer += delta
+		if magic_cast_timer >= get_magic_cast_duration():
+			is_magic_casting = false
+			magic_cast_timer = 0.0
+	
+	# Update spear attack
+	if is_spear_attacking:
+		spear_attack_timer += delta
+		if spear_attack_timer >= get_spear_attack_duration():
+			is_spear_attacking = false
+			spear_attack_timer = 0.0
 
 func _update_hurt(delta: float) -> void:
 	if is_hurt:
@@ -210,6 +295,108 @@ func _update_hurt(delta: float) -> void:
 		if hurt_timer >= hurt_duration:
 			is_hurt = false
 			hurt_timer = 0.0
+
+# Helper function to check if any ability is currently active
+func _is_any_ability_active() -> bool:
+	return is_attacking or is_bow_attacking or is_magic_casting or is_spear_attacking or is_rolling or is_hurt
+
+# Helper function to check if an ability is ready (not on cooldown)
+func _is_ability_ready(ability_id: String) -> bool:
+	# Try to find the AbilityBarComponent in the scene tree
+	var ability_bar = get_tree().get_first_node_in_group("ability_bar")
+	if ability_bar and ability_bar.has_method("is_ability_on_cooldown"):
+		return not ability_bar.is_ability_on_cooldown(ability_id)
+	return true  # If no ability bar found, allow ability use
+
+# Start cooldown for an ability
+func _start_ability_cooldown(ability_id: String, cooldown_time: float) -> void:
+	var ability_bar = get_tree().get_first_node_in_group("ability_bar")
+	if ability_bar and ability_bar.has_method("start_ability_cooldown"):
+		ability_bar.start_ability_cooldown(ability_id, cooldown_time)
+		Logger.debug("Player: Successfully started cooldown for %s (%.1fs)" % [ability_id, cooldown_time], "player")
+	else:
+		Logger.warn("Player: Could not find ability_bar to start cooldown for %s" % ability_id, "player")
+
+# New ability handler methods
+func _handle_melee_attack() -> void:
+	Logger.info("Player: Melee attack triggered - starting swing timer", "player")
+	is_attacking = true
+	attack_timer = 0.0
+	
+	# Emit swing timer start signal instead of cooldown
+	EventBus.melee_swing_started.emit(0.3)  # 0.3s swing duration
+	Logger.debug("Player: Started melee swing timer (0.3s)", "player")
+	
+	# Get attack direction from mouse position
+	var attack_direction := _get_attack_direction()
+	_play_animation("attack_" + attack_direction)
+	
+	# Emit to existing melee system
+	if EventBus.has_signal("melee_attack_started"):
+		EventBus.melee_attack_started.emit({
+			"player_pos": global_position,
+			"target_pos": get_global_mouse_position()
+		})
+
+func _handle_bow_attack() -> void:
+	Logger.info("Player: Bow attack triggered", "player")
+	is_bow_attacking = true
+	bow_attack_timer = 0.0
+	
+	# Get attack direction from mouse position
+	var attack_direction := _get_attack_direction()
+	_play_animation("bow_" + attack_direction)
+	
+	# Start cooldown directly with ability bar
+	_start_ability_cooldown("bow_attack", 0.3)
+	
+	# Emit EventBus signal
+	if EventBus.has_signal("bow_attack_started"):
+		EventBus.bow_attack_started.emit({
+			"player_pos": global_position,
+			"direction": attack_direction,
+			"target_pos": get_global_mouse_position()
+		})
+
+func _handle_magic_cast() -> void:
+	Logger.info("Player: Magic cast triggered", "player")
+	is_magic_casting = true
+	magic_cast_timer = 0.0
+	
+	# Get attack direction from mouse position
+	var attack_direction := _get_attack_direction()
+	_play_animation("magic_" + attack_direction)
+	
+	# Start cooldown directly with ability bar
+	_start_ability_cooldown("magic_cast", 1.0)
+	
+	# Emit EventBus signal
+	if EventBus.has_signal("magic_cast_started"):
+		EventBus.magic_cast_started.emit({
+			"player_pos": global_position,
+			"direction": attack_direction,
+			"target_pos": get_global_mouse_position()
+		})
+
+func _handle_spear_attack() -> void:
+	Logger.info("Player: Spear attack triggered", "player")
+	is_spear_attacking = true
+	spear_attack_timer = 0.0
+	
+	# Get attack direction from mouse position
+	var attack_direction := _get_attack_direction()
+	_play_animation("spear_" + attack_direction)
+	
+	# Start cooldown directly with ability bar
+	_start_ability_cooldown("spear_attack", 0.5)
+	
+	# Emit EventBus signal
+	if EventBus.has_signal("spear_attack_started"):
+		EventBus.spear_attack_started.emit({
+			"player_pos": global_position,
+			"direction": attack_direction,
+			"target_pos": get_global_mouse_position()
+		})
 
 func _handle_movement(_delta: float) -> void:
 	var input_vector: Vector2 = Vector2.ZERO
@@ -247,13 +434,13 @@ func _handle_movement(_delta: float) -> void:
 	elif input_vector != Vector2.ZERO:
 		input_vector = input_vector.normalized()
 		velocity = input_vector * get_move_speed()
-		# Don't override attack or hurt animation with run animation
-		if not is_attacking and not is_hurt:
+		# Don't override any ability animations with run animation
+		if not _is_any_ability_active():
 			_play_animation("run_" + current_direction)
 	else:
 		velocity = Vector2.ZERO
-		# Don't override attack or hurt animation with idle animation
-		if not is_attacking and not is_hurt:
+		# Don't override any ability animations with idle animation
+		if not _is_any_ability_active():
 			_play_animation("idle_" + current_direction)
 	
 	move_and_slide()
@@ -517,6 +704,17 @@ func _play_animation(anim_name: String) -> void:
 	if current_animation != anim_name and animated_sprite.sprite_frames.has_animation(anim_name):
 		current_animation = anim_name
 		animated_sprite.play(anim_name)
+		
+		# Also play on equipment layers for synchronized animation
+		for layer in equipment_layers:
+			if layer.sprite_frames and layer.sprite_frames.has_animation(anim_name):
+				layer.play(anim_name)
+			else:
+				# If equipment layer doesn't have this animation, try to find a fallback
+				var fallback_anim := _find_fallback_animation(layer.sprite_frames, anim_name)
+				if fallback_anim != "":
+					layer.play(fallback_anim)
+		
 		if anim_name == "attack_1":
 			Logger.info("Player: Successfully started playing attack_1 animation", "player")
 	elif not animated_sprite.sprite_frames.has_animation(anim_name):
@@ -596,3 +794,70 @@ func _handle_death_sequence() -> void:
 	UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, {"run_result": death_result})
 
 # Death overlay method removed - no longer blocking result screen buttons
+
+## Setup equipment layers for multi-layer character rendering
+func _setup_equipment_layers() -> void:
+	equipment_layers.clear()
+	
+	# Find all AnimatedSprite2D nodes except the base one
+	for child in get_children():
+		if child is AnimatedSprite2D and child != animated_sprite:
+			equipment_layers.append(child)
+	
+	Logger.info("Found %d equipment layers for synchronization" % equipment_layers.size(), "player")
+
+## Find a fallback animation when equipment layer doesn't have the requested animation
+func _find_fallback_animation(sprite_frames: SpriteFrames, requested_anim: String) -> String:
+	if not sprite_frames:
+		return ""
+	
+	var available_anims = sprite_frames.get_animation_names()
+	if available_anims.is_empty():
+		return ""
+	
+	# Try to find a similar animation based on direction
+	var direction = ""
+	if "_down" in requested_anim:
+		direction = "_down"
+	elif "_left" in requested_anim:
+		direction = "_left" 
+	elif "_right" in requested_anim:
+		direction = "_right"
+	elif "_up" in requested_anim:
+		direction = "_up"
+	
+	# Look for walk or idle animation in same direction
+	for anim in available_anims:
+		if direction != "" and direction in anim and ("walk" in anim or "idle" in anim):
+			return anim
+	
+	# Fallback to first available animation
+	return available_anims[0]
+
+## Sync equipment layers with initial animation on startup
+func _sync_initial_equipment_animation() -> void:
+	# Wait for all nodes to be fully ready
+	if not animated_sprite:
+		return
+	
+	# Get the current animation that the base character is playing
+	var current_base_animation = animated_sprite.animation
+	if current_base_animation == "":
+		current_base_animation = "idle_down"  # Default fallback
+	
+	Logger.info("Syncing equipment layers with initial animation: " + current_base_animation, "player")
+	
+	# Force equipment layers to play the same animation as base character
+	for layer in equipment_layers:
+		if layer and layer.sprite_frames:
+			if layer.sprite_frames.has_animation(current_base_animation):
+				layer.play(current_base_animation)
+				Logger.debug("Equipment layer synced to: " + current_base_animation, "player")
+			else:
+				# Find fallback animation for equipment layer
+				var fallback_anim = _find_fallback_animation(layer.sprite_frames, current_base_animation)
+				if fallback_anim != "":
+					layer.play(fallback_anim)
+					Logger.debug("Equipment layer using fallback: " + fallback_anim, "player")
+	
+	Logger.info("Initial equipment synchronization complete", "player")
