@@ -6,7 +6,8 @@
 script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
 start_mode = "arena"
-skip_main_menu = true
-map_scene = "res://scenes/arena/Arena.tscn"
+skip_main_menu = false
+arena_selection = "Underworld Arena"
+custom_arena_path = ""
 character_selection = "auto"
 character_id = &""

@@ -59,8 +59,6 @@ func handle_auto_attack() -> void:
 
 # Handle melee attack started signal from MeleeSystem
 func _on_melee_attack_signal(player_pos: Vector2, target_pos: Vector2) -> void:
-	Logger.info("PlayerAttackHandler: Received melee attack signal, bridging to EventBus", "player")
-	
 	# Show visual effects
 	show_melee_cone_effect(player_pos, target_pos)
 	

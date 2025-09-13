@@ -7,7 +7,12 @@ class_name DebugConfig
 @export var debug_panels_enabled: bool = false  # Default: debug panels disabled for performance
 @export_enum("menu", "arena", "hideout", "map", "map_test") var start_mode: String = "menu"
 @export var skip_main_menu: bool = false
-@export var map_scene: String = ""
+
+@export_group("Arena Selection")
+@export_enum("Default Arena", "Underworld Arena", "Custom Path") var arena_selection: String = "Default Arena"
+@export var custom_arena_path: String = ""  # Used when arena_selection is "Custom Path"
+
+@export_group("Character Selection")
 @export_enum("auto", "custom_id", "create_new") var character_selection: String = "auto"
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
@@ -16,14 +21,30 @@ func _init(
 	p_debug_panels_enabled: bool = false,
 	p_start_mode: String = "arena", 
 	p_skip_main_menu: bool = false,
-	p_map_scene: String = "",
+	p_arena_selection: String = "Default Arena",
 	p_character_selection: String = "auto"
 ) -> void:
 	debug_panels_enabled = p_debug_panels_enabled
 	start_mode = p_start_mode
 	skip_main_menu = p_skip_main_menu
-	map_scene = p_map_scene
+	arena_selection = p_arena_selection
 	character_selection = p_character_selection
+
+func get_arena_scene_path() -> String:
+	"""Get the arena scene path based on the selected arena."""
+	match arena_selection:
+		"Default Arena":
+			return "res://scenes/arena/Arena.tscn"
+		"Underworld Arena":
+			return "res://scenes/arena/UnderworldArena.tscn"
+		"Custom Path":
+			if custom_arena_path.is_empty():
+				Logger.warn("Debug: Custom arena path is empty, falling back to default", "debug")
+				return "res://scenes/arena/Arena.tscn"
+			return custom_arena_path
+		_:
+			Logger.warn("Debug: Unknown arena selection '%s', using default" % arena_selection, "debug")
+			return "res://scenes/arena/Arena.tscn"
 
 func get_debug_character_id() -> StringName:
 	"""Get the character ID to use for debug mode, supporting auto-selection."""

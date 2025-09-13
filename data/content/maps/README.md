@@ -70,7 +70,50 @@ Map organization for the vibe game. Supports both quick prototyping and systemat
 
 Maps load via `ArenaSystem.gd` - currently loads basic bounds from `.tres`, will be extended to load full map scenes.
 
+### MapConfig Resource Schema
+
+New `MapConfig.gd` resource class provides structured arena configuration:
+
+```gdscript
+# Basic Information
+map_id: StringName              # Unique identifier
+display_name: String            # Human-readable name
+description: String             # Brief description
+
+# Visual Configuration  
+theme_tags: Array[StringName]   # Theme tags (e.g., "underworld", "forest")
+ambient_light_color: Color      # Base ambient lighting
+ambient_light_energy: float    # Ambient light intensity
+background_music: AudioStream   # Background music
+
+# Gameplay Configuration
+arena_bounds_radius: float      # Arena boundary radius
+spawn_radius: float             # Enemy spawn radius
+player_spawn_position: Vector2  # Player spawn offset
+
+# Spawning Configuration
+spawn_zones: Array[Dictionary]  # Named spawn zones with weights
+boss_spawn_positions: Array[Vector2]  # Boss spawn locations
+max_concurrent_enemies: int     # Max enemies alive
+
+# Environmental Effects
+has_environmental_hazards: bool # Enable hazards/damage
+weather_effects: Array[StringName]  # Weather effects
+special_mechanics: Array[StringName]  # Special mechanics
+
+# Future Expansion
+tier_multipliers: Dictionary    # Future tier scaling
+modifier_support: Array[StringName]  # Future modifier system
+custom_properties: Dictionary   # Extensible custom data
+```
+
+### Example Configuration
+
+See `underworld_config.tres` for a complete example with volcanic theme, spawn zones, and environmental hazards.
+
 ## Current Status
 
 **✅ Folder structure created**
-**⏳ Next**: Open Arena.tscn → Add TileMap → Start prototyping
+**✅ MapConfig resource system implemented**
+**✅ UnderworldArena example created**
+**⏳ Next**: Follow UNDERWORLD_SETUP_GUIDE.md to create your first custom arena

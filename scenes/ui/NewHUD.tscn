@@ -28,6 +28,8 @@ mouse_filter = 2
 [node name="EnemyRadar" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("2_radar_component")]
 custom_minimum_size = Vector2(0, 0)
 layout_mode = 1
+offset_left = -146.0
+offset_right = 4.0
 
 [node name="KeybindingsDisplay" parent="Layer1_PrimaryHUD/GameUI" instance=ExtResource("6_keybindings_component")]
 visible = false

@@ -128,6 +128,16 @@ func _resolve_map_path(map_id: String) -> String:
 	"""
 	match map_id:
 		"arena", "default":
+			# Check debug config for arena selection
+			var debug_config_path = "res://config/debug.tres"
+			if ResourceLoader.exists(debug_config_path):
+				var debug_config = load(debug_config_path) as DebugConfig
+				if debug_config and debug_config.has_method("get_arena_scene_path"):
+					var arena_path = debug_config.get_arena_scene_path()
+					Logger.info("SceneTransitionManager: Using debug arena selection: %s" % arena_path, "transition")
+					return arena_path
+			
+			# Fallback to default arena
 			return "res://scenes/arena/Arena.tscn"
 		"hideout":
 			return "res://scenes/core/Hideout.tscn"

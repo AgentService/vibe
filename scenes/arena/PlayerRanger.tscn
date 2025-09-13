@@ -2143,7 +2143,7 @@ autoplay = "idle_down"
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
 position = Vector2(-19, 29)
-energy = 0.87
+energy = 0.0
 shadow_enabled = true
 texture = ExtResource("4_66fk3")
 texture_scale = 2.03
