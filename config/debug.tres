@@ -5,8 +5,8 @@
 [resource]
 script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
-start_mode = "menu"
-skip_main_menu = false
+start_mode = "arena"
+skip_main_menu = true
 map_scene = "res://scenes/arena/Arena.tscn"
 character_selection = "auto"
 character_id = &""
