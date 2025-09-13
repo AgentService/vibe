@@ -485,6 +485,7 @@ func _register_console_commands() -> void:
 	# Register display/performance commands
 	LimboConsole.register_command(cmd_display_mode, "display_mode", "Set display mode for high refresh rate gaming (60hz, 144hz, 240hz, uncapped)")
 	LimboConsole.register_command(cmd_fps_info, "fps_info", "Show current FPS and display settings")
+	LimboConsole.register_command(cmd_toggle_always_on_top, "always_on_top", "Toggle window always on top")
 	
 	# TODO: Add session management commands after SessionManager is stable
 	# Register session management commands
@@ -499,6 +500,14 @@ func _set_default_display_mode() -> void:
 	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
 	Engine.max_fps = 144
 	Logger.info("Default display mode set to 144Hz (VSync disabled)", "debug")
+	
+	# Try setting always on top using window property
+	set_always_on_top(true)
+
+## Set window always on top using get_window() approach
+func set_always_on_top(input: bool) -> void:
+	get_window().always_on_top = input
+	Logger.info("Set window always_on_top to: %s (current: %s)" % [input, get_window().always_on_top], "debug")
 
 ## Console command: Show damage queue statistics
 func cmd_damage_queue_stats() -> void:
@@ -580,6 +589,12 @@ func cmd_fps_info() -> void:
 	LimboConsole.info("Max FPS Limit: %s" % str(max_fps))
 	LimboConsole.info("VSync Mode: %s" % vsync_text)
 	LimboConsole.info("Window Mode: %s" % ("Fullscreen" if DisplayServer.window_get_mode() == DisplayServer.WINDOW_MODE_FULLSCREEN else "Windowed"))
+
+## Console command: Toggle always on top
+func cmd_toggle_always_on_top() -> void:
+	var current_state = get_window().always_on_top
+	set_always_on_top(not current_state)
+	LimboConsole.info("Always on top toggled: %s → %s" % [current_state, get_window().always_on_top])
 
 ## Performance Optimization Methods
 
