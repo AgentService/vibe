@@ -56,6 +56,12 @@ data/
 - `default_player.tres` - Default player configuration  
 - `unlocks.tres` - Player progression unlocks
 
+### Map Configurations
+- `maps/` - Arena and map configurations
+  - `underworld_config.tres` - Underworld arena configuration (MapConfig)
+  - `tilesets/` - TileSet resources for map building
+  - `UNDERWORLD_SETUP_GUIDE.md` - Setup instructions for underworld arena
+
 ## Flat Configuration Files
 
 **Single-file configurations for simplified access:**

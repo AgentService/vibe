@@ -1,0 +1,53 @@
+[gd_resource type="Resource" script_class="MapConfig" load_steps=2 format=3 uid="uid://bk74rb8j8bum0"]
+
+[ext_resource type="Script" uid="uid://8xo3r4641lup" path="res://scripts/resources/MapConfig.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+map_id = &"underworld_arena"
+display_name = "Underworld Arena"
+description = "A hellish arena carved from volcanic rock, filled with molten hazards and demonic energy."
+theme_tags = Array[StringName]([&"underworld", &"volcanic", &"demonic", &"dark"])
+ambient_light_color = Color(0.8, 0.3, 0.2, 1)
+ambient_light_energy = 0.25
+arena_bounds_radius = 600.0
+spawn_radius = 500.0
+player_spawn_position = Vector2(0, 0)
+spawn_zones = Array[Dictionary]([{
+"name": "north_cavern",
+"position": Vector2(0, -400),
+"radius": 80.0,
+"weight": 1.0
+}, {
+"name": "south_cavern",
+"position": Vector2(0, 400),
+"radius": 80.0,
+"weight": 1.0
+}, {
+"name": "east_tunnel",
+"position": Vector2(400, 0),
+"radius": 60.0,
+"weight": 0.8
+}, {
+"name": "west_tunnel",
+"position": Vector2(-400, 0),
+"radius": 60.0,
+"weight": 0.8
+}, {
+"name": "center_pit",
+"position": Vector2(0, 0),
+"radius": 40.0,
+"weight": 0.5
+}])
+boss_spawn_positions = Array[Vector2]([Vector2(0, -300), Vector2(300, 200), Vector2(-300, 200)])
+max_concurrent_enemies = 60
+has_environmental_hazards = true
+weather_effects = Array[StringName]([&"heat_haze", &"ember_particles"])
+special_mechanics = Array[StringName]([&"lava_pits", &"fire_resistance_required"])
+tier_multipliers = {}
+modifier_support = Array[StringName]([])
+custom_properties = {
+"fire_resistance_bonus": 0.3,
+"lava_damage_per_second": 15.0,
+"spawn_effect_variant": "hellfire"
+}

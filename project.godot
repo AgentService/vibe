@@ -47,7 +47,9 @@ HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
 
 window/size/viewport_width=1080
 window/size/viewport_height=720
-window/size/initial_position_type=2
+window/size/initial_position_type=3
+window/size/initial_screen=2
+window/size/borderless=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 window/vsync/vsync_mode=0

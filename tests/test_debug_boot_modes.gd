@@ -61,7 +61,7 @@ func test_arena_boot_mode():
 	# Create debug config for arena mode
 	var debug_config = DebugConfig.new()
 	debug_config.start_mode = "arena"
-	debug_config.map_scene = "res://scenes/arena/Arena.tscn"
+	debug_config.arena_selection = "Default Arena"
 	
 	# Load arena scene
 	var arena_scene = load("res://scenes/arena/Arena.tscn")

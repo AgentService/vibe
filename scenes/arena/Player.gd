@@ -36,6 +36,9 @@ var magic_cast_timer: float = 0.0
 var is_spear_attacking: bool = false
 var spear_attack_timer: float = 0.0
 
+# Attack speed system variables
+var last_melee_attack_time: float = 0.0
+
 # Registration state management
 var _registration_in_progress: bool = false
 
@@ -67,6 +70,7 @@ func _ready() -> void:
 	bow_attack_timer = 0.0
 	magic_cast_timer = 0.0
 	spear_attack_timer = 0.0
+	last_melee_attack_time = 0.0
 	
 	# Reset animation state
 	current_animation = "idle_down"
@@ -147,6 +151,21 @@ func get_magic_cast_duration() -> float:
 
 func get_spear_attack_duration() -> float:
 	return 0.5  # Similar to melee
+
+# Attack speed system functions
+func get_melee_attack_interval() -> float:
+	"""Get the time interval between melee attacks based on balance config."""
+	var attacks_per_second: int = BalanceDB.get_melee_value("attack_speed") as int
+	if attacks_per_second <= 0:
+		Logger.warn("Invalid attack_speed in balance config, using fallback", "player")
+		return 0.5  # Fallback to 2 attacks per second
+	return 1.0 / float(attacks_per_second)
+
+func _can_melee_attack() -> bool:
+	"""Check if enough time has passed since the last melee attack."""
+	var current_time = Time.get_ticks_msec() / 1000.0
+	var time_since_last_attack = current_time - last_melee_attack_time
+	return time_since_last_attack >= get_melee_attack_interval()
 
 func _setup_collision() -> void:
 	var collision_shape := $CollisionShape2D
@@ -247,8 +266,8 @@ func _update_attack(delta: float) -> void:
 
 # New ability input handling
 func _handle_new_ability_inputs() -> void:
-	# Melee attack (LMB) - now uses swing timer instead of cooldown
-	if Input.is_action_just_pressed("cast_melee") and not is_attacking and not _is_any_ability_active():
+	# Melee attack (LMB) - now uses swing timer and attack speed timing
+	if Input.is_action_just_pressed("cast_melee") and not _is_any_other_ability_active() and _can_melee_attack():
 		_handle_melee_attack()
 	
 	# Bow attack (RMB)
@@ -300,6 +319,11 @@ func _update_hurt(delta: float) -> void:
 func _is_any_ability_active() -> bool:
 	return is_attacking or is_bow_attacking or is_magic_casting or is_spear_attacking or is_rolling or is_hurt
 
+# Helper function to check if any non-melee abilities are currently active
+func _is_any_other_ability_active() -> bool:
+	"""Check if any non-melee abilities are currently active."""
+	return is_bow_attacking or is_magic_casting or is_spear_attacking or is_rolling or is_hurt
+
 # Helper function to check if an ability is ready (not on cooldown)
 func _is_ability_ready(ability_id: String) -> bool:
 	# Try to find the AbilityBarComponent in the scene tree
@@ -319,13 +343,14 @@ func _start_ability_cooldown(ability_id: String, cooldown_time: float) -> void:
 
 # New ability handler methods
 func _handle_melee_attack() -> void:
-	Logger.info("Player: Melee attack triggered - starting swing timer", "player")
+	# Update attack timing
+	last_melee_attack_time = Time.get_ticks_msec() / 1000.0
+	
 	is_attacking = true
 	attack_timer = 0.0
 	
 	# Emit swing timer start signal instead of cooldown
 	EventBus.melee_swing_started.emit(0.3)  # 0.3s swing duration
-	Logger.debug("Player: Started melee swing timer (0.3s)", "player")
 	
 	# Get attack direction from mouse position
 	var attack_direction := _get_attack_direction()

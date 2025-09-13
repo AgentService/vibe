@@ -456,7 +456,6 @@ func _on_ability_cooldown_updated(ability_id: String, remaining_time: float) -> 
 
 func _on_melee_swing_started(duration: float) -> void:
 	start_swing_timer("primary_attack", duration)
-	Logger.debug("AbilityBar: Started swing timer for primary_attack (%.1fs)" % duration, "ui")
 
 func _on_ability_button_pressed(ability_index: int) -> void:
 	if ability_index < _abilities.size():

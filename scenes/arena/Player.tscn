@@ -1053,7 +1053,7 @@ player_type = ExtResource("2_jkhsn")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 scale = Vector2(2, 2)
 sprite_frames = SubResource("SpriteFrames_jkhsn")
-animation = &"hurt_up"
+animation = &"hurt_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 visible = false
