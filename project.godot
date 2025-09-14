@@ -48,14 +48,18 @@ HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
 window/size/viewport_width=1080
 window/size/viewport_height=720
 window/size/initial_position_type=3
-window/size/initial_screen=3
-window/stretch/mode="canvas_items"
-window/stretch/aspect="expand"
+window/size/initial_position=Vector2i(1425, 0)
+window/size/initial_screen=1
+window/stretch/mode="viewport"
 window/vsync/vsync_mode=0
 
 [editor_plugins]
 
 enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg")
+
+[filesystem]
+
+import/fbx2gltf/enabled=false
 
 [input]
 
