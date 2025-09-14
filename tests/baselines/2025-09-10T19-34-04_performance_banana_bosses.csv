@@ -1,0 +1,2 @@
+timestamp,duration_seconds,total_frames,average_fps,min_fps,fps_stability,frame_time_95th_percentile,initial_memory_mb,peak_memory_mb,memory_growth_mb,test_passed
+2025-09-10T19:34:04,60.01,8262,144.60,6.85,99.84,8.33,205.29,483.82,278.53,FAIL

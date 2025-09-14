@@ -44,12 +44,10 @@ dist/
 *~
 
 # Claude Code local settings
-.claude/
+
 
 # Obsidian notes
-.obsidian/
+
 *.uid
 
 # Large sprite asset packages
-assets/sprites/
-tests/baselines/*

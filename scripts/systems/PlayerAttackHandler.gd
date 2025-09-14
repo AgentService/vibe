@@ -115,10 +115,19 @@ func show_melee_cone_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	cone_polygon.modulate = visual_config.cone_color
 	cone_polygon.modulate.a = visual_config.max_opacity
 	
-	# Fade out based on config
+	# Kill any existing tween to allow overlapping attacks
+	if cone_polygon.has_method("get_tween"):
+		var existing_tween = cone_polygon.get_tween()
+		if existing_tween:
+			existing_tween.kill()
+	
+	# Fade out based on config - allow interruption for overlapping attacks
 	var tween = create_tween()
+	tween.set_parallel(true)  # Allow multiple tweens to run simultaneously
 	tween.tween_property(cone_polygon, "modulate:a", 0.0, visual_config.fade_duration)
 	tween.tween_callback(func(): 
 		if cone_polygon and is_instance_valid(cone_polygon):
-			cone_polygon.visible = false
+			# Only hide if alpha is actually 0 (not interrupted by new attack)
+			if cone_polygon.modulate.a <= 0.01:
+				cone_polygon.visible = false
 	)

@@ -108,7 +108,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
-radius = 4.0
+radius = 9.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(14, 15)
@@ -122,7 +122,6 @@ sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-visible = false
 shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
@@ -130,7 +129,6 @@ visible = false
 position = Vector2(-1, -8.5)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-visible = false
 position = Vector2(1, 8.5)
 shape = SubResource("RectangleShape2D_737yx")
 
