@@ -1,0 +1,9 @@
+Hello, this text will explain how to use the files inside. First and foremost, I do recommend that you use the PSD files, which can be opened with Photoshop; all the layers are already organized. If you don't have it, I will explain below how to organize the layers.
+
+All the parts of the character spritesheet have an intuitive template, which, with the help of any simple Picture editing tools, you will find very simple to put everything together. Follow the steps:
+1- Open a Skin file of choice; this will be the base.
+2- Set the grid of the editing tools to 48x48 pixels (or 80 pixels for the spear).
+3- Drag and drop each file to its respective space. (Ex: Sword to the sword spot, etc)
+4- The sequence of the layers must be the following, from the highest to the lowest: Above Shield, Hair, Weapons, Magic and Tools, Accessories, Clothing, Pants, Skin, Shield Back.
+
+Obs: Shield above means the part of the shield that is above the character art, while shield back is when the shield appears behind it.

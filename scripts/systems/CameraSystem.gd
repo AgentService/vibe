@@ -18,7 +18,7 @@ signal camera_shake_requested(intensity: float, duration: float)
 @export var zoom_speed: float = 5.0
 @export var min_zoom: float = 0.5  # Godot: <1 zooms in (closer), >1 zooms out
 @export var max_zoom: float = 3.0  # Cap zoom out
-@export var default_zoom: float = 1.5  # Neutral default zoom
+@export var default_zoom: float = 1.3  # Neutral default zoom
 @export var shake_intensity: float = 0.0
 
 var camera: Camera2D

@@ -1,0 +1,40 @@
+=== ARCHITECTURE PERFORMANCE STRESS TEST SUMMARY ===
+Timestamp: 2025-09-10T13:39:43
+Test Duration: 23.03 seconds
+Target: 500+ enemies, ≥30 FPS, <50MB memory growth
+
+=== RESULTS ===
+Final Enemy Count: 500
+Total Frames: 3126
+Average FPS: 150.94
+Minimum FPS: 6.83
+FPS Stability: 99.9%
+Frame Time 95th Percentile: 10.00 ms
+Memory Growth: 1.36 MB
+Test Result: PASSED
+
+=== PASS/FAIL CRITERIA ===
+Average FPS ≥30: ✓ (150.9)
+Frame Time 95th <33.3ms: ✓ (10.00 ms)
+Memory Growth <50MB: ✓ (1.36 MB)
+FPS Stability >90%: ✓ (99.9%)
+
+=== PHASE BREAKDOWN ===
+Phase 1 - gradual_scaling:
+  Duration: 8.0s
+  Enemies: 500 final / 500 peak
+  Memory: 206.3 → 201.9 MB (+-4.5 MB)
+  Average FPS: 153.4
+
+Phase 2 - burst_spawn:
+  Duration: 5.0s
+  Enemies: 500 final / 500 peak
+  Memory: 201.9 → 202.6 MB (+0.7 MB)
+  Average FPS: 149.1
+
+Phase 3 - combat_stress:
+  Duration: 10.0s
+  Enemies: 500 final / 500 peak
+  Memory: 202.6 → 202.7 MB (+0.1 MB)
+  Average FPS: 150.9
+

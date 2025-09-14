@@ -4,9 +4,9 @@
 
 [resource]
 script = ExtResource("1_0")
-cone_color = Color(0.960669, 0.954387, 0.954088, 0.3)
-fade_duration = 0.23
-max_opacity = 0.051
+cone_color = Color(1, 0, 0, 1)
+fade_duration = 0.3
+max_opacity = 0.3
 scale_with_range = true
 base_range_reference = 100.0
 rotation_offset = -90.0
