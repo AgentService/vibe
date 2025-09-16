@@ -20,6 +20,7 @@ class_name LogConfigResource
 @export var debug: bool = true
 @export var radar: bool = false
 @export var camera: bool = false
+@export var arena: bool = true
 
 ## Get category state as dictionary for compatibility with Logger
 func get_categories() -> Dictionary:
@@ -34,7 +35,8 @@ func get_categories() -> Dictionary:
 		"performance": performance,
 		"debug": debug,
 		"radar": radar,
-		"camera": camera
+		"camera": camera,
+		"arena": arena
 	}
 
 ## Validate log level is valid

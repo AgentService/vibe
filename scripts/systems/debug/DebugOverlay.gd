@@ -60,10 +60,10 @@ func _count_enemies() -> int:
 	# Count enemies from various sources
 	var count = 0
 	
-	# Check WaveDirector if available
-	var wave_director = get_node_or_null("/root/WaveDirector")
-	if wave_director and wave_director.has_method("get_alive_enemies"):
-		var alive_enemies = wave_director.get_alive_enemies()
+	# Check SpawnDirector if available
+	var spawn_director = get_node_or_null("/root/SpawnDirector")
+	if spawn_director and spawn_director.has_method("get_alive_enemies"):
+		var alive_enemies = spawn_director.get_alive_enemies()
 		count += alive_enemies.size()
 	
 	return count

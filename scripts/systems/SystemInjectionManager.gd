@@ -62,16 +62,16 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	if arena_ref.player:
 		injected_camera_system.setup_camera(arena_ref.player)
 
-func set_wave_director(injected_wave_director: WaveDirector) -> void:
-	arena_ref.wave_director = injected_wave_director
-	_injected["WaveDirector"] = injected_wave_director
-	Logger.info("WaveDirector injected into Arena", "systems")
-	
-	injected_wave_director.process_mode = Node.PROCESS_MODE_PAUSABLE
-	
-	# Inject WaveDirector into visual effects manager if it exists
+func set_spawn_director(injected_spawn_director: SpawnDirector) -> void:
+	arena_ref.spawn_director = injected_spawn_director
+	_injected["SpawnDirector"] = injected_spawn_director
+	Logger.info("SpawnDirector injected into Arena", "systems")
+
+	injected_spawn_director.process_mode = Node.PROCESS_MODE_PAUSABLE
+
+	# Inject SpawnDirector into visual effects manager if it exists
 	if arena_ref.visual_effects_manager:
-		arena_ref.visual_effects_manager.configure_enemy_feedback_dependencies(null, injected_wave_director)
+		arena_ref.visual_effects_manager.configure_enemy_feedback_dependencies(null, injected_spawn_director)
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	arena_ref.melee_system = injected_melee_system

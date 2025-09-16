@@ -5,7 +5,7 @@ extends Node
 
 # Import system classes - using _Type suffix to avoid conflicts with class names
 const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
-const WaveDirector_Type = preload("res://scripts/systems/WaveDirector.gd")
+const SpawnDirector_Type = preload("res://scripts/systems/SpawnDirector.gd")
 const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
 # TODO: Phase 2 - Remove when replaced with AbilityModule autoload
 # const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
@@ -25,7 +25,7 @@ var initialization_phase: String = "idle"
 
 # System instances that will be created here and injected to Arena
 var card_system: CardSystem_Type
-var wave_director: WaveDirector_Type
+var spawn_director: SpawnDirector_Type
 var radar_system: RadarSystem_Type
 # TODO: Phase 2 - Remove ability_system when replaced with AbilityModule autoload
 # var ability_system: AbilitySystem_Type
@@ -125,38 +125,38 @@ func _initialize_systems() -> void:
 	systems["CameraSystem"] = camera_system
 	Logger.info("CameraSystem initialized by GameOrchestrator", "orchestrator")
 	
-	# Phase D: WaveDirector (no dependencies)
-	wave_director = WaveDirector_Type.new()
-	add_child(wave_director)
-	systems["WaveDirector"] = wave_director
+	# Phase D: SpawnDirector (no dependencies)
+	spawn_director = SpawnDirector_Type.new()
+	add_child(spawn_director)
+	systems["SpawnDirector"] = spawn_director
 	
 	# Set ArenaSystem dependency
-	if wave_director.has_method("set_arena_system"):
-		wave_director.set_arena_system(arena_system)
-		Logger.info("WaveDirector initialized with ArenaSystem dependency", "orchestrator")
+	if spawn_director.has_method("set_arena_system"):
+		spawn_director.set_arena_system(arena_system)
+		Logger.info("SpawnDirector initialized with ArenaSystem dependency", "orchestrator")
 	else:
-		Logger.warn("WaveDirector doesn't have set_arena_system method", "orchestrator")
+		Logger.warn("SpawnDirector doesn't have set_arena_system method", "orchestrator")
 	
-	# Phase D2: RadarSystem (depends on WaveDirector)
+	# Phase D2: RadarSystem (depends on SpawnDirector)
 	radar_system = RadarSystem_Type.new()
 	add_child(radar_system)
 	systems["RadarSystem"] = radar_system
 	
-	# Set WaveDirector dependency
-	if radar_system.has_method("setup") and wave_director:
-		radar_system.setup(wave_director)
-		Logger.info("RadarSystem initialized with WaveDirector dependency", "orchestrator")
+	# Set SpawnDirector dependency
+	if radar_system.has_method("setup") and spawn_director:
+		radar_system.setup(spawn_director)
+		Logger.info("RadarSystem initialized with SpawnDirector dependency", "orchestrator")
 	else:
 		Logger.warn("RadarSystem dependency injection failed", "orchestrator")
 	
 	# Phase E: Combat systems with dependencies
-	# 5. MeleeSystem (needs WaveDirector ref)
+	# 5. MeleeSystem (needs SpawnDirector ref)
 	melee_system = MeleeSystem_Type.new()
 	add_child(melee_system)
 	systems["MeleeSystem"] = melee_system
-	if melee_system.has_method("set_wave_director_reference") and wave_director:
-		melee_system.set_wave_director_reference(wave_director)
-		Logger.info("MeleeSystem initialized with WaveDirector dependency", "orchestrator")
+	if melee_system.has_method("set_spawn_director_reference") and spawn_director:
+		melee_system.set_spawn_director_reference(spawn_director)
+		Logger.info("MeleeSystem initialized with SpawnDirector dependency", "orchestrator")
 	else:
 		Logger.warn("MeleeSystem dependency injection failed", "orchestrator")
 	
@@ -171,8 +171,8 @@ func get_card_system() -> CardSystem_Type:
 
 
 
-func get_wave_director() -> WaveDirector_Type:
-	return wave_director
+func get_spawn_director() -> SpawnDirector_Type:
+	return spawn_director
 
 func get_radar_system() -> RadarSystem_Type:
 	return radar_system
@@ -221,10 +221,10 @@ func inject_systems_to_arena(arena) -> void:
 		arena.set_camera_system(camera_system)
 		Logger.debug("CameraSystem injected to Arena", "orchestrator")
 	
-	# Phase D: Inject WaveDirector
-	if wave_director and arena.has_method("set_wave_director"):
-		arena.set_wave_director(wave_director)
-		Logger.debug("WaveDirector injected to Arena", "orchestrator")
+	# Phase D: Inject SpawnDirector
+	if spawn_director and arena.has_method("set_spawn_director"):
+		arena.set_spawn_director(spawn_director)
+		Logger.debug("SpawnDirector injected to Arena", "orchestrator")
 	
 	# Phase E: Inject combat systems
 	if melee_system and arena.has_method("set_melee_system"):
@@ -273,8 +273,8 @@ func _on_state_changed(prev: StateManager.State, next: StateManager.State, conte
 	Logger.info("GameOrchestrator: State changed %d -> %d" % [prev, next], "orchestrator")
 	
 	# Stop combat systems when leaving arena
-	if prev == StateManager.State.ARENA and wave_director and wave_director.has_method("stop"):
-		wave_director.stop()
+	if prev == StateManager.State.ARENA and spawn_director and spawn_director.has_method("stop"):
+		spawn_director.stop()
 		Logger.info("GameOrchestrator: Stopped combat systems on arena exit", "orchestrator")
 		
 		# Session resets are now handled directly by StateManager methods

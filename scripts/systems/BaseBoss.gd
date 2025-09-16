@@ -116,7 +116,6 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 
 ## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
 func apply_unified_scaling(scale_factor: float) -> void:
-	Logger.info("Applying unified scaling %.2fx to %s" % [scale_factor, get_boss_name()], "debug")
 	
 	# Step 1: Scale sprite (visual component)
 	if animated_sprite:
@@ -131,7 +130,6 @@ func apply_unified_scaling(scale_factor: float) -> void:
 	if collision_shape:
 		var old_scale = collision_shape.scale
 		collision_shape.scale = Vector2.ONE * scale_factor
-		Logger.info("CollisionShape2D scaled: %.2f → %.2f" % [old_scale.x, collision_shape.scale.x], "debug")
 	else:
 		Logger.warn("CollisionShape2D not found for scaling", "debug")
 	
@@ -140,31 +138,23 @@ func apply_unified_scaling(scale_factor: float) -> void:
 	if hitbox:
 		var old_scale = hitbox.scale
 		hitbox.scale = Vector2.ONE * scale_factor
-		Logger.info("HitBox scaled: %.2f → %.2f (child HitBoxShape inherits scaling)" % [old_scale.x, hitbox.scale.x], "debug")
 	else:
 		Logger.warn("HitBox not found for scaling", "debug")
 	
 	# Step 4: Notify all scalable components after scaling changes
 	call_deferred("_notify_components_scaled", scale_factor)
 	
-	Logger.info("Unified scaling applied: all components scaled to %.2fx" % scale_factor, "debug")
-
 ## COMPONENT SCALING NOTIFICATION: Notify all components that boss has been scaled
 func _notify_components_scaled(scale_factor: float) -> void:
-	Logger.debug("Notifying components of %.2fx scaling" % scale_factor, "debug")
 	
 	# Notify health bar to readjust
 	var health_bar = get_node_or_null("BossHealthBar")
 	if health_bar and health_bar.has_method("auto_adjust_to_hitbox"):
 		health_bar.auto_adjust_to_hitbox()
-		Logger.debug("Health bar readjusted after scaling", "debug")
-	
 	
 	# Future: Add other scalable components here
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
 	
-	Logger.debug("All components notified of scaling", "debug")
-
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
 func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
@@ -368,8 +358,6 @@ func _apply_sprite_scaling(scale_factor: float) -> void:
 	
 	# Preserve original position offset (important for sprites with positioning)
 	animated_sprite.position = original_position
-	
-	Logger.info("Sprite scaled to %.2fx for %s (position preserved: %v)" % [scale_factor, get_boss_name(), original_position], "debug")
 	
 	# Validate scaling was applied correctly
 	_validate_sprite_scaling(scale_factor)

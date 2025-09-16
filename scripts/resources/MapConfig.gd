@@ -26,6 +26,33 @@ extends Resource
 @export var boss_spawn_positions: Array[Vector2] = [] ## Predefined boss spawn locations
 @export var max_concurrent_enemies: int = 50 ## Maximum enemies alive at once
 
+@export_group("Proximity Spawning")
+@export var auto_spawn_range: float = 800.0 ## Auto spawn proximity range
+@export var pack_spawn_range: float = 1600.0 ## Pack pre-spawn proximity range (out of view)
+@export var use_viewport_culling: bool = false ## Additional viewport-based culling for performance
+@export var viewport_margin: float = 200.0 ## Extra margin around viewport for spawn culling
+@export var activation_method: ActivationMethod = ActivationMethod.DISTANCE ## Proximity detection method
+
+enum ActivationMethod {
+	DISTANCE,           ## Simple radius check around player
+	VIEWPORT,          ## Camera frustum + margin
+	AREA_TRIGGERS,     ## Area2D collision detection
+	HYBRID             ## Distance + viewport combined
+}
+
+@export_group("Base Spawn Scaling")
+@export var base_spawn_scaling: Dictionary = {
+	"time_scaling_rate": 0.1,        # 10% per minute base
+	"wave_scaling_rate": 0.15,       # 15% per wave base
+	"pack_base_size_min": 5,
+	"pack_base_size_max": 10,
+	"max_scaling_multiplier": 2.5,
+	"pack_spawn_interval": 5.0      # Seconds between pack spawns
+}
+
+@export_group("Arena-Specific Scaling")
+@export var arena_scaling_overrides: Dictionary = {} ## Override any base scaling values per arena
+
 @export_group("Environmental Effects")
 @export var has_environmental_hazards: bool = false ## Enable environmental damage/effects
 @export var weather_effects: Array[StringName] = [] ## Weather/environmental effects
@@ -71,6 +98,66 @@ func get_weighted_spawn_zone() -> Dictionary:
 			return zone
 	
 	return spawn_zones[0]  # Fallback to first zone
+
+## Get zones within range of player position
+func get_zones_in_range(player_pos: Vector2, range_override: float = -1.0) -> Array[Dictionary]:
+	var check_range = range_override if range_override > 0.0 else auto_spawn_range
+	var zones_in_range: Array[Dictionary] = []
+
+	for zone in spawn_zones:
+		var zone_pos = zone.get("position", Vector2.ZERO)
+		var distance = player_pos.distance_to(zone_pos)
+
+		if distance <= check_range:
+			zones_in_range.append(zone)
+
+	return zones_in_range
+
+## Check if specific zone is in range of player (uses auto spawn range)
+func is_zone_in_range(zone_name: String, player_pos: Vector2) -> bool:
+	var zone_data = get_spawn_zone(zone_name)
+	if zone_data.is_empty():
+		return false
+
+	var zone_pos = zone_data.get("position", Vector2.ZERO)
+	return player_pos.distance_to(zone_pos) <= auto_spawn_range
+
+## Get weighted spawn zone from only zones in player range
+func get_weighted_spawn_zone_in_range(player_pos: Vector2) -> Dictionary:
+	var zones_in_range = get_zones_in_range(player_pos)
+
+	if zones_in_range.is_empty():
+		return {}
+
+	# Apply same weighted selection logic but only to zones in range
+	var total_weight: float = 0.0
+	for zone in zones_in_range:
+		total_weight += zone.get("weight", 1.0)
+
+	var random_value: float = randf() * total_weight
+	var current_weight: float = 0.0
+
+	for zone in zones_in_range:
+		current_weight += zone.get("weight", 1.0)
+		if random_value <= current_weight:
+			return zone
+
+	return zones_in_range[0]  # Fallback to first zone in range
+
+## Get effective scaling combining base + arena overrides
+func get_effective_scaling() -> Dictionary:
+	var effective = base_spawn_scaling.duplicate()
+	for key in arena_scaling_overrides:
+		effective[key] = arena_scaling_overrides[key]
+	return effective
+
+## Get zones within pack spawn range (larger range for pre-spawning)
+func get_zones_in_pack_range(player_pos: Vector2) -> Array[Dictionary]:
+	return get_zones_in_range(player_pos, pack_spawn_range)
+
+## Get zones within auto spawn range (smaller range for immediate spawning)
+func get_zones_in_auto_range(player_pos: Vector2) -> Array[Dictionary]:
+	return get_zones_in_range(player_pos, auto_spawn_range)
 
 ## Validate configuration
 func is_valid() -> bool:

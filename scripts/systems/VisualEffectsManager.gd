@@ -30,7 +30,7 @@ func setup_hit_feedback_systems() -> void:
 	
 	Logger.info("VisualEffectsManager initialized with boss hit feedback only", "effects")
 
-func configure_enemy_feedback_dependencies(enemy_render_tier: EnemyRenderTier, wave_director: WaveDirector) -> void:
+func configure_enemy_feedback_dependencies(enemy_render_tier: EnemyRenderTier, spawn_director: SpawnDirector) -> void:
 	# Scene-based enemies handle their own feedback
 	Logger.debug("Scene-based enemy feedback - no configuration needed", "effects")
 

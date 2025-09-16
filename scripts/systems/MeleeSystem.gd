@@ -132,13 +132,13 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 			Logger.warn("Enemy has invalid index for melee damage", "combat")
 			continue
 		
-		# PHASE 4 OPTIMIZATION: Use WaveDirector's pre-generated entity IDs if available
+		# PHASE 4 OPTIMIZATION: Use SpawnDirector's pre-generated entity IDs if available
 		var entity_id: String
 		var game_orchestrator = get_node_or_null("/root/GameOrchestrator")
 		if game_orchestrator:
-			var wd = game_orchestrator.get_wave_director()
-			if wd and wd.has_method("get_enemy_entity_id"):
-				entity_id = wd.get_enemy_entity_id(enemy_pool_index)
+			var sd = game_orchestrator.get_spawn_director()
+			if sd and sd.has_method("get_enemy_entity_id"):
+				entity_id = sd.get_enemy_entity_id(enemy_pool_index)
 			else:
 				entity_id = "enemy_" + str(enemy_pool_index)
 		else:

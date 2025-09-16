@@ -17,7 +17,7 @@ var _is_paused: bool = false
 # Old radar system variables (used when new system is disabled)
 var _old_radar_timer: float = 0.0
 var _old_radar_frequency: float = 30.0
-var _wave_director: WaveDirector
+var _spawn_director: SpawnDirector
 
 func _ready() -> void:
 	_setup_radar_update_manager()
@@ -65,16 +65,16 @@ func _setup_connections() -> void:
 	
 	Logger.debug("RadarSystem: Connected to state management signals", "radar")
 
-func setup(wave_director: WaveDirector = null) -> void:
-	# Store WaveDirector reference for both old and new systems
-	_wave_director = wave_director
+func setup(spawn_director: SpawnDirector = null) -> void:
+	# Store SpawnDirector reference for both old and new systems
+	_spawn_director = spawn_director
 	
 	if _radar_update_manager:
-		# New system: Pass WaveDirector to RadarUpdateManager for hybrid approach fallback
-		_radar_update_manager.setup_wave_director(wave_director)
+		# New system: Pass SpawnDirector to RadarUpdateManager for hybrid approach fallback
+		_radar_update_manager.setup_spawn_director(spawn_director)
 	
 	_update_enabled_state()
-	Logger.info("RadarSystem setup completed", "radar")
+	Logger.info("RadarSystem saetup completed", "radar")
 
 func set_enabled(enabled: bool) -> void:
 	_enabled = enabled
@@ -108,16 +108,16 @@ func _process(delta: float) -> void:
 		_process_old_radar_update()
 
 func _process_old_radar_update() -> void:
-	# Old radar system implementation: Direct WaveDirector access (original system)
+	# Old radar system implementation: Direct SpawnDirector access (original system)
 	# Performance optimization: Skip radar calculations if disabled
 	if DebugManager.is_radar_disabled():
 		return
 	
 	var radar_entities: Array[EventBus.RadarEntity] = []
 	
-	# Gather pooled enemies from WaveDirector (original old system approach)
-	if _wave_director:
-		var alive_enemies: Array[EnemyEntity] = _wave_director.get_alive_enemies()
+	# Gather pooled enemies from SpawnDirector (original old system approach)
+	if _spawn_director:
+		var alive_enemies: Array[EnemyEntity] = _spawn_director.get_alive_enemies()
 		for enemy in alive_enemies:
 			var radar_entity = EventBus.RadarEntity.new(enemy.pos, "enemy")
 			radar_entities.append(radar_entity)

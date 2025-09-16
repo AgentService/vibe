@@ -9,7 +9,7 @@ extends Node
 # Dependencies injected from Arena
 var player: Player
 var melee_system: MeleeSystem
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 var melee_effects_node: Node2D
 var arena_viewport: Viewport
 
@@ -17,10 +17,10 @@ var arena_viewport: Viewport
 # Visual configuration
 var visual_config: MeleeVisualConfig
 
-func setup(player_ref: Player, melee_sys: MeleeSystem, wave_dir: WaveDirector, melee_fx: Node2D, viewport: Viewport) -> void:
+func setup(player_ref: Player, melee_sys: MeleeSystem, spawn_dir: SpawnDirector, melee_fx: Node2D, viewport: Viewport) -> void:
 	player = player_ref
 	melee_system = melee_sys
-	wave_director = wave_dir
+	spawn_director = spawn_dir
 	melee_effects_node = melee_fx
 	arena_viewport = viewport
 	
@@ -39,7 +39,7 @@ func handle_melee_attack(target_pos: Vector2) -> void:
 		return
 	
 	var player_pos = player.global_position
-	var alive_enemies = wave_director.get_alive_enemies()
+	var alive_enemies = spawn_director.get_alive_enemies()
 	melee_system.perform_attack(player_pos, target_pos, alive_enemies)
 
 
@@ -49,7 +49,7 @@ func handle_auto_attack() -> void:
 		return
 	
 	var player_pos = player.global_position
-	var alive_enemies = wave_director.get_alive_enemies()
+	var alive_enemies = spawn_director.get_alive_enemies()
 	
 	# Only attack if there are enemies nearby
 	if alive_enemies.size() > 0:

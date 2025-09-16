@@ -63,6 +63,10 @@ layout_mode = 2
 toggle_mode = true
 text = "10"
 
+[node name="SpawnPackButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
+layout_mode = 2
+text = "Spawn Pack"
+
 [node name="Separator2" type="HSeparator" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn"]
 layout_mode = 2
 

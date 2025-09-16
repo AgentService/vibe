@@ -40,7 +40,21 @@ spawn_zones = Array[Dictionary]([{
 "weight": 0.5
 }])
 boss_spawn_positions = Array[Vector2]([Vector2(0, -300), Vector2(300, 200), Vector2(-300, 200)])
-max_concurrent_enemies = 60
+max_concurrent_enemies = 400
+auto_spawn_range = 1000.0
+pack_spawn_range = 1500.0
+use_viewport_culling = false
+viewport_margin = 200.0
+activation_method = 0
+base_spawn_scaling = {
+"max_scaling_multiplier": 2.5,
+"pack_base_size_max": 10,
+"pack_base_size_min": 5,
+"pack_spawn_interval": 60.0,
+"time_scaling_rate": 0.1,
+"wave_scaling_rate": 0.15
+}
+arena_scaling_overrides = {}
 has_environmental_hazards = true
 weather_effects = Array[StringName]([&"heat_haze", &"ember_particles"])
 special_mechanics = Array[StringName]([&"lava_pits", &"fire_resistance_required"])
