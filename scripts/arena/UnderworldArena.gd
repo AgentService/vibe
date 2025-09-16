@@ -114,17 +114,9 @@ func get_arena_bounds() -> float:
 		return map_config.arena_bounds_radius
 	return arena_bounds
 
-## Get spawn zones for enemy spawning (future spawn system integration)
-func get_spawn_zones() -> Array[Dictionary]:
-	if map_config:
-		return map_config.spawn_zones
-	return []
-
-## Get random spawn zone weighted by spawn zone weights
-func get_weighted_spawn_zone() -> Dictionary:
-	if map_config:
-		return map_config.get_weighted_spawn_zone()
-	return {}
+## Get spawn zones for enemy spawning (scene-only approach)
+func get_spawn_zones() -> Array[Area2D]:
+	return _spawn_zone_areas
 
 ## Get boss spawn positions
 func get_boss_spawn_positions() -> Array[Vector2]:
@@ -167,15 +159,13 @@ func _initialize_spawn_zones() -> void:
 
 ## Override spawn position to use proximity-based zone selection from scene Area2D nodes
 func get_random_spawn_position() -> Vector2:
-	# Use scene Area2D nodes if available, otherwise fall back to config
+	# Scene-only approach: Use Area2D zones exclusively
 	if _spawn_zone_areas.is_empty():
-		# Fallback to config zones if no scene zones
-		if not map_config or map_config.spawn_zones.is_empty():
-			# Final fallback to simple radius spawning
-			var angle := randf() * TAU
-			var distance := randf() * get_spawn_radius()
-			return Vector2(cos(angle), sin(angle)) * distance
-		return _get_position_from_config_zones()
+		Logger.warn("No scene spawn zones available, using radius fallback", "arena")
+		# Final fallback to simple radius spawning
+		var angle := randf() * TAU
+		var distance := randf() * get_spawn_radius()
+		return Vector2(cos(angle), sin(angle)) * distance
 
 	# Get player position for proximity-based zone filtering
 	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
@@ -183,12 +173,14 @@ func get_random_spawn_position() -> Vector2:
 		Logger.debug("Auto spawn: No valid player position, using all scene zones", "arena")
 		return select_random_scene_zone(_spawn_zone_areas)
 
-	# Filter scene zones by proximity (800px range for auto spawning)
-	var auto_spawn_range = 800.0  # Use default or from config
+	# Filter scene zones by min/max distance range (prevent spawning too close)
+	var auto_spawn_range = 800.0  # Default max
+	var auto_spawn_min_distance = 300.0  # Default min
 	if map_config:
 		auto_spawn_range = map_config.auto_spawn_range
+		auto_spawn_min_distance = map_config.auto_spawn_min_distance if "auto_spawn_min_distance" in map_config else 300.0
 
-	var zones_in_range = filter_zones_by_proximity(_spawn_zone_areas, player_pos, auto_spawn_range)
+	var zones_in_range = filter_zones_by_distance_range(_spawn_zone_areas, player_pos, auto_spawn_min_distance, auto_spawn_range)
 
 	if zones_in_range.is_empty():
 		return Vector2.ZERO
@@ -197,26 +189,3 @@ func get_random_spawn_position() -> Vector2:
 	var selected_zone = zones_in_range[randi() % zones_in_range.size()]
 	Logger.debug("Auto spawn: Selected scene zone %s in range" % selected_zone.name, "arena")
 	return generate_position_in_scene_zone(selected_zone)
-
-## Helper method to fall back to config-based zone selection
-func _get_position_from_config_zones() -> Vector2:
-	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
-
-	if player_pos == Vector2.ZERO:
-		# Use weighted zone selection from all zones if no player position
-		var selected_zone_data = get_weighted_spawn_zone()
-		if selected_zone_data.is_empty():
-			# Fallback if zone selection fails
-			var angle := randf() * TAU
-			var distance := randf() * get_spawn_radius()
-			return Vector2(cos(angle), sin(angle)) * distance
-		return generate_position_in_zone(selected_zone_data)
-
-	# Use proximity-based zone selection for auto spawning (800px range)
-	var selected_zone_data = map_config.get_weighted_spawn_zone_in_range(player_pos)
-	if selected_zone_data.is_empty():
-		Logger.debug("Auto spawn: No config zones in range (800px), skipping spawn", "arena")
-		return Vector2.ZERO
-
-	Logger.debug("Auto spawn: Selected config zone %s in range" % selected_zone_data.get("name", "unknown"), "arena")
-	return generate_position_in_zone(selected_zone_data)

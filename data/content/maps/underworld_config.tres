@@ -13,46 +13,23 @@ ambient_light_energy = 0.25
 arena_bounds_radius = 600.0
 spawn_radius = 500.0
 player_spawn_position = Vector2(0, 0)
-spawn_zones = Array[Dictionary]([{
-"name": "north_cavern",
-"position": Vector2(0, -400),
-"radius": 80.0,
-"weight": 1.0
-}, {
-"name": "south_cavern",
-"position": Vector2(0, 400),
-"radius": 80.0,
-"weight": 1.0
-}, {
-"name": "east_tunnel",
-"position": Vector2(400, 0),
-"radius": 60.0,
-"weight": 0.8
-}, {
-"name": "west_tunnel",
-"position": Vector2(-400, 0),
-"radius": 60.0,
-"weight": 0.8
-}, {
-"name": "center_pit",
-"position": Vector2(0, 0),
-"radius": 40.0,
-"weight": 0.5
-}])
+spawn_zones = Array[Dictionary]([])
 boss_spawn_positions = Array[Vector2]([Vector2(0, -300), Vector2(300, 200), Vector2(-300, 200)])
 max_concurrent_enemies = 400
 auto_spawn_range = 1000.0
+auto_spawn_min_distance = 300.0
 pack_spawn_range = 1500.0
+pack_spawn_min_distance = 800.0
 use_viewport_culling = false
 viewport_margin = 200.0
 activation_method = 0
 base_spawn_scaling = {
 "max_scaling_multiplier": 2.5,
-"pack_base_size_max": 10,
-"pack_base_size_min": 5,
-"pack_spawn_interval": 60.0,
-"time_scaling_rate": 0.1,
-"wave_scaling_rate": 0.15
+"pack_base_size_max": 8,
+"pack_base_size_min": 4,
+"pack_spawn_interval": 45.0,
+"time_scaling_rate": 0.08,
+"wave_scaling_rate": 0.12
 }
 arena_scaling_overrides = {}
 has_environmental_hazards = true
