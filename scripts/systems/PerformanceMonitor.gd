@@ -6,12 +6,12 @@ extends Node
 
 class_name PerformanceMonitor
 
-func get_debug_stats(arena_ref: Node, wave_director: WaveDirector) -> Dictionary:
+func get_debug_stats(arena_ref: Node, spawn_director: SpawnDirector) -> Dictionary:
 	var stats: Dictionary = {}
 	
-	# Enemy count from WaveDirector
-	if wave_director:
-		var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
+	# Enemy count from SpawnDirector
+	if spawn_director:
+		var alive_enemies: Array[EnemyEntity] = spawn_director.get_alive_enemies()
 		stats["enemy_count"] = alive_enemies.size()
 		if Logger.is_debug():
 			Logger.debug("Performance Monitor: %d alive enemies" % alive_enemies.size(), "performance")

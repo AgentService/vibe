@@ -606,7 +606,7 @@ func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, dam
 	}
 	
 	# Emit damage sync event for systems to handle
-	# This removes the need for DamageRegistry to know about WaveDirector/Boss internals
+	# This removes the need for DamageRegistry to know about SpawnDirector/Boss internals
 	EventBus.damage_entity_sync.emit(sync_payload)
 	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
 
@@ -683,16 +683,16 @@ func debug_register_all_existing_entities() -> void:
 					if Logger.is_level_enabled(Logger.LogLevel.INFO):
 						Logger.info("DEBUG: Registered existing boss: " + entity_id, "combat")
 	
-	# Register existing enemies from WaveDirector
-	var wave_director = get_tree().get_first_node_in_group("wave_directors")
-	if wave_director:
-		for i in range(wave_director.enemies.size()):
-			var enemy = wave_director.enemies[i]
+	# Register existing enemies from SpawnDirector
+	var spawn_director = get_tree().get_first_node_in_group("spawn_directors")
+	if spawn_director:
+		for i in range(spawn_director.enemies.size()):
+			var enemy = spawn_director.enemies[i]
 			if enemy.alive:
-				# PHASE 4 OPTIMIZATION: Use WaveDirector's pre-generated entity IDs if available
+				# PHASE 4 OPTIMIZATION: Use SpawnDirector's pre-generated entity IDs if available
 				var entity_id: String
-				if wave_director.has_method("get_enemy_entity_id"):
-					entity_id = wave_director.get_enemy_entity_id(i)
+				if spawn_director.has_method("get_enemy_entity_id"):
+					entity_id = spawn_director.get_enemy_entity_id(i)
 				else:
 					entity_id = "enemy_" + str(i)
 				if _entity_lookup.get(entity_id, -1) == -1:

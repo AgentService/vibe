@@ -50,3 +50,63 @@ func _connect_events() -> void:
 	# Connect to player death events for all arena types
 	if EventBus.player_died.connect(_on_player_died) != OK:
 		Logger.warn("BaseArena: Failed to connect to player_died signal", "arena")
+
+## ============================================================================
+## SHARED SPAWN ZONE HELPER METHODS - Used by all arena types
+## ============================================================================
+
+## Helper method to generate random position within a zone (config-based)
+func generate_position_in_zone(zone_data: Dictionary) -> Vector2:
+	var zone_pos = zone_data.get("position", Vector2.ZERO)
+	var zone_radius = zone_data.get("radius", 50.0)
+
+	var angle = randf() * TAU
+	var distance = randf() * zone_radius
+	return zone_pos + Vector2(cos(angle), sin(angle)) * distance
+
+## Helper method to generate random position within a scene Area2D zone
+func generate_position_in_scene_zone(zone_area: Area2D) -> Vector2:
+	var zone_pos = zone_area.global_position
+	var zone_radius = 50.0  # Default radius
+
+	# Try to get radius from CollisionShape2D - support multiple shape types
+	if zone_area.get_child_count() > 0:
+		var collision_shape = zone_area.get_child(0) as CollisionShape2D
+		if collision_shape and collision_shape.shape:
+			if collision_shape.shape is CircleShape2D:
+				var circle_shape = collision_shape.shape as CircleShape2D
+				zone_radius = circle_shape.radius
+				Logger.debug("Using CircleShape2D radius: %.1f for zone %s" % [zone_radius, zone_area.name], "arena")
+			elif collision_shape.shape is RectangleShape2D:
+				var rect_shape = collision_shape.shape as RectangleShape2D
+				# Use half the smaller dimension as radius for rectangular zones
+				zone_radius = minf(rect_shape.size.x, rect_shape.size.y) * 0.5
+				Logger.debug("Using RectangleShape2D radius: %.1f for zone %s" % [zone_radius, zone_area.name], "arena")
+			else:
+				Logger.debug("Zone %s has unsupported shape type (%s), using default radius %.1f" % [zone_area.name, collision_shape.shape.get_class(), zone_radius], "arena")
+		else:
+			Logger.debug("Zone %s has no valid collision shape, using default radius %.1f" % [zone_area.name, zone_radius], "arena")
+
+	var angle = randf() * TAU
+	var distance = randf() * zone_radius
+	return zone_pos + Vector2(cos(angle), sin(angle)) * distance
+
+## Helper method to select random scene zone without proximity filtering
+func select_random_scene_zone(spawn_zone_areas: Array[Area2D]) -> Vector2:
+	if spawn_zone_areas.is_empty():
+		return Vector2.ZERO
+
+	var selected_zone = spawn_zone_areas[randi() % spawn_zone_areas.size()]
+	return generate_position_in_scene_zone(selected_zone)
+
+## Helper method to filter scene zones by proximity
+func filter_zones_by_proximity(spawn_zone_areas: Array[Area2D], player_pos: Vector2, proximity_range: float) -> Array[Area2D]:
+	var zones_in_range: Array[Area2D] = []
+
+	for zone_area in spawn_zone_areas:
+		var zone_pos = zone_area.global_position
+		var distance = player_pos.distance_to(zone_pos)
+		if distance <= proximity_range:
+			zones_in_range.append(zone_area)
+
+	return zones_in_range

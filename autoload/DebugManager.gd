@@ -19,7 +19,7 @@ var boss_scaling: BossScaling
 
 
 # System references for debug operations
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 var boss_spawn_manager: BossSpawnManager
 var arena_ui_manager: ArenaUIManager
 var debug_system_controls: DebugSystemControls
@@ -123,10 +123,10 @@ func toggle_debug_mode() -> void:
 func _enter_debug_mode() -> void:
 	Logger.info("Entering debug mode", "debug")
 	
-	# Disable normal spawning via CheatSystem
-	if CheatSystem:
-		CheatSystem.spawn_disabled = true
-		Logger.debug("Disabled normal enemy spawning", "debug")
+	# Let debug panel checkbox control spawning instead of automatically disabling
+	# if CheatSystem:
+	#	CheatSystem.spawn_disabled = true
+	#	Logger.debug("Disabled normal enemy spawning", "debug")
 	
 	# Debug mode no longer automatically clears enemies - user can manually clear via Debug Panel if needed
 	
@@ -168,12 +168,12 @@ func _hide_debug_ui() -> void:
 		Logger.debug("Debug UI hidden", "debug")
 
 # System registration methods (called by Arena during setup)
-func register_wave_director(wd: WaveDirector) -> void:
-	wave_director = wd
+func register_spawn_director(sd: SpawnDirector) -> void:
+	spawn_director = sd
 	# Connect spawning signal to actual spawning functionality (only if not already connected)
 	if not spawning_requested.is_connected(_on_spawning_requested):
 		spawning_requested.connect(_on_spawning_requested)
-	Logger.debug("WaveDirector registered with DebugManager", "debug")
+	Logger.debug("SpawnDirector registered with DebugManager", "debug")
 
 func register_boss_spawn_manager(bsm: BossSpawnManager) -> void:
 	boss_spawn_manager = bsm
@@ -346,21 +346,21 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 			legacy_type.is_special_boss = true
 			legacy_type.display_name = boss_type.replace("_", " ").capitalize()
 			
-			# Spawn via WaveDirector's V2 system
-			if wave_director and wave_director.has_method("_spawn_from_config_v2"):
-				wave_director._spawn_from_config_v2(legacy_type, boss_config)
+			# Spawn via SpawnDirector's V2 system
+			if spawn_director and spawn_director.has_method("_spawn_from_config_v2"):
+				spawn_director._spawn_from_config_v2(legacy_type, boss_config)
 				Logger.info("Debug spawned boss: %s at %s" % [boss_type, spawn_pos], "debug")
 				
 				# If AI is currently paused, immediately apply paused state to new boss
 				_apply_ai_pause_to_new_entity()
 			else:
-				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
+				Logger.error("SpawnDirector._spawn_from_config_v2 not available", "debug")
 		else:
 			Logger.error("Failed to generate boss config for: %s" % boss_type, "debug")
 
 func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: int) -> void:
-	if not wave_director:
-		Logger.error("WaveDirector not available for regular enemy spawning", "debug")
+	if not spawn_director:
+		Logger.error("SpawnDirector not available for regular enemy spawning", "debug")
 		return
 		
 	Logger.info("Spawning %d regular enemy(ies) of type %s" % [count, enemy_type], "debug")
@@ -390,12 +390,12 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 			var legacy_type := enemy_config.to_enemy_type()
 			legacy_type.display_name = enemy_type.replace("_", " ").capitalize()
 			
-			# Spawn via WaveDirector's V2 system
-			if wave_director and wave_director.has_method("_spawn_from_config_v2"):
-				wave_director._spawn_from_config_v2(legacy_type, enemy_config)
+			# Spawn via SpawnDirector's V2 system
+			if spawn_director and spawn_director.has_method("_spawn_from_config_v2"):
+				spawn_director._spawn_from_config_v2(legacy_type, enemy_config)
 				Logger.info("Debug spawned enemy: %s at %s" % [enemy_type, spawn_pos], "debug")
 			else:
-				Logger.error("WaveDirector._spawn_from_config_v2 not available", "debug")
+				Logger.error("SpawnDirector._spawn_from_config_v2 not available", "debug")
 		else:
 			Logger.error("Failed to generate enemy config for: %s" % enemy_type, "debug")
 	

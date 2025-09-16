@@ -288,11 +288,11 @@ func _reset_player_state(reason: ResetReason, context: Dictionary) -> void:
 func _reset_systems(reason: ResetReason, context: Dictionary) -> void:
 	"""Reset various game systems based on the reset reason"""
 	
-	# Reset wave director
-	var wave_director = get_node_or_null("/root/WaveDirector")
-	if wave_director and wave_director.has_method("reset"):
-		wave_director.reset()
-		Logger.debug("WaveDirector reset", "session")
+	# Reset spawn director
+	var spawn_director = get_node_or_null("/root/SpawnDirector")
+	if spawn_director and spawn_director.has_method("reset"):
+		spawn_director.reset()
+		Logger.debug("SpawnDirector reset", "session")
 	
 	# Reset XP system (conditionally)
 	if not context.get("preserve_progression", false):

@@ -4,7 +4,7 @@ class_name DebugSystemControls
 ## Debug System Controls
 ## Provides system-level debugging controls and utilities
 
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 var ai_paused: bool = false
 var collision_shapes_visible: bool = false
 
@@ -18,13 +18,13 @@ func _ready() -> void:
 			queue_free()  # Remove the entire node
 			return
 	
-	# Try to find WaveDirector reference
-	wave_director = get_node_or_null("/root/WaveDirector")
-	if not wave_director:
+	# Try to find SpawnDirector reference
+	spawn_director = get_node_or_null("/root/SpawnDirector")
+	if not spawn_director:
 		# Try alternative paths
 		var scene_tree = get_tree()
 		if scene_tree and scene_tree.current_scene:
-			wave_director = _find_wave_director(scene_tree.current_scene)
+			spawn_director = _find_spawn_director(scene_tree.current_scene)
 	
 	Logger.debug("DebugSystemControls initialized", "debug")
 
@@ -55,8 +55,8 @@ func clear_all_entities() -> void:
 	var cleared_count = 0
 	
 	# Clear via WaveDirector if available
-	if wave_director and wave_director.has_method("clear_all_enemies"):
-		wave_director.clear_all_enemies()
+	if spawn_director and spawn_director.has_method("clear_all_enemies"):
+		spawn_director.clear_all_enemies()
 		cleared_count += 1
 	
 	# Clear bosses from scene tree
@@ -80,12 +80,12 @@ func reset_session() -> void:
 
 # Helper methods
 
-func _find_wave_director(node: Node) -> WaveDirector:
-	if node is WaveDirector:
-		return node as WaveDirector
+func _find_spawn_director(node: Node) -> SpawnDirector:
+	if node is SpawnDirector:
+		return node as SpawnDirector
 	
 	for child in node.get_children():
-		var result = _find_wave_director(child)
+		var result = _find_spawn_director(child)
 		if result:
 			return result
 	

@@ -23,7 +23,7 @@ var _boss_pos_tmp: PackedVector2Array = PackedVector2Array()
 var _player_position: Vector2 = Vector2.ZERO
 
 # Dependencies
-var _wave_director: WaveDirector = null
+var _spawn_director: SpawnDirector = null
 
 # Queue + pool with latest-only semantics
 var _radar_update_queue: RingBuffer
@@ -79,9 +79,9 @@ func set_update_frequency(hz: float) -> void:
 	_update_frequency = max(1.0, hz)  # Minimum 1 Hz
 	Logger.debug("RadarUpdateManager frequency set to %.0f Hz" % _update_frequency, "radar")
 
-func setup_wave_director(wave_director: WaveDirector) -> void:
-	_wave_director = wave_director
-	Logger.debug("RadarUpdateManager: WaveDirector dependency setup for hybrid fallback", "radar")
+func setup_spawn_director(spawn_director: SpawnDirector) -> void:
+	_spawn_director = spawn_director
+	Logger.debug("RadarUpdateManager: SpawnDirector dependency setup for hybrid fallback", "radar")
 
 func _process(delta: float) -> void:
 	if not _enabled or not EntityTracker:
@@ -139,7 +139,7 @@ func _process_radar_update() -> void:
 	_enemy_pos_tmp.resize(0)
 	_boss_pos_tmp.resize(0)
 
-	# HYBRID APPROACH: Get enemies from both EntityTracker and WaveDirector for reliability  
+	# HYBRID APPROACH: Get enemies from both EntityTracker and SpawnDirector for reliability  
 	# This fixes radar freeze issues with mesh enemies while maintaining boss performance
 	var enemy_ids: PackedStringArray
 	var boss_ids: PackedStringArray
@@ -148,13 +148,13 @@ func _process_radar_update() -> void:
 	enemy_ids = EntityTracker.get_entities_by_type_view("enemy")
 	boss_ids = EntityTracker.get_entities_by_type_view("boss")
 	
-	# Fallback for mesh enemies: Use WaveDirector.get_alive_enemies() if EntityTracker seems problematic
-	var use_wavedirector_fallback = false
-	if enemy_ids.size() == 0 and _wave_director:
-		# Check if WaveDirector has alive enemies that EntityTracker missed
-		var alive_enemies = _wave_director.get_alive_enemies()
+	# Fallback for mesh enemies: Use SpawnDirector.get_alive_enemies() if EntityTracker seems problematic
+	var use_spawndirector_fallback = false
+	if enemy_ids.size() == 0 and _spawn_director:
+		# Check if SpawnDirector has alive enemies that EntityTracker missed
+		var alive_enemies = _spawn_director.get_alive_enemies()
 		if alive_enemies.size() > 0:
-			use_wavedirector_fallback = true
+			use_spawndirector_fallback = true
 	
 	
 	# Adaptive frequency: Temporarily reduce update rate during entity count spikes
@@ -172,10 +172,10 @@ func _process_radar_update() -> void:
 	
 	# Minimal logging for key issues only
 
-	# Handle enemy data based on source (EntityTracker vs WaveDirector fallback)
-	if use_wavedirector_fallback:
-		# Use WaveDirector as source for mesh enemies (old radar system approach)
-		var alive_enemies = _wave_director.get_alive_enemies()
+	# Handle enemy data based on source (EntityTracker vs SpawnDirector fallback)
+	if use_spawndirector_fallback:
+		# Use SpawnDirector as source for mesh enemies (old radar system approach)
+		var alive_enemies = _spawn_director.get_alive_enemies()
 		for enemy in alive_enemies:
 			_ids_buf.append("enemy_fallback_" + str(_ids_buf.size()))  # Generate consistent ID
 			_pos_buf.append(enemy.pos)
