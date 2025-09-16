@@ -11,6 +11,7 @@ extends Control
 @onready var count1_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count1
 @onready var count5_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count5
 @onready var count10_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/CountButtons/Count10
+@onready var spawn_pack_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/SpawnPackButton
 
 # Entity Inspector UI elements
 @onready var entity_info: RichTextLabel = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/EntityInfo
@@ -75,7 +76,10 @@ func _ready() -> void:
 	count1_btn.pressed.connect(_on_count_selected.bind(1))
 	count5_btn.pressed.connect(_on_count_selected.bind(5))
 	count10_btn.pressed.connect(_on_count_selected.bind(10))
-	
+
+	# Connect pack spawn button
+	spawn_pack_btn.pressed.connect(_on_spawn_pack_pressed)
+
 	# Connect entity inspector button signals
 	kill_btn.pressed.connect(_on_kill_pressed)
 	heal_btn.pressed.connect(_on_heal_pressed)
@@ -257,6 +261,20 @@ func _on_spawn_at_player_pressed() -> void:
 			_spawn_all_enemies_at_player()
 		else:
 			DebugManager.spawn_enemy_at_player(selected_enemy_type, selected_count)
+
+func _on_spawn_pack_pressed() -> void:
+	"""Manually trigger pack spawning for testing"""
+	Logger.info("Manual pack spawn triggered from debug panel", "debug")
+
+	# Find the SpawnDirector in the scene
+	var spawn_director = get_tree().get_first_node_in_group("wave_directors")
+	if spawn_director and spawn_director.has_method("_handle_pack_spawning"):
+		# Reset pack timer to trigger immediate spawn
+		spawn_director.pack_spawn_timer = 999.0  # Force spawn by exceeding any interval
+		spawn_director._handle_pack_spawning(0.0)  # Call with minimal delta
+		Logger.info("Pack spawn forced via SpawnDirector", "debug")
+	else:
+		Logger.warn("SpawnDirector not found for manual pack spawn", "debug")
 
 func _on_count_selected(count: int) -> void:
 	selected_count = count
@@ -767,18 +785,18 @@ func _update_performance_stats() -> void:
 		if not debug_system_controls:
 			_reacquire_debug_system_controls()
 		
-		# Try multiple paths to get WaveDirector for mesh enemy counting
-		var wave_dir: WaveDirector = null
-		if debug_system_controls and debug_system_controls.wave_director:
-			wave_dir = debug_system_controls.wave_director
-		elif DebugManager and DebugManager.wave_director:
-			wave_dir = DebugManager.wave_director
+		# Try multiple paths to get SpawnDirector for mesh enemy counting
+		var spawn_dir: SpawnDirector = null
+		if debug_system_controls and debug_system_controls.spawn_director:
+			spawn_dir = debug_system_controls.spawn_director
+		elif DebugManager and DebugManager.spawn_director:
+			spawn_dir = DebugManager.spawn_director
 		else:
 			# Fallback: direct autoload access
-			wave_dir = get_node_or_null("/root/WaveDirector")
+			spawn_dir = get_node_or_null("/root/SpawnDirector")
 		
-		if wave_dir and wave_dir.has_method("get_alive_enemies"):
-			var alive_enemies = wave_dir.get_alive_enemies()
+		if spawn_dir and spawn_dir.has_method("get_alive_enemies"):
+			var alive_enemies = spawn_dir.get_alive_enemies()
 			cached_enemy_count = alive_enemies.size()
 		
 		# Count bosses from EntityTracker instead of expensive scene tree traversal
@@ -872,7 +890,7 @@ func _update_cheat_checkboxes() -> void:
 		var is_auto_spawn_active: bool = true
 		if DebugManager and DebugManager.is_debug_mode_active():
 			# In debug mode, normal spawning is disabled, so auto spawn is off
-			is_auto_spawn_active = false
+			is_auto_spawn_active = true
 		else:
 			# Not in debug mode, check CheatSystem state
 			is_auto_spawn_active = not CheatSystem.is_spawn_disabled()
@@ -909,10 +927,7 @@ func _on_spawn_disabled_toggled(pressed: bool) -> void:
 		if CheatSystem.is_spawn_disabled() != should_disable_spawn:
 			CheatSystem.toggle_spawn_disabled()
 		
-		# If enabling auto spawn while in debug mode, exit debug mode to allow normal spawning
-		if pressed and DebugManager and DebugManager.is_debug_mode_active():
-			Logger.info("Exiting debug mode to enable auto spawn", "debug")
-			DebugManager.toggle_debug_mode()
+		# Note: Keep debug mode active when auto spawn is enabled to maintain panel visibility
 	else:
 		Logger.warn("CheatSystem not available for auto spawn toggle", "debug")
 

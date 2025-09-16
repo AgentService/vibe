@@ -6,7 +6,7 @@ extends Node
 
 class_name DamageSystem
 
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 
 var projectile_radius: float
 var enemy_radius: float
@@ -24,7 +24,7 @@ func _load_balance_values() -> void:
 	Logger.info("Reloaded combat balance values", "combat")
 
 func _on_combat_step(_payload) -> void:
-	if not wave_director:
+	if not spawn_director:
 		return
 	
 	# TODO: Phase 2 - Add AbilityModule.get_projectile_snapshot() collision detection
@@ -34,7 +34,7 @@ func _on_combat_step(_payload) -> void:
 # TODO: Phase 2 - Replace with AbilityModule.get_projectile_snapshot() based collision detection
 # func _check_projectile_enemy_collisions() -> void:
 #	var alive_projectiles := AbilityModule.get_projectile_snapshot()
-#	var alive_enemies := wave_director.get_alive_enemies()
+#	var alive_enemies := spawn_director.get_alive_enemies()
 #	
 #	for p_idx in range(alive_projectiles.size()):
 #		var projectile := alive_projectiles[p_idx]
@@ -94,8 +94,8 @@ func _on_combat_step(_payload) -> void:
 # func _find_enemy_pool_index(target_enemy: EnemyEntity) -> int:
 #	return target_enemy.index
 
-func set_references(wave_dir: WaveDirector) -> void:
-	wave_director = wave_dir
+func set_spawn_director_reference(spawn_dir: SpawnDirector) -> void:
+	spawn_director = spawn_dir
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -104,7 +104,7 @@ func _exit_tree() -> void:
 		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
 
 func _check_enemy_player_collisions() -> void:
-	var alive_enemies := wave_director.get_alive_enemies()
+	var alive_enemies := spawn_director.get_alive_enemies()
 	var player_pos := PlayerState.position
 	
 	if player_pos == Vector2.ZERO:

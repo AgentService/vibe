@@ -20,8 +20,8 @@ func _setup_test_systems() -> void:
 			"signals": ["EventBus.combat_step", "EventBus.enemy_killed", "BalanceDB.balance_reloaded"]
 		},
 		{
-			"name": "WaveDirector", 
-			"script": preload("res://scripts/systems/WaveDirector.gd"),
+			"name": "SpawnDirector",
+			"script": preload("res://scripts/systems/SpawnDirector.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		# TODO: Phase 2 - Replace with AbilityModule autoload testing
@@ -129,7 +129,7 @@ func _print_test_results() -> void:
 	
 	print("\nCache optimization status:")
 	print("  ✓ EnemyRegistry: Pool size limited to 500 entries")
-	print("  ✓ WaveDirector: Fixed-size enemy pool with cache management")
+	print("  ✓ SpawnDirector: Fixed-size enemy pool with cache management")
 	
 	print("\nExpected memory improvement:")
 	print("  - Eliminates %d+ signal connection leaks per scene transition" % (passed_count * 2))

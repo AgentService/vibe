@@ -7,11 +7,11 @@ extends Node
 const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
 
 # Dependencies injected from Arena
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 var player: Node2D
 
-func setup(wave_dir: WaveDirector, player_ref: Node2D) -> void:
-	wave_director = wave_dir
+func setup(spawn_dir: SpawnDirector, player_ref: Node2D) -> void:
+	spawn_director = spawn_dir
 	player = player_ref
 	Logger.info("BossSpawnManager initialized", "boss")
 
@@ -56,14 +56,14 @@ func spawn_single_boss_fallback() -> void:
 	Logger.info("   Size: Using variation size_factor (%.1f)" % boss_config.size_scale, "debug")
 	
 	# Spawn using existing V2 system
-	Logger.info("5. Checking WaveDirector...", "debug")
-	if not wave_director:
-		Logger.error("   ✗ WaveDirector is null!", "debug")
+	Logger.info("5. Checking SpawnDirector...", "debug")
+	if not spawn_director:
+		Logger.error("   ✗ SpawnDirector is null!", "debug")
 		return
-	if not wave_director.has_method("_spawn_from_config_v2"):
-		Logger.error("   ✗ WaveDirector missing _spawn_from_config_v2 method", "debug")
+	if not spawn_director.has_method("_spawn_from_config_v2"):
+		Logger.error("   ✗ SpawnDirector missing _spawn_from_config_v2 method", "debug")
 		return
-	Logger.info("   ✓ WaveDirector ready", "debug")
+	Logger.info("   ✓ SpawnDirector ready", "debug")
 	
 	Logger.info("6. Converting to legacy enemy type...", "debug")
 	var legacy_type := boss_config.to_enemy_type()
@@ -71,16 +71,16 @@ func spawn_single_boss_fallback() -> void:
 	legacy_type.display_name = "Ancient Lich Boss"
 	Logger.info("   Legacy type ID: " + legacy_type.id + ", Health: " + str(legacy_type.health), "debug")
 	
-	Logger.info("7. Spawning via WaveDirector...", "debug")
-	Logger.info("WaveDirector is: " + str(wave_director), "debug")
+	Logger.info("7. Spawning via SpawnDirector...", "debug")
+	Logger.info("SpawnDirector is: " + str(spawn_director), "debug")
 	Logger.info("About to call _spawn_from_config_v2 with legacy_type=" + str(legacy_type.id) + ", boss_config=" + str(boss_config.template_id), "debug")
 	
-	if wave_director and wave_director.has_method("_spawn_from_config_v2"):
-		Logger.info("WaveDirector has _spawn_from_config_v2 method - calling it", "debug")
-		wave_director._spawn_from_config_v2(legacy_type, boss_config)
+	if spawn_director and spawn_director.has_method("_spawn_from_config_v2"):
+		Logger.info("SpawnDirector has _spawn_from_config_v2 method - calling it", "debug")
+		spawn_director._spawn_from_config_v2(legacy_type, boss_config)
 		Logger.info("_spawn_from_config_v2 call completed", "debug")
 	else:
-		Logger.warn("WaveDirector missing or doesn't have _spawn_from_config_v2 method", "debug")
+		Logger.warn("SpawnDirector missing or doesn't have _spawn_from_config_v2 method", "debug")
 	Logger.info("=== LICH SPAWN DEBUG END - SUCCESS! ===", "debug")
 
 # Spawns a boss using the provided configuration
@@ -121,11 +121,11 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 	Logger.info("Scaled - Size: Using variation size_factor (%.1f)" % boss_config.size_scale, "debug")
 	
 	# Spawn using existing V2 system
-	if not wave_director:
-		Logger.error("WaveDirector is null!", "debug")
+	if not spawn_director:
+		Logger.error("SpawnDirector is null!", "debug")
 		return
-	if not wave_director.has_method("_spawn_from_config_v2"):
-		Logger.error("WaveDirector missing _spawn_from_config_v2 method", "debug")
+	if not spawn_director.has_method("_spawn_from_config_v2"):
+		Logger.error("SpawnDirector missing _spawn_from_config_v2 method", "debug")
 		return
 	
 	# Convert to legacy type and spawn
@@ -133,6 +133,6 @@ func spawn_configured_boss(config: BossSpawnConfigScript, spawn_pos: Vector2) ->
 	legacy_type.is_special_boss = true
 	legacy_type.display_name = config.boss_id.capitalize() + " Boss"
 	
-	Logger.info("Spawning via WaveDirector...", "debug")
-	wave_director._spawn_from_config_v2(legacy_type, boss_config)
+	Logger.info("Spawning via SpawnDirector...", "debug")
+	spawn_director._spawn_from_config_v2(legacy_type, boss_config)
 	Logger.info("=== CONFIGURED BOSS SPAWN COMPLETE ===", "debug")

@@ -1,3 +1,4 @@
+class_name Arena
 extends BaseArena
 
 ## Arena scene managing scene-based enemy rendering and receiving injected game systems.
@@ -30,7 +31,7 @@ var player_attack_handler: PlayerAttackHandler
 var player_spawner: PlayerSpawner
 
 
-var wave_director: WaveDirector
+var spawn_director: SpawnDirector
 var arena_system: ArenaSystem
 var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
@@ -159,8 +160,8 @@ func _ready() -> void:
 	Logger.info("Arena: GameOrchestrator.inject_systems_to_arena() completed", "orchestrator")
 
 	# Inject boss hit feedback system to WaveDirector for boss registration
-	if GameOrchestrator.wave_director:
-		GameOrchestrator.wave_director.boss_hit_feedback = visual_effects_manager.get_boss_hit_feedback()
+	if GameOrchestrator.spawn_director:
+		GameOrchestrator.spawn_director.boss_hit_feedback = visual_effects_manager.get_boss_hit_feedback()
 		Logger.debug("BossHitFeedback injected to WaveDirector", "arena")
 	
 	_setup_card_system()
@@ -170,17 +171,17 @@ func _ready() -> void:
 	PlayerState.set_player_reference(player)
 	
 	# Setup Boss Spawn Manager with dependencies
-	boss_spawn_manager.setup(wave_director, player)
+	boss_spawn_manager.setup(spawn_director, player)
 	
 	# Setup Player Attack Handler with dependencies
-	player_attack_handler.setup(player, melee_system, wave_director, melee_effects, get_viewport())
+	player_attack_handler.setup(player, melee_system, spawn_director, melee_effects, get_viewport())
 	
 	# Setup DebugSystemControls from scene node if it exists
 	debug_system_controls = get_node_or_null("DebugSystemControls")
 	
 	# Register systems with DebugManager for debug functionality
 	if DebugManager:
-		DebugManager.register_wave_director(wave_director)
+		DebugManager.register_spawn_director(spawn_director)
 		DebugManager.register_boss_spawn_manager(boss_spawn_manager)
 		DebugManager.register_arena_ui_manager(ui_manager)
 		if debug_system_controls:
@@ -307,9 +308,9 @@ func set_camera_system(injected_camera_system: CameraSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_camera_system(injected_camera_system)
 
-func set_wave_director(injected_wave_director: WaveDirector) -> void:
+func set_spawn_director(injected_spawn_director: SpawnDirector) -> void:
 	if system_injection_manager:
-		system_injection_manager.set_wave_director(injected_wave_director)
+		system_injection_manager.set_spawn_director(injected_spawn_director)
 
 func set_melee_system(injected_melee_system: MeleeSystem) -> void:
 	if system_injection_manager:
@@ -436,11 +437,11 @@ func on_teardown() -> void:
 	Logger.info("Arena teardown initiated", "arena")
 	
 	# Stop and reset WaveDirector
-	if wave_director:
-		if wave_director.has_method("stop"):
-			wave_director.stop()
-		if wave_director.has_method("reset"):
-			wave_director.reset()
+	if spawn_director:
+		if spawn_director.has_method("stop"):
+			spawn_director.stop()
+		if spawn_director.has_method("reset"):
+			spawn_director.reset()
 	
 	# Clear EntityTracker of enemy entities
 	if EntityTracker:

@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="LogConfigResource" load_steps=2 format=3 uid="uid://uu27p48a8lg4"]
+[gd_resource type="Resource" script_class="LogConfigResource" load_steps=2 format=3 uid="uid://cw736lfb6olgh"]
 
 [ext_resource type="Script" uid="uid://yv6ld61q6tom" path="res://scripts/domain/LogConfigResource.gd" id="1_am23r"]
 
@@ -7,12 +7,13 @@ script = ExtResource("1_am23r")
 log_level = "DEBUG"
 balance = false
 combat = false
-waves = false
-player = true
-ui = true
-abilities = false
+waves = true
+player = false
+ui = false
+abilities = true
 signals = true
 performance = false
 debug = true
-radar = false
+radar = true
 camera = false
+arena = true

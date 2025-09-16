@@ -12,8 +12,8 @@ var mm_enemies_regular: MultiMeshInstance2D
 var mm_enemies_elite: MultiMeshInstance2D
 var mm_enemies_boss: MultiMeshInstance2D
 
-# Reference to WaveDirector and camera
-var wave_director: WaveDirector
+# Reference to SpawnDirector and camera
+var spawn_director: SpawnDirector
 var camera: Camera2D
 
 # Visual feedback configuration
@@ -46,9 +46,9 @@ func setup_references(swarm: MultiMeshInstance2D, regular: MultiMeshInstance2D, 
 	camera = injected_camera
 	Logger.debug("Enhanced hit feedback references set up", "visual")
 
-func set_wave_director(injected_wave_director: WaveDirector) -> void:
-	wave_director = injected_wave_director
-	Logger.debug("WaveDirector reference set for enhanced hit feedback", "visual")
+func set_spawn_director(injected_spawn_director: SpawnDirector) -> void:
+	spawn_director = injected_spawn_director
+	Logger.debug("SpawnDirector reference set for enhanced hit feedback", "visual")
 
 func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	var target_id: String = str(payload.target_id)
@@ -262,10 +262,10 @@ func _get_tier_default_color(mm_instance: MultiMeshInstance2D) -> Color:
 # Helper functions (similar to original implementation)
 func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 	# Implementation similar to original EnemyMultiMeshHitFeedback
-	if not wave_director:
+	if not spawn_director:
 		return {}
 	
-	var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
+	var alive_enemies: Array[EnemyEntity] = spawn_director.get_alive_enemies()
 	# Note: This system needs EnemyRenderTier injection - using fallback for now
 	var enemy_render_tier: EnemyRenderTier = null
 	if get_parent() and get_parent().has_method("get_enemy_render_tier"):
@@ -292,12 +292,12 @@ func _find_enemy_in_multimesh(entity_id: String) -> Dictionary:
 
 func _get_enemy_original_index(enemy_dict: Dictionary) -> int:
 	# Implementation similar to original
-	if not wave_director:
+	if not spawn_director:
 		return -1
 	
 	var enemy_pos: Vector2 = enemy_dict.get("pos", Vector2.ZERO)
-	for i in range(wave_director.enemies.size()):
-		var enemy: EnemyEntity = wave_director.enemies[i]
+	for i in range(spawn_director.enemies.size()):
+		var enemy: EnemyEntity = spawn_director.enemies[i]
 		if enemy.alive and enemy.pos.distance_to(enemy_pos) < 1.0:
 			return i
 	
@@ -310,10 +310,10 @@ func _get_enemy_position(entity_id: String) -> Vector2:
 		return Vector2.ZERO
 	
 	var enemy_index: int = parts[1].to_int()
-	if not wave_director:
+	if not spawn_director:
 		return Vector2.ZERO
 	
-	var alive_enemies: Array[EnemyEntity] = wave_director.get_alive_enemies()
+	var alive_enemies: Array[EnemyEntity] = spawn_director.get_alive_enemies()
 	for enemy in alive_enemies:
 		if enemy.alive and _get_enemy_index_from_array(enemy, alive_enemies) == enemy_index:
 			return enemy.pos

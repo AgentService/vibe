@@ -29,6 +29,10 @@ extends "res://scenes/arena/Arena.gd"
 @onready var fire_particles: GPUParticles2D = get_node_or_null("FireParticles")
 @onready var heat_distortion: Node2D = get_node_or_null("HeatDistortion")
 
+# Spawn zone management
+@onready var spawn_zones_container: Node2D = $SpawnZones
+var _spawn_zone_areas: Array[Area2D] = []
+
 func _ready() -> void:
 	Logger.info("=== UNDERWORLDARENA._READY() STARTING ===", "debug")
 	
@@ -44,7 +48,10 @@ func _ready() -> void:
 	
 	# Setup underworld-specific atmosphere after Arena systems are ready
 	_setup_underworld_atmosphere()
-	
+
+	# Initialize spawn zone cache
+	_initialize_spawn_zones()
+
 	Logger.info("UnderworldArena initialization complete: %s" % arena_name, "arena")
 
 func _load_default_config() -> void:
@@ -149,3 +156,67 @@ func get_theme_tags() -> Array[StringName]:
 	if map_config:
 		return map_config.theme_tags
 	return [&"underworld"]
+
+## Initialize spawn zone cache for efficient access
+func _initialize_spawn_zones() -> void:
+	if spawn_zones_container:
+		for child in spawn_zones_container.get_children():
+			if child is Area2D:
+				_spawn_zone_areas.append(child)
+		Logger.debug("Initialized %d spawn zones" % _spawn_zone_areas.size(), "arena")
+
+## Override spawn position to use proximity-based zone selection from scene Area2D nodes
+func get_random_spawn_position() -> Vector2:
+	# Use scene Area2D nodes if available, otherwise fall back to config
+	if _spawn_zone_areas.is_empty():
+		# Fallback to config zones if no scene zones
+		if not map_config or map_config.spawn_zones.is_empty():
+			# Final fallback to simple radius spawning
+			var angle := randf() * TAU
+			var distance := randf() * get_spawn_radius()
+			return Vector2(cos(angle), sin(angle)) * distance
+		return _get_position_from_config_zones()
+
+	# Get player position for proximity-based zone filtering
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+	if player_pos == Vector2.ZERO:
+		Logger.debug("Auto spawn: No valid player position, using all scene zones", "arena")
+		return select_random_scene_zone(_spawn_zone_areas)
+
+	# Filter scene zones by proximity (800px range for auto spawning)
+	var auto_spawn_range = 800.0  # Use default or from config
+	if map_config:
+		auto_spawn_range = map_config.auto_spawn_range
+
+	var zones_in_range = filter_zones_by_proximity(_spawn_zone_areas, player_pos, auto_spawn_range)
+
+	if zones_in_range.is_empty():
+		return Vector2.ZERO
+
+	# Select random zone from those in range
+	var selected_zone = zones_in_range[randi() % zones_in_range.size()]
+	Logger.debug("Auto spawn: Selected scene zone %s in range" % selected_zone.name, "arena")
+	return generate_position_in_scene_zone(selected_zone)
+
+## Helper method to fall back to config-based zone selection
+func _get_position_from_config_zones() -> Vector2:
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+
+	if player_pos == Vector2.ZERO:
+		# Use weighted zone selection from all zones if no player position
+		var selected_zone_data = get_weighted_spawn_zone()
+		if selected_zone_data.is_empty():
+			# Fallback if zone selection fails
+			var angle := randf() * TAU
+			var distance := randf() * get_spawn_radius()
+			return Vector2(cos(angle), sin(angle)) * distance
+		return generate_position_in_zone(selected_zone_data)
+
+	# Use proximity-based zone selection for auto spawning (800px range)
+	var selected_zone_data = map_config.get_weighted_spawn_zone_in_range(player_pos)
+	if selected_zone_data.is_empty():
+		Logger.debug("Auto spawn: No config zones in range (800px), skipping spawn", "arena")
+		return Vector2.ZERO
+
+	Logger.debug("Auto spawn: Selected config zone %s in range" % selected_zone_data.get("name", "unknown"), "arena")
+	return generate_position_in_zone(selected_zone_data)
