@@ -37,12 +37,12 @@ SessionManager="*res://autoload/SessionManager.gd"
 EntityTracker="*res://scripts/systems/EntityTracker.gd"
 DamageService="*res://scripts/systems/damage_v2/DamageRegistry.gd"
 BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
-LimboConsole="*res://addons/limbo_console/limbo_console.gd"
-GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 CameraSystem="*res://scripts/systems/CameraSystem.gd"
 HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
+GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
+LimboConsole="*res://addons/limbo_console/limbo_console.gd"
 
 [display]
 

@@ -1,0 +1,29 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/EventDefinition.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+id = "ritual_basic"
+display_name = "Ritual Circle"
+description = "Defend the ritual site while enemies attack from all sides"
+event_type = "ritual"
+duration = 30.0
+base_config = {
+	"monster_count": 12,
+	"spawn_interval": 2.0,
+	"xp_multiplier": 3.0,
+	"formation": "circle",
+	"circle_radius": 150
+}
+reward_config = {
+	"mastery_points": 1,
+	"xp_bonus": 1.8,
+	"loot_chance": 0.25
+}
+visual_config = {
+	"spawn_effect": "ritual_glow",
+	"completion_effect": "ritual_complete",
+	"ui_color": Color(0.2, 0.8, 0.2, 1),
+	"icon_path": ""
+}
