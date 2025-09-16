@@ -1,11 +1,42 @@
+# ARCHIVED - Superseded by MAP_PROGRESSION_AND_EVENTS_V1.md
+*Archived: 2024-09-16 | Reason: Consolidated with ARENA-1 and event system vision*
+
+## What was kept in MAP_PROGRESSION_AND_EVENTS_V1.md
+- **Boss Events concept** - Perfect match for PoE-style event encounters (Breach, Pack Hunt, Ritual)
+- **Zone-based spawning** - Already implemented in SpawnDirector, ideal for event placement
+- **SpawnDirector architecture** - Core spawning system working, will be extended for events
+- **Dynamic scaling integration** - Time + tier scaling concepts preserved for performance-based progression
+- **Map-specific enemy pools** - Arena-specific enemy types for event variety
+
+## What was dropped/simplified
+- **Complex phase scheduling** - Current time-based scaling sufficient for MVP
+- **Full boss framework system** - Event system provides simpler encounter mechanics
+- **Detailed spawn pool system** - Using existing SpawnDirector patterns instead
+- **Complex resource hierarchy** - Events use existing zone system rather than new pool resources
+
+## Implementation status when archived
+- **Phase -1 concepts** → Available immediately via existing SpawnDirector + MapConfig
+- **Phase 0 concepts** → Integrated into Event System MVP (30-60s event scheduling)
+- **SpawnDirector foundation** ✅ - Already working with zone-based spawning
+- **Boss Events** → Core inspiration for Event System (Breach, Pack Hunt, Ritual events)
+
+## How concepts evolved in consolidated task
+- **Boss Events** → PoE-style Event System using existing SpawnDirector zones
+- **Phase Scheduling** → Event timing system (45-60s between events)
+- **Zone Control** → Event placement using existing spawn zones
+- **Dynamic Scaling** → Performance-based XP multipliers for meta progression
+- **Map Pools** → Arena-specific event types and enemy composition
+
+---
+
 # ARENA-2: Spawn System V2 (Consolidated: Director + Scaling + Map Pools)
 
-Status: Phase -1 Available → Ready for Phase 0  
-Owner: Solo (Indie)  
-Priority: High  
-Type: System Enhancement  
-Dependencies: ARENA-1_MAP_ARENA_SYSTEM_FOUNDATION_V1, 17-RUN_CLOCK_AND_PHASES_SERVICE, Enemy V2 MVP Complete, BalanceDB, EventBus, RNG  
-Risk: Medium-Low (builds on proven foundations)  
+Status: Phase -1 Available → Ready for Phase 0
+Owner: Solo (Indie)
+Priority: High
+Type: System Enhancement
+Dependencies: ARENA-1_MAP_ARENA_SYSTEM_FOUNDATION_V1, 17-RUN_CLOCK_AND_PHASES_SERVICE, Enemy V2 MVP Complete, BalanceDB, EventBus, RNG
+Risk: Medium-Low (builds on proven foundations)
 Complexity: MVP=3/10, Full=7/10
 
 ---
@@ -17,7 +48,7 @@ This task consolidates and builds upon the Map/Arena Foundation (task 19) to cre
 **Foundation Dependencies:**
 - ✅ MapConfig.gd: Arena-specific configuration system (completed)
 - ⏳ ARENA-1_MAP_ARENA_SYSTEM_FOUNDATION_V1: MapDef, MapInstance, SpawnProfile, ModifiersService (Phase -1 complete)
-- ✅ 17-RUN_CLOCK_AND_PHASES_SERVICE: Centralized time/phase tracking  
+- ✅ 17-RUN_CLOCK_AND_PHASES_SERVICE: Centralized time/phase tracking
 - ✅ Enemy V2 MVP: EnemyFactory, template system, hybrid rendering, deterministic variations
 
 **Current Capability:** Can create arenas with MapConfig → Add spawn configuration for immediate arena-specific enemy variety
@@ -434,7 +465,7 @@ This creates a complete, data-driven enemy spawning system that leverages the Ma
 # Current MapConfig spawn features will evolve into:
 class_name SpawnProfile extends Resource
 @export var enemy_pools: Array[Dictionary]  # (from enemy_types)
-@export var phases: Array[Dictionary]  # (from enemy_waves) 
+@export var phases: Array[Dictionary]  # (from enemy_waves)
 @export var zone_weights: Dictionary  # (from spawn_zones)
 # + full advanced features...
 ```

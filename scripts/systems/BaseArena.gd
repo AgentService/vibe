@@ -99,14 +99,18 @@ func select_random_scene_zone(spawn_zone_areas: Array[Area2D]) -> Vector2:
 	var selected_zone = spawn_zone_areas[randi() % spawn_zone_areas.size()]
 	return generate_position_in_scene_zone(selected_zone)
 
-## Helper method to filter scene zones by proximity
+## Helper method to filter scene zones by proximity (legacy - max distance only)
 func filter_zones_by_proximity(spawn_zone_areas: Array[Area2D], player_pos: Vector2, proximity_range: float) -> Array[Area2D]:
+	return filter_zones_by_distance_range(spawn_zone_areas, player_pos, 0.0, proximity_range)
+
+## Helper method to filter scene zones by distance range (min/max distance)
+func filter_zones_by_distance_range(spawn_zone_areas: Array[Area2D], player_pos: Vector2, min_distance: float, max_distance: float) -> Array[Area2D]:
 	var zones_in_range: Array[Area2D] = []
 
 	for zone_area in spawn_zone_areas:
 		var zone_pos = zone_area.global_position
 		var distance = player_pos.distance_to(zone_pos)
-		if distance <= proximity_range:
+		if distance >= min_distance and distance <= max_distance:
 			zones_in_range.append(zone_area)
 
 	return zones_in_range

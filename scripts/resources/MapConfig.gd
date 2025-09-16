@@ -27,8 +27,10 @@ extends Resource
 @export var max_concurrent_enemies: int = 50 ## Maximum enemies alive at once
 
 @export_group("Proximity Spawning")
-@export var auto_spawn_range: float = 800.0 ## Auto spawn proximity range
-@export var pack_spawn_range: float = 1600.0 ## Pack pre-spawn proximity range (out of view)
+@export var auto_spawn_range: float = 800.0 ## Auto spawn proximity range (max distance)
+@export var auto_spawn_min_distance: float = 300.0 ## Auto spawn minimum distance (prevent spawning too close)
+@export var pack_spawn_range: float = 1600.0 ## Pack pre-spawn proximity range (max distance, out of view)
+@export var pack_spawn_min_distance: float = 800.0 ## Pack spawn minimum distance (prefer off-screen spawning)
 @export var use_viewport_culling: bool = false ## Additional viewport-based culling for performance
 @export var viewport_margin: float = 200.0 ## Extra margin around viewport for spawn culling
 @export var activation_method: ActivationMethod = ActivationMethod.DISTANCE ## Proximity detection method

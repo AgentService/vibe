@@ -4,6 +4,15 @@
 
 ## [Current Week - In Progress]
 
+### Architecture
+- **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts
+  - **Hybrid RNG System**: Maintains 100% deterministic gameplay while adding psychological variability layer - competitive integrity preserved with optional engagement features
+  - **Performance-Optimized Territory System**: <1ms territory control using spatial hashing, pre-computed influence fields, and batched dirty region processing
+  - **Memory-Constrained Retention**: Achievement/milestone systems using existing .tres patterns and EventBus signals - zero allocation conflicts with combat systems
+  - **Layered Objective System**: MapConfig extensions supporting primary/secondary/hidden objectives with territory integration and psychology factors
+  - **Concrete Implementation**: Complete .tres resource examples, GDScript implementations, and integration touchpoints with existing SpawnDirector/PlayerProgression systems
+  - **Backwards Compatibility**: All extensions maintain existing RNG/EventBus/resource patterns - no breaking changes to current deterministic architecture
+
 ### Fixed
 - **WaveDirector → SpawnDirector Migration Complete**: Successfully completed comprehensive system-wide refactoring
   - **Parser Errors Resolved**: Fixed all "Could not find type WaveDirector" compilation errors across 12+ core system files
@@ -20,6 +29,15 @@
   - **Debug Logging**: Enhanced logging to track zone selection and proximity detection for better system visibility
 
 ### Added
+
+- **Pack Spawning Overlap Resolution System**: Comprehensive solution eliminating enemy clustering and improving tactical combat depth
+  - **Spatial Overlap Detection**: Implemented position clearing algorithm preventing enemy spawns within 32px separation distance with 5-attempt fallback system
+  - **Zone Cooldown System**: Added 15-second cooldowns preventing rapid consecutive spawns in same zones with efficient timer management
+  - **Dynamic Pack Size Scaling**: Intelligent pack size adjustment based on enemy density (70% arena capacity threshold), zone availability, and threat levels
+  - **Zone-Based Threat Escalation**: Psychological engagement system tracking player presence and escalating threat levels (up to 50% pack size increase) in frequently used areas
+  - **Strategic Formation Variety**: Enhanced pack formations with 6 tactical patterns (Circle, Line, Cluster, Wedge, Ambush, Pincer) selected based on pack size and strategic positioning
+  - **Mathematical Balance Validation**: Comprehensive headless tests confirming scaling multipliers stay within [0.5, 2.5] bounds preventing exponential difficulty spikes
+  - **Optimized Configuration**: Updated underworld_config.tres with balanced pack intervals (45s), smaller base sizes (4-8), and reduced escalation rates for immediate gameplay improvement
 
 - **Map/Arena Configuration Foundation**: Reusable arena configuration system preparing for future Map/Arena Foundation implementation
   - **MapConfig Resource**: Structured arena configuration with gameplay settings, visual themes, spawn zones, and environmental effects

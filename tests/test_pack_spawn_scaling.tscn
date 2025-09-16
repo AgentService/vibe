@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://b2njc5pf8j1v8"]
+
+[ext_resource type="Script" path="res://tests/test_pack_spawn_scaling.gd" id="1"]
+
+[node name="PackSpawnScalingTest" type="Node"]
+script = ExtResource("1")

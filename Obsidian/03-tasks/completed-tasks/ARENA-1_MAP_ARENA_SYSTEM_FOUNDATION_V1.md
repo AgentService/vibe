@@ -1,11 +1,41 @@
+# ARCHIVED - Superseded by MAP_PROGRESSION_AND_EVENTS_V1.md
+*Archived: 2024-09-16 | Reason: Consolidated with ARENA-2 and event system vision*
+
+## What was kept in MAP_PROGRESSION_AND_EVENTS_V1.md
+- **Tier progression concept** - 15-minute map cycles with T1-T16 scaling
+- **Dynamic scaling mechanics** - Time-based and difficulty-based multipliers
+- **MapConfig foundation** - Data-driven arena configuration system (already working)
+- **ModifiersService approach** - Simplified to basic scaling factors
+- **EventBus lifecycle** - Map progression signals adapted for event system
+
+## What was dropped/simplified
+- **Complex MapDef/MapInstance hierarchy** - Current MapConfig system sufficient for MVP
+- **Over-engineered modifier system** - Simplified to basic scaling multipliers
+- **ArenaLoader architecture** - Scene switching works with existing approaches
+- **MapDevice UI system** - Deferred until meta progression system designed
+- **Full resource management** - Using existing MapConfig pattern instead
+
+## Implementation status when archived
+- **Phase -1 COMPLETED** ✅ - MapConfig.gd + UnderworldArena.gd working
+- **Phase 0 concepts** → Integrated into Event System MVP approach
+- **Phases 1-7** → Core concepts preserved in consolidated task, complex architecture deferred
+
+## How concepts evolved in consolidated task
+- **Map Foundation** → Event System uses existing MapConfig + zones
+- **Tier Progression** → 15-minute cycles with dynamic scaling (same vision)
+- **Modifiers** → Performance-based multipliers for meta progression XP
+- **Scene Management** → Build on existing arena switching, no complex loader needed
+
+---
+
 # ARENA-1: Map/Arena System Foundation V1 (Modular, Data-Driven)
 
-Status: Phase -1 Complete → Ready for Phase 0  
-Owner: Solo (Indie)  
-Priority: High  
-Type: Architecture + Systems  
-Dependencies: EventBus, GameOrchestrator, PlayerProgression, RNG, tests; Related: ARENA-2_SPAWN_SYSTEM_V2  
-Risk: Medium-Low (additive, behind seams)  
+Status: Phase -1 Complete → Ready for Phase 0
+Owner: Solo (Indie)
+Priority: High
+Type: Architecture + Systems
+Dependencies: EventBus, GameOrchestrator, PlayerProgression, RNG, tests; Related: ARENA-2_SPAWN_SYSTEM_V2
+Risk: Medium-Low (additive, behind seams)
 Complexity: MVP=2/10, Full=6/10
 
 ---
@@ -22,7 +52,7 @@ Complexity: MVP=2/10, Full=6/10
 
 ### Phase -1: Basic Arena System ✅ COMPLETED
 - [x] MapConfig.gd resource system for arena configuration
-- [x] UnderworldArena.gd theme-specific arena implementation  
+- [x] UnderworldArena.gd theme-specific arena implementation
 - [x] Manual arena creation workflow with asset import guide
 - [x] Foundation that can evolve into full MapDef system
 
@@ -172,7 +202,7 @@ static func from_instance(instance: MapInstance, tier_scalar: float) -> Modifier
     svc._table["enemies.damage_mult"] = tier_scalar
     svc._table["spawn.rate_mult"] = 1.0
     svc._table["spawn.pack_size_mult"] = 1.0
-    
+
     for modifier in instance.applied_modifiers:
         for effect in modifier.effects:
             match effect.op:
@@ -208,18 +238,18 @@ extends RefCounted
 
 static func run_map(instance: MapInstance) -> void:
     EventBus.map_loading.emit(instance)
-    
+
     var arena_scene: PackedScene = MapRegistry.get_scene(instance.def.id)
     await _fade_out()
     _teardown_current_scene()
-    
+
     get_tree().change_scene_to_packed(arena_scene)
     await get_tree().process_frame
-    
+
     var controller := get_tree().current_scene.get_node("%ArenaRuntimeController")
     var tier_scalar := _compute_tier_scalar(instance.tier)
     var mods := ModifiersService.from_instance(instance, tier_scalar)
-    
+
     controller.setup(instance, mods)
     EventBus.map_loaded.emit(instance)
     controller.start()
@@ -243,15 +273,15 @@ static func _compute_tier_scalar(tier: int) -> float:
 - [x] Updated data/README.md and maps/README.md documentation
 
 **Current Capabilities:**
-✅ Can create new arenas immediately using MapConfig system  
-✅ Theme-specific configuration with lighting, spawn zones, environmental properties  
-✅ Professional structure following CLAUDE.md conventions  
-✅ Ready to evolve into full MapDef system when needed  
+✅ Can create new arenas immediately using MapConfig system
+✅ Theme-specific configuration with lighting, spawn zones, environmental properties
+✅ Professional structure following CLAUDE.md conventions
+✅ Ready to evolve into full MapDef system when needed
 
 ### Phase 0 — Multi-Arena Expansion (1-2 hours)
 **Tasks:**
 - [ ] Create Forest arena theme using MapConfig pattern
-- [ ] Create Desert arena theme using MapConfig pattern  
+- [ ] Create Desert arena theme using MapConfig pattern
 - [ ] Test arena switching via get_tree().change_scene_to_file()
 - [ ] Validate performance with 3+ different arena themes
 - [ ] Document arena creation workflow for future themes
@@ -365,15 +395,15 @@ var mods: ModifiersService
 func setup(p_instance: MapInstance, p_mods: ModifiersService) -> void:
     instance = p_instance
     mods = p_mods
-    
+
     # Wire WaveDirector/SpawnPoints
     # Apply spawn_profile to spawning systems
     # Pass mods to enemy factory for scaling
-    
+
 func start() -> void:
     EventBus.map_started.emit(instance)
     # Begin spawning/gameplay
-    
+
 func end(success: bool) -> void:
     EventBus.map_completed.emit(instance, success)
     # Cleanup and transition
@@ -478,7 +508,7 @@ class_name MapConfig extends Resource
 @export var spawn_zones: Array[Dictionary]
 
 # Will evolve to MapDef.gd:
-class_name MapDef extends Resource  
+class_name MapDef extends Resource
 @export var id: StringName  # (from arena_id)
 @export var display_name: String  # (unchanged)
 @export var scene: PackedScene  # (new - reference to .tscn)
@@ -499,7 +529,7 @@ class_name MapDef extends Resource
 
 ### Next Immediate Actions
 1. **Create your underworld arena** using current MapConfig system
-2. **Create 2-3 more arena themes** to validate the pattern  
+2. **Create 2-3 more arena themes** to validate the pattern
 3. **Test arena switching** to ensure smooth transitions
 4. **When ready for full system**: Phase 1+ will evolve everything seamlessly
 
