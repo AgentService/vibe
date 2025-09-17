@@ -1,12 +1,12 @@
 [gd_resource type="Resource" script_class="DebugConfig" load_steps=2 format=3 uid="uid://cfi2smq1cq850"]
 
-[ext_resource type="Script" uid="uid://dgbxuf076ac4s" path="res://scripts/domain/DebugConfig.gd" id="1_xkk1l"]
+[ext_resource type="Script" uid="uid://bjlhc611hf2fn" path="res://scripts/domain/DebugConfig.gd" id="1_xkk1l"]
 
 [resource]
 script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
-start_mode = "arena"
-skip_main_menu = true
+start_mode = "menu"
+skip_main_menu = false
 arena_selection = "Underworld Arena"
 custom_arena_path = ""
 character_selection = "auto"
