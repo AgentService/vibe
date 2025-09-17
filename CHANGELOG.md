@@ -18,6 +18,11 @@
   - **Real-time Modifiers**: Passive allocations immediately affect event behavior (density, duration, rewards) via EventMasterySystem
   - **Resource-Driven Configuration**: All events defined via .tres files for hot-reload balancing and data-driven design
   - **Signal-Based Architecture**: Complete EventBus integration for loose coupling between event system and UI components
+
+- **Display Settings Optimization**: Configured optimal pixel-perfect rendering for mixed sprite sizes (16x16, 48x48, 64x64)
+  - **Project Settings**: Added viewport stretch with aspect keep, enabled 2D pixel snapping, disabled MSAA for pure pixel art
+  - **Scaling Strategy**: Established 16x16 base unit system with consistent pixel density across all sprite sizes
+  - **Documentation**: Created comprehensive sprite import guidelines and scaling documentation in data/README.md and Obsidian/systems/
   - **MasteryTreeUI**: ✅ COMPLETE - Scene-based UI following NewHUD patterns for point allocation and passive management
   - **Interactive Event Mechanics**: 🔄 NEXT - Scene-based event markers, objective entities, and interactive gameplay mechanics
 

@@ -52,6 +52,7 @@ window/size/initial_position=Vector2i(1425, 0)
 window/size/initial_screen=1
 window/size/always_on_top=true
 window/stretch/mode="viewport"
+window/stretch/aspect="keep"
 window/vsync/vsync_mode=0
 
 [editor_plugins]
@@ -137,5 +138,7 @@ enabled=PackedStringArray("gdai-mcp-plugin-godot", "limbo_console")
 [rendering]
 
 textures/canvas_textures/default_texture_filter=0
+2d/snap_2d_transforms_to_pixel=true
+2d/snap_2d_vertices_to_pixel=true
 driver/threads/thread_model="safe"
-anti_aliasing/quality/msaa_2d=1
+anti_aliasing/quality/msaa_2d=0
