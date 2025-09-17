@@ -1,16 +1,54 @@
-[gd_scene load_steps=3 format=3 uid="uid://daayqxgb8gns4"]
+[gd_scene load_steps=6 format=3 uid="uid://daayqxgb8gns4"]
 
 [ext_resource type="Script" uid="uid://doyfxyr7exqmf" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
 [ext_resource type="Script" uid="uid://c8nf3cib6wq0m" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
+[ext_resource type="Script" uid="uid://x4cm26bu4blx" path="res://scenes/core/MasteryDevice.gd" id="2_i1w5u"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_i1w5u"]
+radius = 11.7047
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_ew3s4"]
+radius = 24.3311
 
 [node name="Hideout" type="Node2D"]
 script = ExtResource("1_7lnkj")
 
 [node name="Camera2D" type="Camera2D" parent="."]
+anchor_mode = 0
 
 [node name="YSort" type="Node2D" parent="."]
 
 [node name="spawn_hideout_main" type="Marker2D" parent="YSort"]
+position = Vector2(615, 347)
+
+[node name="MasteryDevice" type="Area2D" parent="YSort"]
+position = Vector2(385, 339)
+script = ExtResource("2_i1w5u")
+
+[node name="DeviceVisual" type="ColorRect" parent="YSort/MasteryDevice"]
+offset_left = -40.0
+offset_top = -30.0
+offset_right = 40.0
+offset_bottom = 30.0
+color = Color(0.8, 0.2, 0.8, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="YSort/MasteryDevice"]
+position = Vector2(0, -1)
+shape = SubResource("CircleShape2D_i1w5u")
 
 [node name="MapDevice" type="Area2D" parent="."]
+position = Vector2(675, 342)
 script = ExtResource("2_h62y0")
+
+[node name="DeviceVisual" type="ColorRect" parent="MapDevice"]
+offset_left = -40.0
+offset_top = -30.0
+offset_right = 40.0
+offset_bottom = 30.0
+color = Color(0.2, 0.4, 0.8, 1)
+metadata/_edit_use_anchors_ = true
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="MapDevice"]
+position = Vector2(-1, 0)
+shape = SubResource("CircleShape2D_ew3s4")

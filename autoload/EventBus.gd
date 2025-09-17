@@ -234,12 +234,38 @@ signal mode_changed(mode: StringName)
 @warning_ignore("unused_signal")
 signal enter_map_requested(map_id: StringName)
 
+# EVENT SYSTEM SIGNALS
+## Event started - emitted when a new event begins
+@warning_ignore("unused_signal")
+signal event_started(event_type: StringName, zone: Area2D)
+
+## Event completed - emitted when an event is successfully finished
+@warning_ignore("unused_signal")
+signal event_completed(event_type: StringName, performance_data: Dictionary)
+
+## Event failed - emitted when an event fails or times out
+@warning_ignore("unused_signal")
+signal event_failed(event_type: StringName, reason: String)
+
+# MASTERY SYSTEM SIGNALS
+## Mastery points earned - emitted when player earns mastery points
+@warning_ignore("unused_signal")
+signal mastery_points_earned(event_type: StringName, points: int)
+
+## Passive allocated - emitted when a mastery passive is allocated
+@warning_ignore("unused_signal")
+signal passive_allocated(passive_id: StringName)
+
+## Passive deallocated - emitted when a mastery passive is deallocated (respec)
+@warning_ignore("unused_signal")
+signal passive_deallocated(passive_id: StringName)
+
 # RADAR SIGNALS
 ## Simple radar entity data structure for typed enemy information
 class RadarEntity:
 	var pos: Vector2
 	var type: String  # "enemy", "boss"
-	
+
 	func _init(position: Vector2, entity_type: String):
 		pos = position
 		type = entity_type

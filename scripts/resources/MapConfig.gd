@@ -60,6 +60,13 @@ enum ActivationMethod {
 @export var weather_effects: Array[StringName] = [] ## Weather/environmental effects
 @export var special_mechanics: Array[StringName] = [] ## Special arena mechanics
 
+@export_group("Event System")
+@export var event_spawn_enabled: bool = true ## Enable event spawning in this arena
+@export var event_spawn_interval: float = 45.0 ## Base seconds between event spawns
+@export var available_events: Array[StringName] = ["breach", "ritual", "pack_hunt", "boss"] ## Event types available in this arena
+@export var event_reward_multiplier: float = 3.0 ## Multiplier for event-based rewards
+@export var event_zone_preference: Array[StringName] = [] ## Preferred zones for event spawning (empty = all zones)
+
 @export_group("Future Expansion")
 @export var tier_multipliers: Dictionary = {} ## Future tier scaling support
 @export var modifier_support: Array[StringName] = [] ## Future modifier system support
@@ -160,6 +167,30 @@ func get_zones_in_pack_range(player_pos: Vector2) -> Array[Dictionary]:
 ## Get zones within auto spawn range (smaller range for immediate spawning)
 func get_zones_in_auto_range(player_pos: Vector2) -> Array[Dictionary]:
 	return get_zones_in_range(player_pos, auto_spawn_range)
+
+## Get random event type from available events
+func get_random_event_type() -> StringName:
+	if available_events.is_empty():
+		return ""
+	return available_events[randi() % available_events.size()]
+
+## Check if specific event type is available in this arena
+func is_event_type_available(event_type: StringName) -> bool:
+	return available_events.has(event_type)
+
+## Get zones suitable for event spawning (considers preferences)
+func get_event_spawn_zones(all_zones: Array[Dictionary]) -> Array[Dictionary]:
+	if event_zone_preference.is_empty():
+		return all_zones
+
+	var preferred_zones: Array[Dictionary] = []
+	for zone in all_zones:
+		var zone_name = zone.get("name", "")
+		if event_zone_preference.has(zone_name):
+			preferred_zones.append(zone)
+
+	# Fallback to all zones if no preferred zones found
+	return preferred_zones if not preferred_zones.is_empty() else all_zones
 
 ## Validate configuration
 func is_valid() -> bool:

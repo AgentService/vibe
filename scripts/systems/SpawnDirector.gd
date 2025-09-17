@@ -74,6 +74,13 @@ var current_wave_level: int = 1
 var pack_spawn_timer: float = 0.0
 var pack_spawn_enabled: bool = true
 
+# EVENT SYSTEM: Event spawning state
+var event_system_enabled: bool = false
+var event_timer: float = 0.0
+var next_event_delay: float = 45.0
+var active_events: Array[Dictionary] = []
+var mastery_system
+
 # ZONE COOLDOWN SYSTEM: Prevent rapid consecutive spawns in same zones
 var _zone_cooldowns: Dictionary = {}  # zone_name -> cooldown_remaining
 var zone_cooldown_duration: float = 15.0  # Seconds before zone can be used again
@@ -124,6 +131,7 @@ func _ready() -> void:
 	_initialize_pool()
 	_initialize_entity_update_queue()
 	_preload_boss_scenes()
+	_initialize_event_system()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 	
@@ -200,6 +208,17 @@ func _preload_boss_scenes() -> void:
 				Logger.warn("Failed to load boss scene: %s" % template.boss_scene_path, "waves")
 	
 	Logger.info("Boss scenes preloaded for performance: %d bosses" % _preloaded_boss_scenes.size(), "waves")
+
+func _initialize_event_system() -> void:
+	"""Initialize the event mastery system"""
+	var EventMasterySystemClass = preload("res://scripts/systems/EventMasterySystem.gd")
+	mastery_system = EventMasterySystemClass.new()
+	add_child(mastery_system)
+
+	# Enable event system by default
+	event_system_enabled = true
+
+	Logger.info("Event system initialized", "events")
 
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
@@ -308,7 +327,8 @@ func _initialize_entity_update_queue() -> void:
 
 func _on_combat_step(payload) -> void:
 	# Safety check: Don't process if not in Arena scene or if player is dead
-	if not _is_arena_scene_cached:
+	# Use dynamic check instead of cached value to handle scene transitions properly
+	if not _is_in_arena_scene():
 		return
 
 	_update_zone_cooldowns(payload.dt)
@@ -443,6 +463,9 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		
 		# Update EntityTracker
 		EntityTracker.unregister_entity(entity_id)
+
+		# Check for event completion
+		_check_event_completion(entity_id)
 	else:
 		# Update EntityTracker position/health data
 		var entity_data = EntityTracker.get_entity(entity_id)
@@ -450,6 +473,11 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 			entity_data["hp"] = new_hp
 
 func _handle_spawning(dt: float) -> void:
+	# SAFETY CHECK: Don't process any spawning logic if not in arena scene
+	# Use dynamic check instead of cached value to handle scene transitions properly
+	if not _is_in_arena_scene():
+		return
+	
 	# Check for spawn disabled cheat
 	if CheatSystem and CheatSystem.has_method("is_spawn_disabled") and CheatSystem.is_spawn_disabled():
 		return
@@ -459,6 +487,10 @@ func _handle_spawning(dt: float) -> void:
 
 	# Handle pack spawning (new unified functionality)
 	_handle_pack_spawning(dt)
+
+	# Handle event spawning
+	if event_system_enabled:
+		_handle_event_spawning(dt)
 
 	# Handle existing auto spawn (wave spawning)
 	spawn_timer += dt
@@ -626,6 +658,227 @@ func _handle_pack_spawning(dt: float) -> void:
 	_escalate_zone_threat(selected_zone.name, 0.15)  # 15% threat increase per pack spawn
 
 	_spawn_pack_formation(pack_size, spawn_position, zone_radius)
+
+func _handle_event_spawning(dt: float) -> void:
+	"""Handle event-based spawning with mastery modifiers."""
+
+	# Update event timer
+	event_timer += dt
+	if event_timer < next_event_delay:
+		return
+
+	# Reset timer
+	event_timer = 0.0
+
+	# Get current arena and map config
+	var arena_scene = _cached_arena_scene
+	if not arena_scene or not "map_config" in arena_scene:
+		Logger.debug("Event spawning: No arena scene or map config available", "events")
+		return
+
+	var map_config = arena_scene.map_config as MapConfig
+	if not map_config or not map_config.event_spawn_enabled:
+		Logger.debug("Event spawning: Events disabled in arena config", "events")
+		return
+
+	# Update event delay from map config
+	next_event_delay = map_config.event_spawn_interval
+
+	# Get player position for zone filtering
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+	if player_pos == Vector2.ZERO:
+		Logger.debug("Event spawning: No valid player position", "events")
+		return
+
+	# Get available zones for event spawning (uses pack spawn range for events)
+	var available_zones = _get_available_event_zones(player_pos, map_config)
+	if available_zones.is_empty():
+		Logger.debug("Event spawning: No available zones (all on cooldown or out of range)", "events")
+		return
+
+	# Select random event type from arena configuration
+	var event_type = map_config.get_random_event_type()
+	if event_type == "":
+		Logger.debug("Event spawning: No event types configured for arena", "events")
+		return
+
+	# Get event definition from mastery system
+	var event_def = mastery_system.get_event_definition(event_type)
+	if not event_def:
+		Logger.warn("Event spawning: No definition found for event type: %s" % event_type, "events")
+		return
+
+	# Apply mastery modifiers to event configuration
+	var modified_config = mastery_system.apply_event_modifiers(event_def)
+
+	# Select zone for event spawning (prefer distant zones)
+	var selected_zone = _select_event_zone(available_zones, player_pos)
+
+	# Set zone cooldown to prevent immediate reuse
+	_set_zone_cooldown(selected_zone.name)
+
+	# Escalate threat in the zone where event spawned
+	_escalate_zone_threat(selected_zone.name, 0.20)  # 20% threat increase per event
+
+	# Spawn the event
+	_spawn_event_at_zone(event_def, modified_config, selected_zone)
+
+	Logger.info("Event spawned: %s at zone %s with %d enemies" % [
+		event_type, selected_zone.name, modified_config.get("monster_count", 0)
+	], "events")
+
+func _get_available_event_zones(player_pos: Vector2, map_config: MapConfig) -> Array[Area2D]:
+	"""Get zones available for event spawning with distance and cooldown filtering."""
+	var arena_scene = _cached_arena_scene
+	if not arena_scene or not "_spawn_zone_areas" in arena_scene:
+		return []
+
+	var all_scene_zones = arena_scene._spawn_zone_areas
+	var event_spawn_range = map_config.pack_spawn_range  # Use pack spawn range for events
+	var event_spawn_min_distance = map_config.pack_spawn_min_distance
+
+	var available_zones: Array[Area2D] = []
+
+	# Filter zones by distance and cooldown
+	for zone_area in all_scene_zones:
+		var distance = player_pos.distance_to(zone_area.global_position)
+
+		# Check distance range (prefer off-screen spawning)
+		if distance < event_spawn_min_distance or distance > event_spawn_range:
+			continue
+
+		# Check zone cooldown
+		if not _is_zone_available(zone_area.name):
+			continue
+
+		available_zones.append(zone_area)
+
+	return available_zones
+
+func _select_event_zone(available_zones: Array[Area2D], player_pos: Vector2) -> Area2D:
+	"""Select zone for event spawning, preferring distant zones."""
+	if available_zones.size() == 1:
+		return available_zones[0]
+
+	# Sort zones by distance (furthest first)
+	var zone_distances: Array[Dictionary] = []
+	for zone in available_zones:
+		var distance = player_pos.distance_to(zone.global_position)
+		zone_distances.append({"zone": zone, "distance": distance})
+
+	zone_distances.sort_custom(func(a, b): return a.distance > b.distance)
+
+	# Prefer distant zones (70% chance for furthest half)
+	var selection_pool_size = max(1, zone_distances.size() / 2)
+	if RNG.randf("events") < 0.7 and selection_pool_size > 0:
+		var distant_index = RNG.randi_range("events", 0, selection_pool_size - 1)
+		return zone_distances[distant_index].zone
+	else:
+		var random_index = RNG.randi_range("events", 0, zone_distances.size() - 1)
+		return zone_distances[random_index].zone
+
+func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
+	"""Spawn event enemies at selected zone using pack formation system."""
+
+	# Use existing pack spawning logic with event-specific parameters
+	var monster_count = config.get("monster_count", 8)
+	var formation = config.get("formation", "circle")
+
+	# Get spawn position and zone radius
+	var arena_scene = _cached_arena_scene
+	var spawn_position = arena_scene.generate_position_in_scene_zone(zone)
+
+	var zone_radius = 50.0  # Default
+	if zone.get_child_count() > 0:
+		var collision_shape = zone.get_child(0) as CollisionShape2D
+		if collision_shape and collision_shape.shape is CircleShape2D:
+			var circle_shape = collision_shape.shape as CircleShape2D
+			zone_radius = circle_shape.radius
+
+	# Emit event started signal
+	EventBus.event_started.emit(event_def.event_type, zone)
+
+	# Spawn event enemies using existing pack formation system
+	_spawn_event_formation(monster_count, spawn_position, zone_radius, event_def)
+
+	# Track event for completion detection
+	active_events.append({
+		"type": event_def.event_type,
+		"zone": zone,
+		"start_time": Time.get_time_dict_from_system(),
+		"config": config,
+		"event_def": event_def,
+		"monster_count": monster_count,
+		"spawned_enemies": []  # Track spawned enemy IDs for completion detection
+	})
+
+func _spawn_event_formation(pack_size: int, center_pos: Vector2, formation_radius: float, event_def) -> void:
+	"""Spawn event enemies in formation (reuses pack formation logic)."""
+
+	# Use existing pack formation logic but mark enemies as event spawns
+	var formation_type = _select_strategic_formation(pack_size, center_pos)
+	var min_enemy_separation = 32.0
+	var occupied_positions: Array[Vector2] = []
+	var successful_spawns = 0
+	var max_attempts_per_enemy = 5
+
+	for i in pack_size:
+		var spawn_pos: Vector2
+		var valid_position_found = false
+
+		for attempt in max_attempts_per_enemy:
+			spawn_pos = _calculate_formation_position(formation_type, i, pack_size, center_pos, formation_radius, min_enemy_separation, attempt)
+
+			if _is_position_clear(spawn_pos, min_enemy_separation, occupied_positions):
+				valid_position_found = true
+				occupied_positions.append(spawn_pos)
+				break
+
+		if valid_position_found:
+			_spawn_event_enemy(spawn_pos, event_def)
+			successful_spawns += 1
+
+	Logger.info("Event formation spawned: %d/%d enemies for %s event" % [
+		successful_spawns, pack_size, event_def.event_type
+	], "events")
+
+func _spawn_event_enemy(position: Vector2, event_def) -> void:
+	"""Spawn a single event enemy using Enemy V2 system with event context."""
+
+	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+
+	# Track spawn index for deterministic seeding
+	var local_spawn_counter: int = get_alive_enemies().size()
+
+	# Create spawn context for EnemyFactory - mark as event spawn
+	var spawn_context := {
+		"run_id": RunManager.run_seed,
+		"wave_index": current_wave_level,
+		"spawn_index": local_spawn_counter,
+		"position": position,
+		"context_tags": ["event", event_def.event_type],  # Mark as event spawn with type
+		"spawn_type": "event",  # Additional metadata
+		"event_type": event_def.event_type  # Event-specific context
+	}
+
+	# Generate V2 spawn configuration using existing system
+	var cfg := EnemyFactoryScript.spawn_from_weights(spawn_context)
+	if not cfg:
+		Logger.warn("Event spawning: Failed to generate spawn config for %s" % event_def.event_type, "events")
+		return
+
+	# Apply event-specific modifiers to spawn config if needed
+	if event_def.base_config.has("xp_multiplier"):
+		# Apply event XP multiplier to spawned enemies
+		var xp_multiplier = event_def.base_config.get("xp_multiplier", 1.0)
+		# Note: This would require extending SpawnConfig to support XP modifiers
+		# For now, the multiplier will be applied during XP calculation
+
+	# Convert to legacy EnemyType for existing system
+	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
+
+	# Use existing spawn system
+	_spawn_from_config_v2(legacy_enemy_type, cfg)
 
 func _spawn_pack_formation(pack_size: int, center_pos: Vector2, formation_radius: float) -> void:
 	"""Spawn a pack of enemies in formation around a center point with overlap detection.
@@ -1231,3 +1484,58 @@ func _find_arena_scene() -> Node:
 			return child
 
 	return null
+
+func _check_event_completion(killed_entity_id: String) -> void:
+	"""Check if any active events are completed by enemy death."""
+
+	# Simple completion logic: event completes when any enemy dies in event area
+	# This could be enhanced later with more sophisticated event mechanics
+	var completed_events: Array[int] = []
+
+	for i in range(active_events.size()):
+		var event_data = active_events[i]
+		var event_def = event_data.event_def
+
+		# Simple completion: any kill in the event zone completes the event
+		# More sophisticated logic could track specific spawned enemies
+		if killed_entity_id.begins_with("enemy_"):
+			# Check if killed enemy was near the event zone
+			var event_zone = event_data.zone as Area2D
+			var zone_pos = event_zone.global_position
+
+			# Extract enemy index and check position
+			var enemy_index_str = killed_entity_id.replace("enemy_", "")
+			var enemy_index = enemy_index_str.to_int()
+
+			if enemy_index >= 0 and enemy_index < enemies.size():
+				var enemy_pos = enemies[enemy_index].pos
+				var distance_to_zone = zone_pos.distance_to(enemy_pos)
+
+				# If enemy was within event zone radius, count it as event completion
+				var zone_radius = 100.0  # Default event completion radius
+				if event_zone.get_child_count() > 0:
+					var collision_shape = event_zone.get_child(0) as CollisionShape2D
+					if collision_shape and collision_shape.shape is CircleShape2D:
+						var circle_shape = collision_shape.shape as CircleShape2D
+						zone_radius = circle_shape.radius * 1.5  # Allow some margin
+
+				if distance_to_zone <= zone_radius:
+					completed_events.append(i)
+
+					# Emit event completion signal with performance data
+					var performance_data = {
+						"duration": Time.get_time_dict_from_system(),  # TODO: Calculate actual duration
+						"enemies_killed": 1,  # Simple metric for now
+						"zone": event_zone.name
+					}
+
+					EventBus.event_completed.emit(event_def.event_type, performance_data)
+
+					Logger.info("Event completed: %s at zone %s" % [
+						event_def.event_type, event_zone.name
+					], "events")
+
+	# Remove completed events (iterate backwards to avoid index issues)
+	for i in range(completed_events.size() - 1, -1, -1):
+		var event_index = completed_events[i]
+		active_events.remove_at(event_index)
