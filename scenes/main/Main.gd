@@ -14,7 +14,7 @@ func _ready() -> void:
 	_setup_scene_transition_manager()
 	_load_debug_config()
 	_setup_initial_state()
-	
+
 	# Connect to combat step for debug purposes
 	EventBus.combat_step.connect(_on_combat_step)
 
@@ -29,6 +29,7 @@ func _setup_scene_transition_manager() -> void:
 	scene_transition_manager.transition_completed.connect(_on_transition_completed)
 	
 	Logger.info("SceneTransitionManager initialized", "main")
+
 
 func _load_debug_config() -> void:
 	var config_path: String = "res://config/debug.tres"

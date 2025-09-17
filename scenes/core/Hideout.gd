@@ -10,14 +10,14 @@ var player_instance: Node2D
 
 func _ready() -> void:
 	Logger.info("Hideout scene initializing", "hideout")
-	
+
 	# Initialize player spawner
 	player_spawner = PlayerSpawner.new()
 	add_child(player_spawner)
-	
+
 	# Spawn player at default spawn point
 	_spawn_player()
-	
+
 	Logger.info("Hideout scene ready", "hideout")
 
 func _spawn_player() -> void:

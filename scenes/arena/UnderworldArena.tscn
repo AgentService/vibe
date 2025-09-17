@@ -1,9 +1,9 @@
 [gd_scene load_steps=22 format=4 uid="uid://d0t1kivumd48l"]
 
-[ext_resource type="Script" uid="uid://b1hrimdv8rdls" path="res://scripts/arena/UnderworldArena.gd" id="1_npj6d"]
+[ext_resource type="Script" uid="uid://h53xp20up1sg" path="res://scripts/arena/UnderworldArena.gd" id="1_npj6d"]
 [ext_resource type="Texture2D" uid="uid://2mle0vmaungi" path="res://assets/x-mark-64.png" id="2_s0j7r"]
 [ext_resource type="Texture2D" uid="uid://b4cypfmocg6k2" path="res://assets/sprites/underworld/All Tileset/64x64.png" id="3_lscl2"]
-[ext_resource type="Script" uid="uid://cjyac8ykv6ihl" path="res://scripts/systems/debug/DebugSystemControls.gd" id="3_q6of8"]
+[ext_resource type="Script" uid="uid://ct3tpadehdggn" path="res://scripts/systems/debug/DebugSystemControls.gd" id="3_q6of8"]
 [ext_resource type="Texture2D" uid="uid://k1eoxy2dq6up" path="res://assets/sprites/underworld/All Tileset/16x16.png" id="4_dya38"]
 [ext_resource type="Texture2D" uid="uid://ca2set0jptos0" path="res://assets/sprites/shadow.png" id="5_4tny7"]
 [ext_resource type="Texture2D" uid="uid://si6d86ke8nbd" path="res://assets/sprites/underworld/All Tileset/48x48.png" id="5_hffjd"]
@@ -11587,6 +11587,23 @@ radius = 322.56
 
 [node name="UnderworldArena" type="Node2D"]
 script = ExtResource("1_npj6d")
+enable_fire_particles = null
+enable_heat_distortion = null
+lava_glow_intensity = null
+enable_lava_damage = null
+lava_damage_per_second = null
+boss_knockback_force = null
+boss_knockback_duration = null
+boss_hit_stop_duration = null
+boss_velocity_decay = null
+boss_flash_duration = null
+boss_flash_intensity = null
+boss_spawn_configs = null
+enable_debug_boss_spawning = null
+arena_id = null
+arena_name = null
+spawn_radius = null
+arena_bounds = null
 
 [node name="Ground" type="TileMapLayer" parent="."]
 z_index = -1
@@ -11645,7 +11662,6 @@ texture_scale = 6.75
 script = ExtResource("3_q6of8")
 
 [node name="PlayerSpawnPoint" type="Marker2D" parent="."]
-position = Vector2(0, 0)
 
 [node name="ArenaRoot" type="Node2D" parent="."]
 
