@@ -4,3 +4,5 @@
 
 [node name="Main" type="Node2D"]
 script = ExtResource("1_0lc8k")
+
+[node name="DefaultCamera" type="Camera2D" parent="."]
