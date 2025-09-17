@@ -26,11 +26,15 @@ func get_debug_stats(arena_ref: Node, spawn_director: SpawnDirector) -> Dictiona
 	stats["fps"] = Engine.get_frames_per_second()
 	stats["memory_mb"] = int(OS.get_static_memory_usage() / (1024 * 1024))
 	
-	# Optional: Camera/visibility metrics if available through arena_ref
-	if arena_ref and arena_ref.has_method("get_camera_system"):
-		var camera_system = arena_ref.get_camera_system()
-		if camera_system:
-			stats["camera_zoom"] = camera_system.get_camera_zoom()
+	# Optional: Camera/visibility metrics from player's camera
+	if arena_ref and arena_ref.has_method("get_player"):
+		var player = arena_ref.get_player()
+		if player:
+			var player_camera = player.get_node_or_null("PlayerCamera")
+			if player_camera and player_camera is Camera2D:
+				stats["camera_zoom"] = player_camera.zoom.x
+			else:
+				stats["camera_zoom"] = 1.0
 	
 	if Logger.is_debug():
 		Logger.debug("Performance Monitor: Collected %d performance metrics" % stats.size(), "performance")

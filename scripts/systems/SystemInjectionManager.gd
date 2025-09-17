@@ -6,7 +6,7 @@ extends Node
 
 # Type imports needed for system injection
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
+# CameraSystem removed - players handle their own cameras
 const XpSystem_Type := preload("res://scripts/systems/XpSystem.gd")
 
 # Arena references needed for system setup
@@ -53,14 +53,6 @@ func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	injected_arena_system.process_mode = Node.PROCESS_MODE_PAUSABLE
 	injected_arena_system.arena_loaded.connect(arena_ref._on_arena_loaded)
 
-func set_camera_system(injected_camera_system: CameraSystem) -> void:
-	arena_ref.camera_system = injected_camera_system
-	_injected["CameraSystem"] = injected_camera_system
-	Logger.info("CameraSystem injected into Arena", "systems")
-	
-	injected_camera_system.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if arena_ref.player:
-		injected_camera_system.setup_camera(arena_ref.player)
 
 func set_spawn_director(injected_spawn_director: SpawnDirector) -> void:
 	arena_ref.spawn_director = injected_spawn_director

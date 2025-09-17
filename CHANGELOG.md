@@ -4,6 +4,12 @@
 
 ## [Current Week - In Progress]
 
+### Fixes
+- **Arena Cache System Simplified**: Removed complex arena scene caching in SpawnDirector that was causing "No cached arena scene available" spam during scene transitions
+  - **Root Cause**: Premature optimization - cached a simple tree lookup that takes microseconds, causing stale reference issues
+  - **Solution**: Replaced cached lookups with direct `_get_arena_scene()` calls - simpler, more reliable, negligible performance impact
+  - **Result**: Eliminated transition spam logs, reduced code complexity by ~50 lines, improved maintainability
+
 ### Features
 - **Event System - PoE Atlas-Style Mastery Foundation**: Complete implementation of core event system with mastery progression
   - **Core Event Types**: 4 event types (Breach, Ritual, Pack Hunt, Boss) with distinct mechanics and formation patterns
@@ -25,6 +31,15 @@
   - **Backwards Compatibility**: All extensions maintain existing RNG/EventBus/resource patterns - no breaking changes to current deterministic architecture
 
 ### Fixed
+- **Complete CameraSystem Elimination**: Removed entire camera management system, fixed arena player visibility
+  - **Problem**: Arena player not visible due to null CameraSystem references breaking arena setup
+  - **Root Cause**: Arena.gd expected injected CameraSystem for bounds/zoom calls, but injection was disabled
+  - **Solution**: Complete CameraSystem removal following Godot best practices
+    - Removed CameraSystem autoload from GameOrchestrator entirely
+    - Updated Arena.gd to work without CameraSystem (direct EventBus bounds emission)
+    - Updated PerformanceMonitor to get camera info from player's Camera2D
+    - Player creates simple Camera2D in _ready() - pure Godot convention
+  - **Impact**: Arena player now visible and controllable, zero camera complexity, all positioning bugs eliminated
 - **SpawnDirector Scene Context Bug**: Fixed critical bug where enemies were spawning in hideout when autospawn was enabled, especially during arena-to-hideout transitions
   - **Root Cause**: SpawnDirector is a global autoload that persists across scene changes, but used cached `_is_arena_scene_cached` boolean that was never updated during scene transitions
   - **Solution**: Replaced static cached checks with dynamic `_is_in_arena_scene()` calls in both `_on_combat_step()` and `_handle_spawning()` methods

@@ -9,7 +9,7 @@ const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd") 
 
 # Player scene loaded dynamically to support @export hot-reload
 const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
-const CameraSystem := preload("res://scripts/systems/CameraSystem.gd")
+# CameraSystem removed - players handle their own cameras
 const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
 const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
 const ArenaUIManagerScript := preload("res://scripts/systems/ArenaUIManager.gd")
@@ -33,7 +33,6 @@ var player_spawner: PlayerSpawner
 
 var spawn_director: SpawnDirector
 var arena_system: ArenaSystem
-var camera_system: CameraSystem
 var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
 var system_injection_manager: SystemInjectionManager
@@ -304,9 +303,7 @@ func set_arena_system(injected_arena_system: ArenaSystem) -> void:
 	if system_injection_manager:
 		system_injection_manager.set_arena_system(injected_arena_system)
 
-func set_camera_system(injected_camera_system: CameraSystem) -> void:
-	if system_injection_manager:
-		system_injection_manager.set_camera_system(injected_camera_system)
+# set_camera_system removed - players handle their own cameras
 
 func set_spawn_director(injected_spawn_director: SpawnDirector) -> void:
 	if system_injection_manager:
@@ -391,15 +388,22 @@ func _on_enemies_updated(_alive_enemies: Array[EnemyEntity]) -> void:
 func _on_arena_loaded(arena_bounds: Rect2) -> void:
 	Logger.info("Arena loaded with bounds: " + str(arena_bounds), "ui")
 	
-	# Set camera bounds for the new arena
-	camera_system.set_arena_bounds(arena_bounds)
+	# Emit arena bounds for any systems that need them
 	var payload := EventBus.ArenaBoundsChangedPayload_Type.new(arena_bounds)
 	EventBus.arena_bounds_changed.emit(payload)
 
 func _get_visible_world_rect() -> Rect2:
 	var viewport_size := get_viewport().get_visible_rect().size
-	var zoom := camera_system.get_camera_zoom()
-	var camera_pos := camera_system.get_camera_position()
+	var zoom: float = 1.0
+	var camera_pos := Vector2.ZERO
+
+	# Get camera info from player's camera if available
+	if player:
+		var player_camera = player.get_node_or_null("PlayerCamera")
+		if player_camera and player_camera is Camera2D:
+			zoom = player_camera.zoom.x
+			camera_pos = player_camera.global_position
+
 	var margin: float = BalanceDB.get_waves_value("enemy_viewport_cull_margin")
 	
 	var half_size := (viewport_size / zoom) * 0.5 + Vector2(margin, margin)

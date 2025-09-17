@@ -39,8 +39,7 @@ var target_distance: float
 # Arena system for spawn configuration
 var arena_system
 
-# Cached arena scene reference for pack spawning (avoids repeated scene tree searches)
-var _cached_arena_scene: Node = null
+# Note: Arena scene reference removed - using dynamic lookup for simplicity and correctness
 var _is_arena_scene_cached: bool = false
 
 # Boss hit feedback system for boss registration
@@ -110,10 +109,7 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 
-	# Cache arena scene reference for pack spawning optimization
-	_cached_arena_scene = _find_arena_scene()
-	if not _cached_arena_scene:
-		Logger.warn("SpawnDirector: Could not cache arena scene reference", "arena")
+	# Arena scene lookup is now dynamic - no caching needed
 	
 	
 	_load_balance_values()
@@ -127,6 +123,8 @@ func _ready() -> void:
 	
 	# Connect to player death for immediate spawning stop
 	EventBus.player_died.connect(_on_player_died)
+
+	# Scene transition signals no longer needed for cache management
 
 	_initialize_pool()
 	_initialize_entity_update_queue()
@@ -369,7 +367,7 @@ func _update_zone_threat_escalation(dt: float) -> void:
 		return
 
 	# Get all spawn zones from current arena
-	var arena_scene = _cached_arena_scene
+	var arena_scene = _get_arena_scene()
 	if not arena_scene or not "_spawn_zone_areas" in arena_scene:
 		return
 
@@ -510,12 +508,11 @@ func _handle_pack_spawning(dt: float) -> void:
 	# Update pack spawn timer
 	pack_spawn_timer += dt
 
-	# Use cached arena scene reference for performance
-	if not _cached_arena_scene:
-		Logger.debug("Pack spawning: No cached arena scene available", "arena")
+	# Get current arena scene
+	var arena_scene = _get_arena_scene()
+	if not arena_scene:
+		Logger.debug("Pack spawning: No arena scene available", "arena")
 		return
-
-	var arena_scene = _cached_arena_scene
 
 	var has_map_config_property = ("map_config" in arena_scene)
 	var map_config_value = arena_scene.map_config if has_map_config_property else null
@@ -671,7 +668,7 @@ func _handle_event_spawning(dt: float) -> void:
 	event_timer = 0.0
 
 	# Get current arena and map config
-	var arena_scene = _cached_arena_scene
+	var arena_scene = _get_arena_scene()
 	if not arena_scene or not "map_config" in arena_scene:
 		Logger.debug("Event spawning: No arena scene or map config available", "events")
 		return
@@ -729,7 +726,7 @@ func _handle_event_spawning(dt: float) -> void:
 
 func _get_available_event_zones(player_pos: Vector2, map_config: MapConfig) -> Array[Area2D]:
 	"""Get zones available for event spawning with distance and cooldown filtering."""
-	var arena_scene = _cached_arena_scene
+	var arena_scene = _get_arena_scene()
 	if not arena_scene or not "_spawn_zone_areas" in arena_scene:
 		return []
 
@@ -785,7 +782,11 @@ func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
 	var formation = config.get("formation", "circle")
 
 	# Get spawn position and zone radius
-	var arena_scene = _cached_arena_scene
+	var arena_scene = _get_arena_scene()
+	if not arena_scene:
+		Logger.warn("Event spawning: Failed to get arena scene", "events")
+		return
+
 	var spawn_position = arena_scene.generate_position_in_scene_zone(zone)
 
 	var zone_radius = 50.0  # Default
@@ -1061,8 +1062,10 @@ func _spawn_enemy_v2() -> void:
 	var arena_scene = null
 	if current_scene and current_scene.has_method("get_random_spawn_position"):
 		arena_scene = current_scene
-	elif _cached_arena_scene and _cached_arena_scene.has_method("get_random_spawn_position"):
-		arena_scene = _cached_arena_scene
+	else:
+		var found_arena = _get_arena_scene()
+		if found_arena and found_arena.has_method("get_random_spawn_position"):
+			arena_scene = found_arena
 
 	if arena_scene:
 		spawn_pos = arena_scene.get_random_spawn_position()
@@ -1424,6 +1427,7 @@ func _on_player_died() -> void:
 	# Enemies will be cleared by SessionManager when user transitions from results screen
 	ai_paused = true
 
+
 func _clear_all_enemies() -> void:
 	"""Clear all enemies from the pool and scene"""
 	Logger.info("WaveDirector: Clearing all enemies", "waves")
@@ -1484,6 +1488,10 @@ func _find_arena_scene() -> Node:
 			return child
 
 	return null
+
+func _get_arena_scene() -> Node:
+	"""Get the current arena scene. Simple wrapper around _find_arena_scene for clarity."""
+	return _find_arena_scene()
 
 func _check_event_completion(killed_entity_id: String) -> void:
 	"""Check if any active events are completed by enemy death."""

@@ -64,15 +64,15 @@ func spawn_player(spawn_point_id: String, parent_node: Node2D) -> Node2D:
 	
 	# Add player to scene
 	parent_node.add_child(player_instance)
-	
+
 	Logger.info("Player spawned successfully at position: " + str(spawn_point.global_position), "spawner")
-	
+
 	# Emit spawn event for other systems
 	EventBus.player_position_changed.emit({
 		"position": player_instance.global_position,
 		"spawn_point_id": spawn_point_id
 	})
-	
+
 	return player_instance
 
 func _find_spawn_point(spawn_point_id: String, parent_node: Node2D) -> Marker2D:
@@ -153,12 +153,12 @@ func spawn_at(root: Node, spawn_name: String) -> Node2D:
 
 func _finalize_spawn(root: Node, player: Node2D, marker: Node) -> void:
 	"""Finalize spawn placement - called deferred to avoid timing issues."""
-	
+
 	if not is_instance_valid(player) or not is_instance_valid(marker):
 		Logger.error("Invalid player or marker during finalize spawn", "PlayerSpawner")
 		return
-		
+
 	player.global_position = (marker as Node2D).global_position
 	root.add_child(player)
-	
+
 	Logger.info("Player spawned at deferred position: " + str(player.global_position), "PlayerSpawner")
