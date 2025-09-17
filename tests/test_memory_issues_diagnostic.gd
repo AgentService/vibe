@@ -102,8 +102,8 @@ func test_system_cleanup_patterns() -> void:
 	print("\n--- Test 5: System Cleanup Pattern Analysis ---")
 	
 	var systems_without_cleanup = [
-		"XpSystem", "WaveDirector", "AbilitySystem", 
-		"MeleeSystem", "EnemyRegistry", "CameraSystem",
+		"XpSystem", "WaveDirector", "AbilitySystem",
+		"MeleeSystem", "EnemyRegistry",
 		"ArenaSystem", "CardSystem"
 	]
 	

@@ -1,8 +1,8 @@
 [gd_scene load_steps=6 format=3 uid="uid://daayqxgb8gns4"]
 
-[ext_resource type="Script" uid="uid://doyfxyr7exqmf" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
-[ext_resource type="Script" uid="uid://c8nf3cib6wq0m" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
-[ext_resource type="Script" uid="uid://x4cm26bu4blx" path="res://scenes/core/MasteryDevice.gd" id="2_i1w5u"]
+[ext_resource type="Script" uid="uid://cuad4sjati4qo" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
+[ext_resource type="Script" uid="uid://dnfaf5uauvsn8" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
+[ext_resource type="Script" uid="uid://7waofbk6kb2v" path="res://scenes/core/MasteryDevice.gd" id="2_i1w5u"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i1w5u"]
 radius = 11.7047
@@ -12,9 +12,6 @@ radius = 24.3311
 
 [node name="Hideout" type="Node2D"]
 script = ExtResource("1_7lnkj")
-
-[node name="Camera2D" type="Camera2D" parent="."]
-anchor_mode = 0
 
 [node name="YSort" type="Node2D" parent="."]
 

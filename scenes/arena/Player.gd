@@ -96,8 +96,12 @@ func _ready() -> void:
 	# DAMAGE V3: Register with unified damage system
 	_register_with_damage_system()
 	
-	# CAMERA: Setup player-following camera
-	CameraSystem.setup_camera(self)
+	# CAMERA: Simple player-following camera (Godot best practice)
+	var camera = Camera2D.new()
+	camera.name = "PlayerCamera"
+	add_child(camera)
+	camera.make_current()  # Ensure this camera takes priority over any default cameras
+	Logger.debug("Player: Set up simple player-following camera", "player")
 	
 	# Connect to melee attack signals for animation
 	if EventBus.has_signal("melee_attack_started"):
