@@ -123,6 +123,28 @@ Currently monitored files in BalanceDB:
 - res://data/ui.tres
 ```
 
+## Sprite Import Guidelines
+
+### Pixel Art Import Settings
+For optimal pixel-perfect rendering with mixed sprite sizes (16x16, 48x48, 64x64):
+
+**Required Import Settings:**
+- **Filter**: OFF (maintains pixel crispness)
+- **Mipmaps**: OFF (prevents blur at different scales)
+- **Fix Alpha Border**: ON (prevents edge artifacts)
+
+**Scaling Strategy:**
+- **Base Unit**: 16x16 pixels as fundamental unit
+- **48x48 sprites**: 3x scale (16×3=48)
+- **64x64 sprites**: 4x scale (16×4=64)
+- **Consistent Density**: All sprites maintain same pixel-per-unit ratio
+
+**Project Display Settings:**
+- **Stretch Mode**: "viewport" with aspect "keep"
+- **Texture Filter**: 0 (nearest neighbor)
+- **Snap 2D**: Transforms and vertices snapped to pixels
+- **MSAA**: Disabled for pure pixel art aesthetics
+
 ## Schema Documentation
 
 See individual config files for their data schemas. Each `.tres` file corresponds to a GDScript Resource class in `/scripts/domain/` or `/scripts/resources/`.
