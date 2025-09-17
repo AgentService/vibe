@@ -4,6 +4,17 @@
 
 ## [Current Week - In Progress]
 
+### Features
+- **Event System - PoE Atlas-Style Mastery Foundation**: Complete implementation of core event system with mastery progression
+  - **Core Event Types**: 4 event types (Breach, Ritual, Pack Hunt, Boss) with distinct mechanics and formation patterns
+  - **Mastery Tree System**: Point-based progression system where players earn points by completing events and spend them on passive modifiers
+  - **Event Spawning Integration**: Events leverage existing SpawnDirector zone system and pack formation logic for optimal performance
+  - **Real-time Modifiers**: Passive allocations immediately affect event behavior (density, duration, rewards) via EventMasterySystem
+  - **Resource-Driven Configuration**: All events defined via .tres files for hot-reload balancing and data-driven design
+  - **Signal-Based Architecture**: Complete EventBus integration for loose coupling between event system and UI components
+  - **MasteryTreeUI**: ✅ COMPLETE - Scene-based UI following NewHUD patterns for point allocation and passive management
+  - **Interactive Event Mechanics**: 🔄 NEXT - Scene-based event markers, objective entities, and interactive gameplay mechanics
+
 ### Architecture
 - **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts
   - **Hybrid RNG System**: Maintains 100% deterministic gameplay while adding psychological variability layer - competitive integrity preserved with optional engagement features
@@ -14,6 +25,10 @@
   - **Backwards Compatibility**: All extensions maintain existing RNG/EventBus/resource patterns - no breaking changes to current deterministic architecture
 
 ### Fixed
+- **SpawnDirector Scene Context Bug**: Fixed critical bug where enemies were spawning in hideout when autospawn was enabled, especially during arena-to-hideout transitions
+  - **Root Cause**: SpawnDirector is a global autoload that persists across scene changes, but used cached `_is_arena_scene_cached` boolean that was never updated during scene transitions
+  - **Solution**: Replaced static cached checks with dynamic `_is_in_arena_scene()` calls in both `_on_combat_step()` and `_handle_spawning()` methods
+  - **Impact**: Eliminates enemy spawning in hideout, stops debug spam, and ensures proper scene context detection across all game state transitions
 - **WaveDirector → SpawnDirector Migration Complete**: Successfully completed comprehensive system-wide refactoring
   - **Parser Errors Resolved**: Fixed all "Could not find type WaveDirector" compilation errors across 12+ core system files
   - **Method Signatures Updated**: Synchronized method calls (`setup_wave_director` → `setup_spawn_director`) between calling code and implementations
