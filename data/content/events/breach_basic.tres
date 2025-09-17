@@ -1,0 +1,28 @@
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/EventDefinition.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+id = "breach_basic"
+display_name = "Breach"
+description = "A portal opens, releasing waves of enemies over time"
+event_type = "breach"
+duration = 25.0
+base_config = {
+	"monster_count": 10,
+	"spawn_interval": 2.5,
+	"xp_multiplier": 2.5,
+	"formation": "circle"
+}
+reward_config = {
+	"mastery_points": 1,
+	"xp_bonus": 1.5,
+	"loot_chance": 0.2
+}
+visual_config = {
+	"spawn_effect": "portal",
+	"completion_effect": "portal_close",
+	"ui_color": Color(0.8, 0.2, 0.8, 1),
+	"icon_path": ""
+}
