@@ -72,9 +72,14 @@ func _on_reset_button_pressed() -> void:
 
 	# Find all SkillNode instances and reset them
 	var skill_nodes = _find_skill_nodes_recursive(self)
+	Logger.debug("Found %d skill nodes to reset" % skill_nodes.size(), "ui")
+
 	for node in skill_nodes:
 		if node and node.has_method("reset_skill"):
+			Logger.debug("Resetting skill node: %s" % node.name, "ui")
 			node.reset_skill()
+		else:
+			Logger.warn("Skill node %s doesn't have reset_skill method" % node.name, "ui")
 
 	# TODO: Old system also had:
 	# - Integration with mastery_system.deallocate_passive() for each node
@@ -87,10 +92,12 @@ func _find_skill_nodes_recursive(parent: Node) -> Array:
 	var nodes: Array = []
 
 	for child in parent.get_children():
-		if child.get_script() != null and child.get_script().get_global_name() == "SkillNode":
+		# Check if this child is a SkillNode using is operator (more reliable)
+		if child is SkillNode:
 			nodes.append(child)
-		else:
-			nodes.append_array(_find_skill_nodes_recursive(child))
+
+		# Always recurse into children to find nested SkillNodes
+		nodes.append_array(_find_skill_nodes_recursive(child))
 
 	return nodes
 

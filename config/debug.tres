@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
-start_mode = "arena"
+start_mode = "hideout"
 skip_main_menu = true
 arena_selection = "Underworld Arena"
 custom_arena_path = ""

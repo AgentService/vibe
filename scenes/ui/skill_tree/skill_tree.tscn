@@ -1,7 +1,7 @@
 [gd_scene load_steps=12 format=3 uid="uid://7waspyljli8q"]
 
-[ext_resource type="Script" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
+[ext_resource type="Script" uid="uid://d3cdxcgj6gey8" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://c6ngshepvl5b1" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_6.png" id="2_pnxj3"]
 [ext_resource type="Texture2D" uid="uid://twx88is878r0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_7.png" id="3_qq112"]
 [ext_resource type="Texture2D" uid="uid://bl6b54xn7we" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_8.png" id="4_qar4f"]
@@ -28,6 +28,16 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+
+[node name="ColorRect" type="ColorRect" parent="Panel"]
+z_index = -1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
 
 [node name="SkillButton" parent="." instance=ExtResource("1_hxcju")]
 layout_mode = 0
@@ -119,9 +129,10 @@ anchors_preset = 1
 anchor_left = 1.0
 anchor_right = 1.0
 offset_left = -120.0
-offset_right = -10.0
 offset_top = 10.0
+offset_right = -10.0
 offset_bottom = 80.0
+grow_horizontal = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UIPanel"]
 layout_mode = 1
