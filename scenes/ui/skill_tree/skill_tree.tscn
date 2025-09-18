@@ -38,10 +38,9 @@ max_level = 1
 
 [node name="SkillButton" parent="SkillButton" instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = 144.9
-offset_top = -121.0
-offset_right = 224.9
-offset_bottom = -41.0
+offset_left = -3.05176e-05
+offset_top = -134.0
+offset_bottom = -54.0
 disabled = true
 max_level = 2
 
@@ -69,16 +68,15 @@ offset_left = -1.90661
 offset_top = -108.0
 offset_right = 78.0934
 offset_bottom = -28.0
-disabled = true
 texture_normal = ExtResource("5_pnxj3")
 max_level = 2
 
 [node name="SkillButton3" parent="SkillButton" instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = -127.741
-offset_top = -111.0
-offset_right = -47.7408
-offset_bottom = -31.0
+offset_left = -270.734
+offset_top = -123.0
+offset_right = -190.734
+offset_bottom = -43.0
 disabled = true
 texture_normal = ExtResource("6_pnxj3")
 max_level = 2
@@ -107,6 +105,29 @@ offset_left = -95.3289
 offset_top = -105.0
 offset_right = -15.3289
 offset_bottom = -25.0
-disabled = true
 texture_normal = ExtResource("9_qar4f")
 max_level = 1
+
+[node name="SkillButton2" parent="." instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 236.0
+offset_top = 62.0
+offset_right = 316.0
+offset_bottom = 142.0
+
+[node name="SkillButton" parent="SkillButton2" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 181.0
+offset_top = 4.0
+offset_right = 261.0
+offset_bottom = 84.0
+
+[node name="SkillButton3" parent="." instance=ExtResource("1_hxcju")]
+layout_mode = 0
+
+[node name="SkillButton" parent="SkillButton3" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 195.0
+offset_top = 155.0
+offset_right = 275.0
+offset_bottom = 235.0
