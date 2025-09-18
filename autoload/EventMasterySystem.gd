@@ -3,7 +3,7 @@ extends Node
 ## EventMasterySystem autoload wrapper
 ## Provides global access to event mastery functionality from hideout and runtime
 
-var mastery_system_instance: EventMasterySystemImpl
+var mastery_system_instance: Node
 
 func _ready() -> void:
 	# Create the actual EventMasterySystem instance

@@ -10,7 +10,7 @@ signal passive_deallocated(passive_id: StringName)
 @export var skill_tree_data: Resource ## SkillTreeData resource containing tree configuration
 @export var event_type: StringName = "breach" ## Event type this tree represents
 
-var _mastery_system: EventMasterySystem
+var _mastery_system: Node
 var _skill_nodes: Dictionary = {} ## passive_id -> SkillNode mapping
 
 func _ready() -> void:

@@ -13,7 +13,7 @@ class_name AtlasTreeUI
 # Event skill trees
 @onready var breach_tree: EventSkillTree = $TabContainer/Breach/BreachTree
 
-var _mastery_system: EventMasterySystem
+var _mastery_system: Node
 var _current_event_type: StringName = "breach"
 
 signal atlas_closed()
