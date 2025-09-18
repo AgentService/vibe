@@ -6,5 +6,5 @@
 shader = ExtResource("1_shader")
 shader_parameter/radius = 0.5
 shader_parameter/center = Vector2(0.5, 0.5)
-shader_parameter/tint_color = Color(1, 1, 1, 1)
-shader_parameter/tint_strength = 0.0
+shader_parameter/tint_color = Color(1, 0.3, 0.3, 1)
+shader_parameter/tint_strength = 0.4
