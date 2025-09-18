@@ -97,6 +97,9 @@ var passive_definitions: Dictionary = {
 }
 
 func _ready() -> void:
+	# Add to mastery_system group for easy discovery
+	add_to_group("mastery_system")
+
 	# Load or create mastery tree
 	_load_mastery_tree()
 
