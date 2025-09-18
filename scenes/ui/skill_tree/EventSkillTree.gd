@@ -20,7 +20,11 @@ func _ready() -> void:
 	if skill_tree_data:
 		_initialize_from_data()
 	else:
-		Logger.warn("EventSkillTree has no skill_tree_data configured", "ui")
+		# For MVP, initialize with breach event type even without explicit data
+		if event_type == "breach":
+			_initialize_from_data()
+		else:
+			Logger.warn("EventSkillTree has no skill_tree_data configured for event type: %s" % event_type, "ui")
 
 func _find_mastery_system() -> void:
 	"""Locate the EventMasterySystem in the scene tree"""
@@ -41,6 +45,7 @@ func _initialize_from_data() -> void:
 	_collect_existing_skill_nodes()
 	_map_nodes_to_passives()
 	_connect_node_signals()
+	_connect_ui_buttons()
 	_refresh_all_nodes()
 
 	Logger.info("EventSkillTree initialized for %s event type" % event_type, "ui")
@@ -106,6 +111,13 @@ func _connect_node_signals() -> void:
 		# We'll connect to the pressed signal and handle allocation in our custom handler
 		if not node.pressed.is_connected(_on_skill_node_clicked):
 			node.pressed.connect(_on_skill_node_clicked.bind(passive_id, node))
+
+func _connect_ui_buttons() -> void:
+	"""Connect UI buttons in the EventSkillTree"""
+	var reset_button = find_child("ResetButton", true, false)
+	if reset_button and not reset_button.pressed.is_connected(reset_all_skills):
+		reset_button.pressed.connect(reset_all_skills)
+		Logger.debug("Connected EventSkillTree reset button", "ui")
 
 func _on_skill_node_clicked(passive_id: StringName, node: SkillNode) -> void:
 	"""Handle skill node clicks for passive allocation/deallocation"""

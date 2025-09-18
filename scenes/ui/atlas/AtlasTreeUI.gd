@@ -38,12 +38,19 @@ func _connect_signals() -> void:
 	"""Connect UI signals"""
 	if tab_container:
 		tab_container.tab_changed.connect(_on_tab_changed)
+		Logger.debug("Connected tab_container signals", "ui")
 
 	if reset_button:
 		reset_button.pressed.connect(_on_reset_button_pressed)
+		Logger.debug("Connected AtlasTreeUI reset button", "ui")
+	else:
+		Logger.warn("AtlasTreeUI reset_button not found", "ui")
 
 	if close_button:
 		close_button.pressed.connect(hide_ui)
+		Logger.debug("Connected AtlasTreeUI close button", "ui")
+	else:
+		Logger.warn("AtlasTreeUI close_button not found", "ui")
 
 	# Connect EventBus signals for real-time updates
 	EventBus.mastery_points_earned.connect(_on_mastery_points_earned)
