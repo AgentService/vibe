@@ -19,6 +19,8 @@ signal skill_tree_closed()
 
 var _is_visible: bool = false
 
+# Modal configuration is inherited from BaseModal
+
 # TODO: Old system had these for advanced features:
 # var mastery_system
 # var skill_nodes: Dictionary = {"breach": [], "ritual": [], "pack_hunt": [], "boss": []}
@@ -30,8 +32,31 @@ func _ready() -> void:
 	# UI should always process (pause-independent)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
+	# Set initial visibility based on context
+	_set_initial_visibility()
+
 	# Connect any buttons that might exist
 	_connect_ui_buttons()
+
+func _set_initial_visibility() -> void:
+	"""Set initial visibility - closed in hideout, visible when testing directly"""
+	var scene_tree = get_tree()
+	var current_scene = scene_tree.current_scene
+
+	# Check if we're running the skill tree scene directly (for testing)
+	var is_testing_directly = (current_scene == self or current_scene.name.contains("SkillTree"))
+
+	if is_testing_directly:
+		# Running skill tree directly from editor - keep it visible for testing
+		visible = true
+		_is_visible = true
+		Logger.debug("Skill tree opened directly - keeping visible for testing", "ui")
+	else:
+		# Running from hideout or other scene - start closed
+		visible = false
+		_is_visible = false
+		Logger.debug("Skill tree in hideout context - starting closed", "ui")
+
 
 func _connect_ui_buttons() -> void:
 	"""Connect UI buttons if they exist"""
@@ -47,14 +72,14 @@ func show_ui() -> void:
 	"""Show the skill tree UI"""
 	visible = true
 	_is_visible = true
-	Logger.debug("New skill tree UI shown", "ui")
+	Logger.debug("Skill tree UI shown", "ui")
 
 func hide_ui() -> void:
 	"""Hide the skill tree UI"""
 	visible = false
 	_is_visible = false
 	skill_tree_closed.emit()
-	Logger.debug("New skill tree UI hidden", "ui")
+	Logger.debug("Skill tree UI hidden", "ui")
 
 func toggle_ui() -> void:
 	"""Toggle the skill tree UI visibility"""
@@ -113,10 +138,9 @@ func _find_skill_nodes_recursive(parent: Node) -> Array:
 # func _refresh_nodes_for_event_type() - update specific event type nodes
 
 func _input(event: InputEvent) -> void:
-	"""Handle input when UI is visible"""
+	"""Handle input when UI is visible - BaseModal handles ESC automatically"""
 	if not _is_visible:
 		return
 
-	if event.is_action_pressed("ui_cancel"):
-		hide_ui()
-		get_viewport().set_input_as_handled()
+	# BaseModal automatically handles ESC key, so we don't need to handle it here
+	# Custom skill tree specific inputs can be added here if needed

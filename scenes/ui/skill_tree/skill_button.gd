@@ -9,6 +9,11 @@ class_name SkillNode
 
 func _ready():
 	_update_label()  # Initialize label with correct max level
+	_update_skill_state()  # Apply initial state
+
+	# Connect to pressed signal for button input
+	pressed.connect(_on_pressed)
+
 	if get_parent() is SkillNode:
 		line_2d.add_point(global_position + size/2)
 		line_2d.add_point(get_parent().global_position + size/2)
@@ -24,11 +29,6 @@ func _update_label():
  
  
  
-func _gui_input(event: InputEvent):
-	if event is InputEventMouseButton and event.pressed:
-		if event.button_index == MOUSE_BUTTON_LEFT:
-			_on_left_click()
-
 func _on_left_click():
 	# Check if we can allocate a point (parent prerequisites met)
 	if _can_allocate_point():
@@ -54,6 +54,7 @@ func _update_skill_state():
 
 		# Update visual appearance for disabled state
 		_update_disabled_visual_state()
+
 
 	# Update child skills availability
 	var skills = get_children()
@@ -91,5 +92,4 @@ func _update_disabled_visual_state():
 	# which affects button interaction behavior
 
 func _on_pressed():
-	# Keep this for backward compatibility, but _gui_input handles clicks now
-	pass
+	_on_left_click()

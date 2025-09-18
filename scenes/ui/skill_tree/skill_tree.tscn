@@ -2,15 +2,15 @@
 
 [ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
 [ext_resource type="Script" uid="uid://d3cdxcgj6gey8" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
-[ext_resource type="Texture2D" uid="uid://c6ngshepvl5b1" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_6.png" id="2_pnxj3"]
-[ext_resource type="Texture2D" uid="uid://twx88is878r0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_7.png" id="3_qq112"]
-[ext_resource type="Texture2D" uid="uid://bl6b54xn7we" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_8.png" id="4_qar4f"]
-[ext_resource type="Texture2D" uid="uid://ccbcfewoe8dm0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_9.png" id="5_r52bh"]
-[ext_resource type="Texture2D" uid="uid://cpkddoo4afqbq" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_11.png" id="6_abst5"]
-[ext_resource type="Texture2D" uid="uid://belc03fbsav8y" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_10.png" id="7_iridg"]
-[ext_resource type="Texture2D" uid="uid://3o1axb7w7nqc" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_12.png" id="8_1kge1"]
-[ext_resource type="Texture2D" uid="uid://c6tc3nvie503v" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_13.png" id="9_1wr01"]
-[ext_resource type="Texture2D" uid="uid://dsqthfqy82qry" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_14.png" id="10_uyeyk"]
+[ext_resource type="Texture2D" uid="uid://by6bpfj6e4phr" path="res://assets/skilltree/circular/circular_Dark_7.png" id="3_pnxj3"]
+[ext_resource type="Material" uid="uid://dyblp8bunfsmu" path="res://assets/materials/circular_border_material.tres" id="3_qq112"]
+[ext_resource type="Texture2D" uid="uid://drt7vmgf1373j" path="res://assets/skilltree/circular/circular_Dark_8.png" id="4_qq112"]
+[ext_resource type="Texture2D" uid="uid://sl74514tcb6k" path="res://assets/skilltree/circular/circular_Dark_9.png" id="5_qar4f"]
+[ext_resource type="Texture2D" uid="uid://bfd7qleglu36q" path="res://assets/skilltree/circular/circular_Dark_10.png" id="6_r52bh"]
+[ext_resource type="Texture2D" uid="uid://dq7ai60qnw21m" path="res://assets/skilltree/circular/circular_Dark_11.png" id="7_abst5"]
+[ext_resource type="Texture2D" uid="uid://bbt0eh2pibdgx" path="res://assets/skilltree/circular/circular_Dark_12.png" id="8_iridg"]
+[ext_resource type="Texture2D" uid="uid://d0n5ri4b2kft7" path="res://assets/skilltree/circular/circular_Dark_13.png" id="9_1kge1"]
+[ext_resource type="Texture2D" uid="uid://cdr37hf6uxfpu" path="res://assets/skilltree/circular/circular_Dark_14.png" id="10_1wr01"]
 
 [node name="SkillTree" type="Control"]
 layout_mode = 3
@@ -39,95 +39,165 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 1)
 
+[node name="RichTextLabel" type="Label" parent="Panel"]
+top_level = true
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -36.0
+offset_top = 80.0
+offset_right = 32.0
+offset_bottom = 170.0
+grow_horizontal = 2
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 50
+text = "Breach
+
+"
+horizontal_alignment = 1
+vertical_alignment = 1
+
 [node name="SkillButton" parent="." instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 432.0
-offset_top = 519.0
-offset_right = 512.0
-offset_bottom = 599.0
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = 7
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -220.0
+offset_bottom = -140.0
+grow_vertical = 0
 scale = Vector2(1.049, 1)
-texture_normal = ExtResource("2_pnxj3")
 max_level = 1
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 111.535
-offset_top = -145.0
-offset_right = 191.535
-offset_bottom = -65.0
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+offset_left = 110.62
+offset_top = -132.0
+offset_right = 190.62
+offset_bottom = -52.0
+grow_horizontal = 1
+grow_vertical = 1
 disabled = true
-texture_normal = ExtResource("10_uyeyk")
+texture_normal = ExtResource("3_pnxj3")
 max_level = 2
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 57.1973
-offset_top = -102.0
-offset_right = 137.197
-offset_bottom = -22.0
-texture_normal = ExtResource("3_qq112")
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+offset_left = 15.2908
+offset_top = -136.0
+offset_right = 95.2908
+offset_bottom = -56.0
+texture_normal = ExtResource("4_qq112")
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton2" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = -48.6177
-offset_top = -102.0
-offset_right = 31.3823
-offset_bottom = -22.0
-texture_normal = ExtResource("4_qar4f")
+material = ExtResource("3_qq112")
+layout_mode = 1
+offset_left = -85.7579
+offset_top = -136.0
+offset_right = -5.75788
+offset_bottom = -56.0
+texture_normal = ExtResource("5_qar4f")
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton/SkillButton/SkillButton2" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = -1.90661
-offset_top = -108.0
-offset_right = 78.0934
-offset_bottom = -28.0
-texture_normal = ExtResource("5_r52bh")
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.462
+anchor_bottom = 0.462
+offset_left = -40.9533
+offset_top = -132.96
+offset_right = 39.0467
+offset_bottom = -52.96
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("6_r52bh")
 max_level = 2
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton3" parent="SkillButton" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = -139.18
-offset_top = -141.0
-offset_right = -59.1802
-offset_bottom = -61.0
-texture_normal = ExtResource("7_iridg")
+material = ExtResource("3_qq112")
+layout_mode = 1
+offset_left = -188.713
+offset_top = -140.0
+offset_right = -108.713
+offset_bottom = -60.0
+texture_normal = ExtResource("7_abst5")
 max_level = 2
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
 layout_mode = 0
-offset_left = 51.4776
-offset_top = -105.0
-offset_right = 131.478
-offset_bottom = -25.0
-texture_normal = ExtResource("6_abst5")
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = 54.3375
+offset_top = -88.0
+offset_right = 134.337
+offset_bottom = -8.0
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("8_iridg")
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton2" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
 layout_mode = 0
-offset_left = -60.0572
-offset_top = -107.0
-offset_right = 19.9428
-offset_bottom = -27.0
-texture_normal = ExtResource("8_1kge1")
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = -76.2631
+offset_top = -88.0
+offset_right = 3.73689
+offset_bottom = -8.0
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("9_1kge1")
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton/SkillButton3/SkillButton2" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
 layout_mode = 0
-offset_left = -1.90655
-offset_top = -109.0
+anchors_preset = 0
+anchor_left = 0.0
+anchor_top = 0.0
+anchor_right = 0.0
+anchor_bottom = 0.0
+offset_left = -1.90658
+offset_top = -96.0
 offset_right = 78.0934
-offset_bottom = -29.0
-texture_normal = ExtResource("9_1wr01")
+offset_bottom = -16.0
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("10_1wr01")
 max_level = 1
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="UIPanel" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 80.0
-grow_horizontal = 0
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -55.0
+offset_top = -70.0
+offset_right = 55.0
+grow_horizontal = 2
+grow_vertical = 0
 
 [node name="VBoxContainer" type="VBoxContainer" parent="UIPanel"]
 layout_mode = 1
