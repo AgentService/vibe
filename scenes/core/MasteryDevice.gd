@@ -49,7 +49,7 @@ func _setup_visual_elements() -> void:
 	# DeviceVisual already exists in scene - no need to create it programmatically
 
 func _find_mastery_ui() -> void:
-	"""Find or create the SkillTreeUI."""
+	"""Find or create the skill tree UI."""
 
 	# Check if it's already instantiated in the scene
 	var ui_nodes = get_tree().get_nodes_in_group("mastery_ui")
@@ -57,8 +57,8 @@ func _find_mastery_ui() -> void:
 		mastery_ui = ui_nodes[0]
 		return
 
-	# Load and instantiate SkillTreeUI scene
-	var skill_tree_scene = load("res://scenes/ui/SkillTreeUI.tscn")
+	# Load and instantiate new skill tree scene
+	var skill_tree_scene = load("res://scenes/ui/skill_tree/skill_tree.tscn")
 	if skill_tree_scene:
 		mastery_ui = skill_tree_scene.instantiate()
 		mastery_ui.add_to_group("mastery_ui")
@@ -70,9 +70,9 @@ func _find_mastery_ui() -> void:
 
 		# Add to scene root - use call_deferred to avoid scene initialization conflicts
 		get_tree().root.call_deferred("add_child", ui_layer)
-		Logger.info("SkillTreeUI scene instantiated and added to CanvasLayer (deferred)", "ui")
+		Logger.info("Skill tree scene instantiated and added to CanvasLayer (deferred)", "ui")
 	else:
-		Logger.warn("Failed to load SkillTreeUI scene", "ui")
+		Logger.warn("Failed to load skill tree scene", "ui")
 
 func _input(event: InputEvent) -> void:
 	if not player_in_range:
@@ -121,7 +121,7 @@ func _activate_mastery_device() -> void:
 	if mastery_ui:
 		mastery_ui.show_ui()
 	else:
-		Logger.warn("SkillTreeUI not available", "ui")
+		Logger.warn("Skill tree UI not available", "ui")
 		# Try to find it again
 		_find_mastery_ui()
 		if mastery_ui:
