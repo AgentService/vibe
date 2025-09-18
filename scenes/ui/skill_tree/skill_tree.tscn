@@ -1,14 +1,16 @@
-[gd_scene load_steps=10 format=3 uid="uid://7waspyljli8q"]
+[gd_scene load_steps=12 format=3 uid="uid://7waspyljli8q"]
 
+[ext_resource type="Script" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
 [ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
-[ext_resource type="Texture2D" uid="uid://e5mbhit4b0fo" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_3.png" id="2_d0x1u"]
-[ext_resource type="Texture2D" uid="uid://b32i6cj8angtw" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_2.png" id="3_fwhjo"]
-[ext_resource type="Texture2D" uid="uid://e7gbtovwg75o" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_5.png" id="4_cvyk3"]
-[ext_resource type="Texture2D" uid="uid://c6f3u1ntkclg0" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_11.png" id="5_pnxj3"]
-[ext_resource type="Texture2D" uid="uid://bn0opgpmlbi0e" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_8.png" id="5_vhfnf"]
-[ext_resource type="Texture2D" uid="uid://0fmyvk0m11xf" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_7.png" id="6_pnxj3"]
-[ext_resource type="Texture2D" uid="uid://dm6l151qwmy17" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_9.png" id="8_qq112"]
-[ext_resource type="Texture2D" uid="uid://dx2m786qqb2qk" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_10.png" id="9_qar4f"]
+[ext_resource type="Texture2D" uid="uid://c6ngshepvl5b1" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_6.png" id="2_pnxj3"]
+[ext_resource type="Texture2D" uid="uid://twx88is878r0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_7.png" id="3_qq112"]
+[ext_resource type="Texture2D" uid="uid://bl6b54xn7we" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_8.png" id="4_qar4f"]
+[ext_resource type="Texture2D" uid="uid://ccbcfewoe8dm0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_9.png" id="5_r52bh"]
+[ext_resource type="Texture2D" uid="uid://cpkddoo4afqbq" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_11.png" id="6_abst5"]
+[ext_resource type="Texture2D" uid="uid://belc03fbsav8y" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_10.png" id="7_iridg"]
+[ext_resource type="Texture2D" uid="uid://3o1axb7w7nqc" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_12.png" id="8_1kge1"]
+[ext_resource type="Texture2D" uid="uid://c6tc3nvie503v" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_13.png" id="9_1wr01"]
+[ext_resource type="Texture2D" uid="uid://dsqthfqy82qry" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_14.png" id="10_uyeyk"]
 
 [node name="SkillTree" type="Control"]
 layout_mode = 3
@@ -17,6 +19,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_script")
 
 [node name="Panel" type="Panel" parent="."]
 layout_mode = 1
@@ -28,20 +31,22 @@ grow_vertical = 2
 
 [node name="SkillButton" parent="." instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = 556.0
-offset_top = 573.0
-offset_right = 636.0
-offset_bottom = 653.0
+offset_left = 432.0
+offset_top = 519.0
+offset_right = 512.0
+offset_bottom = 599.0
 scale = Vector2(1.049, 1)
-texture_normal = ExtResource("3_fwhjo")
+texture_normal = ExtResource("2_pnxj3")
 max_level = 1
 
 [node name="SkillButton" parent="SkillButton" instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = -3.05176e-05
-offset_top = -134.0
-offset_bottom = -54.0
+offset_left = 111.535
+offset_top = -145.0
+offset_right = 191.535
+offset_bottom = -65.0
 disabled = true
+texture_normal = ExtResource("3_qq112")
 max_level = 2
 
 [node name="SkillButton" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
@@ -51,7 +56,7 @@ offset_top = -102.0
 offset_right = 137.197
 offset_bottom = -22.0
 disabled = true
-texture_normal = ExtResource("4_cvyk3")
+texture_normal = ExtResource("4_qar4f")
 
 [node name="SkillButton2" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
 layout_mode = 0
@@ -60,7 +65,7 @@ offset_top = -102.0
 offset_right = 31.3823
 offset_bottom = -22.0
 disabled = true
-texture_normal = ExtResource("2_d0x1u")
+texture_normal = ExtResource("5_r52bh")
 
 [node name="SkillButton" parent="SkillButton/SkillButton/SkillButton2" instance=ExtResource("1_hxcju")]
 layout_mode = 0
@@ -68,17 +73,17 @@ offset_left = -1.90661
 offset_top = -108.0
 offset_right = 78.0934
 offset_bottom = -28.0
-texture_normal = ExtResource("5_pnxj3")
+texture_normal = ExtResource("6_abst5")
 max_level = 2
 
 [node name="SkillButton3" parent="SkillButton" instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = -270.734
-offset_top = -123.0
-offset_right = -190.734
-offset_bottom = -43.0
+offset_left = -139.18
+offset_top = -141.0
+offset_right = -59.1802
+offset_bottom = -61.0
 disabled = true
-texture_normal = ExtResource("6_pnxj3")
+texture_normal = ExtResource("7_iridg")
 max_level = 2
 
 [node name="SkillButton" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
@@ -88,7 +93,7 @@ offset_top = -105.0
 offset_right = 131.478
 offset_bottom = -25.0
 disabled = true
-texture_normal = ExtResource("5_vhfnf")
+texture_normal = ExtResource("8_1kge1")
 
 [node name="SkillButton2" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
 layout_mode = 0
@@ -97,37 +102,39 @@ offset_top = -107.0
 offset_right = 19.9428
 offset_bottom = -27.0
 disabled = true
-texture_normal = ExtResource("8_qq112")
+texture_normal = ExtResource("9_1wr01")
 
 [node name="SkillButton" parent="SkillButton/SkillButton3/SkillButton2" instance=ExtResource("1_hxcju")]
 layout_mode = 0
-offset_left = -95.3289
-offset_top = -105.0
-offset_right = -15.3289
-offset_bottom = -25.0
-texture_normal = ExtResource("9_qar4f")
+offset_left = -1.90655
+offset_top = -109.0
+offset_right = 78.0934
+offset_bottom = -29.0
+texture_normal = ExtResource("10_uyeyk")
 max_level = 1
 
-[node name="SkillButton2" parent="." instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 236.0
-offset_top = 62.0
-offset_right = 316.0
-offset_bottom = 142.0
+[node name="UIPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -120.0
+offset_right = -10.0
+offset_top = 10.0
+offset_bottom = 80.0
 
-[node name="SkillButton" parent="SkillButton2" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 181.0
-offset_top = 4.0
-offset_right = 261.0
-offset_bottom = 84.0
+[node name="VBoxContainer" type="VBoxContainer" parent="UIPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="SkillButton3" parent="." instance=ExtResource("1_hxcju")]
-layout_mode = 0
+[node name="ResetButton" type="Button" parent="UIPanel/VBoxContainer"]
+layout_mode = 2
+text = "Reset All"
 
-[node name="SkillButton" parent="SkillButton3" instance=ExtResource("1_hxcju")]
-layout_mode = 0
-offset_left = 195.0
-offset_top = 155.0
-offset_right = 275.0
-offset_bottom = 235.0
+[node name="CloseButton" type="Button" parent="UIPanel/VBoxContainer"]
+layout_mode = 2
+text = "Close"

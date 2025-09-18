@@ -1,5 +1,9 @@
+# REFERENCE FILE - DO NOT USE IN GAME
+# This is the complete implementation from the old SkillTreeUI system
+# Saved for reference in case we want to re-implement advanced features later
+
 extends Control
-class_name SkillTreeUI
+class_name SkillTreeUI_Reference
 
 ## Full-screen skill tree UI with four independent event trees
 ## Uses SkillTreeNode components arranged in quadrants
@@ -17,6 +21,7 @@ signal skill_tree_closed()
 @onready var tree_container: Control = $TreeContainer
 @onready var ui_panel: Panel = $UIPanel
 # Labels removed from scene - will create them separately if needed
+@onready var reset_button: Button = $UIPanel/VBoxContainer/ResetButton
 @onready var close_button: Button = $UIPanel/VBoxContainer/CloseButton
 @onready var tooltip_container: Control = $TooltipContainer
 @onready var tooltip_label: RichTextLabel = $TooltipContainer/TooltipPanel/TooltipLabel
@@ -184,6 +189,8 @@ func _setup_node_connections() -> void:
 
 func _connect_ui_signals() -> void:
 	"""Connect UI button signals"""
+	if reset_button:
+		reset_button.pressed.connect(_on_reset_button_pressed)
 	if close_button:
 		close_button.pressed.connect(hide_ui)
 
@@ -292,6 +299,16 @@ func toggle_ui() -> void:
 		hide_ui()
 	else:
 		show_ui()
+
+func _on_reset_button_pressed() -> void:
+	"""Reset all skill points to 0"""
+	Logger.info("Resetting all skill points", "ui")
+
+	# Reset all skill nodes to 0 points
+	for event_type in skill_nodes.keys():
+		for node in skill_nodes[event_type]:
+			if node and node.has_method("reset_skill"):
+				node.reset_skill()
 
 func _input(event: InputEvent) -> void:
 	"""Handle input when UI is visible"""

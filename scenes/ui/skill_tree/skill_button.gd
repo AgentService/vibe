@@ -28,19 +28,11 @@ func _gui_input(event: InputEvent):
 	if event is InputEventMouseButton and event.pressed:
 		if event.button_index == MOUSE_BUTTON_LEFT:
 			_on_left_click()
-		elif event.button_index == MOUSE_BUTTON_RIGHT:
-			_on_right_click()
 
 func _on_left_click():
 	# Check if we can allocate a point (parent prerequisites met)
 	if _can_allocate_point():
 		level = min(level + 1, max_level)  # Increase level
-		_update_skill_state()
-
-func _on_right_click():
-	# Check if we can safely remove a point without violating dependencies
-	if _can_remove_point():
-		level = max(level - 1, 0)  # Decrease level, minimum 0
 		_update_skill_state()
 
 func _update_skill_state():
@@ -49,14 +41,28 @@ func _update_skill_state():
 	# Update line color based on level - simple logic only
 	if level > 0:
 		line_2d.default_color = Color(1, 1, 0.24705882370472)  # Yellow when active
+		modulate = Color.WHITE  # Skills with points are always normal appearance
 	else:
 		line_2d.default_color = Color(0.266575, 0.266575, 0.266575, 1)  # Gray when inactive
+
+		# Check if this skill should be disabled (no parent points)
+		var parent = get_parent()
+		if parent is SkillNode:
+			disabled = parent.level < 1
+		else:
+			disabled = false  # Root nodes are never disabled
+
+		# Update visual appearance for disabled state
+		_update_disabled_visual_state()
 
 	# Update child skills availability
 	var skills = get_children()
 	for skill in skills:
 		if skill is SkillNode:
-			skill.disabled = level < 1  # Enable children only if this skill has at least 1 point
+			var should_be_disabled = level < 1
+			if skill.disabled != should_be_disabled:
+				skill.disabled = should_be_disabled
+				skill._update_disabled_visual_state()
 
 func _can_allocate_point() -> bool:
 	# Can't allocate if already at max level
@@ -71,25 +77,20 @@ func _can_allocate_point() -> bool:
 	# Child nodes require parent to have at least 1 point
 	return parent.level >= 1
 
-func _can_remove_point() -> bool:
-	# Can't remove if already at 0
-	if level <= 0:
-		return false
+func reset_skill():
+	"""Reset this skill to 0 points"""
+	level = 0
+	_update_skill_state()
 
-	# If removing this point would take us to 0, check if any children have points
-	if level == 1:
-		return not _has_children_with_points()
-
-	# Otherwise it's safe to remove (we'd still have points left)
-	return true
-
-func _has_children_with_points() -> bool:
-	# Check all child SkillNodes to see if any ha ve points allocated
-	var children = get_children()
-	for child in children:
-		if child is SkillNode and child.level > 0:
-			return true
-	return false
+func _update_disabled_visual_state():
+	"""Update visual appearance based on disabled state"""
+	if disabled and level == 0:
+		# Skill is disabled (parent has no points) - dim it significantly
+		modulate = Color(0.5, 0.5, 0.5, 1.0)
+	elif level == 0:
+		# Skill has no points but is enabled - normal appearance
+		modulate = Color.WHITE
+	# If skill has points (level > 0), it's always enabled and normal appearance
 
 func _on_pressed():
 	# Keep this for backward compatibility, but _gui_input handles clicks now
