@@ -1,4 +1,4 @@
-class_name EventMasterySystem
+class_name EventMasterySystemImpl
 extends Node
 
 ## Event mastery system for applying passive modifiers and tracking progression.
@@ -97,9 +97,6 @@ var passive_definitions: Dictionary = {
 }
 
 func _ready() -> void:
-	# Add to mastery_system group for easy discovery
-	add_to_group("mastery_system")
-
 	# Load or create mastery tree
 	_load_mastery_tree()
 

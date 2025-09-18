@@ -27,23 +27,12 @@ func _ready() -> void:
 	Logger.info("AtlasTreeUI initialized", "ui")
 
 func _find_mastery_system() -> void:
-	"""Locate the EventMasterySystem in the scene tree"""
-	var mastery_systems = get_tree().get_nodes_in_group("mastery_system")
-	if mastery_systems.size() > 0:
-		_mastery_system = mastery_systems[0]
-		Logger.debug("Found EventMasterySystem via group", "ui")
+	"""Locate the EventMasterySystem autoload"""
+	_mastery_system = EventMasterySystem.mastery_system_instance
+	if _mastery_system:
+		Logger.debug("Found EventMasterySystem autoload", "ui")
 	else:
-		# Try to find it as child of SpawnDirector
-		var spawn_directors = get_tree().get_nodes_in_group("spawn_director")
-		for spawn_director in spawn_directors:
-			var mastery_child = spawn_director.get_node_or_null("EventMasterySystem")
-			if mastery_child:
-				_mastery_system = mastery_child
-				Logger.debug("Found EventMasterySystem as child of SpawnDirector", "ui")
-				break
-
-		if not _mastery_system:
-			Logger.warn("EventMasterySystem not found for AtlasTreeUI - may not be available in hideout", "ui")
+		Logger.error("EventMasterySystem autoload not available", "ui")
 
 func _connect_signals() -> void:
 	"""Connect UI signals"""
@@ -54,11 +43,6 @@ func _connect_signals() -> void:
 	if reset_button:
 		reset_button.pressed.connect(_on_reset_button_pressed)
 		Logger.debug("Connected AtlasTreeUI reset button", "ui")
-
-		# Disable reset button if no mastery system available
-		if not _mastery_system:
-			reset_button.disabled = true
-			reset_button.tooltip_text = "Mastery system not available in hideout"
 	else:
 		Logger.warn("AtlasTreeUI reset_button not found", "ui")
 
@@ -122,11 +106,7 @@ func _on_passive_changed(passive_id: StringName) -> void:
 
 func _refresh_points_display() -> void:
 	"""Update the points display for current event type"""
-	if not points_label:
-		return
-
-	if not _mastery_system:
-		points_label.text = "%s Points: Mastery system not available in hideout" % _current_event_type.capitalize()
+	if not points_label or not _mastery_system:
 		return
 
 	var available_points = _mastery_system.mastery_tree.get_points_for_event_type(_current_event_type)

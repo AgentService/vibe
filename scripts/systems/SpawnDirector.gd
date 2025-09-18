@@ -209,14 +209,12 @@ func _preload_boss_scenes() -> void:
 
 func _initialize_event_system() -> void:
 	"""Initialize the event mastery system"""
-	var EventMasterySystemClass = preload("res://scripts/systems/EventMasterySystem.gd")
-	mastery_system = EventMasterySystemClass.new()
-	add_child(mastery_system)
+	mastery_system = EventMasterySystem.mastery_system_instance
 
 	# Enable event system by default
 	event_system_enabled = true
 
-	Logger.info("Event system initialized", "events")
+	Logger.info("Event system initialized using autoload", "events")
 
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
