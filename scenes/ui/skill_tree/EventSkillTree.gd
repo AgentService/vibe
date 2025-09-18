@@ -120,14 +120,13 @@ func _map_nodes_to_passives() -> void:
 		return
 
 	for passive_id in _skill_nodes:
-		var node: SkillNode = _skill_nodes[passive_id]
+		var node = _skill_nodes[passive_id]
 		var passive_info = _mastery_system.get_passive_info(passive_id)
 
-		# Set node level and max_level from passive info
+		# Set node level from passive info (single-level system)
 		node.level = passive_info.get("current_level", 0)
-		node.max_level = passive_info.get("max_level", 3)  # Default to 3 if not specified
 
-		Logger.debug("Mapped %s: level %d/%d" % [passive_id, node.level, node.max_level], "ui")
+		Logger.debug("Mapped %s: level %d" % [passive_id, node.level], "ui")
 
 func _connect_node_signals() -> void:
 	"""Connect SkillNode click events to passive allocation logic"""
@@ -145,7 +144,7 @@ func _connect_node_signals() -> void:
 			node.pressed.connect(_on_node_pressed.bind(node))
 			Logger.debug("Connected EventSkillTree handler for %s" % node.name, "events")
 
-func _on_node_pressed(node: SkillNode) -> void:
+func _on_node_pressed(node) -> void:
 	"""Handle any skill node press - route to appropriate handler"""
 	# Find if this node is mapped to a passive
 	var mapped_passive_id: StringName = ""
@@ -164,15 +163,15 @@ func _on_node_pressed(node: SkillNode) -> void:
 			# Reset mode - only try to deallocate if node has points
 			if node.level > 0:
 				if _can_unmapped_node_be_removed(node):
-					node.level = max(0, node.level - 1)  # Decrease level by 1
+					node.level = 0  # Deallocate completely in single-level system
 					node._update_skill_state()
-					Logger.info("Deallocated unmapped node: %s (level %d)" % [node.name, node.level], "events")
+					Logger.info("Deallocated unmapped node: %s" % node.name, "events")
 				else:
 					Logger.info("Cannot deallocate unmapped node %s - child dependencies exist" % node.name, "events")
 			else:
-				Logger.info("Unmapped node %s already at minimum level (0)" % node.name, "events")
+				Logger.info("Unmapped node %s already deallocated" % node.name, "events")
 		else:
-			# Normal mode - allocate
+			# Normal mode - toggle allocation (handled by SkillNode's _on_left_click)
 			node._on_left_click()
 
 func _connect_ui_buttons() -> void:
@@ -180,56 +179,49 @@ func _connect_ui_buttons() -> void:
 	# Reset and close buttons removed - functionality now handled by AtlasTreeUI panel
 	pass
 
-func _on_skill_node_clicked(passive_id: StringName, node: SkillNode) -> void:
-	"""Handle skill node clicks for passive allocation/deallocation with multi-level support"""
+func _on_skill_node_clicked(passive_id: StringName, node) -> void:
+	"""Handle skill node clicks for passive allocation/deallocation with single-level binary system"""
 	# Check if this node is mapped to EventMasterySystem
 	if passive_id in _skill_nodes and _mastery_system:
 		var passive_info = _mastery_system.get_passive_info(passive_id)
 		var current_level = passive_info.current_level
-		var max_level = passive_info.max_level
 
 		if _reset_mode:
-			# Reset mode - deallocate one level at a time with prerequisite checks
+			# Reset mode - deallocate if allocated
 			if current_level > 0:
 				if _can_deallocate_with_prerequisites(passive_id):
 					_mastery_system.deallocate_passive(passive_id)
-					var new_level = _mastery_system.get_passive_level(passive_id)
-					node.level = new_level
+					node.level = 0
 					passive_deallocated.emit(passive_id)
-					Logger.info("Deallocated passive level: %s (level %d)" % [passive_id, new_level], "events")
+					Logger.info("Deallocated passive: %s" % passive_id, "events")
 				else:
 					Logger.info("Cannot deallocate passive %s - child dependencies exist" % passive_id, "events")
 			else:
-				Logger.info("Passive %s already at minimum level (0)" % passive_id, "events")
+				Logger.info("Passive %s already deallocated" % passive_id, "events")
 		else:
-			# Normal mode - allocate levels with prerequisite checks
-			if current_level >= max_level:
-				# At max level - no action, use reset mode to deallocate
-				Logger.info("Passive %s already at max level (%d/%d) - use reset mode to deallocate" % [passive_id, current_level, max_level], "events")
-				return
-			elif current_level == 0:
-				# Not allocated - allocate to level 1 with prerequisite check
+			# Normal mode - toggle allocation (0 <-> 1)
+			if current_level == 0:
+				# Not allocated - try to allocate
 				if _can_allocate_with_prerequisites(passive_id):
 					if _mastery_system.allocate_passive(passive_id):
 						node.level = 1
 						passive_allocated.emit(passive_id)
-						Logger.info("Allocated passive: %s (level 1)" % passive_id, "events")
+						Logger.info("Allocated passive: %s" % passive_id, "events")
 				else:
 					var parent_id = _get_node_parent(passive_id)
 					if parent_id != "":
-						Logger.info("Cannot allocate passive %s - parent %s requires at least 1 point" % [passive_id, parent_id], "events")
+						Logger.info("Cannot allocate passive %s - parent %s requires allocation" % [passive_id, parent_id], "events")
 					else:
 						Logger.info("Cannot allocate passive %s - insufficient points" % passive_id, "events")
 			else:
-				# Has some levels (1 or 2) - try to increment to next level
-				if _can_allocate_with_prerequisites(passive_id):
-					if _mastery_system.allocate_passive(passive_id):
-						var new_level = _mastery_system.get_passive_level(passive_id)
-						node.level = new_level
-						passive_allocated.emit(passive_id)
-						Logger.info("Leveled up passive: %s (level %d)" % [passive_id, new_level], "events")
+				# Already allocated - try to deallocate
+				if _can_deallocate_with_prerequisites(passive_id):
+					_mastery_system.deallocate_passive(passive_id)
+					node.level = 0
+					passive_deallocated.emit(passive_id)
+					Logger.info("Deallocated passive: %s" % passive_id, "events")
 				else:
-					Logger.info("Cannot level up passive %s - insufficient points" % passive_id, "events")
+					Logger.info("Cannot deallocate passive %s - child dependencies exist" % passive_id, "events")
 
 		# Refresh UI after allocation changes
 		_refresh_all_nodes()
@@ -274,7 +266,7 @@ func _update_reset_mode_highlighting(active: bool) -> void:
 
 	Logger.debug("Updated reset mode highlighting for %d nodes" % all_nodes.size(), "events")
 
-func _can_unmapped_node_be_removed(node: SkillNode) -> bool:
+func _can_unmapped_node_be_removed(node) -> bool:
 	"""Check if an unmapped skill node can be removed (leaf-only logic)"""
 	if node.level <= 0:
 		return false  # No points to remove
@@ -282,7 +274,7 @@ func _can_unmapped_node_be_removed(node: SkillNode) -> bool:
 	# Only check that this node's subtree is empty - siblings don't matter
 	return _is_unmapped_subtree_empty(node)
 
-func _has_unmapped_siblings_with_points(node: SkillNode) -> bool:
+func _has_unmapped_siblings_with_points(node) -> bool:
 	"""Check if this unmapped node has siblings that still have points"""
 	var parent = node.get_parent()
 	if not parent is SkillNode:
@@ -296,7 +288,7 @@ func _has_unmapped_siblings_with_points(node: SkillNode) -> bool:
 
 	return false  # No siblings have points
 
-func _is_unmapped_subtree_empty(node: SkillNode) -> bool:
+func _is_unmapped_subtree_empty(node) -> bool:
 	"""Check if entire unmapped subtree has no allocated points (recursive)"""
 	var child_nodes = node.get_children()
 
@@ -360,14 +352,20 @@ func _can_allocate_with_prerequisites(passive_id: StringName) -> bool:
 	return true
 
 func _can_deallocate_with_prerequisites(passive_id: StringName) -> bool:
-	"""Check if passive can be deallocated considering child dependencies (leaf-only logic)"""
+	"""Check if passive can be deallocated considering child dependencies"""
 	var current_level = _mastery_system.get_passive_level(passive_id)
 	if current_level <= 0:
 		return false  # Nothing to deallocate
 
-	# Only check that this node's subtree is empty - siblings don't matter
+	# In single-level system, can only deallocate if no children have points
 	if not _is_subtree_empty(passive_id):
 		Logger.debug("Cannot deallocate %s - subtree still has allocated descendants" % passive_id, "events")
+		return false
+
+	# Also check actual scene tree children (unmapped nodes)
+	var node = _skill_nodes.get(passive_id)
+	if node and not _is_unmapped_subtree_empty(node):
+		Logger.debug("Cannot deallocate %s - scene subtree still has allocated descendants" % passive_id, "events")
 		return false
 
 	return true
@@ -409,20 +407,31 @@ func _refresh_all_nodes() -> void:
 		return
 
 	for passive_id in _skill_nodes:
-		var node: SkillNode = _skill_nodes[passive_id]
+		var node = _skill_nodes[passive_id]
 		var passive_info = _mastery_system.get_passive_info(passive_id)
+		var new_level = passive_info.get("current_level", 0)
 
-		# Update node level and max_level from current passive state
-		node.level = passive_info.get("current_level", 0)
-		node.max_level = passive_info.get("max_level", 3)
+		# Single-level system - no max_level updates needed
+
+		# Update node level from current passive state
+		node.level = new_level
 
 		# Update node availability based on prerequisite logic
-		# The existing SkillNode prerequisite system handles this automatically
 		node._update_skill_state()
+
+	# Update all child node line connections after all levels are set
+	call_deferred("_refresh_all_line_connections")
 
 	# If in reset mode, refresh highlighting to reflect dependency changes
 	if _reset_mode:
 		_update_reset_mode_highlighting(true)
+
+func _refresh_all_line_connections():
+	"""Refresh line connections for all nodes after positions and levels are finalized"""
+	for passive_id in _skill_nodes:
+		var node = _skill_nodes[passive_id]
+		if node.get_parent() is SkillNode:
+			node._setup_line_connection()
 
 func reset_all_skills() -> void:
 	"""Reset all skills in this tree"""
@@ -432,12 +441,10 @@ func reset_all_skills() -> void:
 	# Deallocate all passives for this event type (handles mapped nodes)
 	var event_passives = _mastery_system.get_all_passives_for_event_type(event_type)
 	for passive_info in event_passives:
-		var current_level = passive_info.current_level
-		# Deallocate all levels for this passive
-		while current_level > 0:
+		if passive_info.current_level > 0:
+			# Single deallocate call for single-level system
 			_mastery_system.deallocate_passive(passive_info.id)
 			passive_deallocated.emit(passive_info.id)
-			current_level -= 1
 
 	# Also reset ALL skill nodes directly (handles unmapped nodes)
 	var all_skill_nodes = _find_skill_nodes_recursive(self)

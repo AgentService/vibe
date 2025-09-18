@@ -87,6 +87,7 @@ func hide_ui() -> void:
 	atlas_closed.emit()
 	Logger.debug("AtlasTreeUI hidden", "ui")
 
+
 func _on_tab_changed(tab_index: int) -> void:
 	"""Handle tab changes to update current event type"""
 	var tab_names = ["breach", "ritual", "pack_hunt", "boss"]

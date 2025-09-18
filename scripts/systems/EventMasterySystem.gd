@@ -8,168 +8,170 @@ extends Node
 var mastery_tree
 var _event_definitions: Dictionary = {} ## event_type -> EventDefinition
 
-# Passive definitions with costs and effects
+# Passive definitions with costs and effects - Single-level format
 var passive_definitions: Dictionary = {
-	# Breach event passives - Multi-level format
-	"breach_density": {
-		"name": "Breach Density",
-		"description": "Breaches spawn more monsters",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],  # 1 point per level
-		"event_type": "breach",
-		"modifiers_per_level": [
-			{"monster_count": 1.15},  # Level 1: +15%
-			{"monster_count": 1.30},  # Level 2: +30%
-			{"monster_count": 1.50}   # Level 3: +50%
-		]
-	},
+	# Breach event passives - Single-level format
 	"breach_duration": {
 		"name": "Breach Duration",
-		"description": "Breaches last longer",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],
+		"description": "Breaches last 5 seconds longer",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"duration": 3.0},   # Level 1: +3 seconds
-			{"duration": 6.0},   # Level 2: +6 seconds
-			{"duration": 10.0}   # Level 3: +10 seconds
-		]
+		"modifiers": {"duration": 5.0}
 	},
 	"breach_rewards": {
 		"name": "Breach Rewards",
-		"description": "Breach enemies grant more XP",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],
+		"description": "Breach enemies grant 30% more XP",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"xp_multiplier": 1.20},  # Level 1: +20%
-			{"xp_multiplier": 1.40},  # Level 2: +40%
-			{"xp_multiplier": 1.60}   # Level 3: +60%
-		]
+		"modifiers": {"xp_multiplier": 1.30}
 	},
 	"breach_power": {
 		"name": "Breach Power",
-		"description": "Deal more damage during breach events",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],
+		"description": "Deal 15% more damage during breach events",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"damage_multiplier": 1.10},  # Level 1: +10%
-			{"damage_multiplier": 1.20},  # Level 2: +20%
-			{"damage_multiplier": 1.35}   # Level 3: +35%
-		]
+		"modifiers": {"damage_multiplier": 1.15}
 	},
 	"breach_defense": {
 		"name": "Breach Defense",
-		"description": "Take less damage during breach events",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],
+		"description": "Take 10% less damage during breach events",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"damage_reduction": 0.95},  # Level 1: 5% reduction
-			{"damage_reduction": 0.90},  # Level 2: 10% reduction
-			{"damage_reduction": 0.82}   # Level 3: 18% reduction
-		]
+		"modifiers": {"damage_reduction": 0.90}
 	},
 	"breach_mobility": {
 		"name": "Breach Mobility",
-		"description": "Move faster during breach events",
-		"max_level": 3,
-		"cost_per_level": [1, 1, 1],
+		"description": "Move 20% faster during breach events",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"movement_speed": 1.10},  # Level 1: +10%
-			{"movement_speed": 1.20},  # Level 2: +20%
-			{"movement_speed": 1.35}   # Level 3: +35%
-		]
-	},
-	"breach_mastery": {
-		"name": "Breach Mastery",
-		"description": "All breach bonuses are more effective",
-		"max_level": 2,
-		"cost_per_level": [1, 1],  # 1 point per level
-		"event_type": "breach",
-		"modifiers_per_level": [
-			{"breach_effectiveness": 1.15},  # Level 1: +15%
-			{"breach_effectiveness": 1.35}   # Level 2: +35%
-		]
+		"modifiers": {"movement_speed": 1.20}
 	},
 	"breach_overflow": {
 		"name": "Breach Overflow",
-		"description": "Breach events have extended duration",
-		"max_level": 2,
-		"cost_per_level": [1, 1],
+		"description": "Breach events have 30% extended duration",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"event_duration": 1.25},  # Level 1: +25%
-			{"event_duration": 1.50}   # Level 2: +50%
-		]
+		"modifiers": {"event_duration": 1.30}
 	},
 	"breach_cascade": {
 		"name": "Breach Cascade",
-		"description": "Defeating enemies during breach extends duration",
-		"max_level": 2,
-		"cost_per_level": [1, 1],  # 1 point per level
+		"description": "Defeating enemies during breach has 12% chance to extend duration",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"cascade_chance": 0.08},  # Level 1: 8% chance
-			{"cascade_chance": 0.15}   # Level 2: 15% chance
-		]
+		"modifiers": {"cascade_chance": 0.12}
 	},
 
-	# Additional breach passives for skill tree
-	"breach_overlord": {
-		"name": "Breach Overlord",
-		"description": "Elite enemies have a chance to spawn in breaches, providing exceptional rewards",
+	# SUPPORT TREE (Branch 1) - Safer, Controlled Breaches
+	"breach_stabilization": {
+		"name": "Breach Stabilization",
+		"description": "Breaches open and close 75% slower, making them easier to manage",
 		"max_level": 1,
-		"cost_per_level": [1],
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"elite_spawn_chance": 0.15}  # Level 1: 15% chance for elite spawns
-		]
+		"tree_position": "A",
+		"tree_branch": "support",
+		"modifiers": {"breach_open_time": 1.75, "breach_close_time": 1.75}
 	},
-	"breach_catalyst": {
-		"name": "Breach Catalyst",
-		"description": "Breach effects have a chance to spread to nearby areas",
-		"max_level": 2,
-		"cost_per_level": [1, 1],
-		"event_type": "breach",
-		"modifiers_per_level": [
-			{"catalyst_chance": 0.10},  # Level 1: 10% spread chance
-			{"catalyst_chance": 0.20}   # Level 2: 20% spread chance
-		]
-	},
-	"breach_stability": {
-		"name": "Breach Stability",
-		"description": "Breaches become more predictable and less dangerous to enter",
+	"breach_fortification": {
+		"name": "Breach Fortification",
+		"description": "Take 20% less damage while within breach areas",
 		"max_level": 1,
-		"cost_per_level": [1],
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"breach_danger_reduction": 0.25}  # Level 1: 25% less dangerous
-		]
+		"tree_position": "B",
+		"tree_branch": "support",
+		"modifiers": {"breach_damage_reduction": 0.20}
 	},
-	"breach_capacity": {
-		"name": "Breach Capacity",
-		"description": "Increases the maximum number of breaches that can be active simultaneously",
-		"max_level": 2,
-		"cost_per_level": [1, 1],
+	"breach_mastery": {
+		"name": "Breach Mastery",
+		"description": "Deal 75% more damage against breach enemies",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"max_breaches": 1},  # Level 1: +1 max breach
-			{"max_breaches": 2}   # Level 2: +2 max breaches
-		]
+		"tree_position": "C",
+		"tree_branch": "support",
+		"modifiers": {"breach_damage_bonus": 1.75}
+	},
+	"breach_sanctuary": {
+		"name": "Breach Sanctuary",
+		"description": "Completing breaches heals 25% HP and grants 10s buff",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "C",
+		"tree_branch": "support",
+		"modifiers": {"breach_completion_heal": 0.25, "breach_completion_buff_duration": 10}
+	},
+
+	# DENSITY TREE (Branch 2) - High Risk, High Action
+	"breach_density": {
+		"name": "Breach Density",
+		"description": "100% more enemies spawn in breaches",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "A",
+		"tree_branch": "density",
+		"modifiers": {"breach_enemy_multiplier": 2.0}
 	},
 	"breach_chaos": {
 		"name": "Breach Chaos",
-		"description": "Breaches occasionally trigger powerful random effects",
-		"max_level": 2,
-		"cost_per_level": [1, 1],
+		"description": "35% chance for elite enemy spawns during breaches",
+		"max_level": 1,
+		"cost": 1,
 		"event_type": "breach",
-		"modifiers_per_level": [
-			{"chaos_chance": 0.08},  # Level 1: 8% chance for chaos effects
-			{"chaos_chance": 0.15}   # Level 2: 15% chance for chaos effects
-		]
+		"tree_position": "B",
+		"tree_branch": "density",
+		"modifiers": {"breach_elite_chance": 0.35}
+	},
+	"breach_frenzy": {
+		"name": "Breach Frenzy",
+		"description": "Kill streaks during breaches grant 10% damage per kill (max 10 stacks)",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "C",
+		"tree_branch": "density",
+		"modifiers": {"breach_killstreak_bonus": 0.1, "breach_killstreak_max": 10}
+	},
+
+	# REWARD TREE (Branch 3) - Fast, Risky, Rewarding
+	"breach_velocity": {
+		"name": "Breach Velocity",
+		"description": "Breaches open and close 40% faster",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "A",
+		"tree_branch": "reward",
+		"modifiers": {"breach_open_time": 0.6, "breach_close_time": 0.6}
+	},
+	"breach_intensity": {
+		"name": "Breach Intensity",
+		"description": "Take 75% more damage but gain 75% more XP and 40% more rewards",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "B",
+		"tree_branch": "reward",
+		"modifiers": {"breach_damage_taken": 1.75, "breach_xp_bonus": 1.75, "breach_reward_bonus": 1.40}
+	},
+	"breach_windfall": {
+		"name": "Breach Windfall",
+		"description": "Completing breaches in under 5 seconds grants 3x rewards",
+		"max_level": 1,
+		"cost": 1,
+		"event_type": "breach",
+		"tree_position": "C",
+		"tree_branch": "reward",
+		"modifiers": {"breach_speed_bonus_threshold": 5, "breach_speed_reward_multiplier": 3.0}
 	},
 
 	# Ritual event passives
@@ -348,71 +350,42 @@ func get_event_definition(event_type: StringName):
 	return _event_definitions.get(event_type)
 
 func can_allocate_passive(passive_id: StringName) -> bool:
-	"""Check if passive can be allocated (next level)"""
+	"""Check if passive can be allocated (next level) - simplified to always cost 1 point"""
 	var passive_def = passive_definitions.get(passive_id)
 	if not passive_def:
 		return false
 
-	# Check if passive supports multi-level
-	if passive_def.has("max_level"):
-		var current_level = get_passive_level(passive_id)
-		if current_level >= passive_def.max_level:
-			return false  # Already at max level
+	# Check max level
+	var current_level = get_passive_level(passive_id)
+	var max_level = passive_def.get("max_level", 1)
+	if current_level >= max_level:
+		return false  # Already at max level
 
-		# Get cost for next level (current_level is 0-indexed for cost array)
-		var cost_per_level = passive_def.get("cost_per_level", [1])
-		var next_level_cost = 1
-		if current_level < cost_per_level.size():
-			next_level_cost = cost_per_level[current_level]
-		else:
-			next_level_cost = cost_per_level[-1]  # Use last cost if beyond array
-
-		return mastery_tree.has_enough_points(passive_def.event_type, next_level_cost)
-	else:
-		# Legacy single-level passive
-		return mastery_tree.can_allocate_passive(
-			passive_id,
-			passive_def.cost,
-			passive_def.event_type
-		)
+	# Always costs 1 point per level
+	return mastery_tree.has_enough_points(passive_def.event_type, 1)
 
 func get_passive_level(passive_id: StringName) -> int:
 	"""Get current level of a passive (0 = not allocated)"""
 	return mastery_tree.get_passive_level(passive_id)
 
 func allocate_passive(passive_id: StringName) -> bool:
-	"""Allocate next level of a passive if requirements are met"""
+	"""Allocate next level of a passive if requirements are met - simplified to always cost 1 point"""
 	var passive_def = passive_definitions.get(passive_id)
 	if not passive_def:
 		return false
 
-	# Check if passive supports multi-level
-	if passive_def.has("max_level"):
-		var current_level = get_passive_level(passive_id)
-		if current_level >= passive_def.max_level:
-			return false  # Already at max level
+	var current_level = get_passive_level(passive_id)
+	var max_level = passive_def.get("max_level", 1)
 
-		# Get cost for next level
-		var cost_per_level = passive_def.get("cost_per_level", [1])
-		var next_level_cost = 1
-		if current_level < cost_per_level.size():
-			next_level_cost = cost_per_level[current_level]
-		else:
-			next_level_cost = cost_per_level[-1]
+	if current_level >= max_level:
+		return false  # Already at max level
 
-		# Allocate next level
-		if mastery_tree.increment_passive_level(passive_id, next_level_cost, passive_def.event_type):
-			_save_mastery_tree()
-			EventBus.passive_allocated.emit(passive_id)
-			Logger.info("Passive level up: %s (level %d)" % [passive_def.name, current_level + 1], "events")
-			return true
-	else:
-		# Legacy single-level passive
-		if mastery_tree.allocate_passive(passive_id, passive_def.cost, passive_def.event_type):
-			_save_mastery_tree()
-			EventBus.passive_allocated.emit(passive_id)
-			Logger.info("Passive allocated: %s (%s)" % [passive_def.name, passive_id], "events")
-			return true
+	# Always costs 1 point per level
+	if mastery_tree.increment_passive_level(passive_id, 1, passive_def.event_type):
+		_save_mastery_tree()
+		EventBus.passive_allocated.emit(passive_id)
+		Logger.info("Passive level up: %s (level %d)" % [passive_def.name, current_level + 1], "events")
+		return true
 
 	return false
 
