@@ -1,12 +1,14 @@
-[gd_scene load_steps=4 format=3 uid="uid://50qclboee12a"]
+[gd_scene load_steps=5 format=3 uid="uid://50qclboee12a"]
 
 [ext_resource type="Texture2D" uid="uid://ctqgyeb4cqura" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_1.png" id="1_rt7g1"]
 [ext_resource type="Script" uid="uid://bca6070b4gqri" path="res://scenes/ui/skill_tree/skill_button.gd" id="2_pdwwg"]
+[ext_resource type="Material" path="res://assets/materials/circular_mask_material.tres" id="3_circular_material"]
 
 [sub_resource type="CanvasTexture" id="CanvasTexture_rt7g1"]
 specular_color = Color(0.158472, 0.158472, 0.158472, 1)
 
 [node name="SkillButton" type="TextureButton"]
+material = ExtResource("3_circular_material")
 show_behind_parent = true
 offset_right = 80.0
 offset_bottom = 80.0

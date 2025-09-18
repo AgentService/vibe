@@ -1,0 +1,8 @@
+[gd_resource type="ShaderMaterial" script_class="" format=3]
+
+[ext_resource type="Shader" path="res://assets/shaders/circular_mask.gdshader" id="1_shader"]
+
+[resource]
+shader = ExtResource("1_shader")
+shader_parameter/radius = 0.5
+shader_parameter/center = Vector2(0.5, 0.5)
