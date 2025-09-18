@@ -82,16 +82,30 @@ func _on_tab_changed(tab_index: int) -> void:
 		Logger.debug("Switched to %s tab" % _current_event_type, "ui")
 
 func _on_reset_button_pressed() -> void:
-	"""Reset skills for current event type"""
+	"""Reset skills for current event type with cost confirmation"""
 	if not _mastery_system:
 		Logger.warn("No mastery system available for reset", "ui")
 		return
 
+	# Calculate reset cost
+	var reset_cost = _mastery_system.calculate_reset_cost(_current_event_type)
+
+	# TODO: Add confirmation dialog showing cost
+	# For now, just show cost in logs and proceed
+	if reset_cost > 0:
+		Logger.info("Reset cost: %d points (placeholder - free for now)" % reset_cost, "ui")
+	else:
+		Logger.info("Reset cost: Free", "ui")
+
+	# Perform reset
 	if _current_event_type == "breach" and breach_tree:
-		breach_tree.reset_all_skills()
+		_mastery_system.reset_passives_for_event_type(_current_event_type)
+		breach_tree.reset_all_skills()  # Also reset visual state
 		Logger.info("Reset all skills for %s" % _current_event_type, "ui")
 	else:
-		Logger.info("Reset not implemented for %s tab yet" % _current_event_type, "ui")
+		# For other event types, use the generic reset
+		_mastery_system.reset_passives_for_event_type(_current_event_type)
+		Logger.info("Reset all skills for %s (generic reset)" % _current_event_type, "ui")
 
 	_refresh_points_display()
 

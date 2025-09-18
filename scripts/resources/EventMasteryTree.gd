@@ -12,11 +12,20 @@ extends Resource
 @export var boss_points: int = 0 ## Points earned from completing Boss events
 
 @export_group("Allocated Passives")
-@export var allocated_passives: Dictionary = {} ## passive_id -> allocated (bool)
+@export var allocated_passives: Dictionary = {} ## passive_id -> level (int), 0 = not allocated
 
 ## Check if a specific passive is allocated
 func is_passive_allocated(passive_id: StringName) -> bool:
-	return allocated_passives.get(passive_id, false)
+	return get_passive_level(passive_id) > 0
+
+## Get current level of a passive
+func get_passive_level(passive_id: StringName) -> int:
+	return allocated_passives.get(passive_id, 0)
+
+## Check if there are enough points for a specific event type
+func has_enough_points(event_type: StringName, required_points: int) -> bool:
+	var available_points = get_points_for_event_type(event_type)
+	return available_points >= required_points
 
 ## Check if a passive can be allocated (has enough points and not already allocated)
 func can_allocate_passive(passive_id: StringName, required_points: int, event_type: StringName) -> bool:
@@ -32,16 +41,36 @@ func get_points_for_event_type(event_type: StringName) -> int:
 		"boss": return boss_points
 		_: return 0
 
-## Allocate a passive if requirements are met
-func allocate_passive(passive_id: StringName, cost: int, event_type: StringName) -> bool:
-	if can_allocate_passive(passive_id, cost, event_type):
-		allocated_passives[passive_id] = true
+## Increment passive level (multi-level support)
+func increment_passive_level(passive_id: StringName, cost: int, event_type: StringName) -> bool:
+	if has_enough_points(event_type, cost):
+		var current_level = get_passive_level(passive_id)
+		allocated_passives[passive_id] = current_level + 1
 		# Note: Points are not deducted - passives unlock when you have enough total points
 		# This follows PoE Atlas passive design where points accumulate permanently
 		return true
 	return false
 
-## Deallocate a passive (for respec functionality)
+## Decrement passive level (respec functionality)
+func decrement_passive_level(passive_id: StringName, refund_points: int, event_type: StringName) -> bool:
+	var current_level = get_passive_level(passive_id)
+	if current_level > 0:
+		allocated_passives[passive_id] = current_level - 1
+		if allocated_passives[passive_id] <= 0:
+			allocated_passives.erase(passive_id)  # Remove entry if level 0
+		return true
+	return false
+
+## Allocate a passive if requirements are met (legacy single-level support)
+func allocate_passive(passive_id: StringName, cost: int, event_type: StringName) -> bool:
+	if can_allocate_passive(passive_id, cost, event_type):
+		allocated_passives[passive_id] = 1
+		# Note: Points are not deducted - passives unlock when you have enough total points
+		# This follows PoE Atlas passive design where points accumulate permanently
+		return true
+	return false
+
+## Deallocate a passive (legacy single-level support)
 func deallocate_passive(passive_id: StringName) -> void:
 	allocated_passives.erase(passive_id)
 
@@ -71,9 +100,10 @@ func is_valid() -> bool:
 	if breach_points < 0 or ritual_points < 0 or pack_hunt_points < 0 or boss_points < 0:
 		return false
 
-	# Validate allocated passives are boolean values
+	# Validate allocated passives are positive integer values
 	for passive_id in allocated_passives:
-		if not allocated_passives[passive_id] is bool:
+		var level = allocated_passives[passive_id]
+		if not level is int or level <= 0:
 			return false
 
 	return true

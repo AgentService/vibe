@@ -10,27 +10,111 @@ var _event_definitions: Dictionary = {} ## event_type -> EventDefinition
 
 # Passive definitions with costs and effects
 var passive_definitions: Dictionary = {
-	# Breach event passives
-	"breach_density_1": {
-		"name": "Breach Density I",
-		"description": "Breaches spawn 25% more monsters",
-		"cost": 1,
+	# Breach event passives - Multi-level format
+	"breach_density": {
+		"name": "Breach Density",
+		"description": "Breaches spawn more monsters",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],  # Level 1: 1pt, Level 2: 1pt, Level 3: 2pts
 		"event_type": "breach",
-		"modifiers": {"monster_count": 1.25}
+		"modifiers_per_level": [
+			{"monster_count": 1.15},  # Level 1: +15%
+			{"monster_count": 1.30},  # Level 2: +30%
+			{"monster_count": 1.50}   # Level 3: +50%
+		]
 	},
-	"breach_duration_1": {
-		"name": "Breach Duration I",
-		"description": "Breaches last 5 seconds longer",
-		"cost": 1,
+	"breach_duration": {
+		"name": "Breach Duration",
+		"description": "Breaches last longer",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],
 		"event_type": "breach",
-		"modifiers": {"duration": 5.0}  # Added duration, not multiplied
+		"modifiers_per_level": [
+			{"duration": 3.0},   # Level 1: +3 seconds
+			{"duration": 6.0},   # Level 2: +6 seconds
+			{"duration": 10.0}   # Level 3: +10 seconds
+		]
 	},
-	"breach_rewards_1": {
-		"name": "Breach Rewards I",
-		"description": "Breach enemies grant 30% more XP",
-		"cost": 1,
+	"breach_rewards": {
+		"name": "Breach Rewards",
+		"description": "Breach enemies grant more XP",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],
 		"event_type": "breach",
-		"modifiers": {"xp_multiplier": 1.3}
+		"modifiers_per_level": [
+			{"xp_multiplier": 1.20},  # Level 1: +20%
+			{"xp_multiplier": 1.40},  # Level 2: +40%
+			{"xp_multiplier": 1.60}   # Level 3: +60%
+		]
+	},
+	"breach_power": {
+		"name": "Breach Power",
+		"description": "Deal more damage during breach events",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"damage_multiplier": 1.10},  # Level 1: +10%
+			{"damage_multiplier": 1.20},  # Level 2: +20%
+			{"damage_multiplier": 1.35}   # Level 3: +35%
+		]
+	},
+	"breach_defense": {
+		"name": "Breach Defense",
+		"description": "Take less damage during breach events",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"damage_reduction": 0.95},  # Level 1: 5% reduction
+			{"damage_reduction": 0.90},  # Level 2: 10% reduction
+			{"damage_reduction": 0.82}   # Level 3: 18% reduction
+		]
+	},
+	"breach_mobility": {
+		"name": "Breach Mobility",
+		"description": "Move faster during breach events",
+		"max_level": 3,
+		"cost_per_level": [1, 1, 2],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"movement_speed": 1.10},  # Level 1: +10%
+			{"movement_speed": 1.20},  # Level 2: +20%
+			{"movement_speed": 1.35}   # Level 3: +35%
+		]
+	},
+	"breach_mastery": {
+		"name": "Breach Mastery",
+		"description": "All breach bonuses are more effective",
+		"max_level": 2,
+		"cost_per_level": [2, 3],  # Higher cost keystone passive
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"breach_effectiveness": 1.15},  # Level 1: +15%
+			{"breach_effectiveness": 1.35}   # Level 2: +35%
+		]
+	},
+	"breach_overflow": {
+		"name": "Breach Overflow",
+		"description": "Breach events have extended duration",
+		"max_level": 2,
+		"cost_per_level": [1, 2],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"event_duration": 1.25},  # Level 1: +25%
+			{"event_duration": 1.50}   # Level 2: +50%
+		]
+	},
+	"breach_cascade": {
+		"name": "Breach Cascade",
+		"description": "Defeating enemies during breach extends duration",
+		"max_level": 2,
+		"cost_per_level": [2, 3],  # Premium passive
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"cascade_chance": 0.08},  # Level 1: 8% chance
+			{"cascade_chance": 0.15}   # Level 2: 15% chance
+		]
 	},
 
 	# Ritual event passives
@@ -159,8 +243,22 @@ func apply_event_modifiers(event_def) -> Dictionary:
 		if not passive_def or passive_def.event_type != event_def.event_type:
 			continue
 
+		# Get modifiers based on passive type (multi-level vs legacy)
+		var modifiers = {}
+		if passive_def.has("modifiers_per_level"):
+			# Multi-level passive - get modifiers for current level
+			var current_level = get_passive_level(passive_id)
+			if current_level > 0:
+				var modifiers_per_level = passive_def.get("modifiers_per_level", [])
+				var level_index = current_level - 1  # Convert to 0-based index
+				if level_index < modifiers_per_level.size():
+					modifiers = modifiers_per_level[level_index]
+					Logger.debug("Multi-level passive %s (level %d): %s" % [passive_id, current_level, modifiers], "events")
+		else:
+			# Legacy single-level passive
+			modifiers = passive_def.get("modifiers", {})
+
 		# Apply each modifier from this passive
-		var modifiers = passive_def.get("modifiers", {})
 		for modifier_key in modifiers:
 			var modifier_value = modifiers[modifier_key]
 
@@ -195,38 +293,132 @@ func get_event_definition(event_type: StringName):
 	return _event_definitions.get(event_type)
 
 func can_allocate_passive(passive_id: StringName) -> bool:
-	"""Check if passive can be allocated"""
+	"""Check if passive can be allocated (next level)"""
 	var passive_def = passive_definitions.get(passive_id)
 	if not passive_def:
 		return false
 
-	return mastery_tree.can_allocate_passive(
-		passive_id,
-		passive_def.cost,
-		passive_def.event_type
-	)
+	# Check if passive supports multi-level
+	if passive_def.has("max_level"):
+		var current_level = get_passive_level(passive_id)
+		if current_level >= passive_def.max_level:
+			return false  # Already at max level
+
+		# Get cost for next level (current_level is 0-indexed for cost array)
+		var cost_per_level = passive_def.get("cost_per_level", [1])
+		var next_level_cost = 1
+		if current_level < cost_per_level.size():
+			next_level_cost = cost_per_level[current_level]
+		else:
+			next_level_cost = cost_per_level[-1]  # Use last cost if beyond array
+
+		return mastery_tree.has_enough_points(passive_def.event_type, next_level_cost)
+	else:
+		# Legacy single-level passive
+		return mastery_tree.can_allocate_passive(
+			passive_id,
+			passive_def.cost,
+			passive_def.event_type
+		)
+
+func get_passive_level(passive_id: StringName) -> int:
+	"""Get current level of a passive (0 = not allocated)"""
+	return mastery_tree.get_passive_level(passive_id)
 
 func allocate_passive(passive_id: StringName) -> bool:
-	"""Allocate a passive if requirements are met"""
+	"""Allocate next level of a passive if requirements are met"""
 	var passive_def = passive_definitions.get(passive_id)
 	if not passive_def:
 		return false
 
-	if mastery_tree.allocate_passive(passive_id, passive_def.cost, passive_def.event_type):
-		_save_mastery_tree()
-		EventBus.passive_allocated.emit(passive_id)
-		Logger.info("Passive allocated: %s (%s)" % [passive_def.name, passive_id], "events")
-		return true
+	# Check if passive supports multi-level
+	if passive_def.has("max_level"):
+		var current_level = get_passive_level(passive_id)
+		if current_level >= passive_def.max_level:
+			return false  # Already at max level
+
+		# Get cost for next level
+		var cost_per_level = passive_def.get("cost_per_level", [1])
+		var next_level_cost = 1
+		if current_level < cost_per_level.size():
+			next_level_cost = cost_per_level[current_level]
+		else:
+			next_level_cost = cost_per_level[-1]
+
+		# Allocate next level
+		if mastery_tree.increment_passive_level(passive_id, next_level_cost, passive_def.event_type):
+			_save_mastery_tree()
+			EventBus.passive_allocated.emit(passive_id)
+			Logger.info("Passive level up: %s (level %d)" % [passive_def.name, current_level + 1], "events")
+			return true
+	else:
+		# Legacy single-level passive
+		if mastery_tree.allocate_passive(passive_id, passive_def.cost, passive_def.event_type):
+			_save_mastery_tree()
+			EventBus.passive_allocated.emit(passive_id)
+			Logger.info("Passive allocated: %s (%s)" % [passive_def.name, passive_id], "events")
+			return true
 
 	return false
 
 func deallocate_passive(passive_id: StringName) -> void:
-	"""Deallocate a passive (respec)"""
-	if mastery_tree.is_passive_allocated(passive_id):
-		mastery_tree.deallocate_passive(passive_id)
-		_save_mastery_tree()
-		EventBus.passive_deallocated.emit(passive_id)
-		Logger.info("Passive deallocated: %s" % passive_id, "events")
+	"""Deallocate one level of a passive (respec)"""
+	var passive_def = passive_definitions.get(passive_id)
+	if not passive_def:
+		return
+
+	var current_level = get_passive_level(passive_id)
+	if current_level <= 0:
+		return  # Nothing to deallocate
+
+	# Check if passive supports multi-level
+	if passive_def.has("max_level"):
+		# Get cost that was paid for current level
+		var cost_per_level = passive_def.get("cost_per_level", [1])
+		var current_level_cost = 1
+		if (current_level - 1) < cost_per_level.size():
+			current_level_cost = cost_per_level[current_level - 1]
+		else:
+			current_level_cost = cost_per_level[-1]
+
+		# Decrement level and refund points
+		if mastery_tree.decrement_passive_level(passive_id, current_level_cost, passive_def.event_type):
+			_save_mastery_tree()
+			EventBus.passive_deallocated.emit(passive_id)
+			Logger.info("Passive level down: %s (level %d)" % [passive_def.name, current_level - 1], "events")
+	else:
+		# Legacy single-level passive
+		if mastery_tree.is_passive_allocated(passive_id):
+			mastery_tree.deallocate_passive(passive_id)
+			_save_mastery_tree()
+			EventBus.passive_deallocated.emit(passive_id)
+			Logger.info("Passive deallocated: %s" % passive_id, "events")
+
+func calculate_reset_cost(event_type: StringName) -> int:
+	"""Calculate cost to reset all passives for an event type (placeholder for future implementation)"""
+	var allocated_passives = get_all_passives_for_event_type(event_type)
+	var total_spent_points = 0
+
+	for passive_info in allocated_passives:
+		if passive_info.allocated:
+			# For multi-level passives, calculate total cost spent
+			var passive_def = passive_definitions.get(passive_info.id, {})
+			if passive_def.has("cost_per_level"):
+				var cost_per_level = passive_def.get("cost_per_level", [1])
+				var current_level = passive_info.get("current_level", 0)
+				for i in range(current_level):
+					if i < cost_per_level.size():
+						total_spent_points += cost_per_level[i]
+					else:
+						total_spent_points += cost_per_level[-1]
+			else:
+				# Legacy single-level passive
+				total_spent_points += passive_def.get("cost", 1)
+
+	# TODO: Implement actual reset cost calculation
+	# For now, return 0 (free reset) - can be changed to percentage of spent points later
+	# Example: return int(total_spent_points * 0.25)  # 25% of spent points as reset cost
+	return 0
 
 func reset_all_passives() -> void:
 	"""Reset all allocated passives (full respec)"""
@@ -234,6 +426,25 @@ func reset_all_passives() -> void:
 	mastery_tree.reset_all_passives()
 	_save_mastery_tree()
 	Logger.info("All passives reset: %d passives deallocated" % count, "events")
+
+func reset_passives_for_event_type(event_type: StringName) -> void:
+	"""Reset all passives for a specific event type"""
+	var reset_count = 0
+	var event_passives = get_all_passives_for_event_type(event_type)
+
+	for passive_info in event_passives:
+		if passive_info.allocated:
+			var passive_id = passive_info.id
+			var current_level = mastery_tree.get_passive_level(passive_id)
+
+			# Reset to level 0
+			if current_level > 0:
+				mastery_tree.allocated_passives.erase(passive_id)
+				reset_count += 1
+
+	if reset_count > 0:
+		_save_mastery_tree()
+		Logger.info("Reset %d passives for %s event type" % [reset_count, event_type], "events")
 
 func _on_event_completed(event_type: StringName, performance_data: Dictionary) -> void:
 	"""Handle event completion - award mastery points"""
@@ -257,16 +468,34 @@ func _save_mastery_tree() -> void:
 func get_passive_info(passive_id: StringName) -> Dictionary:
 	"""Get passive information for UI display"""
 	var passive_def = passive_definitions.get(passive_id, {})
-	var allocated = mastery_tree.is_passive_allocated(passive_id)
+	var current_level = get_passive_level(passive_id)
 	var can_allocate = can_allocate_passive(passive_id)
+
+	# Handle multi-level vs legacy passives
+	var allocated = current_level > 0
+	var max_level = passive_def.get("max_level", 1)
+	var cost = 0
+
+	if passive_def.has("cost_per_level"):
+		# Get cost for next level
+		var cost_per_level = passive_def.get("cost_per_level", [1])
+		if current_level < cost_per_level.size():
+			cost = cost_per_level[current_level]
+		else:
+			cost = cost_per_level[-1] if cost_per_level.size() > 0 else 1
+	else:
+		# Legacy single-level passive
+		cost = passive_def.get("cost", 0)
 
 	return {
 		"id": passive_id,
 		"name": passive_def.get("name", "Unknown"),
 		"description": passive_def.get("description", ""),
-		"cost": passive_def.get("cost", 0),
+		"cost": cost,  # Cost for next level
 		"event_type": passive_def.get("event_type", ""),
 		"allocated": allocated,
+		"current_level": current_level,
+		"max_level": max_level,
 		"can_allocate": can_allocate,
 		"available_points": mastery_tree.get_points_for_event_type(passive_def.get("event_type", ""))
 	}

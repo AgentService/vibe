@@ -96,53 +96,86 @@ func _map_nodes_to_passives() -> void:
 		var node: SkillNode = _skill_nodes[passive_id]
 		var passive_info = _mastery_system.get_passive_info(passive_id)
 
-		# Set node level based on passive allocation
-		if passive_info.allocated:
-			node.level = 1 # Most passives are binary (allocated/not allocated)
-		else:
-			node.level = 0
+		# Set node level and max_level from passive info
+		node.level = passive_info.get("current_level", 0)
+		node.max_level = passive_info.get("max_level", 3)  # Default to 3 if not specified
+
+		Logger.debug("Mapped %s: level %d/%d" % [passive_id, node.level, node.max_level], "ui")
 
 func _connect_node_signals() -> void:
 	"""Connect SkillNode click events to passive allocation logic"""
+	# Get all skill nodes (both mapped and unmapped)
+	var all_nodes = _find_skill_nodes_recursive(self)
+
+	for node in all_nodes:
+		# CRITICAL: Disconnect SkillNode's internal pressed handler to prevent conflict
+		if node.pressed.is_connected(node._on_pressed):
+			node.pressed.disconnect(node._on_pressed)
+			Logger.debug("Disconnected internal SkillNode handler for %s" % node.name, "events")
+
+		# Connect EventSkillTree handler for EventMasterySystem integration
+		if not node.pressed.is_connected(_on_node_pressed):
+			node.pressed.connect(_on_node_pressed.bind(node))
+			Logger.debug("Connected EventSkillTree handler for %s" % node.name, "events")
+
+func _on_node_pressed(node: SkillNode) -> void:
+	"""Handle any skill node press - route to appropriate handler"""
+	# Find if this node is mapped to a passive
+	var mapped_passive_id: StringName = ""
 	for passive_id in _skill_nodes:
-		var node: SkillNode = _skill_nodes[passive_id]
-		# We'll connect to the pressed signal and handle allocation in our custom handler
-		if not node.pressed.is_connected(_on_skill_node_clicked):
-			node.pressed.connect(_on_skill_node_clicked.bind(passive_id, node))
+		if _skill_nodes[passive_id] == node:
+			mapped_passive_id = passive_id
+			break
+
+	if mapped_passive_id != "":
+		# This is a mapped node - use EventMasterySystem integration
+		_on_skill_node_clicked(mapped_passive_id, node)
+	else:
+		# This is an unmapped node - use pure visual behavior (call SkillNode's visual logic)
+		Logger.debug("Handling unmapped node %s with visual behavior" % node.name, "events")
+		node._on_left_click()  # Call SkillNode's visual allocation logic directly
 
 func _connect_ui_buttons() -> void:
 	"""Connect UI buttons in the EventSkillTree"""
-	var reset_button = find_child("ResetButton", true, false)
-	if reset_button and not reset_button.pressed.is_connected(reset_all_skills):
-		reset_button.pressed.connect(reset_all_skills)
-		Logger.debug("Connected EventSkillTree reset button", "ui")
+	# Reset and close buttons removed - functionality now handled by AtlasTreeUI panel
+	pass
 
 func _on_skill_node_clicked(passive_id: StringName, node: SkillNode) -> void:
-	"""Handle skill node clicks for passive allocation/deallocation"""
-	if not _mastery_system:
-		Logger.warn("No mastery system available for passive allocation", "ui")
-		return
+	"""Handle skill node clicks for passive allocation/deallocation with multi-level support"""
+	# Check if this node is mapped to EventMasterySystem
+	if passive_id in _skill_nodes and _mastery_system:
+		var passive_info = _mastery_system.get_passive_info(passive_id)
+		var current_level = passive_info.current_level
+		var max_level = passive_info.max_level
 
-	var passive_info = _mastery_system.get_passive_info(passive_id)
-
-	if passive_info.allocated:
-		# Deallocate passive
-		_mastery_system.deallocate_passive(passive_id)
-		node.level = 0
-		passive_deallocated.emit(passive_id)
-		Logger.info("Deallocated passive: %s" % passive_id, "ui")
-	else:
-		# Try to allocate passive
-		if _mastery_system.can_allocate_passive(passive_id):
-			if _mastery_system.allocate_passive(passive_id):
-				node.level = 1
-				passive_allocated.emit(passive_id)
-				Logger.info("Allocated passive: %s" % passive_id, "ui")
+		# Determine action based on current level
+		# Left-click increments level, reset only via reset button
+		if current_level >= max_level:
+			# At max level - no action, reset only via button
+			Logger.info("Passive %s already at max level (%d/%d) - use reset button to deallocate" % [passive_id, current_level, max_level], "events")
+			return
+		elif current_level == 0:
+			# Not allocated - allocate to level 1
+			if _mastery_system.can_allocate_passive(passive_id):
+				if _mastery_system.allocate_passive(passive_id):
+					node.level = 1
+					passive_allocated.emit(passive_id)
+					Logger.info("Allocated passive: %s (level 1)" % passive_id, "events")
+			else:
+				Logger.info("Cannot allocate passive %s - insufficient points" % passive_id, "events")
 		else:
-			Logger.info("Cannot allocate passive %s - insufficient points or already allocated" % passive_id, "ui")
+			# Has some levels (1 or 2) - try to increment to next level
+			if _mastery_system.can_allocate_passive(passive_id):
+				if _mastery_system.allocate_passive(passive_id):
+					var new_level = _mastery_system.get_passive_level(passive_id)
+					node.level = new_level
+					passive_allocated.emit(passive_id)
+					Logger.info("Leveled up passive: %s (level %d)" % [passive_id, new_level], "events")
+			else:
+				Logger.info("Cannot level up passive %s - insufficient points" % passive_id, "events")
 
-	# Refresh UI after allocation changes
-	_refresh_all_nodes()
+		# Refresh UI after allocation changes
+		_refresh_all_nodes()
 
 func _refresh_all_nodes() -> void:
 	"""Refresh all skill nodes to reflect current mastery system state"""
@@ -153,11 +186,9 @@ func _refresh_all_nodes() -> void:
 		var node: SkillNode = _skill_nodes[passive_id]
 		var passive_info = _mastery_system.get_passive_info(passive_id)
 
-		# Update node level
-		if passive_info.allocated:
-			node.level = 1
-		else:
-			node.level = 0
+		# Update node level and max_level from current passive state
+		node.level = passive_info.get("current_level", 0)
+		node.max_level = passive_info.get("max_level", 3)
 
 		# Update node availability based on prerequisite logic
 		# The existing SkillNode prerequisite system handles this automatically
@@ -168,15 +199,21 @@ func reset_all_skills() -> void:
 	if not _mastery_system:
 		return
 
-	# Deallocate all passives for this event type
+	# Deallocate all passives for this event type (handles mapped nodes)
 	var event_passives = _mastery_system.get_all_passives_for_event_type(event_type)
 	for passive_info in event_passives:
 		if passive_info.allocated:
 			_mastery_system.deallocate_passive(passive_info.id)
 			passive_deallocated.emit(passive_info.id)
 
+	# Also reset ALL skill nodes directly (handles unmapped nodes)
+	var all_skill_nodes = _find_skill_nodes_recursive(self)
+	for node in all_skill_nodes:
+		if node.has_method("reset_skill"):
+			node.reset_skill()
+
 	_refresh_all_nodes()
-	Logger.info("Reset all skills for %s event type" % event_type, "ui")
+	Logger.info("Reset all skills for %s event type (reset %d total nodes)" % [event_type, all_skill_nodes.size()], "ui")
 
 func get_available_points() -> int:
 	"""Get available points for this event type"""
