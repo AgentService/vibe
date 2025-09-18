@@ -6,6 +6,7 @@
 shader = ExtResource("1_shader")
 shader_parameter/radius = 0.5
 shader_parameter/center = Vector2(0.5, 0.5)
-shader_parameter/border_color = Color(1, 1, 1, 1)
-shader_parameter/border_thickness = 0.05
-shader_parameter/border_strength = 0.0
+shader_parameter/border_color = Color(0, 0, 0, 1)
+shader_parameter/border_thickness = 0.056
+shader_parameter/border_strength = 1.0
+shader_parameter/background_color = Color(0, 0, 0, 1)
