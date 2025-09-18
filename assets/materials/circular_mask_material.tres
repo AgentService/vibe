@@ -1,10 +1,11 @@
-[gd_resource type="ShaderMaterial" script_class="" format=3]
+[gd_resource type="ShaderMaterial" load_steps=2 format=3 uid="uid://cilkjrhsgl2o1"]
 
-[ext_resource type="Shader" path="res://assets/shaders/circular_mask.gdshader" id="1_shader"]
+[ext_resource type="Shader" uid="uid://ccw8whgblvar0" path="res://assets/shaders/circular_mask.gdshader" id="1_shader"]
 
 [resource]
 shader = ExtResource("1_shader")
 shader_parameter/radius = 0.5
 shader_parameter/center = Vector2(0.5, 0.5)
-shader_parameter/tint_color = Color(1, 1, 1, 1)
-shader_parameter/tint_strength = 0.0
+shader_parameter/border_color = Color(1, 1, 1, 1)
+shader_parameter/border_thickness = 0.05
+shader_parameter/border_strength = 0.0
