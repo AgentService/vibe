@@ -1,6 +1,10 @@
 # Skill Tree System V2 - Data-Driven Architecture
 
-**Status:** Ready for Implementation  
+**Status:** Parked - Superseded by Atlas System MVP
+  **Priority:** Future Enhancement
+  **Note:** Revisit after EVENT_SYSTEM_FOLLOW_UP_INTEGRATION atlas system is complete
+  
+  **Status:** Ready for Implementation  
 **Priority:** High  
 **Type:** System Architecture Redesign  
 **Estimated Time:** 12-16 hours  

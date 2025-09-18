@@ -4,6 +4,13 @@
 
 ## [Current Week - In Progress]
 
+### Documentation
+- **MultiMesh Investigation Closure**: Documented final status of MultiMesh performance investigation task (26-REMOVE_MULTIMESH_SWITCH_TO_SCENE_ENEMIES.md)
+  - **Discovery**: Investigation document was outdated - MultiMesh system was completely removed September 11, 2025 (day after baseline established)
+  - **Resolution**: Updated investigation status to OBSOLETE, documented actual outcome (system removal vs optimization)
+  - **Rationale**: Scene-based enemies provide adequate performance for target scale (500-700 instances), MultiMesh complexity exceeded benefits
+  - **Archive**: Complete system preserved in `scripts/systems/multimesh-backup/` with restoration instructions for future scaling needs
+
 ### Fixes
 - **Arena Cache System Simplified**: Removed complex arena scene caching in SpawnDirector that was causing "No cached arena scene available" spam during scene transitions
   - **Root Cause**: Premature optimization - cached a simple tree lookup that takes microseconds, causing stale reference issues
