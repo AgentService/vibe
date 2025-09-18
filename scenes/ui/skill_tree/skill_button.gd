@@ -84,13 +84,11 @@ func reset_skill():
 
 func _update_disabled_visual_state():
 	"""Update visual appearance based on disabled state"""
-	if disabled and level == 0:
-		# Skill is disabled (parent has no points) - dim it significantly
-		modulate = Color(0.5, 0.5, 0.5, 1.0)
-	elif level == 0:
-		# Skill has no points but is enabled - normal appearance
-		modulate = Color.WHITE
-	# If skill has points (level > 0), it's always enabled and normal appearance
+	# Don't use modulate for disabled state as it affects shader background
+	# Instead, keep all buttons at normal modulate to preserve shader appearance
+
+	# Visual feedback for disabled state is handled through the disabled property
+	# which affects button interaction behavior
 
 func _on_pressed():
 	# Keep this for backward compatibility, but _gui_input handles clicks now

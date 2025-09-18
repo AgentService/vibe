@@ -10,6 +10,7 @@ specular_color = Color(0.158472, 0.158472, 0.158472, 1)
 [node name="SkillButton" type="TextureButton"]
 show_behind_parent = true
 material = ExtResource("3_circular_material")
+use_parent_material = true
 offset_right = 80.0
 offset_bottom = 80.0
 texture_normal = ExtResource("1_rt7g1")
@@ -43,6 +44,7 @@ horizontal_alignment = 2
 vertical_alignment = 2
 
 [node name="Panel" type="ColorRect" parent="MarginContainer/Label"]
+visible = false
 show_behind_parent = true
 layout_mode = 1
 anchors_preset = 15
@@ -58,6 +60,4 @@ z_index = -1
 width = 4.0
 default_color = Color(0.241156, 0.241156, 0.241156, 1)
 texture = SubResource("CanvasTexture_rt7g1")
-begin_cap_mode = 2
-end_cap_mode = 2
 antialiased = true

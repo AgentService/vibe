@@ -55,6 +55,7 @@ offset_left = 111.535
 offset_top = -145.0
 offset_right = 191.535
 offset_bottom = -65.0
+disabled = true
 texture_normal = ExtResource("10_uyeyk")
 max_level = 2
 
