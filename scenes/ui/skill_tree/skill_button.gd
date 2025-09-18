@@ -6,6 +6,11 @@ class_name SkillNode
 @onready var line_2d: Line2D = $Line2D
 
 @export var max_level: int = 3  # Configurable max level per skill button
+@export var passive_id: StringName = ""  # Explicit passive ID for EventMasterySystem mapping
+
+var _reset_mode_active: bool = false
+var _can_be_removed: bool = false
+var _normal_modulate: Color = Color.WHITE
 
 func _ready():
 	_update_label()  # Initialize label with correct max level
@@ -36,12 +41,14 @@ func _on_left_click():
 		_update_skill_state()
 
 func _update_skill_state():
-	panel.show_behind_parent = true
+	# Store normal modulate for reset mode restoration
+	_normal_modulate = Color.WHITE
 
 	# Update line color based on level - simple logic only
 	if level > 0:
 		line_2d.default_color = Color(1, 1, 0.24705882370472)  # Yellow when active
-		modulate = Color.WHITE  # Skills with points are always normal appearance
+		if not _reset_mode_active:
+			modulate = Color.WHITE  # Skills with points are normal appearance when not in reset mode
 	else:
 		line_2d.default_color = Color(0.266575, 0.266575, 0.266575, 1)  # Gray when inactive
 
@@ -54,6 +61,10 @@ func _update_skill_state():
 
 		# Update visual appearance for disabled state
 		_update_disabled_visual_state()
+
+	# Reapply reset mode highlighting if active
+	if _reset_mode_active:
+		set_reset_mode_highlight(true, _can_be_removed)
 
 
 	# Update child skills availability
@@ -93,3 +104,24 @@ func _update_disabled_visual_state():
 
 func _on_pressed():
 	_on_left_click()
+
+func set_reset_mode_highlight(active: bool, can_remove: bool = false) -> void:
+	"""Set visual highlighting for reset mode"""
+	_reset_mode_active = active
+	_can_be_removed = can_remove
+
+	if not active:
+		# Exit reset mode - restore normal appearance
+		modulate = _normal_modulate
+	else:
+		# In reset mode - apply highlighting based on removability
+		if level > 0:  # Only highlight nodes that have points
+			if can_remove:
+				# Green tint for removable nodes
+				modulate = Color(0.8, 1.0, 0.8, 1.0)
+			else:
+				# Slight red tint for non-removable nodes with points
+				modulate = Color(1.0, 0.8, 0.8, 1.0)
+		else:
+			# Nodes with no points get dimmed in reset mode
+			modulate = Color(0.7, 0.7, 0.7, 1.0)

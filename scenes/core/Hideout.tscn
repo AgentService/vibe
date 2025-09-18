@@ -16,7 +16,7 @@ script = ExtResource("1_7lnkj")
 [node name="YSort" type="Node2D" parent="."]
 
 [node name="spawn_hideout_main" type="Marker2D" parent="YSort"]
-position = Vector2(615, 347)
+position = Vector2(382, 337)
 
 [node name="MasteryDevice" type="Area2D" parent="YSort"]
 position = Vector2(385, 339)

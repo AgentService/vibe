@@ -8,6 +8,7 @@ class_name AtlasTreeUI
 @onready var points_panel: Control = $PointsPanel
 @onready var points_label: Label = $PointsPanel/VBoxContainer/PointsLabel
 @onready var reset_button: Button = $PointsPanel/VBoxContainer/ResetButton
+@onready var reset_all_button: Button = $PointsPanel/VBoxContainer/ResetAllButton
 @onready var close_button: Button = $PointsPanel/VBoxContainer/CloseButton
 
 # Event skill trees
@@ -15,6 +16,7 @@ class_name AtlasTreeUI
 
 var _mastery_system: Node
 var _current_event_type: StringName = "breach"
+var _reset_mode: bool = false ## Toggle for reset mode
 
 signal atlas_closed()
 
@@ -46,6 +48,12 @@ func _connect_signals() -> void:
 	else:
 		Logger.warn("AtlasTreeUI reset_button not found", "ui")
 
+	if reset_all_button:
+		reset_all_button.pressed.connect(_on_reset_all_button_pressed)
+		Logger.debug("Connected AtlasTreeUI reset all button", "ui")
+	else:
+		Logger.warn("AtlasTreeUI reset_all_button not found", "ui")
+
 	if close_button:
 		close_button.pressed.connect(hide_ui)
 		Logger.debug("Connected AtlasTreeUI close button", "ui")
@@ -60,6 +68,12 @@ func _connect_signals() -> void:
 func _setup_initial_visibility() -> void:
 	"""Set initial visibility - start hidden"""
 	visible = false
+	# Set initial button text and visuals
+	if reset_button:
+		reset_button.text = "Reset Skillpoints"
+
+	# Ensure reset mode visuals start in normal state
+	_update_reset_mode_visuals(false)
 
 func show_ui() -> void:
 	"""Show the atlas tree UI"""
@@ -82,32 +96,64 @@ func _on_tab_changed(tab_index: int) -> void:
 		Logger.debug("Switched to %s tab" % _current_event_type, "ui")
 
 func _on_reset_button_pressed() -> void:
-	"""Reset skills for current event type with cost confirmation"""
+	"""Toggle reset mode or perform full reset"""
 	if not _mastery_system:
 		Logger.warn("No mastery system available for reset", "ui")
 		return
 
-	# Calculate reset cost
-	var reset_cost = _mastery_system.calculate_reset_cost(_current_event_type)
-
-	# TODO: Add confirmation dialog showing cost
-	# For now, just show cost in logs and proceed
-	if reset_cost > 0:
-		Logger.info("Reset cost: %d points (placeholder - free for now)" % reset_cost, "ui")
+	if not _reset_mode:
+		# Enter reset mode
+		_reset_mode = true
+		reset_button.text = "Exit Reset Mode"
+		_set_reset_mode_active(true)
+		_update_reset_mode_visuals(true)
+		Logger.info("Entered reset mode for %s - click passives to deallocate levels" % _current_event_type, "events")
 	else:
-		Logger.info("Reset cost: Free", "ui")
+		# Exit reset mode
+		_reset_mode = false
+		reset_button.text = "Reset Skillpoints"
+		_set_reset_mode_active(false)
+		_update_reset_mode_visuals(false)
+		Logger.info("Exited reset mode", "events")
 
-	# Perform reset
+func _on_reset_all_button_pressed() -> void:
+	"""Reset all allocated passives in current event tree"""
+	if not _mastery_system:
+		Logger.warn("No mastery system available for reset all", "ui")
+		return
+
+	# Exit reset mode if active
+	if _reset_mode:
+		_reset_mode = false
+		reset_button.text = "Reset Skillpoints"
+		_set_reset_mode_active(false)
+		_update_reset_mode_visuals(false)
+
+	# Perform complete reset for current event type
 	if _current_event_type == "breach" and breach_tree:
-		_mastery_system.reset_passives_for_event_type(_current_event_type)
-		breach_tree.reset_all_skills()  # Also reset visual state
-		Logger.info("Reset all skills for %s" % _current_event_type, "ui")
-	else:
-		# For other event types, use the generic reset
-		_mastery_system.reset_passives_for_event_type(_current_event_type)
-		Logger.info("Reset all skills for %s (generic reset)" % _current_event_type, "ui")
+		breach_tree.reset_all_skills()
+		Logger.info("Reset all skills for %s event type" % _current_event_type, "events")
 
+	# Refresh UI to show changes
 	_refresh_points_display()
+
+func _set_reset_mode_active(active: bool) -> void:
+	"""Set reset mode state for all event skill trees"""
+	if _current_event_type == "breach" and breach_tree:
+		breach_tree.set_reset_mode(active)
+	# TODO: Add other event type trees when implemented
+
+func _update_reset_mode_visuals(active: bool) -> void:
+	"""Update visual indicators for reset mode"""
+	if reset_button:
+		if active:
+			# Make button red/orange when in reset mode
+			reset_button.modulate = Color(1.0, 0.6, 0.6, 1.0)
+			Logger.debug("Reset button highlighted for reset mode", "ui")
+		else:
+			# Return to normal color
+			reset_button.modulate = Color.WHITE
+			Logger.debug("Reset button returned to normal color", "ui")
 
 func _on_mastery_points_earned(event_type: StringName, points: int) -> void:
 	"""Handle mastery points earned"""

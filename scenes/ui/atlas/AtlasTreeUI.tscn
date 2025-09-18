@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c3jmk4o8vxhgc"]
 
-[ext_resource type="Script" path="res://scenes/ui/atlas/AtlasTreeUI.gd" id="1_atlas_script"]
-[ext_resource type="PackedScene" path="res://scenes/ui/skill_tree/EventSkillTree.tscn" id="2_event_tree"]
+[ext_resource type="Script" uid="uid://lfx3qpr8o0u7" path="res://scenes/ui/atlas/AtlasTreeUI.gd" id="1_atlas_script"]
+[ext_resource type="PackedScene" uid="uid://ho1fwn0ndcau" path="res://scenes/ui/skill_tree/EventSkillTree.tscn" id="2_event_tree"]
 
 [node name="AtlasTreeUI" type="Control"]
 layout_mode = 3
@@ -32,19 +32,21 @@ offset_right = -200.0
 offset_bottom = -20.0
 grow_horizontal = 2
 grow_vertical = 2
+current_tab = 0
 
 [node name="Breach" type="Control" parent="TabContainer"]
 layout_mode = 2
 metadata/_tab_name = "Breach"
+metadata/_tab_index = 0
 
 [node name="BreachTree" parent="TabContainer/Breach" instance=ExtResource("2_event_tree")]
 layout_mode = 1
-event_type = &"breach"
 
 [node name="Ritual" type="Control" parent="TabContainer"]
 visible = false
 layout_mode = 2
 metadata/_tab_name = "Ritual"
+metadata/_tab_index = 1
 
 [node name="PlaceholderLabel" type="Label" parent="TabContainer/Ritual"]
 layout_mode = 1
@@ -70,6 +72,7 @@ vertical_alignment = 1
 visible = false
 layout_mode = 2
 metadata/_tab_name = "Pack Hunt"
+metadata/_tab_index = 2
 
 [node name="PlaceholderLabel" type="Label" parent="TabContainer/Pack Hunt"]
 layout_mode = 1
@@ -95,6 +98,7 @@ vertical_alignment = 1
 visible = false
 layout_mode = 2
 metadata/_tab_name = "Boss"
+metadata/_tab_index = 3
 
 [node name="PlaceholderLabel" type="Label" parent="TabContainer/Boss"]
 layout_mode = 1
@@ -118,9 +122,8 @@ vertical_alignment = 1
 
 [node name="PointsPanel" type="Panel" parent="."]
 layout_mode = 1
-anchors_preset = 6
+anchors_preset = 11
 anchor_left = 1.0
-anchor_top = 0.0
 anchor_right = 1.0
 anchor_bottom = 1.0
 offset_left = -180.0
@@ -162,7 +165,11 @@ layout_mode = 2
 
 [node name="ResetButton" type="Button" parent="PointsPanel/VBoxContainer"]
 layout_mode = 2
-text = "Reset Current Tree"
+text = "Reset Skillpoints"
+
+[node name="ResetAllButton" type="Button" parent="PointsPanel/VBoxContainer"]
+layout_mode = 2
+text = "Reset All"
 
 [node name="HSeparator3" type="HSeparator" parent="PointsPanel/VBoxContainer"]
 layout_mode = 2

@@ -1,7 +1,7 @@
-[gd_scene load_steps=12 format=3 uid="uid://7waspyljli8q"]
+[gd_scene load_steps=12 format=3 uid="uid://bguxxwmxcv74q"]
 
 [ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
-[ext_resource type="Script" uid="uid://d3cdxcgj6gey8" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
+[ext_resource type="Script" path="res://scenes/ui/skill_tree/skill_tree.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://by6bpfj6e4phr" path="res://assets/skilltree/circular/circular_Dark_7.png" id="3_pnxj3"]
 [ext_resource type="Material" uid="uid://dyblp8bunfsmu" path="res://assets/materials/circular_border_material.tres" id="3_qq112"]
 [ext_resource type="Texture2D" uid="uid://drt7vmgf1373j" path="res://assets/skilltree/circular/circular_Dark_8.png" id="4_qq112"]
@@ -61,27 +61,49 @@ vertical_alignment = 1
 [node name="SkillButton" parent="." instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 1
-anchors_preset = 7
-anchor_top = 1.0
-anchor_bottom = 1.0
-offset_top = -220.0
-offset_bottom = -140.0
-grow_vertical = 0
+anchors_preset = -1
+anchor_top = 0.822
+anchor_bottom = 0.822
+offset_left = 164.0
+offset_top = -23.84
+offset_right = 244.0
+offset_bottom = 56.16
 scale = Vector2(1.049, 1)
 max_level = 1
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="SkillButton2" parent="SkillButton" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+offset_left = -108.637
+offset_top = -168.0
+offset_right = -28.6368
+offset_bottom = -88.0
+texture_normal = ExtResource("5_qar4f")
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="SkillButton" parent="SkillButton/SkillButton2" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.462
+anchor_bottom = 0.462
+offset_left = -93.3842
+offset_top = -132.96
+offset_right = -13.3842
+offset_bottom = -52.96
+texture_normal = ExtResource("6_r52bh")
+max_level = 2
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
 [node name="SkillButton" parent="SkillButton" instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 1
 anchors_preset = -1
-offset_left = 110.62
-offset_top = -132.0
-offset_right = 190.62
-offset_bottom = -52.0
-grow_horizontal = 1
-grow_vertical = 1
-disabled = true
+offset_left = 13.3842
+offset_top = -168.0
+offset_right = 93.3842
+offset_bottom = -88.0
 texture_normal = ExtResource("3_pnxj3")
 max_level = 2
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
@@ -90,51 +112,25 @@ metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 material = ExtResource("3_qq112")
 layout_mode = 1
 anchors_preset = -1
-offset_left = 15.2908
-offset_top = -136.0
-offset_right = 95.2908
-offset_bottom = -56.0
+offset_left = 13.3842
+offset_top = -176.0
+offset_right = 93.3842
+offset_bottom = -96.0
 texture_normal = ExtResource("4_qq112")
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
-[node name="SkillButton2" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
+[node name="SkillButton3" parent="." instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 1
-offset_left = -85.7579
-offset_top = -136.0
-offset_right = -5.75788
-offset_bottom = -56.0
-texture_normal = ExtResource("5_qar4f")
-metadata/_custom_type_script = "uid://jxmwu0tldqh8"
-
-[node name="SkillButton" parent="SkillButton/SkillButton/SkillButton2" instance=ExtResource("1_hxcju")]
-material = ExtResource("3_qq112")
-layout_mode = 1
-anchors_preset = -1
-anchor_top = 0.462
-anchor_bottom = 0.462
-offset_left = -40.9533
-offset_top = -132.96
-offset_right = 39.0467
-offset_bottom = -52.96
-grow_horizontal = 1
-grow_vertical = 1
-texture_normal = ExtResource("6_r52bh")
-max_level = 2
-metadata/_custom_type_script = "uid://jxmwu0tldqh8"
-
-[node name="SkillButton3" parent="SkillButton" instance=ExtResource("1_hxcju")]
-material = ExtResource("3_qq112")
-layout_mode = 1
-offset_left = -188.713
-offset_top = -140.0
-offset_right = -108.713
-offset_bottom = -60.0
+offset_left = -220.0
+offset_top = 208.0
+offset_right = -140.0
+offset_bottom = 288.0
 texture_normal = ExtResource("7_abst5")
 max_level = 2
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
-[node name="SkillButton" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+[node name="SkillButton" parent="SkillButton3" instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 0
 anchors_preset = 0
@@ -142,16 +138,16 @@ anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
-offset_left = 54.3375
-offset_top = -88.0
-offset_right = 134.337
-offset_bottom = -8.0
+offset_left = 64.0
+offset_top = -96.0
+offset_right = 144.0
+offset_bottom = -16.0
 grow_horizontal = 1
 grow_vertical = 1
 texture_normal = ExtResource("8_iridg")
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
-[node name="SkillButton2" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+[node name="SkillButton2" parent="SkillButton3" instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 0
 anchors_preset = 0
@@ -168,7 +164,7 @@ grow_vertical = 1
 texture_normal = ExtResource("9_1kge1")
 metadata/_custom_type_script = "uid://jxmwu0tldqh8"
 
-[node name="SkillButton" parent="SkillButton/SkillButton3/SkillButton2" instance=ExtResource("1_hxcju")]
+[node name="SkillButton" parent="SkillButton3/SkillButton2" instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
 layout_mode = 0
 anchors_preset = 0
@@ -176,10 +172,10 @@ anchor_left = 0.0
 anchor_top = 0.0
 anchor_right = 0.0
 anchor_bottom = 0.0
-offset_left = -1.90658
-offset_top = -96.0
-offset_right = 78.0934
-offset_bottom = -16.0
+offset_left = -59.7369
+offset_top = -104.0
+offset_right = 20.2631
+offset_bottom = -24.0
 grow_horizontal = 1
 grow_vertical = 1
 texture_normal = ExtResource("10_1wr01")

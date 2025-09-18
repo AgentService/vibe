@@ -15,7 +15,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Density",
 		"description": "Breaches spawn more monsters",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],  # Level 1: 1pt, Level 2: 1pt, Level 3: 2pts
+		"cost_per_level": [1, 1, 1],  # 1 point per level
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"monster_count": 1.15},  # Level 1: +15%
@@ -27,7 +27,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Duration",
 		"description": "Breaches last longer",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],
+		"cost_per_level": [1, 1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"duration": 3.0},   # Level 1: +3 seconds
@@ -39,7 +39,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Rewards",
 		"description": "Breach enemies grant more XP",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],
+		"cost_per_level": [1, 1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"xp_multiplier": 1.20},  # Level 1: +20%
@@ -51,7 +51,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Power",
 		"description": "Deal more damage during breach events",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],
+		"cost_per_level": [1, 1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"damage_multiplier": 1.10},  # Level 1: +10%
@@ -63,7 +63,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Defense",
 		"description": "Take less damage during breach events",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],
+		"cost_per_level": [1, 1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"damage_reduction": 0.95},  # Level 1: 5% reduction
@@ -75,7 +75,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Mobility",
 		"description": "Move faster during breach events",
 		"max_level": 3,
-		"cost_per_level": [1, 1, 2],
+		"cost_per_level": [1, 1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"movement_speed": 1.10},  # Level 1: +10%
@@ -87,7 +87,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Mastery",
 		"description": "All breach bonuses are more effective",
 		"max_level": 2,
-		"cost_per_level": [2, 3],  # Higher cost keystone passive
+		"cost_per_level": [1, 1],  # 1 point per level
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"breach_effectiveness": 1.15},  # Level 1: +15%
@@ -98,7 +98,7 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Overflow",
 		"description": "Breach events have extended duration",
 		"max_level": 2,
-		"cost_per_level": [1, 2],
+		"cost_per_level": [1, 1],
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"event_duration": 1.25},  # Level 1: +25%
@@ -109,11 +109,66 @@ var passive_definitions: Dictionary = {
 		"name": "Breach Cascade",
 		"description": "Defeating enemies during breach extends duration",
 		"max_level": 2,
-		"cost_per_level": [2, 3],  # Premium passive
+		"cost_per_level": [1, 1],  # 1 point per level
 		"event_type": "breach",
 		"modifiers_per_level": [
 			{"cascade_chance": 0.08},  # Level 1: 8% chance
 			{"cascade_chance": 0.15}   # Level 2: 15% chance
+		]
+	},
+
+	# Additional breach passives for skill tree
+	"breach_overlord": {
+		"name": "Breach Overlord",
+		"description": "Elite enemies have a chance to spawn in breaches, providing exceptional rewards",
+		"max_level": 1,
+		"cost_per_level": [1],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"elite_spawn_chance": 0.15}  # Level 1: 15% chance for elite spawns
+		]
+	},
+	"breach_catalyst": {
+		"name": "Breach Catalyst",
+		"description": "Breach effects have a chance to spread to nearby areas",
+		"max_level": 2,
+		"cost_per_level": [1, 1],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"catalyst_chance": 0.10},  # Level 1: 10% spread chance
+			{"catalyst_chance": 0.20}   # Level 2: 20% spread chance
+		]
+	},
+	"breach_stability": {
+		"name": "Breach Stability",
+		"description": "Breaches become more predictable and less dangerous to enter",
+		"max_level": 1,
+		"cost_per_level": [1],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"breach_danger_reduction": 0.25}  # Level 1: 25% less dangerous
+		]
+	},
+	"breach_capacity": {
+		"name": "Breach Capacity",
+		"description": "Increases the maximum number of breaches that can be active simultaneously",
+		"max_level": 2,
+		"cost_per_level": [1, 1],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"max_breaches": 1},  # Level 1: +1 max breach
+			{"max_breaches": 2}   # Level 2: +2 max breaches
+		]
+	},
+	"breach_chaos": {
+		"name": "Breach Chaos",
+		"description": "Breaches occasionally trigger powerful random effects",
+		"max_level": 2,
+		"cost_per_level": [1, 1],
+		"event_type": "breach",
+		"modifiers_per_level": [
+			{"chaos_chance": 0.08},  # Level 1: 8% chance for chaos effects
+			{"chaos_chance": 0.15}   # Level 2: 15% chance for chaos effects
 		]
 	},
 
