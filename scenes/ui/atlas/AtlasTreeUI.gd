@@ -31,8 +31,19 @@ func _find_mastery_system() -> void:
 	var mastery_systems = get_tree().get_nodes_in_group("mastery_system")
 	if mastery_systems.size() > 0:
 		_mastery_system = mastery_systems[0]
+		Logger.debug("Found EventMasterySystem via group", "ui")
 	else:
-		Logger.warn("EventMasterySystem not found for AtlasTreeUI", "ui")
+		# Try to find it as child of SpawnDirector
+		var spawn_directors = get_tree().get_nodes_in_group("spawn_director")
+		for spawn_director in spawn_directors:
+			var mastery_child = spawn_director.get_node_or_null("EventMasterySystem")
+			if mastery_child:
+				_mastery_system = mastery_child
+				Logger.debug("Found EventMasterySystem as child of SpawnDirector", "ui")
+				break
+
+		if not _mastery_system:
+			Logger.warn("EventMasterySystem not found for AtlasTreeUI - may not be available in hideout", "ui")
 
 func _connect_signals() -> void:
 	"""Connect UI signals"""
@@ -43,6 +54,11 @@ func _connect_signals() -> void:
 	if reset_button:
 		reset_button.pressed.connect(_on_reset_button_pressed)
 		Logger.debug("Connected AtlasTreeUI reset button", "ui")
+
+		# Disable reset button if no mastery system available
+		if not _mastery_system:
+			reset_button.disabled = true
+			reset_button.tooltip_text = "Mastery system not available in hideout"
 	else:
 		Logger.warn("AtlasTreeUI reset_button not found", "ui")
 
@@ -106,7 +122,11 @@ func _on_passive_changed(passive_id: StringName) -> void:
 
 func _refresh_points_display() -> void:
 	"""Update the points display for current event type"""
-	if not _mastery_system or not points_label:
+	if not points_label:
+		return
+
+	if not _mastery_system:
+		points_label.text = "%s Points: Mastery system not available in hideout" % _current_event_type.capitalize()
 		return
 
 	var available_points = _mastery_system.mastery_tree.get_points_for_event_type(_current_event_type)

@@ -31,11 +31,19 @@ func _find_mastery_system() -> void:
 	var mastery_systems = get_tree().get_nodes_in_group("mastery_system")
 	if mastery_systems.size() > 0:
 		_mastery_system = mastery_systems[0]
+		Logger.debug("Found EventMasterySystem via group", "ui")
 	else:
-		# Try to find it by node name if not in group
-		_mastery_system = get_node("/root/EventMasterySystem")
+		# Try to find it as child of SpawnDirector
+		var spawn_directors = get_tree().get_nodes_in_group("spawn_director")
+		for spawn_director in spawn_directors:
+			var mastery_child = spawn_director.get_node_or_null("EventMasterySystem")
+			if mastery_child:
+				_mastery_system = mastery_child
+				Logger.debug("Found EventMasterySystem as child of SpawnDirector", "ui")
+				break
+
 		if not _mastery_system:
-			Logger.warn("EventMasterySystem not found for EventSkillTree", "ui")
+			Logger.warn("EventMasterySystem not found for EventSkillTree - may not be available in hideout", "ui")
 
 func _initialize_from_data() -> void:
 	"""Initialize the skill tree using the loaded data resource"""
@@ -43,12 +51,18 @@ func _initialize_from_data() -> void:
 	# and map the existing SkillNodes to passive IDs from EventMasterySystem
 
 	_collect_existing_skill_nodes()
-	_map_nodes_to_passives()
-	_connect_node_signals()
-	_connect_ui_buttons()
-	_refresh_all_nodes()
 
-	Logger.info("EventSkillTree initialized for %s event type" % event_type, "ui")
+	# If no mastery system is available, show the skill tree in read-only mode
+	if _mastery_system:
+		_map_nodes_to_passives()
+		_connect_node_signals()
+		_refresh_all_nodes()
+		Logger.info("EventSkillTree initialized for %s event type with mastery system" % event_type, "ui")
+	else:
+		# Read-only mode - just show the visual tree without functionality
+		Logger.info("EventSkillTree initialized for %s event type in read-only mode (no mastery system)" % event_type, "ui")
+
+	_connect_ui_buttons()
 
 func _collect_existing_skill_nodes() -> void:
 	"""Collect all SkillNode instances from the existing tree structure"""
@@ -118,6 +132,11 @@ func _connect_ui_buttons() -> void:
 	if reset_button and not reset_button.pressed.is_connected(reset_all_skills):
 		reset_button.pressed.connect(reset_all_skills)
 		Logger.debug("Connected EventSkillTree reset button", "ui")
+
+		# Disable reset button if no mastery system available
+		if not _mastery_system:
+			reset_button.disabled = true
+			reset_button.tooltip_text = "Mastery system not available"
 
 func _on_skill_node_clicked(passive_id: StringName, node: SkillNode) -> void:
 	"""Handle skill node clicks for passive allocation/deallocation"""
