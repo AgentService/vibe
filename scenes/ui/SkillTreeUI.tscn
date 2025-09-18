@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://d3t65n750mt2s"]
 
-[ext_resource type="Script" uid="uid://d1nlgreeica6b" path="res://scripts/ui/SkillTreeUI.gd" id="1_khdce"]
-[ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/SkillTreeNode.tscn" id="2_whskd"]
+[ext_resource type="Script" uid="uid://mn2la7gggqe4" path="res://scripts/ui/SkillTreeUI.gd" id="1_khdce"]
+[ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="2_whskd"]
 
 [node name="SkillTreeUI" type="Control"]
 layout_mode = 3
@@ -128,12 +128,14 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="RitualNode1" parent="TreeContainer/RitualTreeSection/NodeContainer" instance=ExtResource("2_whskd")]
+layout_mode = 0
 offset_left = 234.0
 offset_top = 211.0
 offset_right = 298.0
 offset_bottom = 275.0
 
 [node name="RitualNode2" parent="TreeContainer/RitualTreeSection/NodeContainer" instance=ExtResource("2_whskd")]
+layout_mode = 0
 offset_left = 236.0
 offset_top = 136.0
 offset_right = 300.0
@@ -179,6 +181,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="PackNode1" parent="TreeContainer/PackTreeSection/NodeContainer" instance=ExtResource("2_whskd")]
+layout_mode = 0
 offset_left = 240.0
 offset_top = 218.0
 offset_right = 304.0
@@ -224,6 +227,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="BossNode1" parent="TreeContainer/BossTreeSection/NodeContainer" instance=ExtResource("2_whskd")]
+layout_mode = 0
 offset_left = 234.0
 offset_top = 215.0
 offset_right = 298.0

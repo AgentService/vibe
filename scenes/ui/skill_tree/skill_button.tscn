@@ -1,0 +1,55 @@
+[gd_scene load_steps=3 format=3 uid="uid://50qclboee12a"]
+
+[ext_resource type="Texture2D" uid="uid://ctqgyeb4cqura" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_1.png" id="1_rt7g1"]
+[ext_resource type="Script" uid="uid://bca6070b4gqri" path="res://scenes/ui/skill_tree/skill_button.gd" id="2_pdwwg"]
+
+[node name="SkillButton" type="TextureButton"]
+show_behind_parent = true
+offset_right = 80.0
+offset_bottom = 80.0
+toggle_mode = true
+texture_normal = ExtResource("1_rt7g1")
+ignore_texture_size = true
+stretch_mode = 0
+script = ExtResource("2_pdwwg")
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 0
+offset_right = 80.0
+offset_bottom = 80.0
+mouse_filter = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Label" type="Label" parent="MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 8
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_font_sizes/font_size = 16
+text = "0/3"
+horizontal_alignment = 2
+vertical_alignment = 2
+
+[node name="Panel" type="ColorRect" parent="MarginContainer/Label"]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Line2D" type="Line2D" parent="."]
+top_level = true
+z_index = -1
+width = 3.0
+default_color = Color(0.266575, 0.266575, 0.266575, 1)

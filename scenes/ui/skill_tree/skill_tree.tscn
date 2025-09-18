@@ -1,0 +1,112 @@
+[gd_scene load_steps=10 format=3 uid="uid://7waspyljli8q"]
+
+[ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
+[ext_resource type="Texture2D" uid="uid://e5mbhit4b0fo" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_3.png" id="2_d0x1u"]
+[ext_resource type="Texture2D" uid="uid://b32i6cj8angtw" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_2.png" id="3_fwhjo"]
+[ext_resource type="Texture2D" uid="uid://e7gbtovwg75o" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_5.png" id="4_cvyk3"]
+[ext_resource type="Texture2D" uid="uid://c6f3u1ntkclg0" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_11.png" id="5_pnxj3"]
+[ext_resource type="Texture2D" uid="uid://bn0opgpmlbi0e" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_8.png" id="5_vhfnf"]
+[ext_resource type="Texture2D" uid="uid://0fmyvk0m11xf" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_7.png" id="6_pnxj3"]
+[ext_resource type="Texture2D" uid="uid://dm6l151qwmy17" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_9.png" id="8_qq112"]
+[ext_resource type="Texture2D" uid="uid://dx2m786qqb2qk" path="res://assets/skilltree/Hunter_Free/Hunter_Free/Hunter_10.png" id="9_qar4f"]
+
+[node name="SkillTree" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SkillButton" parent="." instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 556.0
+offset_top = 573.0
+offset_right = 636.0
+offset_bottom = 653.0
+scale = Vector2(1.049, 1)
+texture_normal = ExtResource("3_fwhjo")
+max_level = 1
+
+[node name="SkillButton" parent="SkillButton" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 144.9
+offset_top = -121.0
+offset_right = 224.9
+offset_bottom = -41.0
+disabled = true
+max_level = 2
+
+[node name="SkillButton" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 57.1973
+offset_top = -102.0
+offset_right = 137.197
+offset_bottom = -22.0
+disabled = true
+texture_normal = ExtResource("4_cvyk3")
+
+[node name="SkillButton2" parent="SkillButton/SkillButton" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = -48.6177
+offset_top = -102.0
+offset_right = 31.3823
+offset_bottom = -22.0
+disabled = true
+texture_normal = ExtResource("2_d0x1u")
+
+[node name="SkillButton" parent="SkillButton/SkillButton/SkillButton2" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = -1.90661
+offset_top = -108.0
+offset_right = 78.0934
+offset_bottom = -28.0
+disabled = true
+texture_normal = ExtResource("5_pnxj3")
+max_level = 2
+
+[node name="SkillButton3" parent="SkillButton" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = -127.741
+offset_top = -111.0
+offset_right = -47.7408
+offset_bottom = -31.0
+disabled = true
+texture_normal = ExtResource("6_pnxj3")
+max_level = 2
+
+[node name="SkillButton" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = 51.4776
+offset_top = -105.0
+offset_right = 131.478
+offset_bottom = -25.0
+disabled = true
+texture_normal = ExtResource("5_vhfnf")
+
+[node name="SkillButton2" parent="SkillButton/SkillButton3" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = -60.0572
+offset_top = -107.0
+offset_right = 19.9428
+offset_bottom = -27.0
+disabled = true
+texture_normal = ExtResource("8_qq112")
+
+[node name="SkillButton" parent="SkillButton/SkillButton3/SkillButton2" instance=ExtResource("1_hxcju")]
+layout_mode = 0
+offset_left = -95.3289
+offset_top = -105.0
+offset_right = -15.3289
+offset_bottom = -25.0
+disabled = true
+texture_normal = ExtResource("9_qar4f")
+max_level = 1
