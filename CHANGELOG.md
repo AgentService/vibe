@@ -31,6 +31,17 @@
   - **Scaling Strategy**: Established 16x16 base unit system with consistent pixel density across all sprite sizes
   - **Documentation**: Created comprehensive sprite import guidelines and scaling documentation in data/README.md and Obsidian/systems/
   - **MasteryTreeUI**: ✅ COMPLETE - Scene-based UI following NewHUD patterns for point allocation and passive management
+  - **Atlas Tree Integration**: ✅ COMPLETE - PoE-style tabbed skill tree interface for hideout and runtime event mastery progression
+
+- **Atlas Tree UI System**: Complete tabbed interface implementation for event mastery progression
+  - **EventSkillTree Component**: Reusable skill tree component with data-driven initialization from existing breach tree foundation
+  - **AtlasTreeUI Interface**: Tabbed container supporting Breach (functional), Ritual/Pack Hunt/Boss (placeholder) with unified points display
+  - **EventMasterySystem Autoload**: Universal access architecture enabling skill tree functionality in both hideout and runtime contexts
+  - **MasteryDevice Integration**: E-key hideout access launching AtlasTreeUI with proper modal behavior and ESC handling
+  - **Reset Functionality**: Both Atlas-level and individual tree reset buttons with proper passive deallocation through EventMasterySystem
+  - **Signal Integration**: Real-time EventBus connectivity for passive allocation/deallocation and point earning events
+  - **Resource Architecture**: SkillTreeData system preparing for future expansion to ritual/pack hunt/boss skill tree configurations
+
   - **Interactive Event Mechanics**: 🔄 NEXT - Scene-based event markers, objective entities, and interactive gameplay mechanics
 
 ### Architecture
