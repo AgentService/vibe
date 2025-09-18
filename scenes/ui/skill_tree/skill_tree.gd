@@ -30,9 +30,6 @@ func _ready() -> void:
 	# UI should always process (pause-independent)
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	# Hide initially
-	visible = false
-
 	# Connect any buttons that might exist
 	_connect_ui_buttons()
 
