@@ -8,9 +8,9 @@ class_name SkillNode
 @onready var inner_shadow: ColorRect
 @onready var inner_shadow_layer2: ColorRect
 
-# Tooltip system
-var tooltip_panel: Panel
-var tooltip_label: Label
+# Tooltip system - now using scene nodes
+@onready var tooltip_panel: Panel = $TooltipPanel
+@onready var tooltip_label: RichTextLabel = $TooltipPanel/MarginContainer/TooltipLabel
 var tooltip_visible: bool = false
 
 # Skill tree line styling constants
@@ -27,7 +27,7 @@ const BORDER_ALLOCATED = Color(0.275, 0.0, 0.267, 0.8)       # 460044 - Bright p
 const BORDER_REMOVABLE = Color.DARK_RED                       # Dark red - can be removed in reset mode
 
 # Inner shadow for unallocated state indication
-const SHADOW_DEFAULT = Color(0.051, 0.055, 0.047, 0.88)      # 0d0e0c82 - Dark inner shadow for unallocated skills
+const SHADOW_DEFAULT = Color(0.051, 0.055, 0.047, 0.55)      # 0d0e0c82 - Dark inner shadow for unallocated skills
 
 
 # Themed breach skill tree dropdown with hierarchy indicators
@@ -99,8 +99,8 @@ func _ready():
 	if get_parent() is SkillNode:
 		_setup_line_connection()
 
-	# Create tooltip
-	_create_tooltip()
+	# Setup tooltip styling
+	_setup_tooltip_style()
  
 var level : int = 0:
 	set(value):
@@ -330,13 +330,19 @@ func _update_allocation_shadow() -> void:
 		# Show dark inner shadow for unallocated skills
 		_set_all_shadow_layers(SHADOW_DEFAULT)
 
-func _create_tooltip() -> void:
-	"""Create tooltip UI elements"""
-	# Create tooltip panel
-	tooltip_panel = Panel.new()
-	tooltip_panel.z_index = 100
+func _setup_tooltip_style() -> void:
+	"""Setup styling for the scene-based tooltip"""
+	if not tooltip_panel:
+		Logger.error("Tooltip panel not found in scene for node %s" % name, "ui")
+		return
+
+	if not tooltip_label:
+		Logger.error("Tooltip label not found in scene for node %s" % name, "ui")
+		return
+
+	# Ensure tooltip starts hidden
 	tooltip_panel.visible = false
-	tooltip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Critical: Don't block mouse input!
+	tooltip_visible = false
 
 	# Style the panel
 	var style_box = StyleBoxFlat.new()
@@ -352,93 +358,67 @@ func _create_tooltip() -> void:
 	style_box.corner_radius_bottom_right = 4
 	tooltip_panel.add_theme_stylebox_override("panel", style_box)
 
-	# Create tooltip label
-	tooltip_label = Label.new()
-	tooltip_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	tooltip_label.text = ""
-	tooltip_label.add_theme_font_size_override("font_size", 14)
-	tooltip_label.add_theme_color_override("font_color", Color.WHITE)
-	tooltip_label.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block input
-
-	# Add margin container for padding
-	var margin = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_top", 6)
-	margin.add_theme_constant_override("margin_bottom", 6)
-	margin.mouse_filter = Control.MOUSE_FILTER_IGNORE  # Don't block input
-
-	# Setup hierarchy
-	tooltip_panel.add_child(margin)
-	margin.add_child(tooltip_label)
-
-	# Add to the skill tree root to ensure it appears above everything
-	var skill_tree = get_tree().get_first_node_in_group("skill_trees")
-	if not skill_tree:
-		skill_tree = get_parent()
-		while skill_tree and not skill_tree.name.contains("SkillTree"):
-			skill_tree = skill_tree.get_parent()
-
-	if skill_tree:
-		skill_tree.add_child(tooltip_panel)
+	Logger.debug("Tooltip styling applied for node %s" % name, "ui")
 
 func _on_mouse_entered() -> void:
 	"""Show tooltip on mouse enter"""
+	Logger.debug("Mouse entered node %s (passive_id: %s)" % [name, passive_id], "ui")
 	if tooltip_panel and not tooltip_visible:
 		_update_tooltip_content()
 		_position_tooltip()
 		tooltip_panel.visible = true
 		tooltip_visible = true
+		Logger.debug("Tooltip shown for %s" % name, "ui")
+	elif not tooltip_panel:
+		Logger.warn("No tooltip panel found for node %s" % name, "ui")
 
 func _on_mouse_exited() -> void:
 	"""Hide tooltip on mouse exit"""
+	Logger.debug("Mouse exited node %s" % name, "ui")
 	if tooltip_panel and tooltip_visible:
 		tooltip_panel.visible = false
 		tooltip_visible = false
+		Logger.debug("Tooltip hidden for %s" % name, "ui")
 
 func _update_tooltip_content() -> void:
 	"""Update tooltip text with skill information"""
 	if not tooltip_label:
+		Logger.warn("No tooltip label found for node %s" % name, "ui")
 		return
 
 	# Check if we have a valid passive_id
 	if passive_id == "":
-		tooltip_label.text = "No skill data"
+		tooltip_label.text = "Node: " + name + "\n\nNo passive ID assigned"
+		Logger.debug("Node %s has no passive_id" % name, "ui")
 		return
 
 	# Get skill information from EventMasterySystem autoload
 	var mastery_system = EventMasterySystem.mastery_system_instance
 	if not mastery_system:
-		tooltip_label.text = "Skill system unavailable"
+		tooltip_label.text = "EventMasterySystem unavailable"
+		Logger.error("EventMasterySystem not available for tooltip on %s" % name, "ui")
 		return
 
 	var passive_data = mastery_system.get_passive_info(passive_id)
 	if not passive_data or passive_data.is_empty():
-		tooltip_label.text = "Unknown skill: " + passive_id
+		tooltip_label.text = "Node: " + name + "\n\nUnknown passive: " + passive_id
+		Logger.warn("Unknown passive_id '%s' for node %s" % [passive_id, name], "ui")
 		return
 
-	var tooltip_text = passive_data.name + "\n\n" + passive_data.description
-
-	# Add allocation status
-	if level > 0:
-		tooltip_text += "\n\n[color=green]✓ Allocated[/color]"
-	else:
-		tooltip_text += "\n\n[color=gray]Not allocated[/color]"
-		if passive_data.has("cost") and passive_data.cost > 0:
-			tooltip_text += " (Cost: " + str(passive_data.cost) + ")"
+	# Simple tooltip showing just the skill information
+	var tooltip_text = "%s\n\n%s" % [passive_data.name, passive_data.description]
 
 	tooltip_label.text = tooltip_text
+	Logger.debug("Tooltip content updated for %s: %s" % [name, passive_data.name], "ui")
 
 func _position_tooltip() -> void:
 	"""Position tooltip near the skill node"""
 	if not tooltip_panel:
 		return
 
-	# Calculate tooltip size with fixed width
-	tooltip_label.custom_minimum_size = Vector2(250, 0)
-
-	# Force size calculation by calling get_combined_minimum_size
-	var tooltip_size = Vector2(260, 100)  # Default size estimate
+	# Let the tooltip auto-size based on content
+	# No manual size overrides needed - RichTextLabel handles this
+	var tooltip_size = tooltip_panel.get_combined_minimum_size()
 
 	var node_pos = global_position
 	var node_size = size

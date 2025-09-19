@@ -16,6 +16,7 @@ var _reset_mode: bool = false ## Reset mode for deallocation
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	add_to_group("skill_trees")  # Add to group for tooltip parent finding
 	_find_mastery_system()
 
 	if skill_tree_data:

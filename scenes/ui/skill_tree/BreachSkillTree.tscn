@@ -51,7 +51,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-color = Color(0, 0, 0, 0.662745)
+color = Color(0, 0, 0, 0.760784)
 
 [node name="Branch1_A1" parent="." instance=ExtResource("1_hxcju")]
 material = ExtResource("3_qq112")
