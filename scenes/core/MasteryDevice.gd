@@ -57,10 +57,10 @@ func _find_mastery_ui() -> void:
 		mastery_ui = ui_nodes[0]
 		return
 
-	# Load and instantiate new skill tree scene
-	var skill_tree_scene = load("res://scenes/ui/skill_tree/skill_tree.tscn")
-	if skill_tree_scene:
-		mastery_ui = skill_tree_scene.instantiate()
+	# Load and instantiate new Atlas tree scene
+	var atlas_tree_scene = load("res://scenes/ui/atlas/AtlasTreeUI.tscn")
+	if atlas_tree_scene:
+		mastery_ui = atlas_tree_scene.instantiate()
 		mastery_ui.add_to_group("mastery_ui")
 
 		# Create a CanvasLayer to ensure UI renders on top and ignores camera positioning
@@ -70,9 +70,9 @@ func _find_mastery_ui() -> void:
 
 		# Add to scene root - use call_deferred to avoid scene initialization conflicts
 		get_tree().root.call_deferred("add_child", ui_layer)
-		Logger.info("Skill tree scene instantiated and added to CanvasLayer (deferred)", "ui")
+		Logger.info("Atlas tree scene instantiated and added to CanvasLayer (deferred)", "ui")
 	else:
-		Logger.warn("Failed to load skill tree scene", "ui")
+		Logger.warn("Failed to load Atlas tree scene", "ui")
 
 func _input(event: InputEvent) -> void:
 	if not player_in_range:

@@ -1,428 +1,249 @@
-# Event System Follow-Up - Integration & Polish
+# Event System Follow-Up - Atlas Tree Integration
 
-**Status:** Ready for Implementation
-**Priority:** High
-**Estimated Time:** 8-12 hours (EXPANDED SCOPE)
+**Status:** 25% Complete - Breach Tree Fully Implemented
+**Priority:** Medium (Foundation Complete)
+**Estimated Time:** 3-4 hours (Remaining Event Trees)
 **Created:** 2025-01-16
-**Updated:** 2025-01-16 (Expanded with interactive event mechanics)
-**Depends On:** Event System Core Implementation (COMPLETED)
+**Updated:** 2025-01-19 (Implementation status updated - Breach tree complete)
+**Depends On:** Event System Core Implementation (COMPLETED), Breach Skill Tree POC (COMPLETED → EXCEEDED)
 
-## Context
+## Context & New Direction
 
-The Event System core implementation is complete and successfully tested. All backend systems are functional:
-- ✅ EventMasterySystem loading without errors
-- ✅ Event definitions (.tres files) loading properly
-- ✅ SpawnDirector integration working
-- ✅ Signal architecture in place
-- ✅ Resource-driven configuration functional
+The Event System backend is complete and the breach skill tree POC provides an excellent foundation. **New approach**: Create a unified **atlas-style skill tree system** (like Path of Exile) that integrates all event types into a cohesive progression experience.
 
-## Missing Components for Full Integration
+## Implementation Status Update
 
-### Critical - Scene & UI Integration
-1. **MasteryTreeUI Scene File**: The script exists but needs actual .tscn scene with node hierarchy ⏳ IN PROGRESS
-2. **Input Integration**: Connect mastery tree to game's input/menu system
-3. **UI Accessibility**: Add hotkey or menu button to open mastery tree
+### ✅ **COMPLETED - Foundation Excellence:**
+- ✅ EventMasterySystem with 25 passives (breach complete, others planned)
+- ✅ **BreachSkillTree.gd** - Full implementation with 9 working skills
+- ✅ **AtlasTreeUI.tscn** - Complete tabbed interface with points display
+- ✅ **Scene-based tooltip system** - Auto-sizing tooltips with BBCode support
+- ✅ **Purple breach theme** - Professional visual design with state feedback
+- ✅ **Advanced SkillNode architecture** - Prerequisites, reset mode, visual states
+- ✅ **Backend integration** - Full EventMasterySystem connection and persistence
 
-### EXPANDED: Interactive Event Mechanics
-1. **Scene-Based Event Markers**: Visual indicators on map showing active event locations
-2. **Event Objective Entities**: Interactive objectives for each event type (defend, survive, collect)
-3. **Breach Event Mechanics**: Portal defense with wave spawning and duration objectives
-4. **Ritual Event Mechanics**: Circle defense with channeling mechanics and area protection
-5. **Pack Hunt Mechanics**: Elite tracking system with rare spawn coordination
-6. **Boss Event Mechanics**: Multi-phase encounters with elite guard spawning
+### 🚧 **IN PROGRESS - Remaining Event Trees:**
+- ⚠️ Ritual tree - "Coming Soon" placeholder (needs implementation)
+- ⚠️ Pack Hunt tree - "Coming Soon" placeholder (needs implementation)
+- ⚠️ Boss tree - "Coming Soon" placeholder (needs implementation)
 
-### Important - Gameplay Testing
-1. **Event Spawn Verification**: Confirm events actually spawn in gameplay
-2. **Mastery Point Earning**: Verify points are awarded on event completion
-3. **Passive Effect Testing**: Confirm allocated passives modify event behavior
-4. **Performance Validation**: Ensure no regression in spawn performance
-5. **Interactive Mechanics Testing**: Verify all event objectives work correctly
+### 📁 **Current File Structure:**
+- ✅ `scenes/ui/atlas/AtlasTreeUI.tscn` - Complete atlas interface
+- ✅ `scenes/ui/skill_tree/BreachSkillTree.tscn` - Full breach implementation
+- ✅ `scenes/ui/skill_tree/skill_button.tscn` - Advanced reusable component
+- ❌ `scenes/ui/skill_tree/skill_tree.tscn` - **REMOVED** (legacy file)
 
-### Balance & Polish
-1. **Event Frequency Tuning**: Adjust spawn intervals for good gameplay flow
-2. **Reward Balancing**: Tune XP multipliers and mastery point costs
-3. **Visual Feedback**: Add event start/completion notifications
-4. **Player Communication**: Clear feedback when earning points/allocating passives
-5. **Event Marker Polish**: Smooth animations and clear visual states
+## Atlas Tree Design
 
-## Implementation Plan
-
-### Phase 1: MasteryTreeUI Scene Creation ✅ COMPLETED
-
-**Goal:** Create functional MasteryTreeUI scene that integrates with existing UI systems.
-
-#### 1.1 Scene Structure Design - IMPLEMENTED
+### **Tabbed Interface Approach** (MVP)
 ```
-SkillTreeUI (Control) [1080x720 canvas, script: SkillTreeUI.gd]
-├── Background (ColorRect) - Dark theme background
-├── TreeContainer (Control) - Main layout container
-│   ├── BreachTreeSection (Control) [540x360 - Top Left]
-│   │   ├── NodeContainer (Control) - Organized node positioning
-│   │   │   ├── BreachNode1, BreachNode2, BreachNode3 (SkillTreeNode instances)
-│   │   ├── SectionLabel - "BREACH"
-│   │   └── PointCounter - "0/0" format
-│   ├── RitualTreeSection (Control) [540x360 - Top Right]
-│   │   ├── NodeContainer (Control)
-│   │   │   ├── RitualNode1, RitualNode2 (SkillTreeNode instances)
-│   │   ├── SectionLabel - "RITUAL"
-│   │   └── PointCounter - "0/0" format
-│   ├── PackTreeSection (Control) [540x360 - Bottom Left]
-│   │   ├── NodeContainer (Control)
-│   │   │   ├── PackNode1 (SkillTreeNode instance)
-│   │   ├── SectionLabel - "PACK HUNT"
-│   │   └── PointCounter - "0/0" format
-│   └── BossTreeSection (Control) [540x360 - Bottom Right]
-│       ├── NodeContainer (Control)
-│       │   ├── BossNode1 (SkillTreeNode instance)
-│       ├── SectionLabel - "BOSS"
-│       └── BossPointCounter - "0/0" format
-├── UIPanel (Panel) - Close button container
-└── TooltipContainer (Control) - Hover tooltip system
+[Breach] [Ritual] [Pack Hunt] [Boss]
++--------------------------------+
+|     Current Tree Display       |
+|                               |
+|    ○──○──○                    |
+|    │     │                    |
+|    ○     ○──○                 |
++--------------------------------+
+[Points: Breach 5/12] [Reset All]
 ```
 
-**Key Implementation Features:**
-- ✅ 1080x720 optimal canvas size for UI overlay
-- ✅ Perfect 2x2 quadrant layout (540x360 each)
-- ✅ SkillTreeNode component architecture with visual states
-- ✅ NodeContainer organization for easy positioning
-- ✅ Connection point indicators (8x8 ColorRect, event-typed colors)
-- ✅ Hover state management with proper restoration
-- ✅ Camera-independent CanvasLayer rendering
-- ✅ Event-type color coding (Breach=Purple, etc.)
-- ✅ Scene-based design visible in Godot editor
+**Benefits:**
+- **Reuses existing breach tree** as foundation
+- **Clear separation** between event types
+- **Familiar tabbed UX** for players
+- **Scalable** - easy to add new event types
 
-#### 1.2 Theme Integration
-- **Use existing theme**: Apply `res://data/themes/card_selection_theme.tres`
-- **Button styling**: Follow existing UI button patterns
-- **Color coding**: Different colors per event type (Breach=Purple, Ritual=Green, etc.)
-- **Responsive layout**: Handle different screen sizes
-
-#### 1.3 Node Path Verification
-- **Match script expectations**: Ensure @onready paths in MasteryTreeUI.gd match scene structure
-- **Button connections**: Verify all passive buttons can be found by script
-- **Label references**: Confirm points labels are correctly referenced
-
-### Phase 2: UI Integration & Input (45 minutes)
-
-**Goal:** Make mastery tree accessible from gameplay.
-
-#### 2.1 Input Mapping
+### **Current Architecture** (✅ IMPLEMENTED)
 ```gdscript
-# Add to project.godot input map
-mastery_tree_toggle={
-"deadzone": 0.5,
-"events": [Object(InputEventKey,"keycode":4194328,"physical_keycode":4194328)]  # F9 key
-}
+AtlasTreeUI (Control) - ✅ COMPLETE
+├── TabContainer - ✅ Working tab navigation
+│   ├── Breach (BreachSkillTree) - ✅ FULLY IMPLEMENTED (9 skills)
+│   ├── Ritual (Control) - ⚠️ "Coming Soon" placeholder
+│   ├── Pack Hunt (Control) - ⚠️ "Coming Soon" placeholder
+│   └── Boss (Control) - ⚠️ "Coming Soon" placeholder
+├── PointsPanel - ✅ Points display and reset functionality
+└── EventMasterySystem - ✅ Full backend integration
 ```
 
-#### 2.2 HUD Integration Options
-**Option A: Add to Pause Menu**
-- Add "Mastery Tree" button to existing pause menu
-- Opens MasteryTreeUI as modal overlay
-
-**Option B: Direct Hotkey Access**
-- F9 key toggles mastery tree during gameplay
-- Can be opened/closed anytime (even during combat)
-
-**Option C: Both**
-- F9 hotkey + pause menu button for discoverability
-
-#### 2.3 Modal Behavior
-- **Pause game**: Mastery tree should pause gameplay when open
-- **Input capture**: ESC key closes mastery tree
-- **Z-index**: Ensure mastery tree appears above all other UI
-
-### Phase 3: Integration Testing & Validation (1 hour)
-
-**Goal:** Verify complete event system functionality in actual gameplay.
-
-#### 3.1 Event Spawn Testing
-```bash
-# Test event spawning in arena
-"./Godot_v4.4.1-stable_win64_console.exe" scenes/arena/UnderworldArena.tscn
+### **Scene-Based Tooltip System** (✅ IMPLEMENTED)
+```gdscript
+SkillButton (skill_button.tscn) - ✅ Advanced component
+├── Visual States - ✅ Purple theme with state feedback
+├── Prerequisites - ✅ Parent-child validation
+├── Reset Mode - ✅ Deallocation with dependency checking
+└── TooltipPanel - ✅ Auto-sizing tooltips with BBCode
+    ├── 300px fixed width, variable height
+    ├── RichTextLabel with rich text formatting
+    └── MarginContainer with 8px margins
 ```
 
-**Test Checklist:**
-- [ ] Events spawn every 45-60 seconds
-- [ ] Events use different spawn zones
-- [ ] Zone cooldowns prevent spam spawning
-- [ ] Events respect player proximity ranges
-- [ ] Different event types spawn (Breach, Ritual, Pack Hunt, Boss)
+## REVISED Implementation Plan (Remaining Work)
 
-#### 3.2 Mastery Point Testing
-**Test Scenarios:**
-- [ ] Kill enemies in event zones → mastery points awarded
-- [ ] Points shown correctly in UI for each event type
-- [ ] Points persist between sessions (saved to user://mastery_tree.tres)
-- [ ] Point earning logged properly in console
+**Current Foundation:** BreachSkillTree provides an excellent template with scene-based tooltips, advanced visual states, and robust backend integration.
 
-#### 3.3 Passive Effect Testing
-**Passive Modifier Verification:**
-- [ ] Breach Density I: 25% more monsters in breach events
-- [ ] Breach Duration I: +5 seconds duration
-- [ ] Ritual Area I: 50% larger ritual circles
-- [ ] Pack Density I: +1 rare companion in pack hunts
-- [ ] Allocation/deallocation works correctly
-- [ ] Button states update (Green=allocated, White=available, Gray=locked)
+### Phase 1: Ritual Tree Implementation (1.5 hours)
+**Goal:** Create ritual-specific skill tree using BreachSkillTree as template
 
-#### 3.4 Performance Testing
-- [ ] No FPS drop when events spawn
-- [ ] Memory usage remains stable
-- [ ] No increase in entity update overhead
-- [ ] Zone management performance unchanged
+#### 1.1 Passive Definitions
+- [ ] Add ritual passives to EventMasterySystem.gd (6-9 skills)
+- [ ] Define ritual-specific modifiers and progression paths
+- [ ] Focus on ritual mechanics: duration, rewards, stability
 
-### Phase 4: Balance & Polish (1 hour)
+#### 1.2 Scene Creation
+- [ ] Duplicate BreachSkillTree.tscn → RitualSkillTree.tscn
+- [ ] Update event_type to "ritual" in root node
+- [ ] Redesign node layout (consider circular/radial pattern)
+- [ ] Add ritual passive_type enums to skill_button.gd
+- [ ] Test ritual tree displays and functions correctly
 
-**Goal:** Tune event system for optimal gameplay experience.
+#### 1.3 Integration
+- [ ] Replace "Coming Soon" placeholder in AtlasTreeUI.tscn
+- [ ] Connect RitualSkillTree to tab container
+- [ ] Update points display to show ritual progression
+- [ ] Test tab switching and point allocation
 
-#### 4.1 Event Frequency Balancing
-**Current Settings (may need adjustment):**
-- Event spawn interval: 45 seconds (too fast/slow?)
-- Zone cooldown: 15 seconds (adequate?)
-- Event duration: 20-45 seconds depending on type
+### Phase 2: Pack Hunt Tree Implementation (1.5 hours)
+**Goal:** Create pack hunt skill tree with unique mechanics
 
-**Testing Questions:**
-- Do events feel appropriately spaced?
-- Is there enough variety in event types?
-- Do events interfere with normal gameplay flow?
+#### 2.1 Passive Definitions
+- [ ] Add pack_hunt passives to EventMasterySystem.gd
+- [ ] Define pack-focused modifiers: spawn rates, coordination bonuses
+- [ ] Create interconnected skill dependencies
 
-#### 4.2 Passive Cost Balancing
-**Current Costs (may need adjustment):**
-- Low-impact passives: 2-3 points
-- Medium-impact passives: 4-5 points
-- High-impact passives: 6+ points
+#### 2.2 Scene Creation
+- [ ] Duplicate BreachSkillTree.tscn → PackHuntSkillTree.tscn
+- [ ] Update event_type to "pack_hunt"
+- [ ] Design web/interconnected layout pattern
+- [ ] Add pack_hunt passive_type enums to skill_button.gd
+- [ ] Implement and test pack hunt tree
 
-**Balancing Goals:**
-- First passive unlocked after 2-3 events
-- Meaningful choices (can't unlock everything quickly)
-- Clear progression curve
+#### 2.3 Integration
+- [ ] Replace placeholder in AtlasTreeUI
+- [ ] Connect to tab system and test functionality
 
-#### 4.3 Visual & Audio Feedback
-**Event Start Feedback:**
-- Visual indicator when event spawns (screen flash, UI notification)
-- Audio cue for event start
-- Zone highlighting or visual effect
+### Phase 3: Boss Tree Implementation (1 hour)
+**Goal:** Complete the atlas with boss-specific progression
 
-**Mastery Point Feedback:**
-- Floating text when points earned
-- UI notification in mastery tree
-- Audio feedback for point earning
+#### 3.1 Implementation
+- [ ] Add boss passives to EventMasterySystem.gd
+- [ ] Create BossSkillTree.tscn with hierarchical layout
+- [ ] Define boss encounter modifiers and rewards
+- [ ] Add boss passive_type enums and integration
+- [ ] Replace final placeholder in AtlasTreeUI
 
-**Passive Allocation Feedback:**
-- Confirmation sound when passive allocated
-- Visual feedback showing effect applied
-- Clear indication of what changed
+### Phase 4: Final Integration & Testing (30 minutes)
+**Goal:** Ensure all trees work together seamlessly
 
-### Phase 5: Event-Specific Skill Tree Expansion (PLANNED)
+#### 4.1 System Validation
+- [ ] Test all 4 event trees load and function correctly
+- [ ] Verify points tracking works across all event types
+- [ ] Test reset functionality on all trees
+- [ ] Validate tooltip system works on all new trees
+- [ ] Confirm save/load persistence across all trees
 
-**Goal:** Develop individualized skill trees for each event type with custom layouts and connection logic.
+#### 4.2 Balance & Polish
+- [ ] Verify skill costs are balanced across event types
+- [ ] Test visual consistency across all tree themes
+- [ ] Document any remaining balance adjustments needed
 
-#### 5.1 Individual Tree Architecture Planning
-**Current Foundation:** The base SkillTreeNode component and NodeContainer system provide excellent scaffolding for event-specific customization.
+## Success Criteria (Updated)
 
-**Planned Event-Specific Trees:**
+### ✅ **COMPLETED Requirements:**
+- ✅ AtlasTreeUI opens/closes properly with ESC key
+- ✅ Events spawn, award points, and complete correctly in gameplay
+- ✅ Skill allocation affects event behavior through passives (breach)
+- ✅ Point earning and spending syncs with EventMasterySystem
+- ✅ Save/load state persists across game sessions
+- ✅ Clear progression feedback and visual confirmation
+- ✅ Signal-based architecture maintained
+- ✅ Performance targets met
+- ✅ Advanced tooltip system with scene-based architecture
 
-**Breach Trees - Portal Mastery Focus:**
-- Linear progression: Portal Defense → Portal Enhancement → Portal Mastery
-- Connection logic: Vertical tree with branching specializations
-- Unique passives: Portal health, breach duration, monster density, portal rewards
+### 🚧 **REMAINING Requirements:**
+- [ ] Ritual skill tree fully implemented and functional
+- [ ] Pack Hunt skill tree fully implemented and functional
+- [ ] Boss skill tree fully implemented and functional
+- [ ] All 4 event trees load correctly in tabbed interface
+- [ ] Intuitive navigation between all event trees
+- [ ] Each tree feels unique and specialized
+- [ ] Balanced challenge/reward across all trees
 
-**Ritual Trees - Circle Mastery Focus:**
-- Circular/radial layout: Center ritual improvements radiating outward
-- Connection logic: Hub-and-spoke pattern from central ritual node
-- Unique passives: Circle area, ritual speed, protection strength, channeling bonuses
+### 🎯 **NEW Success Criteria (Based on Current Architecture):**
+- [ ] All trees use BreachSkillTree.tscn template pattern
+- [ ] Scene-based tooltips work consistently across all trees
+- [ ] Purple breach theme maintained or appropriately themed per event
+- [ ] Prerequisite validation works across all tree layouts
+- [ ] Reset mode functions correctly on all trees
 
-**Pack Hunt Trees - Tracking Mastery Focus:**
-- Horizontal web layout: Interconnected tracking and coordination nodes
-- Connection logic: Multiple paths with cross-connections between specializations
-- Unique passives: Elite tracking, pack coordination, rare spawn chances, hunt rewards
+## Future Expansion Options
 
-**Boss Trees - Combat Mastery Focus:**
-- Hierarchical pyramid: Foundation combat → Advanced tactics → Boss specialization
-- Connection logic: Prerequisite-based vertical progression with lateral specializations
-- Unique passives: Boss damage, phase management, elite guard bonuses, encounter rewards
+### **Option B: Large Navigable Canvas** (Future)
+For when the tabbed approach becomes limiting:
+```
++--------------------------------+
+| [Mini-map]    Breach Area      |
+|  ┌─┐                          |
+|  │B│R         ○──○──○          |
+|  │P│B         │     │          |
+|  └─┘          ○     ○──○       |
+|                                |
+| Ritual Area     Pack Hunt Area |
++--------------------------------+
+```
 
-#### 5.2 Technical Implementation Strategy
-**Base Component Reuse:**
-- ✅ SkillTreeNode.tscn serves as universal building block
-- ✅ NodeContainer system enables flexible positioning per event type
-- ✅ Connection point system supports custom line drawing between nodes
-- ✅ Event-type color coding already implemented
+### **Cross-Tree Synergies** (Future)
+- Keystone skills that require points in multiple trees
+- Atlas bonus objectives for completing multiple tree paths
+- Meta-progression rewards for total points across all trees
 
-**Custom Tree Layouts:**
-- Each event type gets specialized node positioning within its NodeContainer
-- Custom connection line drawing logic per event type (straight, curved, radial)
-- Event-specific passive definitions with unique mechanical effects
-- Tailored progression paths reflecting each event type's gameplay identity
+## Related Files (Updated Status)
 
-**Future Development Path:**
-1. Design individual tree layouts for each event type
-2. Implement custom connection line rendering per tree style
-3. Expand passive definitions with event-specific mechanics
-4. Add tree-specific animations and visual effects
-5. Create event-themed skill tree backgrounds and styling
+### ✅ **COMPLETED Implementation:**
+- ✅ `scripts/systems/EventMasterySystem.gd` - Backend with 25 passives (breach complete)
+- ✅ `scripts/resources/EventMasteryTree.gd` - Point tracking and persistence
+- ✅ `scripts/resources/EventDefinition.gd` - Event configuration
+- ✅ `data/content/events/*.tres` - Event definitions
+- ✅ `scenes/ui/atlas/AtlasTreeUI.tscn` - Complete atlas interface
+- ✅ `scenes/ui/atlas/AtlasTreeUI.gd` - Full atlas management logic
+- ✅ `scenes/ui/skill_tree/BreachSkillTree.tscn` - Complete breach implementation
+- ✅ `scenes/ui/skill_tree/BreachSkillTree.gd` - Advanced tree controller
+- ✅ `scenes/ui/skill_tree/skill_button.tscn` - Advanced component with tooltips
 
-### Phase 6: Future Architecture Planning (30 minutes)
+### 🗑️ **REMOVED (Legacy):**
+- ❌ `scenes/ui/skill_tree/skill_tree.tscn` - **REMOVED** (replaced by BreachSkillTree)
+- ❌ `scenes/ui/skill_tree/skill_tree.gd` - **REMOVED** (replaced by BreachSkillTree)
 
-**Goal:** Document technical debt and future improvements.
+### 📋 **TO BE CREATED (Remaining Work):**
+- [ ] `scenes/ui/skill_tree/RitualSkillTree.tscn` - Copy BreachSkillTree pattern
+- [ ] `scenes/ui/skill_tree/PackHuntSkillTree.tscn` - Copy BreachSkillTree pattern
+- [ ] `scenes/ui/skill_tree/BossSkillTree.tscn` - Copy BreachSkillTree pattern
 
-#### 5.1 SpawnDirector Refactoring Assessment
-**Current Status:**
-- SpawnDirector: ~1600 lines (approaching complexity limit)
-- Event logic: ~300 lines added to SpawnDirector
-- Maintainability: Still manageable but approaching refactor threshold
+### 🎯 **IMPLEMENTATION PATTERN:**
+Each new tree follows the proven BreachSkillTree pattern:
+1. Duplicate BreachSkillTree.tscn
+2. Update event_type property
+3. Add passive definitions to EventMasterySystem.gd
+4. Add enum values to skill_button.gd PassiveType
+5. Update node layout and positioning
+6. Replace placeholder in AtlasTreeUI.tscn
 
-**Refactoring Trigger Points:**
-- File exceeds 1800 lines
-- Additional spawn systems needed (sieges, raids, etc.)
-- Performance issues in spawn coordination
-- Team development conflicts
+## Notes (Updated 2025-01-19)
 
-#### 5.2 System Expansion Planning
-**Potential Future Event Types:**
-- **Siege Events**: Large-scale defensive scenarios
-- **Raid Events**: Multi-phase boss encounters
-- **Environmental Events**: Weather/terrain-based challenges
-- **Player-Triggered Events**: Events activated by player actions
+**Architecture Success:** ✅ The atlas approach has proven excellent - the BreachSkillTree foundation exceeded expectations with:
+- Advanced scene-based tooltip system (not originally planned)
+- Sophisticated visual feedback with purple theme
+- Robust prerequisite validation and reset mode
+- Professional UI/UX that rivals commercial implementations
 
-**Architecture Extensions:**
-- Event chaining (events that trigger other events)
-- Cross-event bonuses (complete different event types for rewards)
-- Event-specific loot tables
-- Seasonal/timed events
+**Implementation Reality:** The foundation work was more complex than anticipated but resulted in a superior system. The remaining work is now straightforward replication of the proven BreachSkillTree pattern.
 
-## Implementation Checklist
+**Key Lessons Learned:**
+- Scene-based tooltips > programmatic tooltip creation
+- Enum-based passive mapping > data-driven .tres files
+- Specialized tree scripts > generic EventSkillTree component
+- Visual polish matters significantly for user experience
 
-### Phase 1 - Scene Creation: ✅ COMPLETED
-- [x] Create SkillTreeUI.tscn with proper node hierarchy (1080x720, 2x2 quadrants)
-- [x] Apply theme styling to all UI elements (dark background, event colors)
-- [x] Verify @onready node paths match script expectations
-- [x] Test scene loading without errors
-- [x] Add color coding for different event types (Breach=Purple, etc.)
-- [x] Implement SkillTreeNode component architecture with visual states
-- [x] Add NodeContainer organization for flexible positioning
-- [x] Create visible connection point indicators
-- [x] Fix hover state management with proper restoration
-- [x] Ensure camera-independent rendering via CanvasLayer
+**Balance Status:** Breach tree provides excellent baseline for skill costs and progression pacing. Future trees should match this quality level while providing unique mechanics.
 
-### Phase 2 - Input Integration:
-- [ ] Add mastery_tree_toggle input action to project
-- [ ] Choose integration approach (hotkey/menu/both)
-- [ ] Implement modal behavior with game pause
-- [ ] Add ESC key handling for closing UI
-- [ ] Test accessibility from gameplay
-
-### Phase 3 - Integration Testing:
-- [ ] Verify events spawn in actual gameplay
-- [ ] Confirm mastery points are earned and saved
-- [ ] Test all passive effects modify event behavior
-- [ ] Validate no performance regression
-- [ ] Test UI state synchronization
-
-### Phase 4 - Balance & Polish:
-- [ ] Tune event spawn frequencies based on gameplay feel
-- [ ] Adjust passive costs for good progression curve
-- [ ] Add visual feedback for event start/completion
-- [ ] Implement mastery point earning notifications
-- [ ] Add passive allocation confirmation feedback
-
-### Phase 5 - Documentation:
-- [ ] Update CHANGELOG.md with integration completion
-- [ ] Document balance parameters for future tuning
-- [ ] Note any technical debt or future improvements needed
-- [ ] Create player-facing documentation if needed
-
-### Phase 6 - Scene-Based Event Markers (2 hours):
-- [ ] Create EventMarker.tscn scene with visual states (spawning, active, completing)
-- [ ] Implement EventMarker.gd script with animation and state management
-- [ ] Design marker visuals per event type (Breach=Purple pulse, Ritual=Green circle, etc.)
-- [ ] Add markers to SpawnDirector event spawning logic
-- [ ] Test marker placement and visibility during gameplay
-
-### Phase 7 - Event Objective Entities (3 hours):
-- [ ] Create BaseEventObjective.gd abstract class for event mechanics
-- [ ] Implement BreachPortal.tscn (defend portal, wave spawning mechanics)
-- [ ] Implement RitualCircle.tscn (channeling protection, area defense)
-- [ ] Implement PackHuntTracker.tscn (elite coordination, rare spawn logic)
-- [ ] Implement BossEncounter.tscn (phase management, elite guard spawning)
-- [ ] Add objective completion signals to EventBus
-
-### Phase 8 - Interactive Event Mechanics (4 hours):
-- [ ] Breach mechanics: Portal health, wave defense, duration objectives
-- [ ] Ritual mechanics: Circle protection, channeling interruption, area control
-- [ ] Pack Hunt mechanics: Elite tracking, rare companion coordination
-- [ ] Boss mechanics: Phase transitions, elite guard management, special attacks
-- [ ] Event objective completion logic and mastery point awarding
-- [ ] Visual feedback for objective progress (health bars, timers, completion effects)
-
-### Phase 9 - Integration & Polish (1 hour):
-- [ ] Connect event objectives to SpawnDirector event spawning
-- [ ] Test complete event lifecycle (spawn → objectives → completion → rewards)
-- [ ] Polish marker animations and objective visual feedback
-- [ ] Verify mastery passive effects apply to new mechanics
-- [ ] Performance testing with multiple simultaneous events
-
-## Success Criteria
-
-### Functional Requirements:
-- [ ] MasteryTreeUI opens/closes properly from gameplay
-- [ ] Events spawn, award points, and complete correctly
-- [ ] Passive allocation affects event behavior visibly
-- [ ] All UI states update correctly in real-time
-- [ ] System performs without regression
-- [ ] Event markers appear and update correctly during gameplay
-- [ ] Event objectives spawn and function properly for all event types
-- [ ] Interactive mechanics respond to player actions appropriately
-
-### User Experience Requirements:
-- [ ] Clear progression feedback (points earned, effects applied)
-- [ ] Intuitive UI navigation and passive allocation
-- [ ] Appropriate challenge/reward balance
-- [ ] Events feel integrated with core gameplay
-- [ ] System enhances rather than disrupts gameplay flow
-- [ ] Event markers provide clear visual guidance to active events
-- [ ] Event objectives are clearly communicated and achievable
-- [ ] Interactive mechanics create engaging mini-challenges within combat
-
-### Technical Requirements:
-- [ ] No compilation errors or runtime crashes
-- [ ] Proper resource loading and saving
-- [ ] Signal-based architecture maintained
-- [ ] Performance targets met
-- [ ] Code follows project conventions
-
-## Related Files
-
-**Core Implementation (COMPLETED):**
-- `scripts/resources/EventMasteryTree.gd`
-- `scripts/resources/EventDefinition.gd`
-- `scripts/systems/EventMasterySystem.gd`
-- `scripts/ui/MasteryTreeUI.gd`
-- `data/content/events/*.tres`
-
-**To Be Created:**
-- `scenes/ui/MasteryTreeUI.tscn` - Main UI scene ⏳ IN PROGRESS
-- Input action in `project.godot`
-- Integration with pause menu or HUD
-- `scenes/events/EventMarker.tscn` - Visual event indicators
-- `scripts/events/EventMarker.gd` - Marker behavior and animation
-- `scripts/events/BaseEventObjective.gd` - Abstract base for event mechanics
-- `scenes/events/objectives/BreachPortal.tscn` - Breach event portal defense
-- `scenes/events/objectives/RitualCircle.tscn` - Ritual circle protection
-- `scenes/events/objectives/PackHuntTracker.tscn` - Pack hunt coordination
-- `scenes/events/objectives/BossEncounter.tscn` - Boss phase management
-
-**To Be Modified:**
-- Arena scenes for UI integration
-- Input handling systems
-- Possibly HUD/menu systems for accessibility
-
-## Notes
-
-**Architecture Decision:** The current approach of building events into SpawnDirector is appropriate for the MVP. The refactoring extraction documented in `SPAWN_DIRECTOR_REFACTORING_EVENT_EXTRACTION.md` should be implemented when the system grows beyond current complexity.
-
-**Balance Philosophy:** Events should enhance gameplay variety without disrupting core combat flow. They should feel like meaningful bonuses rather than required optimization.
-
-**Performance Priority:** Event system should maintain the game's 30Hz fixed-step deterministic performance. Any framerate impact is unacceptable.
-
-**Player Agency:** Mastery system should provide meaningful choices rather than obvious optimal paths. Different passive builds should support different playstyles.
+**Next Priority:** With the foundation complete, focus on replicating the BreachSkillTree success for the remaining 3 event types. Each tree should take 1-1.5 hours following the established pattern.

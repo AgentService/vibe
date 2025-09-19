@@ -1,6 +1,10 @@
 # Skill Tree System V2 - Data-Driven Architecture
 
-**Status:** Ready for Implementation  
+**Status:** Parked - Superseded by Atlas System MVP
+  **Priority:** Future Enhancement
+  **Note:** Revisit after EVENT_SYSTEM_FOLLOW_UP_INTEGRATION atlas system is complete
+  
+  **Status:** Ready for Implementation  
 **Priority:** High  
 **Type:** System Architecture Redesign  
 **Estimated Time:** 12-16 hours  
@@ -82,19 +86,19 @@ extends Resource
 @export var connection_style: ConnectionStyle
 
 enum LayoutType {
-    LINEAR,        # Meta progression (vertical chains)
-    RADIAL,        # Ritual mastery (hub-and-spoke) 
-    WEB,           # Equipment/crafting (interconnected)
-    HIERARCHICAL,  # Character skills (prerequisite-based)
-    GRID,          # Traditional skill grid
-    CUSTOM         # Custom positioning
+	LINEAR,        # Meta progression (vertical chains)
+	RADIAL,        # Ritual mastery (hub-and-spoke) 
+	WEB,           # Equipment/crafting (interconnected)
+	HIERARCHICAL,  # Character skills (prerequisite-based)
+	GRID,          # Traditional skill grid
+	CUSTOM         # Custom positioning
 }
 
 enum ConnectionStyle {
-    STRAIGHT,      # Direct lines
-    CURVED,        # Bezier curves
-    STEPPED,       # Right-angle connections
-    ORGANIC        # Flowing natural curves
+	STRAIGHT,      # Direct lines
+	CURVED,        # Bezier curves
+	STEPPED,       # Right-angle connections
+	ORGANIC        # Flowing natural curves
 }
 ```
 
@@ -129,11 +133,11 @@ extends Resource
 @export var visual_style: NodeVisualStyle = NodeVisualStyle.DEFAULT
 
 enum NodeVisualStyle {
-    DEFAULT,
-    KEYSTONE,    # Large important nodes
-    MINOR,       # Small utility nodes
-    MASTERY,     # Special mastery nodes
-    LEGENDARY    # Rare/unique nodes
+	DEFAULT,
+	KEYSTONE,    # Large important nodes
+	MINOR,       # Small utility nodes
+	MASTERY,     # Special mastery nodes
+	LEGENDARY    # Rare/unique nodes
 }
 ```
 
@@ -153,11 +157,11 @@ extends Resource
 @export var is_bidirectional: bool = false
 
 enum ConnectionType {
-    PREREQUISITE,    # Standard unlock requirement
-    SYNERGY,         # Bonus when both nodes allocated
-    EXCLUSIVE,       # Cannot have both nodes
-    GATEWAY,         # Special unlock requirement
-    AESTHETIC        # Visual only, no gameplay impact
+	PREREQUISITE,    # Standard unlock requirement
+	SYNERGY,         # Bonus when both nodes allocated
+	EXCLUSIVE,       # Cannot have both nodes
+	GATEWAY,         # Special unlock requirement
+	AESTHETIC        # Visual only, no gameplay impact
 }
 ```
 
@@ -193,19 +197,19 @@ class_name SkillTreeLayoutEngine
 extends RefCounted
 
 static func calculate_layout(definition: SkillTreeDefinition, canvas_size: Vector2) -> Dictionary:
-    match definition.layout_type:
-        SkillTreeDefinition.LayoutType.LINEAR:
-            return _calculate_linear_layout(definition, canvas_size)
-        SkillTreeDefinition.LayoutType.RADIAL:
-            return _calculate_radial_layout(definition, canvas_size)
-        SkillTreeDefinition.LayoutType.WEB:
-            return _calculate_web_layout(definition, canvas_size)
-        SkillTreeDefinition.LayoutType.HIERARCHICAL:
-            return _calculate_hierarchical_layout(definition, canvas_size)
-        SkillTreeDefinition.LayoutType.GRID:
-            return _calculate_grid_layout(definition, canvas_size)
-        SkillTreeDefinition.LayoutType.CUSTOM:
-            return _use_custom_positions(definition)
+	match definition.layout_type:
+		SkillTreeDefinition.LayoutType.LINEAR:
+			return _calculate_linear_layout(definition, canvas_size)
+		SkillTreeDefinition.LayoutType.RADIAL:
+			return _calculate_radial_layout(definition, canvas_size)
+		SkillTreeDefinition.LayoutType.WEB:
+			return _calculate_web_layout(definition, canvas_size)
+		SkillTreeDefinition.LayoutType.HIERARCHICAL:
+			return _calculate_hierarchical_layout(definition, canvas_size)
+		SkillTreeDefinition.LayoutType.GRID:
+			return _calculate_grid_layout(definition, canvas_size)
+		SkillTreeDefinition.LayoutType.CUSTOM:
+			return _use_custom_positions(definition)
 
 # Layout algorithms for different tree types
 static func _calculate_hierarchical_layout(definition: SkillTreeDefinition, canvas_size: Vector2) -> Dictionary
@@ -262,11 +266,11 @@ const SkillTreeEditorDock = preload("res://addons/skill_tree_editor/dock/SkillTr
 var dock_instance
 
 func _enter_tree():
-    dock_instance = SkillTreeEditorDock.instantiate()
-    add_control_to_dock(DOCK_SLOT_LEFT_UR, dock_instance)
+	dock_instance = SkillTreeEditorDock.instantiate()
+	add_control_to_dock(DOCK_SLOT_LEFT_UR, dock_instance)
 
 func _exit_tree():
-    remove_control_from_docks(dock_instance)
+	remove_control_from_docks(dock_instance)
 ```
 
 #### 2. Visual Tree Editor Interface
@@ -284,30 +288,30 @@ func _exit_tree():
 class_name SkillTreeGenerator
 
 static func generate_scene_from_definition(definition: SkillTreeDefinition) -> PackedScene:
-    var scene = PackedScene.new()
-    var root = SkillTreeRenderer.new()
-    root.tree_definition = definition
-    
-    # Generate layout
-    var layout = SkillTreeLayoutEngine.calculate_layout(definition, Vector2(1920, 1080))
-    
-    # Create node instances
-    for node_def in definition.nodes:
-        var node_instance = _create_node_instance(node_def, layout)
-        root.add_child(node_instance)
-    
-    # Create connections
-    for connection_def in definition.connections:
-        _create_connection_visual(connection_def, root)
-    
-    scene.pack(root)
-    return scene
+	var scene = PackedScene.new()
+	var root = SkillTreeRenderer.new()
+	root.tree_definition = definition
+	
+	# Generate layout
+	var layout = SkillTreeLayoutEngine.calculate_layout(definition, Vector2(1920, 1080))
+	
+	# Create node instances
+	for node_def in definition.nodes:
+		var node_instance = _create_node_instance(node_def, layout)
+		root.add_child(node_instance)
+	
+	# Create connections
+	for connection_def in definition.connections:
+		_create_connection_visual(connection_def, root)
+	
+	scene.pack(root)
+	return scene
 
 static func _create_node_instance(node_def: SkillNodeDefinition, layout: Dictionary) -> SkillTreeNode:
-    var node = preload("res://scenes/ui/skill_tree/SkillTreeNode.tscn").instantiate()
-    node.setup_node(node_def.node_id, "", node_def.display_name, node_def.description, node_def.unlock_cost)
-    node.position = layout[node_def.node_id]
-    return node
+	var node = preload("res://scenes/ui/skill_tree/SkillTreeNode.tscn").instantiate()
+	node.setup_node(node_def.node_id, "", node_def.display_name, node_def.description, node_def.unlock_cost)
+	node.position = layout[node_def.node_id]
+	return node
 ```
 
 ## Implementation Plan

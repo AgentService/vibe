@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="SkillTreeData" load_steps=2 format=3 uid="uid://cbi71x80jh1g3"]
+
+[ext_resource type="Script" uid="uid://b8m255ghokybt" path="res://scripts/resources/SkillTreeData.gd" id="1_script"]
+
+[resource]
+script = ExtResource("1_script")
+event_type = &"breach"
+tree_name = "Breach Mastery"
+description = "Passive skills that enhance breach events"
+passive_mapping = Array[StringName]([&"breach_density_1", &"breach_duration_1", &"breach_rewards_1"])
