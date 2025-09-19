@@ -27,10 +27,10 @@ The EventSkillTree UI is built with a modular component system that provides cle
 signal atlas_closed()  # Emitted when UI is hidden
 ```
 
-### 2. EventSkillTree (scenes/ui/skill_tree/EventSkillTree.tscn)
+### 2. BreachSkillTree (scenes/ui/skill_tree/BreachSkillTree.tscn)
 *Event-specific skill tree container*
 
-**Purpose**: Manages layout and logic for a single event type's skill progression
+**Purpose**: Manages layout and logic for a single event type's skill progression (BreachSkillTree.gd is the current implementation, EventSkillTree.gd was the previous version)
 
 **Key Properties**:
 - `event_type: StringName` - Defines which event this tree represents
@@ -51,11 +51,16 @@ signal atlas_closed()  # Emitted when UI is hidden
 **Visual Elements**:
 ```
 SkillButton (TextureButton)
-├── BorderHighlight (ColorRect) - z_index: -1
+├── InnerShadow (ColorRect) - Shadow effects for unallocated skills
+├── InnerShadowLayer2 (ColorRect) - Additional shadow layer
 ├── Panel (Panel) - Hidden background
 ├── MarginContainer
 │   └── Label - Shows checkmark (✓) when allocated
-└── Line2D - Connection to parent node
+├── Line2D - Connection to parent node
+├── BorderHighlight (ColorRect) - z_index: -1
+└── TooltipPanel (Panel) - Scene-based tooltip system
+    └── MarginContainer
+        └── TooltipLabel (RichTextLabel) - Auto-sizing tooltip content
 ```
 
 **Key Features**:
@@ -63,25 +68,36 @@ SkillButton (TextureButton)
 - **Purple Border Theme**: Color-coded state feedback
 - **Dynamic Line Connections**: Visual parent-child relationships
 - **Reset Mode Integration**: Special highlighting for deallocation
+- **Scene-Based Tooltips**: Integrated tooltip system with auto-sizing and rich text support
 
 ## Visual Design System
 
 ### Border Color Scheme (Purple Breach Theme)
 
 ```gdscript
-BORDER_DEFAULT = Color(0.275, 0.0, 0.267, 1.0)    # 460044 - Base state
-BORDER_ALLOCATED = Color(0.5, 0.15, 0.48, 1.0)    # Bright purple - Allocated
-BORDER_REMOVABLE = Color(0.18, 0.0, 0.17, 1.0)    # Dark purple - Can remove
-BORDER_BLOCKED = Color(0.5, 0.05, 0.15, 1.0)      # Red-purple - Cannot remove
-BORDER_AVAILABLE = Color(0.4, 0.1, 0.39, 1.0)     # Medium purple - Available
+BORDER_UNALLOCATED = Color(0.15, 0.1, 0.15, 0.6)   # Dark purple/grey - Unallocated
+BORDER_ALLOCATED = Color(0.275, 0.0, 0.267, 0.8)   # 460044 - Bright purple - Allocated
+BORDER_REMOVABLE = Color.DARK_RED                   # Dark red - Can be removed in reset mode
 ```
 
-### Line Connection System
+### Line Connection Colors
 
-**Colors**:
-- **Active** (Yellow): Both parent and child are allocated
-- **Available** (Gray): Parent allocated, child not allocated
-- **Disabled** (Dark Gray): Parent not allocated
+```gdscript
+LINE_ACTIVE_COLOR = Color(0.8, 0.2, 0.8, 1.0)      # Bright purple - Active connections
+LINE_INACTIVE_COLOR = Color(0.45, 0.1, 0.45, 1.0)  # Medium purple - Available connections
+LINE_DISABLED_COLOR = Color(0.2, 0.0, 0.2, 1.0)    # Dark purple - Disabled connections
+```
+
+### Tooltip System Architecture
+
+**Scene-Based Implementation**:
+- **TooltipPanel**: 300px fixed width, auto-sizing height with `custom_minimum_size = Vector2(300, 0)`
+- **RichTextLabel**: BBCode support enabled with `bbcode_enabled = true` and `fit_content = true`
+- **MarginContainer**: 8px margins (left/right), 6px margins (top/bottom)
+- **Auto-content**: Displays `passive_data.name` and `passive_data.description` from EventMasterySystem
+- **Positioning**: Automatic placement to right of node, adjusts for screen edges
+
+**Previous Implementation Note**: The old programmatic tooltip creation system has been removed in favor of this cleaner scene-based approach.
 
 **Positioning**:
 - Dynamic margin calculation ensures minimum visible line length
@@ -282,3 +298,34 @@ Logger.debug("Updated reset mode highlighting for %d nodes" % all_nodes.size(), 
 3. **Material Effects**: Customize shaders for unique visual effects
 
 This modular UI architecture ensures maintainable, accessible, and visually appealing skill progression interfaces.
+
+---
+
+## Recent Architectural Changes (v2024)
+
+### Scene-Based Tooltip System
+
+**Migration from Programmatic to Scene-Based**:
+- **Before**: Tooltips created via `Panel.new()` and `Label.new()` with complex parent-finding logic
+- **After**: TooltipPanel and RichTextLabel defined directly in skill_button.tscn scene hierarchy
+- **Benefits**: Cleaner code, better performance, easier maintenance, visual editor configuration
+
+**Key Improvements**:
+- Eliminated 200+ lines of complex tooltip creation code
+- Added BBCode support for rich text formatting
+- Implemented auto-sizing with fixed width (300px) and variable height
+- Simplified positioning logic using `get_combined_minimum_size()`
+- Reduced memory allocation overhead
+
+### File Structure Updates
+
+**Removed Files**:
+- `scenes/ui/skill_tree/skill_tree.tscn` - Legacy scene with broken script references
+
+**Updated Architecture**:
+- `BreachSkillTree.gd` - Current implementation (replaces EventSkillTree.gd pattern)
+- `skill_button.gd` - Now includes @onready tooltip references and simplified tooltip logic
+- `skill_button.tscn` - Scene hierarchy includes complete tooltip system
+
+**Migration Guide for Developers**:
+When creating new event types, use BreachSkillTree.tscn as the template rather than the old EventSkillTree.tscn pattern. All skill nodes automatically include the new tooltip system without additional configuration.

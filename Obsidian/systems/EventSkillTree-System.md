@@ -8,8 +8,8 @@ The EventSkillTree system provides a single-level binary allocation skill tree f
 
 ### Core Components
 
-1. **EventSkillTree.gd** - Main controller for skill tree logic
-2. **SkillNode (skill_button.gd)** - Individual skill button component
+1. **BreachSkillTree.gd** - Main controller for skill tree logic (updated from EventSkillTree.gd)
+2. **SkillNode (skill_button.gd)** - Individual skill button with scene-based tooltips
 3. **AtlasTreeUI.gd** - Tabbed interface wrapper
 4. **EventMasterySystem.gd** - Backend storage and validation
 
@@ -63,9 +63,17 @@ EventBus.mastery_points_earned.connect(_on_mastery_points_earned)
 
 - **Default**: Purple border (460044), no checkmark
 - **Allocated**: Bright purple border, checkmark (✓)
-- **Reset Removable**: Dark purple border
-- **Reset Blocked**: Red-purple border
-- **Line Connections**: Yellow when active, gray when inactive/disabled
+- **Reset Removable**: Dark red border
+- **Reset Blocked**: Standard purple border
+- **Line Connections**: Bright purple when active, medium purple when available, dark purple when disabled
+
+### Scene-Based Tooltip System
+
+Each SkillNode now includes built-in tooltips with:
+- **TooltipPanel**: Auto-sizing with 300px fixed width, variable height
+- **RichTextLabel**: BBCode support for rich text formatting
+- **MarginContainer**: 8px margins for professional spacing
+- **Auto-content**: Displays skill name and description from EventMasterySystem
 
 ### Passive Type Mapping
 
@@ -87,6 +95,7 @@ enum PassiveType {
 - **Line Connections**: Dynamic positioning with margin calculations
 - **Border Highlighting**: Purple theme with state-based colors
 - **Toggle Behavior**: Click to allocate/deallocate (outside reset mode)
+- **Integrated Tooltips**: Scene-based tooltips with automatic content from passive definitions
 
 ## AtlasTreeUI Integration
 

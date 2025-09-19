@@ -44,6 +44,8 @@ Add passive definitions to the `passive_definitions` dictionary:
 
 In `scenes/ui/skill_tree/skill_button.gd`, extend the PassiveType enum:
 
+**Note**: The skill_button.gd file now includes a scene-based tooltip system with @onready references to TooltipPanel and RichTextLabel nodes.
+
 ```gdscript
 enum PassiveType {
     NONE,
@@ -78,22 +80,24 @@ var passive_id: StringName:
 
 #### Option A: Copy Existing Tree (Recommended)
 
-1. **Duplicate EventSkillTree.tscn**:
+1. **Duplicate BreachSkillTree.tscn**:
    ```
-   scenes/ui/skill_tree/EventSkillTree.tscn → ExpeditionSkillTree.tscn
+   scenes/ui/skill_tree/BreachSkillTree.tscn → ExpeditionSkillTree.tscn
    ```
 
 2. **Update the scene**:
    - Open `ExpeditionSkillTree.tscn` in Godot editor
    - Set event_type to "expedition" in the root node's inspector
    - Rename skill nodes (Branch1_A1 → Expedition_A1, etc.)
+   - Each skill node now includes built-in scene-based tooltips
 
 #### Option B: Create New Tree Layout
 
 1. **Create new scene**: `scenes/ui/skill_tree/ExpeditionSkillTree.tscn`
-2. **Root node**: Control with EventSkillTree.gd script
+2. **Root node**: Control with BreachSkillTree.gd script (or create EventSkillTree.gd base)
 3. **Set event_type**: "expedition" in inspector
 4. **Add skill nodes**: Instance skill_button.tscn for each passive
+   - **Note**: skill_button.tscn now includes TooltipPanel with auto-sizing tooltips
 
 ### Step 4: Configure Node Layout (Godot Editor)
 
@@ -244,10 +248,18 @@ const BORDER_EXPEDITION_ALLOCATED = Color(0.2, 0.8, 0.4, 1.0)  # Bright green
 
 ### Required Files to Modify
 1. `scripts/systems/EventMasterySystem.gd` - Passive definitions
-2. `scenes/ui/skill_tree/skill_button.gd` - Enum and mapping
-3. `scenes/ui/skill_tree/NewEventTree.tscn` - Tree layout
+2. `scenes/ui/skill_tree/skill_button.gd` - Enum and mapping (includes scene-based tooltips)
+3. `scenes/ui/skill_tree/NewEventTree.tscn` - Tree layout (use BreachSkillTree.tscn as template)
 4. `scenes/ui/atlas/AtlasTreeUI.tscn` - Tab addition
 5. `scenes/ui/atlas/AtlasTreeUI.gd` - Tab logic
+
+### Scene-Based Tooltip System (Current Architecture)
+
+The skill nodes now include built-in tooltips with:
+- **TooltipPanel**: Auto-sizing panel with 300px fixed width
+- **RichTextLabel**: BBCode support for rich text formatting
+- **MarginContainer**: 8px margins for clean spacing
+- **Auto content**: Shows skill name and description automatically
 
 ### Minimal Example
 ```gdscript
