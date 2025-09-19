@@ -1,5 +1,5 @@
 extends Control
-class_name EventSkillTree
+class_name BreachSkillTree
 
 ## Data-driven skill tree component that can load different event type skill configurations.
 ## Reuses the existing SkillNode architecture but loads layout and passive data from resources.
@@ -25,7 +25,7 @@ func _ready() -> void:
 		if event_type == "breach":
 			_initialize_from_data()
 		else:
-			Logger.warn("EventSkillTree has no skill_tree_data configured for event type: %s" % event_type, "ui")
+			Logger.warn("BreachSkillTree has no skill_tree_data configured for event type: %s" % event_type, "ui")
 
 func _find_mastery_system() -> void:
 	"""Locate the EventMasterySystem autoload"""
@@ -46,7 +46,7 @@ func _initialize_from_data() -> void:
 	_connect_node_signals()
 	_validate_passive_assignments()
 	_refresh_all_nodes()
-	Logger.info("EventSkillTree initialized for %s event type" % event_type, "ui")
+	Logger.info("BreachSkillTree initialized for %s event type" % event_type, "ui")
 
 	_connect_ui_buttons()
 
@@ -139,10 +139,10 @@ func _connect_node_signals() -> void:
 			node.pressed.disconnect(node._on_pressed)
 			Logger.debug("Disconnected internal SkillNode handler for %s" % node.name, "events")
 
-		# Connect EventSkillTree handler for EventMasterySystem integration
+		# Connect BreachSkillTree handler for EventMasterySystem integration
 		if not node.pressed.is_connected(_on_node_pressed):
 			node.pressed.connect(_on_node_pressed.bind(node))
-			Logger.debug("Connected EventSkillTree handler for %s" % node.name, "events")
+			Logger.debug("Connected BreachSkillTree handler for %s" % node.name, "events")
 
 func _on_node_pressed(node) -> void:
 	"""Handle any skill node press - route to appropriate handler"""
@@ -175,7 +175,7 @@ func _on_node_pressed(node) -> void:
 			node._on_left_click()
 
 func _connect_ui_buttons() -> void:
-	"""Connect UI buttons in the EventSkillTree"""
+	"""Connect UI buttons in the BreachSkillTree"""
 	# Reset and close buttons removed - functionality now handled by AtlasTreeUI panel
 	pass
 

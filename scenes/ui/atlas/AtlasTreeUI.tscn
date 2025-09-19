@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://c3jmk4o8vxhgc"]
 
 [ext_resource type="Script" uid="uid://lfx3qpr8o0u7" path="res://scenes/ui/atlas/AtlasTreeUI.gd" id="1_atlas_script"]
-[ext_resource type="PackedScene" uid="uid://ho1fwn0ndcau" path="res://scenes/ui/skill_tree/EventSkillTree.tscn" id="2_event_tree"]
+[ext_resource type="PackedScene" uid="uid://dofp3el7q5am2" path="res://scenes/ui/skill_tree/BreachSkillTree.tscn" id="2_breach_tree"]
 
 [node name="AtlasTreeUI" type="Control"]
 layout_mode = 3
@@ -13,7 +13,6 @@ grow_vertical = 2
 script = ExtResource("1_atlas_script")
 
 [node name="Background" type="ColorRect" parent="."]
-z_index = -1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -40,7 +39,7 @@ layout_mode = 2
 metadata/_tab_name = "Breach"
 metadata/_tab_index = 0
 
-[node name="BreachTree" parent="TabContainer/Breach" instance=ExtResource("2_event_tree")]
+[node name="BreachTree" parent="TabContainer/Breach" instance=ExtResource("2_breach_tree")]
 layout_mode = 1
 
 [node name="Ritual" type="Control" parent="TabContainer"]

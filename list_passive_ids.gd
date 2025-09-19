@@ -46,7 +46,7 @@ func _initialize():
 
 	print("=" * 50)
 	print("INSTRUCTIONS:")
-	print("1. Open EventSkillTree.tscn in the editor")
+	print("1. Open BreachSkillTree.tscn in the editor")
 	print("2. Select each SkillButton node (B1, B2, etc.)")
 	print("3. In the Inspector, find the 'Passive Id' field")
 	print("4. Enter one of the IDs above (copy exactly)")

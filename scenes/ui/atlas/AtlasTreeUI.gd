@@ -12,7 +12,7 @@ class_name AtlasTreeUI
 @onready var close_button: Button = $PointsPanel/VBoxContainer/CloseButton
 
 # Event skill trees
-@onready var breach_tree: EventSkillTree = $TabContainer/Breach/BreachTree
+@onready var breach_tree = $TabContainer/Breach/BreachTree
 
 var _mastery_system: Node
 var _current_event_type: StringName = "breach"

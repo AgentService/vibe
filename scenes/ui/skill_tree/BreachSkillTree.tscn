@@ -1,0 +1,178 @@
+[gd_scene load_steps=13 format=3 uid="uid://dofp3el7q5am2"]
+
+[ext_resource type="Script" uid="uid://bn3w2motlvb00" path="res://scenes/ui/skill_tree/BreachSkillTree.gd" id="1_breach_script"]
+[ext_resource type="PackedScene" uid="uid://50qclboee12a" path="res://scenes/ui/skill_tree/skill_button.tscn" id="1_hxcju"]
+[ext_resource type="Texture2D" uid="uid://dbejdxel6m4fa" path="res://assets/skilltree/background_breach.png" id="2_bg"]
+[ext_resource type="Material" uid="uid://dyblp8bunfsmu" path="res://assets/materials/circular_border_material.tres" id="3_qq112"]
+[ext_resource type="Texture2D" uid="uid://c6ngshepvl5b1" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_6.png" id="4_rwn2s"]
+[ext_resource type="Texture2D" uid="uid://twx88is878r0" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_7.png" id="5_2xlnf"]
+[ext_resource type="Texture2D" uid="uid://bl6b54xn7we" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_8.png" id="6_x41pc"]
+[ext_resource type="Texture2D" uid="uid://belc03fbsav8y" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_10.png" id="7_kda6l"]
+[ext_resource type="Texture2D" uid="uid://3o1axb7w7nqc" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_12.png" id="9_p1arw"]
+[ext_resource type="Texture2D" uid="uid://dsqthfqy82qry" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_14.png" id="11_216ke"]
+[ext_resource type="Texture2D" uid="uid://cpkddoo4afqbq" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_11.png" id="13_rwn2s"]
+[ext_resource type="Texture2D" uid="uid://c6tc3nvie503v" path="res://assets/skilltree/40-free-skillability-icons-volume-1-release/SpellIconsVolume_1_Free/Dark/Dark_13.png" id="14_2xlnf"]
+
+[node name="BreachSkillTree" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_breach_script")
+metadata/_edit_vertical_guides_ = [-288.0]
+
+[node name="Panel" type="Panel" parent="."]
+z_index = 1
+clip_contents = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundTexture" type="TextureRect" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -48.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+
+[node name="ColorRect" type="ColorRect" parent="Panel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.662745)
+
+[node name="Branch1_A1" parent="." instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.296
+anchor_top = 1.0
+anchor_right = 0.296
+anchor_bottom = 1.0
+offset_left = -69.68
+offset_top = -120.0
+offset_right = 10.32
+offset_bottom = -40.0
+grow_vertical = 0
+texture_normal = ExtResource("4_rwn2s")
+passive_type = 5
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch1_B1" parent="Branch1_A1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+offset_left = -117.0
+offset_top = -203.0
+offset_right = -37.0
+offset_bottom = -123.0
+texture_normal = ExtResource("5_2xlnf")
+passive_type = 6
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch1_C1" parent="Branch1_A1/Branch1_B1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+offset_left = -64.0
+offset_top = -200.0
+offset_right = 16.0
+offset_bottom = -120.0
+texture_normal = ExtResource("6_x41pc")
+passive_type = 7
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch2_A1" parent="." instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -120.0
+offset_bottom = -40.0
+grow_vertical = 0
+scale = Vector2(1.049, 1)
+texture_normal = ExtResource("7_kda6l")
+passive_type = 8
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch2_B1" parent="Branch2_A1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+offset_left = -74.3184
+offset_top = -216.0
+offset_right = 5.68161
+offset_bottom = -136.0
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("13_rwn2s")
+passive_type = 9
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch2_C1" parent="Branch2_A1/Branch2_B1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+offset_left = -66.6921
+offset_top = -190.0
+offset_right = 13.3079
+offset_bottom = -110.0
+texture_normal = ExtResource("9_p1arw")
+passive_type = 10
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch3_A1" parent="." instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_left = 0.681
+anchor_top = 1.0
+anchor_right = 0.681
+anchor_bottom = 1.0
+offset_left = 61.52
+offset_top = -120.0
+offset_right = 141.52
+offset_bottom = -40.0
+texture_normal = ExtResource("14_2xlnf")
+passive_type = 1
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch3_B1" parent="Branch3_A1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+anchor_top = 0.462
+anchor_bottom = 0.462
+offset_left = 15.0
+offset_top = -204.96
+offset_right = 95.0
+offset_bottom = -124.96
+grow_horizontal = 1
+grow_vertical = 1
+texture_normal = ExtResource("11_216ke")
+passive_type = 2
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"
+
+[node name="Branch3_C1" parent="Branch3_A1/Branch3_B1" instance=ExtResource("1_hxcju")]
+material = ExtResource("3_qq112")
+layout_mode = 1
+anchors_preset = -1
+offset_left = -20.0
+offset_top = -197.0
+offset_right = 60.0
+offset_bottom = -117.0
+grow_horizontal = 1
+grow_vertical = 1
+passive_type = 3
+metadata/_custom_type_script = "uid://jxmwu0tldqh8"

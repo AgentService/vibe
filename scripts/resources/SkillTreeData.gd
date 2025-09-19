@@ -2,7 +2,7 @@ class_name SkillTreeData
 extends Resource
 
 ## Resource that defines the structure and passive mappings for a skill tree.
-## Used by EventSkillTree to load data-driven skill tree configurations.
+## Used by BreachSkillTree to load data-driven skill tree configurations.
 
 @export var event_type: StringName = "breach"
 @export var tree_name: String = "Breach Mastery"

@@ -2,13 +2,13 @@ extends SceneTree
 
 func _initialize():
 	print("=== Current Skill Tree Node Names ===")
-	print("This shows the current node names in your EventSkillTree.tscn")
+	print("This shows the current node names in your BreachSkillTree.tscn")
 	print()
 
-	# Load the EventSkillTree scene to inspect its structure
-	var skill_tree_scene = load("res://scenes/ui/skill_tree/EventSkillTree.tscn")
+	# Load the BreachSkillTree scene to inspect its structure
+	var skill_tree_scene = load("res://scenes/ui/skill_tree/BreachSkillTree.tscn")
 	if not skill_tree_scene:
-		print("ERROR: Could not load EventSkillTree.tscn")
+		print("ERROR: Could not load BreachSkillTree.tscn")
 		quit()
 		return
 
@@ -25,7 +25,7 @@ func _initialize():
 	print("NEXT STEPS:")
 	print("1. Note the node names above (B1, B2, etc.)")
 	print("2. Run list_passive_ids.gd to see available passive IDs")
-	print("3. Open EventSkillTree.tscn in editor")
+	print("3. Open BreachSkillTree.tscn in editor")
 	print("4. For each node, set the 'Passive Id' field in Inspector")
 	print("5. Save and test!")
 
