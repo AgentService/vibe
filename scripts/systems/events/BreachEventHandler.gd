@@ -19,6 +19,9 @@ var breach_config: BreachEventConfig
 
 func initialize(director: SpawnDirector, mastery: EventMasterySystemImpl) -> void:
 	"""Initialize with required dependencies"""
+	assert(director != null, "SpawnDirector required for BreachEventHandler")
+	assert(mastery != null, "Mastery system required for BreachEventHandler")
+	
 	spawn_director = director
 	mastery_system = mastery
 

@@ -42,7 +42,7 @@ func _init(zone_area: Area2D, breach_config: BreachEventConfig = null):
 	zone = zone_area
 
 	# Generate unique breach ID for ownership tracking
-	breach_id = "breach_" + str(Time.get_time_dict_from_system().hour) + "_" + str(Time.get_time_dict_from_system().minute) + "_" + str(Time.get_time_dict_from_system().second) + "_" + str(randi())
+	breach_id = "breach_" + str(get_instance_id())
 
 	# Load configuration
 	if breach_config:

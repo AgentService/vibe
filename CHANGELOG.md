@@ -5,6 +5,14 @@
 ## [Current Week - Completed]
 
 ### Documentation
+- **Breach Event System Architecture Documentation**: Created comprehensive documentation for the PoE-Atlas-style breach event system in Obsidian systems folder
+  - **Complete System Architecture**: Documented dynamic ring spawning, sector-based enemy distribution, and independent multi-breach support
+  - **Component Documentation**: Detailed coverage of BreachEventHandler, EventInstance, BreachEventConfig, and EventSpawnStrategy classes
+  - **Integration Patterns**: EventBus communication, SpawnDirector coordination, and enemy ownership tracking
+  - **Configuration & Hot-Reload**: Resource-driven design with .tres configuration files and hot-reload support
+  - **Performance Optimizations**: Spatial validation, ring spawn optimization, and efficient cleanup during shrinking phase
+  - **Testing Guidelines**: Suggested test scenarios for multi-breach independence and enemy distribution validation
+  - **Future Enhancement Planning**: Documented planned features from breach_summary.md including monster reveal system and specialized breach monsters
 - **Enhanced CLAUDE.md Navigation System**: Added comprehensive file structure documentation and AI navigation tips for improved codebase understanding
   - **Quick Reference Table**: Added table showing all major folders, their purposes, key entry points, and documentation locations
   - **Project File Structure**: Detailed ASCII tree showing complete codebase organization with annotations for each major component
@@ -13,6 +21,14 @@
   - **Context Integration**: Added link to current project state assessment and enhanced quick links section
   - **Navigation Efficiency**: Documented specific patterns for autoload changes, game logic work, data structure updates, UI work, and testing
   - **Reference Hierarchy**: Clear documentation layers from file structure → subfolder docs → main rules → deep architectural docs
+- **Hierarchical Documentation System Implementation**: Created comprehensive subfolder CLAUDE.md files for each major code layer
+  - **autoload/CLAUDE.md**: Foundation patterns, initialization order, EventBus architecture, fixed-step timing, RNG streams
+  - **scripts/systems/CLAUDE.md**: 30Hz combat patterns, dependency injection, EventBus communication, resource configuration
+  - **scripts/domain/CLAUDE.md**: Pure data models, signal payloads, validation patterns, hot-reload strategies
+  - **scenes/CLAUDE.md**: Scene constraints, dynamic loading, HUD architecture, boss patterns, theme integration
+  - **tests/CLAUDE.md**: Test execution patterns (.tscn vs --script), Monte-Carlo framework, isolation testing, CI/CD integration
+  - **Documentation Maintenance Workflow**: Added requirement to update relevant subfolder CLAUDE.md after completing tasks in that area
+  - **Cross-References**: Established "See Also" sections linking related layers for cohesive documentation navigation
 - **Project State Assessment 2025-09-20**: Comprehensive current state evaluation documenting 9 months of development progress since January baseline
   - **Major Milestone Analysis**: Transformation from basic prototype to production-ready roguelike with PoE-style systems
   - **Architecture Status**: Complete EventBus typed contracts, StateManager flow, component-based HUD, modal overlay system
@@ -22,6 +38,17 @@
   - **Next Priorities**: Ability system extraction (foundation ready), audio integration, map variety expansion
   - **Status**: Ready for content expansion phase with exceptional technical foundation
 
+### Added
+- **Production-Ready Breach Event Testing Suite**: Created focused test framework validating core breach event system mechanics without spawn system dependencies
+  - **Complete Lifecycle Testing**: Validates breach creation, expansion (55px → 600px), natural phase transitions, and shrinking mechanics
+  - **Ring Calculation Determinism**: Confirms deterministic enemy spawn calculations using RNG.stream("waves") with fixed seeds for reproducible testing
+  - **Configuration Validation**: Verifies BreachEventConfig.tres parameter loading (max_radius: 600.0, ring_interval: 100.0, enemy_density: 0.015)
+  - **Multi-Breach Independence**: Tests unique ID generation and confirms 3 simultaneous breaches operate independently without cross-interference
+  - **Focused Test Architecture**: Bypasses complex arena spawn system integration to test core breach mechanics directly
+  - **Automated Validation**: 4/4 tests passing with comprehensive pass/fail reporting and detailed diagnostic output
+  - **Development Workflow Integration**: Recommended execution before commits, during CI/CD, and after balance configuration changes
+  - **Test Execution**: `"../Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_breach_events_focused.tscn`
+
 ### Critical Architecture Fixes
 - **SpawnDirector Direct Return Pattern**: Fixed 40% breach enemy tagging failure that was preventing complete cleanup during breach shrinking
   - **Root Cause**: Position-based enemy searching with 20px tolerance had race conditions during scene instantiation
@@ -29,6 +56,16 @@
   - **Impact**: 100% reliable enemy tagging, complete breach cleanup, eliminated expensive tree searches
   - **Compatibility**: Fully backward compatible - all existing spawn callers (debug V key, wave spawning, boss spawning) unaffected
   - **Documentation**: Created comprehensive Obsidian docs and README for SpawnDirector system architecture
+
+### Testing Infrastructure Improvements
+- **Isolated Test Hanging Fix**: Resolved issue where DamageSystem_Isolated and SpawnDirector_Isolated tests hung indefinitely after debug initialization
+  - **Root Cause**: Tests were designed as interactive debugging tools waiting for keyboard input via `_unhandled_input()` functions
+  - **Solution**: Added headless mode detection with `DisplayServer.get_name() == "headless"` and automated test execution paths
+  - **Integration**: Updated tests to use DebugManager.spawn_enemy_at_position() for proper enemy spawning with current system architecture
+  - **Dual-Mode Pattern**: Tests now serve both interactive debugging (manual controls) and automated CI/CD validation (headless mode)
+  - **API Validation**: Tests validate system integration points (DamageService, EntityTracker, EventBus) without requiring full enemy spawning
+  - **CI Compatibility**: Tests exit cleanly with pass/fail status suitable for GitHub Actions workflows
+  - **Documentation**: Updated tests/CLAUDE.md with interactive vs automated test patterns and troubleshooting guidance
 
 ## [Previous Weeks - Archive]
 

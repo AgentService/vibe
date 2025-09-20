@@ -1,5 +1,9 @@
 {
-  "statusLine": "npx ccstatusline@latest",
+  "statusLine": {
+    "type": "command",
+    "command": "npx ccstatusline@latest",
+    "padding": 0
+  },
    "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "env": {
     "BASH_DEFAULT_TIMEOUT_MS": "1800000",

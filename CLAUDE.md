@@ -223,3 +223,9 @@ This hierarchical approach reduces search time and provides focused context with
 ## ALWAYS END TASK WITH ##
 - update CHANGELOG.md with quick summary of what you have done (current week only - see `/changelogs/README.md` for management approach)
 - note any Obsidian documentation updates needed in `/Obsidian/systems/*` (if architecture/systems changed)
+- **update relevant subfolder CLAUDE.md** if you worked in that area:
+  - Modified autoloads? Update `autoload/CLAUDE.md` with new patterns/dependencies
+  - Added/changed systems? Update `scripts/systems/CLAUDE.md` with integration patterns
+  - Created domain models? Update `scripts/domain/CLAUDE.md` with relationships
+  - Modified UI/scenes? Update `scenes/CLAUDE.md` with new patterns
+  - Added tests? Update `tests/CLAUDE.md` with test patterns/execution methods

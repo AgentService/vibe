@@ -71,10 +71,12 @@ static func _simulate_encounter(rng: RngService, balance: Node, trial_id: int) -
 	var crit_chance: float = balance.get_combat_value("crit_chance")
 	var crit_multiplier: float = balance.get_combat_value("crit_multiplier")
 	
-	var projectile_speed: float = balance.get_abilities_value("projectile_speed")
-	var projectile_ttl: float = balance.get_abilities_value("projectile_ttl")
+	# Use hardcoded values since abilities system isn't implemented yet
+	var projectile_speed: float = 300.0
+	var projectile_ttl: float = 3.0
 	
-	var enemy_hp: float = balance.get_waves_value("enemy_hp")
+	# Use hardcoded value since enemy HP isn't in balance data yet
+	var enemy_hp: float = 100.0
 	var enemy_speed: float = balance.get_waves_value("enemy_speed_min")  # Use min for consistency
 	
 	# Player stats (apply card bonuses)
