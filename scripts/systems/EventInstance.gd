@@ -202,7 +202,7 @@ func get_emptiest_sectors(count: int) -> Array[int]:
 		sector_data.append({"id": i, "count": enemy_count})
 
 	# Sort by enemy count (ascending)
-	sector_data.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.count < b.count)
+	sector_data.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a["count"] < b["count"])
 
 	var result: Array[int] = []
 	for i in range(min(count, sector_data.size())):

@@ -16,6 +16,9 @@ class_name DebugConfig
 @export_enum("auto", "custom_id", "create_new") var character_selection: String = "auto"
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
+@export_group("Boss Debug")
+@export var show_personal_space_circles: bool = false  # Control boss personal space visualization
+
 
 func _init(
 	p_debug_panels_enabled: bool = false,

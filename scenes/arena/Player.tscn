@@ -1047,6 +1047,7 @@ animations = [{
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
 scale = Vector2(0.8, 0.8)
+collision_mask = 3
 script = ExtResource("1_dn4kl")
 player_type = ExtResource("2_jkhsn")
 

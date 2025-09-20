@@ -158,7 +158,6 @@ func _initialize_systems() -> void:
 	
 	# Phase F: XpSystem (needs arena reference - will be injected later)
 	# Note: XpSystem requires arena node in constructor, so it will be handled by SystemInjectionManager
-	Logger.info("XpSystem will be initialized by Arena via SystemInjectionManager", "orchestrator")
 
 func get_card_system() -> CardSystem_Type:
 	return card_system
@@ -238,17 +237,11 @@ func inject_systems_to_arena(arena) -> void:
 			xp_system = XpSystem_Type.new(arena)
 			add_child(xp_system)
 			systems["XpSystem"] = xp_system
-			Logger.info("XpSystem instance created and registered", "orchestrator")
 		else:
 			# Update existing XpSystem with new arena reference
-			Logger.info("Updating existing XpSystem arena reference", "orchestrator")
 			xp_system.update_arena_reference(arena)
-			Logger.info("XpSystem arena reference updated", "orchestrator")
-		
 		if arena.has_method("set_xp_system"):
-			Logger.info("Arena has set_xp_system method, calling it...", "orchestrator")
 			arena.set_xp_system(xp_system)
-			Logger.info("XpSystem successfully injected to Arena", "orchestrator")
 		else:
 			Logger.error("Arena doesn't have set_xp_system method - XpSystem injection failed!", "orchestrator")
 	

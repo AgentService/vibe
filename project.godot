@@ -130,6 +130,13 @@ cast_melee={
 ]
 }
 
+[layer_names]
+
+2d_physics/layer_1="Terrain"
+2d_physics/layer_2="Bosses"
+2d_physics/layer_3="Player"
+2d_physics/layer_4="Projectiles"
+
 [plugins]
 
 enabled=PackedStringArray("gdai-mcp-plugin-godot", "limbo_console")

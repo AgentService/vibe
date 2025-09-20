@@ -14,7 +14,7 @@ func _ready() -> void:
 	attack_damage = 20.0
 	attack_cooldown = 2.5
 	attack_range = 70.0
-	chase_range = 250.0
+	# chase_range = 250.0  # Using BaseBoss default (5500.0)
 	
 	# Shadow configured directly in scene tree - see BossShadow node in Inspector
 	
