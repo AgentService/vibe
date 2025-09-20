@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BreachEventConfig" load_steps=2 format=3 uid="uid://cg25654tigicx"]
+
+[ext_resource type="Script" uid="uid://cf1355moodfab" path="res://scripts/resources/BreachEventConfig.gd" id="1_2k8gf"]
+
+[resource]
+script = ExtResource("1_2k8gf")
+expand_duration = 10.0
+shrink_duration = 10.0
+initial_radius = 30.0
+max_radius = 222.0
+spawn_interval = 1.0
+enemies_per_spawn = 8
+spawn_distance_factor = 0.1
+enemy_modulate = Color(0.8, 0.3, 1, 0.9)
+pulse_speed = 4.0
+min_breach_distance = 200.0
+max_simultaneous_breaches = 3
+redraw_frequency = 3

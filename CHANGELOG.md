@@ -18,6 +18,12 @@
   - **Result**: Eliminated transition spam logs, reduced code complexity by ~50 lines, improved maintainability
 
 ### Features
+- **Breach Event Configuration System**: Implemented centralized `.tres` resource configuration for all breach event parameters
+  - **Created**: `BreachEventConfig.gd` resource script with validation and helper methods for editor-friendly parameter tuning
+  - **Created**: `/data/balance/breach_event_config.tres` configuration file with hot-reload support for rapid iteration
+  - **Integration**: Updated `EventInstance`, `BreachEventHandler`, and `BreachIndicator` to use centralized config parameters
+  - **Parameters**: All timing (expand/shrink duration), sizing (radius, distance), spawning (interval, count), and visual (colors, pulse speed) settings now configurable
+  - **Benefits**: Real-time balance adjustments without code changes, consistent parameters across all breach components, follows CLAUDE.md hot-reload patterns
 - **Event System - PoE Atlas-Style Mastery Foundation**: Complete implementation of core event system with mastery progression
   - **Core Event Types**: 4 event types (Breach, Ritual, Pack Hunt, Boss) with distinct mechanics and formation patterns
   - **Mastery Tree System**: Point-based progression system where players earn points by completing events and spend them on passive modifiers
@@ -38,11 +44,25 @@
   - **AtlasTreeUI Interface**: Tabbed container supporting Breach (functional), Ritual/Pack Hunt/Boss (placeholder) with unified points display
   - **EventMasterySystem Autoload**: Universal access architecture enabling skill tree functionality in both hideout and runtime contexts
   - **MasteryDevice Integration**: E-key hideout access launching AtlasTreeUI with proper modal behavior and ESC handling
+
+- **Breach Event Visual Polish**: Enhanced breach event visibility and testing features
+  - **SimpleBreachIndicator**: Streamlined indicator using Godot's built-in viewport transforms for world-to-screen conversion
+  - **Unified Indicator System**: Single indicator that smoothly transitions from edge arrows (off-screen) to breach circles (on-screen)
+  - **Purple Enemy Modulation**: Breach-spawned enemies appear with distinct purple tint (Color(0.8, 0.3, 1.0, 1.0))
+  - **Shrinking Circle Cleanup**: Enemies touched by shrinking breach circle dissolve with purple fade effect (no XP granted)
+  - **Testing Mode**: Forced banana_lord enemy spawning for breach events to ensure consistent testing experience
   - **Reset Functionality**: Both Atlas-level and individual tree reset buttons with proper passive deallocation through EventMasterySystem
   - **Signal Integration**: Real-time EventBus connectivity for passive allocation/deallocation and point earning events
   - **Resource Architecture**: SkillTreeData system preparing for future expansion to ritual/pack hunt/boss skill tree configurations
 
-  - **Interactive Event Mechanics**: 🔄 NEXT - Scene-based event markers, objective entities, and interactive gameplay mechanics
+  - **Interactive Event Mechanics**: ✅ COMPLETE - Full breach event lifecycle with visual indicators and mastery integration
+
+- **Breach Event System Polish**: Enhanced breach events with improved visibility and testing features
+  - **Editor Visibility**: @tool script with configurable preview radius (100px) makes breach indicators visible in scene editor
+  - **Off-Screen Tracking**: Arrow indicators at screen edges point to off-screen breaches with distance display
+  - **Testing Mode**: Forced banana_lord spawning for breach events with purple modulation for easy identification
+  - **Shrinking Circle Cleanup**: Enemies caught by closing breach circle dissolve with purple fade effect (no XP awarded)
+  - **Scene Metadata**: Breach-spawned enemies tagged with metadata for proper cleanup during shrinking phase
 
 ### Architecture
 - **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts
