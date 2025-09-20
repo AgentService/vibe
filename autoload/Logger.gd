@@ -82,25 +82,31 @@ func is_level_enabled(level: LogLevel) -> bool:
 	return level >= current_level
 
 func _load_config() -> void:
-	var config_resource: LogConfigResource = load(config_path)
+	var config_resource = load(config_path)
 	if config_resource == null:
 		warn("Failed to load log config resource: " + config_path)
 		return
 	
-	# Validate resource
-	if not config_resource.is_valid_log_level():
-		warn("Invalid log level in config: " + config_resource.log_level)
+	# Validate resource (check if method exists before calling)
+	if not config_resource.has_method("is_valid_log_level") or not config_resource.is_valid_log_level():
+		var log_level = config_resource.log_level if "log_level" in config_resource else "UNKNOWN"
+		warn("Invalid log level in config: " + str(log_level))
 		return
 	
 	# Load log level
 	var old_level: LogLevel = current_level
-	current_level = _parse_level(config_resource.log_level)
+	var log_level_value = config_resource.log_level if "log_level" in config_resource else "INFO"
+	current_level = _parse_level(str(log_level_value))
 	
-	# Load categories
-	enabled_categories = config_resource.get_categories()
+	# Load categories (check if method exists)
+	if config_resource.has_method("get_categories"):
+		enabled_categories = config_resource.get_categories()
+	else:
+		# Fallback to default categories for CI
+		enabled_categories = {}
 	
 	if old_level != current_level:
-		info("Log level updated from config: " + config_resource.log_level)
+		info("Log level updated from config: " + str(log_level_value))
 
 func _parse_level(level_str: String) -> LogLevel:
 	match level_str.to_upper():
