@@ -64,7 +64,6 @@ func gain_exp(amount: float) -> void:
 		return
 	
 	if _max_level_reached:
-		Logger.debug("Max level reached, ignoring XP gain", "progression")
 		return
 	
 	var old_total: float = experience
@@ -122,7 +121,6 @@ func _update_xp_to_next() -> void:
 		# Max level reached
 		xp_to_next = 0.0
 		_max_level_reached = true
-		Logger.info("Max level reached: %d" % level, "progression")
 	else:
 		# Calculate XP still needed for next level
 		xp_to_next = float(next_level_total_xp) - experience

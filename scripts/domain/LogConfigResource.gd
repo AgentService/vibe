@@ -16,6 +16,7 @@ class_name LogConfigResource
 @export var ui: bool = true
 @export var abilities: bool = true
 @export var signals: bool = true
+@export var collision: bool = false
 @export var performance: bool = false
 @export var debug: bool = true
 @export var radar: bool = false
@@ -40,6 +41,7 @@ func get_categories() -> Dictionary:
 		"ui": ui,
 		"abilities": abilities,
 		"signals": signals,
+		"collision": collision,
 		"performance": performance,
 		"debug": debug,
 		"radar": radar,

@@ -1184,13 +1184,13 @@ func _spawn_enemy_v2() -> void:
 	# Hand off to existing pooling/rendering system
 	_spawn_from_config_v2(legacy_enemy_type, cfg)
 
-func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> void:
+func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> Node2D:
 	# DECISION: Switch to scene-based enemies only - no more MultiMesh pooled enemies
 	# All enemies (boss, elite, regular, swarm) now use existing boss scene spawning logic
-	_spawn_boss_scene(spawn_config)
+	return _spawn_boss_scene(spawn_config)
 
 # Scene-based spawning for all enemy types (bosses and regular enemies)
-func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
+func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Event spawning now handled by individual event handlers (BreachEventHandler)
 	# No strategy registration needed - events manage their own spawn logic
 
@@ -1205,13 +1205,13 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	if not enemy_scene:
 		var message = "No scene available for enemy type: " + spawn_config.template_id + " (render_tier: " + spawn_config.render_tier + ")"
 		Logger.warn(message, "waves")
-		return
+		return null
 
 	# Instantiate enemy scene
 	var enemy_instance = enemy_scene.instantiate()
 	if not enemy_instance:
 		Logger.warn("Failed to instantiate enemy scene", "waves")
-		return
+		return null
 
 	# Setup enemy with spawn config
 	if enemy_instance.has_method("setup_from_spawn_config"):
@@ -1237,7 +1237,8 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	# Register with boss hit feedback system (only for actual bosses)
 	if spawn_config.render_tier == "boss" and boss_hit_feedback:
 		boss_hit_feedback.register_boss(enemy_instance)
-		Logger.debug("Boss registered with hit feedback system", "waves")
+
+	return enemy_instance
 
 
 # HYBRID SPAWNING SYSTEM: Core routing logic

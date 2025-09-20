@@ -11,3 +11,4 @@ arena_selection = "Underworld Arena"
 custom_arena_path = ""
 character_selection = "auto"
 character_id = &""
+show_personal_space_circles = false

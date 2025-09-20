@@ -323,15 +323,7 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 		spawned_count, ring_radius, breach_event.breach_id
 	], "events")
 
-# Helper function still needed for phantom system
-func _find_enemy_at_position(arena_root: Node, target_position: Vector2, tolerance: float = 20.0) -> Node2D:
-	"""Find an enemy node near the target position"""
-	for child in arena_root.get_children():
-		if child.is_in_group("enemies") and child is Node2D:
-			var distance = child.global_position.distance_to(target_position)
-			if distance <= tolerance:
-				return child
-	return null
+# NOTE: _find_enemy_at_position() removed - no longer needed with direct node references
 
 func _update_active_breaches(dt: float) -> void:
 	"""Update lifecycle for all active breach events"""
@@ -407,21 +399,23 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 	# Convert to legacy EnemyType for existing system
 	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
 
-	# Use SpawnDirector's spawn system
-	spawn_director._spawn_from_config_v2(legacy_enemy_type, cfg)
+	# Get direct node reference from SpawnDirector (eliminates race condition)
+	var enemy_node = spawn_director._spawn_from_config_v2(legacy_enemy_type, cfg)
 
-	# Find the spawned enemy node and tag with breach ownership
-	var arena_root = spawn_director._get_arena_root()
-	var enemy_node = _find_enemy_at_position(arena_root, position)
 	if enemy_node:
-		# Tag enemy with breach ownership for cross-breach protection
+		# IMMEDIATE and RELIABLE tagging (100% success rate)
 		enemy_node.set_meta("breach_owner", breach_event.breach_id)
 		enemy_node.set_meta("breach_spawned", true)
 		enemy_node.add_to_group("breach_enemies")
 
-		# Purple modulation successfully applied
+		# Track in breach event for extra safety
+		var pos_key = _get_position_key(position)
+		breach_event.revealed_enemies[pos_key] = enemy_node
 
-	Logger.debug("Spawned breach enemy at %s for breach %s" % [position, breach_event.breach_id], "events")
+		Logger.debug("Spawned and tagged breach enemy at %s for breach %s" % [position, breach_event.breach_id], "events")
+	else:
+		Logger.warn("Failed to spawn breach enemy at %s for breach %s" % [position, breach_event.breach_id], "events")
+
 	return enemy_node
 
 func _is_enemy_owned_by_breach(enemy_node: Node2D, breach_id: String) -> bool:

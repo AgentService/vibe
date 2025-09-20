@@ -13,7 +13,7 @@ func _ready() -> void:
 	attack_damage = 40.0
 	attack_cooldown = 2.5  # Slightly slower attacks
 	attack_range = 85.0
-	chase_range = 320.0
+	# chase_range = 320.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "walking"  # Uses walking_north, walking_south, etc.
 	
 	# Shadow is handled by BossShadow scene instance in the .tscn file

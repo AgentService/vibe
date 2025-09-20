@@ -13,7 +13,7 @@ func _ready() -> void:
 	attack_damage = 45.0
 	attack_cooldown = 1.8
 	attack_range = 90.0
-	chase_range = 400.0
+	# chase_range = 400.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "scary_walk"  # Uses scary_walk_north, scary_walk_south, etc.
 	
 	# Call parent _ready() to handle all base initialization

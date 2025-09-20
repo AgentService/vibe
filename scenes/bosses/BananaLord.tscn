@@ -1,4 +1,4 @@
-[gd_scene load_steps=17 format=3 uid="uid://8e6qf7vr1fh5"]
+[gd_scene load_steps=18 format=3 uid="uid://8e6qf7vr1fh5"]
 
 [ext_resource type="Script" uid="uid://bfqe2l6dc16h0" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
@@ -93,7 +93,11 @@ height = 63.6
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(24, 63)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_w5q7g"]
+radius = 40.0
+
 [node name="BananaLord" type="CharacterBody2D"]
+collision_layer = 2
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -117,10 +121,16 @@ shape = SubResource("RectangleShape2D_737yx")
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
-visible = false
 
 [node name="BossShadow" parent="." instance=ExtResource("4_7b065")]
 position = Vector2(210, 12)
 scale = Vector2(3.60203, 2.75435)
 offset = Vector2(-58.3291, 10.1517)
 opacity = 0.8
+
+[node name="PersonalSpaceArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
+shape = SubResource("CircleShape2D_w5q7g")

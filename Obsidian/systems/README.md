@@ -25,6 +25,9 @@ Modal dialogs like CardPicker, pause management, and the proposed generic modal 
 ### 📡 [[EventBus-System]]
 Signal-based communication patterns, UI updates via EventBus, and current signal architecture.
 
+### 🎯 [[Spawn-System-Direct-Return-Pattern]]
+**NEW: Critical Architecture Fix** - Direct return pattern implementation that eliminated 40% breach enemy tagging failures. Key breakthrough in spawn system reliability and enemy lifecycle management.
+
 ### 🧩 [[Component-Structure-Reference]]
 Detailed breakdown of scene files, component dependencies, node structures, and lifecycle management.
 

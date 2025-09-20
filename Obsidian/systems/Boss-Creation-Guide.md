@@ -95,7 +95,166 @@ The `BossHealthBar.tscn` scene now automatically:
 - HitBoxShape must have a shape assigned (CircleShape2D or RectangleShape2D)
 - BossHealthBar will warn in console if requirements aren't met
 
-**✨ NEW: Manual Shadow System**
+### **⚠️ CRITICAL: DUAL COLLISION SYSTEM SETUP**
+
+**REQUIRED FOR ALL NEW BOSSES:**
+
+Every new boss scene MUST be configured with proper collision layers to enable boss clustering while maintaining terrain collision:
+
+**Collision Layer Configuration:**
+```
+collision_layer = 2  # Boss layer (what this boss IS)
+collision_mask = 1   # Terrain layer only (what this boss COLLIDES WITH)
+```
+
+**Project Collision Layers:**
+- **Layer 1**: Terrain/Walls
+- **Layer 2**: Bosses
+- **Layer 3**: Player
+- **Layer 4**: Projectiles
+
+**Result:**
+- ✅ **Bosses can cluster together** (no boss-vs-boss collision)
+- ✅ **Bosses are completely blocked by walls/terrain**
+- ✅ **Large CollisionShape2D prevents wall clipping**
+- ✅ **No custom separation code needed**
+
+**Implementation in Boss Scene:**
+1. Select the root **CharacterBody2D** node
+2. In Inspector → **Collision** section:
+   - Set **Layer** = 2 (Bosses)
+   - Set **Mask** = 1 (Terrain)
+3. **Save the scene**
+
+**✅ All Existing Bosses Updated:**
+- AncientSlime.tscn ✅
+- BananaLord.tscn ✅
+- DemonOverlord.tscn ✅
+- DragonLord.tscn ✅
+- AncientLich.tscn ✅
+- TestShadowBoss.tscn ✅
+- BossTemplate.tscn ✅
+
+**Testing:**
+- Spawn multiple bosses close together (V key debug spawn)
+- Verify they cluster without pushing each other apart
+- Confirm walls/terrain still completely block movement
+
+### **✨ NEW: PersonalSpaceArea - Fine-Tuned Boss Spacing Control**
+
+**OPTIONAL ENHANCEMENT:** For precise control over boss clustering behavior beyond basic collision layer separation.
+
+The PersonalSpaceArea system provides gentle, signal-based spacing control that works alongside the collision layer system:
+
+**Key Features:**
+- ✅ **Signal-based detection** - Real-time boss proximity awareness via Area2D
+- ✅ **Gentle spacing forces** - Subtle 20px/s repulsion for natural personal space
+- ✅ **Collision layer compatible** - Works perfectly with collision_layer=2 setup
+- ✅ **Performance optimized** - Only calculates forces when bosses are nearby
+- ✅ **Configurable radius** - 32px detection range (adjustable per boss)
+
+**When to Use PersonalSpaceArea:**
+- **Fine control needed**: Want specific spacing behavior between bosses
+- **Visual polish**: Prevent minor visual overlapping of boss sprites
+- **Custom clustering**: Different boss types need different personal space rules
+- **Advanced AI**: Bosses that react to each other's presence beyond collision
+
+**Implementation in Boss Scene:**
+
+1. **Add PersonalSpaceArea node structure**:
+   ```
+   YourBoss (CharacterBody2D)
+   ├── [existing boss nodes...]
+   └── PersonalSpaceArea (Area2D)
+       └── PersonalSpaceShape (CollisionShape2D with CircleShape2D, radius=32)
+   ```
+
+2. **Configure PersonalSpaceArea properties**:
+   ```
+   PersonalSpaceArea:
+   - collision_layer = 0  (doesn't emit collision signals)
+   - collision_mask = 2   (detects other bosses on layer 2)
+
+   PersonalSpaceShape:
+   - CircleShape2D with radius = 32.0  (detection range)
+   ```
+
+3. **BaseBoss handles all the logic** automatically:
+   - Connects to `body_entered`/`body_exited` signals
+   - Tracks nearby bosses in `nearby_bosses` array
+   - Applies gentle spacing forces in `apply_personal_space_forces()`
+   - Integrates forces with AI movement seamlessly
+
+**✅ All Existing Bosses Updated with PersonalSpaceArea:**
+- AncientSlime.tscn ✅
+- BananaLord.tscn ✅
+- DemonOverlord.tscn ✅
+- DragonLord.tscn ✅
+- AncientLich.tscn ✅
+- BossTemplate.tscn ✅
+
+**PersonalSpaceArea Configuration Values:**
+```gdscript
+# In BaseBoss.gd (automatically applied to all bosses)
+const PERSONAL_SPACE_STRENGTH: float = 20.0  # Gentle 20px/s spacing force
+const PERSONAL_SPACE_RADIUS: float = 32.0    # 32px detection radius
+```
+
+**How It Works:**
+1. **Collision layers prevent hard collisions** (primary system)
+2. **PersonalSpaceArea detects nearby bosses** via signals (enhancement)
+3. **Gentle spacing forces applied** when bosses get within 32px range
+4. **Result**: Natural clustering with subtle personal space behavior
+
+**Manual Setup Instructions** (for new bosses):
+
+1. **Add Area2D node** as child of boss root:
+   ```
+   - Right-click boss root → Add Child → Area2D
+   - Rename to "PersonalSpaceArea"
+   ```
+
+2. **Add CollisionShape2D** as child of PersonalSpaceArea:
+   ```
+   - Right-click PersonalSpaceArea → Add Child → CollisionShape2D
+   - Rename to "PersonalSpaceShape"
+   ```
+
+3. **Configure CollisionShape2D**:
+   ```
+   - In Inspector → Shape: Create new CircleShape2D
+   - Set CircleShape2D → Radius: 32
+   ```
+
+4. **Set PersonalSpaceArea collision properties**:
+   ```
+   - collision_layer = 0  (this area doesn't trigger other detection)
+   - collision_mask = 2   (detects bosses on layer 2)
+   ```
+
+5. **Save the scene** - BaseBoss will automatically handle all signal connections
+
+**Testing PersonalSpaceArea:**
+- Spawn multiple bosses very close together (V debug key)
+- Bosses should cluster but maintain subtle spacing (not perfectly overlapped)
+- Movement should feel natural with gentle separation
+- No obvious "pushing" behavior, just natural personal space
+
+**Performance Notes:**
+- PersonalSpaceArea only activates when bosses are within 32px range
+- Uses efficient signal-based detection instead of continuous distance checks
+- Spacing forces are very gentle (20px/s) to avoid visual artifacts
+- Compatible with existing BossUpdateManager performance optimizations
+
+**✨ Benefits of PersonalSpaceArea System:**
+- ✅ **Precise control** - Fine-tune boss clustering behavior per scene
+- ✅ **Visual polish** - Prevents minor sprite overlapping issues
+- ✅ **Natural movement** - Gentle spacing feels organic, not forced
+- ✅ **Performance conscious** - Only calculates when needed
+- ✅ **Flexible configuration** - Different bosses can have different personal space rules
+- ✅ **Future-ready** - Foundation for advanced boss interaction systems
+
+### **✨ NEW: Manual Shadow System**
 
 The new shadow system uses scene instances for maximum control and visual consistency:
 
