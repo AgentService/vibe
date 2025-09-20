@@ -26,6 +26,11 @@ var attack_range: float = 80.0
 var chase_range: float = 300.0
 var ai_paused: bool = false
 
+# DUAL COLLISION SYSTEM: Distance-based entity separation (DISABLED)
+const SEPARATION_RADIUS: float = 0.0       # Disabled - no separation
+const SEPARATION_STRENGTH: float = 0.0     # Disabled - no separation
+const MIN_SEPARATION_DISTANCE: float = 0.0 # Disabled - no separation
+
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
@@ -179,6 +184,15 @@ func _update_ai(_dt: float) -> void:
 			# Move toward player
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
+
+			# DUAL COLLISION SYSTEM: Add gentle separation from other bosses
+			var separation = apply_gentle_entity_separation()
+			if separation.length_squared() > 0.1:  # Only log when significant separation occurs
+				Logger.debug("%s applying separation force: %.1f px/s (pos: %s)" % [get_boss_name(), separation.length(), global_position], "collision")
+
+			# Apply separation as a gentle modifier, not additive to full speed
+			velocity += separation * 0.2  # Ultra-gentle application
+
 			move_and_slide()
 			
 			# Update directional animation automatically
@@ -269,17 +283,71 @@ func _try_directional_animation(direction: Vector2) -> bool:
 func _apply_sprite_flipping(direction: Vector2) -> void:
 	if not animated_sprite:
 		return
-	
+
 	# Use simple left/right flipping based on horizontal movement
 	if abs(direction.x) > 0.1:  # Only flip if there's significant horizontal movement
 		animated_sprite.flip_h = direction.x < 0  # Flip when moving left
-	
+
 	# Ensure the boss is playing some animation (use default if available)
 	if animated_sprite.sprite_frames and not animated_sprite.is_playing():
 		if animated_sprite.sprite_frames.has_animation("default"):
 			animated_sprite.play("default")
 		elif animated_sprite.sprite_frames.has_animation(animation_prefix):
 			animated_sprite.play(animation_prefix)
+
+## DUAL COLLISION SYSTEM: Gentle distance-based separation from other bosses
+func apply_gentle_entity_separation() -> Vector2:
+	# Get positions of other bosses from BossUpdateManager
+	var other_positions = _get_nearby_boss_positions()
+	if other_positions.is_empty():
+		return Vector2.ZERO
+
+	var separation_force = Vector2.ZERO
+	var min_distance_sq = MIN_SEPARATION_DISTANCE * MIN_SEPARATION_DISTANCE
+	var entity_pos = global_position
+
+	for other_pos in other_positions:
+		var distance_sq = entity_pos.distance_squared_to(other_pos)
+
+		# Only apply force when very close
+		if distance_sq < min_distance_sq and distance_sq > 1.0:  # Avoid division by zero
+			var distance = sqrt(distance_sq)
+			var direction = (entity_pos - other_pos) / distance  # Normalized
+
+			# Exponential falloff - very gentle at edge, stronger when overlapping
+			var strength_ratio = 1.0 - (distance / MIN_SEPARATION_DISTANCE)
+			var force_magnitude = SEPARATION_STRENGTH * strength_ratio * strength_ratio
+
+			separation_force += direction * force_magnitude
+
+	return separation_force
+
+## Get positions of other bosses from BossUpdateManager for separation calculations
+func _get_nearby_boss_positions() -> Array[Vector2]:
+	var positions: Array[Vector2] = []
+	var my_position = global_position
+	var separation_radius_sq = SEPARATION_RADIUS * SEPARATION_RADIUS
+
+	# Access BossUpdateManager directly to get other boss positions
+	if not BossUpdateManager:
+		return positions
+
+	# Get all registered boss nodes
+	var boss_nodes = BossUpdateManager._boss_nodes
+	var my_instance_id = get_instance_id()
+
+	for boss_node in boss_nodes:
+		if not is_instance_valid(boss_node) or boss_node.get_instance_id() == my_instance_id:
+			continue
+
+		var other_position = boss_node.global_position
+		var distance_sq = my_position.distance_squared_to(other_position)
+
+		# Only include bosses within separation radius for performance
+		if distance_sq <= separation_radius_sq:
+			positions.append(other_position)
+
+	return positions
 
 ## DAMAGE V3: Handle unified damage sync events for scene bosses
 func _on_damage_entity_sync(payload: Dictionary) -> void:
