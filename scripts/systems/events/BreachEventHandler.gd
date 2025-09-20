@@ -12,6 +12,9 @@ signal breach_completed(breach_event: EventInstance, performance_data: Dictionar
 var pending_breach_events: Array[EventInstance] = []
 var active_breach_events: Array[EventInstance] = []
 
+# Performance optimization: O(1) breach enemy lookups
+var breach_enemies: Dictionary = {}  # breach_id -> Array[Node2D]
+
 # Dependencies
 var spawn_director: SpawnDirector
 var mastery_system
@@ -345,20 +348,32 @@ func _update_active_breaches(dt: float) -> void:
 func _check_and_cleanup_touched_rings(breach_event: EventInstance) -> void:
 	"""Remove breach enemies as the shrinking circle border touches them"""
 	var cleanup_count = 0
-	var arena_root = spawn_director._get_arena_root()
-
-	# Find breach enemies that are now outside the shrinking circle
-	for enemy in arena_root.get_children():
-		if enemy.is_in_group("breach_enemies") and _is_enemy_owned_by_breach(enemy, breach_event.breach_id):
-			var distance = enemy.global_position.distance_to(breach_event.center_position)
-
-			# Remove enemy if it's outside the current radius (touched by shrinking border)
-			if distance > breach_event.current_radius:
-				_delete_breach_enemy_with_effect(enemy)
-				cleanup_count += 1
-				Logger.debug("REMOVED breach enemy touched by shrinking border at distance %.1f (radius: %.1f)" % [
-					distance, breach_event.current_radius
-				], "events")
+	
+	# Performance optimization: Use cached enemies instead of iterating all arena children
+	if not breach_enemies.has(breach_event.breach_id):
+		return  # No enemies to clean up for this breach
+	
+	var enemy_list = breach_enemies[breach_event.breach_id]
+	
+	# Iterate backwards to safely remove during iteration
+	for i in range(enemy_list.size() - 1, -1, -1):
+		var enemy = enemy_list[i]
+		
+		# Check if enemy is still valid (not already freed)
+		if not is_instance_valid(enemy):
+			enemy_list.remove_at(i)
+			continue
+		
+		var distance = enemy.global_position.distance_to(breach_event.center_position)
+		
+		# Remove enemy if it's outside the current radius (touched by shrinking border)
+		if distance > breach_event.current_radius:
+			_delete_breach_enemy_with_effect(enemy)
+			enemy_list.remove_at(i)  # Remove from cache
+			cleanup_count += 1
+			Logger.debug("REMOVED breach enemy touched by shrinking border at distance %.1f (radius: %.1f)" % [
+				distance, breach_event.current_radius
+			], "events")
 
 	if cleanup_count > 0:
 		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s" % [
@@ -410,6 +425,11 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 		enemy_node.set_meta("breach_owner", breach_event.breach_id)
 		enemy_node.set_meta("breach_spawned", true)
 		enemy_node.add_to_group("breach_enemies")
+
+		# Performance optimization: Cache enemy in breach-specific array for O(1) cleanup
+		if not breach_enemies.has(breach_event.breach_id):
+			breach_enemies[breach_event.breach_id] = []
+		breach_enemies[breach_event.breach_id].append(enemy_node)
 
 		# Track in breach event for extra safety
 		var pos_key = _get_position_key(position)
@@ -469,6 +489,11 @@ func _cleanup_completed_breaches() -> void:
 			# Clean up visual indicator
 			_cleanup_breach_visual_indicator(breach_event)
 
+			# Performance optimization: Clean up cached enemies for this breach
+			if breach_enemies.has(breach_event.breach_id):
+				breach_enemies.erase(breach_event.breach_id)
+				Logger.debug("Cleaned up enemy cache for breach %s" % breach_event.breach_id, "events")
+
 			# Remove from active list
 			active_breach_events.remove_at(i)
 
@@ -521,4 +546,8 @@ func clear_all_breaches() -> void:
 	"""Clear all breach events (for scene transitions)"""
 	pending_breach_events.clear()
 	active_breach_events.clear()
+	
+	# Performance optimization: Clear enemy cache
+	breach_enemies.clear()
+	
 	Logger.info("All breach events cleared", "events")
