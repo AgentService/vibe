@@ -11577,7 +11577,7 @@ radius = 189.095
 radius = 533.046
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_pp4ni"]
-radius = 244.205
+radius = 223.002
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_p1wej"]
 radius = 176.028
@@ -11587,23 +11587,6 @@ radius = 322.56
 
 [node name="UnderworldArena" type="Node2D"]
 script = ExtResource("1_npj6d")
-enable_fire_particles = null
-enable_heat_distortion = null
-lava_glow_intensity = null
-enable_lava_damage = null
-lava_damage_per_second = null
-boss_knockback_force = null
-boss_knockback_duration = null
-boss_hit_stop_duration = null
-boss_velocity_decay = null
-boss_flash_duration = null
-boss_flash_intensity = null
-boss_spawn_configs = null
-enable_debug_boss_spawning = null
-arena_id = null
-arena_name = null
-spawn_radius = null
-arena_bounds = null
 
 [node name="Ground" type="TileMapLayer" parent="."]
 z_index = -1

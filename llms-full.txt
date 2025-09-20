@@ -1,0 +1,1 @@
+<\!DOCTYPE html><html><head><meta http-equiv="refresh" content="0; url=https://llm-docs.ams3.cdn.digitaloceanspaces.com/documentation/godot/4.2.2-full.txt"><script>window.location.href = "https://llm-docs.ams3.cdn.digitaloceanspaces.com/documentation/godot/4.2.2-full.txt";</script></head></html>

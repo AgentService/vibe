@@ -1,6 +1,6 @@
 [gd_scene load_steps=17 format=3 uid="uid://8e6qf7vr1fh5"]
 
-[ext_resource type="Script" uid="uid://hjracmfrs5p3" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
+[ext_resource type="Script" uid="uid://bfqe2l6dc16h0" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_ywjq4"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="4_7b065"]

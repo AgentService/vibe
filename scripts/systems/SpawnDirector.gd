@@ -48,6 +48,7 @@ var boss_hit_feedback: BossHitFeedback
 # Preloaded boss scenes for performance
 var _preloaded_boss_scenes: Dictionary = {}
 
+
 # PHASE 7 OPTIMIZATION: Bit-field alive/dead tracking (5-10MB reduction)
 # Replace individual alive checking with efficient bit operations
 var _alive_bitfield: PackedByteArray = PackedByteArray()  # Bit-field for alive status (1 bit per enemy)
@@ -79,6 +80,9 @@ var event_timer: float = 0.0
 var next_event_delay: float = 45.0
 var active_events: Array[Dictionary] = []
 var mastery_system
+
+# BREACH EVENT HANDLER: Separate handler for breach events
+var breach_handler: BreachEventHandler
 
 # ZONE COOLDOWN SYSTEM: Prevent rapid consecutive spawns in same zones
 var _zone_cooldowns: Dictionary = {}  # zone_name -> cooldown_remaining
@@ -130,6 +134,7 @@ func _ready() -> void:
 	_initialize_entity_update_queue()
 	_preload_boss_scenes()
 	_initialize_event_system()
+	_initialize_breach_handler()
 	if BalanceDB:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 	
@@ -215,6 +220,58 @@ func _initialize_event_system() -> void:
 	event_system_enabled = true
 
 	Logger.info("Event system initialized using autoload", "events")
+
+func _initialize_breach_handler() -> void:
+	"""Initialize the breach event handler"""
+	breach_handler = BreachEventHandler.new()
+	add_child(breach_handler)
+	breach_handler.initialize(self, mastery_system)
+
+	# Connect breach signals for logging/debugging
+	breach_handler.breach_activated.connect(_on_breach_activated)
+	breach_handler.breach_completed.connect(_on_breach_completed)
+
+	Logger.info("Breach event handler initialized", "events")
+
+func _update_breach_system(dt: float) -> void:
+	"""Update the breach event system if enabled"""
+	if event_system_enabled and breach_handler:
+		breach_handler.update(dt)
+
+func _on_breach_activated(breach_event: EventInstance) -> void:
+	"""Handle breach activation logging"""
+	Logger.debug("SpawnDirector: Breach activated at %s" % breach_event.center_position, "events")
+
+func _on_breach_completed(breach_event: EventInstance, performance_data: Dictionary) -> void:
+	"""Handle breach completion logging"""
+	Logger.debug("SpawnDirector: Breach completed with %d enemies spawned" % performance_data.get("enemies_spawned", 0), "events")
+
+# SPATIAL RESTRICTION HELPERS: Prevent regular spawning inside breach circles
+func _is_position_inside_any_breach(position: Vector2) -> bool:
+	"""Check if a position is inside any active breach circle"""
+	if not breach_handler:
+		return false
+
+	for breach_event in breach_handler.active_breach_events:
+		var distance = position.distance_to(breach_event.center_position)
+		if distance <= breach_event.current_radius:
+			return true
+
+	return false
+
+func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vector2:
+	"""Try to find alternative spawn position outside breach circles"""
+	var max_attempts = 10
+	var attempt = 0
+
+	while attempt < max_attempts:
+		var test_pos = arena_scene.get_random_spawn_position()
+		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
+			return test_pos
+		attempt += 1
+
+	# No valid position found
+	return Vector2.ZERO
 
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
@@ -331,6 +388,7 @@ func _on_combat_step(payload) -> void:
 	_update_zone_threat_escalation(payload.dt)
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
+	_update_breach_system(payload.dt)
 	# DECISION: No longer emit enemies_updated signal for MultiMesh - scene enemies self-manage
 
 func _update_zone_cooldowns(dt: float) -> void:
@@ -1070,9 +1128,23 @@ func _spawn_enemy_v2() -> void:
 		# Check if arena returned zero position (no zones in range)
 		if spawn_pos == Vector2.ZERO:
 			return
+
+		# SPATIAL RESTRICTION: Don't spawn regular enemies inside active breach circles
+		if _is_position_inside_any_breach(spawn_pos):
+			spawn_pos = _get_alternative_spawn_position(arena_scene, spawn_pos)
+			if spawn_pos == Vector2.ZERO:
+				Logger.debug("No valid spawn position outside breach circles, skipping regular spawn", "arena")
+				return
+
 		Logger.debug("Using arena zone-based spawn position: %s from %s" % [spawn_pos, arena_scene.name], "arena")
 	elif arena_system and arena_system.has_method("get_random_spawn_position"):
 		spawn_pos = arena_system.get_random_spawn_position()
+
+		# SPATIAL RESTRICTION: Check for breach overlap
+		if _is_position_inside_any_breach(spawn_pos):
+			Logger.debug("Arena spawn position inside breach, skipping regular spawn", "arena")
+			return
+
 		Logger.debug("Using ArenaSystem spawn position: %s" % spawn_pos, "arena")
 	else:
 		# Fallback to legacy radius-based spawning
@@ -1080,6 +1152,12 @@ func _spawn_enemy_v2() -> void:
 		var angle := RNG.randf_range("waves", 0.0, TAU)
 		var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
 		spawn_pos = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
+
+		# SPATIAL RESTRICTION: Check fallback position too
+		if _is_position_inside_any_breach(spawn_pos):
+			Logger.debug("Fallback spawn position inside breach, skipping regular spawn", "arena")
+			return
+
 		Logger.debug("Using fallback radius-based spawn position: %s" % spawn_pos, "arena")
 	
 	# Track spawn index for deterministic seeding
@@ -1113,27 +1191,40 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 
 # Scene-based spawning for all enemy types (bosses and regular enemies)
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
+	# Event spawning now handled by individual event handlers (BreachEventHandler)
+	# No strategy registration needed - events manage their own spawn logic
+
+
 	# Try to get specific scene for this enemy type
 	var enemy_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id)
-	
+
 	# For boss-tier enemies, fall back to ancient_lich if no specific scene
 	if not enemy_scene and spawn_config.render_tier == "boss":
 		enemy_scene = _preloaded_boss_scenes.get("ancient_lich")
-	
+
 	if not enemy_scene:
-		Logger.warn("No scene available for enemy type: " + spawn_config.template_id + " (render_tier: " + spawn_config.render_tier + ")", "waves")
+		var message = "No scene available for enemy type: " + spawn_config.template_id + " (render_tier: " + spawn_config.render_tier + ")"
+		Logger.warn(message, "waves")
 		return
-	
+
 	# Instantiate enemy scene
 	var enemy_instance = enemy_scene.instantiate()
 	if not enemy_instance:
 		Logger.warn("Failed to instantiate enemy scene", "waves")
 		return
-	
+
 	# Setup enemy with spawn config
 	if enemy_instance.has_method("setup_from_spawn_config"):
 		enemy_instance.spawn_config = spawn_config
 		enemy_instance.setup_from_spawn_config(spawn_config)
+
+	# Apply modulation if specified (for all enemies, not just breach)
+	if spawn_config.modulate != Color.WHITE:
+		enemy_instance.modulate = spawn_config.modulate
+
+	# Apply event-specific properties based on strategy
+	if spawn_config.event_id and spawn_config.event_id.begins_with("breach_"):
+		enemy_instance.set_meta("breach_spawned", true)
 	
 	# Add to ArenaRoot for proper scene ownership
 	var arena_root = _get_arena_root()
@@ -1147,8 +1238,6 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 	if spawn_config.render_tier == "boss" and boss_hit_feedback:
 		boss_hit_feedback.register_boss(enemy_instance)
 		Logger.debug("Boss registered with hit feedback system", "waves")
-
-	Logger.info("Scene enemy spawned: " + spawn_config.template_id + " (" + enemy_instance.name + ") at " + str(spawn_config.position), "waves")
 
 
 # HYBRID SPAWNING SYSTEM: Core routing logic
@@ -1370,6 +1459,7 @@ func clear_all_enemies() -> void:
 			Logger.debug("WaveDirector: Cleared enemies via production EntityClearingService", "waves")
 	else:
 		Logger.error("EntityClearingService not available - cannot clear enemies", "waves")
+
 
 func stop() -> void:
 	"""Stop WaveDirector - halt spawning and clear timers for scene transitions"""

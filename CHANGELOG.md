@@ -17,7 +17,39 @@
   - **Solution**: Replaced cached lookups with direct `_get_arena_scene()` calls - simpler, more reliable, negligible performance impact
   - **Result**: Eliminated transition spam logs, reduced code complexity by ~50 lines, improved maintainability
 
+- **Breach Spawning Code Cleanup**: Removed unnecessary boss fallback logic and excessive logging from breach enemy spawning
+- **Breach Enemy Cleanup Fix**: Fixed issue where some breach enemies weren't being removed when breach events completed
+
 ### Features
+- **Dynamic Breach Ring Spawning System**: Replaced static phantom position system with dynamic ring spawning that scales with circle size
+  - **Ring-Based Generation**: Enemies spawn in rings every 50px of expansion at 85-90% of breach radius
+  - **Circumference Scaling**: Enemy count scales with circle circumference (~1 enemy per 30px) instead of fixed 50 enemies
+  - **Sector Distribution**: 16-sector system ensures even distribution around breach perimeter, prioritizing empty areas
+  - **Spatial Restrictions**: Regular enemies can no longer spawn inside active breach circles, only breach enemies spawn within
+  - **Multi-Breach Independence**: Each breach maintains separate enemy pools, sector tracking, and unique breach IDs
+  - **UI Improvements**: Distance indicators removed after breach activation for cleaner visual experience
+  - **Configuration**: All parameters hot-reloadable via BreachEventConfig.tres (density, edge factor, ring interval, sectors)
+  - **Zone Validation**: Breach enemies still respect spawn zone boundaries, preventing spawning in water or invalid areas
+  - **Removed**: Ancient slime/banana lord fallback that was added when breach enemies lacked proper scenes
+  - **Cleaned**: Excess debug logging reduced to appropriate levels (INFO → DEBUG for spawn attempts)
+  - **Result**: Cleaner codebase, less log spam, proper enemy spawning maintained via zone bypass system
+
+- **Event Spawn Strategy System**: Implemented extensible strategy pattern for event-specific spawning behavior
+  - **EventSpawnStrategy Base Class**: Provides common validation and position generation interface for all event types
+  - **BreachSpawnStrategy**: Handles breach-specific logic ensuring enemies spawn within both breach circle AND zone boundaries
+  - **SpawnDirector Integration**: Strategy registration system allows events to define custom spawn behavior without modifying core spawning logic
+  - **Zone Intersection Validation**: Proper geometric validation ensures enemies only spawn in valid areas (fixes breach overspill issues)
+  - **Improved Spawn Distribution**: Fixed center-clustering issue using sqrt() distribution for uniform area coverage (30%-90% radius range)
+  - **Legacy Cleanup**: Removed context_tags workaround system in favor of clean strategy-based approach
+  - **Benefits**: Extensible for future events (ritual, pack hunt), cleaner separation of concerns, easier testing and debugging
+
+### Features
+- **Breach Event Configuration System**: Implemented centralized `.tres` resource configuration for all breach event parameters
+  - **Created**: `BreachEventConfig.gd` resource script with validation and helper methods for editor-friendly parameter tuning
+  - **Created**: `/data/balance/breach_event_config.tres` configuration file with hot-reload support for rapid iteration
+  - **Integration**: Updated `EventInstance`, `BreachEventHandler`, and `BreachIndicator` to use centralized config parameters
+  - **Parameters**: All timing (expand/shrink duration), sizing (radius, distance), spawning (interval, count), and visual (colors, pulse speed) settings now configurable
+  - **Benefits**: Real-time balance adjustments without code changes, consistent parameters across all breach components, follows CLAUDE.md hot-reload patterns
 - **Event System - PoE Atlas-Style Mastery Foundation**: Complete implementation of core event system with mastery progression
   - **Core Event Types**: 4 event types (Breach, Ritual, Pack Hunt, Boss) with distinct mechanics and formation patterns
   - **Mastery Tree System**: Point-based progression system where players earn points by completing events and spend them on passive modifiers
@@ -38,11 +70,34 @@
   - **AtlasTreeUI Interface**: Tabbed container supporting Breach (functional), Ritual/Pack Hunt/Boss (placeholder) with unified points display
   - **EventMasterySystem Autoload**: Universal access architecture enabling skill tree functionality in both hideout and runtime contexts
   - **MasteryDevice Integration**: E-key hideout access launching AtlasTreeUI with proper modal behavior and ESC handling
+
+- **Breach Event Visual Polish**: Enhanced breach event visibility and testing features
+  - **SimpleBreachIndicator**: Streamlined indicator using Godot's built-in viewport transforms for world-to-screen conversion
+  - **Unified Indicator System**: Single indicator that smoothly transitions from edge arrows (off-screen) to breach circles (on-screen)
+  - **Purple Enemy Modulation**: Breach-spawned enemies appear with distinct purple tint (Color(0.8, 0.3, 1.0, 1.0))
+  - **Shrinking Circle Cleanup**: Enemies touched by shrinking breach circle dissolve with purple fade effect (no XP granted)
+  - **Testing Mode**: Forced banana_lord enemy spawning for breach events to ensure consistent testing experience
   - **Reset Functionality**: Both Atlas-level and individual tree reset buttons with proper passive deallocation through EventMasterySystem
   - **Signal Integration**: Real-time EventBus connectivity for passive allocation/deallocation and point earning events
   - **Resource Architecture**: SkillTreeData system preparing for future expansion to ritual/pack hunt/boss skill tree configurations
 
-  - **Interactive Event Mechanics**: 🔄 NEXT - Scene-based event markers, objective entities, and interactive gameplay mechanics
+  - **Interactive Event Mechanics**: ✅ COMPLETE - Full breach event lifecycle with visual indicators and mastery integration
+
+- **Breach Event System Polish**: Enhanced breach events with improved visibility and testing features
+  - **Editor Visibility**: @tool script with configurable preview radius (100px) makes breach indicators visible in scene editor
+  - **Off-Screen Tracking**: Arrow indicators at screen edges point to off-screen breaches with distance display
+  - **Testing Mode**: Forced banana_lord spawning for breach events with purple modulation for easy identification
+  - **Shrinking Circle Cleanup**: Enemies caught by closing breach circle dissolve with purple fade effect (no XP awarded)
+  - **Scene Metadata**: Breach-spawned enemies tagged with metadata for proper cleanup during shrinking phase
+
+- **Breach Event Phantom Position System**: Completed performance-optimized breach enemy revealing system using phantom positions instead of pre-spawning
+  - **Phantom Position Generation**: Pre-calculated enemy positions (50 total) distributed across full zone area using proper rectangular/circular distribution algorithms
+  - **Dimensional Reveal Mechanics**: Enemies spawn only when breach circle expansion reveals their phantom positions - no invisible entities for performance
+  - **Ownership Tracking System**: Each breach has unique breach_id to prevent cross-breach interference when multiple breaches operate simultaneously
+  - **Dynamic Circle Cleanup**: Shrinking breach circles properly remove enemies outside contracted radius, tested from 50 revealed enemies down to 2 remaining
+  - **Multi-Breach Independence**: Disabled zone cooldowns and old spawn strategy registration to ensure breaches in overlapping zones operate independently
+  - **Config Integration**: Full integration with BreachEventConfig.tres for total_breach_enemies (50), purple modulation, and all breach parameters
+  - **Performance Optimization**: Zero pre-spawning eliminates transparent enemy entities, phantom positions calculated once per breach activation
 
 ### Architecture
 - **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts

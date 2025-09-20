@@ -19,6 +19,7 @@
   - RNG via a **singleton with named streams** (`RNG.stream("crit"|"loot"|"waves")`), seeded per run by `RunManager`.
 - **YOU MUST** use **pools** for projectiles/enemies and **MultiMeshInstance2D** for high-count rendering variants.
 - **YOU MUST NOT** add networking to the client MVP (server/leagues later).
+- **YOU MUST** always use Context7 when I need code generation, setup or configuration steps, or library/API documentation. This means you should automatically use the Context7 MCP tools to resolve library id and get library docs without me having to explicitly ask.
 
 ## Content formats
 - **Gameplay content** (enemies, abilities, items, heroes, maps) → **`.tres` resources** in `/data/content/*`.
@@ -93,14 +94,14 @@ get_node("../../UI/HUD").update_health(hp)
 4) **Add/adjust headless sim**; verify DPS/TTK bands stay within ±10%. **Use `print()` for all test output** - never Logger.
    ```bash
    # For tests with autoloads (EventBus, RNG, ContentDB, etc.) - USE .tscn
-   "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn
-   "./Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_balance.tscn
+   "./.Godot_v4.4.1-stable_win64_console.exe" --headless tests/run_tests.tscn
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_balance.tscn
    
    # For simple standalone scripts (no autoloads needed) - USE .gd
-   "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_math_test.gd
+   "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/simple_math_test.gd
    
    # WRONG: Using --script with autoload dependencies will fail
-   # "./Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
+   # "../Godot_v4.4.1-stable_win64_console.exe" --headless --script tests/test_with_eventbus.gd  # ❌ FAILS
    ```
 4b) **Consider isolated system test** for new core systems; see `/Obsidian/systems/Isolated-Testing-System.md`.
    ```bash
