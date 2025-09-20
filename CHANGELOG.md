@@ -18,6 +18,18 @@
   - **Result**: Eliminated transition spam logs, reduced code complexity by ~50 lines, improved maintainability
 
 - **Breach Spawning Code Cleanup**: Removed unnecessary boss fallback logic and excessive logging from breach enemy spawning
+- **Breach Enemy Cleanup Fix**: Fixed issue where some breach enemies weren't being removed when breach events completed
+
+### Features
+- **Dynamic Breach Ring Spawning System**: Replaced static phantom position system with dynamic ring spawning that scales with circle size
+  - **Ring-Based Generation**: Enemies spawn in rings every 50px of expansion at 85-90% of breach radius
+  - **Circumference Scaling**: Enemy count scales with circle circumference (~1 enemy per 30px) instead of fixed 50 enemies
+  - **Sector Distribution**: 16-sector system ensures even distribution around breach perimeter, prioritizing empty areas
+  - **Spatial Restrictions**: Regular enemies can no longer spawn inside active breach circles, only breach enemies spawn within
+  - **Multi-Breach Independence**: Each breach maintains separate enemy pools, sector tracking, and unique breach IDs
+  - **UI Improvements**: Distance indicators removed after breach activation for cleaner visual experience
+  - **Configuration**: All parameters hot-reloadable via BreachEventConfig.tres (density, edge factor, ring interval, sectors)
+  - **Zone Validation**: Breach enemies still respect spawn zone boundaries, preventing spawning in water or invalid areas
   - **Removed**: Ancient slime/banana lord fallback that was added when breach enemies lacked proper scenes
   - **Cleaned**: Excess debug logging reduced to appropriate levels (INFO → DEBUG for spawn attempts)
   - **Result**: Cleaner codebase, less log spam, proper enemy spawning maintained via zone bypass system

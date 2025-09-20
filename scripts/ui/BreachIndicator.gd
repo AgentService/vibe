@@ -310,14 +310,14 @@ func _draw_screen_indicator() -> void:
 		# Draw the arrow
 		screen_indicator.draw_colored_polygon(arrow_points, final_color)
 
-	# Draw distance text only for waiting breaches or active breaches on screen
-	if breach_event.phase == EventInstance.Phase.WAITING or (is_breach_active and is_breach_on_screen):
+	# Draw distance text only for waiting breaches (remove after activation)
+	if breach_event.phase == EventInstance.Phase.WAITING:
 		var distance = global_position.distance_to(PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO)
 		var distance_text = "%dm" % int(distance / 10)  # Assuming 10 units = 1 meter
 
-		# Position text appropriately
+		# Position text appropriately (waiting breaches only)
 		var text_position: Vector2
-		if is_breach_on_screen or is_breach_active:
+		if is_breach_on_screen:
 			text_position = breach_screen_pos + Vector2(0, breach_radius + 20)
 		else:
 			text_position = edge_position + Vector2(0, arrow_size + 15)

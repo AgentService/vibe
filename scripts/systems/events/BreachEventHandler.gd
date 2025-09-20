@@ -90,6 +90,50 @@ func _is_zone_far_from_existing_breaches(zone_area) -> bool:
 
 	return true
 
+func _is_position_in_zone(position: Vector2, zone_area: Area2D) -> bool:
+	"""Check if a position is within the given spawn zone"""
+	if not zone_area:
+		return false
+
+	# Check if zone has collision shapes to determine bounds
+	var shape_owners = zone_area.get_shape_owners()
+	if shape_owners.size() > 0:
+		var owner_id = shape_owners[0]
+		var shape = zone_area.shape_owner_get_shape(owner_id, 0)
+
+		if shape is RectangleShape2D:
+			var rect_shape = shape as RectangleShape2D
+			var half_size = rect_shape.size / 2
+			var local_pos = position - zone_area.global_position
+			return abs(local_pos.x) <= half_size.x and abs(local_pos.y) <= half_size.y
+		elif shape is CircleShape2D:
+			var circle_shape = shape as CircleShape2D
+			var distance = position.distance_to(zone_area.global_position)
+			return distance <= circle_shape.radius
+
+	# Fallback: always return true if we can't determine zone bounds
+	return true
+
+func _find_valid_position_near_ring(breach_event: EventInstance, sector: int, ring_radius: float) -> Vector2:
+	"""Find a valid spawn position near the ring within the zone"""
+	var sector_angle = (TAU / breach_event.total_sectors) * sector
+	var attempts = 8  # Try multiple positions in the sector
+
+	for attempt in range(attempts):
+		# Vary both angle and distance to find a valid position
+		var angle_variation = randf_range(-PI / breach_event.total_sectors * 0.7, PI / breach_event.total_sectors * 0.7)
+		var distance_variation = randf_range(0.6, 1.1)  # Allow more distance variation for validation
+		var angle = sector_angle + angle_variation
+		var distance = ring_radius * distance_variation
+
+		var test_pos = breach_event.center_position + Vector2.from_angle(angle) * distance
+
+		if _is_position_in_zone(test_pos, breach_event.zone):
+			return test_pos
+
+	# No valid position found
+	return Vector2.ZERO
+
 func _get_zone_center(zone_area: Area2D) -> Vector2:
 	"""Get the center position of a zone area"""
 	# Check if zone has collision shapes to determine center
@@ -173,15 +217,15 @@ func _check_breach_activation() -> void:
 			# Activate the breach
 			breach_event.activate()
 
-			# PHANTOM POSITIONS: Pre-calculate enemy positions (no actual spawning)
-			_generate_phantom_positions(breach_event)
+			# DYNAMIC RING SPAWNING: Initialize sector tracking for even distribution
+			_initialize_breach_sectors(breach_event)
 
 			# Move from pending to active
 			pending_breach_events.remove_at(i)
 			active_breach_events.append(breach_event)
 
 			# Zone cooldowns disabled for multi-breach independence
-			# Old spawn strategy system replaced with phantom positions
+			# Old spawn strategy system replaced with dynamic ring spawning
 
 			# Apply mastery modifiers (placeholder for now)
 			_apply_breach_modifiers(breach_event)
@@ -190,94 +234,94 @@ func _check_breach_activation() -> void:
 			breach_activated.emit(breach_event)
 			EventBus.event_started.emit("breach", breach_event.zone)
 
-			Logger.info("Breach activated by player at %s (generated %d phantom positions)" % [
-				breach_event.center_position, breach_event.phantom_positions.size()
+			Logger.info("Breach activated by player at %s (dynamic ring spawning enabled)" % [
+				breach_event.center_position
 			], "events")
 
-func _generate_phantom_positions(breach_event: EventInstance) -> void:
-	"""Generate phantom enemy positions (no actual spawning for performance)"""
-	var zone_area = breach_event.zone
-	var enemy_count = breach_config.total_breach_enemies if breach_config else 20
+func _initialize_breach_sectors(breach_event: EventInstance) -> void:
+	"""Initialize sector tracking for dynamic ring spawning"""
+	# Clear any existing sector counts
+	breach_event.sector_enemy_counts.clear()
+	breach_event.last_ring_spawn_radius = 0.0
 
-	# Debug logging for config values
-	Logger.debug("Breach config loaded: total_breach_enemies = %d" % enemy_count, "events")
+	# Load configuration from breach config
+	if breach_config:
+		breach_event.ring_spawn_threshold = breach_config.ring_spawn_interval
+		breach_event.total_sectors = breach_config.sector_count
 
-	# Generate distributed positions across the entire zone
-	breach_event.phantom_positions = _generate_zone_distributed_positions(zone_area, enemy_count)
-
-	Logger.info("Generated %d phantom positions for breach %s" % [
-		breach_event.phantom_positions.size(), breach_event.breach_id
+	Logger.info("Initialized dynamic ring spawning for breach %s (threshold: %.1f, sectors: %d)" % [
+		breach_event.breach_id, breach_event.ring_spawn_threshold, breach_event.total_sectors
 	], "events")
 
-func _generate_zone_distributed_positions(zone_area: Area2D, count: int) -> Array[Vector2]:
-	"""Generate well-distributed positions across the entire zone"""
-	var positions: Array[Vector2] = []
+func _calculate_ring_enemy_count(radius: float) -> int:
+	"""Calculate how many enemies to spawn in a ring based on circumference"""
+	if breach_config:
+		return breach_config.get_ring_enemy_count(radius)
+	else:
+		# Fallback calculation if no config
+		var circumference = 2 * PI * radius
+		var edge_factor = 0.87  # Default edge spawn factor
+		var density = 0.033     # Default density
+		var actual_circumference = circumference * edge_factor
+		var enemy_count = max(3, int(actual_circumference * density))
+		Logger.debug("Ring at radius %.1f: circumference %.1f, enemies %d (fallback)" % [radius, circumference, enemy_count], "events")
+		return enemy_count
 
-	# Get zone shape for bounds
-	var shape_owners = zone_area.get_shape_owners()
-	if shape_owners.size() == 0:
-		Logger.warn("Zone has no collision shapes for position generation", "events")
-		return positions
+func _spawn_edge_ring(breach_event: EventInstance) -> void:
+	"""Spawn a ring of enemies at configured edge factor of current breach radius"""
+	var edge_factor = breach_config.edge_spawn_factor if breach_config else 0.87
+	var ring_radius = breach_event.current_radius * edge_factor
+	var enemy_count = _calculate_ring_enemy_count(breach_event.current_radius)
 
-	var owner_id = shape_owners[0]
-	var shape = zone_area.shape_owner_get_shape(owner_id, 0)
+	# Get emptiest sectors for spawn prioritization
+	var target_sectors = breach_event.get_emptiest_sectors(enemy_count)
+	var spawned_count = 0
 
-	if shape is RectangleShape2D:
-		var rect_shape = shape as RectangleShape2D
-		var half_size = rect_shape.size / 2
+	Logger.debug("Spawning ring at radius %.1f with %d enemies in sectors %s" % [
+		ring_radius, enemy_count, target_sectors
+	], "events")
 
-		# Use grid-based distribution for better spread
-		var grid_size = int(ceil(sqrt(count)))
-		var cell_width = rect_shape.size.x / grid_size
-		var cell_height = rect_shape.size.y / grid_size
+	for i in range(enemy_count):
+		# Use sector prioritization
+		var target_sector = target_sectors[i % target_sectors.size()]
+		var sector_angle = (TAU / breach_event.total_sectors) * target_sector
 
-		for i in range(count):
-			var grid_x = i % grid_size
-			var grid_y = i / grid_size
+		# Add variation within sector
+		var angle_variation = randf_range(-PI / breach_event.total_sectors * 0.5, PI / breach_event.total_sectors * 0.5)
+		var angle = sector_angle + angle_variation
 
-			# Add some randomness within each grid cell
-			var cell_offset = Vector2(
-				randf_range(-cell_width * 0.3, cell_width * 0.3),
-				randf_range(-cell_height * 0.3, cell_height * 0.3)
-			)
+		# Add slight distance variation (±3%)
+		var distance = ring_radius * randf_range(0.97, 1.03)
 
-			var grid_pos = Vector2(
-				(grid_x - grid_size * 0.5 + 0.5) * cell_width,
-				(grid_y - grid_size * 0.5 + 0.5) * cell_height
-			)
+		var spawn_pos = breach_event.center_position + Vector2.from_angle(angle) * distance
 
-			var world_pos = zone_area.global_position + grid_pos + cell_offset
-			positions.append(world_pos)
+		# Validate spawn position is within the breach's spawn zone
+		if not _is_position_in_zone(spawn_pos, breach_event.zone):
+			# Try to find a valid position near the ring
+			spawn_pos = _find_valid_position_near_ring(breach_event, target_sector, ring_radius)
+			if spawn_pos == Vector2.ZERO:  # No valid position found
+				Logger.debug("Skipping enemy spawn - no valid position in zone for sector %d" % target_sector, "events")
+				continue
 
-	elif shape is CircleShape2D:
-		var circle_shape = shape as CircleShape2D
+		var enemy_node = _spawn_breach_enemy_at_position(spawn_pos, breach_event)
 
-		# Use random distribution with minimum distance for circles
-		var min_distance = 40.0  # Minimum distance between enemies
-		var max_attempts = count * 10
+		if enemy_node:
+			# Track in sector
+			breach_event.increment_sector_count(target_sector)
+			breach_event.add_spawned_enemy("enemy_" + str(enemy_node.get_instance_id()))
 
-		for i in range(count):
-			var valid_position = false
-			var attempts = 0
+			# Track in revealed_enemies for shrinking cleanup
+			var position_key = _get_position_key(spawn_pos)
+			breach_event.revealed_enemies[position_key] = enemy_node
 
-			while not valid_position and attempts < max_attempts:
-				var angle = randf() * TAU
-				var distance = sqrt(randf()) * circle_shape.radius  # Uniform area distribution
-				var candidate_pos = zone_area.global_position + Vector2.from_angle(angle) * distance
+			spawned_count += 1
 
-				# Check minimum distance from existing positions
-				valid_position = true
-				for existing_pos in positions:
-					if candidate_pos.distance_to(existing_pos) < min_distance:
-						valid_position = false
-						break
+	# Mark that we've spawned this ring
+	breach_event.mark_ring_spawned()
 
-				if valid_position:
-					positions.append(candidate_pos)
-				attempts += 1
-
-	Logger.debug("Generated %d distributed positions in zone %s" % [positions.size(), zone_area.name], "events")
-	return positions
+	Logger.info("Spawned ring: %d enemies at radius %.1f for breach %s" % [
+		spawned_count, ring_radius, breach_event.breach_id
+	], "events")
 
 # Helper function still needed for phantom system
 func _find_enemy_at_position(arena_root: Node, target_position: Vector2, tolerance: float = 20.0) -> Node2D:
@@ -294,99 +338,44 @@ func _update_active_breaches(dt: float) -> void:
 	for breach_event in active_breach_events:
 		breach_event.update_lifecycle(dt)
 
-		# Handle dimensional reveals during expansion
-		if breach_event.phase == EventInstance.Phase.EXPANDING:
-			_reveal_enemies_in_expanding_circle(breach_event)
+		# Handle dynamic ring spawning during expansion
+		if breach_event.phase == EventInstance.Phase.EXPANDING and breach_event.should_spawn_new_ring():
+			_spawn_edge_ring(breach_event)
 
-		# Handle dimensional hiding during shrinking
+		# Handle enemy cleanup during shrinking - only when circle touches spawn rings
 		elif breach_event.phase == EventInstance.Phase.SHRINKING:
-			_hide_enemies_outside_shrinking_circle(breach_event)
+			_check_and_cleanup_touched_rings(breach_event)
 
-func _reveal_enemies_in_expanding_circle(breach_event: EventInstance) -> void:
-	"""Spawn enemies at phantom positions as the breach circle expands"""
-	var revealed_count = 0
-	var total_phantoms = breach_event.phantom_positions.size()
-	var already_revealed = breach_event.revealed_enemies.size()
 
-	Logger.debug("REVEAL CHECK: Breach %s has %d phantoms, %d already revealed, radius %.1f" % [
-		breach_event.breach_id, total_phantoms, already_revealed, breach_event.current_radius
-	], "events")
+func _check_and_cleanup_touched_rings(breach_event: EventInstance) -> void:
+	"""Remove breach enemies as the shrinking circle border touches them"""
+	var cleanup_count = 0
+	var arena_root = spawn_director._get_arena_root()
 
-	for phantom_pos in breach_event.phantom_positions:
-		var position_key = _get_position_key(phantom_pos)
+	# Find breach enemies that are now outside the shrinking circle
+	for enemy in arena_root.get_children():
+		if enemy.is_in_group("breach_enemies") and _is_enemy_owned_by_breach(enemy, breach_event.breach_id):
+			var distance = enemy.global_position.distance_to(breach_event.center_position)
 
-		# Skip if already revealed
-		if position_key in breach_event.revealed_enemies:
-			continue
-
-		# Check if phantom position is within current breach radius
-		var distance = phantom_pos.distance_to(breach_event.center_position)
-		var is_in_circle = distance <= breach_event.current_radius
-
-		# Spawn enemy if position is within the expanding circle
-		if is_in_circle:
-			var enemy_node = _spawn_breach_enemy_at_phantom_position(phantom_pos, breach_event)
-			if enemy_node:
-				breach_event.revealed_enemies[position_key] = enemy_node
-				breach_event.add_spawned_enemy("enemy_" + str(enemy_node.get_instance_id()))
-				revealed_count += 1
-				Logger.debug("REVEALED enemy #%d at distance %.1f (radius: %.1f) for breach %s" % [
-					revealed_count, distance, breach_event.current_radius, breach_event.breach_id
+			# Remove enemy if it's outside the current radius (touched by shrinking border)
+			if distance > breach_event.current_radius:
+				_delete_breach_enemy_with_effect(enemy)
+				cleanup_count += 1
+				Logger.debug("REMOVED breach enemy touched by shrinking border at distance %.1f (radius: %.1f)" % [
+					distance, breach_event.current_radius
 				], "events")
 
-	if revealed_count > 0:
-		Logger.info("REVEAL SUMMARY: %d new enemies revealed for breach %s (total revealed: %d/%d)" % [
-			revealed_count, breach_event.breach_id, breach_event.revealed_enemies.size(), total_phantoms
-		], "events")
-
-func _hide_enemies_outside_shrinking_circle(breach_event: EventInstance) -> void:
-	"""Remove enemies outside the shrinking breach circle"""
-	var enemies_to_remove = []
-	var total_revealed = breach_event.revealed_enemies.size()
-
-	Logger.debug("HIDE CHECK: Breach %s has %d revealed enemies, radius %.1f" % [
-		breach_event.breach_id, total_revealed, breach_event.current_radius
-	], "events")
-
-	for position_key in breach_event.revealed_enemies:
-		var enemy_node = breach_event.revealed_enemies[position_key]
-		if not enemy_node or not is_instance_valid(enemy_node):
-			enemies_to_remove.append(position_key)
-			Logger.debug("REMOVING invalid enemy node for key %s" % position_key, "events")
-			continue
-
-		# Check if enemy is owned by this breach (prevent cross-breach interference)
-		if not _is_enemy_owned_by_breach(enemy_node, breach_event.breach_id):
-			Logger.debug("SKIPPING enemy not owned by this breach %s" % breach_event.breach_id, "events")
-			continue
-
-		# Check if enemy is outside current breach radius
-		var distance = enemy_node.global_position.distance_to(breach_event.center_position)
-		var is_outside_circle = distance > breach_event.current_radius
-
-		# Remove enemy if it's outside the shrinking circle
-		if is_outside_circle:
-			_delete_breach_enemy_with_effect(enemy_node)
-			enemies_to_remove.append(position_key)
-			Logger.debug("REMOVED enemy outside shrinking circle at distance %.1f (radius: %.1f) for breach %s" % [
-				distance, breach_event.current_radius, breach_event.breach_id
-			], "events")
-
-	# Clean up removed enemy references
-	for key in enemies_to_remove:
-		breach_event.revealed_enemies.erase(key)
-
-	if enemies_to_remove.size() > 0:
-		Logger.info("HIDE SUMMARY: Removed %d enemies from breach %s (remaining: %d)" % [
-			enemies_to_remove.size(), breach_event.breach_id, breach_event.revealed_enemies.size()
+	if cleanup_count > 0:
+		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s" % [
+			cleanup_count, breach_event.breach_id
 		], "events")
 
 func _get_position_key(position: Vector2) -> String:
 	"""Generate a unique key for a position (for tracking revealed enemies)"""
 	return "pos_" + str(int(position.x)) + "_" + str(int(position.y))
 
-func _spawn_breach_enemy_at_phantom_position(position: Vector2, breach_event: EventInstance) -> Node2D:
-	"""Spawn a single enemy at a phantom position with breach ownership"""
+func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInstance) -> Node2D:
+	"""Spawn a single breach enemy at specified position with breach ownership"""
 	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 
 	# Track spawn index for deterministic seeding
@@ -398,15 +387,15 @@ func _spawn_breach_enemy_at_phantom_position(position: Vector2, breach_event: Ev
 		"wave_index": spawn_director.current_wave_level,
 		"spawn_index": local_spawn_counter,
 		"position": position,
-		"context_tags": ["event", "breach", "phantom_reveal"],
-		"spawn_type": "breach_reveal",
+		"context_tags": ["event", "breach", "ring_spawn"],
+		"spawn_type": "breach_ring",
 		"event_type": "breach"
 	}
 
 	# Use weighted enemy selection for breach events
 	var cfg: SpawnConfig = EnemyFactoryScript.spawn_from_weights(spawn_context)
 	if not cfg:
-		Logger.warn("Phantom reveal spawning: Failed to generate enemy config", "events")
+		Logger.warn("Ring spawning: Failed to generate enemy config", "events")
 		return null
 
 	# Apply breach purple modulation
@@ -478,6 +467,8 @@ func _cleanup_completed_breaches() -> void:
 
 			# Old spawn strategy system removed - phantom positions used instead
 
+			# Note: Breach enemies are cleaned up during shrinking phase
+
 			# Clean up visual indicator
 			_cleanup_breach_visual_indicator(breach_event)
 
@@ -487,6 +478,7 @@ func _cleanup_completed_breaches() -> void:
 			Logger.info("Breach completed: %d enemies spawned at %s" % [
 				breach_event.spawned_enemies.size(), breach_event.zone.name
 			], "events")
+
 
 func _cleanup_breach_visual_indicator(breach_event: EventInstance) -> void:
 	"""Clean up scene-based visual indicator"""

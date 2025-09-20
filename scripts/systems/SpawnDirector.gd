@@ -246,6 +246,33 @@ func _on_breach_completed(breach_event: EventInstance, performance_data: Diction
 	"""Handle breach completion logging"""
 	Logger.debug("SpawnDirector: Breach completed with %d enemies spawned" % performance_data.get("enemies_spawned", 0), "events")
 
+# SPATIAL RESTRICTION HELPERS: Prevent regular spawning inside breach circles
+func _is_position_inside_any_breach(position: Vector2) -> bool:
+	"""Check if a position is inside any active breach circle"""
+	if not breach_handler:
+		return false
+
+	for breach_event in breach_handler.active_breach_events:
+		var distance = position.distance_to(breach_event.center_position)
+		if distance <= breach_event.current_radius:
+			return true
+
+	return false
+
+func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vector2:
+	"""Try to find alternative spawn position outside breach circles"""
+	var max_attempts = 10
+	var attempt = 0
+
+	while attempt < max_attempts:
+		var test_pos = arena_scene.get_random_spawn_position()
+		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
+			return test_pos
+		attempt += 1
+
+	# No valid position found
+	return Vector2.ZERO
+
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
 	if enemy_index >= 0 and enemy_index < _pre_generated_entity_ids.size():
@@ -1101,9 +1128,23 @@ func _spawn_enemy_v2() -> void:
 		# Check if arena returned zero position (no zones in range)
 		if spawn_pos == Vector2.ZERO:
 			return
+
+		# SPATIAL RESTRICTION: Don't spawn regular enemies inside active breach circles
+		if _is_position_inside_any_breach(spawn_pos):
+			spawn_pos = _get_alternative_spawn_position(arena_scene, spawn_pos)
+			if spawn_pos == Vector2.ZERO:
+				Logger.debug("No valid spawn position outside breach circles, skipping regular spawn", "arena")
+				return
+
 		Logger.debug("Using arena zone-based spawn position: %s from %s" % [spawn_pos, arena_scene.name], "arena")
 	elif arena_system and arena_system.has_method("get_random_spawn_position"):
 		spawn_pos = arena_system.get_random_spawn_position()
+
+		# SPATIAL RESTRICTION: Check for breach overlap
+		if _is_position_inside_any_breach(spawn_pos):
+			Logger.debug("Arena spawn position inside breach, skipping regular spawn", "arena")
+			return
+
 		Logger.debug("Using ArenaSystem spawn position: %s" % spawn_pos, "arena")
 	else:
 		# Fallback to legacy radius-based spawning
@@ -1111,6 +1152,12 @@ func _spawn_enemy_v2() -> void:
 		var angle := RNG.randf_range("waves", 0.0, TAU)
 		var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
 		spawn_pos = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
+
+		# SPATIAL RESTRICTION: Check fallback position too
+		if _is_position_inside_any_breach(spawn_pos):
+			Logger.debug("Fallback spawn position inside breach, skipping regular spawn", "arena")
+			return
+
 		Logger.debug("Using fallback radius-based spawn position: %s" % spawn_pos, "arena")
 	
 	# Track spawn index for deterministic seeding

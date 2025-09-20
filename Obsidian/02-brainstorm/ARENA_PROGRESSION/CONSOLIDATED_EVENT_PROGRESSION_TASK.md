@@ -221,5 +221,81 @@ CURRENT STATE:
   3. Meaningful progression ✅ - Mastery points awarded automatically       
   4. Clean architecture ✅ - All systems working together seamlessly        
 
-  The foundation is now solid for implementing ritual, pack_hunt, and       
-  boss events using the same EventInstance pattern. Excellent work! 🚀  
+  The foundation is now solid for implementing ritual, pack_hunt, and
+  boss events using the same EventInstance pattern. Excellent work! 🚀
+
+## FOLLOW-UP TASK: Breach Spawn Behavior Refinement
+*Added: 2025-09-20 | Priority: High | Estimated: 1-2 hours*
+
+### Issue Analysis
+Current breach system has phantom position implementation working, but spawn behavior needs refinement:
+
+1. **Edge Spawning Preference**: Enemies should spawn more at breach circle edges rather than center clustering
+2. **Max Radius Issues**: Current max_radius (600px) may be too large for effective gameplay
+3. **Multi-Breach Enemy Limits**: Each breach should have independent enemy count limits rather than sharing global pool
+
+### Required Improvements
+
+#### 1. Adjust Spawn Distribution (30 minutes)
+**Problem**: Phantom positions may still cluster toward center
+**Solution**: Enhance `_generate_zone_distributed_positions()` in BreachEventHandler.gd
+- **For Circular Zones**: Weight positions toward 70-90% of radius (edge preference)
+- **For Rectangular Zones**: Avoid center 30% area, prefer outer perimeter regions
+- **Distance Validation**: Ensure minimum 40px separation between phantom positions
+
+#### 2. Optimize Max Radius Configuration (15 minutes)
+**Problem**: max_radius = 600px may be too large for arena gameplay
+**Investigation Required**:
+- Test optimal radius range (200-400px) for different arena sizes
+- Ensure breach circles don't overlap with arena boundaries
+- Balance player navigation vs threat coverage
+
+**Files to modify**:
+- `data/balance/breach_event_config.tres` - Adjust max_radius value
+- Test in UnderworldArena.tscn to verify visual scale
+
+#### 3. Independent Breach Enemy Limits (45 minutes)
+**Problem**: Multiple breaches may interfere with each other's enemy spawning
+**Solution**: Implement per-breach enemy tracking system
+
+**Architecture Changes**:
+```gdscript
+# EventInstance.gd - Add per-breach limits
+var max_active_enemies: int = 15  # Per breach limit (not global)
+var active_enemy_count: int = 0   # Track current revealed enemies
+
+# BreachEventHandler.gd - Respect per-breach limits
+func _reveal_enemies_in_expanding_circle(breach_event: EventInstance):
+    # Skip revealing if breach already at capacity
+    if breach_event.active_enemy_count >= breach_event.max_active_enemies:
+        return
+```
+
+**Benefits**:
+- 3 simultaneous breaches = 45 total enemies (15 each) vs current 50 shared
+- Each breach operates independently without interference
+- Better performance scaling with multiple active events
+- Cleaner enemy cleanup per breach
+
+#### 4. Enhanced Multi-Breach Testing (30 minutes)
+**Validation Requirements**:
+- [ ] 3 simultaneous breaches can spawn without interference
+- [ ] Each breach respects its own 15-enemy limit
+- [ ] Edge-weighted spawning creates better threat distribution
+- [ ] Optimized radius creates appropriate gameplay pressure
+- [ ] Cleanup properly removes per-breach enemies on shrinking
+
+### Implementation Priority
+1. **High**: Per-breach enemy limits (prevents interference)
+2. **High**: Edge-weighted spawn distribution (improves gameplay feel)
+3. **Medium**: Max radius optimization (balance/testing)
+4. **Low**: Enhanced visual feedback for multiple breaches
+
+### Success Criteria
+- [ ] Multiple breaches operate with independent enemy pools
+- [ ] Enemy spawning favors breach circle edges over center
+- [ ] Optimal breach radius for arena gameplay (200-400px range)
+- [ ] No cross-breach interference in enemy spawning/cleanup
+- [ ] Smooth scaling from 1-3 simultaneous breaches
+
+This refinement maintains the excellent phantom position architecture while addressing spawn distribution and multi-breach independence for optimal gameplay experience.  

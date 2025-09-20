@@ -12,8 +12,11 @@ class_name BreachEventConfig
 @export var initial_radius: float = 30.0   ## Small touch circle for activation
 @export var max_radius: float = 150.0      ## Full expansion size
 
-@export_group("Phantom Enemy System")
-@export var total_breach_enemies: int = 50 ## Total phantom positions distributed across the zone
+@export_group("Dynamic Ring Spawning")
+@export var ring_spawn_interval: float = 50.0 ## Spawn new ring every N pixels of expansion
+@export var enemy_density: float = 0.033     ## Enemies per pixel of circumference (~1 per 30px)
+@export var edge_spawn_factor: float = 0.87  ## Spawn at 87% of radius (middle of 85-90% range)
+@export var sector_count: int = 16           ## Divide circle into N sectors for distribution
 
 @export_group("Visual Effects")
 @export var enemy_modulate: Color = Color(0.8, 0.3, 1.0, 0.9)  ## Purple tint for breach enemies
@@ -36,8 +39,20 @@ func validate() -> bool:
 		push_error("BreachEventConfig: Radius values must be positive and max > initial")
 		return false
 
-	if total_breach_enemies <= 0:
-		push_error("BreachEventConfig: Total breach enemies must be positive")
+	if ring_spawn_interval <= 0:
+		push_error("BreachEventConfig: Ring spawn interval must be positive")
+		return false
+
+	if enemy_density <= 0:
+		push_error("BreachEventConfig: Enemy density must be positive")
+		return false
+
+	if edge_spawn_factor <= 0 or edge_spawn_factor > 1:
+		push_error("BreachEventConfig: Edge spawn factor must be between 0 and 1")
+		return false
+
+	if sector_count <= 0:
+		push_error("BreachEventConfig: Sector count must be positive")
 		return false
 
 	return true
@@ -46,6 +61,12 @@ func validate() -> bool:
 func get_total_duration() -> float:
 	return expand_duration + shrink_duration
 
-## Get total enemies for phantom generation
-func get_total_enemies_spawned() -> int:
-	return total_breach_enemies
+## Calculate expected rings for given expansion
+func get_expected_ring_count(max_expansion: float) -> int:
+	return int(max_expansion / ring_spawn_interval)
+
+## Calculate enemies per ring at given radius
+func get_ring_enemy_count(radius: float) -> int:
+	var circumference = 2 * PI * radius
+	var edge_circumference = circumference * edge_spawn_factor
+	return max(3, int(edge_circumference * enemy_density))

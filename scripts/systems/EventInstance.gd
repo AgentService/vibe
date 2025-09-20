@@ -25,12 +25,17 @@ var phase: Phase = Phase.WAITING
 var spawn_timer: float = 0.0  # Kept for compatibility
 var spawned_enemies: Array[String] = []  # Track spawned enemy IDs
 
-# PHANTOM POSITION SYSTEM: Pre-calculated positions, spawn enemies on reveal
-var phantom_positions: Array[Vector2] = []  # Pre-calculated enemy positions
+# DYNAMIC RING SPAWNING SYSTEM: Spawn enemy rings as circle expands
+var last_ring_spawn_radius: float = 0.0  # Last radius when we spawned a ring
+var ring_spawn_threshold: float = 50.0  # Spawn new ring every 50px expansion
 var revealed_enemies: Dictionary = {}  # position_key -> enemy_node mapping
 var breach_id: String = ""  # Unique ID for this breach instance
 
-# Event strategy system integration
+# SECTOR TRACKING: Divide circle into sectors for even distribution
+var sector_enemy_counts: Dictionary = {}  # sector_id -> enemy_count
+var total_sectors: int = 16  # Divide circle into 16 sectors
+
+# Event strategy system integration (legacy)
 var strategy_id: String = ""  # ID for linked spawn strategy
 
 func _init(zone_area: Area2D, breach_config: BreachEventConfig = null):
@@ -139,8 +144,12 @@ func is_enemy_inside_circle(enemy_pos: Vector2) -> bool:
 	return enemy_pos.distance_to(center_position) <= current_radius
 
 func should_spawn_enemies() -> bool:
-	"""Legacy function - phantom position system doesn't use time-based spawning"""
-	return false  # Always false - phantom positions handle enemy revealing
+	"""Legacy function - now using ring spawning system"""
+	return should_spawn_new_ring()
+
+func should_spawn_new_ring() -> bool:
+	"""Check if we should spawn a new enemy ring at current radius"""
+	return phase == Phase.EXPANDING and (current_radius - last_ring_spawn_radius >= ring_spawn_threshold)
 
 func reset_spawn_timer() -> void:
 	"""Reset spawn timer after spawning enemies"""
@@ -170,3 +179,37 @@ func get_progress() -> float:
 			return 1.0
 		_:
 			return 0.0
+
+# SECTOR MANAGEMENT FUNCTIONS: For even enemy distribution
+func get_enemy_sector(enemy_pos: Vector2) -> int:
+	"""Calculate which sector an enemy position belongs to"""
+	var to_enemy = enemy_pos - center_position
+	var angle = to_enemy.angle()
+	if angle < 0:
+		angle += TAU
+	return int(angle / (TAU / total_sectors))
+
+func increment_sector_count(sector_id: int) -> void:
+	"""Add one enemy to a sector's count"""
+	if sector_id >= 0 and sector_id < total_sectors:
+		sector_enemy_counts[sector_id] = sector_enemy_counts.get(sector_id, 0) + 1
+
+func get_emptiest_sectors(count: int) -> Array[int]:
+	"""Get the N emptiest sectors for spawn prioritization"""
+	var sector_data: Array[Dictionary] = []
+	for i in range(total_sectors):
+		var enemy_count = sector_enemy_counts.get(i, 0)
+		sector_data.append({"id": i, "count": enemy_count})
+
+	# Sort by enemy count (ascending)
+	sector_data.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return a.count < b.count)
+
+	var result: Array[int] = []
+	for i in range(min(count, sector_data.size())):
+		var sector_id: int = sector_data[i]["id"]
+		result.append(sector_id)
+	return result
+
+func mark_ring_spawned() -> void:
+	"""Mark that we've spawned a ring at current radius"""
+	last_ring_spawn_radius = current_radius
