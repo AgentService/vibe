@@ -12,10 +12,8 @@ class_name BreachEventConfig
 @export var initial_radius: float = 30.0   ## Small touch circle for activation
 @export var max_radius: float = 150.0      ## Full expansion size
 
-@export_group("Enemy Spawning")
-@export var spawn_interval: float = 1.0    ## Spawn enemies every X seconds
-@export var enemies_per_spawn: int = 2     ## Number of enemies per spawn event
-@export var spawn_distance_factor: float = 0.9  ## How far from center to spawn (0.0-1.0)
+@export_group("Phantom Enemy System")
+@export var total_breach_enemies: int = 50 ## Total phantom positions distributed across the zone
 
 @export_group("Visual Effects")
 @export var enemy_modulate: Color = Color(0.8, 0.3, 1.0, 0.9)  ## Purple tint for breach enemies
@@ -38,8 +36,8 @@ func validate() -> bool:
 		push_error("BreachEventConfig: Radius values must be positive and max > initial")
 		return false
 
-	if spawn_interval <= 0:
-		push_error("BreachEventConfig: Spawn interval must be positive")
+	if total_breach_enemies <= 0:
+		push_error("BreachEventConfig: Total breach enemies must be positive")
 		return false
 
 	return true
@@ -48,7 +46,6 @@ func validate() -> bool:
 func get_total_duration() -> float:
 	return expand_duration + shrink_duration
 
-## Calculate enemies spawned during full breach lifecycle
+## Get total enemies for phantom generation
 func get_total_enemies_spawned() -> int:
-	var spawn_events = int(expand_duration / spawn_interval)
-	return spawn_events * enemies_per_spawn
+	return total_breach_enemies

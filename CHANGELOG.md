@@ -22,6 +22,15 @@
   - **Cleaned**: Excess debug logging reduced to appropriate levels (INFO → DEBUG for spawn attempts)
   - **Result**: Cleaner codebase, less log spam, proper enemy spawning maintained via zone bypass system
 
+- **Event Spawn Strategy System**: Implemented extensible strategy pattern for event-specific spawning behavior
+  - **EventSpawnStrategy Base Class**: Provides common validation and position generation interface for all event types
+  - **BreachSpawnStrategy**: Handles breach-specific logic ensuring enemies spawn within both breach circle AND zone boundaries
+  - **SpawnDirector Integration**: Strategy registration system allows events to define custom spawn behavior without modifying core spawning logic
+  - **Zone Intersection Validation**: Proper geometric validation ensures enemies only spawn in valid areas (fixes breach overspill issues)
+  - **Improved Spawn Distribution**: Fixed center-clustering issue using sqrt() distribution for uniform area coverage (30%-90% radius range)
+  - **Legacy Cleanup**: Removed context_tags workaround system in favor of clean strategy-based approach
+  - **Benefits**: Extensible for future events (ritual, pack hunt), cleaner separation of concerns, easier testing and debugging
+
 ### Features
 - **Breach Event Configuration System**: Implemented centralized `.tres` resource configuration for all breach event parameters
   - **Created**: `BreachEventConfig.gd` resource script with validation and helper methods for editor-friendly parameter tuning
@@ -68,6 +77,15 @@
   - **Testing Mode**: Forced banana_lord spawning for breach events with purple modulation for easy identification
   - **Shrinking Circle Cleanup**: Enemies caught by closing breach circle dissolve with purple fade effect (no XP awarded)
   - **Scene Metadata**: Breach-spawned enemies tagged with metadata for proper cleanup during shrinking phase
+
+- **Breach Event Phantom Position System**: Completed performance-optimized breach enemy revealing system using phantom positions instead of pre-spawning
+  - **Phantom Position Generation**: Pre-calculated enemy positions (50 total) distributed across full zone area using proper rectangular/circular distribution algorithms
+  - **Dimensional Reveal Mechanics**: Enemies spawn only when breach circle expansion reveals their phantom positions - no invisible entities for performance
+  - **Ownership Tracking System**: Each breach has unique breach_id to prevent cross-breach interference when multiple breaches operate simultaneously
+  - **Dynamic Circle Cleanup**: Shrinking breach circles properly remove enemies outside contracted radius, tested from 50 revealed enemies down to 2 remaining
+  - **Multi-Breach Independence**: Disabled zone cooldowns and old spawn strategy registration to ensure breaches in overlapping zones operate independently
+  - **Config Integration**: Full integration with BreachEventConfig.tres for total_breach_enemies (50), purple modulation, and all breach parameters
+  - **Performance Optimization**: Zero pre-spawning eliminates transparent enemy entities, phantom positions calculated once per breach activation
 
 ### Architecture
 - **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts

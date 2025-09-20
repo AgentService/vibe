@@ -48,6 +48,7 @@ var boss_hit_feedback: BossHitFeedback
 # Preloaded boss scenes for performance
 var _preloaded_boss_scenes: Dictionary = {}
 
+
 # PHASE 7 OPTIMIZATION: Bit-field alive/dead tracking (5-10MB reduction)
 # Replace individual alive checking with efficient bit operations
 var _alive_bitfield: PackedByteArray = PackedByteArray()  # Bit-field for alive status (1 bit per enemy)
@@ -1143,8 +1144,9 @@ func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> 
 
 # Scene-based spawning for all enemy types (bosses and regular enemies)
 func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
-	# Check if this is a spawn that should bypass zone validation
-	var _bypass_zone_checks = spawn_config.context_tags.size() > 0 and "bypass_zone_checks" in spawn_config.context_tags
+	# Event spawning now handled by individual event handlers (BreachEventHandler)
+	# No strategy registration needed - events manage their own spawn logic
+
 
 	# Try to get specific scene for this enemy type
 	var enemy_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id)
@@ -1169,12 +1171,13 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> void:
 		enemy_instance.spawn_config = spawn_config
 		enemy_instance.setup_from_spawn_config(spawn_config)
 
-	# Apply breach-specific properties if this is a breach spawn
-	if spawn_config.context_tags.size() > 0 and "breach" in spawn_config.context_tags:
+	# Apply modulation if specified (for all enemies, not just breach)
+	if spawn_config.modulate != Color.WHITE:
+		enemy_instance.modulate = spawn_config.modulate
+
+	# Apply event-specific properties based on strategy
+	if spawn_config.event_id and spawn_config.event_id.begins_with("breach_"):
 		enemy_instance.set_meta("breach_spawned", true)
-		# Apply purple modulation if specified
-		if spawn_config.modulate != Color.WHITE:
-			enemy_instance.modulate = spawn_config.modulate
 	
 	# Add to ArenaRoot for proper scene ownership
 	var arena_root = _get_arena_root()
@@ -1409,6 +1412,7 @@ func clear_all_enemies() -> void:
 			Logger.debug("WaveDirector: Cleared enemies via production EntityClearingService", "waves")
 	else:
 		Logger.error("EntityClearingService not available - cannot clear enemies", "waves")
+
 
 func stop() -> void:
 	"""Stop WaveDirector - halt spawning and clear timers for scene transitions"""

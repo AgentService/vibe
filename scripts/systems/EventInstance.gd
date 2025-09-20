@@ -21,13 +21,23 @@ var current_radius: float = 50.0
 enum Phase { WAITING, EXPANDING, SHRINKING, COMPLETED }
 var phase: Phase = Phase.WAITING
 
-# Spawning control during expansion
-var spawn_timer: float = 0.0
-var spawn_interval: float = 1.0  # Will be set from config
+# Legacy spawning vars (no longer used with phantom position system)
+var spawn_timer: float = 0.0  # Kept for compatibility
 var spawned_enemies: Array[String] = []  # Track spawned enemy IDs
+
+# PHANTOM POSITION SYSTEM: Pre-calculated positions, spawn enemies on reveal
+var phantom_positions: Array[Vector2] = []  # Pre-calculated enemy positions
+var revealed_enemies: Dictionary = {}  # position_key -> enemy_node mapping
+var breach_id: String = ""  # Unique ID for this breach instance
+
+# Event strategy system integration
+var strategy_id: String = ""  # ID for linked spawn strategy
 
 func _init(zone_area: Area2D, breach_config: BreachEventConfig = null):
 	zone = zone_area
+
+	# Generate unique breach ID for ownership tracking
+	breach_id = "breach_" + str(Time.get_time_dict_from_system().hour) + "_" + str(Time.get_time_dict_from_system().minute) + "_" + str(Time.get_time_dict_from_system().second) + "_" + str(randi())
 
 	# Load configuration
 	if breach_config:
@@ -41,7 +51,7 @@ func _init(zone_area: Area2D, breach_config: BreachEventConfig = null):
 		shrink_duration = config.shrink_duration
 		initial_radius = config.initial_radius
 		max_radius = config.max_radius
-		spawn_interval = config.spawn_interval
+		# spawn_interval removed - phantom position system doesn't use time-based spawning
 	else:
 		Logger.warn("Invalid breach config, using defaults", "events")
 
@@ -129,8 +139,8 @@ func is_enemy_inside_circle(enemy_pos: Vector2) -> bool:
 	return enemy_pos.distance_to(center_position) <= current_radius
 
 func should_spawn_enemies() -> bool:
-	"""Check if it's time to spawn more enemies during expansion"""
-	return phase == Phase.EXPANDING and spawn_timer >= spawn_interval
+	"""Legacy function - phantom position system doesn't use time-based spawning"""
+	return false  # Always false - phantom positions handle enemy revealing
 
 func reset_spawn_timer() -> void:
 	"""Reset spawn timer after spawning enemies"""

@@ -27,6 +27,7 @@ var velocity: Vector2
 # Event-specific properties (for breach, ritual, etc.)
 var context_tags: Array[String] = []
 var modulate: Color = Color.WHITE
+var event_id: String = ""  # ID for event strategy lookup
 
 
 func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0) -> void:
