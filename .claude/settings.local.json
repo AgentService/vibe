@@ -20,7 +20,8 @@
       "Rg",
       "mcp__godot-mcp__get_project_info",
       "mcp__godot-mcp__view_script",
-      "mcp__godot-mcp__get_scene_tree"
+      "mcp__godot-mcp__get_scene_tree",
+      "mcp__sequential-thinking__sequentialthinking"
     ],
     "deny": [],
     "ask": [],

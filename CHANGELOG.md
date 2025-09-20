@@ -4,6 +4,16 @@
 
 ## [Current Week - Completed]
 
+### Infrastructure
+- **GitHub Actions Test Cleanup**: Removed failing GitHub Actions workflows and implemented comprehensive local testing automation
+  - **Removed Workflows**: Deleted `godot-tests.yml`, `breach-event-tests.yml`, and `pr-breach-validation.yml` due to Godot headless dependency resolution issues
+  - **Root Cause Analysis**: GitHub Actions failed due to autoload script compilation issues where EventBus/BalanceDB couldn't resolve domain class dependencies (EntityId, DamageAppliedPayload, CombatBalance, etc.) in headless mode
+  - **Local Testing Automation**: Implemented Git hooks for testing without CI dependencies
+    - **Pre-Push Hook**: Comprehensive testing (60s breach + 120s main suite) before `git push` to remote
+    - **Post-Commit Hook**: Quick smoke testing and commit logging after successful commits
+  - **Test Strategy**: Maintains superior test quality with local execution where Godot dependencies resolve correctly
+  - **Preserved Workflows**: Kept working `architecture-validation.yml` and `architecture-check.yml` for structural validation
+
 ### Documentation
 - **Breach Event System Architecture Documentation**: Created comprehensive documentation for the PoE-Atlas-style breach event system in Obsidian systems folder
   - **Complete System Architecture**: Documented dynamic ring spawning, sector-based enemy distribution, and independent multi-breach support
