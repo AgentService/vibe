@@ -233,9 +233,10 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 		"wave_index": spawn_director.current_wave_level,
 		"spawn_index": local_spawn_counter,
 		"position": position,
-		"context_tags": ["event", "breach"],  # Mark as breach event spawn
+		"context_tags": ["event", "breach", "bypass_zone_checks"],  # Mark as breach event spawn with zone bypass
 		"spawn_type": "breach",  # Additional metadata
-		"event_type": "breach"   # Event-specific context
+		"event_type": "breach",   # Event-specific context
+		"force_spawn": true      # Bypass all proximity and zone validation
 	}
 
 	# Use weighted enemy selection for breach events
@@ -250,14 +251,14 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 	# Convert to legacy EnemyType for existing system
 	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
 
-	# Use SpawnDirector's spawn system
+	# Use SpawnDirector's spawn system with zone bypass
 	spawn_director._spawn_from_config_v2(legacy_enemy_type, cfg)
 
 	# Track enemy with breach event
 	var entity_id = "enemy_" + str(local_spawn_counter)  # This will match the actual entity ID
 	breach_event.add_spawned_enemy(entity_id)
 
-	Logger.debug("Spawned breach enemy at %s for breach at %s" % [position, breach_event.center_position], "events")
+	Logger.debug("Breach enemy spawned at %s for breach at %s" % [position, breach_event.center_position], "events")
 
 func _handle_breach_enemy_cleanup() -> void:
 	"""Delete enemies outside shrinking breach circles"""

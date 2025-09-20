@@ -189,6 +189,13 @@ static func spawn_from_template(template: EnemyTemplate, context: Dictionary) ->
 	# Set position from context
 	config.position = context.get("position", Vector2.ZERO)
 	config.velocity = Vector2.ZERO  # Will be set by spawning system
+
+	# Set event-specific properties if present
+	if context.has("context_tags"):
+		var tags_array = context.get("context_tags", [])
+		config.context_tags.clear()
+		for tag in tags_array:
+			config.context_tags.append(str(tag))
 	
 	Logger.debug("Generated spawn config: " + config.debug_string(), "enemies")
 	return config

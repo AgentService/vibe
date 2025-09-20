@@ -24,6 +24,10 @@ var render_tier: String
 var position: Vector2
 var velocity: Vector2
 
+# Event-specific properties (for breach, ritual, etc.)
+var context_tags: Array[String] = []
+var modulate: Color = Color.WHITE
+
 
 func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0) -> void:
 	health = p_health
@@ -36,6 +40,8 @@ func _init(p_health: float = 10.0, p_damage: float = 5.0, p_speed: float = 60.0)
 	render_tier = "regular"
 	position = Vector2.ZERO
 	velocity = Vector2.ZERO
+	context_tags = []
+	modulate = Color.WHITE
 
 ## Convert to legacy EnemyType for existing systems (temporary compatibility)
 func to_enemy_type() -> EnemyType:
@@ -67,6 +73,7 @@ func to_enemy_type() -> EnemyType:
 
 ## Debug string representation - renamed to avoid Object.to_string() override
 func debug_string() -> String:
-	return "SpawnConfig[%s]: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f Color=%s" % [
-		template_id, health, damage, speed, size_scale, color_tint
+	var tags_str = ", tags=" + str(context_tags) if context_tags.size() > 0 else ""
+	return "SpawnConfig[%s]: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2f Color=%s%s" % [
+		template_id, health, damage, speed, size_scale, color_tint, tags_str
 	]
