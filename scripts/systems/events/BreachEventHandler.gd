@@ -5,6 +5,9 @@ class_name BreachEventHandler
 ## Separated from SpawnDirector for cleaner architecture and easier maintenance
 ## Future event types (ritual, pack_hunt, boss) will have similar handler files
 
+# Import the BreachEnemyTracker for zero-allocation enemy management
+const BreachEnemyTracker = preload("res://scripts/systems/events/BreachEnemyTracker.gd")
+
 signal breach_activated(breach_event: EventInstance)
 signal breach_completed(breach_event: EventInstance, performance_data: Dictionary)
 
@@ -12,8 +15,8 @@ signal breach_completed(breach_event: EventInstance, performance_data: Dictionar
 var pending_breach_events: Array[EventInstance] = []
 var active_breach_events: Array[EventInstance] = []
 
-# Performance optimization: O(1) breach enemy lookups
-var breach_enemies: Dictionary = {}  # breach_id -> Array[Node2D]
+# Performance optimization: Zero-allocation breach enemy tracking
+var breach_trackers: Dictionary[String, BreachEnemyTracker] = {}  # breach_id -> BreachEnemyTracker
 
 # Dependencies
 var spawn_director: SpawnDirector
@@ -34,7 +37,13 @@ func initialize(director: SpawnDirector, mastery: EventMasterySystemImpl) -> voi
 		Logger.warn("Failed to load valid breach config, using defaults", "events")
 		breach_config = BreachEventConfig.new()  # Create with defaults
 
-	Logger.info("BreachEventHandler initialized with config", "events")
+	# Initialize breach tracking system
+	_initialize_breach_trackers()
+
+	# Connect to 30Hz fixed-step combat updates for performance optimization
+	EventBus.combat_step.connect(_on_combat_step)
+
+	Logger.info("BreachEventHandler initialized with config and 30Hz combat step", "events")
 
 func update(dt: float) -> void:
 	"""Main update loop called by SpawnDirector"""
@@ -346,39 +355,8 @@ func _update_active_breaches(dt: float) -> void:
 
 
 func _check_and_cleanup_touched_rings(breach_event: EventInstance) -> void:
-	"""Remove breach enemies as the shrinking circle border touches them"""
-	var cleanup_count = 0
-	
-	# Performance optimization: Use cached enemies instead of iterating all arena children
-	if not breach_enemies.has(breach_event.breach_id):
-		return  # No enemies to clean up for this breach
-	
-	var enemy_list = breach_enemies[breach_event.breach_id]
-	
-	# Iterate backwards to safely remove during iteration
-	for i in range(enemy_list.size() - 1, -1, -1):
-		var enemy = enemy_list[i]
-		
-		# Check if enemy is still valid (not already freed)
-		if not is_instance_valid(enemy):
-			enemy_list.remove_at(i)
-			continue
-		
-		var distance = enemy.global_position.distance_to(breach_event.center_position)
-		
-		# Remove enemy if it's outside the current radius (touched by shrinking border)
-		if distance > breach_event.current_radius:
-			_delete_breach_enemy_with_effect(enemy)
-			enemy_list.remove_at(i)  # Remove from cache
-			cleanup_count += 1
-			Logger.debug("REMOVED breach enemy touched by shrinking border at distance %.1f (radius: %.1f)" % [
-				distance, breach_event.current_radius
-			], "events")
-
-	if cleanup_count > 0:
-		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s" % [
-			cleanup_count, breach_event.breach_id
-		], "events")
+	"""Legacy function - now redirects to optimized zero-allocation cleanup"""
+	_cleanup_breach_enemies_optimized(breach_event)
 
 func _get_position_key(position: Vector2) -> String:
 	"""Generate a unique key for a position (for tracking revealed enemies)"""
@@ -426,10 +404,8 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 		enemy_node.set_meta("breach_spawned", true)
 		enemy_node.add_to_group("breach_enemies")
 
-		# Performance optimization: Cache enemy in breach-specific array for O(1) cleanup
-		if not breach_enemies.has(breach_event.breach_id):
-			breach_enemies[breach_event.breach_id] = []
-		breach_enemies[breach_event.breach_id].append(enemy_node)
+		# Performance optimization: Add enemy to zero-allocation RingBuffer tracker
+		_add_enemy_to_breach(enemy_node, breach_event.breach_id)
 
 		# Track in breach event for extra safety
 		var pos_key = _get_position_key(position)
@@ -489,10 +465,12 @@ func _cleanup_completed_breaches() -> void:
 			# Clean up visual indicator
 			_cleanup_breach_visual_indicator(breach_event)
 
-			# Performance optimization: Clean up cached enemies for this breach
-			if breach_enemies.has(breach_event.breach_id):
-				breach_enemies.erase(breach_event.breach_id)
-				Logger.debug("Cleaned up enemy cache for breach %s" % breach_event.breach_id, "events")
+			# Performance optimization: Clean up breach tracker for this breach
+			if breach_trackers.has(breach_event.breach_id):
+				var tracker = breach_trackers[breach_event.breach_id]
+				tracker.clear()
+				breach_trackers.erase(breach_event.breach_id)
+				Logger.debug("Cleaned up breach tracker for breach %s" % breach_event.breach_id, "events")
 
 			# Remove from active list
 			active_breach_events.remove_at(i)
@@ -547,7 +525,119 @@ func clear_all_breaches() -> void:
 	pending_breach_events.clear()
 	active_breach_events.clear()
 	
-	# Performance optimization: Clear enemy cache
-	breach_enemies.clear()
-	
+	# Performance optimization: Clear breach trackers
+	_clear_all_breach_trackers()
+
 	Logger.info("All breach events cleared", "events")
+
+## ZERO-ALLOCATION OPTIMIZATION: New functions for RingBuffer-based tracking
+
+func _initialize_breach_trackers() -> void:
+	"""Initialize breach tracking system - call during setup"""
+	breach_trackers.clear()
+	Logger.debug("Breach tracker system initialized", "events")
+
+func _on_combat_step(payload) -> void:
+	"""30Hz fixed-step update handler for deterministic performance"""
+	if not payload:
+		return
+
+	var delta_time = payload.dt  # Fixed 1/30 = 0.0333... seconds
+
+	# Create pending breaches if needed
+	_handle_breach_creation()
+
+	# Check for player activation
+	_check_breach_activation()
+
+	# Update active breach lifecycles at fixed 30Hz
+	_update_active_breaches_optimized(delta_time)
+
+	# Clean up completed breaches
+	_cleanup_completed_breaches()
+
+func _update_active_breaches_optimized(dt: float) -> void:
+	"""Optimized breach lifecycle updates using 30Hz fixed-step timing"""
+	for breach_event in active_breach_events:
+		breach_event.update_lifecycle(dt)
+
+		# Handle dynamic ring spawning during expansion
+		if breach_event.phase == EventInstance.Phase.EXPANDING and breach_event.should_spawn_new_ring():
+			_spawn_edge_ring(breach_event)
+
+		# Handle enemy cleanup during shrinking - use zero-allocation strategy
+		elif breach_event.phase == EventInstance.Phase.SHRINKING:
+			_cleanup_breach_enemies_optimized(breach_event)
+
+func _add_enemy_to_breach(enemy: Node2D, breach_id: String) -> bool:
+	"""Add enemy to breach using RingBuffer tracker"""
+	if not enemy or not is_instance_valid(enemy):
+		Logger.warn("BreachEventHandler: Attempted to add invalid enemy to breach %s" % breach_id, "events")
+		return false
+
+	# Ensure tracker exists for this breach
+	if not breach_trackers.has(breach_id):
+		var tracker = BreachEnemyTracker.new()
+		tracker.setup(256)  # 256-enemy capacity per breach
+		breach_trackers[breach_id] = tracker
+		Logger.debug("Created new breach tracker for %s with 256 capacity" % breach_id, "events")
+
+	var tracker = breach_trackers[breach_id]
+	var success = tracker.add_enemy(enemy)
+
+	if not success:
+		_handle_capacity_overflow(breach_id)
+
+	return success
+
+func _cleanup_breach_enemies_optimized(breach_event: EventInstance) -> void:
+	"""Zero-allocation enemy cleanup using mark-for-removal strategy"""
+	if not breach_trackers.has(breach_event.breach_id):
+		return  # No tracker for this breach
+
+	var tracker = breach_trackers[breach_event.breach_id]
+	var cleanup_count = 0
+
+	# Mark enemies outside shrinking radius for removal (zero allocations)
+	var valid_enemies = tracker.iterate_valid_enemies()
+	for enemy in valid_enemies:
+		if not is_instance_valid(enemy):
+			tracker.mark_for_removal(enemy)
+			cleanup_count += 1
+			continue
+
+		var distance = enemy.global_position.distance_to(breach_event.center_position)
+
+		# Mark enemy for removal if outside current radius (touched by shrinking border)
+		if distance > breach_event.current_radius:
+			_delete_breach_enemy_with_effect(enemy)
+			tracker.mark_for_removal(enemy)
+			cleanup_count += 1
+			Logger.debug("MARKED enemy for removal - touched by shrinking border at distance %.1f (radius: %.1f)" % [
+				distance, breach_event.current_radius
+			], "events")
+
+	# Batch cleanup marked enemies during safe phase
+	if cleanup_count > 0:
+		tracker.cleanup_marked()
+		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s" % [
+			cleanup_count, breach_event.breach_id
+		], "events")
+
+func _handle_capacity_overflow(breach_id: String) -> void:
+	"""Handle capacity overflow - log warning and continue gracefully"""
+	Logger.warn("BreachEventHandler: Breach %s exceeded 256-enemy capacity limit" % breach_id, "events")
+
+	# Get debug info if tracker exists
+	if breach_trackers.has(breach_id):
+		var debug_info = breach_trackers[breach_id].get_debug_info()
+		Logger.warn("Breach %s tracker state: %s" % [breach_id, debug_info], "events")
+
+func _clear_all_breach_trackers() -> void:
+	"""Clear all breach trackers - call during scene transitions"""
+	for breach_id in breach_trackers:
+		var tracker = breach_trackers[breach_id]
+		tracker.clear()
+
+	breach_trackers.clear()
+	Logger.debug("All breach trackers cleared", "events")
