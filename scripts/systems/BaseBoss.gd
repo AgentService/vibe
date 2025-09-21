@@ -124,14 +124,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 
 ## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
 func apply_unified_scaling(scale_factor: float) -> void:
-	
-	# Step 1: Scale sprite (visual component)
-	if animated_sprite:
-		_apply_sprite_scaling(scale_factor)
-	else:
-		# Defer sprite scaling if animated_sprite isn't ready yet
-		Logger.debug("AnimatedSprite2D not ready, deferring sprite scaling", "debug")
-		call_deferred("_apply_sprite_scaling", scale_factor)
+
+	# Step 1: Scale sprite (visual component) - always defer to ensure node readiness
+	call_deferred("_apply_sprite_scaling", scale_factor)
 	
 	# Step 2: Scale collision shape (physics/movement)
 	var collision_shape = get_node_or_null("CollisionShape2D")
@@ -488,7 +483,8 @@ func _setup_personal_space_debug_visual() -> void:
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
 	if not animated_sprite:
-		Logger.warn("Cannot apply sprite scaling: AnimatedSprite2D not found", "bosses")
+		# Only log if this is unexpected (after deferred call, sprite should exist)
+		Logger.warn("Cannot apply sprite scaling: AnimatedSprite2D not found for %s" % get_boss_name(), "bosses")
 		return
 	
 	# Store original position offset to preserve it during scaling
