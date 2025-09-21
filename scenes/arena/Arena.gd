@@ -167,10 +167,10 @@ func _ready() -> void:
 		Logger.debug("BossHitFeedback injected to WaveDirector", "arena")
 	
 	_setup_card_system()
-	
-	
-	# Set player reference in PlayerState for cached position access
-	PlayerState.set_player_reference(player)
+
+
+	# PlayerState reference now set immediately after player creation in _setup_player()
+	# This prevents timing issues with SpawnDirector during system initialization
 	
 	# Setup Boss Spawn Manager with dependencies
 	boss_spawn_manager.setup(spawn_director, player)
@@ -245,10 +245,10 @@ func _setup_player() -> void:
 	# Initialize PlayerSpawner system
 	player_spawner = PlayerSpawnerScript.new()
 	add_child(player_spawner)
-	
+
 	# Spawn player at PlayerSpawnPoint
 	player = player_spawner.spawn_player("PlayerSpawnPoint", self)
-	
+
 	if not player:
 		Logger.error("Failed to spawn player in Arena", "arena")
 		# Fallback: create player manually at center
@@ -257,7 +257,13 @@ func _setup_player() -> void:
 		player.global_position = Vector2(0, 0)
 		add_child(player)
 		Logger.warn("Using fallback player spawn method", "arena")
-	
+
+	# TIMING FIX: Set player reference in PlayerState immediately after player creation
+	# This prevents SpawnDirector from using fallback spawning during system initialization
+	if player:
+		PlayerState.set_player_reference(player)
+		Logger.debug("PlayerState reference set immediately after player creation", "arena")
+
 	# Camera setup now handled in injection method
 
 # DEPRECATED: XP system setup moved to GameOrchestrator injection

@@ -45,6 +45,17 @@ func initialize(director: SpawnDirector, mastery: EventMasterySystemImpl) -> voi
 
 	Logger.info("BreachEventHandler initialized with config and 30Hz combat step", "events")
 
+func reset() -> void:
+	"""Reset breach event state for session resets - clears all pending and active breaches"""
+	Logger.info("BreachEventHandler: Resetting state for session reset", "events")
+
+	# Clear all breach event state
+	pending_breach_events.clear()
+	active_breach_events.clear()
+	breach_trackers.clear()
+
+	Logger.debug("BreachEventHandler: Reset complete - all breach state cleared", "events")
+
 func _ready() -> void:
 	"""Register BreachEventHandler for monitoring detection"""
 	add_to_group("breach_handlers")
@@ -196,9 +207,9 @@ func _create_breach_visual_indicator(breach_event: EventInstance) -> void:
 	if breach_indicator.has_method("setup_breach"):
 		breach_indicator.setup_breach(breach_event)
 
-	# Add to cleanup groups
-	breach_indicator.add_to_group("arena_owned")
-	breach_indicator.add_to_group("breach_indicators")
+	# Add to semantic groups - breaches persist across enemy clears
+	ClearingSemantics.add_semantic_group(breach_indicator, ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS)
+	breach_indicator.add_to_group("breach_indicators")  # Functional group for breach system
 
 	Logger.debug("Created scene-based breach indicator for %s" % breach_event.zone.name, "events")
 
@@ -217,9 +228,9 @@ func _create_simple_breach_indicator(breach_event: EventInstance) -> void:
 	if breach_indicator.has_method("setup_breach"):
 		breach_indicator.setup_breach(breach_event)
 
-	# Add to cleanup groups
-	breach_indicator.add_to_group("arena_owned")
-	breach_indicator.add_to_group("breach_indicators")
+	# Add to semantic groups - breaches persist across enemy clears
+	ClearingSemantics.add_semantic_group(breach_indicator, ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS)
+	breach_indicator.add_to_group("breach_indicators")  # Functional group for breach system
 
 	Logger.debug("Created programmatic breach indicator (fallback) for %s" % breach_event.zone.name, "events")
 

@@ -168,22 +168,30 @@ func _clear_entities(reason: ResetReason, context: Dictionary) -> void:
 	# Determine clearing strategy based on reset reason and context
 	var preserve_progression = context.get("preserve_progression", true)
 	var should_preserve_enemies = false
-	
+	var needs_session_reset = false
+
 	match reason:
 		ResetReason.PLAYER_DEATH:
 			# Death but not fresh restart - preserve enemies for results screen
 			should_preserve_enemies = preserve_progression
+			needs_session_reset = false
 		ResetReason.LEVEL_RESTART:
 			# Fresh restart should clear everything regardless of player state
 			should_preserve_enemies = preserve_progression
+			needs_session_reset = false
 		ResetReason.DEBUG_RESET, ResetReason.MAP_TRANSITION:
-			# These should always clear everything
+			# These should always clear everything including session objects
 			should_preserve_enemies = false
+			needs_session_reset = true
 		_:
 			# Default to preserving based on context
 			should_preserve_enemies = preserve_progression
-	
-	if should_preserve_enemies:
+			needs_session_reset = false
+
+	if needs_session_reset:
+		Logger.info("Clearing ALL session objects (enemies + transients + breach indicators) for fresh session", "session")
+		EntityClearingService.clear_all_session_objects()
+	elif should_preserve_enemies:
 		Logger.info("Preserving enemies but clearing transient objects (XP orbs)", "session")
 		EntityClearingService.clear_transient_objects()
 	else:

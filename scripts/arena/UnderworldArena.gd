@@ -170,7 +170,6 @@ func get_random_spawn_position() -> Vector2:
 	# Get player position for proximity-based zone filtering
 	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
 	if player_pos == Vector2.ZERO:
-		Logger.debug("Auto spawn: No valid player position, using all scene zones", "arena")
 		return select_random_scene_zone(_spawn_zone_areas)
 
 	# Filter scene zones by min/max distance range (prevent spawning too close)
@@ -187,5 +186,4 @@ func get_random_spawn_position() -> Vector2:
 
 	# Select random zone from those in range
 	var selected_zone = zones_in_range[randi() % zones_in_range.size()]
-	Logger.debug("Auto spawn: Selected scene zone %s in range" % selected_zone.name, "arena")
 	return generate_position_in_scene_zone(selected_zone)

@@ -63,7 +63,7 @@ func _spawn_xp_orb(pos: Vector2, xp_value: int) -> void:
 	orb.global_position = pos
 	orb.xp_value = xp_value
 	orb.collected.connect(_on_xp_collected)
-	orb.add_to_group("transient")  # Auto-register for cleanup by EntityClearingService
+	ClearingSemantics.add_semantic_group(orb, ClearingSemantics.CLEAR_WITH_TRANSIENTS)  # Auto-register for cleanup by EntityClearingService
 	_arena_node.add_child(orb)
 
 func _on_xp_collected(amount: int) -> void:

@@ -1,10 +1,36 @@
-# Week 3: Jan 13-19, 2025
+# Week 4: Jan 20-26, 2025
 
 **Current Sprint Changelog** - See `/changelogs/` for weekly archives and feature history
 
-## [Current Week - Completed]
+## [Current Week - In Progress]
+
+### Documentation
+- **Tileset-Based Spawn Areas Research**: Created comprehensive research task for replacing spawn circles with tileset-based spawn areas
+  - Analyzed current breach spawn system implementation (BreachEventHandler, Area2D zones)
+  - Researched Godot TileSet custom data layers for marking spawnable tiles
+  - Designed tile caching system for performance optimization
+  - Documented migration path from Area2D to tileset-based spawning
+  - Created prototype implementation plans with code examples
+
+---
+
+# Week 3: Jan 13-19, 2025
+
+## [Previous Week - Completed]
 
 ### Infrastructure
+- **Semantic Clearing System**: Replaced hardcoded exclusions with proper architectural solution for object clearing behavior
+  - **Root Cause**: EntityClearingService mixed lifecycle management ("arena_owned") with clearing semantics, forcing hardcoded exclusions
+  - **Solution**: Implemented semantic group system where objects declare their clearing intent through dedicated groups:
+    - `CLEAR_WITH_ENEMIES` - Combat entities cleared during enemy clearing operations
+    - `CLEAR_WITH_ENEMY_EFFECTS` - Projectiles and effects from enemy actions
+    - `CLEAR_WITH_TRANSIENTS` - Temporary pickups like XP orbs and loot
+    - `PERSIST_ACROSS_ENEMY_CLEARS` - Map events like breaches that survive enemy clears
+    - `NEVER_AUTO_CLEAR` - Objects that should never be automatically cleared
+  - **Architecture**: Separated lifecycle management from clearing semantics, eliminating need for filtering logic
+  - **Impact**: Clean, explicit clearing behavior with no hardcoded exclusions; breaches persist correctly across enemy clears
+  - **Implementation**: Added ClearingSemantics autoload, updated EntityClearingService, BreachEventHandler, SpawnDirector, and XpSystem
+  - **Testing**: Comprehensive test suite verified correct clearing behavior for all semantic groups
 - **Code Cleanup**: Removed unused breach indicator components and fixed Godot editor errors
   - **Removed Files**: `SimpleBreachIndicator.tscn` and `SimpleBreachIndicator.gd` (unused alternative to active `BreachIndicator.tscn`)
   - **Fixed Test Errors**: Removed broken test files that referenced missing scripts
