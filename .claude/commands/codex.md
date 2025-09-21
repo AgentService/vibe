@@ -1,45 +1,55 @@
-# Codex Second Opinion
+<!--
+name: reasoning-solve
+description: Forces structured reasoning and codex consultation for problem-solving
+usage: /codex "your problem description"
+-->
 
-Before using Codex, please follow the Claude Code Configuration guidelines:
+# Structured Problem-Solving with Codex Consultation
 
-## Task Management Guidelines
+You should solve the following task with structured reasoning: **$ARGUMENTS**
 
-### Task Splitting and Delegation
-- Split complex tasks into smaller, manageable subtasks
-- Use Codex for research and solution finding
-- Delegate specific tasks to Codex using `codex exec` commands
+## MANDATORY Work Steps:
 
-### Codex Usage
-- Use Codex to search for solutions to specific problems
-- Implementation tasks with clear commands
-- Example: `codex exec "fix the CI failure"`
-- Example: `codex exec "find implementation of user authentication"`
+### 1. PROBLEM ANALYSIS (Reasoning Required)
 
-### Important Restrictions
-- **FORBIDDEN**: never use `--full-auto` flag
-- Always maintain manual control over task execution
-- Review Codex outputs before implementation
+Analyze the problem systematically:
 
-### Workflow
-1. Break down user requests into specific tasks
-2. Use TodoWrite to track progress
-3. Use `codex exec` for research and specific implementations
-4. Verify solutions before final implementation
+-   What is the core problem?
+-   What constraints and requirements exist?
+-   What dependencies and risks need to be considered?
+-   What existing patterns/code could be relevant?
 
----
+### 2. CODEX CONSULTATION (MANDATORY)
 
-## Getting Second Opinion from Codex
+**BEFORE you search for solutions**, execute this command:
 
-When stuck on a problem or need a second opinion, use:
-
-```bash
-codex exec "analyze this problem: [describe your issue]"
+```
+codex exec "How to solve: $ARGUMENTS - considering modern best practices, architecture patterns, and potential pitfalls. Provide implementation strategies and alternative approaches."
 ```
 
-Or for specific technical questions:
+Write the best possible prompt for codex that:
 
-```bash
-codex exec "provide alternative approaches for: [your current approach]"
-```
+-   Precisely describes the problem
+-   Asks for modern best practices
+-   Requires alternative solution approaches
+-   Considers potential pitfalls
+-   Requests implementation strategies
+-   Outputs a summary with a solution
 
-Remember to review and verify all Codex suggestions before implementing them.
+### 3. SOLUTION SYNTHESIS
+
+Combine your analysis with codex input:
+
+-   What approaches does codex recommend?
+-   How do these fit with our codebase/context?
+-   What hybrid solution makes the most sense?
+
+### 4. IMPLEMENTATION
+
+Only implement AFTER codex consultation:
+
+-   Structured implementation plan
+-   Code archaeology in the existing project
+-   Step-by-step implementation with validation
+
+**IMPORTANT**: Without codex consultation in step 2, this task is not complete!

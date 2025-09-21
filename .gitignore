@@ -3,7 +3,7 @@
 *.tmp
 .import/
 /android/
-
+/tests/baselines/*
 # Visual Studio Code
 .vscode/
 
