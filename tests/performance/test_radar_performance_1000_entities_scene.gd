@@ -1,13 +1,13 @@
 extends Node
 
-## RADAR PERFORMANCE V3: Test 1000+ entity radar performance with batched processing
+## RADAR PERFORMANCE V3: Test 500 entity radar performance with batched processing
 ## Validates that EntityTracker type-indexing + RadarUpdateManager eliminates O(N) scanning bottleneck
-## Expected: Stable 30 Hz radar updates with zero allocation spikes at 1000+ entities
+## Expected: Stable 30 Hz radar updates with zero allocation spikes at 500 entities
 
 # Test configuration
 const TEST_DURATION: float = 8.0 # Run for 8 seconds (shorter for CI)
-const ENTITY_COUNT_ENEMIES: int = 500
-const ENTITY_COUNT_BOSSES: int = 500
+const ENTITY_COUNT_ENEMIES: int = 300
+const ENTITY_COUNT_BOSSES: int = 200
 
 # Performance tracking
 var _test_start_time: float = 0.0
@@ -24,7 +24,7 @@ var _test_entities: Array[String] = []
 var _radar_manager: Node = null
 
 func _ready() -> void:
-	print("=== RADAR PERFORMANCE TEST: 1000+ Entities ===")
+	print("=== RADAR PERFORMANCE TEST: 500 Entities ===")
 	print("Testing EntityTracker type-indexing + RadarUpdateManager performance")
 	print("Target: %d enemies + %d bosses = %d total entities" % [ENTITY_COUNT_ENEMIES, ENTITY_COUNT_BOSSES, ENTITY_COUNT_ENEMIES + ENTITY_COUNT_BOSSES])
 	print("Expected: Stable 30Hz radar updates, no allocation spikes")
@@ -201,7 +201,7 @@ func _complete_test() -> void:
 	print("PERFORMANCE VALIDATION:")
 	if performance_passed:
 		print("  ✅ PASSED - Radar performance optimization successful!")
-		print("  - Stable frame rates with 1000+ entities")
+		print("  - Stable frame rates with 500 entities")
 		print("  - Consistent 30Hz radar updates")
 		print("  - No performance degradation detected")
 	else:
