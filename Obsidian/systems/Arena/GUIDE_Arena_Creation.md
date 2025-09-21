@@ -486,7 +486,7 @@ After creating your basic arena:
 - **Working Example**: `scenes/arena/UnderworldArena.tscn` + `UnderworldArena.gd`
 - **Resource Reference**: `scripts/resources/MapConfig.gd`
 - **System Integration**: `scripts/systems/WaveDirector.gd` (spawning integration)
-- **Updated Documentation**: `ARENA_USAGE.md` (current patterns and debugging)
+- **Updated Documentation**: `GUIDE_Arena_Usage.md` (current patterns and debugging)
 
 **★ Success Criteria ─────────────────────────────────────**
 - ✅ Enemies spawn in your configured zones (not random radius)

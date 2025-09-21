@@ -364,4 +364,4 @@ This system provides a **production-ready foundation** for zone-controlled spawn
 3. **Progressive Scaling**: Increase spawn rates/counts with game progression
 4. **Environmental Hazards**: Zone-specific damage/effects integration
 
-**See Also:** `NEW_ARENA_CREATION_GUIDE.md` for step-by-step arena creation workflow
+**See Also:** `GUIDE_Arena_Creation.md` for step-by-step arena creation workflow

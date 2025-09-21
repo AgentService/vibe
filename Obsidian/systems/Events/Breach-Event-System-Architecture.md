@@ -1091,7 +1091,7 @@ tween.tween_property(enemy_node, "modulate", Color(0.8, 0.0, 1.0, 0.0), 0.5)
 ---
 
 ## Related Documentation
-- **[Event Implementation Guide](Event-Implementation-Guide.md)**: Framework for creating new event types
+- **[Event Implementation Guide](GUIDE_Event_Implementation.md)**: Framework for creating new event types
 - **[EventBus System](EventBus-System.md)**: Signal contracts and payload types
 - **[Enemy System Architecture](Enemy-System-Architecture.md)**: Enemy spawning and lifecycle
 - **[Spawn System Pattern](Spawn-System-Direct-Return-Pattern.md)**: Zone-based spawning guidelines
@@ -1099,4 +1099,4 @@ tween.tween_property(enemy_node, "modulate", Color(0.8, 0.0, 1.0, 0.0), 0.5)
 
 ---
 
-*This documentation reflects the current production implementation of the breach event system as of September 2025. For implementation details, see the source files in `scripts/systems/events/`. For implementing new event types, see the [Event Implementation Guide](Event-Implementation-Guide.md).*
+*This documentation reflects the current production implementation of the breach event system as of September 2025. For implementation details, see the source files in `scripts/systems/events/`. For implementing new event types, see the [Event Implementation Guide](GUIDE_Event_Implementation.md).*
