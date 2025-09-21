@@ -2,6 +2,8 @@
 
 > PoE-style buildcraft roguelike with mechanics-first approach
 
+<!-- Test change to verify workflow behavior -->
+
 ## 🚀 Quick Start
 
 ### Running the Game
