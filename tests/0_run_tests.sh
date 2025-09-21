@@ -8,9 +8,9 @@ echo "Running comprehensive test suite including zero-allocation breach optimiza
 echo
 
 # Test configuration
-GODOT_CMD="./Godot_v4.4.1-stable_win64_console.exe"
-TEST_DIR="tests"
-RESULTS_DIR="tests/results"
+GODOT_CMD="../Godot_v4.4.1-stable_win64_console.exe"
+TEST_DIR="."
+RESULTS_DIR="results"
 
 # Create results directory if it doesn't exist
 mkdir -p "$RESULTS_DIR"

@@ -45,6 +45,11 @@ func initialize(director: SpawnDirector, mastery: EventMasterySystemImpl) -> voi
 
 	Logger.info("BreachEventHandler initialized with config and 30Hz combat step", "events")
 
+func _ready() -> void:
+	"""Register BreachEventHandler for monitoring detection"""
+	add_to_group("breach_handlers")
+	Logger.debug("BreachEventHandler added to 'breach_handlers' group", "events")
+
 func update(dt: float) -> void:
 	"""Main update loop called by SpawnDirector"""
 

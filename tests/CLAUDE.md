@@ -434,6 +434,166 @@ func _print_result(test_name: String, success: bool) -> void:
 - **Performance Tests:** Regression detection (`.tscn` execution)
 - **Balance Tests:** Monte-Carlo validation (`.tscn` execution)
 
+## New Testing Patterns
+
+### 2025-09-21 - Breach Optimization Validation Suite
+- **Test Type:** .tscn pattern with comprehensive scenario coverage
+- **Autoload Dependencies:** EventBus (combat_step), RNG (deterministic seeding), Logger (performance monitoring)
+- **Monte-Carlo Updates:** New breach performance validation with 50%+ improvement target
+- **Headless Execution:** 5 comprehensive test cases + quick validation suite
+
+## Test Examples
+
+### ⚡️ **Breach Performance Optimization Tests**
+
+```gdscript
+# test_breach_enemy_tracking.tscn/gd - Comprehensive validation
+extends Node2D
+
+func _ready() -> void:
+    print("=== Breach Enemy Tracking Validation ===")
+    
+    # Test deterministic seeding for reproducible results
+    RNG.seed_run(12345)
+    
+    # Run comprehensive test suite
+    if DisplayServer.get_name() == "headless":
+        _run_automated_breach_tests()
+    else:
+        _setup_interactive_breach_debug()
+
+func _run_automated_breach_tests() -> void:
+    print("Running 5 comprehensive breach test cases...")
+    
+    # Test 1: Capacity overflow handling
+    _test_capacity_overflow()
+    
+    # Test 2: Concurrent enemy removal
+    _test_concurrent_removal()
+    
+    # Test 3: Timing preservation validation
+    _test_timing_preservation()
+    
+    # Test 4: Zero allocation behavior
+    _test_zero_allocation()
+    
+    # Test 5: Multi-breach isolation
+    _test_multi_breach_isolation()
+    
+    print("✓ All breach optimization tests passed")
+    get_tree().quit()
+
+func _test_capacity_overflow() -> void:
+    # Simulate 300+ enemies to test graceful overflow
+    var tracker = BreachEnemyTracker.new()
+    
+    # Add beyond capacity
+    for i in range(300):
+        tracker.add_enemy("enemy_%d" % i)
+    
+    # Verify graceful handling
+    assert(tracker.get_count() <= 256, "Capacity overflow not handled")
+    print("✓ Capacity overflow test passed")
+
+func _test_timing_preservation() -> void:
+    # Validate 30Hz fixed-step timing matches original behavior
+    var original_timing = _simulate_original_breach_timing()
+    var optimized_timing = _simulate_optimized_breach_timing()
+    
+    var timing_diff = abs(original_timing - optimized_timing)
+    assert(timing_diff < 0.1, "Timing preservation failed: %.3f variance" % timing_diff)
+    print("✓ Timing preservation validated")
+```
+
+### 📊 **Performance Regression Detection**
+
+```gdscript
+# breach_optimization_verification.tscn/gd - Quick validation
+extends Node2D
+
+func _ready() -> void:
+    print("=== Breach Performance Quick Validation ===")
+    
+    if DisplayServer.get_name() == "headless":
+        _run_performance_validation()
+
+func _run_performance_validation() -> void:
+    # Test scenario: 3 breaches × 50+ enemies
+    var performance_data = _monitor_breach_performance(3, 50)
+    
+    # Validate 50%+ improvement target
+    var baseline_fps = 45.0  # Historical baseline
+    var improvement_threshold = baseline_fps * 1.5  # 50% improvement
+    
+    if performance_data.average_fps >= improvement_threshold:
+        print("✓ Performance target achieved: %.1f FPS (target: %.1f)" % [
+            performance_data.average_fps, improvement_threshold
+        ])
+    else:
+        print("❌ Performance target missed: %.1f FPS < %.1f" % [
+            performance_data.average_fps, improvement_threshold
+        ])
+    
+    get_tree().quit()
+
+func _monitor_breach_performance(breach_count: int, enemies_per_breach: int) -> Dictionary:
+    # Setup test environment with EventBus combat_step integration
+    _setup_breach_test_environment(breach_count, enemies_per_breach)
+    
+    # Monitor performance for 5 seconds
+    var frame_times: Array[float] = []
+    var start_time = Time.get_ticks_msec()
+    
+    while (Time.get_ticks_msec() - start_time) < 5000:
+        var frame_start = Time.get_ticks_msec()
+        
+        # Manually emit combat_step for deterministic testing
+        var payload = EventBus.CombatStepPayload_Type.new()
+        payload.delta_time = 1.0 / 30.0
+        EventBus.combat_step.emit(payload)
+        
+        await get_tree().process_frame
+        var frame_time = Time.get_ticks_msec() - frame_start
+        frame_times.append(frame_time)
+    
+    # Calculate performance metrics
+    var total_time = frame_times.reduce(func(sum, time): return sum + time, 0.0)
+    var average_fps = (frame_times.size() / total_time) * 1000.0
+    
+    return {
+        "average_fps": average_fps,
+        "frame_count": frame_times.size(),
+        "total_time_ms": total_time
+    }
+```
+
+### 🎯 **Radar Performance Test Updates**
+
+```gdscript
+# Updated test parameters for realistic performance validation
+const ENTITY_COUNT_ENEMIES := 300  # Reduced from 500
+const ENTITY_COUNT_BOSSES := 200   # Reduced from 500
+# Total entities: 500 (down from 1000)
+# Maintains meaningful performance validation while reducing computational load
+
+func _validate_radar_optimization() -> void:
+    print("Testing radar with %d total entities" % (ENTITY_COUNT_ENEMIES + ENTITY_COUNT_BOSSES))
+    
+    # Spawn test entities
+    _spawn_test_enemies(ENTITY_COUNT_ENEMIES)
+    _spawn_test_bosses(ENTITY_COUNT_BOSSES)
+    
+    # Monitor radar system performance
+    var radar_performance = _monitor_radar_updates(3.0)  # 3 second test
+    
+    # Validate performance maintains 60+ FPS
+    var target_fps = 60.0
+    if radar_performance.average_fps >= target_fps:
+        print("✓ Radar performance validated: %.1f FPS with 500 entities" % radar_performance.average_fps)
+    else:
+        print("❌ Radar performance degraded: %.1f FPS < %.1f" % [radar_performance.average_fps, target_fps])
+```
+
 ## Migration Notes
 
 When adding new tests:

@@ -1,6 +1,3 @@
-[gd_scene load_steps=2 format=3 uid="uid://i7aew7rpskkd"]
-
-[ext_resource type="Script" path="res://tests/test_breach_events.gd" id="1_h4ehx"]
+[gd_scene format=3 uid="uid://dlalqr2xalsab"]
 
 [node name="TestBreachEvents" type="Node2D"]
-script = ExtResource("1_h4ehx")

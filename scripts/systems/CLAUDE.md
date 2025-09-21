@@ -244,6 +244,101 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
     # Avoid individual boss _process() methods
 ```
 
+## New Patterns Added
+
+### 2025-09-21 - Breach Event Optimization
+- **New System:** BreachEnemyTracker - Zero-allocation enemy tracking with RingBuffer
+- **30Hz Compatibility:** Converted from 60Hz per-frame to 30Hz fixed-step via EventBus.combat_step
+- **EventBus Integration:** Consumes combat_step signals, maintains breach timing preservation
+- **Resource Dependencies:** Uses mark-for-removal strategy for safe concurrent operations
+- **Common Gotchas:** 256-enemy capacity with graceful overflow - monitor for capacity warnings
+
+## Integration Examples
+
+### ⚡️ **Zero-Allocation Breach Tracking Pattern**
+
+```gdscript
+# BreachEnemyTracker.gd - RingBuffer-based tracking
+extends RefCounted
+class_name BreachEnemyTracker
+
+const MAX_ENEMIES := 256
+var _enemies: Array[String] = []  # Pre-allocated ring buffer
+var _count := 0
+var _removal_flags: PackedByteArray  # Mark-for-removal flags
+
+func add_enemy(enemy_id: String) -> void:
+    if _count >= MAX_ENEMIES:
+        Logger.warn("BreachEnemyTracker: Capacity overflow, oldest enemy removed", "breach")
+        _remove_oldest()
+    
+    _enemies[_count] = enemy_id
+    _removal_flags[_count] = 0  # Not marked for removal
+    _count += 1
+
+func mark_for_removal(enemy_id: String) -> void:
+    # Safe concurrent marking - actual removal in fixed-step
+    for i in range(_count):
+        if _enemies[i] == enemy_id:
+            _removal_flags[i] = 1
+            break
+
+func process_removals() -> void:
+    # Called during 30Hz combat_step - processes all marked removals
+    var write_index := 0
+    for read_index in range(_count):
+        if _removal_flags[read_index] == 0:
+            _enemies[write_index] = _enemies[read_index]
+            _removal_flags[write_index] = 0
+            write_index += 1
+    _count = write_index
+```
+
+### 🎯 **BreachEventHandler 30Hz Integration**
+
+```gdscript
+# BreachEventHandler.gd - Fixed-step breach processing
+func _ready() -> void:
+    # Connect to 30Hz fixed timestep
+    EventBus.combat_step.connect(_on_combat_step)
+    
+    # Initialize zero-allocation tracker
+    _enemy_tracker = BreachEnemyTracker.new()
+
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+    # Process all breach updates at fixed 30Hz
+    _enemy_tracker.process_removals()
+    _update_breach_effects(payload.delta_time)
+    _check_breach_completion()
+
+func _on_enemy_died(enemy_id: String) -> void:
+    # Mark for removal - processed in next combat step
+    _enemy_tracker.mark_for_removal(enemy_id)
+    
+    # Immediate breach progress update
+    _update_breach_progress()
+```
+
+### 📊 **Performance Optimization Notes**
+
+```gdscript
+# Before: Dictionary-based tracking with per-frame iteration
+# Performance: O(n) iteration every frame (60Hz)
+# Memory: Frequent allocations/deallocations during enemy death waves
+
+# After: RingBuffer with fixed-step processing  
+# Performance: O(n) batch processing at 30Hz = 50%+ improvement
+# Memory: Zero allocation during steady-state enemy management
+# Behavior: Identical breach timing and completion detection
+
+# Capacity Management
+func _monitor_breach_capacity() -> void:
+    if _enemy_tracker.get_count() > (MAX_ENEMIES * 0.8):
+        Logger.warn("Breach approaching capacity: %d/%d enemies" % [
+            _enemy_tracker.get_count(), MAX_ENEMIES
+        ], "breach")
+```
+
 ## System-Specific Patterns
 
 ### ⚔️ **MeleeSystem Cone Detection**

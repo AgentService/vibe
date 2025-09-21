@@ -35,7 +35,7 @@ var _spawn_zone_areas: Array[Area2D] = []
 
 func _ready() -> void:
 	Logger.info("=== UNDERWORLDARENA._READY() STARTING ===", "debug")
-	
+
 	# Apply underworld-specific configuration first
 	if map_config:
 		_apply_map_config()

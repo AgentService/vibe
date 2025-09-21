@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3 uid="uid://cac1eme7ki88w"]
+[gd_scene load_steps=2 format=3 uid="uid://7pwr5bba3g2y"]
 
 [ext_resource type="Script" uid="uid://b0bjuof1esm0v" path="res://scripts/ui/SimpleBreachIndicator.gd" id="1_b5240"]
 

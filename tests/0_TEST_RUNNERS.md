@@ -6,12 +6,12 @@ The breach optimization tests have been successfully integrated into the existin
 
 ## Available Test Runners
 
-### 1. **Main Comprehensive Test Runner** (`run_tests.sh`)
+### 1. **Main Comprehensive Test Runner** (`0_run_tests.sh`)
 Runs all test categories including the new zero-allocation breach optimization tests.
 
 ```bash
 # Run all tests (recommended)
-bash run_tests.sh
+cd tests && bash 0_run_tests.sh
 ```
 
 **Test Categories Included:**
@@ -88,7 +88,7 @@ When tests pass, you should see:
 
 ```bash
 # Full test suite (all categories)
-bash run_tests.sh
+cd tests && bash 0_run_tests.sh
 
 # Performance tests only
 cd tests && bash run_performance_tests.sh

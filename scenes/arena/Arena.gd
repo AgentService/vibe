@@ -96,7 +96,10 @@ var _enemy_transforms: Array[Transform2D] = []
 func _ready() -> void:
 	Logger.info("=== ARENA._READY() STARTING ===", "debug")
 	Logger.info("Arena initializing", "ui")
-	
+
+	# Call BaseArena._ready() first to setup base functionality
+	super._ready()
+
 	# Arena should pause game entities but allow debug controls
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	

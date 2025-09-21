@@ -145,7 +145,7 @@ find autoload/ -name "*.gd" -type f
 ### Phase 3: UI & Integration
 - [ ] Build UI components (if needed)
 - [ ] Wire EventBus connections
-- [ ] Add logging with Logger
+- [ ] Add logging with Logger and make sure the used category is available in debug.tres (add if not, also in LogConfigResource)
 - [ ] Performance optimization
 
 ### Phase 4: Testing & Validation
@@ -297,13 +297,6 @@ Return comprehensive risk analysis."
    - tokens: 5000 (for comprehensive coverage)
    ```
 
-3. **Focus Areas for Task Types:**
-   - **Combat/Performance tasks** → Research: "performance optimization", "fixed timestep"
-   - **Signal/EventBus tasks** → Research: "signals", "node communication", "event systems"
-   - **UI/Scene tasks** → Research: "scene management", "UI controls", "canvas layers"
-   - **Resource/Data tasks** → Research: "resources", "custom resources", "data management"
-   - **Audio/Visual tasks** → Research: "audio", "2D rendering", "animation"
-
 ### Integration with Task Template
 
 **Automatically include in task:**
@@ -323,57 +316,3 @@ Return comprehensive risk analysis."
 ### Performance Considerations:
 [Official performance guidance for this feature type]
 ```
-
-## 🚀 Enhanced Task Creation Features
-
-### Automatic Intelligence:
-- **Smart categorization** based on task description keywords
-- **Context7 MCP integration** for up-to-date Godot documentation
-- **Pre-populated sections** based on affected systems analysis
-- **Related file detection** from existing codebase patterns
-- **Performance impact assessment** for 30Hz combat compatibility
-- **Integration point identification** with EventBus and autoloads
-
-### Quality Assurance:
-- **Official documentation validation** via Context7 MCP
-- **Validation against vibe patterns** (EventBus, Logger, layer boundaries)
-- **Completeness checking** for all required sections
-- **Cross-reference generation** with existing Obsidian documentation
-- **Risk mitigation planning** based on complexity analysis
-
-### Context7 MCP Benefits:
-- **Always current** - Up-to-date Godot documentation and best practices
-- **Official examples** - Real code patterns from Godot documentation
-- **Performance guidance** - Official recommendations for optimization
-- **API accuracy** - Correct method signatures and usage patterns
-- **Version compatibility** - Godot 4.2+ specific guidance
-
-## 🎯 Example Context7 Research Topics
-
-### For Different Task Types:
-
-**Combat System Tasks:**
-```
-Topic: "performance optimization fixed timestep"
-Result: Official guidance on high-performance rendering and fixed timestep loops
-```
-
-**EventBus/Signal Tasks:**
-```
-Topic: "signals node communication event systems"
-Result: Best practices for signal design and cross-node communication
-```
-
-**UI Component Tasks:**
-```
-Topic: "UI controls canvas layers scene management"
-Result: UI architecture patterns and scene organization
-```
-
-**Resource/Data Tasks:**
-```
-Topic: "custom resources data management serialization"
-Result: Resource system patterns and data persistence strategies
-```
-
-Use this command to create comprehensive, well-researched tasks with official Godot documentation backing! 🎯📚🚀

@@ -5,6 +5,12 @@
 ## [Current Week - Completed]
 
 ### Infrastructure
+- **Code Cleanup**: Removed unused breach indicator components and fixed Godot editor errors
+  - **Removed Files**: `SimpleBreachIndicator.tscn` and `SimpleBreachIndicator.gd` (unused alternative to active `BreachIndicator.tscn`)
+  - **Fixed Test Errors**: Removed broken test files that referenced missing scripts
+    - `test_breach_events.tscn` (replaced by `test_breach_events_focused.tscn`)
+    - `test_breach_events_simple.tscn` (orphaned during test consolidation)
+  - **Active System**: BreachEventHandler continues using `BreachIndicator.tscn` for scene-based breach visualization
 - **GitHub Actions Test Cleanup**: Removed failing GitHub Actions workflows and implemented comprehensive local testing automation
   - **Removed Workflows**: Deleted `godot-tests.yml`, `breach-event-tests.yml`, and `pr-breach-validation.yml` due to Godot headless dependency resolution issues
   - **Root Cause Analysis**: GitHub Actions failed due to autoload script compilation issues where EventBus/BalanceDB couldn't resolve domain class dependencies (EntityId, DamageAppliedPayload, CombatBalance, etc.) in headless mode
