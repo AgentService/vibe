@@ -82,12 +82,10 @@ func generate_position_in_scene_zone(zone_area: Area2D) -> Vector2:
 			if collision_shape.shape is CircleShape2D:
 				var circle_shape = collision_shape.shape as CircleShape2D
 				zone_radius = circle_shape.radius
-				Logger.debug("Using CircleShape2D radius: %.1f for zone %s" % [zone_radius, zone_area.name], "arena")
 			elif collision_shape.shape is RectangleShape2D:
 				var rect_shape = collision_shape.shape as RectangleShape2D
 				# Use half the smaller dimension as radius for rectangular zones
 				zone_radius = minf(rect_shape.size.x, rect_shape.size.y) * 0.5
-				Logger.debug("Using RectangleShape2D radius: %.1f for zone %s" % [zone_radius, zone_area.name], "arena")
 			else:
 				Logger.debug("Zone %s has unsupported shape type (%s), using default radius %.1f" % [zone_area.name, collision_shape.shape.get_class(), zone_radius], "arena")
 		else:
