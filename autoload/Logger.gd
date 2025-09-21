@@ -89,13 +89,13 @@ func _load_config() -> void:
 	
 	# Validate resource (check if method exists before calling)
 	if not config_resource.has_method("is_valid_log_level") or not config_resource.is_valid_log_level():
-		var log_level = config_resource.log_level if "log_level" in config_resource else "UNKNOWN"
+		var log_level = config_resource.get("log_level") if config_resource.get("log_level") != null else "UNKNOWN"
 		warn("Invalid log level in config: " + str(log_level))
 		return
-	
+
 	# Load log level
 	var old_level: LogLevel = current_level
-	var log_level_value = config_resource.log_level if "log_level" in config_resource else "INFO"
+	var log_level_value = config_resource.get("log_level") if config_resource.get("log_level") != null else "INFO"
 	current_level = _parse_level(str(log_level_value))
 	
 	# Load categories (check if method exists)
