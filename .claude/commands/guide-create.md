@@ -1,14 +1,17 @@
 <!--
 name: guide-create
 description: Create system implementation guides in appropriate Obsidian folders
-usage: /guide-create "system_type" "object_type" ["specific_description"]
+usage: /guide-create "description of what you want to implement"
 -->
 
 # Create System Implementation Guide
 
-Create a new implementation guide for **$1** system: **$2** type
+Create a new implementation guide based on your description: **$1**
 
-**Optional specific description**: $3
+Claude will intelligently analyze your description to determine:
+- **System type** (arena, boss, event, player, ui, equipment, etc.)
+- **Object type** (specific implementation within the system)
+- **Implementation approach** (creation, modification, integration)
 
 ## ⚠️ Rules!
 
@@ -31,18 +34,24 @@ Create a new implementation guide for **$1** system: **$2** type
 **BEFORE creating the guide, THINK with minimum 6000 tokens about:**
 
 ```
-🎯 SYSTEM ANALYSIS:
-   What system type is being requested? (arena, boss, event, player, ui, etc.)
-   What existing patterns exist for this system?
-   What are the key implementation entry points?
+🧠 DESCRIPTION ANALYSIS:
+   What is the user trying to implement based on their description?
+   What keywords indicate the system type (arena, boss, event, player, ui, etc.)?
+   What specific object or feature are they describing?
+   What implementation approach is implied (create new, modify existing, integrate)?
 
-🔍 OBJECT TYPE ANALYSIS:
-   What specific object type within the system? (new arena type, new boss, new event, etc.)
-   How do similar objects integrate with the system?
-   What are the creation vs modification patterns?
+🎯 INTELLIGENT SYSTEM DETECTION:
+   Based on the description, what system type is being requested?
+   What existing patterns exist for this detected system?
+   What are the key implementation entry points for this system?
+
+🔍 OBJECT TYPE INFERENCE:
+   What specific object type can be inferred from the description?
+   How do similar objects integrate with the detected system?
+   What are the creation vs modification patterns for this object type?
 
 📚 EXISTING PATTERNS RESEARCH:
-   What guides already exist for this system?
+   What guides already exist for the detected system?
    What implementation patterns are established in the codebase?
    What .tres schemas, EventBus signals, and autoloads are involved?
 
@@ -52,8 +61,8 @@ Create a new implementation guide for **$1** system: **$2** type
    How does this relate to existing guide organization?
 
 📋 TEMPLATE SELECTION:
-   Which template approach best fits this system type?
-   What are the key implementation phases for this object type?
+   Which template approach best fits the detected system type?
+   What are the key implementation phases for the inferred object type?
    What are the integration points and testing requirements?
 ```
 
@@ -110,40 +119,36 @@ find Obsidian/systems/ -name "*{system_type}*" -type f
 - **Check existing guides** in that folder for patterns
 - **Identify naming convention** and numbering if applicable
 
-### 3. **Template Selection Logic**
-```gdscript
-match system_type.to_lower():
-    "arena", "arenas":
-        template = ARENA_TEMPLATE
-        folder = "Obsidian/systems/Arena/"
-    "boss", "bosses", "enemy":
-        template = BOSS_TEMPLATE
-        folder = "Obsidian/systems/Bosses/"
-    "event", "events", "breach":
-        template = EVENT_TEMPLATE
-        folder = "Obsidian/systems/Events/"
-    "player", "character", "hero":
-        template = PLAYER_TEMPLATE
-        folder = "Obsidian/systems/Player/"
-    "ui", "hud", "modal":
-        template = UI_TEMPLATE
-        folder = "Obsidian/systems/UI/"
-    "equipment", "item", "gear":
-        template = EQUIPMENT_TEMPLATE
-        folder = "Obsidian/systems/Equipment/"
-    _:
-        template = GENERAL_TEMPLATE
-        folder = "Obsidian/systems/" + system_type.capitalize() + "/"
+### 3. **Intelligent Template Selection Logic**
+Claude analyzes the description to determine the best template:
+
+**Description Keywords → System Detection:**
+- **Arena/Environment**: "arena", "level", "map", "zone", "environment", "volcanic", "underwater", "forest"
+- **Boss/Enemy**: "boss", "enemy", "monster", "creature", "miniboss", "encounter", "fight"
+- **Event/Mechanics**: "event", "breach", "ritual", "mechanic", "system", "trigger", "condition"
+- **Player/Character**: "player", "character", "class", "hero", "necromancer", "warrior", "abilities"
+- **UI/Interface**: "ui", "hud", "modal", "inventory", "menu", "interface", "component", "widget"
+- **Equipment/Items**: "equipment", "item", "weapon", "armor", "gear", "loot", "drop"
+
+**Auto-Selected Template and Folder:**
+```
+Description analysis → Detected system → Template + Folder
+"volcanic arena" → Arena system → ARENA_TEMPLATE + "Obsidian/systems/Arena/"
+"necromancer class" → Player system → PLAYER_TEMPLATE + "Obsidian/systems/Player/"
+"inventory modal" → UI system → UI_TEMPLATE + "Obsidian/systems/UI/"
 ```
 
-### 4. **Generate Guide File Name**
-- **Pattern**: `GUIDE_{SystemType}_{ObjectType}_{Action}.md`
-- **Examples**:
-  - `GUIDE_Arena_Creation.md` (how to create new arenas)
-  - `GUIDE_Boss_Implementation.md` (how to implement new boss types)
-  - `GUIDE_Event_NewTypes.md` (how to create new event types)
-  - `GUIDE_Player_NewClass.md` (how to add new player classes)
-  - `GUIDE_UI_ComponentCreation.md` (how to create UI components)
+### 4. **Auto-Generate Guide File Name**
+Claude intelligently generates file names based on description analysis:
+
+**Pattern**: `GUIDE_{DetectedSystem}_{InferredObject}_{DeterminedAction}.md`
+
+**Examples of Intelligent Naming**:
+- Description: "volcanic arena with lava hazards" → `GUIDE_Arena_Volcanic_Creation.md`
+- Description: "necromancer player class" → `GUIDE_Player_Necromancer_Implementation.md`
+- Description: "inventory modal system" → `GUIDE_UI_Inventory_Creation.md`
+- Description: "miniboss encounters" → `GUIDE_Boss_Miniboss_Implementation.md`
+- Description: "ritual event mechanics" → `GUIDE_Event_Ritual_Creation.md`
 
 ### 5. **Template Structure Components**
 
@@ -254,31 +259,34 @@ match system_type.to_lower():
 
 ### Agent 1: System Archaeology
 ```
-"Analyze the vibe codebase for [system_type] patterns:
-- Existing implementations and file structure
-- EventBus signal usage and contracts
-- Resource file patterns and schemas
-- Integration points with other systems
+"Analyze the vibe codebase for patterns related to: [user_description]
+- Identify the most relevant system from the description
+- Find existing implementations and file structure
+- Analyze EventBus signal usage and contracts
+- Document resource file patterns and schemas
+- Map integration points with other systems
 Return structured analysis with file:line references."
 ```
 
 ### Agent 2: Guide Pattern Analysis
 ```
-"Research existing GUIDE_ files for [system_type]:
-- Current guide structure and templates
-- Implementation step patterns
-- Testing and validation approaches
-- Integration requirements and checklists
-Return consistent pattern recommendations."
+"Research existing GUIDE_ files related to: [user_description]
+- Determine the most appropriate guide category
+- Analyze current guide structure and templates
+- Document implementation step patterns
+- Review testing and validation approaches
+- Extract integration requirements and checklists
+Return consistent pattern recommendations for this type of implementation."
 ```
 
 ### Agent 3: Implementation Research
 ```
-"Research [object_type] implementation requirements:
-- Required file structure and naming
-- Key classes and inheritance patterns
-- Configuration and data requirements
-- Performance and architectural considerations
+"Research implementation requirements for: [user_description]
+- Infer the specific object/feature type being described
+- Document required file structure and naming
+- Identify key classes and inheritance patterns
+- Analyze configuration and data requirements
+- Note performance and architectural considerations
 Return practical implementation roadmap."
 ```
 
@@ -332,20 +340,23 @@ Return practical implementation roadmap."
 ## 🎯 Example Usage
 
 ```bash
-# Create new arena type guide
-/guide-create "arena" "volcanic" "lava-themed arena with environmental hazards"
+# Claude intelligently determines: Arena system, Volcanic type, Creation action
+/guide-create "volcanic arena with lava hazards and environmental damage"
 
-# Create new boss implementation guide
-/guide-create "boss" "miniboss" "smaller boss entities for wave encounters"
+# Claude intelligently determines: Boss system, Miniboss type, Implementation action
+/guide-create "smaller boss entities for wave encounters and mini-bosses"
 
-# Create new event type guide
-/guide-create "event" "ritual" "ritual event system for summoning mechanics"
+# Claude intelligently determines: Event system, Ritual type, Creation action
+/guide-create "ritual event system for summoning mechanics and player interaction"
 
-# Create new player class guide
-/guide-create "player" "necromancer" "death magic focused character class"
+# Claude intelligently determines: Player system, Necromancer type, Implementation action
+/guide-create "necromancer character class with death magic and minion control"
 
-# Create new UI component guide
-/guide-create "ui" "inventory" "expandable inventory modal system"
+# Claude intelligently determines: UI system, Inventory type, Creation action
+/guide-create "expandable inventory modal system with drag and drop"
+
+# Claude intelligently determines: Equipment system, Weapon type, Creation action
+/guide-create "legendary weapon system with special effects and upgrade paths"
 ```
 
 ## 🚨 Success Criteria

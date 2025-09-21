@@ -1,8 +1,22 @@
-# Week 3: Jan 13-19, 2025
+# Week 4: Jan 20-26, 2025
 
 **Current Sprint Changelog** - See `/changelogs/` for weekly archives and feature history
 
-## [Current Week - Completed]
+## [Current Week - In Progress]
+
+### Documentation
+- **Tileset-Based Spawn Areas Research**: Created comprehensive research task for replacing spawn circles with tileset-based spawn areas
+  - Analyzed current breach spawn system implementation (BreachEventHandler, Area2D zones)
+  - Researched Godot TileSet custom data layers for marking spawnable tiles
+  - Designed tile caching system for performance optimization
+  - Documented migration path from Area2D to tileset-based spawning
+  - Created prototype implementation plans with code examples
+
+---
+
+# Week 3: Jan 13-19, 2025
+
+## [Previous Week - Completed]
 
 ### Infrastructure
 - **Semantic Clearing System**: Replaced hardcoded exclusions with proper architectural solution for object clearing behavior
