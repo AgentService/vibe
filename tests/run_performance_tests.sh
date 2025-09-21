@@ -1,15 +1,15 @@
 #!/bin/bash
 
 # Performance Test Runner
-# Runs all performance stress tests with proper command syntax
+# Runs all working performance stress tests with proper command syntax
 
 echo "=== PERFORMANCE STRESS TEST SUITE ==="
-echo "Running architecture validation tests for 500+ enemy performance"
+echo "Running architecture validation tests for boss spawning and radar performance"
 echo
 
 # Test configuration
-GODOT_CMD="./Godot_v4.4.1-stable_win64_console.exe"
-TEST_DIR="tests"
+GODOT_CMD="../Godot_v4.4.1-stable_win64_console.exe"
+PERF_DIR="tests/performance"
 RESULTS_DIR="tests/baselines"
 
 # Create results directory if it doesn't exist
@@ -18,33 +18,43 @@ mkdir -p "$RESULTS_DIR"
 echo "Test Results Directory: $RESULTS_DIR"
 echo
 
-# Test 1: Simple baseline test
-echo "=== Test 1: Simple Performance Baseline ==="
-echo "Command: $GODOT_CMD --headless $TEST_DIR/test_performance_simple.tscn --quit-after 15"
-if "$GODOT_CMD" --headless "$TEST_DIR/test_performance_simple.tscn" --quit-after 15; then
-    echo "✓ Simple baseline test completed successfully"
+# Test 1: Banana Boss Performance Stress Test
+echo "=== Test 1: Banana Boss Performance Stress Test ==="
+echo "Command: $GODOT_CMD --headless $PERF_DIR/test_performance_banana_bosses.tscn --quit-after 30"
+if "$GODOT_CMD" --headless "$PERF_DIR/test_performance_banana_bosses.tscn" --quit-after 30; then
+    echo "✓ Banana boss stress test completed successfully"
 else
-    echo "✗ Simple baseline test failed with exit code $?"
+    echo "✗ Banana boss stress test failed with exit code $?"
 fi
 echo
 
-# Test 2: Arena scene performance test  
-echo "=== Test 2: Arena Scene Performance ==="
-echo "Command: $GODOT_CMD --headless $TEST_DIR/test_performance_arena_scene.tscn --quit-after 35 --no-debug"
-if "$GODOT_CMD" --headless "$TEST_DIR/test_performance_arena_scene.tscn" --quit-after 35 --no-debug; then
-    echo "✓ Arena scene test completed successfully"
+# Test 2: Radar Performance Simple Test
+echo "=== Test 2: Radar Performance Simple Test ==="
+echo "Command: $GODOT_CMD --headless $PERF_DIR/test_radar_performance_simple.tscn --quit-after 20"
+if "$GODOT_CMD" --headless "$PERF_DIR/test_radar_performance_simple.tscn" --quit-after 20; then
+    echo "✓ Radar performance simple test completed successfully"
 else
-    echo "✗ Arena scene test failed with exit code $?"
+    echo "✗ Radar performance simple test failed with exit code $?"
 fi
 echo
 
-# Test 3: 500 enemy stress test (main architecture validation)
-echo "=== Test 3: 500 Enemy Architecture Stress Test ==="
-echo "Command: $GODOT_CMD --headless $TEST_DIR/test_performance_500_enemies.tscn --quit-after 60 --no-debug"
-if "$GODOT_CMD" --headless "$TEST_DIR/test_performance_500_enemies.tscn" --quit-after 60 --no-debug; then
-    echo "✓ 500 enemy stress test completed successfully"
+# Test 3: Radar Performance 1000 Entities Test
+echo "=== Test 3: Radar Performance 1000 Entities Test ==="
+echo "Command: $GODOT_CMD --headless $PERF_DIR/test_radar_performance_1000_entities.tscn --quit-after 30"
+if "$GODOT_CMD" --headless "$PERF_DIR/test_radar_performance_1000_entities.tscn" --quit-after 30; then
+    echo "✓ Radar performance 1000 entities test completed successfully"
 else
-    echo "✗ 500 enemy stress test failed with exit code $?"
+    echo "✗ Radar performance 1000 entities test failed with exit code $?"
+fi
+echo
+
+# Test 4: Boss Performance Integration Test
+echo "=== Test 4: Boss Performance Integration Test ==="
+echo "Command: $GODOT_CMD --headless $PERF_DIR/BossPerformance_integration_test.tscn --quit-after 30"
+if "$GODOT_CMD" --headless "$PERF_DIR/BossPerformance_integration_test.tscn" --quit-after 30; then
+    echo "✓ Boss performance integration test completed successfully"
+else
+    echo "✗ Boss performance integration test failed with exit code $?"
 fi
 echo
 
@@ -52,6 +62,7 @@ echo "=== PERFORMANCE TEST SUITE COMPLETED ==="
 echo "Results saved to: $RESULTS_DIR"
 echo
 echo "To run individual tests:"
-echo "  Simple:     $GODOT_CMD --headless $TEST_DIR/test_performance_simple.tscn --quit-after 15"
-echo "  Arena:      $GODOT_CMD --headless $TEST_DIR/test_performance_arena_scene.tscn --quit-after 35 --no-debug"
-echo "  Stress:     $GODOT_CMD --headless $TEST_DIR/test_performance_500_enemies.tscn --quit-after 60 --no-debug"
+echo "  Banana Bosses:   $GODOT_CMD --headless $PERF_DIR/test_performance_banana_bosses.tscn --quit-after 30"
+echo "  Radar Simple:    $GODOT_CMD --headless $PERF_DIR/test_radar_performance_simple.tscn --quit-after 20"
+echo "  Radar 1000:      $GODOT_CMD --headless $PERF_DIR/test_radar_performance_1000_entities.tscn --quit-after 30"
+echo "  Boss Integration: $GODOT_CMD --headless $PERF_DIR/BossPerformance_integration_test.tscn --quit-after 30"
