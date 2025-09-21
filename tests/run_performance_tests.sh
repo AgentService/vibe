@@ -38,13 +38,13 @@ else
 fi
 echo
 
-# Test 3: Radar Performance 1000 Entities Test
-echo "=== Test 3: Radar Performance 1000 Entities Test ==="
+# Test 3: Radar Performance 500 Entities Test
+echo "=== Test 3: Radar Performance 500 Entities Test ==="
 echo "Command: $GODOT_CMD --headless $PERF_DIR/test_radar_performance_1000_entities.tscn --quit-after 30"
 if "$GODOT_CMD" --headless "$PERF_DIR/test_radar_performance_1000_entities.tscn" --quit-after 30; then
-    echo "✓ Radar performance 1000 entities test completed successfully"
+    echo "✓ Radar performance 500 entities test completed successfully"
 else
-    echo "✗ Radar performance 1000 entities test failed with exit code $?"
+    echo "✗ Radar performance 500 entities test failed with exit code $?"
 fi
 echo
 
@@ -58,11 +58,33 @@ else
 fi
 echo
 
+# Test 5: Zero-Allocation Breach Enemy Tracking Test
+echo "=== Test 5: Zero-Allocation Breach Enemy Tracking Test ==="
+echo "Command: $GODOT_CMD --headless tests/test_breach_enemy_tracking.tscn"
+if "$GODOT_CMD" --headless "tests/test_breach_enemy_tracking.tscn"; then
+    echo "✓ Zero-allocation breach tracking test completed successfully"
+else
+    echo "✗ Zero-allocation breach tracking test failed with exit code $?"
+fi
+echo
+
+# Test 6: Breach Optimization Verification Test
+echo "=== Test 6: Breach Optimization Verification Test ==="
+echo "Command: $GODOT_CMD --headless tests/breach_optimization_verification.tscn"
+if "$GODOT_CMD" --headless "tests/breach_optimization_verification.tscn"; then
+    echo "✓ Breach optimization verification test completed successfully"
+else
+    echo "✗ Breach optimization verification test failed with exit code $?"
+fi
+echo
+
 echo "=== PERFORMANCE TEST SUITE COMPLETED ==="
 echo "Results saved to: $RESULTS_DIR"
 echo
 echo "To run individual tests:"
-echo "  Banana Bosses:   $GODOT_CMD --headless $PERF_DIR/test_performance_banana_bosses.tscn --quit-after 30"
-echo "  Radar Simple:    $GODOT_CMD --headless $PERF_DIR/test_radar_performance_simple.tscn --quit-after 20"
-echo "  Radar 1000:      $GODOT_CMD --headless $PERF_DIR/test_radar_performance_1000_entities.tscn --quit-after 30"
-echo "  Boss Integration: $GODOT_CMD --headless $PERF_DIR/BossPerformance_integration_test.tscn --quit-after 30"
+echo "  Banana Bosses:       $GODOT_CMD --headless $PERF_DIR/test_performance_banana_bosses.tscn --quit-after 30"
+echo "  Radar Simple:        $GODOT_CMD --headless $PERF_DIR/test_radar_performance_simple.tscn --quit-after 20"
+echo "  Radar 500:           $GODOT_CMD --headless $PERF_DIR/test_radar_performance_1000_entities.tscn --quit-after 30"
+echo "  Boss Integration:    $GODOT_CMD --headless $PERF_DIR/BossPerformance_integration_test.tscn --quit-after 30"
+echo "  Breach Tracking:     $GODOT_CMD --headless tests/test_breach_enemy_tracking.tscn"
+echo "  Breach Verification: $GODOT_CMD --headless tests/breach_optimization_verification.tscn"
