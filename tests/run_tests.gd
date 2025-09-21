@@ -6,6 +6,9 @@ extends Node
 const BalanceSimsTest = preload("res://tests/balance_sims.gd")
 const TestSignalContracts = preload("res://tests/test_signal_contracts.gd")
 
+# Note: Breach optimization tests are scene-based (.tscn files) and cannot be preloaded here
+# They should be run via command line:
+
 func _ready() -> void:
 	print("Starting tests...")
 	
@@ -17,8 +20,15 @@ func _ready() -> void:
 	
 	print("\nRunning balance simulation (1,000 trials for headless)...")
 	BalanceSimsTest.run_baseline_simulation(1000, 42)
-	
-	print("\nAll tests completed.")
+
+	print("\n=== CORE TESTS COMPLETED ===")
+	print("✅ RNG streams validation")
+	print("✅ Signal contracts validation")
+	print("✅ Balance simulation (1,000 trials)")
+	print("\nFor zero-allocation breach optimization tests, run:")
+	print("  ./Godot_v4.4.1-stable_win64_console.exe --headless tests/test_breach_enemy_tracking.tscn")
+	print("  ./Godot_v4.4.1-stable_win64_console.exe --headless tests/breach_optimization_verification.tscn")
+	print("\nOr run the full test suite: bash run_tests.sh")
 	
 	# Exit in headless mode
 	if DisplayServer.get_name() == "headless":

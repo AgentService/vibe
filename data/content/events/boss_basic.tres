@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="EventDefinition" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="EventDefinition" load_steps=2 format=3 uid="uid://powyina48jmt"]
 
-[ext_resource type="Script" path="res://scripts/resources/EventDefinition.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://cer7o3y0e2ub1" path="res://scripts/resources/EventDefinition.gd" id="1_0"]
 
 [resource]
 script = ExtResource("1_0")
@@ -10,21 +10,21 @@ description = "Powerful boss with unique mechanics and elite guards"
 event_type = "boss"
 duration = 45.0
 base_config = {
-	"monster_count": 4,
-	"spawn_interval": 3.0,
-	"xp_multiplier": 6.0,
-	"formation": "pincer",
-	"boss_health": 1.0,
-	"elite_guards": 0
+"boss_health": 1.0,
+"elite_guards": 0,
+"formation": "pincer",
+"monster_count": 4,
+"spawn_interval": 3.0,
+"xp_multiplier": 6.0
 }
 reward_config = {
-	"mastery_points": 1,
-	"xp_bonus": 3.0,
-	"loot_chance": 0.5
+"loot_chance": 0.5,
+"mastery_points": 1,
+"xp_bonus": 3.0
 }
 visual_config = {
-	"spawn_effect": "boss_entrance",
-	"completion_effect": "boss_defeat",
-	"ui_color": Color(0.8, 0.2, 0.2, 1),
-	"icon_path": ""
+"completion_effect": "boss_defeat",
+"icon_path": "",
+"spawn_effect": "boss_entrance",
+"ui_color": Color(0.8, 0.2, 0.2, 1)
 }

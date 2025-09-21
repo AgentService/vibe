@@ -1,6 +1,6 @@
-[gd_scene load_steps=47 format=3 uid="uid://cyejk5ial4frs"]
+[gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
 
-[ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
+[ext_resource type="Script" uid="uid://bt7og6sdb0rqd" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="3_shadow"]
 [ext_resource type="Texture2D" uid="uid://lh7fpy0feqr" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_000.png" id="4_s0"]
@@ -214,7 +214,11 @@ height = 42.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hj45v"]
 size = Vector2(19, 38)
 
+[sub_resource type="CircleShape2D" id="CircleShape2D_83bbo"]
+radius = 45.0
+
 [node name="AncientSlime" type="CharacterBody2D"]
+collision_layer = 2
 script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
@@ -241,3 +245,10 @@ shape = SubResource("RectangleShape2D_hj45v")
 position = Vector2(1, 27)
 scale = Vector2(1.93333, 1.88571)
 opacity = 0.8
+
+[node name="PersonalSpaceArea" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
+shape = SubResource("CircleShape2D_83bbo")

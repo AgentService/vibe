@@ -16,6 +16,16 @@ class_name DebugConfig
 @export_enum("auto", "custom_id", "create_new") var character_selection: String = "auto"
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
+@export_group("Boss Debug")
+@export var show_personal_space_circles: bool = false  # Control boss personal space visualization
+
+@export_group("Performance Debug")
+@export var enable_breach_monitoring: bool = false  # Enable automatic breach performance monitoring
+@export var enable_ritual_monitoring: bool = false  # Enable automatic ritual performance monitoring
+@export var enable_packhunt_monitoring: bool = false  # Enable automatic pack hunt performance monitoring
+@export var enable_boss_monitoring: bool = false  # Enable automatic boss performance monitoring
+@export var event_monitor_interval: float = 5.0  # Seconds between automatic monitoring reports
+
 
 func _init(
 	p_debug_panels_enabled: bool = false,

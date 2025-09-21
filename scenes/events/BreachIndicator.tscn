@@ -1,0 +1,13 @@
+[gd_scene load_steps=2 format=3 uid="uid://pywijookim5v"]
+
+[ext_resource type="Script" uid="uid://dgm4fm8uolcd2" path="res://scripts/ui/BreachIndicator.gd" id="1_8k5r4"]
+
+[node name="BreachIndicator" type="Node2D"]
+script = ExtResource("1_8k5r4")
+waiting_color = Color(0.843137, 0, 0.796078, 1)
+expanding_color = Color(0.843137, 0, 0.796078, 0.447059)
+shrinking_color = Color(0.843137, 0, 0.796078, 1)
+border_width = 5.0
+editor_preview_radius = 500.0
+pulse_speed = 5.0
+arrow_smooth_speed = 1.0

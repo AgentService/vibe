@@ -96,7 +96,10 @@ var _enemy_transforms: Array[Transform2D] = []
 func _ready() -> void:
 	Logger.info("=== ARENA._READY() STARTING ===", "debug")
 	Logger.info("Arena initializing", "ui")
-	
+
+	# Call BaseArena._ready() first to setup base functionality
+	super._ready()
+
 	# Arena should pause game entities but allow debug controls
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	
@@ -459,9 +462,7 @@ func on_teardown() -> void:
 	if arena_root:
 		var child_count = arena_root.get_child_count()
 		for child in arena_root.get_children():
-			Logger.debug("Arena teardown: Freeing child %s" % child.name, "arena")
 			child.queue_free()
-		Logger.info("Arena teardown: Freed %d ArenaRoot children" % child_count, "arena")
 	
 	# Diagnostic: Check for remaining enemies and arena_owned nodes
 	var enemies_remaining = get_tree().get_nodes_in_group("enemies").size()

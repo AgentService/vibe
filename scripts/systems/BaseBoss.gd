@@ -23,8 +23,13 @@ var last_attack_time: float = 0.0
 # AI configuration (override in child classes)
 var target_position: Vector2
 var attack_range: float = 80.0
-var chase_range: float = 300.0
+var chase_range: float = 5500.0
 var ai_paused: bool = false
+
+# DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
+const PERSONAL_SPACE_STRENGTH: float = 175.0  # Balanced spacing force that works with chase behavior
+var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
+var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
@@ -78,6 +83,9 @@ func _ready() -> void:
 	
 	# Initialize health bar
 	_update_health_bar()
+
+	# Setup personal space area for boss-to-boss spacing control
+	_setup_personal_space_area()
 	
 
 func _exit_tree() -> void:
@@ -116,14 +124,9 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 
 ## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
 func apply_unified_scaling(scale_factor: float) -> void:
-	
-	# Step 1: Scale sprite (visual component)
-	if animated_sprite:
-		_apply_sprite_scaling(scale_factor)
-	else:
-		# Defer sprite scaling if animated_sprite isn't ready yet
-		Logger.debug("AnimatedSprite2D not ready, deferring sprite scaling", "debug")
-		call_deferred("_apply_sprite_scaling", scale_factor)
+
+	# Step 1: Scale sprite (visual component) - always defer to ensure node readiness
+	call_deferred("_apply_sprite_scaling", scale_factor)
 	
 	# Step 2: Scale collision shape (physics/movement)
 	var collision_shape = get_node_or_null("CollisionShape2D")
@@ -179,6 +182,15 @@ func _update_ai(_dt: float) -> void:
 			# Move toward player
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
+
+			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
+			var spacing_force = apply_personal_space_forces()
+			if spacing_force.length_squared() > 0.1:  # Only log when significant spacing occurs
+				Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+
+			# Apply personal space forces - these work with collision layers
+			velocity += spacing_force
+
 			move_and_slide()
 			
 			# Update directional animation automatically
@@ -269,17 +281,19 @@ func _try_directional_animation(direction: Vector2) -> bool:
 func _apply_sprite_flipping(direction: Vector2) -> void:
 	if not animated_sprite:
 		return
-	
+
 	# Use simple left/right flipping based on horizontal movement
 	if abs(direction.x) > 0.1:  # Only flip if there's significant horizontal movement
 		animated_sprite.flip_h = direction.x < 0  # Flip when moving left
-	
+
 	# Ensure the boss is playing some animation (use default if available)
 	if animated_sprite.sprite_frames and not animated_sprite.is_playing():
 		if animated_sprite.sprite_frames.has_animation("default"):
 			animated_sprite.play("default")
 		elif animated_sprite.sprite_frames.has_animation(animation_prefix):
 			animated_sprite.play(animation_prefix)
+
+# OLD SEPARATION SYSTEM REMOVED - Now using PersonalSpaceArea + collision layers
 
 ## DAMAGE V3: Handle unified damage sync events for scene bosses
 func _on_damage_entity_sync(payload: Dictionary) -> void:
@@ -344,10 +358,133 @@ func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
 
+## Setup PersonalSpaceArea for signal-based boss spacing control
+func _setup_personal_space_area() -> void:
+	personal_space_area = get_node("PersonalSpaceArea") as Area2D
+	if not personal_space_area:
+		Logger.debug("%s: No PersonalSpaceArea found - boss spacing disabled" % get_boss_name(), "collision")
+		return
+
+	# Connect to area signals for boss detection
+	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
+	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
+	Logger.debug("%s: Personal space area configured for boss spacing" % get_boss_name(), "collision")
+
+	# Enable debug visualization if both debug mode and personal space circles are enabled
+	if DebugManager and DebugManager.debug_enabled:
+		var debug_config = load("res://config/debug.tres") as DebugConfig
+		if debug_config and debug_config.show_personal_space_circles:
+			_setup_personal_space_debug_visual()
+
+## Handle boss entering personal space - add to nearby list
+func _on_boss_entered_personal_space(body: Node2D) -> void:
+	var boss = body as CharacterBody2D
+	if boss and boss != self and boss.has_method("get_boss_name"):
+		nearby_bosses.append(boss)
+		Logger.debug("%s: %s entered personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
+
+## Handle boss leaving personal space - remove from nearby list
+func _on_boss_exited_personal_space(body: Node2D) -> void:
+	var boss = body as CharacterBody2D
+	if boss and boss != self and boss.has_method("get_boss_name"):
+		nearby_bosses.erase(boss)
+		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
+
+## Calculate spacing force to maintain personal space from other bosses
+func apply_personal_space_forces() -> Vector2:
+	if nearby_bosses.is_empty():
+		return Vector2.ZERO
+
+	var spacing_force = Vector2.ZERO
+	var my_position = global_position
+	var personal_space_radius = _get_personal_space_radius()
+
+	for boss in nearby_bosses:
+		if not is_instance_valid(boss):
+			continue
+
+		var other_position = boss.global_position
+		var direction = (my_position - other_position)
+		var distance = direction.length()
+
+		if distance > 0.1:  # Avoid division by zero
+			# Normalize direction and apply gentle force
+			direction = direction.normalized()
+			var force_strength = PERSONAL_SPACE_STRENGTH * (1.0 - min(distance / personal_space_radius, 1.0))  # Stronger when closer
+			spacing_force += direction * force_strength
+
+	return spacing_force
+
+## DEBUG: Apply only personal space forces (for testing)
+func apply_only_personal_space_movement(delta: float) -> void:
+	if ai_paused:
+		return
+
+	var spacing_force = apply_personal_space_forces()
+	if spacing_force.length_squared() > 0.1:
+		velocity = spacing_force
+		move_and_slide()
+		Logger.debug("%s: Pure personal space movement: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+
+## DEBUG: Print current personal space status
+func debug_personal_space_status() -> void:
+	Logger.info("%s Personal Space Status:" % get_boss_name(), "collision")
+	Logger.info("  - Radius: %.1f px" % _get_personal_space_radius(), "collision")
+	Logger.info("  - Nearby bosses: %d" % nearby_bosses.size(), "collision")
+	for boss in nearby_bosses:
+		if boss and is_instance_valid(boss):
+			var distance = global_position.distance_to(boss.global_position)
+			Logger.info("    * %s at %.1f px distance" % [boss.get_boss_name(), distance], "collision")
+
+## Get the actual radius from PersonalSpaceArea's CircleShape2D
+func _get_personal_space_radius() -> float:
+	if not personal_space_area:
+		Logger.debug("%s: No personal_space_area - using fallback 32.0" % get_boss_name(), "collision")
+		return 32.0  # Default fallback
+
+	var collision_shape = personal_space_area.get_child(0) as CollisionShape2D
+	if not collision_shape or not collision_shape.shape:
+		Logger.debug("%s: No collision shape or shape - using fallback 32.0" % get_boss_name(), "collision")
+		return 32.0  # Default fallback
+
+	var circle_shape = collision_shape.shape as CircleShape2D
+	if circle_shape:
+		var radius = circle_shape.radius
+		Logger.debug("%s: PersonalSpaceArea radius from editor: %.1f" % [get_boss_name(), radius], "collision")
+		return radius
+
+	Logger.debug("%s: Shape is not CircleShape2D - using fallback 32.0" % get_boss_name(), "collision")
+	return 32.0  # Default fallback
+
+## Setup visual debug circle for PersonalSpaceArea
+func _setup_personal_space_debug_visual() -> void:
+	if not personal_space_area:
+		return
+
+	# Create a visual circle to show the PersonalSpaceArea radius
+	var debug_circle = ColorRect.new()
+	debug_circle.name = "DebugPersonalSpaceCircle"
+	debug_circle.color = Color(1.0, 0.0, 1.0, 0.2)  # Magenta with transparency
+	debug_circle.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
+	# Get the radius for sizing
+	var radius = _get_personal_space_radius()
+	var diameter = radius * 2
+
+	# Size and position the visual circle
+	debug_circle.size = Vector2(diameter, diameter)
+	debug_circle.position = Vector2(-radius, -radius)  # Center on boss
+
+	# Add to the boss so it moves with the boss
+	add_child(debug_circle)
+
+	Logger.debug("%s: PersonalSpaceArea debug visual created (radius: %.1f)" % [get_boss_name(), radius], "collision")
+
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
 	if not animated_sprite:
-		Logger.warn("Cannot apply sprite scaling: AnimatedSprite2D not found", "bosses")
+		# Only log if this is unexpected (after deferred call, sprite should exist)
+		Logger.warn("Cannot apply sprite scaling: AnimatedSprite2D not found for %s" % get_boss_name(), "bosses")
 		return
 	
 	# Store original position offset to preserve it during scaling

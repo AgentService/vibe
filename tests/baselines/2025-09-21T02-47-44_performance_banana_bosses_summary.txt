@@ -1,0 +1,40 @@
+=== BANANA BOSS PERFORMANCE STRESS TEST SUMMARY ===
+Timestamp: 2025-09-21T02:47:44
+Test Duration: 60.56 seconds
+Target: 500+ banana bosses, ≥30 FPS, <50MB memory growth
+
+=== RESULTS ===
+Final Boss Count: 1706
+Total Frames: 771
+Average FPS: 117.10
+Minimum FPS: 6.67
+FPS Stability: 85.2%
+Frame Time 95th Percentile: 127.90 ms
+Memory Growth: 662.39 MB
+Test Result: FAILED
+
+=== PASS/FAIL CRITERIA (Same as Original) ===
+Average FPS ≥30: ✓ (117.1)
+Frame Time 95th <33.3ms: ✗ (127.90 ms)
+Memory Growth <50MB: ✗ (662.39 MB)
+FPS Stability >90%: ✗ (85.2%)
+
+=== PHASE BREAKDOWN ===
+Phase 1 - gradual_boss_scaling:
+  Duration: 15.1s
+  Bosses: 797 final / 797 peak
+  Memory: 266.4 → 524.7 MB (+258.2 MB)
+  Average FPS: 127.7
+
+Phase 2 - burst_boss_spawn:
+  Duration: 17.1s
+  Bosses: 1851 final / 1851 peak
+  Memory: 524.7 → 803.5 MB (+278.8 MB)
+  Average FPS: 122.1
+
+Phase 3 - boss_combat_stress:
+  Duration: 16.6s
+  Bosses: 2101 final / 2101 peak
+  Memory: 803.5 → 928.8 MB (+125.3 MB)
+  Average FPS: 121.3
+

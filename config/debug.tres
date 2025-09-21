@@ -5,9 +5,15 @@
 [resource]
 script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
-start_mode = "hideout"
+start_mode = "arena"
 skip_main_menu = true
 arena_selection = "Underworld Arena"
 custom_arena_path = ""
 character_selection = "auto"
 character_id = &""
+show_personal_space_circles = false
+enable_breach_monitoring = true
+enable_ritual_monitoring = false
+enable_packhunt_monitoring = false
+enable_boss_monitoring = false
+event_monitor_interval = 5.0

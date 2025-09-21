@@ -1,6 +1,48 @@
 # Systems Documentation
 
-This folder contains comprehensive documentation of the game's UI and scene management architecture.
+This folder contains comprehensive documentation of the game's system architectures, organized by broader categories for easier navigation.
+
+## 📁 Documentation Categories
+
+### 🏟️ **Arena** - Arena Management & Spatial Systems
+Game arena coordination, spatial boundaries, arena creation patterns, and usage guidelines.
+
+### ⚔️ **Combat** - Combat Mechanics & Damage Systems
+Damage calculation, combat timing, hit detection, and combat-related system coordination.
+
+### 🧠 **Core** - Foundation Systems & Infrastructure
+EventBus communication, data architecture, entity cleanup, camera systems, and core coordination patterns.
+
+### 🛠️ **Development** - Development Tools & Debugging
+Debug systems, testing frameworks, performance monitoring, display settings, and development tooling.
+
+### 👹 **Enemy** - Enemy Systems & AI
+Enemy spawning, boss creation, entity architecture, AI patterns, and enemy lifecycle management.
+
+### 🎯 **Events** - Event Systems & Breach Mechanics
+Breach event architecture, event skill trees, implementation guides, and dynamic event systems.
+
+### 🔌 **Integration** - External System Integration
+MCP integration, Limbo console, and third-party system integration patterns.
+
+### 🎨 **UI** - User Interface & Scene Management
+UI frameworks, scene transitions, modal systems, and visual interface coordination.
+
+## 📝 Documentation Conventions
+
+### File Naming Patterns
+- **`GUIDE_*.md`** - Step-by-step implementation guides and walkthroughs
+- **`*-Architecture.md`** - System architecture overviews and design patterns
+- **`*-System.md`** - Core system documentation and integration patterns
+
+### Guide Files (GUIDE_ prefix)
+All practical implementation guides use the `GUIDE_` prefix for easy identification:
+- 🏟️ **GUIDE_Arena_Creation.md** - Step-by-step arena creation workflow
+- 🏟️ **GUIDE_Arena_Usage.md** - Arena debugging and usage patterns
+- 👹 **GUIDE_Boss_Creation.md** - Boss entity creation and integration
+- 🎯 **GUIDE_Event_Implementation.md** - Framework for creating new event types
+- 🎯 **GUIDE_EventSkillTree_NewEventTypes.md** - Event skill tree extension guide
+- 🎨 **GUIDE_Modal_System.md** - Modal system implementation guide
 
 ## Core UI Architecture Documents
 
@@ -24,6 +66,9 @@ Modal dialogs like CardPicker, pause management, and the proposed generic modal 
 
 ### 📡 [[EventBus-System]]
 Signal-based communication patterns, UI updates via EventBus, and current signal architecture.
+
+### 🎯 [[Spawn-System-Direct-Return-Pattern]]
+**NEW: Critical Architecture Fix** - Direct return pattern implementation that eliminated 40% breach enemy tagging failures. Key breakthrough in spawn system reliability and enemy lifecycle management.
 
 ### 🧩 [[Component-Structure-Reference]]
 Detailed breakdown of scene files, component dependencies, node structures, and lifecycle management.

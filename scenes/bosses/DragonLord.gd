@@ -15,7 +15,7 @@ func _ready() -> void:
 	attack_damage = 35.0
 	attack_cooldown = 2.0
 	attack_range = 90.0
-	chase_range = 400.0
+	# chase_range = 400.0  # Using BaseBoss default (5500.0)
 	
 	# Call parent _ready() to handle base initialization
 	super._ready()

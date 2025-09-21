@@ -3,6 +3,10 @@ extends Node
 ## Test StateManager state transitions and core loop flow with autoload access.
 ## Scene-based test that can access StateManager and other autoloads.
 
+# Test signal variables (class members for proper closure access)
+var _test_signal_received: bool = false
+var _test_signal_data: Dictionary = {}
+
 func _ready() -> void:
 	print("=== StateManager Transition Tests (Scene-based) ===")
 	
@@ -136,43 +140,44 @@ func _test_state_strings() -> bool:
 func _test_signals() -> bool:
 	"""Test signal emission functionality."""
 	
-	var signal_received = false
-	var signal_data = {}
+	_test_signal_received = false
+	_test_signal_data = {}
 	
+	# Create callable for signal connection
+	var signal_callback = func(prev: StateManager.State, next: StateManager.State, context: Dictionary):
+		_test_signal_received = true
+		_test_signal_data = {"prev": prev, "next": next, "context": context}
+
 	# Connect to state changed signal
-	var connection = StateManager.state_changed.connect(
-		func(prev: StateManager.State, next: StateManager.State, context: Dictionary):
-			signal_received = true
-			signal_data = {"prev": prev, "next": next, "context": context}
-	)
+	StateManager.state_changed.connect(signal_callback)
 	
-	# Trigger a state change
+	# Trigger a state change with force_transition to ensure signal emission
 	var initial_state = StateManager.get_current_state()
-	StateManager.go_to_menu({"test": "signal_test"})
-	
+	StateManager.go_to_menu({"test": "signal_test", "force_transition": true})
+
 	# Wait for signal processing
 	await get_tree().process_frame
 	
 	# Check if signal was received
-	if not signal_received:
+	if not _test_signal_received:
 		print("  Failed: state_changed signal not received")
-		if StateManager.state_changed.is_connected(connection):
-			StateManager.state_changed.disconnect(connection)
+		if StateManager.state_changed.is_connected(signal_callback):
+			StateManager.state_changed.disconnect(signal_callback)
 		return false
-	
+
 	# Validate signal data
-	if signal_data.get("prev") != initial_state:
+	if _test_signal_data.get("prev") != initial_state:
 		print("  Failed: Wrong previous state in signal")
-		if StateManager.state_changed.is_connected(connection):
-			StateManager.state_changed.disconnect(connection)
+		if StateManager.state_changed.is_connected(signal_callback):
+			StateManager.state_changed.disconnect(signal_callback)
 		return false
-	
-	if signal_data.get("context", {}).get("test") != "signal_test":
+
+	if _test_signal_data.get("context", {}).get("test") != "signal_test":
 		print("  Failed: Context not passed correctly")
-		if StateManager.state_changed.is_connected(connection):
-			StateManager.state_changed.disconnect(connection)
+		if StateManager.state_changed.is_connected(signal_callback):
+			StateManager.state_changed.disconnect(signal_callback)
 		return false
-	
-	if StateManager.state_changed.is_connected(connection):
-		StateManager.state_changed.disconnect(connection)
+
+	if StateManager.state_changed.is_connected(signal_callback):
+		StateManager.state_changed.disconnect(signal_callback)
 	return true

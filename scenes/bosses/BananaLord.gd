@@ -20,7 +20,7 @@ func _ready() -> void:
 	attack_damage = 25.0
 	attack_cooldown = 1.5
 	attack_range = 60.0
-	chase_range = 300.0
+	# chase_range = 5300.0  # Using BaseBoss default (5500.0)
 	
 	# Call parent _ready() to handle base initialization
 	super._ready()
@@ -59,26 +59,26 @@ func _update_ai(_dt: float) -> void:
 	# Skip AI updates if paused by debug system
 	if ai_paused:
 		return
-		
+
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
-		
+
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
-	
+
 	# Trigger aggro when player gets close
 	if distance_to_player <= chase_range and not is_aggroed:
 		_aggro()
 		return
-	
+
 	# Only move after fully waking up
 	if not has_woken_up:
 		return
-	
+
 	# Call parent AI behavior for standard movement and attacks
 	super._update_ai(_dt)
-	
+
 	# Add BananaLord specific behavior here if needed
 
 # Override parent attack with BananaLord-specific attack
