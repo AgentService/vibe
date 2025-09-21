@@ -196,9 +196,9 @@ func _create_breach_visual_indicator(breach_event: EventInstance) -> void:
 	if breach_indicator.has_method("setup_breach"):
 		breach_indicator.setup_breach(breach_event)
 
-	# Add to cleanup groups
-	breach_indicator.add_to_group("arena_owned")
-	breach_indicator.add_to_group("breach_indicators")
+	# Add to semantic groups - breaches persist across enemy clears
+	ClearingSemantics.add_semantic_group(breach_indicator, ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS)
+	breach_indicator.add_to_group("breach_indicators")  # Functional group for breach system
 
 	Logger.debug("Created scene-based breach indicator for %s" % breach_event.zone.name, "events")
 
@@ -217,9 +217,9 @@ func _create_simple_breach_indicator(breach_event: EventInstance) -> void:
 	if breach_indicator.has_method("setup_breach"):
 		breach_indicator.setup_breach(breach_event)
 
-	# Add to cleanup groups
-	breach_indicator.add_to_group("arena_owned")
-	breach_indicator.add_to_group("breach_indicators")
+	# Add to semantic groups - breaches persist across enemy clears
+	ClearingSemantics.add_semantic_group(breach_indicator, ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS)
+	breach_indicator.add_to_group("breach_indicators")  # Functional group for breach system
 
 	Logger.debug("Created programmatic breach indicator (fallback) for %s" % breach_event.zone.name, "events")
 

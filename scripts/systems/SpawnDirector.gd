@@ -384,6 +384,11 @@ func _on_combat_step(payload) -> void:
 	if not _is_in_arena_scene():
 		return
 
+	# TIMING FIX: Don't spawn until PlayerState has a valid player reference
+	# Prevents spawning during arena initialization before player is ready
+	if not PlayerState.has_player_reference():
+		return
+
 	_update_zone_cooldowns(payload.dt)
 	_update_zone_threat_escalation(payload.dt)
 	_handle_spawning(payload.dt)
@@ -1136,7 +1141,6 @@ func _spawn_enemy_v2() -> void:
 				Logger.debug("No valid spawn position outside breach circles, skipping regular spawn", "arena")
 				return
 
-		Logger.debug("Using arena zone-based spawn position: %s from %s" % [spawn_pos, arena_scene.name], "arena")
 	elif arena_system and arena_system.has_method("get_random_spawn_position"):
 		spawn_pos = arena_system.get_random_spawn_position()
 
@@ -1230,9 +1234,9 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	var arena_root = _get_arena_root()
 	arena_root.add_child(enemy_instance)
 	
-	# Add to groups for proper cleanup
-	enemy_instance.add_to_group("arena_owned")
-	enemy_instance.add_to_group("enemies")
+	# Add to semantic groups for proper cleanup behavior
+	ClearingSemantics.add_semantic_group(enemy_instance, ClearingSemantics.CLEAR_WITH_ENEMIES)
+	enemy_instance.add_to_group("enemies")  # Functional group for combat systems
 
 	# Register with boss hit feedback system (only for actual bosses)
 	if spawn_config.render_tier == "boss" and boss_hit_feedback:
@@ -1254,9 +1258,9 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	arena_root.add_child(boss_node)
 	boss_node.global_position = position
 	
-	# Add to groups for proper cleanup
-	boss_node.add_to_group("arena_owned")
-	boss_node.add_to_group("enemies")
+	# Add to semantic groups for proper cleanup behavior
+	ClearingSemantics.add_semantic_group(boss_node, ClearingSemantics.CLEAR_WITH_ENEMIES)
+	boss_node.add_to_group("enemies")  # Functional group for combat systems
 	
 	# Connect boss death to EventBus for XP/loot
 	if boss_node.has_signal("died"):
