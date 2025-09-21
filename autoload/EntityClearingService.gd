@@ -85,6 +85,18 @@ func clear_all_world_objects() -> void:
 	
 	Logger.info("EntityClearingService: Complete world clear finished - no XP orbs spawned", "system")
 
+func clear_all_session_objects() -> void:
+	"""Complete session reset - clears all objects including breach indicators for fresh session start"""
+	Logger.info("EntityClearingService: Starting complete session reset clear", "system")
+
+	# Clear all world objects first (enemies + transients)
+	clear_all_world_objects()
+
+	# Clear session-scoped persistent objects (breach indicators, etc.)
+	var cleared_session_objects = _clear_semantic_group(ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS, "session-scoped persistent objects")
+
+	Logger.info("EntityClearingService: Session reset finished - cleared %d session-scoped objects" % cleared_session_objects, "system")
+
 ## Helper method to clear a specific semantic group
 func _clear_semantic_group(semantic_group: String, group_description: String) -> int:
 	var nodes := get_tree().get_nodes_in_group(semantic_group)

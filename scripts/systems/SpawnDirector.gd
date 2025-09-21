@@ -1501,7 +1501,11 @@ func reset() -> void:
 			enemies[i].reset_to_defaults()
 			# PHASE 7 OPTIMIZATION: Update bit-field
 			_set_enemy_alive(i, false)
-	
+
+	# Reset breach event handler state
+	if breach_handler:
+		breach_handler.reset()
+
 	Logger.info("WaveDirector: Reset completed", "waves")
 
 func _on_cheat_toggled(payload) -> void:

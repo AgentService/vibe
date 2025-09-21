@@ -45,6 +45,17 @@ func initialize(director: SpawnDirector, mastery: EventMasterySystemImpl) -> voi
 
 	Logger.info("BreachEventHandler initialized with config and 30Hz combat step", "events")
 
+func reset() -> void:
+	"""Reset breach event state for session resets - clears all pending and active breaches"""
+	Logger.info("BreachEventHandler: Resetting state for session reset", "events")
+
+	# Clear all breach event state
+	pending_breach_events.clear()
+	active_breach_events.clear()
+	breach_trackers.clear()
+
+	Logger.debug("BreachEventHandler: Reset complete - all breach state cleared", "events")
+
 func _ready() -> void:
 	"""Register BreachEventHandler for monitoring detection"""
 	add_to_group("breach_handlers")
