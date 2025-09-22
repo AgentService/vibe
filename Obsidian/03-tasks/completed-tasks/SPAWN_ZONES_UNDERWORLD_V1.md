@@ -98,36 +98,36 @@ The underworld arena currently has spawn zones defined in `underworld_config.tre
    var _spawn_zone_areas: Array[Area2D] = []
 
    func _ready():
-       super._ready()
-       _initialize_spawn_zones()
+	   super._ready()
+	   _initialize_spawn_zones()
 
    func _initialize_spawn_zones():
-       # Cache Area2D nodes for efficient access
-       for child in spawn_zones_container.get_children():
-           if child is Area2D:
-               _spawn_zone_areas.append(child)
+	   # Cache Area2D nodes for efficient access
+	   for child in spawn_zones_container.get_children():
+		   if child is Area2D:
+			   _spawn_zone_areas.append(child)
    ```
 
 2. **Override get_random_spawn_position in UnderworldArena.gd**
    ```gdscript
    ## Override to use spawn zones instead of simple radius
    func get_random_spawn_position() -> Vector2:
-       if _spawn_zone_areas.is_empty():
-           # Fallback to parent radius-based spawning
-           return super.get_random_spawn_position()
+	   if _spawn_zone_areas.is_empty():
+		   # Fallback to parent radius-based spawning
+		   return super.get_random_spawn_position()
 
-       # Use weighted zone selection from MapConfig
-       var selected_zone_data = get_weighted_spawn_zone()
-       if selected_zone_data.is_empty():
-           return super.get_random_spawn_position()
+	   # Use weighted zone selection from MapConfig
+	   var selected_zone_data = get_weighted_spawn_zone()
+	   if selected_zone_data.is_empty():
+		   return super.get_random_spawn_position()
 
-       # Generate random position within selected zone
-       var zone_pos = selected_zone_data.get("position", Vector2.ZERO)
-       var zone_radius = selected_zone_data.get("radius", 50.0)
+	   # Generate random position within selected zone
+	   var zone_pos = selected_zone_data.get("position", Vector2.ZERO)
+	   var zone_radius = selected_zone_data.get("radius", 50.0)
 
-       var angle = randf() * TAU
-       var distance = randf() * zone_radius
-       return zone_pos + Vector2(cos(angle), sin(angle)) * distance
+	   var angle = randf() * TAU
+	   var distance = randf() * zone_radius
+	   return zone_pos + Vector2(cos(angle), sin(angle)) * distance
    ```
 
 **Files Modified:**
@@ -140,40 +140,40 @@ The underworld arena currently has spawn zones defined in `underworld_config.tre
    ```gdscript
    ## Get random spawn zone using weighted selection
    func get_weighted_spawn_zone() -> Dictionary:
-       if spawn_zones.is_empty():
-           return {}
+	   if spawn_zones.is_empty():
+		   return {}
 
-       # Calculate total weight
-       var total_weight = 0.0
-       for zone in spawn_zones:
-           total_weight += zone.get("weight", 1.0)
+	   # Calculate total weight
+	   var total_weight = 0.0
+	   for zone in spawn_zones:
+		   total_weight += zone.get("weight", 1.0)
 
-       # Select random zone by weight
-       var random_value = randf() * total_weight
-       var current_weight = 0.0
+	   # Select random zone by weight
+	   var random_value = randf() * total_weight
+	   var current_weight = 0.0
 
-       for zone in spawn_zones:
-           current_weight += zone.get("weight", 1.0)
-           if random_value <= current_weight:
-               return zone
+	   for zone in spawn_zones:
+		   current_weight += zone.get("weight", 1.0)
+		   if random_value <= current_weight:
+			   return zone
 
-       # Fallback to first zone
-       return spawn_zones[0]
+	   # Fallback to first zone
+	   return spawn_zones[0]
    ```
 
 2. **Add zone validation methods**
    ```gdscript
    ## Validate that spawn zones are within arena bounds
    func validate_spawn_zones() -> bool:
-       for zone in spawn_zones:
-           var pos = zone.get("position", Vector2.ZERO)
-           var radius = zone.get("radius", 0.0)
+	   for zone in spawn_zones:
+		   var pos = zone.get("position", Vector2.ZERO)
+		   var radius = zone.get("radius", 0.0)
 
-           # Check if zone is completely within arena bounds
-           if pos.length() + radius > arena_bounds_radius:
-               Logger.warn("Spawn zone %s extends beyond arena bounds" % zone.get("name", "unnamed"))
-               return false
-       return true
+		   # Check if zone is completely within arena bounds
+		   if pos.length() + radius > arena_bounds_radius:
+			   Logger.warn("Spawn zone %s extends beyond arena bounds" % zone.get("name", "unnamed"))
+			   return false
+	   return true
    ```
 
 **Files Modified:**
@@ -187,27 +187,27 @@ The underworld arena currently has spawn zones defined in `underworld_config.tre
    var _debug_draw_zones: bool = false
 
    func _ready():
-       super._ready()
-       # Enable debug drawing if debug config enabled
-       if DebugConfig and DebugConfig.debug_panels_enabled:
-           _debug_draw_zones = true
+	   super._ready()
+	   # Enable debug drawing if debug config enabled
+	   if DebugConfig and DebugConfig.debug_panels_enabled:
+		   _debug_draw_zones = true
 
    func _draw():
-       if not _debug_draw_zones:
-           return
+	   if not _debug_draw_zones:
+		   return
 
-       # Draw spawn zone circles
-       for zone_data in get_spawn_zones():
-           var pos = zone_data.get("position", Vector2.ZERO)
-           var radius = zone_data.get("radius", 50.0)
-           var weight = zone_data.get("weight", 1.0)
+	   # Draw spawn zone circles
+	   for zone_data in get_spawn_zones():
+		   var pos = zone_data.get("position", Vector2.ZERO)
+		   var radius = zone_data.get("radius", 50.0)
+		   var weight = zone_data.get("weight", 1.0)
 
-           # Color intensity based on weight
-           var color = Color.YELLOW
-           color.a = 0.3 + (weight * 0.4)  # Higher weight = more opaque
+		   # Color intensity based on weight
+		   var color = Color.YELLOW
+		   color.a = 0.3 + (weight * 0.4)  # Higher weight = more opaque
 
-           draw_circle(pos, radius, color)
-           draw_arc(pos, radius, 0, TAU, 32, Color.WHITE, 2.0)
+		   draw_circle(pos, radius, color)
+		   draw_arc(pos, radius, 0, TAU, 32, Color.WHITE, 2.0)
    ```
 
 **Files Modified:**
