@@ -118,6 +118,13 @@ func _init():
 	info_label.add_theme_font_size_override("font_size", 10)
 	vbox.add_child(info_label)
 
+	# Runtime hotkey hint
+	var hotkey_label = Label.new()
+	hotkey_label.text = "Runtime: Press F6 to regenerate"
+	hotkey_label.add_theme_font_size_override("font_size", 9)
+	hotkey_label.modulate = Color(0.8, 0.8, 0.8)
+	vbox.add_child(hotkey_label)
+
 func _on_generate_pressed():
 	var selected_nodes = EditorInterface.get_selection().get_selected_nodes()
 
@@ -143,6 +150,9 @@ func _on_generate_pressed():
 	# Generate!
 	print("🌲 Generating forest arena with seed: ", generator.generation_seed)
 	generator.generate_arena()
+
+	# Update UI to show the incremented seed
+	seed_input.value = generator.generation_seed
 
 	# Mark scene as modified so user can save
 	EditorInterface.mark_scene_as_unsaved()

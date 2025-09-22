@@ -44,7 +44,6 @@ UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
 ClearingSemantics="*res://scripts/domain/ClearingSemantics.gd"
-SimpleTileSpawnValidator="*res://scripts/systems/SimpleTileSpawnValidator.gd"
 
 [display]
 

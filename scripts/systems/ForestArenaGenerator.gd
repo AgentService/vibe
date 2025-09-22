@@ -34,8 +34,6 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 
-	Logger.info("ForestArenaGenerator initializing", "map_generation")
-
 	# Load tile mapping (we'll create this as a resource)
 	tile_mapping = ForestTileMapping.new()
 
@@ -44,9 +42,8 @@ func _ready() -> void:
 
 func generate_arena() -> void:
 	"""Generate the forest arena with the given parameters"""
-	# Auto-increment seed for natural variation (unless called from editor)
-	if not Engine.is_editor_hint():
-		generation_seed += 1
+	# Auto-increment seed for natural variation every time
+	generation_seed += 1
 
 	# Initialize tile mapping if not already done (for editor use)
 	if not tile_mapping:
@@ -60,7 +57,7 @@ func generate_arena() -> void:
 	if Engine.is_editor_hint():
 		print("🌲 Starting forest arena generation with seed: ", generation_seed)
 	else:
-		Logger.info("Starting forest arena generation", "map_generation")
+		print("🌲 Starting forest arena generation with seed:", generation_seed)
 
 	# Set up RNG for reproducible results
 	var rng := RandomNumberGenerator.new()
@@ -85,7 +82,7 @@ func generate_arena() -> void:
 	if Engine.is_editor_hint():
 		print("✅ Forest arena generation completed!")
 	else:
-		Logger.info("Forest arena generation completed", "map_generation")
+		print("✅ Forest arena generation completed!")
 
 	generation_complete.emit()
 
@@ -99,13 +96,13 @@ func clear_arena() -> void:
 func generate_floor(rng: RandomNumberGenerator) -> void:
 	"""Generate grass floor tiles with natural variation"""
 	if not Engine.is_editor_hint():
-		Logger.debug("Generating floor tiles", "map_generation")
+		print("🌱 Generating floor tiles")
 
 	if not ground_layer:
 		if Engine.is_editor_hint():
 			print("⚠️  Ground layer not found")
 		else:
-			Logger.warn("Ground layer not found", "map_generation")
+			print("⚠️ Ground layer not found")
 		return
 	
 	# Fill the entire arena area with grass tiles (including tree border areas)
@@ -125,10 +122,10 @@ func generate_floor(rng: RandomNumberGenerator) -> void:
 func generate_tree_borders(rng: RandomNumberGenerator) -> void:
 	"""Generate tree borders around the arena perimeter"""
 	if not Engine.is_editor_hint():
-		Logger.debug("Generating tree borders", "map_generation")
+		print("🌲 Generating tree borders")
 	
 	if not trees_layer:
-		Logger.warn("Trees layer not found", "map_generation")
+		print("⚠️ Trees layer not found")
 		return
 	
 	var half_width := arena_size.x / 2
@@ -200,7 +197,7 @@ func place_border_tree(pos: Vector2i, rng: RandomNumberGenerator) -> void:
 func add_decorations(rng: RandomNumberGenerator) -> void:
 	"""Add scattered decorative elements within the arena"""
 	if not Engine.is_editor_hint():
-		Logger.debug("Adding decorative elements", "map_generation")
+		print("🎨 Adding decorative elements")
 	
 	# Add decorations sparsely throughout the floor area
 	for x in range(-arena_size.x / 2 + 2, arena_size.x / 2 - 2):
@@ -219,7 +216,7 @@ func set_player_spawn() -> void:
 	"""Set the player spawn point at the center of the arena"""
 	if player_spawn:
 		player_spawn.position = Vector2.ZERO
-		Logger.debug("Player spawn set to center", "map_generation")
+		print("📍 Player spawn set to center")
 
 func get_arena_bounds() -> Rect2i:
 	"""Get the bounds of the generated arena"""
@@ -234,6 +231,8 @@ func regenerate_with_seed(new_seed: int) -> void:
 
 # Debug function to test generation
 func _input(event: InputEvent) -> void:
-	if event.is_action_pressed("ui_refresh"):  # F5
-		Logger.info("Regenerating arena (debug)", "map_generation")
+	# Use F6 instead of F5 to avoid conflict with DebugManager/BalanceDB
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F6:
+		print("🔄 Regenerating arena (debug)")
 		regenerate_with_seed(randi())
+		get_viewport().set_input_as_handled()
