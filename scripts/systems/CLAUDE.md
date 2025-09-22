@@ -10,6 +10,7 @@
 | **DamageSystem.gd** | Collision detection & damage application | N/A (uses DamageService) | `combat_step` consumer |
 | **MeleeSystem.gd** | Cone-based AOE melee attacks | `melee_attack_started`, `enemies_hit` | `combat_step` consumer |
 | **SpawnDirector.gd** | Enemy spawning with zone restrictions | `enemies_spawned` | Entity registration |
+| **SimpleTileSpawnValidator.gd** | Tileset-based spawn validation & positioning | N/A (utility autoload) | Spatial partitioning |
 | **ArenaSystem.gd** | Arena bounds & spatial management | `arena_loaded` | Bounds configuration |
 | **CardSystem.gd** | Upgrade card selection & application | `card_selected`, `card_applied` | Player progression |
 | **BossSpawnManager.gd** | Zone-based boss spawning | Boss creation events | Zone validation |
@@ -246,6 +247,14 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 
 ## New Patterns Added
 
+### 2025-09-22 - SimpleTileSpawnValidator System
+- **New Autoload:** SimpleTileSpawnValidator - Spatial partitioned tileset-based spawning
+- **Purpose:** Replace Area2D spawn circles with ground tile validation from TileMapLayer
+- **Performance:** <2ms spawn queries via 512px spatial grid partitioning (76k+ tiles → ~9 grid cells)
+- **Integration:** SpawnDirector fallback pattern - try tileset first, radius-based as backup
+- **Core API:** `cache_ground_tiles(arena, ground_layer)`, `get_random_spawn_position(arena, ground_layer, target_pos, radius)`
+- **Tile Detection:** Uses `get_used_cells_by_id(2, Vector2i(12, 3))` for ground tile identification
+
 ### 2025-09-21 - Breach Event Optimization
 - **New System:** BreachEnemyTracker - Zero-allocation enemy tracking with RingBuffer
 - **30Hz Compatibility:** Converted from 60Hz per-frame to 30Hz fixed-step via EventBus.combat_step
@@ -337,6 +346,116 @@ func _monitor_breach_capacity() -> void:
         Logger.warn("Breach approaching capacity: %d/%d enemies" % [
             _enemy_tracker.get_count(), MAX_ENEMIES
         ], "breach")
+```
+
+### 🎯 **SimpleTileSpawnValidator Spatial Partitioning Pattern**
+
+```gdscript
+# SimpleTileSpawnValidator.gd - Optimized tileset-based spawning
+extends Node
+
+const GRID_SIZE := 512  # Spatial grid cell size in world units
+var _arena_spatial_grids: Dictionary = {}  # arena_id -> Dictionary[Vector2i, Array[Vector2i]]
+
+func cache_ground_tiles(arena: Node, ground_layer: TileMapLayer) -> void:
+    var arena_id := arena.get_instance_id()
+    var ground_positions: Array[Vector2i] = []
+    var spatial_grid: Dictionary = {}
+
+    # Get all ground tiles using Godot's efficient tile query
+    for atlas_coords in GROUND_ATLAS_IDS:
+        var tiles_at_coords := ground_layer.get_used_cells_by_id(GROUND_SOURCE_ID, atlas_coords)
+        ground_positions.append_array(tiles_at_coords)
+
+    # Build spatial grid for O(grid cells) lookup instead of O(all tiles)
+    for tile_pos in ground_positions:
+        var world_pos := ground_layer.map_to_local(tile_pos)
+        var grid_coord := Vector2i(
+            int(world_pos.x / GRID_SIZE),
+            int(world_pos.y / GRID_SIZE)
+        )
+
+        if not spatial_grid.has(grid_coord):
+            spatial_grid[grid_coord] = []
+        spatial_grid[grid_coord].append(tile_pos)
+
+    _arena_spatial_grids[arena_id] = spatial_grid
+    Logger.info("Cached %d ground tiles in %d grid cells" % [
+        ground_positions.size(), spatial_grid.size()
+    ], "tilespawn")
+
+func get_random_spawn_position(arena: Node, ground_layer: TileMapLayer, target_pos: Vector2, radius: float) -> Vector2:
+    var spatial_grid: Dictionary = _arena_spatial_grids.get(arena.get_instance_id(), {})
+
+    # Calculate which grid cells to check (dramatically reduces search space)
+    var grid_radius := int(ceil(radius / GRID_SIZE)) + 1
+    var center_grid := Vector2i(int(target_pos.x / GRID_SIZE), int(target_pos.y / GRID_SIZE))
+
+    var valid_tiles: Array[Vector2i] = []
+    # Only check nearby grid cells (e.g., 9 cells for 500px radius)
+    for x in range(center_grid.x - grid_radius, center_grid.x + grid_radius + 1):
+        for y in range(center_grid.y - grid_radius, center_grid.y + grid_radius + 1):
+            var grid_coord := Vector2i(x, y)
+            var tiles_in_cell: Array = spatial_grid.get(grid_coord, [])
+
+            # Fine-grained distance check within grid cell
+            for tile_pos in tiles_in_cell:
+                var world_pos := ground_layer.map_to_local(tile_pos)
+                if world_pos.distance_to(target_pos) <= radius:
+                    valid_tiles.append(tile_pos)
+
+    # Deterministic random selection
+    if not valid_tiles.is_empty():
+        var spawn_rng := RNG.stream("spawn")
+        var selected_tile := valid_tiles[spawn_rng.randi() % valid_tiles.size()]
+        return ground_layer.map_to_local(selected_tile)
+
+    return Vector2.ZERO
+```
+
+### 🔄 **SpawnDirector Integration Pattern**
+
+```gdscript
+# SpawnDirector.gd - Hybrid spawn approach
+func _spawn_enemy_v2(enemy_type: String, position: Vector2) -> Node2D:
+    # Try tileset-based spawning first
+    var tileset_spawn_pos = _try_tileset_spawn_position(position)
+    if tileset_spawn_pos != Vector2.ZERO:
+        return _create_enemy(enemy_type, tileset_spawn_pos)
+
+    # Fallback to radius-based spawning for compatibility
+    var fallback_pos = _find_spawn_position_in_radius(position, spawn_radius)
+    if fallback_pos != Vector2.ZERO:
+        return _create_enemy(enemy_type, fallback_pos)
+
+    Logger.warn("No valid spawn position found for enemy: %s" % enemy_type, "spawning")
+    return null
+
+func _try_tileset_spawn_position(target_pos: Vector2) -> Vector2:
+    var ground_layer = arena_scene.get_node("Ground")
+    if not ground_layer or not ground_layer is TileMapLayer:
+        return Vector2.ZERO
+
+    # Use SimpleTileSpawnValidator for tileset-based positioning
+    return SimpleTileSpawnValidator.get_random_spawn_position(
+        arena_scene, ground_layer, target_pos, spawn_radius
+    )
+```
+
+### 📊 **Performance Monitoring Pattern**
+
+```gdscript
+# Monitor tileset spawn performance
+func _validate_spawn_performance() -> void:
+    var performance_metrics = SimpleTileSpawnValidator.get_performance_metrics()
+
+    if performance_metrics.query_time_ms > 2.0:  # 2ms threshold
+        Logger.warn("Slow tileset spawn query: %.2f ms" % performance_metrics.query_time_ms, "performance")
+
+    Logger.debug("Spawn query completed in %.1f μs (%d grid cells)" % [
+        performance_metrics.last_query_time_us,
+        performance_metrics.total_grid_cells
+    ], "tilespawn")
 ```
 
 ## System-Specific Patterns
