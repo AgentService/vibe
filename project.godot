@@ -31,7 +31,6 @@ PlayerProgression="*res://autoload/PlayerProgression.gd"
 CharacterManager="*res://autoload/CharacterManager.gd"
 PlayerState="*res://autoload/PlayerState.gd"
 CheatSystem="*res://autoload/CheatSystem.gd"
-ClearingSemantics="*res://scripts/domain/ClearingSemantics.gd"
 EntityClearingService="*res://autoload/EntityClearingService.gd"
 DebugManager="*res://autoload/DebugManager.gd"
 SessionManager="*res://autoload/SessionManager.gd"
@@ -44,6 +43,8 @@ GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
+ClearingSemantics="*res://scripts/domain/ClearingSemantics.gd"
+SimpleTileSpawnValidator="*res://scripts/systems/SimpleTileSpawnValidator.gd"
 
 [display]
 
@@ -57,7 +58,7 @@ window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg")
+enabled=PackedStringArray("res://addons/gaea/plugin.cfg", "res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg")
 
 [filesystem]
 

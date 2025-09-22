@@ -436,6 +436,14 @@ func _print_result(test_name: String, success: bool) -> void:
 
 ## New Testing Patterns
 
+### 2025-09-22 - SimpleTileSpawnValidator Integration Test
+- **Test Type:** .tscn scene pattern for autoload access (TilesetIntegration_test.tscn/gd)
+- **Purpose:** Validate tileset-based spawning with real UnderworldArena scene data
+- **Autoload Dependencies:** SimpleTileSpawnValidator, Logger, RNG ("spawn" stream)
+- **Performance Validation:** <2ms spawn query target with 76k+ ground tiles
+- **Test Cases:** Autoload availability, arena ground tile detection, spawn position generation, performance monitoring
+- **Execution:** `"./Godot_v4.4.1-stable_win64_console.exe" --headless tests/TilesetIntegration_test.tscn`
+
 ### 2025-09-21 - Breach Optimization Validation Suite
 - **Test Type:** .tscn pattern with comprehensive scenario coverage
 - **Autoload Dependencies:** EventBus (combat_step), RNG (deterministic seeding), Logger (performance monitoring)
@@ -592,6 +600,102 @@ func _validate_radar_optimization() -> void:
         print("✓ Radar performance validated: %.1f FPS with 500 entities" % radar_performance.average_fps)
     else:
         print("❌ Radar performance degraded: %.1f FPS < %.1f" % [radar_performance.average_fps, target_fps])
+```
+
+### 🎯 **SimpleTileSpawnValidator Integration Test**
+
+```gdscript
+# TilesetIntegration_test.tscn/gd - Complete integration validation
+extends Node
+
+func _ready() -> void:
+    print("=== Tileset Integration Test ===")
+
+    # Auto-quit for headless mode, interactive for visual debugging
+    if DisplayServer.get_name() == "headless":
+        _run_automated_tests()
+    else:
+        print("Interactive mode - tests will run automatically")
+        _run_automated_tests()
+
+func _run_automated_tests() -> void:
+    # Test 1: Validate SimpleTileSpawnValidator autoload
+    _test_autoload_availability()
+
+    # Test 2: Load UnderworldArena and test ground tile detection
+    _test_arena_ground_tiles()
+
+    # Test 3: Test spawn position generation and performance
+    _test_spawn_position_generation()
+
+    print("=== Integration tests completed ===")
+
+    if DisplayServer.get_name() == "headless":
+        get_tree().quit()
+
+func _test_arena_ground_tiles() -> void:
+    print("\n--- Testing arena ground tile detection ---")
+
+    # Load UnderworldArena scene
+    var arena_scene = load("res://scenes/arena/UnderworldArena.tscn")
+    var arena_instance = arena_scene.instantiate()
+    var ground_layer = arena_instance.get_node("Ground")
+
+    # Test tile detection with known source/atlas IDs
+    var ground_tiles = ground_layer.get_used_cells_by_id(2, Vector2i(12, 3))
+    print("✓ Found %d ground tiles with source_id=2, atlas=(12,3)" % ground_tiles.size())
+
+    # Cache ground tiles using SimpleTileSpawnValidator
+    SimpleTileSpawnValidator.cache_ground_tiles(arena_instance, ground_layer)
+    var cached_tiles = SimpleTileSpawnValidator.get_ground_tiles(arena_instance)
+    print("✓ Cached %d ground tiles for spawning" % cached_tiles.size())
+
+    arena_instance.queue_free()
+
+func _test_spawn_position_generation() -> void:
+    print("\n--- Testing spawn position generation ---")
+
+    var arena_scene = load("res://scenes/arena/UnderworldArena.tscn")
+    var arena_instance = arena_scene.instantiate()
+    var ground_layer = arena_instance.get_node("Ground")
+
+    # Cache tiles
+    SimpleTileSpawnValidator.cache_ground_tiles(arena_instance, ground_layer)
+
+    # Test spawn position generation with performance monitoring
+    var target_pos = Vector2(0, 0)
+    var radius = 500.0
+    var spawn_attempts = 10
+    var successful_spawns = 0
+
+    for i in range(spawn_attempts):
+        var spawn_pos = SimpleTileSpawnValidator.get_random_spawn_position(
+            arena_instance, ground_layer, target_pos, radius)
+
+        if spawn_pos != Vector2.ZERO:
+            successful_spawns += 1
+            var distance = spawn_pos.distance_to(target_pos)
+            print("  Spawn %d: %s (distance: %.1f)" % [i+1, spawn_pos, distance])
+
+    print("✓ Successful spawns: %d/%d" % [successful_spawns, spawn_attempts])
+
+    # Performance validation
+    var start_time = Time.get_ticks_usec()
+    for i in range(100):
+        SimpleTileSpawnValidator.get_random_spawn_position(
+            arena_instance, ground_layer, target_pos, radius)
+    var total_time = Time.get_ticks_usec() - start_time
+    var avg_time = total_time / 100.0
+
+    print("✓ Performance: %.1f μs average per spawn query" % avg_time)
+
+    # Validate <2ms performance target
+    if avg_time > 2000.0:
+        print("WARNING: Spawn queries slower than expected (%.1f μs > 2000 μs)" % avg_time)
+    else:
+        print("✓ Performance acceptable: %.1f μs < 2ms target" % avg_time)
+
+    arena_instance.queue_free()
 ```
 
 ## Migration Notes

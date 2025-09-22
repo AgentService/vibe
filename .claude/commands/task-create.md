@@ -86,8 +86,9 @@ find autoload/ -name "*.gd" -type f
 
 ### 2. **Generate Task File Name**
 - **Automatically convert** task description to snake_case filename
-- **Auto-add** current date prefix: `YYYY-MM-DD_task_name.md`
-- **Auto-determine** location: `Obsidian/03-tasks/YYYY-MM-DD_task_name.md`
+- **FILENAME** CATEGORY prefix depending on task category from smart task step
+- **Auto-add** current date prefix: `{CATEGORY}_task_name.md`
+- **Auto-determine** location: `Obsidian/03-tasks/{CATEGORY}_task_name.md`
 
 ### 3. **Smart Task Template Generation**
 

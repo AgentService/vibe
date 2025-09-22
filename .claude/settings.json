@@ -34,17 +34,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash|Edit|MultiEdit|Write",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "claude-voice-notifications"
-          }
-        ]
-      }
     ]
   }
 }
