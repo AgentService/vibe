@@ -18,7 +18,7 @@ The [[CameraSystem]] provides smooth player following, zoom controls, and screen
 @export var zoom_speed: float = 5.0        # Zoom transition speed  
 @export var min_zoom: float = 2.0          # Minimum zoom (default/max zoom out)
 @export var max_zoom: float = 4.0          # Maximum zoom (max zoom in)
-@export var default_zoom: float = 2.0      # Starting zoom level
+@export var default_zoom: float = 1.0      # Starting zoom level
 @export var deadzone_radius: float = 20.0  # Player movement tolerance
 ```
 

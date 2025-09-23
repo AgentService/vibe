@@ -102,7 +102,7 @@ func _ready() -> void:
 	add_child(camera)
 	camera.make_current()  # Ensure this camera takes priority over any default cameras
 	Logger.debug("Player: Set up simple player-following camera", "player")
-	
+	camera.zoom = Vector2(0.8, 0.8)  # Zoom out (smaller number = more zoomed out)
 	# Connect to melee attack signals for animation
 	if EventBus.has_signal("melee_attack_started"):
 		EventBus.melee_attack_started.connect(_on_melee_attack_started)
