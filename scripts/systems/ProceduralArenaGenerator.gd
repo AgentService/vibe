@@ -31,15 +31,15 @@ func _safe_log(message: String, category: String = "", level: String = "info") -
 # Arena reference for component mode
 var arena_reference: Node2D
 
-# Layer references (general-purpose layer system)
-@onready var ground_layer: TileMapLayer = _get_layer_node("Ground")
-@onready var boundaries_layer: TileMapLayer = _get_layer_node("Boundaries")
-@onready var decorations_layer: TileMapLayer = _get_layer_node("Decorations")
-@onready var interactive_layer: TileMapLayer = _get_layer_node("Interactive")
-@onready var spawn_layer: TileMapLayer = _get_layer_node("Spawn")
+# Layer references (populated after arena reference is set)
+var ground_layer: TileMapLayer
+var boundaries_layer: TileMapLayer
+var decorations_layer: TileMapLayer
+var interactive_layer: TileMapLayer
+var spawn_layer: TileMapLayer
 
 # Spawn point reference
-@onready var player_spawn: Marker2D = _get_spawn_point("PlayerSpawnPoint")
+var player_spawn: Marker2D
 
 # Tree collision system
 var tree_collision_container: Node2D
@@ -47,6 +47,22 @@ var tree_collision_container: Node2D
 func set_arena_reference(arena: Node2D) -> void:
 	"""Set arena reference for component mode - allows finding nodes relative to arena"""
 	arena_reference = arena
+
+	# Now that we have the arena reference, populate the layer references
+	_populate_layer_references()
+
+func _populate_layer_references() -> void:
+	"""Populate layer and spawn point references after arena reference is set"""
+	ground_layer = _get_layer_node("Ground")
+	boundaries_layer = _get_layer_node("Boundaries")
+	decorations_layer = _get_layer_node("Decorations")
+	interactive_layer = _get_layer_node("Interactive")
+	spawn_layer = _get_layer_node("Spawn")
+	player_spawn = _get_spawn_point("PlayerSpawnPoint")
+
+	_safe_log("Layer reference setup complete: Ground=%s, Boundaries=%s" % [
+		ground_layer != null, boundaries_layer != null
+	], "procedural")
 
 func _get_layer_node(layer_name: String) -> TileMapLayer:
 	"""Get a TileMapLayer node, checking both direct child and arena reference paths"""

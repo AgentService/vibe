@@ -37,10 +37,10 @@ func _ready() -> void:
 	Logger.info("=== FORESTARENA._READY() STARTING ===", "debug")
 
 	# Apply forest configuration first
-	if map_config:
+	if map_config and map_config.is_valid():
 		_apply_map_config()
 	else:
-		# Load default forest config if none assigned
+		# Load default forest config if none assigned or invalid
 		_load_default_config()
 
 	# Setup procedural generation component first
@@ -63,21 +63,33 @@ func _setup_procedural_generator() -> void:
 	Logger.info("Starting procedural generator setup", "debug")
 
 	# Create procedural generator as a component
+	Logger.debug("About to preload ProceduralArenaGenerator script", "debug")
 	var ProceduralArenaGeneratorScript = preload("res://scripts/systems/ProceduralArenaGenerator.gd")
-	procedural_generator = ProceduralArenaGeneratorScript.new()
-	add_child(procedural_generator)
+	Logger.debug("Preload successful, creating instance", "debug")
 
-	Logger.debug("Created and added ProceduralArenaGenerator", "procedural")
+	procedural_generator = ProceduralArenaGeneratorScript.new()
+	Logger.debug("Instance created, adding as child", "debug")
+
+	add_child(procedural_generator)
+	Logger.debug("Child added successfully", "debug")
+
+	Logger.debug("Created and added ProceduralArenaGenerator", "debug")
 
 	# Pass arena reference to generator so it can find nodes
+	Logger.debug("Checking for set_arena_reference method", "debug")
 	if procedural_generator.has_method("set_arena_reference"):
+		Logger.debug("Method exists, calling set_arena_reference", "debug")
 		procedural_generator.set_arena_reference(self)
-		Logger.debug("Set arena reference", "procedural")
+		Logger.debug("Set arena reference", "debug")
+	else:
+		Logger.warn("set_arena_reference method not found on procedural_generator", "debug")
 
 	# Load default configurations if not set
+	Logger.debug("About to call _setup_generator_configs", "debug")
 	_setup_generator_configs()
+	Logger.debug("_setup_generator_configs completed", "debug")
 
-	Logger.debug("ProceduralArenaGenerator component added", "procedural")
+	Logger.debug("ProceduralArenaGenerator component added", "debug")
 
 func _setup_generator_configs() -> void:
 	"""Setup default configurations for the procedural generator."""
@@ -87,7 +99,7 @@ func _setup_generator_configs() -> void:
 		var biome_path = "res://data/content/biomes/ForestBiome.tres"
 		if ResourceLoader.exists(biome_path):
 			procedural_generator.biome_config = load(biome_path)
-			Logger.debug("Loaded ForestBiome config", "procedural")
+			Logger.debug("Loaded ForestBiome config", "debug")
 
 	# Load or create GenerationParams - make a copy to avoid modifying the resource file
 	if not procedural_generator.generation_params:
@@ -96,11 +108,11 @@ func _setup_generator_configs() -> void:
 			var template_params = load(params_path) as GenerationParams
 			# Create a copy to avoid modifying the shared resource
 			procedural_generator.generation_params = template_params.duplicate()
-			Logger.debug("Loaded and duplicated DefaultGenerationParams", "procedural")
+			Logger.debug("Loaded and duplicated DefaultGenerationParams", "debug")
 		else:
 			# Create default params if file doesn't exist
 			procedural_generator.generation_params = GenerationParams.new()
-			Logger.debug("Created default GenerationParams", "procedural")
+			Logger.debug("Created default GenerationParams", "debug")
 
 	# Set a unique seed for this arena visit (following plugin pattern)
 	_set_unique_generation_seed()
@@ -110,7 +122,7 @@ func _set_unique_generation_seed() -> void:
 	if procedural_generator.generation_params:
 		var unique_seed = _get_generation_seed()
 		procedural_generator.generation_params.generation_seed = unique_seed
-		Logger.debug("Set unique generation seed: %d" % unique_seed, "procedural")
+		Logger.debug("Set unique generation seed: %d" % unique_seed, "debug")
 
 func _apply_procedural_generation() -> void:
 	"""Apply procedural generation based on transition context or export settings."""
@@ -119,16 +131,16 @@ func _apply_procedural_generation() -> void:
 
 	# Check for procedural context from scene transition
 	var context = _get_procedural_context()
-	Logger.debug("Procedural context: %s" % context, "procedural")
+	Logger.debug("Procedural context: %s" % context, "debug")
 
 	if context and context.has("source"):
-		Logger.info("Applying procedural generation from context: %s" % context.source, "procedural")
+		Logger.info("Applying procedural generation from context: %s" % context.source, "debug")
 		_generate_from_context(context)
 	elif auto_generate_on_ready:
-		Logger.info("Applying auto-generation with export settings (auto_generate_on_ready=%s)" % auto_generate_on_ready, "procedural")
+		Logger.info("Applying auto-generation with export settings (auto_generate_on_ready=%s)" % auto_generate_on_ready, "debug")
 		_generate_from_export_settings()
 	else:
-		Logger.warn("No procedural generation triggered - auto_generate_on_ready=%s, context=%s" % [auto_generate_on_ready, context], "procedural")
+		Logger.warn("No procedural generation triggered - auto_generate_on_ready=%s, context=%s" % [auto_generate_on_ready, context], "debug")
 
 func _get_procedural_context() -> Dictionary:
 	"""Retrieve procedural context from StateManager or scene transition."""
@@ -149,25 +161,53 @@ func _generate_from_context(context: Dictionary) -> void:
 	"""Generate arena using procedural context from scene transition."""
 
 	if not procedural_generator:
-		Logger.error("ProceduralArenaGenerator not available for context generation", "procedural")
+		Logger.error("ProceduralArenaGenerator not available for context generation", "debug")
 		return
 
 	# Trigger generation (seed already set in _setup_generator_configs)
 	if procedural_generator.has_method("generate_arena"):
+		# Add validation logging before generation
+		Logger.debug("About to call generate_arena - validation check:", "debug")
+		Logger.debug("  biome_config exists: %s" % str(procedural_generator.biome_config != null), "debug")
+		Logger.debug("  generation_params exists: %s" % str(procedural_generator.generation_params != null), "debug")
+		if procedural_generator.biome_config:
+			Logger.debug("  biome_config valid: %s" % str(procedural_generator.biome_config.is_valid()), "debug")
+		if procedural_generator.generation_params:
+			Logger.debug("  generation_params valid: %s" % str(procedural_generator.generation_params.is_valid()), "debug")
+
 		procedural_generator.generate_arena()
-		Logger.info("Procedural generation completed from context", "procedural")
+		Logger.info("Procedural generation completed from context", "debug")
+
+		# Check if layers were found after generation attempt
+		Logger.debug("Post-generation layer check:", "debug")
+		Logger.debug("  Ground layer: %s" % str(procedural_generator.ground_layer != null), "debug")
+		Logger.debug("  Boundaries layer: %s" % str(procedural_generator.boundaries_layer != null), "debug")
 
 func _generate_from_export_settings() -> void:
 	"""Generate arena using export property settings."""
 
 	if not procedural_generator:
-		Logger.error("ProceduralArenaGenerator not available for export generation", "procedural")
+		Logger.error("ProceduralArenaGenerator not available for export generation", "debug")
 		return
 
 	# Trigger generation (seed already set in _setup_generator_configs)
 	if procedural_generator.has_method("generate_arena"):
+		# Add validation logging before generation
+		Logger.debug("About to call generate_arena - validation check:", "debug")
+		Logger.debug("  biome_config exists: %s" % str(procedural_generator.biome_config != null), "debug")
+		Logger.debug("  generation_params exists: %s" % str(procedural_generator.generation_params != null), "debug")
+		if procedural_generator.biome_config:
+			Logger.debug("  biome_config valid: %s" % str(procedural_generator.biome_config.is_valid()), "debug")
+		if procedural_generator.generation_params:
+			Logger.debug("  generation_params valid: %s" % str(procedural_generator.generation_params.is_valid()), "debug")
+
 		procedural_generator.generate_arena()
-		Logger.info("Procedural generation completed from export settings", "procedural")
+		Logger.info("Procedural generation completed from export settings", "debug")
+
+		# Check if layers were found after generation attempt
+		Logger.debug("Post-generation layer check:", "debug")
+		Logger.debug("  Ground layer: %s" % str(procedural_generator.ground_layer != null), "debug")
+		Logger.debug("  Boundaries layer: %s" % str(procedural_generator.boundaries_layer != null), "debug")
 
 func _get_generation_seed() -> int:
 	"""Get a seed for procedural generation with variation between visits."""
@@ -184,7 +224,7 @@ func _get_generation_seed() -> int:
 	var time_variation = int(Time.get_unix_time_from_system()) % 10000
 	var combined_seed = base_seed + time_variation
 
-	Logger.debug("Generated arena seed: %d (base: %d + time: %d)" % [combined_seed, base_seed, time_variation], "procedural")
+	Logger.debug("Generated arena seed: %d (base: %d + time: %d)" % [combined_seed, base_seed, time_variation], "debug")
 	return combined_seed
 
 func _setup_forest_atmosphere() -> void:
@@ -215,9 +255,9 @@ func regenerate_arena() -> void:
 
 	if procedural_generator and procedural_generator.has_method("generate_arena"):
 		procedural_generator.generate_arena()
-		Logger.info("Arena regenerated", "procedural")
+		Logger.info("Arena regenerated", "debug")
 	else:
-		Logger.warn("Cannot regenerate arena - procedural generator not available", "procedural")
+		Logger.warn("Cannot regenerate arena - procedural generator not available", "debug")
 
 func _load_default_config() -> void:
 	"""Load default forest configuration if none is set"""
@@ -226,11 +266,15 @@ func _load_default_config() -> void:
 		map_config = load(config_path) as MapConfig
 		if map_config:
 			Logger.info("Loaded default forest config", "arena")
+			_apply_map_config()
 		else:
 			Logger.warn("Failed to load forest config from %s" % config_path, "arena")
+			_create_default_config()
+			_apply_map_config()
 	else:
 		# Create a default config if file doesn't exist
 		_create_default_config()
+		_apply_map_config()
 
 func _create_default_config() -> void:
 	"""Create a default forest configuration"""
@@ -273,8 +317,15 @@ func _create_default_config() -> void:
 
 func _apply_map_config() -> void:
 	"""Apply map configuration to arena properties"""
-	if not map_config or not map_config.is_valid():
-		Logger.warn("Invalid map config for ForestArena", "arena")
+	if not map_config:
+		Logger.warn("No map config for ForestArena", "arena")
+		return
+
+	if not map_config.is_valid():
+		Logger.warn("Invalid map config for ForestArena:", "arena")
+		Logger.warn("  map_id: '%s'" % map_config.map_id, "arena")
+		Logger.warn("  display_name: '%s'" % map_config.display_name, "arena")
+		Logger.warn("  arena_bounds_radius: %s" % map_config.arena_bounds_radius, "arena")
 		return
 
 	# Apply basic arena properties
