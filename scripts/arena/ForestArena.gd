@@ -60,14 +60,19 @@ func _ready() -> void:
 func _setup_procedural_generator() -> void:
 	"""Initialize the procedural generator component."""
 
+	Logger.info("Starting procedural generator setup", "debug")
+
 	# Create procedural generator as a component
 	var ProceduralArenaGeneratorScript = preload("res://scripts/systems/ProceduralArenaGenerator.gd")
 	procedural_generator = ProceduralArenaGeneratorScript.new()
 	add_child(procedural_generator)
 
+	Logger.debug("Created and added ProceduralArenaGenerator", "procedural")
+
 	# Pass arena reference to generator so it can find nodes
 	if procedural_generator.has_method("set_arena_reference"):
 		procedural_generator.set_arena_reference(self)
+		Logger.debug("Set arena reference", "procedural")
 
 	# Load default configurations if not set
 	_setup_generator_configs()
@@ -110,14 +115,20 @@ func _set_unique_generation_seed() -> void:
 func _apply_procedural_generation() -> void:
 	"""Apply procedural generation based on transition context or export settings."""
 
+	Logger.info("Starting procedural generation application", "debug")
+
 	# Check for procedural context from scene transition
 	var context = _get_procedural_context()
+	Logger.debug("Procedural context: %s" % context, "procedural")
+
 	if context and context.has("source"):
 		Logger.info("Applying procedural generation from context: %s" % context.source, "procedural")
 		_generate_from_context(context)
 	elif auto_generate_on_ready:
-		Logger.info("Applying auto-generation with export settings", "procedural")
+		Logger.info("Applying auto-generation with export settings (auto_generate_on_ready=%s)" % auto_generate_on_ready, "procedural")
 		_generate_from_export_settings()
+	else:
+		Logger.warn("No procedural generation triggered - auto_generate_on_ready=%s, context=%s" % [auto_generate_on_ready, context], "procedural")
 
 func _get_procedural_context() -> Dictionary:
 	"""Retrieve procedural context from StateManager or scene transition."""
