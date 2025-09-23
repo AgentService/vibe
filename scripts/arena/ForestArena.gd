@@ -69,7 +69,43 @@ func _setup_procedural_generator() -> void:
 	if procedural_generator.has_method("set_arena_reference"):
 		procedural_generator.set_arena_reference(self)
 
+	# Load default configurations if not set
+	_setup_generator_configs()
+
 	Logger.debug("ProceduralArenaGenerator component added", "procedural")
+
+func _setup_generator_configs() -> void:
+	"""Setup default configurations for the procedural generator."""
+
+	# Load BiomeConfig if not already set
+	if not procedural_generator.biome_config:
+		var biome_path = "res://data/content/biomes/ForestBiome.tres"
+		if ResourceLoader.exists(biome_path):
+			procedural_generator.biome_config = load(biome_path)
+			Logger.debug("Loaded ForestBiome config", "procedural")
+
+	# Load or create GenerationParams - make a copy to avoid modifying the resource file
+	if not procedural_generator.generation_params:
+		var params_path = "res://data/content/biomes/DefaultGenerationParams.tres"
+		if ResourceLoader.exists(params_path):
+			var template_params = load(params_path) as GenerationParams
+			# Create a copy to avoid modifying the shared resource
+			procedural_generator.generation_params = template_params.duplicate()
+			Logger.debug("Loaded and duplicated DefaultGenerationParams", "procedural")
+		else:
+			# Create default params if file doesn't exist
+			procedural_generator.generation_params = GenerationParams.new()
+			Logger.debug("Created default GenerationParams", "procedural")
+
+	# Set a unique seed for this arena visit (following plugin pattern)
+	_set_unique_generation_seed()
+
+func _set_unique_generation_seed() -> void:
+	"""Set a unique generation seed for this arena visit (similar to plugin approach)."""
+	if procedural_generator.generation_params:
+		var unique_seed = _get_generation_seed()
+		procedural_generator.generation_params.generation_seed = unique_seed
+		Logger.debug("Set unique generation seed: %d" % unique_seed, "procedural")
 
 func _apply_procedural_generation() -> void:
 	"""Apply procedural generation based on transition context or export settings."""
@@ -105,19 +141,7 @@ func _generate_from_context(context: Dictionary) -> void:
 		Logger.error("ProceduralArenaGenerator not available for context generation", "procedural")
 		return
 
-	# Extract generation parameters from context
-	var biome = context.get("biome_preference", "")
-	var size = context.get("size_preference", "standard")
-
-	# Apply parameters to generator
-	if procedural_generator.has_method("set_generation_config"):
-		procedural_generator.set_generation_config({
-			"biome": biome,
-			"size": size,
-			"seed": _get_generation_seed()
-		})
-
-	# Trigger generation
+	# Trigger generation (seed already set in _setup_generator_configs)
 	if procedural_generator.has_method("generate_arena"):
 		procedural_generator.generate_arena()
 		Logger.info("Procedural generation completed from context", "procedural")
@@ -129,29 +153,28 @@ func _generate_from_export_settings() -> void:
 		Logger.error("ProceduralArenaGenerator not available for export generation", "procedural")
 		return
 
-	# Use export properties for generation
-	if procedural_generator.has_method("set_generation_config"):
-		procedural_generator.set_generation_config({
-			"biome": biome_preference,
-			"size": size_preference,
-			"seed": _get_generation_seed()
-		})
-
-	# Trigger generation
+	# Trigger generation (seed already set in _setup_generator_configs)
 	if procedural_generator.has_method("generate_arena"):
 		procedural_generator.generate_arena()
 		Logger.info("Procedural generation completed from export settings", "procedural")
 
 func _get_generation_seed() -> int:
-	"""Get a deterministic seed for procedural generation."""
+	"""Get a seed for procedural generation with variation between visits."""
 
-	# Use RNG autoload for consistent seeding
+	# Create variation by combining base seed with visit counter and time
+	var base_seed: int = 0
 	if RNG and RNG.has_method("stream"):
-		var proc_rng = RNG.stream("procedural")
-		return proc_rng.randi()
+		# Use the base procedural stream for consistency
+		base_seed = RNG.stream("procedural").randi()
+	else:
+		base_seed = 12345  # Fallback base seed
 
-	# Fallback to time-based seed
-	return Time.get_unix_time_from_system() as int
+	# Add variation using time to ensure different maps each visit
+	var time_variation = int(Time.get_unix_time_from_system()) % 10000
+	var combined_seed = base_seed + time_variation
+
+	Logger.debug("Generated arena seed: %d (base: %d + time: %d)" % [combined_seed, base_seed, time_variation], "procedural")
+	return combined_seed
 
 func _setup_forest_atmosphere() -> void:
 	"""Configure forest-specific visual and audio atmosphere."""
