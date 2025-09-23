@@ -1,9 +1,0 @@
-[gd_scene load_steps=3 format=3 uid="uid://de653xu2ogg27"]
-
-[ext_resource type="PackedScene" uid="uid://rh88l27aythn" path="res://scenes/arena/ForestArena.tscn" id="1_eyft5"]
-[ext_resource type="Script" uid="uid://bpbxgvcvynuu8" path="res://scripts/systems/RavenForestArenaGenerator.gd" id="2_eyft5"]
-
-[node name="TestRavenForestGeneration" type="Node"]
-
-[node name="RavenForestArena" type="Node2D" parent="." instance=ExtResource("1_eyft5")]
-script = ExtResource("2_eyft5")
