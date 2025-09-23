@@ -1,0 +1,30 @@
+[gd_scene load_steps=4 format=3 uid="uid://bqx7n8w4vg3u0"]
+
+[ext_resource type="Script" path="res://scripts/systems/ProceduralArenaGenerator.gd" id="1_0k8ys"]
+[ext_resource type="Resource" uid="uid://c6i8y5m1kcg4v" path="res://data/content/biomes/ForestBiome.tres" id="2_5qj2p"]
+[ext_resource type="Resource" uid="uid://dx4m8l2y6gk7n" path="res://data/content/biomes/DefaultGenerationParams.tres" id="3_x9m5k"]
+
+[node name="ProceduralArena" type="Node2D"]
+script = ExtResource("1_0k8ys")
+biome_config = ExtResource("2_5qj2p")
+generation_params = ExtResource("3_x9m5k")
+
+[node name="Ground" type="TileMapLayer" parent="."]
+z_index = 0
+
+[node name="ObjectBases" type="TileMapLayer" parent="."]
+z_index = 1
+
+[node name="Decorations" type="TileMapLayer" parent="."]
+z_index = 2
+
+[node name="Interactive" type="TileMapLayer" parent="."]
+z_index = 5
+
+[node name="ObjectTops" type="TileMapLayer" parent="."]
+z_index = 10
+y_sort_enabled = true
+
+[node name="PlayerSpawnPoint" type="Marker2D" parent="."]
+
+[node name="SpawnZones" type="Node2D" parent="."]

@@ -1,3 +1,4 @@
+@tool
 extends Node
 
 ## Centralized logging system with optional categories and configurable log levels.

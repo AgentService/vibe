@@ -1046,7 +1046,6 @@ animations = [{
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_etesd"]
 
 [node name="Player" type="CharacterBody2D" groups=["player"]]
-scale = Vector2(0.8, 0.8)
 collision_mask = 3
 script = ExtResource("1_dn4kl")
 player_type = ExtResource("2_jkhsn")
@@ -1057,12 +1056,12 @@ sprite_frames = SubResource("SpriteFrames_jkhsn")
 animation = &"hurt_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-visible = false
 scale = Vector2(1, 2)
 shape = SubResource("CapsuleShape2D_etesd")
 debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
 energy = 0.85
 shadow_enabled = true
 shadow_color = Color(0.0605303, 0.0605303, 0.0605303, 0)
