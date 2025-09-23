@@ -11,13 +11,13 @@
   - **Integration**: Added hybrid spawn approach to SpawnDirector - try tileset first, fallback to radius-based
   - **Validation**: Uses `get_used_cells_by_id(2, Vector2i(12, 3))` to identify 76,498 ground tiles in UnderworldArena
   - **Testing**: Created TilesetIntegration_test.tscn with comprehensive autoload validation and performance monitoring
-- **Forest Arena Procedural Generation**: Complete implementation of forest-themed arena generator using Raven Fantasy 48x48 tileset
-  - **Core System**: ForestArenaGenerator with deterministic seed-based generation (40x30 arena = 1200 floor tiles, 503 border tiles)
-  - **Architecture**: Clean TileMapLayer structure (Ground/Trees) with tree borders replacing traditional walls
-  - **Algorithm**: Simple but effective - grass floor variation + 3-tile deep tree borders + scattered decorations (5% density)
-  - **Integration**: Follows project patterns (Logger, EventBus signals, RNG streams, configurable parameters)
-  - **Testing**: Automated test suite validates tile placement, arena bounds, regeneration with different seeds
-  - **Scene**: New ForestArena.tscn scene ready for integration with existing spawn/combat systems
+- **ForestArena Migration to ProceduralArenaGenerator**: Successfully migrated ForestArena from specialized to general procedural system
+  - **Architecture Migration**: Replaced ForestArenaGenerator with tileset-agnostic ProceduralArenaGenerator using BiomeConfig resources
+  - **Resource-Driven Design**: Created ForestBiome.tres and DefaultGenerationParams.tres for easy configuration without code changes
+  - **5-Layer Z-Ordering Foundation**: Implemented Ground→ObjectBases→Decorations→Interactive→ObjectTops layer structure (z-index 0,1,2,5,10)
+  - **Backward Compatibility**: Maintains identical visual output while enabling multi-biome support (swamp, desert, winter)
+  - **Migration Guide**: Created comprehensive documentation with rollback plan and phase roadmap for tree z-ordering and object systems
+  - **Testing Updates**: Updated test_forest_generation.gd to work with new ProceduralArenaGenerator while maintaining validation coverage
 
 ### Documentation
 - **Tileset-Based Spawn Areas Research**: Created comprehensive research task for replacing spawn circles with tileset-based spawn areas

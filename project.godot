@@ -34,16 +34,17 @@ CheatSystem="*res://autoload/CheatSystem.gd"
 EntityClearingService="*res://autoload/EntityClearingService.gd"
 DebugManager="*res://autoload/DebugManager.gd"
 SessionManager="*res://autoload/SessionManager.gd"
-EventMasterySystem="*res://autoload/EventMasterySystem.gd"
 EntityTracker="*res://scripts/systems/EntityTracker.gd"
 DamageService="*res://scripts/systems/damage_v2/DamageRegistry.gd"
 BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
-LimboConsole="*res://addons/limbo_console/limbo_console.gd"
-GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
+GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
+LimboConsole="*res://addons/limbo_console/limbo_console.gd"
+EventMasterySystem="*res://autoload/EventMasterySystem.gd"
 ClearingSemantics="*res://scripts/domain/ClearingSemantics.gd"
+ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
 
 [display]
 
@@ -53,11 +54,12 @@ window/size/initial_position_type=0
 window/size/initial_position=Vector2i(455, 555)
 window/size/initial_screen=2
 window/size/always_on_top=true
+window/stretch/mode="viewport"
 window/vsync/vsync_mode=0
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/forest_generator_editor/plugin.cfg", "res://addons/gaea/plugin.cfg", "res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg")
+enabled=PackedStringArray("res://addons/forest_generator_editor/plugin.cfg", "res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg")
 
 [filesystem]
 

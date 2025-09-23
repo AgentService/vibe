@@ -1,4 +1,4 @@
-[gd_resource type="TileSet" script_class="" format=3 uid="uid://bgl4w1dv41j2p"]
+[gd_resource type="TileSet" load_steps=0 format=3 uid="uid://bgl4w1dv41j2p"]
 
 [sub_resource type="TileSetAtlasSource" id="TileSetAtlasSource_1"]
 texture = preload("res://assets/sprites/raven/Raven Fantasy - 2D PixelArt Tileset and Sprites - Green Forest 2/All Tileset/48x48.png")

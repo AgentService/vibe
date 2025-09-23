@@ -3,7 +3,7 @@ extends Node
 ## Test script for forest arena generation
 ## Validates that tiles are placed correctly and generation works
 
-@onready var forest_arena: ForestArenaGenerator = $ForestArena
+@onready var forest_arena: ProceduralArenaGenerator = $ForestArena
 
 func _ready() -> void:
 	print("=== Forest Arena Generation Test ===")
@@ -23,18 +23,18 @@ func _on_generation_complete() -> void:
 	
 	# Test 1: Check if TileMapLayers exist and have tiles
 	var ground_layer = forest_arena.get_node("Ground") as TileMapLayer
-	var trees_layer = forest_arena.get_node("Trees") as TileMapLayer
-	
+	var boundaries_layer = forest_arena.get_node("Boundaries") as TileMapLayer
+
 	if not ground_layer:
 		print("FAIL: Ground layer not found")
 		get_tree().quit(1)
 		return
-	
-	if not trees_layer:
-		print("FAIL: Trees layer not found")
+
+	if not boundaries_layer:
+		print("FAIL: Boundaries layer not found")
 		get_tree().quit(1)
 		return
-	
+
 	print("PASS: TileMapLayers found")
 	
 	# Test 2: Check if arena has floor tiles
@@ -48,16 +48,16 @@ func _on_generation_complete() -> void:
 	
 	print("PASS: Ground tiles generated")
 	
-	# Test 3: Check if arena has tree border tiles
-	var tree_tiles_count = count_tiles_in_layer(trees_layer)
-	print("Tree tiles count: ", tree_tiles_count)
-	
-	if tree_tiles_count == 0:
-		print("FAIL: No tree tiles found")
+	# Test 3: Check if arena has boundary tiles
+	var boundary_tiles_count = count_tiles_in_layer(boundaries_layer)
+	print("Boundary tiles count: ", boundary_tiles_count)
+
+	if boundary_tiles_count == 0:
+		print("FAIL: No boundary tiles found")
 		get_tree().quit(1)
 		return
-	
-	print("PASS: Tree border tiles generated")
+
+	print("PASS: Boundary tiles generated")
 	
 	# Test 4: Check arena bounds
 	var arena_bounds = forest_arena.get_arena_bounds()

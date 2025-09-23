@@ -9,9 +9,14 @@ var tree_spacing_min_input: SpinBox
 var tree_spacing_max_input: SpinBox
 var tree_chance_input: SpinBox
 
+# New enhanced configuration controls
+var camera_extension_input: SpinBox
+var spawn_layer_toggle: CheckBox
+var spawn_border_spacing_input: SpinBox
+
 func _init():
 	name = "Forest Generator"
-	set_custom_minimum_size(Vector2(200, 300))
+	set_custom_minimum_size(Vector2(220, 450))
 
 	# Create UI
 	var vbox = VBoxContainer.new()
@@ -98,6 +103,41 @@ func _init():
 
 	vbox.add_child(HSeparator.new())
 
+	# Enhanced features section
+	var enhanced_label = Label.new()
+	enhanced_label.text = "Enhanced Features:"
+	enhanced_label.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(enhanced_label)
+
+	# Camera boundary extension
+	var camera_label = Label.new()
+	camera_label.text = "Camera Extension (more trees):"
+	vbox.add_child(camera_label)
+
+	camera_extension_input = SpinBox.new()
+	camera_extension_input.min_value = 0
+	camera_extension_input.max_value = 20
+	camera_extension_input.value = 5
+	vbox.add_child(camera_extension_input)
+
+	# Spawn layer controls
+	spawn_layer_toggle = CheckBox.new()
+	spawn_layer_toggle.text = "Enable Spawn Layer"
+	spawn_layer_toggle.button_pressed = true
+	vbox.add_child(spawn_layer_toggle)
+
+	var spawn_spacing_label = Label.new()
+	spawn_spacing_label.text = "Spawn Border Spacing:"
+	vbox.add_child(spawn_spacing_label)
+
+	spawn_border_spacing_input = SpinBox.new()
+	spawn_border_spacing_input.min_value = 0
+	spawn_border_spacing_input.max_value = 10
+	spawn_border_spacing_input.value = 1
+	vbox.add_child(spawn_border_spacing_input)
+
+	vbox.add_child(HSeparator.new())
+
 	# Generate button
 	generate_button = Button.new()
 	generate_button.text = "Generate Forest Arena"
@@ -128,7 +168,7 @@ func _init():
 func _on_generate_pressed():
 	var selected_nodes = EditorInterface.get_selection().get_selected_nodes()
 
-	# Look for ForestArenaGenerator in the current scene
+	# Look for ProceduralArenaGenerator in the current scene
 	var current_scene = EditorInterface.get_edited_scene_root()
 	if not current_scene:
 		push_error("No scene is currently open")
@@ -137,22 +177,33 @@ func _on_generate_pressed():
 
 	var generator = _find_forest_generator(current_scene)
 	if not generator:
-		push_error("No ForestArenaGenerator found in current scene. Please open ForestArena.tscn")
+		push_error("No ProceduralArenaGenerator found in current scene. Please open ForestArena.tscn")
 		return
 
-	# Update generator settings
-	generator.generation_seed = int(seed_input.value)
-	generator.arena_size = Vector2i(int(arena_size_x.value), int(arena_size_y.value))
-	generator.tree_spacing_min = int(tree_spacing_min_input.value)
-	generator.tree_spacing_max = int(tree_spacing_max_input.value)
-	generator.tree_placement_chance = tree_chance_input.value
+	# Update generator settings via GenerationParams resource
+	if generator.generation_params:
+		generator.generation_params.generation_seed = int(seed_input.value)
+		generator.generation_params.arena_size = Vector2i(int(arena_size_x.value), int(arena_size_y.value))
+
+		# Apply enhanced feature settings
+		generator.generation_params.camera_boundary_extension = int(camera_extension_input.value)
+		generator.generation_params.enable_spawn_layer = spawn_layer_toggle.button_pressed
+		generator.generation_params.spawn_border_spacing = int(spawn_border_spacing_input.value)
+
+	# Update biome settings via BiomeConfig resource
+	if generator.biome_config:
+		generator.biome_config.tree_spacing_min = int(tree_spacing_min_input.value)
+		generator.biome_config.tree_spacing_max = int(tree_spacing_max_input.value)
+		generator.biome_config.tree_placement_chance = tree_chance_input.value
 
 	# Generate!
-	print("🌲 Generating forest arena with seed: ", generator.generation_seed)
+	var current_seed = generator.generation_params.generation_seed if generator.generation_params else 0
+	print("🌲 Generating procedural arena with seed: ", current_seed)
 	generator.generate_arena()
 
 	# Update UI to show the incremented seed
-	seed_input.value = generator.generation_seed
+	if generator.generation_params:
+		seed_input.value = generator.generation_params.generation_seed
 
 	# Mark scene as modified so user can save
 	EditorInterface.mark_scene_as_unsaved()
@@ -160,14 +211,14 @@ func _on_generate_pressed():
 # Removed random seed function - auto-incrementing now
 
 func _find_forest_generator(node: Node) -> Node:
-	"""Recursively find ForestArenaGenerator in the scene tree"""
+	"""Recursively find ProceduralArenaGenerator in the scene tree"""
 	# Check if this node has the generate_arena method (our script)
 	if node.has_method("generate_arena"):
 		var script = node.get_script()
 		if script:
-			# Check if it's the ForestArenaGenerator script
+			# Check if it's the ProceduralArenaGenerator script
 			var script_path = str(script.resource_path)
-			if "ForestArenaGenerator" in script_path:
+			if "ProceduralArenaGenerator" in script_path:
 				return node
 
 	# Search children

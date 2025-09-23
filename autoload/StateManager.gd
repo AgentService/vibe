@@ -70,6 +70,28 @@ func start_run(arena_id: StringName, context: Dictionary = {}) -> void:
 	# Transition to arena state
 	_transition_to_state(State.ARENA, context)
 
+func start_procedural_run(arena_scene: Node2D, context: Dictionary = {}) -> void:
+	"""Start a new procedural arena run with dynamically generated scene."""
+	Logger.info("Starting procedural run - arena: %s" % arena_scene.name, "state")
+
+	# Reset session before starting new run
+	if SessionManager:
+		await SessionManager.reset_session(SessionManager.ResetReason.MAP_TRANSITION, context)
+		Logger.info("Session reset completed before starting procedural run", "state")
+
+	# Generate unique run ID for procedural arena
+	var run_id = StringName("procedural_run_%d" % Time.get_ticks_msec())
+	context["run_id"] = run_id
+	context["arena_id"] = &"procedural"
+	context["procedural_arena"] = arena_scene
+	context["arena_type"] = "procedural"
+
+	# Emit run started signal before state change
+	run_started.emit(run_id, context)
+
+	# Transition to arena state - the Main scene will handle the procedural arena setup
+	_transition_to_state(State.ARENA, context)
+
 func end_run(result: Dictionary) -> void:
 	"""End current run and emit signals - results are now shown via UIManager modal."""
 	Logger.info("Ending run - result: %s" % result, "state")

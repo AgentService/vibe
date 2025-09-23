@@ -16,6 +16,11 @@ var player_reference: Node2D
 @export var interaction_key: String = "E"
 @export var spawn_point_override: String = ""
 
+# Procedural generation settings
+@export var enable_procedural_generation: bool = false
+@export var procedural_biome_preference: String = ""  # Empty = random
+@export var procedural_size_preference: String = "standard"  # small, standard, large
+
 func _ready() -> void:
 	_setup_collision_shape()
 	_setup_visual_elements()
@@ -89,27 +94,32 @@ func _on_body_exited(body: Node2D) -> void:
 
 func _activate_map_device() -> void:
 	"""Activates the map device and initiates scene transition."""
-	
+
 	Logger.info("MapDevice activated: " + map_display_name + " (map_id: " + map_id + ")", "mapdevice")
-	
+
 	# Gather character data to preserve across transition
 	var character_data = {}
 	if player_reference and player_reference.has_method("get_character_data"):
 		character_data = player_reference.get_character_data()
-	
-	# Prepare context for StateManager
+
+	# Hide interaction prompt immediately
+	interaction_prompt.visible = false
+	player_in_range = false
+
+	# Handle procedural generation
+	if enable_procedural_generation:
+		_handle_procedural_generation(character_data)
+		return
+
+	# Prepare context for StateManager (traditional scene loading)
 	var context = {
 		"spawn_point": spawn_point_override if spawn_point_override != "" else "PlayerSpawnPoint",
 		"character_data": character_data,
 		"source": "hideout_map_device"
 	}
-	
+
 	# Use StateManager to start run
 	StateManager.start_run(map_id, context)
-	
-	# Hide interaction prompt immediately
-	interaction_prompt.visible = false
-	player_in_range = false
 
 func set_map_config(p_map_id: StringName, p_display_name: String, p_spawn_point: String = "") -> void:
 	"""Configure the map device programmatically."""
