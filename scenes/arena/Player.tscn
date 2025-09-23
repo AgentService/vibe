@@ -1057,12 +1057,12 @@ sprite_frames = SubResource("SpriteFrames_jkhsn")
 animation = &"hurt_down"
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-visible = false
 scale = Vector2(1, 2)
 shape = SubResource("CapsuleShape2D_etesd")
 debug_color = Color(0.752941, 0.4, 0.584314, 0.823529)
 
 [node name="PointLight2D" type="PointLight2D" parent="."]
+visible = false
 energy = 0.85
 shadow_enabled = true
 shadow_color = Color(0.0605303, 0.0605303, 0.0605303, 0)

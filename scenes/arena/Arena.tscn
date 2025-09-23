@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://xceeadxwl47t" path="res://assets/sprites/World of Solaria Demo Pack Update 04/16x16/Tilesets/Old/Solaria Demo Update 01.png" id="3_dm0lm"]
 [ext_resource type="Texture2D" uid="uid://b4cypfmocg6k2" path="res://assets/sprites/underworld/All Tileset/64x64.png" id="4_e8lwv"]
 [ext_resource type="Texture2D" uid="uid://dks1aad6inkp" path="res://assets/sprites/World of Solaria Demo Pack Update 04/16x16/Sprites/New/Chris Idle.png" id="4_etbs0"]
-[ext_resource type="Script" uid="uid://ct3tpadehdggn" path="res://scripts/systems/debug/DebugSystemControls.gd" id="5_faeup"]
+[ext_resource type="Script" uid="uid://cjyac8ykv6ihl" path="res://scripts/systems/debug/DebugSystemControls.gd" id="5_faeup"]
 
 [sub_resource type="TileMapPattern" id="TileMapPattern_dm0lm"]
 tile_data = PackedInt32Array(0, 458753, 0)

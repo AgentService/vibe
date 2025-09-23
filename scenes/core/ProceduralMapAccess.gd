@@ -94,33 +94,18 @@ func _activate_procedural_access() -> void:
 	interaction_prompt.visible = false
 	player_in_range = false
 
-	# Generate procedural arena
-	var biome_preference = default_biome if default_biome != "" else ""
-	var procedural_arena = ProceduralMapManager.generate_random_arena(default_size)
-
-	if not procedural_arena:
-		Logger.error("Failed to generate procedural arena", "procedural")
-		_show_generation_error()
-		return
-
-	# Transition to the generated arena
-	_transition_to_procedural_arena(procedural_arena, character_data)
-
-func _transition_to_procedural_arena(arena_scene: Node2D, character_data: Dictionary) -> void:
-	"""Handle transition to the procedurally generated arena."""
-
-	# Create context for the procedural arena
-	var context = {
-		"spawn_point": "PlayerSpawnPoint",
+	# Prepare procedural context for ForestArena
+	var procedural_context = {
 		"character_data": character_data,
-		"source": "hideout_procedural_access",
-		"procedural_arena": arena_scene,
-		"arena_type": "procedural"
+		"biome_preference": default_biome,
+		"size_preference": default_size,
+		"spawn_point": "PlayerSpawnPoint",
+		"source": "hideout_procedural_access"
 	}
 
-	# Use StateManager to transition to procedural arena
-	# We'll need to enhance StateManager to handle procedural arenas
-	StateManager.start_procedural_run(arena_scene, context)
+	# Use StateManager to load ForestArena with procedural generation
+	StateManager.start_run(&"forest_arena", procedural_context)
+
 
 func _show_generation_error() -> void:
 	"""Show error message when procedural generation fails."""

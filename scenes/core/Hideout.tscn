@@ -41,6 +41,7 @@ shape = SubResource("CircleShape2D_i1w5u")
 [node name="MapDevice" type="Area2D" parent="."]
 position = Vector2(675, 342)
 script = ExtResource("2_h62y0")
+enable_procedural_generation = true
 
 [node name="DeviceVisual" type="ColorRect" parent="MapDevice"]
 offset_left = -40.0

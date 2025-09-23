@@ -19,4 +19,4 @@ default_boundary_width = 3
 default_decoration_density = 0.05
 tree_placement_chance = 0.6
 tree_spacing_min = 1
-tree_spacing_max = 4
+tree_spacing_max = 1

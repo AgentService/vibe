@@ -28,18 +28,57 @@ func _safe_log(message: String, category: String = "", level: String = "info") -
 @export var biome_config: BiomeConfig
 @export var generation_params: GenerationParams
 
+# Arena reference for component mode
+var arena_reference: Node2D
+
 # Layer references (general-purpose layer system)
-@onready var ground_layer: TileMapLayer = $Ground
-@onready var boundaries_layer: TileMapLayer = $Boundaries
-@onready var decorations_layer: TileMapLayer = get_node_or_null("Decorations")
-@onready var interactive_layer: TileMapLayer = get_node_or_null("Interactive")
-@onready var spawn_layer: TileMapLayer = get_node_or_null("Spawn")
+@onready var ground_layer: TileMapLayer = _get_layer_node("Ground")
+@onready var boundaries_layer: TileMapLayer = _get_layer_node("Boundaries")
+@onready var decorations_layer: TileMapLayer = _get_layer_node("Decorations")
+@onready var interactive_layer: TileMapLayer = _get_layer_node("Interactive")
+@onready var spawn_layer: TileMapLayer = _get_layer_node("Spawn")
 
 # Spawn point reference
-@onready var player_spawn: Marker2D = $PlayerSpawnPoint
+@onready var player_spawn: Marker2D = _get_spawn_point("PlayerSpawnPoint")
 
 # Tree collision system
 var tree_collision_container: Node2D
+
+func set_arena_reference(arena: Node2D) -> void:
+	"""Set arena reference for component mode - allows finding nodes relative to arena"""
+	arena_reference = arena
+
+func _get_layer_node(layer_name: String) -> TileMapLayer:
+	"""Get a TileMapLayer node, checking both direct child and arena reference paths"""
+	# Try direct child first (for legacy scene script usage)
+	var direct_node = get_node_or_null(layer_name)
+	if direct_node and direct_node is TileMapLayer:
+		return direct_node
+
+	# Try arena reference (for component usage)
+	if arena_reference:
+		var arena_node = arena_reference.get_node_or_null(layer_name)
+		if arena_node and arena_node is TileMapLayer:
+			return arena_node
+
+	Logger.warn("TileMapLayer not found: %s" % layer_name, "procedural")
+	return null
+
+func _get_spawn_point(spawn_name: String) -> Marker2D:
+	"""Get a Marker2D spawn point, checking both direct child and arena reference paths"""
+	# Try direct child first (for legacy scene script usage)
+	var direct_node = get_node_or_null(spawn_name)
+	if direct_node and direct_node is Marker2D:
+		return direct_node
+
+	# Try arena reference (for component usage)
+	if arena_reference:
+		var arena_node = arena_reference.get_node_or_null(spawn_name)
+		if arena_node and arena_node is Marker2D:
+			return arena_node
+
+	Logger.warn("Spawn point not found: %s" % spawn_name, "procedural")
+	return null
 
 # Generation state
 var _placed_objects: Array[Vector2] = []
@@ -89,7 +128,7 @@ func _setup_tree_collision_system() -> void:
 
 func _create_tree_collision(position: Vector2i, collision_radius: float = 16.0) -> void:
 	"""Create collision area for a tree base at given position"""
-	if not tree_collision_container:
+	if not tree_collision_container or not boundaries_layer:
 		return
 
 	# Convert tile position to world position
@@ -466,7 +505,7 @@ func _fill_boundary_edge_gaps(rng: RandomNumberGenerator) -> void:
 
 	# Apply organic fill with gradual density increase
 	for pos in fill_positions:
-		if not boundaries_layer.get_cell_source_id(pos) == 0:  # If no tree here
+		if not boundaries_layer or boundaries_layer.get_cell_source_id(pos) != -1:  # If no boundaries_layer or tree already exists
 			var distance_from_center = pos.distance_to(Vector2.ZERO)
 			var organic_fill_chance = _calculate_organic_fill_chance(distance_from_center, min_arena_radius, max_fill_radius, rng)
 

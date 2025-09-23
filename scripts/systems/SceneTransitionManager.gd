@@ -141,6 +141,8 @@ func _resolve_map_path(map_id: String) -> String:
 		"character_select":
 			return "res://scenes/ui/CharacterSelect.tscn"
 		# "results" removed - now handled by UIManager modal system
+		"forest_arena":
+			return "res://scenes/arena/ForestArena.tscn"
 		"forest":
 			return "res://scenes/maps/Forest.tscn"  # Future maps
 		"dungeon":
