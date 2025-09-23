@@ -134,7 +134,7 @@ func _apply_procedural_generation() -> void:
 	Logger.debug("Procedural context: %s" % context, "debug")
 
 	if context and context.has("source"):
-		Logger.info("Applying procedural generation from context: %s" % context.source, "debug")
+		Logger.info("Applying procedural generation from context: %s" % context.get("source"), "debug")
 		_generate_from_context(context)
 	elif auto_generate_on_ready:
 		Logger.info("Applying auto-generation with export settings (auto_generate_on_ready=%s)" % auto_generate_on_ready, "debug")
