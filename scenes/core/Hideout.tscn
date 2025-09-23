@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://doyfxyr7exqmf" path="res://scenes/core/Hideout.gd" id="1_7lnkj"]
 [ext_resource type="Script" uid="uid://c8nf3cib6wq0m" path="res://scenes/core/MapDevice.gd" id="2_h62y0"]
 [ext_resource type="Script" path="res://scenes/core/MasteryDevice.gd" id="2_i1w5u"]
-[ext_resource type="Script" path="res://scenes/core/ProceduralMapAccess.gd" id="4_ew3s4"]
+[ext_resource type="Script" uid="uid://c3mspmp1j76vl" path="res://scenes/core/ProceduralMapAccess.gd" id="4_ew3s4"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_i1w5u"]
 radius = 11.7047
