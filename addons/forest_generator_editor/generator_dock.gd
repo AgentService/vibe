@@ -122,8 +122,8 @@ func _create_basic_controls(container: VBoxContainer) -> void:
 
 	arena_size_x = SpinBox.new()
 	arena_size_x.min_value = 10
-	arena_size_x.max_value = 100
-	arena_size_x.value = 50
+	arena_size_x.max_value = 150
+	arena_size_x.value = 150
 	size_hbox.add_child(arena_size_x)
 
 	var x_label = Label.new()
@@ -132,8 +132,8 @@ func _create_basic_controls(container: VBoxContainer) -> void:
 
 	arena_size_y = SpinBox.new()
 	arena_size_y.min_value = 10
-	arena_size_y.max_value = 100
-	arena_size_y.value = 50
+	arena_size_y.max_value = 150
+	arena_size_y.value = 150
 	size_hbox.add_child(arena_size_y)
 
 	# Tree spacing controls
@@ -147,7 +147,7 @@ func _create_basic_controls(container: VBoxContainer) -> void:
 	tree_spacing_min_input = SpinBox.new()
 	tree_spacing_min_input.min_value = 1
 	tree_spacing_min_input.max_value = 10
-	tree_spacing_min_input.value = 1
+	tree_spacing_min_input.value = 5
 	spacing_hbox.add_child(tree_spacing_min_input)
 
 	var dash_label = Label.new()
@@ -205,7 +205,7 @@ func _create_camera_extension_controls(container: VBoxContainer) -> void:
 	camera_extension_input = SpinBox.new()
 	camera_extension_input.min_value = 0
 	camera_extension_input.max_value = 50
-	camera_extension_input.value = 25
+	camera_extension_input.value = 15
 	container.add_child(camera_extension_input)
 
 	# Edge density control
@@ -217,7 +217,7 @@ func _create_camera_extension_controls(container: VBoxContainer) -> void:
 	edge_density_input.min_value = 1.0
 	edge_density_input.max_value = 999999
 	edge_density_input.step = 0.5
-	edge_density_input.value = 40.0
+	edge_density_input.value = 10.0
 	container.add_child(edge_density_input)
 
 	# Gradient inversion control

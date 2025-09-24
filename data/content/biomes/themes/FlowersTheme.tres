@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DecorationThemeConfig" load_steps=2 format=3 uid="uid://daqmr4n8lpx12"]
+
+[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/DecorationThemeConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+theme_name = "Flowers"
+theme_color = Color(0.9, 0.4, 0.7, 1)
+description = "Small delicate flowers and blooms scattered throughout the forest floor"
+decoration_tiles = Array[Vector2i]([Vector2i(9, 3), Vector2i(12, 3), Vector2i(15, 3), Vector2i(18, 3), Vector2i(21, 3)])
+tile_size = Vector2i(3, 3)
+spawn_weight = 1
+rarity_modifier = 0.5
+min_spacing = 1
+max_spacing = 1
+enable_clustering = true
+cluster_chance = 0.15
+cluster_radius = 10
+max_cluster_size = 20
+cluster_decay = 0.15
+prefer_edges = false
+prefer_center = false
+avoid_boundaries = true
+boundary_buffer = 2
+z_layer = 1
+layer_name = "middle"

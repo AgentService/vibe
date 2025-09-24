@@ -24,16 +24,6 @@
           }
         ]
       }
-    ],
-    "Notification": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "claude-voice-notifications"
-          }
-        ]
-      }
-    ]
+    ]  
   }
 }

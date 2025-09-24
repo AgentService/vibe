@@ -1,22 +1,31 @@
-[gd_resource type="Resource" script_class="BiomeConfig" load_steps=4 format=3 uid="uid://c6i8y5m1kcg4v"]
+[gd_resource type="Resource" script_class="BiomeConfig" load_steps=12 format=3 uid="uid://c6i8y5m1kcg4v"]
 
 [ext_resource type="Script" uid="uid://ba7vsoi6hm3xj" path="res://scripts/resources/BiomeConfig.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/DecorationThemeConfig.gd" id="1_2a5jm"]
 [ext_resource type="Script" uid="uid://c5tvvqf2x7yv8" path="res://scripts/resources/InteractiveObjectConfig.gd" id="1_yw8u5"]
 [ext_resource type="Script" uid="uid://b4uuwoueo217l" path="res://scripts/resources/TreeObjectConfig.gd" id="3_j1ct2"]
+[ext_resource type="Resource" uid="uid://bqfwxknr65kah" path="res://data/content/biomes/themes/GreenVegetationTheme.tres" id="4_green"]
+[ext_resource type="Resource" uid="uid://dh4mx8r7nt2q5" path="res://data/content/biomes/themes/GreyRocksTheme.tres" id="6_rocks"]
+[ext_resource type="Resource" uid="uid://daqmr4n8lpx12" path="res://data/content/biomes/themes/FlowersTheme.tres" id="7_flowers"]
+[ext_resource type="Resource" uid="uid://dfjtf6ss8j2ff" path="res://data/content/biomes/themes/FlowerLayerTheme.tres" id="8_bigflowers"]
+[ext_resource type="Resource" uid="uid://ceise5rr7j5ee" path="res://data/content/biomes/themes/GreenGroundLayerTheme.tres" id="9_grounddeco"]
+[ext_resource type="Resource" uid="uid://gys5wlpd7oo" path="res://data/content/biomes/themes/MushroomsTheme.tres" id="10_mushrooms"]
+[ext_resource type="Resource" uid="uid://ehsd3p04i4cc" path="res://data/content/biomes/themes/BranchesTheme.tres" id="11_branches"]
 
 [resource]
 script = ExtResource("1_0")
 biome_name = "Forest"
 floor_tiles = Array[Vector2i]([Vector2i(3, 0)])
 boundary_tiles = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
-decoration_tiles = Array[Vector2i]([Vector2i(4, 0), Vector2i(0, 2), Vector2i(1, 2)])
+decoration_tiles = Array[Vector2i]([Vector2i(9, 0), Vector2i(12, 0), Vector2i(15, 0), Vector2i(18, 0), Vector2i(21, 0), Vector2i(24, 0), Vector2i(27, 0), Vector2i(30, 0)])
 special_tiles = Array[Vector2i]([Vector2i(3, 1), Vector2i(4, 1)])
 walkable_floor_tiles = Array[Vector2i]([Vector2i(3, 0)])
 spawn_area_tiles = Array[Vector2i]([Vector2i(3, 0)])
 tree_objects = Array[ExtResource("3_j1ct2")]([])
 interactive_objects = Array[ExtResource("1_yw8u5")]([])
+decoration_themes = Array[ExtResource("1_2a5jm")]([ExtResource("6_rocks"), ExtResource("7_flowers"), ExtResource("8_bigflowers"), ExtResource("9_grounddeco"), ExtResource("10_mushrooms"), ExtResource("11_branches"), ExtResource("4_green")])
 default_boundary_width = 3
-default_decoration_density = 0.05
+default_decoration_density = 0.01
 tree_placement_chance = 0.6
-tree_spacing_min = 1
+tree_spacing_min = 5
 tree_spacing_max = 1

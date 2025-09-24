@@ -24,6 +24,9 @@ extends Resource
 # Interactive object configurations
 @export var interactive_objects: Array[InteractiveObjectConfig] = []
 
+# Themed decoration system
+@export var decoration_themes: Array[DecorationThemeConfig] = []
+
 # Generation parameters specific to this biome
 @export var default_boundary_width: int = 3
 @export var default_decoration_density: float = 0.05
@@ -44,10 +47,74 @@ func get_random_boundary_tile(rng: RandomNumberGenerator) -> Vector2i:
 	return boundary_tiles[rng.randi() % boundary_tiles.size()]
 
 func get_random_decoration_tile(rng: RandomNumberGenerator) -> Vector2i:
-	"""Get a random decoration tile coordinate"""
+	"""Get a random decoration tile coordinate (legacy method)"""
 	if decoration_tiles.is_empty():
 		return Vector2i(4, 0)
 	return decoration_tiles[rng.randi() % decoration_tiles.size()]
+
+func get_weighted_decoration_theme(rng: RandomNumberGenerator) -> DecorationThemeConfig:
+	"""Get a decoration theme based on weighted probability"""
+	if decoration_themes.is_empty():
+		return null
+
+	# Calculate total weight
+	var total_weight := 0.0
+	for theme in decoration_themes:
+		total_weight += theme.get_effective_spawn_weight()
+
+	if total_weight <= 0.0:
+		return decoration_themes[0]
+
+	# Select theme based on weight
+	var random_value := rng.randf() * total_weight
+	var current_weight := 0.0
+
+	for theme in decoration_themes:
+		current_weight += theme.get_effective_spawn_weight()
+		if random_value <= current_weight:
+			return theme
+
+	return decoration_themes[0]
+
+func get_themed_decoration_tile(rng: RandomNumberGenerator, position: Vector2i, arena_center: Vector2i, arena_bounds: Rect2i, existing_decorations: Dictionary = {}) -> Dictionary:
+	"""Get a themed decoration with clustering and environmental preferences
+	Returns: {tile: Vector2i, theme_name: String, success: bool}"""
+
+	var result := {"tile": Vector2i(0, 0), "theme_name": "", "success": false}
+
+	if decoration_themes.is_empty():
+		# Fallback to legacy system
+		result.tile = get_random_decoration_tile(rng)
+		result.theme_name = "legacy"
+		result.success = true
+		return result
+
+	var selected_theme := get_weighted_decoration_theme(rng)
+	if not selected_theme:
+		return result
+
+	# Check environmental preferences
+	var env_modifier := selected_theme.get_environmental_preference_modifier(position, arena_center, arena_bounds)
+
+	# Apply environmental modifier to spawn chance
+	if rng.randf() > env_modifier * 0.5:  # Base 50% chance modified by environment
+		return result
+
+	# Check clustering behavior
+	var theme_positions_raw = existing_decorations.get(selected_theme.theme_name, [])
+	var theme_positions: Array[Vector2i] = []
+	theme_positions.assign(theme_positions_raw)
+	if selected_theme.enable_clustering and not theme_positions.is_empty():
+		if not selected_theme.should_cluster_near(theme_positions, position, rng):
+			# Try a different theme if clustering fails
+			selected_theme = get_weighted_decoration_theme(rng)
+			if not selected_theme:
+				return result
+
+	result.tile = selected_theme.get_random_tile(rng)
+	result.theme_name = selected_theme.theme_name
+	result.success = true
+	return result
 
 func get_random_tree_object(rng: RandomNumberGenerator) -> TreeObjectConfig:
 	"""Get a random tree object configuration"""

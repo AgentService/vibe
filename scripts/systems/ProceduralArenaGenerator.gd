@@ -77,7 +77,14 @@ func _get_layer_node(layer_name: String) -> TileMapLayer:
 		if arena_node and arena_node is TileMapLayer:
 			return arena_node
 
-	Logger.warn("TileMapLayer not found: %s" % layer_name, "procedural")
+	# Try parent node (for tool mode / editor plugin usage)
+	var parent_node = get_parent()
+	if parent_node:
+		var parent_layer = parent_node.get_node_or_null(layer_name)
+		if parent_layer and parent_layer is TileMapLayer:
+			return parent_layer
+
+	_safe_log("TileMapLayer not found: %s" % layer_name, "procedural", "warn")
 	return null
 
 func _get_spawn_point(spawn_name: String) -> Marker2D:
@@ -93,7 +100,14 @@ func _get_spawn_point(spawn_name: String) -> Marker2D:
 		if arena_node and arena_node is Marker2D:
 			return arena_node
 
-	Logger.warn("Spawn point not found: %s" % spawn_name, "procedural")
+	# Try parent node (for tool mode / editor plugin usage)
+	var parent_node = get_parent()
+	if parent_node:
+		var parent_spawn = parent_node.get_node_or_null(spawn_name)
+		if parent_spawn and parent_spawn is Marker2D:
+			return parent_spawn
+
+	_safe_log("Spawn point not found: %s" % spawn_name, "procedural", "warn")
 	return null
 
 # Generation state
@@ -130,7 +144,7 @@ func _setup_layer_z_ordering() -> void:
 		# Enable Y-sorting for trees so players can walk behind them
 		boundaries_layer.y_sort_enabled = true
 	if decorations_layer:
-		decorations_layer.z_index = 2
+		decorations_layer.z_index = 0  # Same as ground layer to appear behind boundaries
 	if interactive_layer:
 		interactive_layer.z_index = 5
 
@@ -191,6 +205,10 @@ func generate_arena() -> void:
 	"""Generate the arena with the configured biome and parameters"""
 	if not _validate_configuration():
 		return
+
+	# Ensure layer references are populated (important for tool mode)
+	if not ground_layer or not boundaries_layer:
+		_populate_layer_references()
 
 	# Increment seed for natural variation
 	generation_params.increment_seed()
@@ -779,22 +797,90 @@ func _generate_object_bases(rng: RandomNumberGenerator) -> void:
 	_safe_log("🪵 Generating object bases", "generation", "debug")
 
 func _generate_decorations(rng: RandomNumberGenerator) -> void:
-	"""Generate decorative elements within the arena"""
-	_safe_log("🎨 Generating decorations", "generation", "debug")
+	"""Generate themed decorative elements with y-sorting depth control"""
+	_safe_log("🎨 Generating y-sorted themed decorations", "generation", "debug")
 
 	if not decorations_layer:
 		return
 
+	# Enable y-sorting for automatic depth sorting
+	decorations_layer.y_sort_enabled = true
+
 	var arena_bounds = generation_params.get_arena_bounds()
+	var arena_center = Vector2i(0, 0)  # Arena center
 	var margin = 2  # Keep decorations away from edges
 
-	# Add decorations sparsely throughout the arena
+	# Track decorations by theme for clustering
+	var theme_decorations: Dictionary = {}
+	var total_decorations_placed = 0
+
+	# Collect all potential decoration positions first
+	var decoration_positions: Array[Dictionary] = []
+
 	for x in range(arena_bounds.position.x + margin, arena_bounds.end.x - margin):
 		for y in range(arena_bounds.position.y + margin, arena_bounds.end.y - margin):
 			if rng.randf() < generation_params.decoration_density:
 				var pos = Vector2i(x, y)
-				var decoration_tile = biome_config.get_random_decoration_tile(rng)
-				decorations_layer.set_cell(pos, 0, decoration_tile)
+
+				# Check if position conflicts with existing trees
+				if _will_have_obstruction(pos, rng):
+					continue
+
+				# Use themed decoration system
+				var decoration_result = biome_config.get_themed_decoration_tile(
+					rng, pos, arena_center, arena_bounds, theme_decorations
+				)
+
+				if decoration_result.get("success", false):
+					var tile = decoration_result.get("tile", Vector2i(0, 0))
+					var theme_name = decoration_result.get("theme_name", "")
+
+					decoration_positions.append({
+						"pos": pos,
+						"tile": tile,
+						"theme_name": theme_name
+					})
+
+					# Track for clustering
+					if not theme_decorations.has(theme_name):
+						theme_decorations[theme_name] = []
+					theme_decorations[theme_name].append(pos)
+
+	# Apply cross-layer stone attraction logic
+	decoration_positions = _apply_stone_cross_layer_attraction(decoration_positions, theme_decorations, rng)
+
+	# Create connected stone floor formations
+	decoration_positions = _create_connected_stone_floor_formations(decoration_positions, theme_decorations, rng)
+
+	# Sort decorations with background stone priority, then by Y position for proper y-sorting
+	# Background stones (30,0) and (30,3) render behind everything, then Y-sorting applies
+	decoration_positions.sort_custom(func(a, b):
+		var a_is_background_stone = (a.tile == Vector2i(30, 0) or a.tile == Vector2i(30, 3))
+		var b_is_background_stone = (b.tile == Vector2i(30, 0) or b.tile == Vector2i(30, 3))
+
+		# Background stones always render first (behind everything)
+		if a_is_background_stone and not b_is_background_stone:
+			return true
+		if b_is_background_stone and not a_is_background_stone:
+			return false
+
+		# For same priority level, sort by Y position (lower Y first for proper depth)
+		return a.pos.y < b.pos.y
+	)
+
+	# Place decorations in Y-sorted order
+	for decoration_data in decoration_positions:
+		decorations_layer.set_cell(decoration_data.pos, 0, decoration_data.tile)
+		total_decorations_placed += 1
+
+	_safe_log("🎨 Placed %d y-sorted decorations across %d themes" % [
+		total_decorations_placed, theme_decorations.size()
+	], "generation", "debug")
+
+	# Log theme distribution for debugging
+	for theme_name in theme_decorations:
+		var count = theme_decorations[theme_name].size()
+		_safe_log("  Theme '%s': %d decorations" % [theme_name, count], "generation", "debug")
 
 func _generate_interactive_objects(rng: RandomNumberGenerator) -> void:
 	"""Generate interactive objects like chests and shrines"""
@@ -932,10 +1018,233 @@ func regenerate_with_seed(new_seed: int) -> void:
 	generation_params.generation_seed = new_seed
 	generate_arena()
 
+func _apply_stone_cross_layer_attraction(decoration_positions: Array[Dictionary], theme_decorations: Dictionary, rng: RandomNumberGenerator) -> Array[Dictionary]:
+	"""Apply cross-layer stone attraction to create natural stone groupings
+
+	Stone themes attract each other across different z-layers:
+	- Ground Decoration (z_layer 0): small stone fragments (30, 0), (30, 3)
+	- Stones (z_layer 1): larger rock formations (6, 0), (6, 3), (9, 6), (12, 6)
+
+	Returns modified decoration_positions with additional stone placements near existing stones
+	"""
+
+	# Identify stone themes by their characteristics
+	var stone_theme_names = _identify_stone_themes(theme_decorations)
+	if stone_theme_names.size() < 2:
+		return decoration_positions  # Need at least 2 stone themes for attraction
+
+	var enhanced_positions = decoration_positions.duplicate()
+	var stone_attraction_radius = 8  # Distance for cross-layer attraction
+	var attraction_chance = 0.4  # 40% chance to place attracted stones
+
+	# Get all stone positions across all stone themes
+	var all_stone_positions: Array[Vector2i] = []
+	for theme_name in stone_theme_names:
+		var positions = theme_decorations.get(theme_name, [])
+		for pos in positions:
+			all_stone_positions.append(pos)
+
+	# For each stone position, try to attract stones from other layers
+	for stone_pos in all_stone_positions:
+		# Try to place attraction stones around this position
+		for attempt in range(3):  # 3 attempts per stone position
+			if rng.randf() > attraction_chance:
+				continue
+
+			# Find a nearby position for cross-layer stone attraction
+			var angle = rng.randf() * TAU  # Random angle
+			var distance = rng.randf_range(2, stone_attraction_radius)
+			var offset = Vector2(cos(angle), sin(angle)) * distance
+			var attraction_pos = Vector2i(stone_pos + Vector2i(offset))
+
+			# Check if position is available (not too close to existing decorations)
+			if _is_position_available_for_stone_attraction(attraction_pos, enhanced_positions):
+				# Select a stone theme different from nearby stones for layering effect
+				var target_theme = _select_complementary_stone_theme(stone_pos, theme_decorations, rng)
+				if target_theme and target_theme.decoration_tiles.size() > 0:
+					var stone_tile = target_theme.get_random_tile(rng)
+
+					enhanced_positions.append({
+						"pos": attraction_pos,
+						"tile": stone_tile,
+						"theme_name": target_theme.theme_name
+					})
+
+					# Update theme decorations tracking
+					if not theme_decorations.has(target_theme.theme_name):
+						theme_decorations[target_theme.theme_name] = []
+					theme_decorations[target_theme.theme_name].append(attraction_pos)
+
+	Logger.info("🪨 Applied stone cross-layer attraction: %d enhanced positions" % enhanced_positions.size(), "generation")
+	return enhanced_positions
+
+func _identify_stone_themes(theme_decorations: Dictionary) -> Array[String]:
+	"""Identify themes that contain stone elements based on theme names and characteristics"""
+	var stone_theme_names: Array[String] = []
+
+	for theme_name in theme_decorations.keys():
+		# Identify stone-related themes by name patterns
+		var theme_name_lower = theme_name.to_lower()
+		if "stone" in theme_name_lower or "rock" in theme_name_lower or "ground decoration" in theme_name_lower:
+			stone_theme_names.append(theme_name)
+
+	return stone_theme_names
+
+func _is_position_available_for_stone_attraction(pos: Vector2i, existing_positions: Array[Dictionary]) -> bool:
+	"""Check if a position is available for stone attraction (minimum spacing)"""
+	var min_spacing = 1
+
+	for existing in existing_positions:
+		var existing_pos = existing.get("pos", Vector2i.ZERO)
+		if pos.distance_to(existing_pos) < min_spacing:
+			return false
+
+	return true
+
+func _select_complementary_stone_theme(reference_pos: Vector2i, theme_decorations: Dictionary, rng: RandomNumberGenerator) -> DecorationThemeConfig:
+	"""Select a stone theme that complements nearby stones for layering effect"""
+	if not biome_config or biome_config.decoration_themes.is_empty():
+		return null
+
+	# Find stone themes
+	var stone_themes: Array[DecorationThemeConfig] = []
+	for theme in biome_config.decoration_themes:
+		var theme_name_lower = theme.theme_name.to_lower()
+		if "stone" in theme_name_lower or "rock" in theme_name_lower or "ground decoration" in theme_name_lower:
+			stone_themes.append(theme)
+
+	if stone_themes.is_empty():
+		return null
+
+	# Prefer themes with different z_layers for visual layering
+	# Look for what stone themes are already near this position
+	var nearby_themes: Array[String] = []
+	var check_radius = 6
+
+	for theme_name in theme_decorations.keys():
+		var positions = theme_decorations.get(theme_name, [])
+		for pos in positions:
+			if reference_pos.distance_to(pos) <= check_radius:
+				nearby_themes.append(theme_name)
+				break
+
+	# Select a stone theme that's not already dominant nearby
+	var available_themes: Array[DecorationThemeConfig] = []
+	for theme in stone_themes:
+		if not theme.theme_name in nearby_themes:
+			available_themes.append(theme)
+
+	# If all nearby themes are present, use any stone theme
+	if available_themes.is_empty():
+		available_themes = stone_themes
+
+	return available_themes[rng.randi() % available_themes.size()]
+
+func _create_connected_stone_floor_formations(decoration_positions: Array[Dictionary], theme_decorations: Dictionary, rng: RandomNumberGenerator) -> Array[Dictionary]:
+	"""Create connected geometric stone floor formations for natural appearance
+
+	Analyzes existing stone floor tiles (30, 0) and (30, 3) and creates connecting paths
+	and geometric patterns to form cohesive stone floor areas rather than isolated tiles.
+	"""
+
+	var enhanced_positions = decoration_positions.duplicate()
+	var stone_floor_tiles = [Vector2i(30, 0), Vector2i(30, 3)]
+
+	# Find all existing stone floor positions
+	var stone_floor_positions: Array[Vector2i] = []
+	for decoration_data in enhanced_positions:
+		if stone_floor_tiles.has(decoration_data.tile):
+			stone_floor_positions.append(decoration_data.pos)
+
+	if stone_floor_positions.size() < 2:
+		return enhanced_positions  # Need at least 2 stone floor tiles to connect
+
+	# Create connections between nearby stone floor tiles
+	var connection_radius = 333  # Maximum distance to attempt connections
+	var connections_created = 0
+
+	for i in range(stone_floor_positions.size()):
+		for j in range(i + 1, stone_floor_positions.size()):
+			var pos_a = stone_floor_positions[i]
+			var pos_b = stone_floor_positions[j]
+			var distance = pos_a.distance_to(pos_b)
+
+			if distance <= connection_radius and distance > 1:
+				# Create connecting path between the two stone floor tiles
+				var connection_positions = _generate_stone_path_between_points(pos_a, pos_b, rng)
+
+				for connect_pos in connection_positions:
+					# Check if position is available (not occupied by existing decorations)
+					if _is_position_available_for_stone_connection(connect_pos, enhanced_positions):
+						var stone_tile = stone_floor_tiles[rng.randi() % stone_floor_tiles.size()]
+
+						enhanced_positions.append({
+							"pos": connect_pos,
+							"tile": stone_tile,
+							"theme_name": "Ground Decoration"
+						})
+
+						# Update theme decorations tracking
+						if not theme_decorations.has("Ground Decoration"):
+							theme_decorations["Ground Decoration"] = []
+						theme_decorations["Ground Decoration"].append(connect_pos)
+
+						connections_created += 1
+
+	Logger.info("🔗 Created %d stone floor connections for natural formations" % connections_created, "generation")
+	return enhanced_positions
+
+func _generate_stone_path_between_points(start: Vector2i, end: Vector2i, rng: RandomNumberGenerator) -> Array[Vector2i]:
+	"""Generate connecting stone path between two points using simple line algorithm"""
+	var path: Array[Vector2i] = []
+	var current = start
+
+	# Simple step-by-step path generation
+	while current.distance_to(end) > 1:
+		var direction = (end - current).normalized()
+
+		# Choose step direction (prefer cardinal directions for geometric look)
+		var next_step: Vector2i
+		if abs(direction.x) > abs(direction.y):
+			next_step = Vector2i(1 if direction.x > 0 else -1, 0)
+		else:
+			next_step = Vector2i(0, 1 if direction.y > 0 else -1)
+
+		current += next_step
+
+		# Add some randomness for natural variation (25% chance of diagonal step)
+		if rng.randf() < 0.25 and current != end:
+			var diagonal_offset = Vector2i(
+				1 if rng.randf() < 0.5 else -1,
+				1 if rng.randf() < 0.5 else -1
+			)
+			# Only add diagonal if it doesn't overshoot the target
+			var diagonal_pos = current + diagonal_offset
+			if diagonal_pos.distance_to(end) < current.distance_to(end):
+				current = diagonal_pos
+
+		path.append(current)
+
+		# Safety limit to prevent infinite loops
+		if path.size() > 10:
+			break
+
+	return path
+
+func _is_position_available_for_stone_connection(pos: Vector2i, existing_positions: Array[Dictionary]) -> bool:
+	"""Check if position is available for stone floor connections"""
+	for existing in existing_positions:
+		var existing_pos = existing.get("pos", Vector2i.ZERO)
+		if pos == existing_pos:
+			return false  # Position already occupied
+
+	return true
+
 func regenerate_with_biome(new_biome: BiomeConfig) -> void:
 	"""Regenerate the arena with a different biome"""
 	biome_config = new_biome
 	generate_arena()
+
 
 # Debug function to test generation
 func _input(event: InputEvent) -> void:
