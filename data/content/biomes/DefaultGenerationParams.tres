@@ -6,7 +6,7 @@
 script = ExtResource("1_0")
 arena_size = Vector2i(150, 150)
 boundary_width = 3
-generation_seed = 12384
+generation_seed = 12350
 auto_increment_seed = true
 decoration_density = 0.0525
 interactive_object_density = 0.01

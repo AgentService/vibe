@@ -1092,7 +1092,7 @@ func _identify_stone_themes(theme_decorations: Dictionary) -> Array[String]:
 
 func _is_position_available_for_stone_attraction(pos: Vector2i, existing_positions: Array[Dictionary]) -> bool:
 	"""Check if a position is available for stone attraction (minimum spacing)"""
-	var min_spacing = 1
+	var min_spacing = 2
 
 	for existing in existing_positions:
 		var existing_pos = existing.get("pos", Vector2i.ZERO)
