@@ -383,7 +383,7 @@ func _generate_boundary_layer(rng: RandomNumberGenerator) -> void:
 		boundary_config = generation_params.simple_boundary_config
 
 	if use_simplified and boundary_config:
-		_generate_simplified_boundary_layer_with_config(boundary_config, rng)
+		_generate_simplified_boundary_layer_with_config(boundary_config, rng, generation_params)
 		return
 
 	# All boundary generation now uses simplified system only
@@ -392,7 +392,7 @@ func _generate_boundary_layer(rng: RandomNumberGenerator) -> void:
 
 # Old rectangular boundary function removed - using simplified boundary system only
 
-func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, rng: RandomNumberGenerator) -> void:
+func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, rng: RandomNumberGenerator, generation_params: Resource) -> void:
 	"""Generate simplified boundary with reliable spacing and no escape gaps"""
 	_safe_log("🌲 Generating simplified boundary layer with guaranteed gap-free coverage", "generation", "debug")
 
@@ -419,7 +419,7 @@ func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, 
 
 	# Generate trees in layers from inside to outside for consistent coverage
 	for row_layer in range(boundary_config.tree_row_count):
-		var layer_trees_placed = _generate_simplified_boundary_row(boundary_config, row_layer, tree_spacing_tiles, rng)
+		var layer_trees_placed = _generate_simplified_boundary_row(boundary_config, row_layer, tree_spacing_tiles, rng, generation_params)
 		tree_count_placed += layer_trees_placed
 
 		_safe_log("🌲 Layer %d: Placed %d trees" % [row_layer, layer_trees_placed], "generation", "debug")
@@ -428,25 +428,25 @@ func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, 
 		tree_count_placed, boundary_config.tree_row_count
 	], "generation")
 
-func _generate_simplified_boundary_row(boundary_config: Resource, row_layer: int, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+func _generate_simplified_boundary_row(boundary_config: Resource, row_layer: int, spacing_tiles: float, rng: RandomNumberGenerator, generation_params: Resource) -> int:
 	"""Generate one row/layer of trees around the boundary perimeter"""
 	var trees_placed = 0
-	var arena_bounds = boundary_config.get_arena_bounds()
+	var arena_bounds = boundary_config.get_arena_bounds(generation_params)
 
 	# Calculate the distance from arena edge for this row
 	var row_distance = (row_layer + 1) * spacing_tiles
 
 	match boundary_config.base_shape:
 		"Circle":
-			trees_placed = _generate_circular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng)
+			trees_placed = _generate_circular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng, generation_params)
 		"Rectangle":
-			trees_placed = _generate_rectangular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng)
+			trees_placed = _generate_rectangular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng, generation_params)
 		_:
 			_safe_log("❌ Unknown boundary shape: %s" % boundary_config.base_shape, "generation", "error")
 
 	return trees_placed
 
-func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator, generation_params: Resource) -> int:
 	"""Generate trees in net-like staggered pattern around elliptical arena with natural randomness"""
 	var trees_placed = 0
 
@@ -500,10 +500,10 @@ func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, 
 
 	return trees_placed
 
-func _generate_rectangular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+func _generate_rectangular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator, generation_params: Resource) -> int:
 	"""Generate trees in a rectangular pattern around the arena"""
 	var trees_placed = 0
-	var arena_bounds = boundary_config.get_arena_bounds()
+	var arena_bounds = boundary_config.get_arena_bounds(generation_params)
 
 	# Expand the rectangle by row_distance
 	var expanded_bounds = Rect2i(
