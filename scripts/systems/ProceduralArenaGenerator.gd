@@ -447,19 +447,26 @@ func _generate_simplified_boundary_row(boundary_config: Resource, row_layer: int
 	return trees_placed
 
 func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
-	"""Generate trees in a circular pattern around the arena"""
+	"""Generate trees in an elliptical pattern around the arena using shape_length for tictac stretching"""
 	var trees_placed = 0
 	var base_radius = boundary_config.arena_base_size
-	var circle_radius = base_radius + row_distance
 
-	# Calculate circumference and required number of trees for even spacing
-	var circumference = 2.0 * PI * circle_radius
-	var tree_count = max(8, int(circumference / spacing_tiles))  # Minimum 8 trees per circle
+	# Apply shape_length to create elliptical boundaries (tictac-like stretching)
+	var x_radius = (base_radius * boundary_config.shape_length) + row_distance
+	var y_radius = base_radius + row_distance
+
+	# Calculate ellipse perimeter approximation for tree count
+	# Ramanujan's approximation: π * (3(a+b) - sqrt((3a+b)(a+3b)))
+	var a = x_radius
+	var b = y_radius
+	var perimeter_approx = PI * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
+	var tree_count = max(8, int(perimeter_approx / spacing_tiles))  # Minimum 8 trees per ellipse
 
 	for i in range(tree_count):
 		var angle = (i * 2.0 * PI) / tree_count
-		var x = int(circle_radius * cos(angle))
-		var y = int(circle_radius * sin(angle))
+		# Use elliptical coordinates with different x and y radii
+		var x = int(x_radius * cos(angle))
+		var y = int(y_radius * sin(angle))
 		var tree_pos = Vector2i(x, y)
 
 		# Use density check to maintain reliable coverage

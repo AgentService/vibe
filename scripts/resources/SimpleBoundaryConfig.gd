@@ -19,7 +19,7 @@ extends Resource
 
 @export_group("Tree Configuration")
 ## Tree tile variants to use - now supports alternative trees with bigger collision
-@export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1)]
+@export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 28), Vector2i(9, 28)]
 
 ## Fixed distance between trees in pixels (no random variation for reliability)
 @export_range(16, 128, 8) var tree_spacing_pixels: int = 48
@@ -48,10 +48,11 @@ extends Resource
 func get_arena_bounds() -> Rect2i:
 	match base_shape:
 		"Circle":
-			# For circle, create square bounds that fit the circle
-			var effective_radius = arena_base_size
-			var size = Vector2i(effective_radius * 2, effective_radius * 2)
-			return Rect2i(-effective_radius, -effective_radius, size.x, size.y)
+			# For circle, use shape_length to create tictac-like stretching
+			# Width becomes longer, height stays the same
+			var half_width = int(arena_base_size * shape_length)
+			var half_height = arena_base_size
+			return Rect2i(-half_width, -half_height, half_width * 2, half_height * 2)
 		"Rectangle":
 			# For rectangle, use shape_length to extend width
 			var half_width = int(arena_base_size * shape_length)
@@ -94,7 +95,7 @@ func should_place_tree_at(position: Vector2i, row_layer: int) -> bool:
 ## Get random tree tile variant for variety
 func get_random_tree_tile(rng: RandomNumberGenerator) -> Vector2i:
 	if tree_tile_variants.is_empty():
-		return Vector2i(0, 1)  # Default tree
+		return Vector2i(0, 28)  # Default tree (updated coordinates)
 
 	return tree_tile_variants[rng.randi() % tree_tile_variants.size()]
 
@@ -116,8 +117,15 @@ func generate_path_checkpoints() -> Array[Vector2i]:
 ## Private helper functions
 
 func _is_inside_circle(position: Vector2i) -> bool:
-	var distance_from_center = Vector2(position).length()
-	return distance_from_center <= arena_base_size
+	# Create elliptical shape using shape_length for width stretching
+	var x_radius = arena_base_size * shape_length
+	var y_radius = arena_base_size
+
+	# Ellipse equation: (x/a)^2 + (y/b)^2 <= 1
+	var normalized_x = position.x / x_radius
+	var normalized_y = position.y / y_radius
+
+	return (normalized_x * normalized_x) + (normalized_y * normalized_y) <= 1.0
 
 func _is_inside_rectangle(position: Vector2i) -> bool:
 	var arena_bounds = get_arena_bounds()
@@ -133,7 +141,23 @@ func _is_in_tree_boundary_layer(position: Vector2i, row_layer: int) -> bool:
 func _get_distance_from_arena_edge(position: Vector2i) -> float:
 	match base_shape:
 		"Circle":
-			return max(0.0, Vector2(position).length() - arena_base_size)
+			# Calculate distance from ellipse edge
+			var x_radius = arena_base_size * shape_length
+			var y_radius = arena_base_size
+
+			# If inside the ellipse, distance is 0
+			if _is_inside_circle(position):
+				return 0.0
+
+			# For points outside ellipse, approximate distance to ellipse edge
+			# This is a simplified calculation - for exact distance we'd need more complex math
+			var normalized_x = position.x / x_radius
+			var normalized_y = position.y / y_radius
+			var ellipse_value = (normalized_x * normalized_x) + (normalized_y * normalized_y)
+
+			# Approximate distance based on how far outside the ellipse the point is
+			return (sqrt(ellipse_value) - 1.0) * min(x_radius, y_radius)
+
 		"Rectangle":
 			var arena_bounds = get_arena_bounds()
 			if arena_bounds.has_point(position):
@@ -155,12 +179,14 @@ func _meets_spacing_requirements(position: Vector2i) -> bool:
 
 func _generate_circular_checkpoints() -> Array[Vector2i]:
 	var checkpoints: Array[Vector2i] = []
-	var radius = arena_base_size + (tree_row_count * tree_spacing_pixels / 16)
+	# Account for elliptical shape with different radii
+	var x_radius = (arena_base_size * shape_length) + (tree_row_count * tree_spacing_pixels / 16)
+	var y_radius = arena_base_size + (tree_row_count * tree_spacing_pixels / 16)
 
 	for i in range(path_checkpoint_count):
 		var angle = (i * 2.0 * PI) / path_checkpoint_count
-		var x = int(radius * cos(angle))
-		var y = int(radius * sin(angle))
+		var x = int(x_radius * cos(angle))
+		var y = int(y_radius * sin(angle))
 		checkpoints.append(Vector2i(x, y))
 
 	return checkpoints
