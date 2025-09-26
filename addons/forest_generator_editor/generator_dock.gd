@@ -10,7 +10,7 @@ var arena_size_y: SpinBox
 var boundary_shape_option: OptionButton
 var shape_length_input: SpinBox
 var shape_height_input: SpinBox
-var arena_base_size_input: SpinBox
+# arena_base_size removed - boundary system is now single source of truth
 var tree_spacing_horizontal_input: SpinBox
 var tree_spacing_vertical_input: SpinBox
 var tree_row_count_input: SpinBox
@@ -171,17 +171,7 @@ func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
 	connection_info.modulate = Color(0.2, 0.8, 0.2)
 	container.add_child(connection_info)
 
-	# Arena base size (kept for compatibility but not used)
-	var base_size_label = Label.new()
-	base_size_label.text = "Arena Base Size (not used - kept for compatibility):"
-	container.add_child(base_size_label)
-
-	arena_base_size_input = SpinBox.new()
-	arena_base_size_input.min_value = 10
-	arena_base_size_input.max_value = 100
-	arena_base_size_input.value = 30
-	arena_base_size_input.editable = false  # Make it clear this isn't used
-	container.add_child(arena_base_size_input)
+	# arena_base_size removed - boundary system is now single source of truth
 
 	# Tree spacing in pixels - horizontal
 	var spacing_h_label = Label.new()
@@ -384,7 +374,7 @@ func _on_generate_pressed():
 			boundary_config.base_shape = "Circle" if boundary_shape_option.selected == 0 else "Rectangle"
 			boundary_config.shape_length = shape_length_input.value
 			boundary_config.shape_height = shape_height_input.value
-			boundary_config.arena_base_size = int(arena_base_size_input.value)  # Kept for compatibility but not used
+			# arena_base_size removed - boundary system is now single source of truth
 			boundary_config.tree_spacing_horizontal = int(tree_spacing_horizontal_input.value)
 			boundary_config.tree_spacing_vertical = int(tree_spacing_vertical_input.value)
 			boundary_config.tree_row_count = int(tree_row_count_input.value)
