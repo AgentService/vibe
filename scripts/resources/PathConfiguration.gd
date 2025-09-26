@@ -21,7 +21,8 @@ extends Resource
 ## Point space radius - circular area around each point that pushes boundaries outward
 @export_range(50, 200, 10) var point_space_radius: float = 100.0
 
-## Path extension width - additional darker ground around paths (pixels) - unlimited
+## Path extension width - ring thickness for forest layers (pixels) - unlimited
+## Green ring: 0 to path_extension_width, Dark ring: path_extension_width to 2*path_extension_width
 @export_range(0, 999999, 12) var path_extension_width: float = 48.0
 
 ## Arena size for point generation bounds
@@ -270,6 +271,71 @@ func generate_path_extensions(ground_positions: Array[Vector2]) -> Array[Vector2
 
 	return unique_extensions
 
+## Generate dual-layer forest rings using single width parameter for consistent ring spacing
+func generate_dual_forest_rings(ground_positions: Array[Vector2]) -> Dictionary:
+	if path_extension_width <= 0:
+		return {"green": [], "dark": []}
+
+	var green_tiles: Dictionary = {}  # Vector2i -> bool for deduplication
+	var dark_tiles: Dictionary = {}   # Vector2i -> bool for deduplication
+	var tile_size = 48.0
+
+	# Calculate path edge distance (where Green ring should start)
+	var path_edge_distance = path_width * 0.5  # Half-width = edge of walkable corridor
+
+	# Use single width parameter for both rings, starting from path edge:
+	# Green ring: path_edge_distance to path_edge_distance + path_extension_width
+	# Dark ring: path_edge_distance + path_extension_width to path_edge_distance + 2 * path_extension_width
+	var green_inner_radius = path_edge_distance
+	var green_outer_radius = path_edge_distance + path_extension_width
+	var dark_outer_radius = path_edge_distance + (path_extension_width * 2.0)
+
+	# Compute once the max tile radius we need (tight loop bounds)
+	var max_radius_tiles = int(ceil(dark_outer_radius / tile_size))
+
+	# Squared thresholds in tile space to avoid sqrt
+	var green_inner_threshold_sq = (green_inner_radius / tile_size) * (green_inner_radius / tile_size)
+	var green_outer_threshold_sq = (green_outer_radius / tile_size) * (green_outer_radius / tile_size)
+	var dark_outer_threshold_sq = (dark_outer_radius / tile_size) * (dark_outer_radius / tile_size)
+
+	# Single pass generation: both layers from same loop
+	for ground_pos in ground_positions:
+		var base_tile_x = int(ground_pos.x / tile_size)
+		var base_tile_y = int(ground_pos.y / tile_size)
+
+		for x_offset in range(-max_radius_tiles, max_radius_tiles + 1):
+			for y_offset in range(-max_radius_tiles, max_radius_tiles + 1):
+				# Skip center position (walkable area)
+				if x_offset == 0 and y_offset == 0:
+					continue
+
+				# Use squared distance in tile space (no sqrt needed)
+				var distance_sq = x_offset * x_offset + y_offset * y_offset
+				var tile_pos = Vector2i(base_tile_x + x_offset, base_tile_y + y_offset)
+
+				# Split distance thresholds for proper ring assignment:
+				# Green ring: path_edge_distance < distance <= path_edge_distance + path_extension_width
+				# Dark ring: path_edge_distance + path_extension_width < distance <= path_edge_distance + 2 * path_extension_width
+				if distance_sq > green_inner_threshold_sq and distance_sq <= green_outer_threshold_sq:
+					green_tiles[tile_pos] = true
+				elif distance_sq > green_outer_threshold_sq and distance_sq <= dark_outer_threshold_sq:
+					dark_tiles[tile_pos] = true
+
+	# Convert to position arrays for tile placement
+	var green_positions: Array[Vector2] = []
+	var dark_positions: Array[Vector2] = []
+
+	for tile_coord in green_tiles.keys():
+		green_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
+
+	for tile_coord in dark_tiles.keys():
+		dark_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
+
+	Logger.debug("Generated dual forest rings using single width %.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f)" % [
+		path_extension_width, green_positions.size(), green_inner_radius, green_outer_radius, dark_positions.size(), green_outer_radius, dark_outer_radius
+	], "pathgen")
+
+	return {"green": green_positions, "dark": dark_positions}
 
 ## Check if position is within walkable corridor (path width only)
 func is_position_in_walkable_corridor(position: Vector2, paths: Array[PathSegment]) -> bool:

@@ -21,6 +21,7 @@ class_name PathAwareArenaGenerator
 # Layer name constants
 const BASE_LAYER_NAME = "BaseGreen"        # Renamed from "Base" - base layer
 const GROUND_LAYER_NAME = "Green"          # Renamed from "Ground2" - first extension layer
+const GROUND2_LAYER_NAME = "DarkGreen"     # Second extension layer - deeper forest
 const TREES_LAYER_NAME = "Trees2"          # In YSort_Objects - needs depth sorting
 
 # Visual debug nodes
@@ -150,6 +151,9 @@ func clear_arena():
 	if ground_layer and ground_layer is TileMapLayer:
 		ground_layer.clear()
 
+	var ground2_layer = _find_layer_node(GROUND2_LAYER_NAME)
+	if ground2_layer and ground2_layer is TileMapLayer:
+		ground2_layer.clear()
 
 	var tree_layer = _find_layer_node(TREES_LAYER_NAME)
 	if tree_layer and tree_layer is TileMapLayer:
@@ -231,11 +235,21 @@ func _draw():
 
 ## Helper method to find TileMapLayer nodes
 func _find_layer_node(layer_name: String) -> TileMapLayer:
+	Logger.debug("_find_layer_node called with: '%s'" % layer_name, "pathgen")
+
 	# BaseGreen, Green, and Dark Green layers are outside YSort_Objects (don't need sorting)
-	if layer_name == BASE_LAYER_NAME or layer_name == GROUND_LAYER_NAME:
+	if layer_name == BASE_LAYER_NAME or layer_name == GROUND_LAYER_NAME or layer_name == GROUND2_LAYER_NAME:
+		Logger.debug("Layer '%s' matches direct access condition" % layer_name, "pathgen")
 		var layer_node = get_node_or_null(layer_name)
+		Logger.debug("get_node_or_null('%s') returned: %s" % [layer_name, "found" if layer_node else "null"], "pathgen")
+
 		if layer_node and layer_node is TileMapLayer:
+			Logger.debug("Layer '%s' found and is TileMapLayer" % layer_name, "pathgen")
 			return layer_node as TileMapLayer
+		else:
+			Logger.debug("Layer '%s' failed type check - node: %s, is TileMapLayer: %s" % [
+				layer_name, "found" if layer_node else "null", layer_node is TileMapLayer if layer_node else "N/A"
+			], "pathgen")
 	else:
 		# Trees2 layer is in YSort_Objects (needs depth sorting)
 		var ysort_container = get_node_or_null("YSort_Objects")
@@ -334,16 +348,29 @@ func _create_connection_line(path) -> Line2D:
 	return line
 
 func _generate_ground_tiles():
-	"""Generate ground tiles for walkable corridor areas using DungeonPathGenerator data"""
-	var green_layer = _find_layer_node(GROUND_LAYER_NAME)  # Green layer for extensions
+	"""Generate ground tiles using dual-layer forest ring approach"""
+	Logger.debug("_generate_ground_tiles() called - using dual-layer ring approach", "pathgen")
+
+	var green_layer = _find_layer_node(GROUND_LAYER_NAME)
+	var dark_layer = _find_layer_node(GROUND2_LAYER_NAME)
+
+	Logger.debug("Layer check - Green: %s, Dark: %s" % [
+		"found" if green_layer else "missing",
+		"found" if dark_layer else "missing"
+	], "pathgen")
 
 	if not green_layer or not green_layer is TileMapLayer:
 		Logger.warn("No %s TileMapLayer found in scene, skipping ground tile generation" % GROUND_LAYER_NAME, "pathgen")
 		return
 
+	if not dark_layer or not dark_layer is TileMapLayer:
+		Logger.warn("No %s TileMapLayer found in scene, skipping dark extension generation" % GROUND2_LAYER_NAME, "pathgen")
+		return
+
 	# Clear existing tiles first
 	green_layer.clear()
-	Logger.debug("Using Green TileMapLayer for extension placement", "pathgen")
+	dark_layer.clear()
+	Logger.debug("Using dual-layer forest ring approach", "pathgen")
 
 	# Get ground positions from DungeonPathGenerator
 	var ground_positions = path_generator.get_ground_positions()
@@ -351,35 +378,38 @@ func _generate_ground_tiles():
 		Logger.warn("No corridor ground positions available from path generator", "pathgen")
 		return
 
-	# Ground tile configuration using forest tileset - SINGLE EXTENSION SYSTEM
+	# Atlas coordinates for forest tileset
 	var ground_source_id = 0
-	var extension_atlas_coords = Vector2i(0, 12)   # Extension layer (0,12)
-	var tile_size = 48  # Forest tileset uses 48x48 tiles
+	var green_atlas_coords = Vector2i(0, 12)   # Light forest (0,12)
+	var dark_atlas_coords = Vector2i(15, 12)   # Deep forest (15,12)
+	var tile_size = 48
 
-	# Generate extension layer
-	var extension_positions: Array[Vector2] = []
-	var extension_tiles_placed = 0
+	# Generate dual forest rings using distance thresholds
+	var ring_data = path_config.generate_dual_forest_rings(ground_positions)
+	var green_positions: Array[Vector2] = ring_data.get("green", [])
+	var dark_positions: Array[Vector2] = ring_data.get("dark", [])
 
-	if path_config and path_config.path_extension_width > 0:
-		extension_positions = path_config.generate_path_extensions(ground_positions)
+	# Convert to tile coordinates for deduplication tracking
+	var green_tiles: Dictionary = {}
+	var dark_tiles: Dictionary = {}
 
-		# Place extension tiles in Green layer
-		var unique_green_tiles: Array[Vector2i] = []
-		for ext_pos in extension_positions:
-			var tile_pos = Vector2i(int(ext_pos.x / tile_size), int(ext_pos.y / tile_size))
+	# Paint green layer first
+	for green_pos in green_positions:
+		var tile_pos = Vector2i(int(green_pos.x / tile_size), int(green_pos.y / tile_size))
+		green_tiles[tile_pos] = true
+		green_layer.set_cell(tile_pos, ground_source_id, green_atlas_coords)
 
-			# Only place tile if we haven't already placed one at this position
-			if tile_pos not in unique_green_tiles:
-				green_layer.set_cell(tile_pos, ground_source_id, extension_atlas_coords)
-				unique_green_tiles.append(tile_pos)
+	# Paint dark layer with overlap guard
+	for dark_pos in dark_positions:
+		var tile_pos = Vector2i(int(dark_pos.x / tile_size), int(dark_pos.y / tile_size))
+		# Guard dark placement: don't overwrite green tiles
+		if not tile_pos in green_tiles:
+			dark_tiles[tile_pos] = true
+			dark_layer.set_cell(tile_pos, ground_source_id, dark_atlas_coords)
 
-		extension_tiles_placed = unique_green_tiles.size()
-
-	# No main path tiles - paths remain clear for walking
-	# Extensions create the visual boundaries without covering the actual walkable paths
-	var tiles_placed = 0  # No path tiles placed
-
-	Logger.info("Generated %d main path tiles (none - clear paths), %d extensions (0,12)" % [tiles_placed, extension_tiles_placed], "pathgen")
+	Logger.info("Generated dual forest rings: %d green (0,12), %d dark (15,12)" % [
+		green_tiles.size(), dark_tiles.size()
+	], "pathgen")
 
 func _generate_boundary_trees():
 	"""Generate trees using TreeBoundaryGenerator data that responds to path layout"""
