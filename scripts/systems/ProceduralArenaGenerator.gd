@@ -37,7 +37,6 @@ var boundaries_layer: TileMapLayer
 var decorations_layer: TileMapLayer
 var ground_decorations_layer: TileMapLayer  # New layer for non-Y-sorted ground decorations
 var interactive_layer: TileMapLayer
-var spawn_layer: TileMapLayer
 
 # Spawn point reference
 var player_spawn: Marker2D
@@ -59,7 +58,6 @@ func _populate_layer_references() -> void:
 	decorations_layer = _get_layer_node("Decorations")
 	ground_decorations_layer = _get_layer_node("GroundDecoration")
 	interactive_layer = _get_layer_node("Interactive")
-	spawn_layer = _get_layer_node("Spawn")
 	player_spawn = _get_spawn_point("PlayerSpawnPoint")
 
 	_safe_log("Layer reference setup complete: Ground=%s, Boundaries=%s" % [
@@ -152,8 +150,6 @@ func _setup_layer_z_ordering() -> void:
 	"""Configure z-index for proper depth sorting"""
 	if ground_layer:
 		ground_layer.z_index = 0
-	if spawn_layer:
-		spawn_layer.z_index = 0  # Same level as ground, for enemy spawning
 	if ground_decorations_layer:
 		ground_decorations_layer.z_index = 0  # Same as ground layer for non-Y-sorted ground decorations
 	if boundaries_layer:
@@ -298,7 +294,6 @@ func generate_arena() -> void:
 
 	# Core generation phases
 	_generate_floor_layer(rng)
-	_generate_spawn_layer(rng)  # Generate spawn areas right after ground
 	_generate_walkable_floor_layer(rng)  # Walkable areas for player movement
 	_generate_boundary_layer(rng)
 	# Note: _fill_boundary_edge_gaps removed - simplified boundary system has no gaps
@@ -323,8 +318,6 @@ func clear_arena() -> void:
 	# Clear all layers
 	if ground_layer:
 		ground_layer.clear()
-	if spawn_layer:
-		spawn_layer.clear()
 	if ground_decorations_layer:
 		ground_decorations_layer.clear()
 	if boundaries_layer:
@@ -676,9 +669,9 @@ func _generate_interactive_objects(rng: RandomNumberGenerator) -> void:
 	pass
 
 func _generate_walkable_floor_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate natural ground tiles following boundary shape with extension"""
+	"""Generate simple rectangular ground coverage that covers all trees and beyond"""
 
-	_safe_log("👟 Generating natural ground coverage following boundary shape", "generation", "debug")
+	_safe_log("🌍 Generating ultra simple ground coverage - rect covers all trees and beyond", "generation", "debug")
 
 	if not ground_layer:
 		return
@@ -688,53 +681,21 @@ func _generate_walkable_floor_layer(rng: RandomNumberGenerator) -> void:
 		_safe_log("❌ No SimpleBoundaryConfig found - skipping ground generation", "generation", "warn")
 		return
 
-	# Get rough bounds for iteration optimization (actual shape-following happens in should_have_ground_tile)
-	var ground_bounds = boundary_config.get_total_ground_bounds(generation_params)
-	_safe_log("🌍 Natural ground coverage: %s with %d tile extension" % [boundary_config.base_shape, boundary_config.ground_extension], "generation", "debug")
+	# Use ultra simple rect approach - no complex shape following
+	var ground_bounds = boundary_config.get_simple_ground_bounds(generation_params)
+	_safe_log("🌍 Simple rect ground coverage with %d tile extension beyond boundary trees" % boundary_config.ground_extension, "generation", "debug")
 
 	var tiles_placed = 0
-	# Iterate through the bounds but use shape-following logic for placement
-	for x in range(ground_bounds.position.x, ground_bounds.end.x):
-		for y in range(ground_bounds.position.y, ground_bounds.end.y):
+	# Simple rectangular fill - every position in bounds gets ground
+	for x in range(ground_bounds.position.x, ground_bounds.position.x + ground_bounds.size.x):
+		for y in range(ground_bounds.position.y, ground_bounds.position.y + ground_bounds.size.y):
 			var tile_pos = Vector2i(x, y)
+			var walkable_tile = biome_config.get_random_walkable_floor_tile(rng)
+			ground_layer.set_cell(tile_pos, 0, walkable_tile)
+			tiles_placed += 1
 
-			# Natural boundary-following placement: ground follows shape + extension
-			if boundary_config.should_have_ground_tile(tile_pos, generation_params):
-				var walkable_tile = biome_config.get_random_walkable_floor_tile(rng)
-				ground_layer.set_cell(tile_pos, 0, walkable_tile)
-				tiles_placed += 1
+	_safe_log("🌍 Placed %d ground tiles in simple rect coverage" % tiles_placed, "generation", "debug")
 
-	_safe_log("🌍 Placed %d ground tiles naturally following %s boundary shape" % [tiles_placed, boundary_config.base_shape], "generation", "debug")
-
-func _generate_spawn_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate natural spawn area following boundary shape with spacing"""
-	if not generation_params.enable_spawn_layer or not spawn_layer:
-		return
-
-	_safe_log("👾 Generating natural spawn area following boundary shape", "generation", "debug")
-
-	var boundary_config = generation_params.simple_boundary_config
-	if not boundary_config:
-		_safe_log("❌ No SimpleBoundaryConfig found - skipping spawn generation", "generation", "warn")
-		return
-
-	# Get rough bounds for iteration optimization (actual shape-following happens in should_have_spawn_tile)
-	var ground_bounds = boundary_config.get_total_ground_bounds(generation_params)
-	_safe_log("👾 Natural spawn coverage: %s with %d tile border spacing" % [boundary_config.base_shape, boundary_config.spawn_border_spacing], "generation", "debug")
-
-	var spawn_tiles_placed = 0
-	# Iterate through the bounds but use shape-following logic for placement
-	for x in range(ground_bounds.position.x, ground_bounds.end.x):
-		for y in range(ground_bounds.position.y, ground_bounds.end.y):
-			var tile_pos = Vector2i(x, y)
-
-			# Natural boundary-following spawn placement: follows shape with spawn border spacing
-			if boundary_config.should_have_spawn_tile(tile_pos, generation_params):
-				var spawn_tile = biome_config.get_spawn_area_tile(rng)
-				spawn_layer.set_cell(tile_pos, 0, spawn_tile)
-				spawn_tiles_placed += 1
-
-	_safe_log("👾 Placed %d spawn tiles naturally following %s boundary shape" % [spawn_tiles_placed, boundary_config.base_shape], "generation", "debug")
 
 func _will_have_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
 	"""Check if a position will have a tree or other obstruction - simplified boundary system"""

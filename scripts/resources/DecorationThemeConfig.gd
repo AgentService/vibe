@@ -87,6 +87,6 @@ func get_environmental_preference_modifier(position: Vector2i, arena_center: Vec
 func is_valid() -> bool:
 	"""Validate configuration"""
 	return not theme_name.is_empty() and \
-	       not decoration_tiles.is_empty() and \
-	       spawn_weight > 0.0 and \
-	       rarity_modifier > 0.0
+		   not decoration_tiles.is_empty() and \
+		   spawn_weight > 0.0 and \
+		   rarity_modifier > 0.0

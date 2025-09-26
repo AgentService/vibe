@@ -3,14 +3,13 @@ extends Control
 
 var generate_button: Button
 var seed_input: SpinBox
-var arena_size_x: SpinBox
-var arena_size_y: SpinBox
 
-# Simplified Boundary Controls
+# Simple Size Configuration
+var arena_width_input: SpinBox
+var arena_height_input: SpinBox
+
+# Boundary Configuration
 var boundary_shape_option: OptionButton
-var shape_length_input: SpinBox
-var shape_height_input: SpinBox
-# arena_base_size removed - boundary system is now single source of truth
 var tree_spacing_horizontal_input: SpinBox
 var tree_spacing_vertical_input: SpinBox
 var tree_row_count_input: SpinBox
@@ -21,10 +20,8 @@ var enable_staggered_toggle: CheckBox
 var placement_randomness_input: SpinBox
 var max_random_offset_input: SpinBox
 
-# Natural Coverage Extension
+# Simple Ground Extension
 var ground_extension_input: SpinBox
-var spawn_layer_toggle: CheckBox
-var spawn_border_spacing_input: SpinBox
 
 func _init():
 	name = "Forest Generator"
@@ -50,7 +47,7 @@ func _init():
 
 	# Title
 	var title = Label.new()
-	title.text = "Simplified Forest Generator"
+	title.text = "Ultra Simple Forest Generator"
 	title.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(title)
 
@@ -61,8 +58,13 @@ func _init():
 
 	vbox.add_child(HSeparator.new())
 
-	# Simplified Boundary section
-	_create_simplified_boundary_controls(vbox)
+	# Simple Size Configuration section
+	_create_simple_size_controls(vbox)
+
+	vbox.add_child(HSeparator.new())
+
+	# Boundary Configuration section
+	_create_boundary_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
@@ -71,14 +73,14 @@ func _init():
 
 	vbox.add_child(HSeparator.new())
 
-	# Natural Coverage Extension section
-	_create_natural_coverage_controls(vbox)
+	# Simple Ground Extension section
+	_create_simple_ground_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
 	# Generate button
 	generate_button = Button.new()
-	generate_button.text = "Generate Simplified Arena"
+	generate_button.text = "Generate Ultra Simple Arena"
 	generate_button.pressed.connect(_on_generate_pressed)
 	vbox.add_child(generate_button)
 
@@ -98,34 +100,41 @@ func _create_basic_controls(container: VBoxContainer) -> void:
 	seed_input.value = 12345
 	container.add_child(seed_input)
 
-	# Arena size controls
-	var size_label = Label.new()
-	size_label.text = "Arena Size:"
-	container.add_child(size_label)
+func _create_simple_size_controls(container: VBoxContainer) -> void:
+	"""Create ultra simple size configuration controls"""
+	var size_title = Label.new()
+	size_title.text = "Simple Size Configuration"
+	size_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(size_title)
 
-	var size_hbox = HBoxContainer.new()
-	container.add_child(size_hbox)
+	# Arena width
+	var width_label = Label.new()
+	width_label.text = "Arena Width (tiles):"
+	container.add_child(width_label)
 
-	arena_size_x = SpinBox.new()
-	arena_size_x.min_value = 10
-	arena_size_x.max_value = 150
-	arena_size_x.value = 150
-	size_hbox.add_child(arena_size_x)
+	arena_width_input = SpinBox.new()
+	arena_width_input.min_value = 20
+	arena_width_input.max_value = 999
+	arena_width_input.step = 5
+	arena_width_input.value = 150
+	container.add_child(arena_width_input)
 
-	var x_label = Label.new()
-	x_label.text = " x "
-	size_hbox.add_child(x_label)
+	# Arena height
+	var height_label = Label.new()
+	height_label.text = "Arena Height (tiles):"
+	container.add_child(height_label)
 
-	arena_size_y = SpinBox.new()
-	arena_size_y.min_value = 10
-	arena_size_y.max_value = 150
-	arena_size_y.value = 150
-	size_hbox.add_child(arena_size_y)
+	arena_height_input = SpinBox.new()
+	arena_height_input.min_value = 20
+	arena_height_input.max_value = 999
+	arena_height_input.step = 5
+	arena_height_input.value = 150
+	container.add_child(arena_height_input)
 
-func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
-	"""Create simplified boundary controls"""
+func _create_boundary_controls(container: VBoxContainer) -> void:
+	"""Create boundary configuration controls"""
 	var boundary_title = Label.new()
-	boundary_title.text = "Simplified Boundary System"
+	boundary_title.text = "Boundary Configuration"
 	boundary_title.add_theme_font_size_override("font_size", 12)
 	container.add_child(boundary_title)
 
@@ -140,38 +149,12 @@ func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
 	boundary_shape_option.selected = 0  # Default to Circle
 	container.add_child(boundary_shape_option)
 
-	# Shape length (width)
-	var length_label = Label.new()
-	length_label.text = "Shape Width (1=circle/square, 2-5=wide ellipse/rectangle):"
-	container.add_child(length_label)
-
-	shape_length_input = SpinBox.new()
-	shape_length_input.min_value = 1.0
-	shape_length_input.max_value = 5.0
-	shape_length_input.step = 0.1
-	shape_length_input.value = 1.0
-	container.add_child(shape_length_input)
-
-	# Shape height
-	var height_label = Label.new()
-	height_label.text = "Shape Height (1=circle/square, 2-5=tall ellipse/rectangle):"
-	container.add_child(height_label)
-
-	shape_height_input = SpinBox.new()
-	shape_height_input.min_value = 1.0
-	shape_height_input.max_value = 5.0
-	shape_height_input.step = 0.1
-	shape_height_input.value = 1.0
-	container.add_child(shape_height_input)
-
-	# Info about arena size connection
-	var connection_info = Label.new()
-	connection_info.text = "✅ Boundary shape automatically uses Arena Size above (150x150)"
-	connection_info.add_theme_font_size_override("font_size", 10)
-	connection_info.modulate = Color(0.2, 0.8, 0.2)
-	container.add_child(connection_info)
-
-	# arena_base_size removed - boundary system is now single source of truth
+	# Info about size integration
+	var size_info = Label.new()
+	size_info.text = "✅ Shape automatically uses Arena Width/Height above"
+	size_info.add_theme_font_size_override("font_size", 10)
+	size_info.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(size_info)
 
 	# Tree spacing in pixels - horizontal
 	var spacing_h_label = Label.new()
@@ -257,52 +240,37 @@ func _create_natural_placement_controls(container: VBoxContainer) -> void:
 	max_random_offset_input.value = 8
 	container.add_child(max_random_offset_input)
 
-func _create_natural_coverage_controls(container: VBoxContainer) -> void:
-	"""Create natural coverage extension controls"""
-	var coverage_title = Label.new()
-	coverage_title.text = "Natural Coverage Extension"
-	coverage_title.add_theme_font_size_override("font_size", 12)
-	container.add_child(coverage_title)
+func _create_simple_ground_controls(container: VBoxContainer) -> void:
+	"""Create ultra simple ground extension controls"""
+	var ground_title = Label.new()
+	ground_title.text = "Simple Ground Extension"
+	ground_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(ground_title)
 
 	# Ground extension beyond boundaries
 	var ground_label = Label.new()
-	ground_label.text = "Ground Extension Beyond Boundaries (tiles):"
+	ground_label.text = "Ground Extension Beyond Trees (tiles):"
 	container.add_child(ground_label)
 
 	ground_extension_input = SpinBox.new()
-	ground_extension_input.min_value = 0
-	ground_extension_input.max_value = 30
-	ground_extension_input.value = 10
+	ground_extension_input.min_value = 5
+	ground_extension_input.max_value = 150
+	ground_extension_input.step = 5
+	ground_extension_input.value = 50
 	container.add_child(ground_extension_input)
-
-	# Spawn layer controls
-	spawn_layer_toggle = CheckBox.new()
-	spawn_layer_toggle.text = "Enable Natural Spawn Layer"
-	spawn_layer_toggle.button_pressed = true
-	container.add_child(spawn_layer_toggle)
-
-	var spawn_spacing_label = Label.new()
-	spawn_spacing_label.text = "Spawn Border Spacing from Boundaries (tiles):"
-	container.add_child(spawn_spacing_label)
-
-	spawn_border_spacing_input = SpinBox.new()
-	spawn_border_spacing_input.min_value = 1
-	spawn_border_spacing_input.max_value = 15
-	spawn_border_spacing_input.value = 5
-	container.add_child(spawn_border_spacing_input)
 
 	# Info label
 	var info_label = Label.new()
-	info_label.text = "✅ Ground and spawn areas naturally follow boundary shape"
+	info_label.text = "✅ Simple rect covers all trees and extends beyond"
 	info_label.add_theme_font_size_override("font_size", 10)
 	info_label.modulate = Color(0.2, 0.8, 0.2)
 	container.add_child(info_label)
 
 func _create_info_labels(container: VBoxContainer) -> void:
 	"""Create information and help labels"""
-	# Note about simplified system
+	# Note about ultra simple system
 	var simple_note_label = Label.new()
-	simple_note_label.text = "✅ Using new simplified boundary system"
+	simple_note_label.text = "✅ Ultra simple boundary + ground system"
 	simple_note_label.add_theme_font_size_override("font_size", 10)
 	simple_note_label.modulate = Color(0.2, 0.8, 0.2)
 	container.add_child(simple_note_label)
@@ -349,32 +317,22 @@ func _on_generate_pressed():
 		push_error("Generator is missing BiomeConfig resource. Please assign it in the inspector.")
 		return
 
-	# Update generator settings via GenerationParams resource (simplified version)
+	# Update generator settings - ultra simple approach
 	if generator.generation_params:
 		generator.generation_params.generation_seed = int(seed_input.value)
-		generator.generation_params.arena_size = Vector2i(int(arena_size_x.value), int(arena_size_y.value))
-
-		# Apply natural coverage settings directly to boundary config
-		if generator.generation_params.simple_boundary_config:
-			var boundary_config = generator.generation_params.simple_boundary_config
-			boundary_config.ground_extension = int(ground_extension_input.value)
-			boundary_config.spawn_border_spacing = int(spawn_border_spacing_input.value)
-
-		# Apply spawn layer setting to generation params
-		generator.generation_params.enable_spawn_layer = spawn_layer_toggle.button_pressed
 
 		# Enable simplified boundaries
 		generator.generation_params.use_simplified_boundaries = true
 
-		# Update the SimpleBoundaryConfig resource if it exists
+		# Update the SimpleBoundaryConfig resource - ultra simple approach
 		if generator.generation_params.simple_boundary_config:
 			var boundary_config = generator.generation_params.simple_boundary_config
 
-			# Apply simplified boundary settings
-			boundary_config.base_shape = "Circle" if boundary_shape_option.selected == 0 else "Rectangle"
-			boundary_config.shape_length = shape_length_input.value
-			boundary_config.shape_height = shape_height_input.value
-			# arena_base_size removed - boundary system is now single source of truth
+			# Apply simple size configuration
+			boundary_config.arena_width = int(arena_width_input.value)
+			boundary_config.arena_height = int(arena_height_input.value)
+
+			# Apply boundary configuration
 			boundary_config.tree_spacing_horizontal = int(tree_spacing_horizontal_input.value)
 			boundary_config.tree_spacing_vertical = int(tree_spacing_vertical_input.value)
 			boundary_config.tree_row_count = int(tree_row_count_input.value)
@@ -385,9 +343,12 @@ func _on_generate_pressed():
 			boundary_config.placement_randomness = placement_randomness_input.value
 			boundary_config.max_random_offset = int(max_random_offset_input.value)
 
+			# Apply simple ground extension
+			boundary_config.ground_extension = int(ground_extension_input.value)
+
 	# Generate!
 	var current_seed = generator.generation_params.generation_seed if generator.generation_params else 0
-	print("🌲 Generating simplified arena with seed: ", current_seed)
+	print("🌲 Generating ultra simple arena with seed: ", current_seed)
 	generator.generate_arena()
 
 	# Update UI to show the incremented seed
