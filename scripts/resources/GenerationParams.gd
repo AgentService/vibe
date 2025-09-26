@@ -38,44 +38,10 @@ extends Resource
 @export var enable_spawn_layer: bool = true  # Generate spawn layer for enemies
 @export var spawn_border_spacing: int = 5  # Distance from boundaries for spawn area
 
-# Camera extension density gradient
-@export var edge_density_multiplier: float = 40.0  # How much denser trees get at outer edge (1.0 = no change, 10.0 = very dense)
-@export var invert_density_gradient: bool = true  # If true, trees get denser toward edges; if false, denser toward center
-
-# Organic boundary fine-tuning
-@export var organic_noise_octaves: int = 2  # Number of noise layers (0-8)
-@export var organic_noise_lacunarity: float = 1.5  # Frequency multiplier between octaves (0.0+)
-@export var organic_noise_gain: float = 0.3  # Amplitude reduction for higher octaves (0.0-1.0)
-@export var organic_amplitude_multiplier: float = 0.5  # Overall amplitude reduction (0.0-2.0)
-@export var organic_curvature_scale: float = 8.0  # Fixed curvature scale (0.0+ for sharp edges, higher for smoother)
-
-# Organic boundary settings
-@export var enable_organic_boundaries: bool = true  # Enable cloud-like natural boundaries
-@export var boundary_noise_frequency: float = 0.05  # Lower = smoother curves (0.0 = no noise)
-@export var boundary_noise_amplitude: float = 3.0  # Noise variation strength
-@export var boundary_edge_fill_chance: float = 0.9  # Chance to fill boundary edge gaps (0.0-1.0) to prevent escape routes
-
-# Ultra-strong gap-free system parameters
-@export_group("Ultra-Strong Gap Fill")
-@export var fill_sample_spacing: int = 1  # Tile spacing between samples (1 = ultra-dense, up to 20)
-@export var fill_coverage_radius: float = 1.0  # Radius of coverage around each sample (0.0-3.0, 1.0 = 3x3 grid)
-@export var fill_angular_density: float = 0.2  # Angular density multiplier (0.1-1.0, higher = more points)
-@export var fill_minimum_chance: float = 0.8  # Minimum placement chance (0.0-1.0, 0.8 = 80% minimum)
-@export var fill_maximum_multiplier: float = 8.0  # Maximum density multiplier at edges (1.0-20.0)
-@export var fill_noise_variation: float = 0.1  # Random variation (0.0-0.5, 0.1 = 10% variation, very consistent)
-
-# Advanced organic boundary configuration
-@export_group("Organic Boundary Advanced")
-@export var boundary_variation_range: Vector2 = Vector2(1.0, 8.0)  # Min/max variation from base boundary
-@export var pocket_frequency: float = 0.03  # Creates inward pockets and outward bulges
-@export var pocket_depth: float = 6.0  # How deep/high pockets can extend
-@export var curvature_strength: float = 2.5  # Smoothness vs sharpness of curves
-@export var layered_noise_octaves: int = 4  # Number of noise layers for complexity
-@export var noise_lacunarity: float = 2.0  # Frequency multiplier for noise octaves
-@export var noise_gain: float = 0.5  # Amplitude reduction for higher octaves
-@export var enable_erosion_effect: bool = true  # Creates more natural weathered boundaries
-@export var erosion_strength: float = 1.5  # How much erosion affects boundary
-@export var boundary_density_variation: float = 0.3  # Random gaps in boundary for organic feel
+# Simplified boundary system
+@export_group("Simplified Boundaries")
+@export var use_simplified_boundaries: bool = true  # Use simplified boundary system with intuitive controls
+@export var simple_boundary_config: Resource
 
 # Debug settings
 @export var debug_generation: bool = false

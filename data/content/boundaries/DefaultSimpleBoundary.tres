@@ -1,0 +1,24 @@
+[gd_resource type="Resource" script_class="SimpleBoundaryConfig" load_steps=2 format=3 uid="uid://50oqmbysowkn"]
+
+[ext_resource type="Script" uid="uid://dgeuxwh2fyvck" path="res://scripts/resources/SimpleBoundaryConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+base_shape = "Circle"
+shape_length = 1.0
+shape_height = 1.0
+arena_width = 220
+arena_height = 75
+ground_extension = 50
+tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
+tree_spacing_horizontal = 48
+tree_spacing_vertical = 32
+tree_row_count = 3
+tree_density = 0.95
+enable_staggered_placement = true
+placement_randomness = 0.3
+max_random_offset = 8
+enable_path_generation = false
+path_width = 2
+path_checkpoint_count = 6
+debug_show_boundary_preview = false

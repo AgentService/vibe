@@ -1,0 +1,26 @@
+[gd_resource type="Resource" script_class="DecorationThemeConfig" load_steps=2 format=3 uid="uid://dfjtf6ss8j2ff"]
+
+[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/DecorationThemeConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+theme_name = "Big Flowers"
+theme_color = Color(0.9, 0.7, 0.3, 1)
+description = "Large vibrant flower patches and prominent blooms forming meadows"
+decoration_tiles = Array[Vector2i]([Vector2i(21, 6), Vector2i(24, 6), Vector2i(27, 6), Vector2i(30, 6), Vector2i(21, 9), Vector2i(24, 9), Vector2i(27, 9), Vector2i(30, 9), Vector2i(33, 9)])
+tile_size = Vector2i(3, 3)
+spawn_weight = 222.0
+rarity_modifier = 0.1
+min_spacing = 1
+max_spacing = 5
+enable_clustering = true
+cluster_chance = 0.7
+cluster_radius = 5
+max_cluster_size = 4
+cluster_decay = 0.6
+prefer_edges = true
+prefer_center = false
+avoid_boundaries = true
+boundary_buffer = 0
+z_layer = 2
+layer_name = "foreground"

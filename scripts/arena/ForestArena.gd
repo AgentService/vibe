@@ -62,18 +62,13 @@ func _setup_procedural_generator() -> void:
 
 	Logger.info("Starting procedural generator setup", "debug")
 
-	# Create procedural generator as a component
-	Logger.debug("About to preload ProceduralArenaGenerator script", "debug")
-	var ProceduralArenaGeneratorScript = preload("res://scripts/systems/ProceduralArenaGenerator.gd")
-	Logger.debug("Preload successful, creating instance", "debug")
+	# Use existing ProceduralArenaGenerator node from scene
+	procedural_generator = get_node_or_null("ProceduralArenaGenerator")
+	if not procedural_generator:
+		Logger.error("ProceduralArenaGenerator node not found in scene", "debug")
+		return
 
-	procedural_generator = ProceduralArenaGeneratorScript.new()
-	Logger.debug("Instance created, adding as child", "debug")
-
-	add_child(procedural_generator)
-	Logger.debug("Child added successfully", "debug")
-
-	Logger.debug("Created and added ProceduralArenaGenerator", "debug")
+	Logger.debug("Found existing ProceduralArenaGenerator node", "debug")
 
 	# Pass arena reference to generator so it can find nodes
 	Logger.debug("Checking for set_arena_reference method", "debug")
@@ -89,7 +84,7 @@ func _setup_procedural_generator() -> void:
 	_setup_generator_configs()
 	Logger.debug("_setup_generator_configs completed", "debug")
 
-	Logger.debug("ProceduralArenaGenerator component added", "debug")
+	Logger.debug("ProceduralArenaGenerator component ready", "debug")
 
 func _setup_generator_configs() -> void:
 	"""Setup default configurations for the procedural generator."""

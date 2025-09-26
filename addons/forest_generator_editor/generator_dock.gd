@@ -3,42 +3,25 @@ extends Control
 
 var generate_button: Button
 var seed_input: SpinBox
-var arena_size_x: SpinBox
-var arena_size_y: SpinBox
-var tree_spacing_min_input: SpinBox
-var tree_spacing_max_input: SpinBox
-var tree_chance_input: SpinBox
 
-# New enhanced configuration controls
-var camera_extension_input: SpinBox
-var spawn_layer_toggle: CheckBox
-var spawn_border_spacing_input: SpinBox
+# Simple Size Configuration
+var arena_width_input: SpinBox
+var arena_height_input: SpinBox
 
-# Organic boundary controls
-var organic_boundaries_toggle: CheckBox
-var noise_frequency_input: SpinBox
-var noise_amplitude_input: SpinBox
-var boundary_edge_fill_input: SpinBox
+# Boundary Configuration
+var boundary_shape_option: OptionButton
+var tree_spacing_horizontal_input: SpinBox
+var tree_spacing_vertical_input: SpinBox
+var tree_row_count_input: SpinBox
+var tree_density_input: SpinBox
 
-# Density gradient controls
-var edge_density_input: SpinBox
-var invert_gradient_toggle: CheckBox
+# Natural Placement Controls
+var enable_staggered_toggle: CheckBox
+var placement_randomness_input: SpinBox
+var max_random_offset_input: SpinBox
 
-# Organic boundary fine-tuning controls
-var organic_octaves_input: SpinBox
-var organic_lacunarity_input: SpinBox
-var organic_gain_input: SpinBox
-var organic_amplitude_input: SpinBox
-var organic_curvature_input: SpinBox
-
-# Ultra-strong gap-free system controls
-var fill_sample_spacing_input: SpinBox
-var fill_coverage_radius_input: SpinBox
-var fill_angular_density_input: SpinBox
-var fill_minimum_chance_input: SpinBox
-var fill_maximum_multiplier_input: SpinBox
-var fill_noise_variation_input: SpinBox
-
+# Simple Ground Extension
+var ground_extension_input: SpinBox
 
 func _init():
 	name = "Forest Generator"
@@ -47,7 +30,7 @@ func _init():
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 
 	# Set minimum size to ensure content is visible
-	set_custom_minimum_size(Vector2(250, 400))
+	set_custom_minimum_size(Vector2(250, 350))
 
 	# Create scrollable container that fills the dock
 	var scroll_container = ScrollContainer.new()
@@ -64,35 +47,40 @@ func _init():
 
 	# Title
 	var title = Label.new()
-	title.text = "Forest Arena Generator"
+	title.text = "Ultra Simple Forest Generator"
 	title.add_theme_font_size_override("font_size", 14)
 	vbox.add_child(title)
 
 	vbox.add_child(HSeparator.new())
 
-	# Basic Controls section (always visible)
+	# Basic Controls section
 	_create_basic_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
-	# Camera Extension section (collapsible)
-	_create_collapsible_section(vbox, "Camera Extension", _create_camera_extension_controls)
+	# Simple Size Configuration section
+	_create_simple_size_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
-	# Organic Boundaries section (collapsible)
-	_create_collapsible_section(vbox, "Organic Boundaries", _create_organic_boundary_controls)
+	# Boundary Configuration section
+	_create_boundary_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
-	# Advanced Tuning section (collapsible)
-	_create_collapsible_section(vbox, "Advanced Tuning", _create_advanced_tuning_controls)
+	# Natural Placement section
+	_create_natural_placement_controls(vbox)
+
+	vbox.add_child(HSeparator.new())
+
+	# Simple Ground Extension section
+	_create_simple_ground_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
 	# Generate button
 	generate_button = Button.new()
-	generate_button.text = "Generate Forest Arena"
+	generate_button.text = "Generate Ultra Simple Arena"
 	generate_button.pressed.connect(_on_generate_pressed)
 	vbox.add_child(generate_button)
 
@@ -100,7 +88,7 @@ func _init():
 	_create_info_labels(vbox)
 
 func _create_basic_controls(container: VBoxContainer) -> void:
-	"""Create basic generation controls that are always visible"""
+	"""Create basic generation controls"""
 	# Seed control
 	var seed_label = Label.new()
 	seed_label.text = "Generation Seed:"
@@ -112,328 +100,180 @@ func _create_basic_controls(container: VBoxContainer) -> void:
 	seed_input.value = 12345
 	container.add_child(seed_input)
 
-	# Arena size controls
-	var size_label = Label.new()
-	size_label.text = "Arena Size:"
-	container.add_child(size_label)
+func _create_simple_size_controls(container: VBoxContainer) -> void:
+	"""Create ultra simple size configuration controls"""
+	var size_title = Label.new()
+	size_title.text = "Simple Size Configuration"
+	size_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(size_title)
 
-	var size_hbox = HBoxContainer.new()
-	container.add_child(size_hbox)
+	# Arena width
+	var width_label = Label.new()
+	width_label.text = "Arena Width (tiles):"
+	container.add_child(width_label)
 
-	arena_size_x = SpinBox.new()
-	arena_size_x.min_value = 10
-	arena_size_x.max_value = 100
-	arena_size_x.value = 50
-	size_hbox.add_child(arena_size_x)
+	arena_width_input = SpinBox.new()
+	arena_width_input.min_value = 20
+	arena_width_input.max_value = 999
+	arena_width_input.step = 5
+	arena_width_input.value = 150
+	container.add_child(arena_width_input)
 
-	var x_label = Label.new()
-	x_label.text = " x "
-	size_hbox.add_child(x_label)
+	# Arena height
+	var height_label = Label.new()
+	height_label.text = "Arena Height (tiles):"
+	container.add_child(height_label)
 
-	arena_size_y = SpinBox.new()
-	arena_size_y.min_value = 10
-	arena_size_y.max_value = 100
-	arena_size_y.value = 50
-	size_hbox.add_child(arena_size_y)
+	arena_height_input = SpinBox.new()
+	arena_height_input.min_value = 20
+	arena_height_input.max_value = 999
+	arena_height_input.step = 5
+	arena_height_input.value = 150
+	container.add_child(arena_height_input)
 
-	# Tree spacing controls
-	var spacing_label = Label.new()
-	spacing_label.text = "Tree Spacing (Min - Max):"
-	container.add_child(spacing_label)
+func _create_boundary_controls(container: VBoxContainer) -> void:
+	"""Create boundary configuration controls"""
+	var boundary_title = Label.new()
+	boundary_title.text = "Boundary Configuration"
+	boundary_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(boundary_title)
 
-	var spacing_hbox = HBoxContainer.new()
-	container.add_child(spacing_hbox)
+	# Shape selection
+	var shape_label = Label.new()
+	shape_label.text = "Boundary Shape:"
+	container.add_child(shape_label)
 
-	tree_spacing_min_input = SpinBox.new()
-	tree_spacing_min_input.min_value = 1
-	tree_spacing_min_input.max_value = 10
-	tree_spacing_min_input.value = 1
-	spacing_hbox.add_child(tree_spacing_min_input)
+	boundary_shape_option = OptionButton.new()
+	boundary_shape_option.add_item("Circle")
+	boundary_shape_option.add_item("Rectangle")
+	boundary_shape_option.selected = 0  # Default to Circle
+	container.add_child(boundary_shape_option)
 
-	var dash_label = Label.new()
-	dash_label.text = " - "
-	spacing_hbox.add_child(dash_label)
+	# Info about size integration
+	var size_info = Label.new()
+	size_info.text = "✅ Shape automatically uses Arena Width/Height above"
+	size_info.add_theme_font_size_override("font_size", 10)
+	size_info.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(size_info)
 
-	tree_spacing_max_input = SpinBox.new()
-	tree_spacing_max_input.min_value = 1
-	tree_spacing_max_input.max_value = 10
-	tree_spacing_max_input.value = 1
-	spacing_hbox.add_child(tree_spacing_max_input)
+	# Tree spacing in pixels - horizontal
+	var spacing_h_label = Label.new()
+	spacing_h_label.text = "Tree Spacing Horizontal (pixels, 16-128):"
+	container.add_child(spacing_h_label)
 
-	# Tree placement chance
-	var chance_label = Label.new()
-	chance_label.text = "Tree Placement (0.0-1.0):"
-	container.add_child(chance_label)
+	tree_spacing_horizontal_input = SpinBox.new()
+	tree_spacing_horizontal_input.min_value = 16
+	tree_spacing_horizontal_input.max_value = 128
+	tree_spacing_horizontal_input.step = 8
+	tree_spacing_horizontal_input.value = 48
+	container.add_child(tree_spacing_horizontal_input)
 
-	tree_chance_input = SpinBox.new()
-	tree_chance_input.min_value = 0.0
-	tree_chance_input.max_value = 1.0
-	tree_chance_input.step = 0.1
-	tree_chance_input.value = 0.6
-	container.add_child(tree_chance_input)
+	# Tree spacing in pixels - vertical
+	var spacing_v_label = Label.new()
+	spacing_v_label.text = "Tree Spacing Vertical (pixels, 16-128):"
+	container.add_child(spacing_v_label)
 
-func _create_collapsible_section(parent: VBoxContainer, title: String, content_creator: Callable) -> void:
-	"""Create a collapsible section with title and content"""
-	var button = Button.new()
-	button.text = "▼ " + title
-	button.flat = true
-	button.alignment = HORIZONTAL_ALIGNMENT_LEFT
-	parent.add_child(button)
+	tree_spacing_vertical_input = SpinBox.new()
+	tree_spacing_vertical_input.min_value = 16
+	tree_spacing_vertical_input.max_value = 128
+	tree_spacing_vertical_input.step = 8
+	tree_spacing_vertical_input.value = 32
+	container.add_child(tree_spacing_vertical_input)
 
-	var content_container = VBoxContainer.new()
-	parent.add_child(content_container)
+	# Tree row count
+	var row_count_label = Label.new()
+	row_count_label.text = "Tree Rows Outside Arena (1-6):"
+	container.add_child(row_count_label)
 
-	# Call the content creator function to populate the section
-	content_creator.call(content_container)
+	tree_row_count_input = SpinBox.new()
+	tree_row_count_input.min_value = 1
+	tree_row_count_input.max_value = 6
+	tree_row_count_input.value = 3
+	container.add_child(tree_row_count_input)
 
-	# Connect button to toggle visibility
-	button.pressed.connect(func(): _toggle_section(button, content_container))
+	# Tree density
+	var density_label = Label.new()
+	density_label.text = "Tree Density (0.1-1.0, 0.95+ recommended):"
+	container.add_child(density_label)
 
-func _toggle_section(button: Button, container: VBoxContainer) -> void:
-	"""Toggle section visibility and button text"""
-	container.visible = !container.visible
-	var title = button.text.substr(2)  # Remove the arrow
-	button.text = ("▼ " if container.visible else "▶ ") + title
+	tree_density_input = SpinBox.new()
+	tree_density_input.min_value = 0.1
+	tree_density_input.max_value = 1.0
+	tree_density_input.step = 0.05
+	tree_density_input.value = 0.95
+	container.add_child(tree_density_input)
 
-func _create_camera_extension_controls(container: VBoxContainer) -> void:
-	"""Create camera extension controls"""
-	# Camera boundary extension
-	var camera_label = Label.new()
-	camera_label.text = "Camera Extension (more trees):"
-	container.add_child(camera_label)
+func _create_natural_placement_controls(container: VBoxContainer) -> void:
+	"""Create natural placement controls for staggered and random placement"""
+	var natural_title = Label.new()
+	natural_title.text = "Natural Placement Settings"
+	natural_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(natural_title)
 
-	camera_extension_input = SpinBox.new()
-	camera_extension_input.min_value = 0
-	camera_extension_input.max_value = 50
-	camera_extension_input.value = 25
-	container.add_child(camera_extension_input)
+	# Enable staggered placement toggle
+	enable_staggered_toggle = CheckBox.new()
+	enable_staggered_toggle.text = "Enable Net-like Staggered Placement"
+	enable_staggered_toggle.button_pressed = true
+	container.add_child(enable_staggered_toggle)
 
-	# Edge density control
-	var edge_density_label = Label.new()
-	edge_density_label.text = "Edge Density Multiplier (1.0+):"
-	container.add_child(edge_density_label)
+	# Placement randomness
+	var randomness_label = Label.new()
+	randomness_label.text = "Placement Randomness (0=perfect grid, 1=high variation):"
+	container.add_child(randomness_label)
 
-	edge_density_input = SpinBox.new()
-	edge_density_input.min_value = 1.0
-	edge_density_input.max_value = 999999
-	edge_density_input.step = 0.5
-	edge_density_input.value = 40.0
-	container.add_child(edge_density_input)
+	placement_randomness_input = SpinBox.new()
+	placement_randomness_input.min_value = 0.0
+	placement_randomness_input.max_value = 1.0
+	placement_randomness_input.step = 0.1
+	placement_randomness_input.value = 0.3
+	container.add_child(placement_randomness_input)
 
-	# Gradient inversion control
-	invert_gradient_toggle = CheckBox.new()
-	invert_gradient_toggle.text = "Invert Gradient (denser toward edges)"
-	invert_gradient_toggle.button_pressed = true  # Default to denser toward edges
-	container.add_child(invert_gradient_toggle)
+	# Maximum random offset
+	var offset_label = Label.new()
+	offset_label.text = "Max Random Offset (pixels, 0-16):"
+	container.add_child(offset_label)
 
-	# Spawn layer controls
-	spawn_layer_toggle = CheckBox.new()
-	spawn_layer_toggle.text = "Enable Spawn Layer"
-	spawn_layer_toggle.button_pressed = true
-	container.add_child(spawn_layer_toggle)
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = 0
+	max_random_offset_input.max_value = 16
+	max_random_offset_input.step = 2
+	max_random_offset_input.value = 8
+	container.add_child(max_random_offset_input)
 
-	var spawn_spacing_label = Label.new()
-	spawn_spacing_label.text = "Spawn Border Spacing:"
-	container.add_child(spawn_spacing_label)
+func _create_simple_ground_controls(container: VBoxContainer) -> void:
+	"""Create ultra simple ground extension controls"""
+	var ground_title = Label.new()
+	ground_title.text = "Simple Ground Extension"
+	ground_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(ground_title)
 
-	spawn_border_spacing_input = SpinBox.new()
-	spawn_border_spacing_input.min_value = 0
-	spawn_border_spacing_input.max_value = 10
-	spawn_border_spacing_input.value = 5
-	container.add_child(spawn_border_spacing_input)
+	# Ground extension beyond boundaries
+	var ground_label = Label.new()
+	ground_label.text = "Ground Extension Beyond Trees (tiles):"
+	container.add_child(ground_label)
 
-func _create_organic_boundary_controls(container: VBoxContainer) -> void:
-	"""Create organic boundary controls"""
-	# Organic boundaries toggle
-	organic_boundaries_toggle = CheckBox.new()
-	organic_boundaries_toggle.text = "Enable Organic Boundaries"
-	organic_boundaries_toggle.button_pressed = true
-	container.add_child(organic_boundaries_toggle)
+	ground_extension_input = SpinBox.new()
+	ground_extension_input.min_value = 5
+	ground_extension_input.max_value = 150
+	ground_extension_input.step = 5
+	ground_extension_input.value = 50
+	container.add_child(ground_extension_input)
 
-	# Noise frequency control
-	var frequency_label = Label.new()
-	frequency_label.text = "Shape Smoothness (0.0-1.0):"
-	container.add_child(frequency_label)
-
-	noise_frequency_input = SpinBox.new()
-	noise_frequency_input.min_value = 0.0
-	noise_frequency_input.max_value = 1.0
-	noise_frequency_input.step = 0.01
-	noise_frequency_input.value = 0.05
-	container.add_child(noise_frequency_input)
-
-	# Noise amplitude control
-	var amplitude_label = Label.new()
-	amplitude_label.text = "Shape Variation (0.0-50.0):"
-	container.add_child(amplitude_label)
-
-	noise_amplitude_input = SpinBox.new()
-	noise_amplitude_input.min_value = 0.0
-	noise_amplitude_input.max_value = 50.0
-	noise_amplitude_input.step = 0.5
-	noise_amplitude_input.value = 3.0
-	container.add_child(noise_amplitude_input)
-
-	# Boundary edge fill control
-	var edge_fill_label = Label.new()
-	edge_fill_label.text = "Edge Fill Chance (0.0-1.0):"
-	container.add_child(edge_fill_label)
-
-	boundary_edge_fill_input = SpinBox.new()
-	boundary_edge_fill_input.min_value = 0.0
-	boundary_edge_fill_input.max_value = 1.0
-	boundary_edge_fill_input.step = 0.1
-	boundary_edge_fill_input.value = 0.9
-	container.add_child(boundary_edge_fill_input)
-
-	# Ultra-strong gap-free system controls
-	var gap_free_title = Label.new()
-	gap_free_title.text = "Ultra-Strong Gap-Free Controls:"
-	gap_free_title.add_theme_font_size_override("font_size", 11)
-	container.add_child(gap_free_title)
-
-	# Sample spacing control
-	var spacing_label = Label.new()
-	spacing_label.text = "Sample Spacing (1-20):"
-	container.add_child(spacing_label)
-
-	fill_sample_spacing_input = SpinBox.new()
-	fill_sample_spacing_input.min_value = 1
-	fill_sample_spacing_input.max_value = 20
-	fill_sample_spacing_input.step = 1
-	fill_sample_spacing_input.value = 1
-	container.add_child(fill_sample_spacing_input)
-
-	# Coverage radius control (allowing fractional values)
-	var coverage_label = Label.new()
-	coverage_label.text = "Coverage Radius (0.0-3.0):"
-	container.add_child(coverage_label)
-
-	fill_coverage_radius_input = SpinBox.new()
-	fill_coverage_radius_input.min_value = 0.0
-	fill_coverage_radius_input.max_value = 3.0
-	fill_coverage_radius_input.step = 0.1
-	fill_coverage_radius_input.value = 1.0
-	container.add_child(fill_coverage_radius_input)
-
-	# Angular density control
-	var angular_label = Label.new()
-	angular_label.text = "Angular Density (0.1-1.0):"
-	container.add_child(angular_label)
-
-	fill_angular_density_input = SpinBox.new()
-	fill_angular_density_input.min_value = 0.1
-	fill_angular_density_input.max_value = 1.0
-	fill_angular_density_input.step = 0.05
-	fill_angular_density_input.value = 0.2
-	container.add_child(fill_angular_density_input)
-
-	# Minimum chance control
-	var min_chance_label = Label.new()
-	min_chance_label.text = "Minimum Chance (0.0-1.0):"
-	container.add_child(min_chance_label)
-
-	fill_minimum_chance_input = SpinBox.new()
-	fill_minimum_chance_input.min_value = 0.0
-	fill_minimum_chance_input.max_value = 1.0
-	fill_minimum_chance_input.step = 0.05
-	fill_minimum_chance_input.value = 0.8
-	container.add_child(fill_minimum_chance_input)
-
-	# Maximum multiplier control
-	var max_mult_label = Label.new()
-	max_mult_label.text = "Max Edge Multiplier (1.0-20.0):"
-	container.add_child(max_mult_label)
-
-	fill_maximum_multiplier_input = SpinBox.new()
-	fill_maximum_multiplier_input.min_value = 1.0
-	fill_maximum_multiplier_input.max_value = 20.0
-	fill_maximum_multiplier_input.step = 0.5
-	fill_maximum_multiplier_input.value = 8.0
-	container.add_child(fill_maximum_multiplier_input)
-
-	# Noise variation control
-	var noise_var_label = Label.new()
-	noise_var_label.text = "Noise Variation (0.0-0.5):"
-	container.add_child(noise_var_label)
-
-	fill_noise_variation_input = SpinBox.new()
-	fill_noise_variation_input.min_value = 0.0
-	fill_noise_variation_input.max_value = 0.5
-	fill_noise_variation_input.step = 0.02
-	fill_noise_variation_input.value = 0.1
-	container.add_child(fill_noise_variation_input)
-
-func _create_advanced_tuning_controls(container: VBoxContainer) -> void:
-	"""Create advanced organic tuning controls"""
-	# Noise octaves control
-	var octaves_label = Label.new()
-	octaves_label.text = "Noise Octaves (0-8):"
-	container.add_child(octaves_label)
-
-	organic_octaves_input = SpinBox.new()
-	organic_octaves_input.min_value = 0
-	organic_octaves_input.max_value = 8
-	organic_octaves_input.step = 1
-	organic_octaves_input.value = 2
-	container.add_child(organic_octaves_input)
-
-	# Lacunarity control
-	var lacunarity_label = Label.new()
-	lacunarity_label.text = "Lacunarity (0.0+):"
-	container.add_child(lacunarity_label)
-
-	organic_lacunarity_input = SpinBox.new()
-	organic_lacunarity_input.min_value = 0.0
-	organic_lacunarity_input.max_value = 10.0
-	organic_lacunarity_input.step = 0.1
-	organic_lacunarity_input.value = 1.5
-	container.add_child(organic_lacunarity_input)
-
-	# Gain control
-	var gain_label = Label.new()
-	gain_label.text = "Gain (0.0-1.0):"
-	container.add_child(gain_label)
-
-	organic_gain_input = SpinBox.new()
-	organic_gain_input.min_value = 0.0
-	organic_gain_input.max_value = 1.0
-	organic_gain_input.step = 0.1
-	organic_gain_input.value = 0.3
-	container.add_child(organic_gain_input)
-
-	# Amplitude multiplier control
-	var amplitude_mult_label = Label.new()
-	amplitude_mult_label.text = "Amplitude Multiplier (0.0-2.0):"
-	container.add_child(amplitude_mult_label)
-
-	organic_amplitude_input = SpinBox.new()
-	organic_amplitude_input.min_value = 0.0
-	organic_amplitude_input.max_value = 2.0
-	organic_amplitude_input.step = 0.1
-	organic_amplitude_input.value = 0.5
-	container.add_child(organic_amplitude_input)
-
-	# Curvature scale control
-	var curvature_label = Label.new()
-	curvature_label.text = "Curvature Scale (0.0+):"
-	container.add_child(curvature_label)
-
-	organic_curvature_input = SpinBox.new()
-	organic_curvature_input.min_value = 0.0
-	organic_curvature_input.max_value = 50.0
-	organic_curvature_input.step = 0.5
-	organic_curvature_input.value = 8.0
-	container.add_child(organic_curvature_input)
+	# Info label
+	var info_label = Label.new()
+	info_label.text = "✅ Simple rect covers all trees and extends beyond"
+	info_label.add_theme_font_size_override("font_size", 10)
+	info_label.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(info_label)
 
 func _create_info_labels(container: VBoxContainer) -> void:
 	"""Create information and help labels"""
-	# Note about auto-seeding
-	var auto_seed_label = Label.new()
-	auto_seed_label.text = "Note: Seed auto-increments each generation"
-	auto_seed_label.add_theme_font_size_override("font_size", 9)
-	auto_seed_label.modulate = Color(0.7, 0.7, 0.7)
-	container.add_child(auto_seed_label)
+	# Note about ultra simple system
+	var simple_note_label = Label.new()
+	simple_note_label.text = "✅ Ultra simple boundary + ground system"
+	simple_note_label.add_theme_font_size_override("font_size", 10)
+	simple_note_label.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(simple_note_label)
 
 	# Info label
 	var info_label = Label.new()
@@ -458,7 +298,6 @@ func _on_generate_pressed():
 		push_error("No scene is currently open")
 		return
 
-
 	var generator = _find_forest_generator(current_scene)
 	if not generator:
 		push_error("No ProceduralArenaGenerator found in current scene. Please open ForestArena.tscn")
@@ -478,49 +317,38 @@ func _on_generate_pressed():
 		push_error("Generator is missing BiomeConfig resource. Please assign it in the inspector.")
 		return
 
-	# Update generator settings via GenerationParams resource
+	# Update generator settings - ultra simple approach
 	if generator.generation_params:
 		generator.generation_params.generation_seed = int(seed_input.value)
-		generator.generation_params.arena_size = Vector2i(int(arena_size_x.value), int(arena_size_y.value))
 
-		# Apply enhanced feature settings
-		generator.generation_params.camera_boundary_extension = int(camera_extension_input.value)
-		generator.generation_params.enable_spawn_layer = spawn_layer_toggle.button_pressed
-		generator.generation_params.spawn_border_spacing = int(spawn_border_spacing_input.value)
-		generator.generation_params.edge_density_multiplier = edge_density_input.value
-		generator.generation_params.invert_density_gradient = invert_gradient_toggle.button_pressed
+		# Enable simplified boundaries
+		generator.generation_params.use_simplified_boundaries = true
 
-		# Apply organic boundary settings
-		generator.generation_params.enable_organic_boundaries = organic_boundaries_toggle.button_pressed
-		generator.generation_params.boundary_noise_frequency = noise_frequency_input.value
-		generator.generation_params.boundary_noise_amplitude = noise_amplitude_input.value
-		generator.generation_params.boundary_edge_fill_chance = boundary_edge_fill_input.value
+		# Update the SimpleBoundaryConfig resource - ultra simple approach
+		if generator.generation_params.simple_boundary_config:
+			var boundary_config = generator.generation_params.simple_boundary_config
 
-		# Apply organic fine-tuning settings
-		generator.generation_params.organic_noise_octaves = int(organic_octaves_input.value)
-		generator.generation_params.organic_noise_lacunarity = organic_lacunarity_input.value
-		generator.generation_params.organic_noise_gain = organic_gain_input.value
-		generator.generation_params.organic_amplitude_multiplier = organic_amplitude_input.value
-		generator.generation_params.organic_curvature_scale = organic_curvature_input.value
+			# Apply simple size configuration
+			boundary_config.arena_width = int(arena_width_input.value)
+			boundary_config.arena_height = int(arena_height_input.value)
 
-		# Apply ultra-strong gap-free settings
-		generator.generation_params.fill_sample_spacing = int(fill_sample_spacing_input.value)
-		generator.generation_params.fill_coverage_radius = fill_coverage_radius_input.value
-		generator.generation_params.fill_angular_density = fill_angular_density_input.value
-		generator.generation_params.fill_minimum_chance = fill_minimum_chance_input.value
-		generator.generation_params.fill_maximum_multiplier = fill_maximum_multiplier_input.value
-		generator.generation_params.fill_noise_variation = fill_noise_variation_input.value
+			# Apply boundary configuration
+			boundary_config.tree_spacing_horizontal = int(tree_spacing_horizontal_input.value)
+			boundary_config.tree_spacing_vertical = int(tree_spacing_vertical_input.value)
+			boundary_config.tree_row_count = int(tree_row_count_input.value)
+			boundary_config.tree_density = tree_density_input.value
 
+			# Apply natural placement settings
+			boundary_config.enable_staggered_placement = enable_staggered_toggle.button_pressed
+			boundary_config.placement_randomness = placement_randomness_input.value
+			boundary_config.max_random_offset = int(max_random_offset_input.value)
 
-	# Update biome settings via BiomeConfig resource
-	if generator.biome_config:
-		generator.biome_config.tree_spacing_min = int(tree_spacing_min_input.value)
-		generator.biome_config.tree_spacing_max = int(tree_spacing_max_input.value)
-		generator.biome_config.tree_placement_chance = tree_chance_input.value
+			# Apply simple ground extension
+			boundary_config.ground_extension = int(ground_extension_input.value)
 
 	# Generate!
 	var current_seed = generator.generation_params.generation_seed if generator.generation_params else 0
-	print("🌲 Generating procedural arena with seed: ", current_seed)
+	print("🌲 Generating ultra simple arena with seed: ", current_seed)
 	generator.generate_arena()
 
 	# Update UI to show the incremented seed
@@ -529,8 +357,6 @@ func _on_generate_pressed():
 
 	# Mark scene as modified so user can save
 	EditorInterface.mark_scene_as_unsaved()
-
-# Removed random seed function - auto-incrementing now
 
 func _find_forest_generator(node: Node) -> Node:
 	"""Recursively find ProceduralArenaGenerator in the scene tree"""

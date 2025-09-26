@@ -1,0 +1,41 @@
+[gd_resource type="Resource" script_class="TilePatternConfig" load_steps=2 format=3 uid="uid://bw3r8s5x9y4z1"]
+
+[ext_resource type="Script" uid="uid://cqwo6lrhiqi5w" path="res://scripts/resources/TilePatternConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+pattern_name = "Test Flower Circle"
+pattern_weight = 1.0
+pattern_tiles = Array[Dictionary]([{
+"relative_pos": Vector2i(0, 0),
+"tile": Vector2i(21, 6)
+}, {
+"relative_pos": Vector2i(-1, -1),
+"tile": Vector2i(9, 6)
+}, {
+"relative_pos": Vector2i(1, -1),
+"tile": Vector2i(9, 6)
+}, {
+"relative_pos": Vector2i(-1, 1),
+"tile": Vector2i(9, 6)
+}, {
+"relative_pos": Vector2i(1, 1),
+"tile": Vector2i(9, 6)
+}, {
+"relative_pos": Vector2i(0, -2),
+"tile": Vector2i(12, 6)
+}, {
+"relative_pos": Vector2i(2, 0),
+"tile": Vector2i(12, 6)
+}, {
+"relative_pos": Vector2i(0, 2),
+"tile": Vector2i(12, 6)
+}, {
+"relative_pos": Vector2i(-2, 0),
+"tile": Vector2i(12, 6)
+}])
+min_spacing_from_others = 15
+placement_chance = 0.6
+max_instances_per_arena = 3
+pattern_width = 5
+pattern_height = 5

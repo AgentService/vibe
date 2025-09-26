@@ -185,6 +185,31 @@ func _get_arena_root() -> Node2D:
 	Logger.warn("ArenaRoot not found in current scene or BaseArena children, falling back to current_scene", "waves")
 	return current_scene
 
+func _get_ysort_container_or_arena_root() -> Node2D:
+	"""Get YSort_Objects container for Y-sorting, or fall back to ArenaRoot"""
+	var current_scene = get_tree().current_scene
+	if not current_scene:
+		Logger.debug("No current scene found, using ArenaRoot fallback", "waves")
+		return _get_arena_root()
+
+	# First check if current scene has YSort_Objects directly
+	var ysort_container = current_scene.get_node_or_null("YSort_Objects")
+	if ysort_container:
+		Logger.debug("Found YSort_Objects container in current scene: %s" % current_scene.name, "waves")
+		return ysort_container
+
+	# Check if any BaseArena child has YSort_Objects (for dynamic loading)
+	for child in current_scene.get_children():
+		if child is BaseArena:
+			var child_ysort = child.get_node_or_null("YSort_Objects")
+			if child_ysort:
+				Logger.debug("Found YSort_Objects container in BaseArena child: %s" % child.name, "waves")
+				return child_ysort
+
+	# Fallback to ArenaRoot if no YSort_Objects container found
+	Logger.debug("YSort_Objects not found in scene %s, using ArenaRoot fallback" % current_scene.name, "waves")
+	return _get_arena_root()
+
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
 	_initialize_pool()
@@ -1230,10 +1255,12 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	if spawn_config.event_id and spawn_config.event_id.begins_with("breach_"):
 		enemy_instance.set_meta("breach_spawned", true)
 	
-	# Add to ArenaRoot for proper scene ownership
-	var arena_root = _get_arena_root()
-	arena_root.add_child(enemy_instance)
-	
+	# Use YSort_Objects container for proper Y-sorting, fallback to ArenaRoot
+	var spawn_container = _get_ysort_container_or_arena_root()
+	Logger.debug("_spawn_boss_scene: Using spawn container: %s (type: %s)" % [spawn_container.name, spawn_container.get_class()], "waves")
+
+	spawn_container.add_child(enemy_instance)
+
 	# Add to semantic groups for proper cleanup behavior
 	ClearingSemantics.add_semantic_group(enemy_instance, ClearingSemantics.CLEAR_WITH_ENEMIES)
 	enemy_instance.add_to_group("enemies")  # Functional group for combat systems
@@ -1241,6 +1268,10 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Register with boss hit feedback system (only for actual bosses)
 	if spawn_config.render_tier == "boss" and boss_hit_feedback:
 		boss_hit_feedback.register_boss(enemy_instance)
+
+	Logger.info("Spawned scene enemy: %s (tier: %s) at %s in container %s" % [
+		spawn_config.template_id, spawn_config.render_tier, str(enemy_instance.global_position), spawn_container.name
+	], "waves")
 
 	return enemy_instance
 
@@ -1254,18 +1285,22 @@ func _spawn_from_type(enemy_type: EnemyType, position: Vector2) -> void:
 
 func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	var boss_node = enemy_type.boss_scene.instantiate()
-	var arena_root = _get_arena_root()
-	arena_root.add_child(boss_node)
+
+	# Try to spawn in YSort_Objects container for proper Y-sorting, otherwise use ArenaRoot
+	var spawn_container = _get_ysort_container_or_arena_root()
+	Logger.debug("_spawn_special_boss: Using spawn container: %s (type: %s)" % [spawn_container.name if spawn_container.has_method("get") else "Unknown", spawn_container.get_class()], "waves")
+
+	spawn_container.add_child(boss_node)
 	boss_node.global_position = position
-	
+
 	# Add to semantic groups for proper cleanup behavior
 	ClearingSemantics.add_semantic_group(boss_node, ClearingSemantics.CLEAR_WITH_ENEMIES)
 	boss_node.add_to_group("enemies")  # Functional group for combat systems
-	
+
 	# Connect boss death to EventBus for XP/loot
 	if boss_node.has_signal("died"):
 		boss_node.died.connect(_on_special_boss_died.bind(enemy_type))
-	
+
 	# DAMAGE V3: Register boss with both EntityTracker and DamageService
 	var entity_id = "boss_" + str(boss_node.get_instance_id())
 	var entity_data = {
@@ -1278,8 +1313,8 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	}
 	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
-	
-	Logger.info("Spawned special boss: " + enemy_type.id + " at " + str(position) + " registered as " + entity_id, "waves")
+
+	Logger.info("Spawned special boss: %s at %s in container %s, registered as %s" % [enemy_type.id, str(position), spawn_container.name, entity_id], "waves")
 
 func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED

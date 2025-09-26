@@ -1,7 +1,7 @@
 [gd_scene load_steps=72 format=3 uid="uid://cj52peu3ecx4l"]
 
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
-[ext_resource type="Script" uid="uid://7esodp484p7x" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
+[ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
 [ext_resource type="Texture2D" uid="uid://cj4li0w17cl0g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_000.png" id="3_south0"]
 [ext_resource type="Texture2D" uid="uid://chlnrlajhmk5g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_001.png" id="4_south1"]
 [ext_resource type="Texture2D" uid="uid://b457ceomq6ejn" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_002.png" id="5_south2"]
@@ -303,12 +303,11 @@ animations = [{
 "speed": 6.0
 }]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_mo2wd"]
-radius = 18.0
-height = 42.0
+[sub_resource type="CircleShape2D" id="CircleShape2D_byhqc"]
+radius = 8.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
-size = Vector2(31, 39)
+size = Vector2(31, 41.5)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_mo2wd"]
 radius = 48.0
@@ -318,18 +317,17 @@ collision_layer = 2
 script = ExtResource("1_kjm5n")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -3)
 sprite_frames = SubResource("SpriteFrames_demon")
 animation = &"scary_walk_south_west"
+offset = Vector2(0, -12.675)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CapsuleShape2D_mo2wd")
+shape = SubResource("CircleShape2D_byhqc")
 
 [node name="HitBox" type="Area2D" parent="."]
-visible = false
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1.5, 1.5)
+position = Vector2(0, -12.75)
 shape = SubResource("RectangleShape2D_04ech")
 
 [node name="AttackTimer" type="Timer" parent="."]
@@ -337,11 +335,13 @@ shape = SubResource("RectangleShape2D_04ech")
 [node name="BossHealthBar" parent="." instance=ExtResource("1_861tk")]
 
 [node name="BossShadow" parent="." instance=ExtResource("67_qtjdy")]
-position = Vector2(0, 24)
-scale = Vector2(2.20097, 2.88673)
+z_as_relative = false
+scale = Vector2(2.889, 3.557)
+offset = Vector2(-0.64, 2.165)
 opacity = 0.8
 
 [node name="PersonalSpaceArea" type="Area2D" parent="."]
+visible = false
 collision_layer = 0
 collision_mask = 2
 

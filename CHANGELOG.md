@@ -5,12 +5,21 @@
 ## [Current Week - In Progress]
 
 ### Systems
+- **Strategic Architecture Decision**: Created comprehensive analysis for procedural generation scope management
+  - **Decision**: Keep existing procedural system dormant rather than removing it
+  - **Rationale**: Focus on core gameplay polish while preserving future flexibility for decorative/event variations
+  - **Documentation**: `/Obsidian/03-tasks/future-tasks/PROCEDURAL_GENERATION_REMOVAL_ANALYSIS.md` with detailed analysis and future decision criteria
+  - **Impact**: Zero maintenance burden while maintaining strategic options for later development phases
 - **SimpleTileSpawnValidator Implementation**: Complete tileset-based spawn validation system to replace Area2D spawn circles
   - **Core System**: Created SimpleTileSpawnValidator autoload with spatial partitioning for <2ms spawn queries
   - **Performance**: Optimized from 3.4ms to 1.8ms (47% improvement) using 512px spatial grid instead of linear search
   - **Integration**: Added hybrid spawn approach to SpawnDirector - try tileset first, fallback to radius-based
   - **Validation**: Uses `get_used_cells_by_id(2, Vector2i(12, 3))` to identify 76,498 ground tiles in UnderworldArena
   - **Testing**: Created TilesetIntegration_test.tscn with comprehensive autoload validation and performance monitoring
+- **Procedural Generation Parameter Refinements**: Minor parameter adjustments to improve procedural arena generation
+  - **Generation Seed**: Updated DefaultGenerationParams seed from 12384 to 12350 for fresh procedural variation
+  - **Theme Standardization**: Standardized decimal formatting (1→1.0) in FlowersTheme and GreyRocksTheme for consistency
+  - **Arena Layout**: Refined ForestArena tileset configuration for improved visual composition
 - **ForestArena Migration to ProceduralArenaGenerator**: Successfully migrated ForestArena from specialized to general procedural system
   - **Architecture Migration**: Replaced ForestArenaGenerator with tileset-agnostic ProceduralArenaGenerator using BiomeConfig resources
   - **Resource-Driven Design**: Created ForestBiome.tres and DefaultGenerationParams.tres for easy configuration without code changes
