@@ -21,9 +21,11 @@ extends Resource
 ## Point space radius - circular area around each point that pushes boundaries outward
 @export_range(50, 200, 10) var point_space_radius: float = 100.0
 
-## Path extension width - ring thickness for forest layers (pixels) - unlimited
-## Green ring: 0 to path_extension_width, Dark ring: path_extension_width to 2*path_extension_width
+## Path extension width - Green ring thickness for forest layers (pixels) - unlimited
 @export_range(0, 999999, 12) var path_extension_width: float = 48.0
+
+## Second extension width - Dark ring thickness for deeper forest layers (pixels) - unlimited
+@export_range(0, 999999, 12) var path_extension_width2: float = 48.0
 
 ## Arena size for point generation bounds
 @export_range(100, 500, 20) var arena_size: float = 300.0
@@ -272,9 +274,14 @@ func generate_path_extensions(ground_positions: Array[Vector2]) -> Array[Vector2
 	return unique_extensions
 
 ## Generate dual-layer forest rings using single width parameter for consistent ring spacing
-func generate_dual_forest_rings(ground_positions: Array[Vector2]) -> Dictionary:
+func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array = []) -> Dictionary:
 	if path_extension_width <= 0:
 		return {"green": [], "dark": []}
+
+	# Debug parameter values
+	Logger.debug("Ring generation parameters: width1=%.1f, width2=%.1f, path_width=%.1f" % [
+		path_extension_width, path_extension_width2, path_width
+	], "pathgen")
 
 	var green_tiles: Dictionary = {}  # Vector2i -> bool for deduplication
 	var dark_tiles: Dictionary = {}   # Vector2i -> bool for deduplication
@@ -283,12 +290,12 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2]) -> Dictionary:
 	# Calculate path edge distance (where Green ring should start)
 	var path_edge_distance = path_width * 0.5  # Half-width = edge of walkable corridor
 
-	# Use single width parameter for both rings, starting from path edge:
+	# Use independent width parameters for each ring, starting from path edge:
 	# Green ring: path_edge_distance to path_edge_distance + path_extension_width
-	# Dark ring: path_edge_distance + path_extension_width to path_edge_distance + 2 * path_extension_width
+	# Dark ring: path_edge_distance + path_extension_width to path_edge_distance + path_extension_width + path_extension_width2
 	var green_inner_radius = path_edge_distance
 	var green_outer_radius = path_edge_distance + path_extension_width
-	var dark_outer_radius = path_edge_distance + (path_extension_width * 2.0)
+	var dark_outer_radius = path_edge_distance + path_extension_width + path_extension_width2
 
 	# Compute once the max tile radius we need (tight loop bounds)
 	var max_radius_tiles = int(ceil(dark_outer_radius / tile_size))
@@ -317,9 +324,15 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2]) -> Dictionary:
 				# Green ring: path_edge_distance < distance <= path_edge_distance + path_extension_width
 				# Dark ring: path_edge_distance + path_extension_width < distance <= path_edge_distance + 2 * path_extension_width
 				if distance_sq > green_inner_threshold_sq and distance_sq <= green_outer_threshold_sq:
-					green_tiles[tile_pos] = true
+					# Collision-aware generation: only add if not in walkable corridor
+					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
+					if paths.is_empty() or not is_position_in_walkable_corridor(world_pos, paths):
+						green_tiles[tile_pos] = true
 				elif distance_sq > green_outer_threshold_sq and distance_sq <= dark_outer_threshold_sq:
-					dark_tiles[tile_pos] = true
+					# Collision-aware generation: only add if not in walkable corridor
+					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
+					if paths.is_empty() or not is_position_in_walkable_corridor(world_pos, paths):
+						dark_tiles[tile_pos] = true
 
 	# Convert to position arrays for tile placement
 	var green_positions: Array[Vector2] = []
@@ -331,8 +344,8 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2]) -> Dictionary:
 	for tile_coord in dark_tiles.keys():
 		dark_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
 
-	Logger.debug("Generated dual forest rings using single width %.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f)" % [
-		path_extension_width, green_positions.size(), green_inner_radius, green_outer_radius, dark_positions.size(), green_outer_radius, dark_outer_radius
+	Logger.debug("Generated dual forest rings using widths %.1f/%.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f)" % [
+		path_extension_width, path_extension_width2, green_positions.size(), green_inner_radius, green_outer_radius, dark_positions.size(), green_outer_radius, dark_outer_radius
 	], "pathgen")
 
 	return {"green": green_positions, "dark": dark_positions}

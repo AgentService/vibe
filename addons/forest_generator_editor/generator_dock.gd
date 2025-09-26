@@ -165,7 +165,7 @@ func _create_boundary_controls(container: VBoxContainer) -> void:
 	tree_spacing_horizontal_input.min_value = 16
 	tree_spacing_horizontal_input.max_value = 128
 	tree_spacing_horizontal_input.step = 8
-	tree_spacing_horizontal_input.value = 48
+	tree_spacing_horizontal_input.value = 60
 	container.add_child(tree_spacing_horizontal_input)
 
 	# Tree spacing in pixels - vertical

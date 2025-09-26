@@ -384,10 +384,34 @@ func _generate_ground_tiles():
 	var dark_atlas_coords = Vector2i(15, 12)   # Deep forest (15,12)
 	var tile_size = 48
 
-	# Generate dual forest rings using distance thresholds
-	var ring_data = path_config.generate_dual_forest_rings(ground_positions)
+	# Get path data for collision-aware generation
+	var path_data = path_generator.get_current_path_data()
+	var paths: Array = path_data.get("paths", [])
+
+	# Generate dual forest rings with collision-aware optimization
+	var ring_data = path_config.generate_dual_forest_rings(ground_positions, paths)
 	var green_positions: Array[Vector2] = ring_data.get("green", [])
 	var dark_positions: Array[Vector2] = ring_data.get("dark", [])
+
+	# VALIDATION: Run old filtering approach to verify optimization works correctly
+	var filtered_green_positions: Array[Vector2] = []
+	var filtered_dark_positions: Array[Vector2] = []
+
+	for green_pos in green_positions:
+		if not path_config.is_position_in_walkable_corridor(green_pos, paths):
+			filtered_green_positions.append(green_pos)
+
+	for dark_pos in dark_positions:
+		if not path_config.is_position_in_walkable_corridor(dark_pos, paths):
+			filtered_dark_positions.append(dark_pos)
+
+	# Validation logging: optimized vs filtered counts should match
+	var green_match = green_positions.size() == filtered_green_positions.size()
+	var dark_match = dark_positions.size() == filtered_dark_positions.size()
+	Logger.debug("Optimization validation - Green: %d optimized vs %d filtered (%s), Dark: %d vs %d (%s)" % [
+		green_positions.size(), filtered_green_positions.size(), "✓" if green_match else "✗",
+		dark_positions.size(), filtered_dark_positions.size(), "✓" if dark_match else "✗"
+	], "pathgen")
 
 	# Convert to tile coordinates for deduplication tracking
 	var green_tiles: Dictionary = {}

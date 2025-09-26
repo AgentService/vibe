@@ -14,6 +14,7 @@ var chain_length_input: SpinBox
 var min_distance_input: SpinBox
 var point_radius_input: SpinBox
 var path_extension_width_input: SpinBox
+var path_extension_width2_input: SpinBox
 var boundary_distance_input: SpinBox
 var status_label: Label
 
@@ -189,6 +190,18 @@ func _build_ui():
 	path_extension_width_input.suffix = "px"
 	vbox.add_child(path_extension_width_input)
 
+	# Second path extension width control
+	var path_extension_width2_label = Label.new()
+	path_extension_width2_label.text = "Dark Extension Width:"
+	vbox.add_child(path_extension_width2_label)
+
+	path_extension_width2_input = SpinBox.new()
+	path_extension_width2_input.min_value = 0
+	path_extension_width2_input.max_value = 1000  # Unlimited extension width
+	path_extension_width2_input.value = 60
+	path_extension_width2_input.step = 10
+	path_extension_width2_input.suffix = "px"
+	vbox.add_child(path_extension_width2_input)
 
 	# Boundary distance control
 	var boundary_distance_label = Label.new()
@@ -304,6 +317,8 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 			generator.path_config.point_space_radius = point_radius_input.value
 		if path_extension_width_input:
 			generator.path_config.path_extension_width = path_extension_width_input.value
+		if path_extension_width2_input:
+			generator.path_config.path_extension_width2 = path_extension_width2_input.value
 
 	# Update tree configuration
 	if generator.tree_config:
@@ -314,7 +329,7 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 	# Update arena base radius
 	generator.arena_base_radius = arena_base_radius_input.value
 
-	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f, ext1=%.1f, boundary=%.1f" % [
+	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f, ext1=%.1f, ext2=%.1f, boundary=%.1f" % [
 		generator.generation_seed,
 		int(path_count_input.value),
 		arena_size_input.value,
@@ -325,6 +340,7 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		min_distance_input.value if min_distance_input else 80.0,
 		point_radius_input.value if point_radius_input else 100.0,
 		path_extension_width_input.value if path_extension_width_input else 48.0,
+		path_extension_width2_input.value if path_extension_width2_input else 48.0,
 		boundary_distance_input.value if boundary_distance_input else 96.0
 	], "plugin")
 
