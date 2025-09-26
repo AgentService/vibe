@@ -43,8 +43,9 @@ func _log(level: LogLevel, msg: String, category: String) -> void:
 		return
 	
 	# Category filtering - if no category defined, all are enabled
+	# Auto-allow new categories by default (true) - user can disable by adding to config
 	if not enabled_categories.is_empty() and category != "":
-		if not enabled_categories.get(category, false):
+		if not enabled_categories.get(category, true):
 			return
 	
 	var prefix: String = _get_prefix(level, category)

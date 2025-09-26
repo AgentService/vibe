@@ -19,6 +19,9 @@ extends Resource
 ## Additional buffer around paths before placing trees (pixels)
 @export_range(24, 96, 4) var path_buffer_distance: float = 48.0
 
+## Distance of tree boundaries away from paths (pixels) - negative values allow tree overlap
+@export_range(-999999, 999999, 24) var boundary_distance: float = 96.0
+
 ## How much to extend tree boundaries beyond path network (tiles)
 @export_range(5, 50, 5) var boundary_extension: int = 20
 
@@ -31,6 +34,16 @@ extends Resource
 
 ## Noise threshold for tree placement (higher = fewer trees)
 @export_range(-1.0, 1.0, 0.1) var clustering_threshold: float = 0.2
+
+@export_group("Asymmetric Placement")
+## Enable staggered placement for natural asymmetric pattern
+@export var enable_staggered_placement: bool = true
+
+## Placement randomness factor (0=perfect grid, 1=high variation)
+@export_range(0.0, 1.0, 0.1) var placement_randomness: float = 0.3
+
+## Maximum random offset in pixels for asymmetric placement
+@export_range(0, 32, 2) var max_random_offset: float = 8.0
 
 @export_group("Boundary Optimization")
 ## Ensure trees form continuous boundary for arena containment
@@ -55,7 +68,7 @@ func generate_tree_boundaries(path_data: Dictionary, rng: RandomNumberGenerator)
 		Logger.warn("No path data available for tree boundary generation", "treegen")
 		return []
 
-	# Generate comprehensive tree coverage avoiding path corridors
+	# Generate comprehensive tree coverage avoiding path corridors (base paths only)
 	var tree_positions = _generate_corridor_avoiding_trees(paths, corridor_bounds, rng)
 
 	# Apply natural clustering if enabled
@@ -69,7 +82,7 @@ func generate_tree_boundaries(path_data: Dictionary, rng: RandomNumberGenerator)
 	Logger.info("Generated %d tree boundary positions" % tree_positions.size(), "treegen")
 	return tree_positions
 
-## Generate trees that avoid path corridors with buffer
+## Generate trees that avoid path corridors with buffer using asymmetric placement
 func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng: RandomNumberGenerator) -> Array[Vector2]:
 	var tree_positions: Array[Vector2] = []
 	var tile_size = 48  # Match forest tileset 48x48 tiles
@@ -80,32 +93,60 @@ func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng
 		corridor_bounds.size + Vector2(100, 100)
 	)
 
-	# Grid-based approach for comprehensive coverage
+	# Grid-based approach for comprehensive coverage with asymmetric placement
 	var start_x = int(extended_bounds.position.x / tile_size) * tile_size
 	var start_y = int(extended_bounds.position.y / tile_size) * tile_size
 	var end_x = start_x + extended_bounds.size.x
 	var end_y = start_y + extended_bounds.size.y
 
-	# Sample grid positions and place trees where not in corridors
-	for x in range(start_x, end_x, tree_spacing):
-		for y in range(start_y, end_y, tree_spacing):
-			var test_position = Vector2(x, y)
+	# Calculate row and column indices for staggered placement
+	var row_index = 0
+	for y in range(start_y, end_y, tree_spacing):
+		var col_index = 0
+		for x in range(start_x, end_x, tree_spacing):
+			var base_position = Vector2(x, y)
 
-			# Check if position is NOT in any path corridor with buffer
-			if not _is_position_in_path_buffer_zone(test_position, paths):
+			# Apply asymmetric staggered placement pattern
+			var final_position = _apply_asymmetric_placement(base_position, row_index, col_index, rng)
+
+			# Check if position is NOT in any path corridor with buffer (base paths only)
+			if not _is_position_in_path_buffer_zone(final_position, paths):
 				# Apply basic density filter
 				if rng.randf() < tree_density:
-					tree_positions.append(test_position)
+					tree_positions.append(final_position)
+
+			col_index += 1
+		row_index += 1
 
 	return tree_positions
+
+## Apply asymmetric staggered placement pattern to tree position
+func _apply_asymmetric_placement(base_position: Vector2, row_index: int, col_index: int, rng: RandomNumberGenerator) -> Vector2:
+	var final_position = base_position
+
+	# Apply staggered placement offset (net-like pattern)
+	if enable_staggered_placement and (row_index % 2 == 1):
+		# Offset every other row by half spacing for staggered pattern
+		final_position.x += tree_spacing * 0.5
+
+	# Apply random offset for natural variation
+	if placement_randomness > 0.0:
+		var random_range = max_random_offset * placement_randomness
+		final_position.x += (rng.randf() - 0.5) * 2.0 * random_range
+		final_position.y += (rng.randf() - 0.5) * 2.0 * random_range
+
+	return final_position
 
 ## Check if position is within path buffer zone (walkable area + buffer)
 func _is_position_in_path_buffer_zone(position: Vector2, paths: Array) -> bool:
 	for path in paths:
 		var path_points: Array[Vector2] = path.get_full_path()
-		# Use path width plus buffer for tree separation
-		# Combine base buffer with tree spacing for wider separation
-		var buffer_width = (path.width * 0.5) + path_buffer_distance + (tree_spacing * 0.5)
+		# Use path width plus configurable boundary distance for tree separation
+		# Combine boundary distance with tree spacing for controlled spacing
+		# Negative boundary_distance allows trees to overlap paths
+		var buffer_width = (path.width * 0.5) + boundary_distance + (tree_spacing * 0.5)
+		# Ensure minimum buffer of 0 to prevent unexpected behavior
+		buffer_width = max(0.0, buffer_width)
 
 		# Check distance to each path segment
 		for i in range(path_points.size() - 1):

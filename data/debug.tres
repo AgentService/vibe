@@ -23,3 +23,4 @@ system = true
 progression = false
 input = false
 session = false
+pathgen = true

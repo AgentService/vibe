@@ -13,6 +13,8 @@ var arena_base_radius_input: SpinBox
 var chain_length_input: SpinBox
 var min_distance_input: SpinBox
 var point_radius_input: SpinBox
+var path_extension_width_input: SpinBox
+var boundary_distance_input: SpinBox
 var status_label: Label
 
 # Generator reference
@@ -102,10 +104,10 @@ func _build_ui():
 	vbox.add_child(corridor_width_label)
 
 	corridor_width_input = SpinBox.new()
-	corridor_width_input.min_value = 32
-	corridor_width_input.max_value = 999999  # Unlimited
-	corridor_width_input.value = 96
-	corridor_width_input.step = 24
+	corridor_width_input.min_value = 50
+	corridor_width_input.max_value = 5000  # Unlimited
+	corridor_width_input.value = 900
+	corridor_width_input.step = 50
 	corridor_width_input.suffix = "px"
 	vbox.add_child(corridor_width_input)
 
@@ -115,10 +117,10 @@ func _build_ui():
 	vbox.add_child(tree_spacing_label)
 
 	tree_spacing_input = SpinBox.new()
-	tree_spacing_input.min_value = 48
-	tree_spacing_input.max_value = 144
-	tree_spacing_input.value = 72
-	tree_spacing_input.step = 12
+	tree_spacing_input.min_value = 20
+	tree_spacing_input.max_value = 150
+	tree_spacing_input.value = 30
+	tree_spacing_input.step = 1
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
 
@@ -130,7 +132,7 @@ func _build_ui():
 	arena_base_radius_input = SpinBox.new()
 	arena_base_radius_input.min_value = 200
 	arena_base_radius_input.max_value = 999999  # No limits
-	arena_base_radius_input.value = 800
+	arena_base_radius_input.value = 1800
 	arena_base_radius_input.step = 50
 	arena_base_radius_input.suffix = "px"
 	vbox.add_child(arena_base_radius_input)
@@ -142,8 +144,8 @@ func _build_ui():
 
 	chain_length_input = SpinBox.new()
 	chain_length_input.min_value = 2
-	chain_length_input.max_value = 10
-	chain_length_input.value = 6
+	chain_length_input.max_value = 15
+	chain_length_input.value = 7
 	chain_length_input.step = 1
 	chain_length_input.suffix = " points"
 	vbox.add_child(chain_length_input)
@@ -154,10 +156,10 @@ func _build_ui():
 	vbox.add_child(min_distance_label)
 
 	min_distance_input = SpinBox.new()
-	min_distance_input.min_value = 50
-	min_distance_input.max_value = 500
-	min_distance_input.value = 120
-	min_distance_input.step = 10
+	min_distance_input.min_value = 100
+	min_distance_input.max_value = 1600
+	min_distance_input.value = 800
+	min_distance_input.step = 100
 	min_distance_input.suffix = "px"
 	vbox.add_child(min_distance_input)
 
@@ -173,6 +175,34 @@ func _build_ui():
 	point_radius_input.step = 10
 	point_radius_input.suffix = "px"
 	vbox.add_child(point_radius_input)
+
+	# Path extension width control
+	var path_extension_width_label = Label.new()
+	path_extension_width_label.text = "Path Extension Width:"
+	vbox.add_child(path_extension_width_label)
+
+	path_extension_width_input = SpinBox.new()
+	path_extension_width_input.min_value = 0
+	path_extension_width_input.max_value = 1000  # Unlimited extension width
+	path_extension_width_input.value = 60
+	path_extension_width_input.step = 10
+	path_extension_width_input.suffix = "px"
+	vbox.add_child(path_extension_width_input)
+
+
+	# Boundary distance control
+	var boundary_distance_label = Label.new()
+	boundary_distance_label.text = "Boundary Distance:"
+	boundary_distance_label.tooltip_text = "Distance from paths to tree boundaries. Negative values allow tree overlap."
+	vbox.add_child(boundary_distance_label)
+
+	boundary_distance_input = SpinBox.new()
+	boundary_distance_input.min_value = -500  # Allow negative values for tree overlap
+	boundary_distance_input.max_value = 500  # Unlimited boundary distance
+	boundary_distance_input.value = -150
+	boundary_distance_input.step = 50
+	boundary_distance_input.suffix = "px"
+	vbox.add_child(boundary_distance_input)
 
 	# Separator
 	var separator2 = HSeparator.new()
@@ -272,15 +302,19 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 			generator.path_config.min_point_distance = min_distance_input.value
 		if point_radius_input:
 			generator.path_config.point_space_radius = point_radius_input.value
+		if path_extension_width_input:
+			generator.path_config.path_extension_width = path_extension_width_input.value
 
 	# Update tree configuration
 	if generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
+		if boundary_distance_input:
+			generator.tree_config.boundary_distance = boundary_distance_input.value
 
 	# Update arena base radius
 	generator.arena_base_radius = arena_base_radius_input.value
 
-	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f" % [
+	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f, ext1=%.1f, boundary=%.1f" % [
 		generator.generation_seed,
 		int(path_count_input.value),
 		arena_size_input.value,
@@ -289,7 +323,9 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		arena_base_radius_input.value,
 		int(chain_length_input.value if chain_length_input else 4),
 		min_distance_input.value if min_distance_input else 80.0,
-		point_radius_input.value if point_radius_input else 100.0
+		point_radius_input.value if point_radius_input else 100.0,
+		path_extension_width_input.value if path_extension_width_input else 48.0,
+		boundary_distance_input.value if boundary_distance_input else 96.0
 	], "plugin")
 
 func _show_error(message: String):

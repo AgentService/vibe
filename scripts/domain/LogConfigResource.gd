@@ -1,3 +1,4 @@
+@tool
 extends Resource
 
 class_name LogConfigResource
@@ -29,6 +30,7 @@ class_name LogConfigResource
 @export var progression: bool = true ## PlayerProgression, XP and level system
 @export var input: bool = false ## ArenaInputHandler, input processing
 @export var session: bool = false ## Session management, player registration
+@export var pathgen: bool = true ## Path-aware arena generation system
 
 ## Get category state as dictionary for compatibility with Logger
 func get_categories() -> Dictionary:
@@ -53,7 +55,8 @@ func get_categories() -> Dictionary:
 		"system": system,
 		"progression": progression,
 		"input": input,
-		"session": session
+		"session": session,
+		"pathgen": pathgen
 	}
 
 ## Validate log level is valid

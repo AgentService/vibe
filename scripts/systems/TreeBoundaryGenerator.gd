@@ -15,14 +15,18 @@ class_name TreeBoundaryGenerator
 # Generation state
 var current_tree_data: Dictionary = {}
 var current_path_data: Dictionary = {}
+var current_extension_data: Dictionary = {}
 var rng: RandomNumberGenerator
 var generation_seed: int
 
 ## Generate tree boundaries that respond to path data
-func generate_tree_boundaries(path_data: Dictionary, seed: int) -> Array[Vector2]:
+func generate_tree_boundaries(path_data: Dictionary, seed: int, extension_data: Dictionary = {}) -> Array[Vector2]:
 	var start_time = Time.get_ticks_msec()
 	generation_seed = seed
 	current_path_data = path_data
+
+	# Store extension data for proper boundary calculations around complete visual area
+	current_extension_data = extension_data
 
 	# Initialize deterministic RNG
 	rng = RandomNumberGenerator.new()
@@ -38,10 +42,10 @@ func generate_tree_boundaries(path_data: Dictionary, seed: int) -> Array[Vector2
 		Logger.warn("Invalid path data provided for tree boundary generation", "treegen")
 		return []
 
-	# Generate tree boundaries using configuration
+	# Generate tree boundaries using configuration (trees avoid only base path corridors)
 	var tree_positions = tree_config.generate_tree_boundaries(path_data, rng)
 
-	# Validate boundary quality
+	# Validate boundary quality (trees should only avoid base path corridors)
 	var validation_result = _validate_boundary_quality(tree_positions, path_data)
 
 	# Store generation results
@@ -59,11 +63,6 @@ func generate_tree_boundaries(path_data: Dictionary, seed: int) -> Array[Vector2
 	# Verify performance target
 	if elapsed_time > target_generation_time_ms:
 		Logger.warn("Tree generation exceeded target time: %.1fms > %.1fms" % [elapsed_time, target_generation_time_ms], "performance")
-
-	Logger.info("Generated tree boundaries: %d trees, %.1fms, coverage %.1f%%" % [
-		tree_positions.size(), elapsed_time,
-		validation_result.get("coverage_ratio", 0.0) * 100
-	], "treegen")
 
 	return tree_positions
 
@@ -112,7 +111,7 @@ func _validate_boundary_quality(tree_positions: Array[Vector2], path_data: Dicti
 	else:
 		validation.issues.append("Inadequate arena containment")
 
-	# Validate path corridor avoidance
+	# Validate path corridor avoidance (base path only, not extensions)
 	var path_avoidance_ok = _validate_path_avoidance(tree_positions, path_data.get("paths", []))
 	validation.path_avoidance_check = path_avoidance_ok
 	if not path_avoidance_ok:
@@ -166,7 +165,7 @@ func _find_nearest_tree_distance(position: Vector2, tree_positions: Array[Vector
 
 	return min_distance
 
-## Validate that trees avoid path corridors
+## Validate that trees avoid path corridors (base paths only)
 func _validate_path_avoidance(tree_positions: Array[Vector2], paths: Array) -> bool:
 	if not tree_config:
 		return true  # Skip validation if no config

@@ -19,9 +19,9 @@ class_name PathAwareArenaGenerator
 @export var line_width: float = 2.0
 
 # Layer name constants
-const BASE_LAYER_NAME = "Base"          # Direct child - no depth sorting needed
-const GROUND_LAYER_NAME = "Ground2"     # Direct child - no depth sorting needed
-const TREES_LAYER_NAME = "Trees2"       # In YSort_Objects - needs depth sorting
+const BASE_LAYER_NAME = "BaseGreen"        # Renamed from "Base" - base layer
+const GROUND_LAYER_NAME = "Green"          # Renamed from "Ground2" - first extension layer
+const TREES_LAYER_NAME = "Trees2"          # In YSort_Objects - needs depth sorting
 
 # Visual debug nodes
 var debug_markers: Array[Node2D] = []
@@ -29,7 +29,7 @@ var debug_lines: Array[Line2D] = []
 
 # System components
 var path_generator: DungeonPathGenerator
-var tree_generator: TreeBoundaryGenerator
+var tree_generator: Node
 
 # Generated data
 var current_path_data: Dictionary = {}
@@ -59,10 +59,13 @@ func _initialize_systems():
 	path_generator.path_config = path_config
 	add_child(path_generator)
 
-	# Create tree boundary generator system
-	tree_generator = TreeBoundaryGenerator.new()
-	tree_generator.tree_config = tree_config
-	add_child(tree_generator)
+	# Create tree boundary generator system (using script resource to avoid class registration issues)
+	var tree_script = load("res://scripts/systems/TreeBoundaryGenerator.gd")
+	var tree_node = Node.new()
+	tree_node.set_script(tree_script)
+	tree_node.tree_config = tree_config
+	add_child(tree_node)
+	tree_generator = tree_node
 
 	Logger.debug("Initialized DungeonPathGenerator and TreeBoundaryGenerator systems", "pathgen")
 
@@ -101,7 +104,11 @@ func generate_path_aware_arena():
 		Logger.error("TreeBoundaryGenerator is null, cannot generate trees", "treegen")
 		return
 
-	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed)
+	# Trees should avoid the complete visual area (path corridors + extensions) for natural boundaries
+	var extension_data = {
+		"path_extension_width": path_config.path_extension_width
+	}
+	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed, extension_data)
 
 	# Phase 3: Create visual debug markers
 	if show_debug_markers:
@@ -142,6 +149,7 @@ func clear_arena():
 	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
 	if ground_layer and ground_layer is TileMapLayer:
 		ground_layer.clear()
+
 
 	var tree_layer = _find_layer_node(TREES_LAYER_NAME)
 	if tree_layer and tree_layer is TileMapLayer:
@@ -223,7 +231,7 @@ func _draw():
 
 ## Helper method to find TileMapLayer nodes
 func _find_layer_node(layer_name: String) -> TileMapLayer:
-	# Base and Ground2 layers are outside YSort_Objects (don't need sorting)
+	# BaseGreen, Green, and Dark Green layers are outside YSort_Objects (don't need sorting)
 	if layer_name == BASE_LAYER_NAME or layer_name == GROUND_LAYER_NAME:
 		var layer_node = get_node_or_null(layer_name)
 		if layer_node and layer_node is TileMapLayer:
@@ -327,14 +335,15 @@ func _create_connection_line(path) -> Line2D:
 
 func _generate_ground_tiles():
 	"""Generate ground tiles for walkable corridor areas using DungeonPathGenerator data"""
-	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
-	if not ground_layer or not ground_layer is TileMapLayer:
+	var green_layer = _find_layer_node(GROUND_LAYER_NAME)  # Green layer for extensions
+
+	if not green_layer or not green_layer is TileMapLayer:
 		Logger.warn("No %s TileMapLayer found in scene, skipping ground tile generation" % GROUND_LAYER_NAME, "pathgen")
 		return
 
 	# Clear existing tiles first
-	ground_layer.clear()
-	Logger.debug("Using existing Ground TileMapLayer for tile placement", "pathgen")
+	green_layer.clear()
+	Logger.debug("Using Green TileMapLayer for extension placement", "pathgen")
 
 	# Get ground positions from DungeonPathGenerator
 	var ground_positions = path_generator.get_ground_positions()
@@ -342,46 +351,40 @@ func _generate_ground_tiles():
 		Logger.warn("No corridor ground positions available from path generator", "pathgen")
 		return
 
-	# Ground tile configuration using forest tileset
+	# Ground tile configuration using forest tileset - SINGLE EXTENSION SYSTEM
 	var ground_source_id = 0
-	var ground_atlas_coords = Vector2i(0, 12)  # Flexible underground tile (15x15 - can be drawn along path)
+	var extension_atlas_coords = Vector2i(0, 12)   # Extension layer (0,12)
 	var tile_size = 48  # Forest tileset uses 48x48 tiles
 
-	# Place underground tiles following the actual path segments
-	var tiles_placed = 0
-	for world_pos in ground_positions:
-		var tile_pos = Vector2i(int(world_pos.x / tile_size), int(world_pos.y / tile_size))
-		ground_layer.set_cell(tile_pos, ground_source_id, ground_atlas_coords)
-		tiles_placed += 1
+	# Generate extension layer
+	var extension_positions: Array[Vector2] = []
+	var extension_tiles_placed = 0
 
-	# Also place tiles directly along path segments for continuous coverage
-	var paths: Array = current_path_data.get("paths", [])
-	for path in paths:
-		var path_points = path.get_full_path()
-		for i in range(path_points.size() - 1):
-			var start_point = path_points[i]
-			var end_point = path_points[i + 1]
+	if path_config and path_config.path_extension_width > 0:
+		extension_positions = path_config.generate_path_extensions(ground_positions)
 
-			# Draw tiles along the line segment
-			var segment_length = start_point.distance_to(end_point)
-			var step_count = max(1, int(segment_length / (tile_size * 0.5)))
+		# Place extension tiles in Green layer
+		var unique_green_tiles: Array[Vector2i] = []
+		for ext_pos in extension_positions:
+			var tile_pos = Vector2i(int(ext_pos.x / tile_size), int(ext_pos.y / tile_size))
 
-			for step in range(step_count + 1):
-				var t = float(step) / float(step_count) if step_count > 0 else 0.0
-				var point = start_point.lerp(end_point, t)
-				var tile_pos = Vector2i(int(point.x / tile_size), int(point.y / tile_size))
+			# Only place tile if we haven't already placed one at this position
+			if tile_pos not in unique_green_tiles:
+				green_layer.set_cell(tile_pos, ground_source_id, extension_atlas_coords)
+				unique_green_tiles.append(tile_pos)
 
-				# Only place if not already placed
-				if ground_layer.get_cell_source_id(tile_pos) == -1:
-					ground_layer.set_cell(tile_pos, ground_source_id, ground_atlas_coords)
-					tiles_placed += 1
+		extension_tiles_placed = unique_green_tiles.size()
 
-	Logger.info("Generated %d underground tiles along path corridors" % tiles_placed, "pathgen")
+	# No main path tiles - paths remain clear for walking
+	# Extensions create the visual boundaries without covering the actual walkable paths
+	var tiles_placed = 0  # No path tiles placed
+
+	Logger.info("Generated %d main path tiles (none - clear paths), %d extensions (0,12)" % [tiles_placed, extension_tiles_placed], "pathgen")
 
 func _generate_boundary_trees():
 	"""Generate trees using TreeBoundaryGenerator data that responds to path layout"""
 	var tree_layer = _find_layer_node(TREES_LAYER_NAME)
-	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
+	var green_layer = _find_layer_node(GROUND_LAYER_NAME)  # Use Green layer for tree ground placement
 
 	if not tree_layer or not tree_layer is TileMapLayer:
 		Logger.warn("No %s TileMapLayer found in scene, skipping tree generation" % TREES_LAYER_NAME, "treegen")
@@ -398,8 +401,7 @@ func _generate_boundary_trees():
 
 	# Tree tile configuration using forest tileset
 	var tree_source_id = 0
-	var tree_atlas_coords = Vector2i(0, 28)  # Tree tile
-	var tree_ground_atlas_coords = Vector2i(15, 12)  # Ground beneath trees (15x15)
+	var tree_ground_atlas_coords = Vector2i(0, 12)  # Ground beneath trees - use Green layer tileset (0,12)
 	var tile_size = 48  # Forest tileset uses 48x48 tiles
 	var ground_tiles_placed = 0
 
@@ -407,20 +409,23 @@ func _generate_boundary_trees():
 		# Convert world position to tile position
 		var tile_pos = Vector2i(int(world_pos.x / tile_size), int(world_pos.y / tile_size))
 
-		# Place tree tile
-		tree_layer.set_cell(tile_pos, tree_source_id, tree_atlas_coords)
+		# Get random tree variant from TreeBoundaryConfiguration for visual diversity
+		var selected_tree_variant = tree_config.get_random_tree_tile(rng)
 
-		# Place ground tile beneath tree with southern offset for centering around tree base
-		if ground_layer and ground_layer is TileMapLayer:
+		# Place tree tile with selected variant
+		tree_layer.set_cell(tile_pos, tree_source_id, selected_tree_variant)
+
+		# Place ground tile beneath tree using Green layer tileset (0,12)
+		if green_layer and green_layer is TileMapLayer:
 			# Southern offset: move ground tile slightly south to center around tree base
 			var ground_offset = Vector2i(0, -1)  # 1 tile south offset
 			var ground_tile_pos = tile_pos + ground_offset
 
-			# Only place ground if no tile exists there
-			ground_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
+			# Place Green layer tileset (0,12) beneath tree for consistency
+			green_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
 			ground_tiles_placed += 1
 
-	Logger.info("Placed %d boundary trees and %d tree ground tiles with forest tileset" % [current_tree_data.size(), ground_tiles_placed], "treegen")
+	Logger.info("Placed %d boundary trees (variants: 0,28 & 9,28) and %d tree ground tiles using Green layer tileset (0,12)" % [current_tree_data.size(), ground_tiles_placed], "treegen")
 
 # Editor tool functionality
 func _get_configuration_warnings() -> PackedStringArray:

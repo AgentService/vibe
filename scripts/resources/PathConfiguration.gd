@@ -21,6 +21,9 @@ extends Resource
 ## Point space radius - circular area around each point that pushes boundaries outward
 @export_range(50, 200, 10) var point_space_radius: float = 100.0
 
+## Path extension width - additional darker ground around paths (pixels) - unlimited
+@export_range(0, 999999, 12) var path_extension_width: float = 48.0
+
 ## Arena size for point generation bounds
 @export_range(100, 500, 20) var arena_size: float = 300.0
 
@@ -227,6 +230,47 @@ func _calculate_corridor_bounds(points: Array[PathPoint]) -> Rect2:
 
 	return Rect2(min_pos, max_pos - min_pos)
 
+## Generate path extension positions around existing path tiles
+func generate_path_extensions(ground_positions: Array[Vector2]) -> Array[Vector2]:
+	if path_extension_width <= 0:
+		return []
+
+	var extension_positions: Array[Vector2] = []
+	var tile_size = 48  # Forest tileset uses 48x48 tiles
+
+	# Convert extension width to tile count
+	var extension_tiles = int(ceil(path_extension_width / tile_size))
+
+	# For each ground position, generate extension tiles around it
+	for ground_pos in ground_positions:
+		for x_offset in range(-extension_tiles, extension_tiles + 1):
+			for y_offset in range(-extension_tiles, extension_tiles + 1):
+				# Skip the center position (already has ground tile)
+				if x_offset == 0 and y_offset == 0:
+					continue
+
+				# Calculate distance to determine if within extension radius
+				var distance = sqrt(x_offset * x_offset + y_offset * y_offset) * tile_size
+				if distance <= path_extension_width:
+					var extension_pos = ground_pos + Vector2(x_offset * tile_size, y_offset * tile_size)
+
+					# Only add if not already a ground position
+					if not extension_pos in ground_positions:
+						extension_positions.append(extension_pos)
+
+	# Remove duplicates
+	var unique_extensions: Array[Vector2] = []
+	for ext_pos in extension_positions:
+		if not ext_pos in unique_extensions:
+			unique_extensions.append(ext_pos)
+
+	Logger.debug("Generated %d path extension positions with width %.1fpx" % [
+		unique_extensions.size(), path_extension_width
+	], "pathgen")
+
+	return unique_extensions
+
+
 ## Check if position is within walkable corridor (path width only)
 func is_position_in_walkable_corridor(position: Vector2, paths: Array[PathSegment]) -> bool:
 	for path in paths:
@@ -261,19 +305,31 @@ func get_ground_corridor_positions(paths: Array[PathSegment], corridor_bounds: R
 	var ground_positions: Array[Vector2] = []
 	var tile_size = 48  # Match forest tileset 48x48 tiles
 
+	Logger.debug("Checking corridor bounds: %s, paths: %d" % [corridor_bounds, paths.size()], "pathgen")
+
 	# Grid-based approach for ground tiles
 	var start_x = int(corridor_bounds.position.x / tile_size) * tile_size
 	var start_y = int(corridor_bounds.position.y / tile_size) * tile_size
 	var end_x = start_x + corridor_bounds.size.x
 	var end_y = start_y + corridor_bounds.size.y
 
+	var total_positions_checked = 0
+	var positions_in_corridor = 0
+
 	# Sample all positions and place ground where corridors exist
 	for x in range(start_x, end_x, tile_size):
 		for y in range(start_y, end_y, tile_size):
 			var test_position = Vector2(x, y)
+			total_positions_checked += 1
 
 			# Place ground tiles where position IS in walkable corridors
 			if is_position_in_walkable_corridor(test_position, paths):
 				ground_positions.append(test_position)
+				positions_in_corridor += 1
+
+	Logger.debug("Ground position check: %d/%d positions in corridor, first path width: %.1f" % [
+		positions_in_corridor, total_positions_checked,
+		paths[0].width if paths.size() > 0 else 0.0
+	], "pathgen")
 
 	return ground_positions
