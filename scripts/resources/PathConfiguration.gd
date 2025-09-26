@@ -9,11 +9,17 @@ extends Resource
 ## Enable path generation system
 @export var enable_path_generation: bool = true
 
-## Number of connection points for path network (fixed at 3 for hub-and-spoke)
-@export_range(3, 3, 1) var connection_points: int = 3
+## Number of connection points for path network (configurable chain length)
+@export_range(2, 10, 1) var connection_points: int = 3
+
+## Chain length for the outward path (how many points in sequence)
+@export_range(2, 10, 1) var chain_length: int = 6
 
 ## Minimum distance between connection points (pixels)
-@export_range(50, 200, 10) var min_point_distance: float = 80.0
+@export_range(50, 500, 10) var min_point_distance: float = 120.0
+
+## Point space radius - circular area around each point that pushes boundaries outward
+@export_range(50, 200, 10) var point_space_radius: float = 100.0
 
 ## Arena size for point generation bounds
 @export_range(100, 500, 20) var arena_size: float = 300.0
@@ -117,8 +123,8 @@ func generate_path_network(rng: RandomNumberGenerator) -> Dictionary:
 func _generate_connection_points(rng: RandomNumberGenerator) -> Array[PathPoint]:
 	var points: Array[PathPoint] = []
 
-	# Create a single chain extending outward: center → point1 → point2 → point3
-	var chain_length = 4  # center + 3 points extending outward
+	# Create a single chain extending outward using configurable chain length
+	var total_chain_length = chain_length  # Use configurable chain length
 
 	# Start at center
 	var current_position = Vector2.ZERO
@@ -128,9 +134,9 @@ func _generate_connection_points(rng: RandomNumberGenerator) -> Array[PathPoint]
 	# Choose initial random direction
 	var current_direction = Vector2(cos(rng.randf() * TAU), sin(rng.randf() * TAU))
 
-	# Generate 3 points extending outward in sequence
-	for i in range(1, chain_length):
-		# Distance for this segment
+	# Generate points extending outward in sequence using configurable chain length
+	for i in range(1, total_chain_length):
+		# Distance for this segment using configurable min distance
 		var segment_distance = min_point_distance * rng.randf_range(0.8, 1.2)
 
 		# Add directional variation for natural curving path
@@ -214,8 +220,8 @@ func _calculate_corridor_bounds(points: Array[PathPoint]) -> Rect2:
 		max_pos.x = max(max_pos.x, point.position.x)
 		max_pos.y = max(max_pos.y, point.position.y)
 
-	# Extend bounds for path width and ground extension
-	var total_extension = path_width + (ground_extension * 16)  # Convert tiles to pixels
+	# Extend bounds for path width, ground extension, and point space radius
+	var total_extension = path_width + (ground_extension * 16) + point_space_radius  # Include point space radius
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
 

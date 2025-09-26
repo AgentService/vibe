@@ -10,6 +10,7 @@ class_name PathAwareArenaGenerator
 @export var tree_config: TreeBoundaryConfiguration
 @export var generation_seed: int = 54321
 @export var auto_generate_on_ready: bool = false
+@export var arena_base_radius: float = 600.0
 
 @export_group("Visual Debug")
 @export var show_debug_markers: bool = true
@@ -18,8 +19,9 @@ class_name PathAwareArenaGenerator
 @export var line_width: float = 2.0
 
 # Layer name constants
-const GROUND_LAYER_NAME = "Ground2"
-const TREES_LAYER_NAME = "Trees2"
+const BASE_LAYER_NAME = "Base"          # Direct child - no depth sorting needed
+const GROUND_LAYER_NAME = "Ground2"     # Direct child - no depth sorting needed
+const TREES_LAYER_NAME = "Trees2"       # In YSort_Objects - needs depth sorting
 
 # Visual debug nodes
 var debug_markers: Array[Node2D] = []
@@ -108,7 +110,8 @@ func generate_path_aware_arena():
 	if show_path_connections:
 		_create_debug_connections()
 
-	# Phase 4: Generate tiles (ground and trees)
+	# Phase 4: Generate tiles (arena base, ground corridors, and trees)
+	_generate_arena_base()
 	_generate_ground_tiles()
 	_generate_boundary_trees()
 
@@ -132,11 +135,15 @@ func clear_arena():
 	debug_lines.clear()
 
 	# Clear tile map layers
-	var ground_layer = get_node_or_null(GROUND_LAYER_NAME)
+	var base_layer = _find_layer_node(BASE_LAYER_NAME)
+	if base_layer and base_layer is TileMapLayer:
+		base_layer.clear()
+
+	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
 	if ground_layer and ground_layer is TileMapLayer:
 		ground_layer.clear()
 
-	var tree_layer = get_node_or_null(TREES_LAYER_NAME)
+	var tree_layer = _find_layer_node(TREES_LAYER_NAME)
 	if tree_layer and tree_layer is TileMapLayer:
 		tree_layer.clear()
 
@@ -214,6 +221,85 @@ func _draw():
 
 	return marker
 
+## Helper method to find TileMapLayer nodes
+func _find_layer_node(layer_name: String) -> TileMapLayer:
+	# Base and Ground2 layers are outside YSort_Objects (don't need sorting)
+	if layer_name == BASE_LAYER_NAME or layer_name == GROUND_LAYER_NAME:
+		var layer_node = get_node_or_null(layer_name)
+		if layer_node and layer_node is TileMapLayer:
+			return layer_node as TileMapLayer
+	else:
+		# Trees2 layer is in YSort_Objects (needs depth sorting)
+		var ysort_container = get_node_or_null("YSort_Objects")
+		if ysort_container:
+			var nested_node = ysort_container.get_node_or_null(layer_name)
+			if nested_node and nested_node is TileMapLayer:
+				return nested_node as TileMapLayer
+
+	return null
+
+## Calculate bounding rectangle that covers all generated tree positions
+func _calculate_tree_coverage_bounds() -> Rect2:
+	if current_tree_data.is_empty():
+		return Rect2()  # No trees, return empty rect
+
+	# Find min/max positions from tree data
+	var min_pos = current_tree_data[0]
+	var max_pos = current_tree_data[0]
+
+	for tree_pos in current_tree_data:
+		min_pos.x = min(min_pos.x, tree_pos.x)
+		min_pos.y = min(min_pos.y, tree_pos.y)
+		max_pos.x = max(max_pos.x, tree_pos.x)
+		max_pos.y = max(max_pos.y, tree_pos.y)
+
+	# Create bounding rectangle
+	var size = max_pos - min_pos
+	return Rect2(min_pos, size)
+
+func _generate_arena_base():
+	"""Generate base ground layer covering full tree generation area plus extension"""
+	var base_layer = _find_layer_node(BASE_LAYER_NAME)
+	if not base_layer or not base_layer is TileMapLayer:
+		Logger.warn("No %s TileMapLayer found in scene, skipping arena base generation" % BASE_LAYER_NAME, "pathgen")
+		return
+
+	# Arena base tile configuration
+	var base_source_id = 0
+	var base_atlas_coords = Vector2i(3, 0)  # Base ground tile (3x3)
+	var tile_size = 48  # Forest tileset uses 48x48 tiles
+	var base_tiles_placed = 0
+
+	# Calculate bounding box from actual tree positions
+	var coverage_bounds = _calculate_tree_coverage_bounds()
+
+	# If no trees or invalid bounds, fall back to arena_base_radius
+	if coverage_bounds == Rect2():
+		var half_radius = arena_base_radius
+		coverage_bounds = Rect2(-half_radius, -half_radius, half_radius * 2, half_radius * 2)
+	else:
+		# Extend tree coverage by arena_base_radius in all directions
+		var extension = arena_base_radius
+		coverage_bounds = coverage_bounds.grow(extension)
+
+	# Align to tile grid
+	var start_x = int(coverage_bounds.position.x / tile_size) * tile_size
+	var start_y = int(coverage_bounds.position.y / tile_size) * tile_size
+	var end_x = int((coverage_bounds.position.x + coverage_bounds.size.x) / tile_size) * tile_size
+	var end_y = int((coverage_bounds.position.y + coverage_bounds.size.y) / tile_size) * tile_size
+
+	# Fill rectangular area with base tiles covering all trees and beyond
+	for x in range(start_x, end_x + tile_size, tile_size):
+		for y in range(start_y, end_y + tile_size, tile_size):
+			var tile_pos = Vector2i(int(x / tile_size), int(y / tile_size))
+			base_layer.set_cell(tile_pos, base_source_id, base_atlas_coords)
+			base_tiles_placed += 1
+
+	Logger.info("Generated %d arena base tiles covering tree area + %dpx extension" % [
+		base_tiles_placed,
+		int(arena_base_radius)
+	], "pathgen")
+
 func _create_debug_connections():
 	"""Create visual lines showing path connections"""
 	var paths: Array = current_path_data.get("paths", [])
@@ -241,7 +327,7 @@ func _create_connection_line(path) -> Line2D:
 
 func _generate_ground_tiles():
 	"""Generate ground tiles for walkable corridor areas using DungeonPathGenerator data"""
-	var ground_layer = get_node_or_null(GROUND_LAYER_NAME)
+	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
 	if not ground_layer or not ground_layer is TileMapLayer:
 		Logger.warn("No %s TileMapLayer found in scene, skipping ground tile generation" % GROUND_LAYER_NAME, "pathgen")
 		return
@@ -258,19 +344,45 @@ func _generate_ground_tiles():
 
 	# Ground tile configuration using forest tileset
 	var ground_source_id = 0
-	var ground_atlas_coords = Vector2i(3, 0)  # First tile for ground/grass
+	var ground_atlas_coords = Vector2i(0, 12)  # Flexible underground tile (15x15 - can be drawn along path)
 	var tile_size = 48  # Forest tileset uses 48x48 tiles
 
-	# Place ground tiles only in path corridors
+	# Place underground tiles following the actual path segments
+	var tiles_placed = 0
 	for world_pos in ground_positions:
 		var tile_pos = Vector2i(int(world_pos.x / tile_size), int(world_pos.y / tile_size))
 		ground_layer.set_cell(tile_pos, ground_source_id, ground_atlas_coords)
+		tiles_placed += 1
 
-	Logger.info("Generated %d corridor ground tiles with forest tileset" % ground_positions.size(), "pathgen")
+	# Also place tiles directly along path segments for continuous coverage
+	var paths: Array = current_path_data.get("paths", [])
+	for path in paths:
+		var path_points = path.get_full_path()
+		for i in range(path_points.size() - 1):
+			var start_point = path_points[i]
+			var end_point = path_points[i + 1]
+
+			# Draw tiles along the line segment
+			var segment_length = start_point.distance_to(end_point)
+			var step_count = max(1, int(segment_length / (tile_size * 0.5)))
+
+			for step in range(step_count + 1):
+				var t = float(step) / float(step_count) if step_count > 0 else 0.0
+				var point = start_point.lerp(end_point, t)
+				var tile_pos = Vector2i(int(point.x / tile_size), int(point.y / tile_size))
+
+				# Only place if not already placed
+				if ground_layer.get_cell_source_id(tile_pos) == -1:
+					ground_layer.set_cell(tile_pos, ground_source_id, ground_atlas_coords)
+					tiles_placed += 1
+
+	Logger.info("Generated %d underground tiles along path corridors" % tiles_placed, "pathgen")
 
 func _generate_boundary_trees():
 	"""Generate trees using TreeBoundaryGenerator data that responds to path layout"""
-	var tree_layer = get_node_or_null(TREES_LAYER_NAME)
+	var tree_layer = _find_layer_node(TREES_LAYER_NAME)
+	var ground_layer = _find_layer_node(GROUND_LAYER_NAME)
+
 	if not tree_layer or not tree_layer is TileMapLayer:
 		Logger.warn("No %s TileMapLayer found in scene, skipping tree generation" % TREES_LAYER_NAME, "treegen")
 		return
@@ -286,8 +398,10 @@ func _generate_boundary_trees():
 
 	# Tree tile configuration using forest tileset
 	var tree_source_id = 0
-	var tree_atlas_coords = Vector2i(0, 28)  # Second tile for trees
+	var tree_atlas_coords = Vector2i(0, 28)  # Tree tile
+	var tree_ground_atlas_coords = Vector2i(15, 12)  # Ground beneath trees (15x15)
 	var tile_size = 48  # Forest tileset uses 48x48 tiles
+	var ground_tiles_placed = 0
 
 	for world_pos in current_tree_data:
 		# Convert world position to tile position
@@ -296,7 +410,17 @@ func _generate_boundary_trees():
 		# Place tree tile
 		tree_layer.set_cell(tile_pos, tree_source_id, tree_atlas_coords)
 
-	Logger.info("Placed %d boundary trees with forest tileset" % current_tree_data.size(), "treegen")
+		# Place ground tile beneath tree with southern offset for centering around tree base
+		if ground_layer and ground_layer is TileMapLayer:
+			# Southern offset: move ground tile slightly south to center around tree base
+			var ground_offset = Vector2i(0, -1)  # 1 tile south offset
+			var ground_tile_pos = tile_pos + ground_offset
+
+			# Only place ground if no tile exists there
+			ground_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
+			ground_tiles_placed += 1
+
+	Logger.info("Placed %d boundary trees and %d tree ground tiles with forest tileset" % [current_tree_data.size(), ground_tiles_placed], "treegen")
 
 # Editor tool functionality
 func _get_configuration_warnings() -> PackedStringArray:

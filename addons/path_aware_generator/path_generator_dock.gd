@@ -9,6 +9,10 @@ var path_count_input: SpinBox
 var arena_size_input: SpinBox
 var corridor_width_input: SpinBox
 var tree_spacing_input: SpinBox
+var arena_base_radius_input: SpinBox
+var chain_length_input: SpinBox
+var min_distance_input: SpinBox
+var point_radius_input: SpinBox
 var status_label: Label
 
 # Generator reference
@@ -92,14 +96,14 @@ func _build_ui():
 	arena_size_input.step = 50
 	vbox.add_child(arena_size_input)
 
-	# Corridor width control
+	# Corridor width control (unlimited)
 	var corridor_width_label = Label.new()
 	corridor_width_label.text = "Corridor Width:"
 	vbox.add_child(corridor_width_label)
 
 	corridor_width_input = SpinBox.new()
-	corridor_width_input.min_value = 48
-	corridor_width_input.max_value = 192
+	corridor_width_input.min_value = 32
+	corridor_width_input.max_value = 999999  # Unlimited
 	corridor_width_input.value = 96
 	corridor_width_input.step = 24
 	corridor_width_input.suffix = "px"
@@ -117,6 +121,58 @@ func _build_ui():
 	tree_spacing_input.step = 12
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
+
+	# Arena base radius control
+	var arena_base_radius_label = Label.new()
+	arena_base_radius_label.text = "Arena Base Radius:"
+	vbox.add_child(arena_base_radius_label)
+
+	arena_base_radius_input = SpinBox.new()
+	arena_base_radius_input.min_value = 200
+	arena_base_radius_input.max_value = 999999  # No limits
+	arena_base_radius_input.value = 800
+	arena_base_radius_input.step = 50
+	arena_base_radius_input.suffix = "px"
+	vbox.add_child(arena_base_radius_input)
+
+	# Chain length control
+	var chain_length_label = Label.new()
+	chain_length_label.text = "Chain Length:"
+	vbox.add_child(chain_length_label)
+
+	chain_length_input = SpinBox.new()
+	chain_length_input.min_value = 2
+	chain_length_input.max_value = 10
+	chain_length_input.value = 6
+	chain_length_input.step = 1
+	chain_length_input.suffix = " points"
+	vbox.add_child(chain_length_input)
+
+	# Min distance control
+	var min_distance_label = Label.new()
+	min_distance_label.text = "Min Point Distance:"
+	vbox.add_child(min_distance_label)
+
+	min_distance_input = SpinBox.new()
+	min_distance_input.min_value = 50
+	min_distance_input.max_value = 500
+	min_distance_input.value = 120
+	min_distance_input.step = 10
+	min_distance_input.suffix = "px"
+	vbox.add_child(min_distance_input)
+
+	# Point radius control
+	var point_radius_label = Label.new()
+	point_radius_label.text = "Point Space Radius:"
+	vbox.add_child(point_radius_label)
+
+	point_radius_input = SpinBox.new()
+	point_radius_input.min_value = 50
+	point_radius_input.max_value = 200
+	point_radius_input.value = 100
+	point_radius_input.step = 10
+	point_radius_input.suffix = "px"
+	vbox.add_child(point_radius_input)
 
 	# Separator
 	var separator2 = HSeparator.new()
@@ -210,17 +266,30 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		generator.path_config.connection_points = int(path_count_input.value)
 		generator.path_config.arena_size = arena_size_input.value
 		generator.path_config.path_width = corridor_width_input.value
+		if chain_length_input:
+			generator.path_config.chain_length = int(chain_length_input.value)
+		if min_distance_input:
+			generator.path_config.min_point_distance = min_distance_input.value
+		if point_radius_input:
+			generator.path_config.point_space_radius = point_radius_input.value
 
 	# Update tree configuration
 	if generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
 
-	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f" % [
+	# Update arena base radius
+	generator.arena_base_radius = arena_base_radius_input.value
+
+	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f" % [
 		generator.generation_seed,
 		int(path_count_input.value),
 		arena_size_input.value,
 		corridor_width_input.value,
-		tree_spacing_input.value
+		tree_spacing_input.value,
+		arena_base_radius_input.value,
+		int(chain_length_input.value if chain_length_input else 4),
+		min_distance_input.value if min_distance_input else 80.0,
+		point_radius_input.value if point_radius_input else 100.0
 	], "plugin")
 
 func _show_error(message: String):
