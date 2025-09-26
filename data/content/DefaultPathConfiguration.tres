@@ -1,0 +1,16 @@
+[gd_resource type="PathConfiguration" format=3]
+
+[resource]
+enable_path_generation = true
+connection_points = 3
+min_point_distance = 80.0
+arena_size = 300.0
+path_width = 64.0
+path_smoothing = 0.4
+enable_path_variation = true
+max_path_variation = 20.0
+add_intermediate_waypoints = true
+waypoint_probability = 0.6
+ground_extension = 20
+debug_show_paths = false
+debug_show_points = false

@@ -1,0 +1,225 @@
+@tool
+class_name TreeBoundaryConfiguration
+extends Resource
+
+## Tree boundary configuration that responds to path data for natural arena containment
+## Implements "Path Drives → Boundary Responds" principle
+
+@export_group("Tree Placement")
+## Tree tile variants to use for boundary trees
+@export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 28), Vector2i(9, 28)]
+
+## Tree spacing between boundary trees (pixels)
+@export_range(16, 64, 4) var tree_spacing: float = 32.0
+
+## Tree density along boundaries (0.8+ recommended for natural look)
+@export_range(0.5, 1.0, 0.05) var tree_density: float = 0.9
+
+@export_group("Boundary Adaptation")
+## Additional buffer around paths before placing trees (pixels)
+@export_range(24, 96, 4) var path_buffer_distance: float = 48.0
+
+## How much to extend tree boundaries beyond path network (tiles)
+@export_range(5, 50, 5) var boundary_extension: int = 20
+
+@export_group("Natural Clustering")
+## Enable Perlin noise for realistic tree clustering
+@export var enable_natural_clustering: bool = true
+
+## Noise scale for tree clustering (larger = more spread out clusters)
+@export_range(0.01, 0.2, 0.01) var clustering_noise_scale: float = 0.05
+
+## Noise threshold for tree placement (higher = fewer trees)
+@export_range(-1.0, 1.0, 0.1) var clustering_threshold: float = 0.2
+
+@export_group("Boundary Optimization")
+## Ensure trees form continuous boundary for arena containment
+@export var enforce_boundary_continuity: bool = true
+
+## Maximum gap allowed in tree boundary (pixels)
+@export_range(16, 64, 8) var max_boundary_gap: float = 48.0
+
+@export_group("Debug Visualization")
+## Show tree boundary preview
+@export var debug_show_tree_boundaries: bool = false
+
+## Show path buffer zones
+@export var debug_show_path_buffers: bool = false
+
+## Generate tree boundary positions that respond to path data
+func generate_tree_boundaries(path_data: Dictionary, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var paths: Array = path_data.get("paths", [])
+	var corridor_bounds: Rect2 = path_data.get("corridor_bounds", Rect2())
+
+	if paths.is_empty() or corridor_bounds == Rect2():
+		Logger.warn("No path data available for tree boundary generation", "treegen")
+		return []
+
+	# Generate comprehensive tree coverage avoiding path corridors
+	var tree_positions = _generate_corridor_avoiding_trees(paths, corridor_bounds, rng)
+
+	# Apply natural clustering if enabled
+	if enable_natural_clustering:
+		tree_positions = _apply_natural_clustering(tree_positions, rng)
+
+	# Ensure boundary continuity for arena containment
+	if enforce_boundary_continuity:
+		tree_positions = _optimize_boundary_continuity(tree_positions, corridor_bounds, rng)
+
+	Logger.info("Generated %d tree boundary positions" % tree_positions.size(), "treegen")
+	return tree_positions
+
+## Generate trees that avoid path corridors with buffer
+func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var tree_positions: Array[Vector2] = []
+	var tile_size = 48  # Match forest tileset 48x48 tiles
+
+	# Expand bounds for full coverage
+	var extended_bounds = Rect2(
+		corridor_bounds.position - Vector2(50, 50),
+		corridor_bounds.size + Vector2(100, 100)
+	)
+
+	# Grid-based approach for comprehensive coverage
+	var start_x = int(extended_bounds.position.x / tile_size) * tile_size
+	var start_y = int(extended_bounds.position.y / tile_size) * tile_size
+	var end_x = start_x + extended_bounds.size.x
+	var end_y = start_y + extended_bounds.size.y
+
+	# Sample grid positions and place trees where not in corridors
+	for x in range(start_x, end_x, tree_spacing):
+		for y in range(start_y, end_y, tree_spacing):
+			var test_position = Vector2(x, y)
+
+			# Check if position is NOT in any path corridor with buffer
+			if not _is_position_in_path_buffer_zone(test_position, paths):
+				# Apply basic density filter
+				if rng.randf() < tree_density:
+					tree_positions.append(test_position)
+
+	return tree_positions
+
+## Check if position is within path buffer zone (walkable area + buffer)
+func _is_position_in_path_buffer_zone(position: Vector2, paths: Array) -> bool:
+	for path in paths:
+		var path_points: Array[Vector2] = path.get_full_path()
+		# Use path width plus buffer for tree separation
+		# Combine base buffer with tree spacing for wider separation
+		var buffer_width = (path.width * 0.5) + path_buffer_distance + (tree_spacing * 0.5)
+
+		# Check distance to each path segment
+		for i in range(path_points.size() - 1):
+			var start_point = path_points[i]
+			var end_point = path_points[i + 1]
+			var distance = _point_to_line_distance(position, start_point, end_point)
+
+			if distance <= buffer_width:
+				return true
+
+	return false
+
+## Apply Perlin noise for natural tree clustering
+func _apply_natural_clustering(tree_positions: Array[Vector2], rng: RandomNumberGenerator) -> Array[Vector2]:
+	var clustered_positions: Array[Vector2] = []
+	var noise = FastNoiseLite.new()
+	noise.seed = rng.randi()
+	noise.frequency = clustering_noise_scale
+
+	for position in tree_positions:
+		var noise_value = noise.get_noise_2d(position.x, position.y)
+
+		# Only keep trees where noise exceeds threshold
+		if noise_value > clustering_threshold:
+			clustered_positions.append(position)
+
+	Logger.debug("Applied clustering: %d → %d trees" % [tree_positions.size(), clustered_positions.size()], "treegen")
+	return clustered_positions
+
+## Optimize boundary continuity to ensure arena containment
+func _optimize_boundary_continuity(tree_positions: Array[Vector2], corridor_bounds: Rect2, rng: RandomNumberGenerator) -> Array[Vector2]:
+	var optimized_positions = tree_positions.duplicate()
+
+	# Identify boundary perimeter
+	var perimeter_points = _get_boundary_perimeter(corridor_bounds)
+
+	# Fill gaps in boundary coverage
+	for perimeter_point in perimeter_points:
+		var nearest_tree_distance = _find_nearest_tree_distance(perimeter_point, optimized_positions)
+
+		# Add tree if gap is too large
+		if nearest_tree_distance > max_boundary_gap:
+			optimized_positions.append(perimeter_point)
+
+	Logger.debug("Boundary optimization: %d → %d trees" % [tree_positions.size(), optimized_positions.size()], "treegen")
+	return optimized_positions
+
+## Get perimeter points around boundary for continuity checking
+func _get_boundary_perimeter(bounds: Rect2) -> Array[Vector2]:
+	var perimeter_points: Array[Vector2] = []
+	var step_size = tree_spacing
+
+	# Top and bottom edges
+	for x in range(bounds.position.x, bounds.position.x + bounds.size.x, step_size):
+		perimeter_points.append(Vector2(x, bounds.position.y))  # Top edge
+		perimeter_points.append(Vector2(x, bounds.position.y + bounds.size.y))  # Bottom edge
+
+	# Left and right edges
+	for y in range(bounds.position.y, bounds.position.y + bounds.size.y, step_size):
+		perimeter_points.append(Vector2(bounds.position.x, y))  # Left edge
+		perimeter_points.append(Vector2(bounds.position.x + bounds.size.x, y))  # Right edge
+
+	return perimeter_points
+
+## Find distance to nearest tree from given position
+func _find_nearest_tree_distance(position: Vector2, tree_positions: Array[Vector2]) -> float:
+	var min_distance = INF
+
+	for tree_pos in tree_positions:
+		var distance = position.distance_to(tree_pos)
+		min_distance = min(min_distance, distance)
+
+	return min_distance
+
+## Calculate distance from point to line segment
+func _point_to_line_distance(point: Vector2, line_start: Vector2, line_end: Vector2) -> float:
+	var line_vec = line_end - line_start
+	var line_length_squared = line_vec.length_squared()
+
+	if line_length_squared == 0.0:
+		return point.distance_to(line_start)
+
+	var t = max(0, min(1, (point - line_start).dot(line_vec) / line_length_squared))
+	var projection = line_start + t * line_vec
+	return point.distance_to(projection)
+
+## Get random tree tile variant for visual variety
+func get_random_tree_tile(rng: RandomNumberGenerator) -> Vector2i:
+	if tree_tile_variants.is_empty():
+		return Vector2i(0, 28)  # Default tree tile
+
+	return tree_tile_variants[rng.randi() % tree_tile_variants.size()]
+
+## Calculate 5-screen path length target for path generation validation
+func calculate_target_path_length() -> float:
+	# This is used by DungeonPathGenerator to target appropriate path lengths
+	# 5 screens = 5 * viewport diagonal
+	var viewport_size = Vector2(1080, 720)  # Default project viewport
+	return viewport_size.length() * 5.0
+
+## Validate that tree boundaries provide adequate arena containment
+func validate_arena_containment(tree_positions: Array[Vector2], corridor_bounds: Rect2) -> bool:
+	var perimeter_points = _get_boundary_perimeter(corridor_bounds)
+	var uncovered_points = 0
+
+	for perimeter_point in perimeter_points:
+		var nearest_distance = _find_nearest_tree_distance(perimeter_point, tree_positions)
+		if nearest_distance > max_boundary_gap:
+			uncovered_points += 1
+
+	var coverage_ratio = float(perimeter_points.size() - uncovered_points) / float(perimeter_points.size())
+	var is_adequate = coverage_ratio >= 0.8  # 80% coverage threshold
+
+	if not is_adequate:
+		Logger.warn("Inadequate boundary coverage: %.1f%%" % (coverage_ratio * 100), "treegen")
+
+	return is_adequate

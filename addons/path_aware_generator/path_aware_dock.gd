@@ -14,10 +14,6 @@ var path_width_input: SpinBox
 var boundary_thickness_input: SpinBox
 var path_smoothing_input: SpinBox
 
-# Tree Configuration
-var tree_spacing_input: SpinBox
-var tree_density_input: SpinBox
-
 # Natural Generation
 var enable_variation_toggle: CheckBox
 var max_variation_input: SpinBox
@@ -206,25 +202,11 @@ func _create_tree_config_controls(container: VBoxContainer) -> void:
 	spacing_label.text = "Tree Spacing (pixels):"
 	container.add_child(spacing_label)
 
-	tree_spacing_input = SpinBox.new()
-	tree_spacing_input.min_value = 16
-	tree_spacing_input.max_value = 64
-	tree_spacing_input.step = 4
-	tree_spacing_input.value = 32
-	container.add_child(tree_spacing_input)
-
 	# Tree density
 	var density_label = Label.new()
 	density_label.text = "Tree Density (0.5-1.0):"
 	container.add_child(density_label)
-
-	tree_density_input = SpinBox.new()
-	tree_density_input.min_value = 0.5
-	tree_density_input.max_value = 1.0
-	tree_density_input.step = 0.05
-	tree_density_input.value = 0.9
-	container.add_child(tree_density_input)
-
+	
 func _create_natural_generation_controls(container: VBoxContainer) -> void:
 	"""Create natural generation controls"""
 	var natural_title = Label.new()
@@ -350,8 +332,6 @@ func _on_generate_pressed():
 	path_config.path_width = path_width_input.value
 	path_config.boundary_thickness = boundary_thickness_input.value
 	path_config.path_smoothing = path_smoothing_input.value
-	path_config.tree_spacing = tree_spacing_input.value
-	path_config.tree_density = tree_density_input.value
 	path_config.enable_path_variation = enable_variation_toggle.button_pressed
 	path_config.max_path_variation = max_variation_input.value
 	path_config.add_intermediate_waypoints = enable_waypoints_toggle.button_pressed
@@ -388,7 +368,6 @@ func _generate_path_aware_arena(generator: Node, path_config: PathAwareBoundaryC
 	print("  - Arena size: ", path_config.arena_size)
 	print("  - Path width: ", path_config.path_width)
 	print("  - Boundary thickness: ", path_config.boundary_thickness)
-	print("  - Tree spacing: ", path_config.tree_spacing)
 
 	# Check if this is a PathAwareArenaGenerator
 	if generator.has_method("generate_path_aware_arena"):

@@ -1,0 +1,15 @@
+[gd_resource type="TreeBoundaryConfiguration" format=3]
+
+[resource]
+tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
+tree_spacing = 32.0
+tree_density = 0.9
+path_buffer_distance = 32.0
+boundary_extension = 20
+enable_natural_clustering = true
+clustering_noise_scale = 0.05
+clustering_threshold = 0.2
+enforce_boundary_continuity = true
+max_boundary_gap = 48.0
+debug_show_tree_boundaries = false
+debug_show_path_buffers = false
