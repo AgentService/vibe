@@ -9,26 +9,45 @@ extends Resource
 ## Basic shape type - circle can be extended into cylinder
 @export_enum("Circle", "Rectangle") var base_shape: String = "Circle"
 
-## Length multiplier - 1=circle, 2-5=increasingly long cylinder
-## For circle: 1=circle, 2=oval, 3-5=increasingly elongated cylinder
-## For rectangle: 1=square, 2+=increasingly elongated rectangle
+## Width multiplier - 1=circle/square, 2-5=increasingly wide
+## For circle: 1=circle, 2=oval, 3-5=increasingly elongated ellipse
+## For rectangle: 1=square, 2+=increasingly wide rectangle
 @export_range(1.0, 5.0, 0.1) var shape_length: float = 1.0
 
-## Arena base radius (for circle) or half-width (for rectangle) in tiles
+## Height multiplier - 1=circle/square, 2-5=increasingly tall
+## For circle: 1=circle, 2=tall oval, 3-5=increasingly elongated ellipse
+## For rectangle: 1=square, 2+=increasingly tall rectangle
+@export_range(1.0, 5.0, 0.1) var shape_height: float = 1.0
+
+## Arena base size - not used anymore, arena size always comes from GenerationParams
+## This is kept for compatibility but ignored in favor of actual arena bounds
 @export_range(10, 100, 1) var arena_base_size: int = 25
 
 @export_group("Tree Configuration")
 ## Tree tile variants to use - now supports alternative trees with bigger collision
 @export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 28), Vector2i(9, 28)]
 
-## Fixed distance between trees in pixels (no random variation for reliability)
-@export_range(16, 128, 8) var tree_spacing_pixels: int = 48
+## Horizontal spacing between trees in the same row (pixels)
+@export_range(16, 128, 8) var tree_spacing_horizontal: int = 48
+
+## Vertical spacing between tree rows (pixels) - can be different from horizontal
+@export_range(16, 128, 8) var tree_spacing_vertical: int = 32
 
 ## Number of tree rows outside the arena (for escape-proof boundaries)
 @export_range(1, 6, 1) var tree_row_count: int = 3
 
 ## Tree placement density (0.9+ recommended for gap-free boundaries)
 @export_range(0.1, 1.0, 0.05) var tree_density: float = 0.95
+
+@export_group("Natural Placement")
+## Enable staggered net-like placement pattern (alternating row offsets)
+@export var enable_staggered_placement: bool = true
+
+## Randomness in tree placement (0=perfect grid, 1=high variation)
+@export_range(0.0, 1.0, 0.1) var placement_randomness: float = 0.3
+
+## Maximum pixel offset for random placement variation
+@export_range(0, 16, 2) var max_random_offset: int = 8
 
 @export_group("Path Generation")
 ## Enable path generation around boundary perimeter
@@ -45,26 +64,35 @@ extends Resource
 @export var debug_show_boundary_preview: bool = false
 
 ## Calculate arena bounds based on shape configuration
-func get_arena_bounds() -> Rect2i:
+## Always uses the actual GenerationParams arena size - no fallback
+func get_arena_bounds(generation_params: Resource) -> Rect2i:
+	if not generation_params or not generation_params.has_method("get_arena_bounds"):
+		push_error("SimpleBoundaryConfig: generation_params is required and must have get_arena_bounds() method")
+		return Rect2i(-25, -25, 50, 50)  # Emergency fallback
+
+	# Use the actual arena size from GenerationParams
+	var arena_bounds = generation_params.get_arena_bounds()
+	var base_width = arena_bounds.size.x / 2  # Half-width
+	var base_height = arena_bounds.size.y / 2  # Half-height
+
 	match base_shape:
 		"Circle":
-			# For circle, use shape_length to create tictac-like stretching
-			# Width becomes longer, height stays the same
-			var half_width = int(arena_base_size * shape_length)
-			var half_height = arena_base_size
+			# For circle, use shape_length and shape_height to create ellipse
+			var half_width = int(base_width * shape_length)
+			var half_height = int(base_height * shape_height)
 			return Rect2i(-half_width, -half_height, half_width * 2, half_height * 2)
 		"Rectangle":
-			# For rectangle, use shape_length to extend width
-			var half_width = int(arena_base_size * shape_length)
-			var half_height = arena_base_size
+			# For rectangle, use shape_length and shape_height to extend dimensions
+			var half_width = int(base_width * shape_length)
+			var half_height = int(base_height * shape_height)
 			return Rect2i(-half_width, -half_height, half_width * 2, half_height * 2)
 		_:
-			return Rect2i(-arena_base_size, -arena_base_size, arena_base_size * 2, arena_base_size * 2)
+			return Rect2i(-base_width, -base_height, base_width * 2, base_height * 2)
 
 ## Get total boundary area including tree rows
-func get_total_boundary_bounds() -> Rect2i:
-	var arena_bounds = get_arena_bounds()
-	var tree_row_expansion = tree_row_count * (tree_spacing_pixels / 16)  # Convert pixels to tiles
+func get_total_boundary_bounds(generation_params: Resource) -> Rect2i:
+	var arena_bounds = get_arena_bounds(generation_params)
+	var tree_row_expansion = tree_row_count * (tree_spacing_vertical / 16)  # Convert pixels to tiles
 
 	return Rect2i(
 		arena_bounds.position.x - tree_row_expansion,
@@ -73,13 +101,30 @@ func get_total_boundary_bounds() -> Rect2i:
 		arena_bounds.size.y + (tree_row_expansion * 2)
 	)
 
+## Get total ground tile area - includes boundary area plus camera extension
+## This defines the complete area that should have ground tiles to prevent players seeing empty space
+func get_total_ground_bounds(generation_params: Resource) -> Rect2i:
+	var boundary_bounds = get_total_boundary_bounds(generation_params)
+
+	# Add camera extension beyond the boundaries
+	var camera_extension = 0
+	if generation_params.has_method("get") and generation_params.get("camera_boundary_extension"):
+		camera_extension = generation_params.camera_boundary_extension
+
+	return Rect2i(
+		boundary_bounds.position.x - camera_extension,
+		boundary_bounds.position.y - camera_extension,
+		boundary_bounds.size.x + (camera_extension * 2),
+		boundary_bounds.size.y + (camera_extension * 2)
+	)
+
 ## Check if a position is inside the arena boundary (for walkable area)
-func is_inside_arena(position: Vector2i) -> bool:
+func is_inside_arena(position: Vector2i, generation_params: Resource = null) -> bool:
 	match base_shape:
 		"Circle":
-			return _is_inside_circle(position)
+			return _is_inside_circle(position, generation_params)
 		"Rectangle":
-			return _is_inside_rectangle(position)
+			return _is_inside_rectangle(position, generation_params)
 		_:
 			return false
 
@@ -100,7 +145,7 @@ func get_random_tree_tile(rng: RandomNumberGenerator) -> Vector2i:
 	return tree_tile_variants[rng.randi() % tree_tile_variants.size()]
 
 ## Generate path checkpoint positions around perimeter
-func generate_path_checkpoints() -> Array[Vector2i]:
+func generate_path_checkpoints(generation_params: Resource = null) -> Array[Vector2i]:
 	var checkpoints: Array[Vector2i] = []
 
 	if not enable_path_generation:
@@ -108,18 +153,23 @@ func generate_path_checkpoints() -> Array[Vector2i]:
 
 	match base_shape:
 		"Circle":
-			checkpoints = _generate_circular_checkpoints()
+			checkpoints = _generate_circular_checkpoints(generation_params)
 		"Rectangle":
-			checkpoints = _generate_rectangular_checkpoints()
+			checkpoints = _generate_rectangular_checkpoints(generation_params)
 
 	return checkpoints
 
 ## Private helper functions
 
-func _is_inside_circle(position: Vector2i) -> bool:
-	# Create elliptical shape using shape_length for width stretching
-	var x_radius = arena_base_size * shape_length
-	var y_radius = arena_base_size
+func _is_inside_circle(position: Vector2i, generation_params: Resource = null) -> bool:
+	# Get the actual arena bounds to base ellipse on
+	var arena_bounds = get_arena_bounds(generation_params)
+	var base_width = arena_bounds.size.x / 2
+	var base_height = arena_bounds.size.y / 2
+
+	# Create elliptical shape using shape_length for width and shape_height for height
+	var x_radius = base_width * shape_length
+	var y_radius = base_height * shape_height
 
 	# Ellipse equation: (x/a)^2 + (y/b)^2 <= 1
 	var normalized_x = position.x / x_radius
@@ -127,26 +177,31 @@ func _is_inside_circle(position: Vector2i) -> bool:
 
 	return (normalized_x * normalized_x) + (normalized_y * normalized_y) <= 1.0
 
-func _is_inside_rectangle(position: Vector2i) -> bool:
-	var arena_bounds = get_arena_bounds()
+func _is_inside_rectangle(position: Vector2i, generation_params: Resource = null) -> bool:
+	var arena_bounds = get_arena_bounds(generation_params)
 	return arena_bounds.has_point(position)
 
-func _is_in_tree_boundary_layer(position: Vector2i, row_layer: int) -> bool:
-	var distance_from_arena = _get_distance_from_arena_edge(position)
-	var layer_min_distance = row_layer * (tree_spacing_pixels / 16.0)
-	var layer_max_distance = (row_layer + 1) * (tree_spacing_pixels / 16.0)
+func _is_in_tree_boundary_layer(position: Vector2i, row_layer: int, generation_params: Resource = null) -> bool:
+	var distance_from_arena = _get_distance_from_arena_edge(position, generation_params)
+	var layer_min_distance = row_layer * (tree_spacing_vertical / 16.0)
+	var layer_max_distance = (row_layer + 1) * (tree_spacing_vertical / 16.0)
 
 	return distance_from_arena >= layer_min_distance and distance_from_arena < layer_max_distance
 
-func _get_distance_from_arena_edge(position: Vector2i) -> float:
+func _get_distance_from_arena_edge(position: Vector2i, generation_params: Resource = null) -> float:
 	match base_shape:
 		"Circle":
-			# Calculate distance from ellipse edge
-			var x_radius = arena_base_size * shape_length
-			var y_radius = arena_base_size
+			# Get the actual arena bounds to base ellipse on
+			var arena_bounds = get_arena_bounds(generation_params)
+			var base_width = arena_bounds.size.x / 2
+			var base_height = arena_bounds.size.y / 2
+
+			# Calculate distance from ellipse edge using both shape dimensions
+			var x_radius = base_width * shape_length
+			var y_radius = base_height * shape_height
 
 			# If inside the ellipse, distance is 0
-			if _is_inside_circle(position):
+			if _is_inside_circle(position, generation_params):
 				return 0.0
 
 			# For points outside ellipse, approximate distance to ellipse edge
@@ -159,7 +214,7 @@ func _get_distance_from_arena_edge(position: Vector2i) -> float:
 			return (sqrt(ellipse_value) - 1.0) * min(x_radius, y_radius)
 
 		"Rectangle":
-			var arena_bounds = get_arena_bounds()
+			var arena_bounds = get_arena_bounds(generation_params)
 			if arena_bounds.has_point(position):
 				return 0.0
 
@@ -172,16 +227,23 @@ func _get_distance_from_arena_edge(position: Vector2i) -> float:
 
 func _meets_spacing_requirements(position: Vector2i) -> bool:
 	# Use grid-based spacing for consistency
-	var grid_spacing = tree_spacing_pixels / 16  # Convert to tile units
+	var grid_spacing_h = tree_spacing_horizontal / 16  # Convert to tile units
+	var grid_spacing_v = tree_spacing_vertical / 16  # Convert to tile units
 
 	# Check if position aligns with spacing grid
-	return (position.x % grid_spacing == 0) and (position.y % grid_spacing == 0)
+	return (position.x % grid_spacing_h == 0) and (position.y % grid_spacing_v == 0)
 
-func _generate_circular_checkpoints() -> Array[Vector2i]:
+func _generate_circular_checkpoints(generation_params: Resource = null) -> Array[Vector2i]:
 	var checkpoints: Array[Vector2i] = []
-	# Account for elliptical shape with different radii
-	var x_radius = (arena_base_size * shape_length) + (tree_row_count * tree_spacing_pixels / 16)
-	var y_radius = arena_base_size + (tree_row_count * tree_spacing_pixels / 16)
+
+	# Get the actual arena bounds
+	var arena_bounds = get_arena_bounds(generation_params)
+	var base_width = arena_bounds.size.x / 2
+	var base_height = arena_bounds.size.y / 2
+
+	# Account for elliptical shape with different radii plus tree rows
+	var x_radius = (base_width * shape_length) + (tree_row_count * tree_spacing_vertical / 16)
+	var y_radius = (base_height * shape_height) + (tree_row_count * tree_spacing_vertical / 16)
 
 	for i in range(path_checkpoint_count):
 		var angle = (i * 2.0 * PI) / path_checkpoint_count
@@ -191,9 +253,9 @@ func _generate_circular_checkpoints() -> Array[Vector2i]:
 
 	return checkpoints
 
-func _generate_rectangular_checkpoints() -> Array[Vector2i]:
+func _generate_rectangular_checkpoints(generation_params: Resource = null) -> Array[Vector2i]:
 	var checkpoints: Array[Vector2i] = []
-	var bounds = get_total_boundary_bounds()
+	var bounds = get_total_boundary_bounds(generation_params)
 
 	# Generate checkpoints around rectangle perimeter
 	var perimeter_length = 2 * (bounds.size.x + bounds.size.y)

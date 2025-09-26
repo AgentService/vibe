@@ -410,7 +410,7 @@ func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, 
 	_safe_log("✅ Boundaries layer initialized: %s" % boundaries_layer.name, "generation", "debug")
 
 	# Calculate tree spacing in tile units
-	var tree_spacing_tiles = boundary_config.tree_spacing_pixels / 16.0
+	var tree_spacing_tiles = boundary_config.tree_spacing_vertical / 16.0
 	var tree_count_placed = 0
 
 	_safe_log("🔧 Boundary config: shape=%s, length=%.1f, spacing=%.1f tiles, rows=%d" % [
@@ -447,27 +447,51 @@ func _generate_simplified_boundary_row(boundary_config: Resource, row_layer: int
 	return trees_placed
 
 func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
-	"""Generate trees in an elliptical pattern around the arena using shape_length for tictac stretching"""
+	"""Generate trees in net-like staggered pattern around elliptical arena with natural randomness"""
 	var trees_placed = 0
-	var base_radius = boundary_config.arena_base_size
 
-	# Apply shape_length to create elliptical boundaries (tictac-like stretching)
-	var x_radius = (base_radius * boundary_config.shape_length) + row_distance
-	var y_radius = base_radius + row_distance
+	# Get the actual arena bounds from generation_params
+	var arena_bounds = boundary_config.get_arena_bounds(generation_params)
+	var base_width = arena_bounds.size.x / 2
+	var base_height = arena_bounds.size.y / 2
+
+	# Apply shape_length and shape_height to create elliptical boundaries
+	var x_radius = (base_width * boundary_config.shape_length) + row_distance
+	var y_radius = (base_height * boundary_config.shape_height) + row_distance
+
+	# Calculate spacing in tiles - use horizontal for tree-to-tree, vertical for row-to-row
+	var horizontal_spacing_tiles = boundary_config.tree_spacing_horizontal / 16.0
+	var vertical_spacing_tiles = boundary_config.tree_spacing_vertical / 16.0
 
 	# Calculate ellipse perimeter approximation for tree count
 	# Ramanujan's approximation: π * (3(a+b) - sqrt((3a+b)(a+3b)))
 	var a = x_radius
 	var b = y_radius
 	var perimeter_approx = PI * (3 * (a + b) - sqrt((3 * a + b) * (a + 3 * b)))
-	var tree_count = max(8, int(perimeter_approx / spacing_tiles))  # Minimum 8 trees per ellipse
+	var tree_count = max(8, int(perimeter_approx / horizontal_spacing_tiles))  # Use horizontal spacing for perimeter calculation
+
+	# Net-like staggered placement: offset every other row
+	var stagger_offset = 0.0
+	if boundary_config.enable_staggered_placement and (row_layer % 2 == 1):
+		stagger_offset = PI / tree_count  # Half step offset for alternating rows
 
 	for i in range(tree_count):
-		var angle = (i * 2.0 * PI) / tree_count
+		var angle = (i * 2.0 * PI) / tree_count + stagger_offset
+
 		# Use elliptical coordinates with different x and y radii
-		var x = int(x_radius * cos(angle))
-		var y = int(y_radius * sin(angle))
-		var tree_pos = Vector2i(x, y)
+		var base_x = x_radius * cos(angle)
+		var base_y = y_radius * sin(angle)
+
+		# Apply natural randomness if enabled
+		var final_x = base_x
+		var final_y = base_y
+
+		if boundary_config.placement_randomness > 0.0:
+			var random_range = boundary_config.max_random_offset * boundary_config.placement_randomness
+			final_x += (rng.randf() - 0.5) * 2.0 * random_range
+			final_y += (rng.randf() - 0.5) * 2.0 * random_range
+
+		var tree_pos = Vector2i(int(final_x), int(final_y))
 
 		# Use density check to maintain reliable coverage
 		if rng.randf() < boundary_config.tree_density:
@@ -660,19 +684,37 @@ func _generate_walkable_floor_layer(rng: RandomNumberGenerator) -> void:
 	if not ground_layer:
 		return
 
-	# Get actual arena bounds (without camera extension)
-	var arena_bounds = generation_params.get_arena_bounds()
-	var margin = 1  # Keep walkable area slightly inside arena bounds
+	# Get total ground bounds from boundary system - includes boundary area + camera extension
+	# This ensures ground tiles extend beyond boundaries so players never see empty space
+	var ground_bounds: Rect2i
+	if generation_params.use_simplified_boundaries and generation_params.simple_boundary_config:
+		ground_bounds = generation_params.simple_boundary_config.get_total_ground_bounds(generation_params)
+		_safe_log("🌍 Using boundary-based ground bounds: %s" % ground_bounds, "generation", "debug")
+	else:
+		# Fallback to old system for compatibility
+		var arena_bounds = generation_params.get_arena_bounds()
+		var camera_ext = generation_params.camera_boundary_extension
+		ground_bounds = Rect2i(
+			arena_bounds.position.x - camera_ext,
+			arena_bounds.position.y - camera_ext,
+			arena_bounds.size.x + (camera_ext * 2),
+			arena_bounds.size.y + (camera_ext * 2)
+		)
+		_safe_log("🌍 Using fallback ground bounds: %s" % ground_bounds, "generation", "debug")
 
-	# Only place walkable tiles in the actual playable arena area
-	for x in range(arena_bounds.position.x + margin, arena_bounds.end.x - margin):
-		for y in range(arena_bounds.position.y + margin, arena_bounds.end.y - margin):
+	var tiles_placed = 0
+	# Place walkable tiles in the complete ground area
+	for x in range(ground_bounds.position.x, ground_bounds.end.x):
+		for y in range(ground_bounds.position.y, ground_bounds.end.y):
 			var tile_pos = Vector2i(x, y)
 
 			# Check if this position will have a tree or boundary element
 			if not _will_have_obstruction(tile_pos, rng):
 				var walkable_tile = biome_config.get_random_walkable_floor_tile(rng)
 				ground_layer.set_cell(tile_pos, 0, walkable_tile)
+				tiles_placed += 1
+
+	_safe_log("🌍 Placed %d ground tiles in extended area" % tiles_placed, "generation", "debug")
 
 func _generate_spawn_layer(rng: RandomNumberGenerator) -> void:
 	"""Generate spawn layer for enemy placement"""
@@ -721,7 +763,7 @@ func _will_have_simplified_boundary_obstruction(pos: Vector2i, rng: RandomNumber
 	
 	# Use simplified boundary config for more accurate obstruction detection
 	# Check if position is outside the arena (inside boundary area)
-	return not boundary_config.is_inside_arena(pos)
+	return not boundary_config.is_inside_arena(pos, generation_params)
 
 
 func _set_player_spawn() -> void:
