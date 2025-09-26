@@ -27,6 +27,9 @@ extends Resource
 # Themed decoration system
 @export var decoration_themes: Array[DecorationThemeConfig] = []
 
+# Tile pattern system for walkable area placement
+@export var tile_patterns: Array[TilePatternConfig] = []
+
 # Generation parameters specific to this biome
 @export var default_boundary_width: int = 3
 @export var default_decoration_density: float = 0.05
@@ -141,6 +144,38 @@ func get_spawn_area_tile(rng: RandomNumberGenerator) -> Vector2i:
 		# Use transparent tile at (0,0) if no spawn tiles defined
 		return Vector2i(0, 0)
 	return spawn_area_tiles[rng.randi() % spawn_area_tiles.size()]
+
+func get_random_tile_pattern(rng: RandomNumberGenerator) -> TilePatternConfig:
+	"""Get a random tile pattern based on weights"""
+	if tile_patterns.is_empty():
+		return null
+
+	# Filter valid patterns
+	var valid_patterns: Array[TilePatternConfig] = []
+	for pattern in tile_patterns:
+		if pattern.is_valid():
+			valid_patterns.append(pattern)
+
+	if valid_patterns.is_empty():
+		return null
+
+	# Weighted selection
+	var total_weight = 0.0
+	for pattern in valid_patterns:
+		total_weight += pattern.pattern_weight
+
+	if total_weight <= 0.0:
+		return valid_patterns[rng.randi() % valid_patterns.size()]
+
+	var random_value = rng.randf() * total_weight
+	var current_weight = 0.0
+
+	for pattern in valid_patterns:
+		current_weight += pattern.pattern_weight
+		if random_value <= current_weight:
+			return pattern
+
+	return valid_patterns[-1]  # Fallback to last pattern
 
 func is_valid() -> bool:
 	"""Validate that this biome configuration has minimum required data"""

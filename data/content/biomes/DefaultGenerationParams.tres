@@ -6,7 +6,7 @@
 script = ExtResource("1_0")
 arena_size = Vector2i(150, 150)
 boundary_width = 3
-generation_seed = 12350
+generation_seed = 12382
 auto_increment_seed = true
 decoration_density = 0.0525
 interactive_object_density = 0.01
@@ -20,7 +20,7 @@ decoration_zones = 11
 max_objects_per_zone = 5
 max_total_objects = 20
 enable_walkable_floor = true
-camera_boundary_extension = 15
+camera_boundary_extension = 22
 enable_spawn_layer = true
 spawn_border_spacing = 5
 edge_density_multiplier = 10.0

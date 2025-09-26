@@ -1,0 +1,38 @@
+[gd_resource type="Resource" script_class="TilePatternConfig" load_steps=2 format=3 uid="uid://cn8v1w4r7s2ia"]
+
+[ext_resource type="Script" uid="uid://cqwo6lrhiqi5w" path="res://scripts/resources/TilePatternConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+pattern_name = "Test Random Scatter"
+pattern_weight = 2.0
+pattern_tiles = Array[Dictionary]([{
+"relative_pos": Vector2i(0, 0),
+"tile": Vector2i(24, 6)
+}, {
+"relative_pos": Vector2i(-2, -1),
+"tile": Vector2i(27, 6)
+}, {
+"relative_pos": Vector2i(1, -2),
+"tile": Vector2i(30, 6)
+}, {
+"relative_pos": Vector2i(-1, 2),
+"tile": Vector2i(33, 6)
+}, {
+"relative_pos": Vector2i(3, 1),
+"tile": Vector2i(21, 9)
+}, {
+"relative_pos": Vector2i(-3, 0),
+"tile": Vector2i(24, 9)
+}, {
+"relative_pos": Vector2i(2, -1),
+"tile": Vector2i(27, 9)
+}, {
+"relative_pos": Vector2i(0, 3),
+"tile": Vector2i(30, 9)
+}])
+min_spacing_from_others = 12
+placement_chance = 0.4
+max_instances_per_arena = 2
+pattern_width = 7
+pattern_height = 6

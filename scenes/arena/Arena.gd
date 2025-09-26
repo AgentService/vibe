@@ -258,6 +258,19 @@ func _setup_player() -> void:
 		add_child(player)
 		Logger.warn("Using fallback player spawn method", "arena")
 
+	# Move player to YSort_Objects container if it exists for proper Y-sorting
+	if player:
+		var ysort_container = get_node_or_null("YSort_Objects")
+		if ysort_container:
+			Logger.debug("Moving player to YSort_Objects container for Y-sorting", "arena")
+			player.reparent(ysort_container)
+
+			# Ensure camera is still active after reparenting
+			var player_camera = player.get_node_or_null("PlayerCamera")
+			if player_camera and player_camera is Camera2D:
+				player_camera.make_current()
+				Logger.debug("Reactivated player camera after reparenting to YSort_Objects", "arena")
+
 	# TIMING FIX: Set player reference in PlayerState immediately after player creation
 	# This prevents SpawnDirector from using fallback spawning during system initialization
 	if player:

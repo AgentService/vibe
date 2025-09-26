@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="TilePatternConfig" load_steps=2 format=3 uid="uid://dy7k2nan5q6x3"]
+
+[ext_resource type="Script" uid="uid://cqwo6lrhiqi5w" path="res://scripts/resources/TilePatternConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+pattern_name = "Test Stone Path"
+pattern_weight = 1.5
+pattern_tiles = Array[Dictionary]([{
+"relative_pos": Vector2i(0, 0),
+"tile": Vector2i(30, 0)
+}, {
+"relative_pos": Vector2i(0, 1),
+"tile": Vector2i(30, 3)
+}, {
+"relative_pos": Vector2i(0, 2),
+"tile": Vector2i(30, 0)
+}, {
+"relative_pos": Vector2i(0, 3),
+"tile": Vector2i(30, 3)
+}, {
+"relative_pos": Vector2i(-1, 1),
+"tile": Vector2i(9, 6)
+}, {
+"relative_pos": Vector2i(1, 2),
+"tile": Vector2i(9, 6)
+}])
+min_spacing_from_others = 8
+placement_chance = 0.8
+max_instances_per_arena = 4
+pattern_width = 3
+pattern_height = 4

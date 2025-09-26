@@ -7485,3 +7485,6 @@ position = Vector2(-20, 23)
 occluder = SubResource("OccluderPolygon2D_e8lwv")
 
 [node name="CanvasModulate" type="CanvasModulate" parent="."]
+
+[node name="YSort_Objects" type="Node2D" parent="."]
+y_sort_enabled = true
