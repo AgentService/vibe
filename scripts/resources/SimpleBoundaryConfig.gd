@@ -19,9 +19,14 @@ extends Resource
 ## For rectangle: 1=square, 2+=increasingly tall rectangle
 @export_range(1.0, 5.0, 0.1) var shape_height: float = 1.0
 
-## Arena base size - not used anymore, arena size always comes from GenerationParams
-## This is kept for compatibility but ignored in favor of actual arena bounds
-@export_range(10, 100, 1) var arena_base_size: int = 25
+@export_group("Coverage Extension")
+## Ground tiles extension beyond boundary trees (tiles)
+## Ensures ground coverage extends beyond trees for visual completeness
+@export_range(0, 30, 1) var ground_extension: int = 10
+
+## Spawn border spacing from boundaries (tiles)
+## Prevents enemies spawning inside tree boundaries
+@export_range(1, 15, 1) var spawn_border_spacing: int = 5
 
 @export_group("Tree Configuration")
 ## Tree tile variants to use - now supports alternative trees with bigger collision
@@ -101,21 +106,30 @@ func get_total_boundary_bounds(generation_params: Resource) -> Rect2i:
 		arena_bounds.size.y + (tree_row_expansion * 2)
 	)
 
-## Get total ground tile area - includes boundary area plus camera extension
-## This defines the complete area that should have ground tiles to prevent players seeing empty space
+## Get total ground tile area - includes boundary area plus ground extension
+## This naturally follows the boundary shape and ensures ground coverage extends beyond trees
 func get_total_ground_bounds(generation_params: Resource) -> Rect2i:
 	var boundary_bounds = get_total_boundary_bounds(generation_params)
 
-	# Add camera extension beyond the boundaries
-	var camera_extension = 0
-	if generation_params.has_method("get") and generation_params.get("camera_boundary_extension"):
-		camera_extension = generation_params.camera_boundary_extension
-
+	# Add ground extension beyond the boundaries for visual completeness
 	return Rect2i(
-		boundary_bounds.position.x - camera_extension,
-		boundary_bounds.position.y - camera_extension,
-		boundary_bounds.size.x + (camera_extension * 2),
-		boundary_bounds.size.y + (camera_extension * 2)
+		boundary_bounds.position.x - ground_extension,
+		boundary_bounds.position.y - ground_extension,
+		boundary_bounds.size.x + (ground_extension * 2),
+		boundary_bounds.size.y + (ground_extension * 2)
+	)
+
+## Get spawn area bounds - ground area minus spawn border spacing from boundaries
+## Ensures enemies can spawn everywhere the player can go, but not inside tree boundaries
+func get_spawn_area_bounds(generation_params: Resource) -> Rect2i:
+	var arena_bounds = get_arena_bounds(generation_params)
+
+	# Spawn area is the arena minus spawn border spacing
+	return Rect2i(
+		arena_bounds.position.x + spawn_border_spacing,
+		arena_bounds.position.y + spawn_border_spacing,
+		arena_bounds.size.x - (spawn_border_spacing * 2),
+		arena_bounds.size.y - (spawn_border_spacing * 2)
 	)
 
 ## Check if a position is inside the arena boundary (for walkable area)
@@ -286,3 +300,67 @@ func _get_rectangular_perimeter_point(bounds: Rect2i, progress: float) -> Vector
 	else:
 		# Left edge
 		return Vector2i(bounds.position.x, bounds.end.y - int(distance - 2 * bounds.size.x - bounds.size.y))
+
+## Natural Coverage Methods - Follow boundary shape for ground and spawn areas
+
+## Check if position should have ground tile (follows boundary shape + extension)
+func should_have_ground_tile(position: Vector2i, generation_params: Resource) -> bool:
+	match base_shape:
+		"Circle":
+			return _is_in_extended_ellipse(position, generation_params, ground_extension)
+		"Rectangle":
+			var ground_bounds = get_total_ground_bounds(generation_params)
+			return ground_bounds.has_point(position)
+		_:
+			return false
+
+## Check if position should have spawn tile (follows boundary shape with spawn spacing)
+func should_have_spawn_tile(position: Vector2i, generation_params: Resource) -> bool:
+	# Must be in ground area first
+	if not should_have_ground_tile(position, generation_params):
+		return false
+
+	# Must not be inside tree boundary area (spawn border spacing)
+	match base_shape:
+		"Circle":
+			return not _is_in_spawn_restricted_ellipse(position, generation_params)
+		"Rectangle":
+			var spawn_bounds = get_spawn_area_bounds(generation_params)
+			return spawn_bounds.has_point(position)
+		_:
+			return false
+
+## Helper: Check if position is inside ellipse extended by given amount
+func _is_in_extended_ellipse(position: Vector2i, generation_params: Resource, extension: int) -> bool:
+	var arena_bounds = get_arena_bounds(generation_params)
+	var base_width = arena_bounds.size.x / 2
+	var base_height = arena_bounds.size.y / 2
+
+	# Extend ellipse by given amount
+	var x_radius = (base_width * shape_length) + extension
+	var y_radius = (base_height * shape_height) + extension
+
+	# Ellipse equation: (x/a)^2 + (y/b)^2 <= 1
+	var normalized_x = position.x / x_radius
+	var normalized_y = position.y / y_radius
+
+	return (normalized_x * normalized_x) + (normalized_y * normalized_y) <= 1.0
+
+## Helper: Check if position is inside spawn-restricted ellipse (boundary + spawn border)
+func _is_in_spawn_restricted_ellipse(position: Vector2i, generation_params: Resource) -> bool:
+	var arena_bounds = get_arena_bounds(generation_params)
+	var base_width = arena_bounds.size.x / 2
+	var base_height = arena_bounds.size.y / 2
+
+	# Tree boundary area plus spawn border spacing
+	var tree_row_expansion = tree_row_count * (tree_spacing_vertical / 16.0)
+	var total_restriction = tree_row_expansion + spawn_border_spacing
+
+	var x_radius = (base_width * shape_length) + total_restriction
+	var y_radius = (base_height * shape_height) + total_restriction
+
+	# If inside this expanded ellipse, it's spawn-restricted
+	var normalized_x = position.x / x_radius
+	var normalized_y = position.y / y_radius
+
+	return (normalized_x * normalized_x) + (normalized_y * normalized_y) <= 1.0

@@ -5,12 +5,18 @@
 [resource]
 script = ExtResource("1_0")
 base_shape = "Circle"
-shape_length = 5.0
-arena_base_size = 30
+shape_length = 1.0
+shape_height = 1.0
+ground_extension = 10
+spawn_border_spacing = 5
 tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
-tree_spacing_pixels = 48
+tree_spacing_horizontal = 48
+tree_spacing_vertical = 32
 tree_row_count = 3
 tree_density = 0.95
+enable_staggered_placement = true
+placement_randomness = 0.3
+max_random_offset = 8
 enable_path_generation = false
 path_width = 2
 path_checkpoint_count = 6

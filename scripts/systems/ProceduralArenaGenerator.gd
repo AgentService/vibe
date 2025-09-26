@@ -676,66 +676,65 @@ func _generate_interactive_objects(rng: RandomNumberGenerator) -> void:
 	pass
 
 func _generate_walkable_floor_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate special floor tiles for walkable areas (player movement)"""
-	# Always generate walkable floor - Ground layer is essential
+	"""Generate natural ground tiles following boundary shape with extension"""
 
-	_safe_log("👟 Generating walkable floor areas", "generation", "debug")
+	_safe_log("👟 Generating natural ground coverage following boundary shape", "generation", "debug")
 
 	if not ground_layer:
 		return
 
-	# Get total ground bounds from boundary system - includes boundary area + camera extension
-	# This ensures ground tiles extend beyond boundaries so players never see empty space
-	var ground_bounds: Rect2i
-	if generation_params.use_simplified_boundaries and generation_params.simple_boundary_config:
-		ground_bounds = generation_params.simple_boundary_config.get_total_ground_bounds(generation_params)
-		_safe_log("🌍 Using boundary-based ground bounds: %s" % ground_bounds, "generation", "debug")
-	else:
-		# Fallback to old system for compatibility
-		var arena_bounds = generation_params.get_arena_bounds()
-		var camera_ext = generation_params.camera_boundary_extension
-		ground_bounds = Rect2i(
-			arena_bounds.position.x - camera_ext,
-			arena_bounds.position.y - camera_ext,
-			arena_bounds.size.x + (camera_ext * 2),
-			arena_bounds.size.y + (camera_ext * 2)
-		)
-		_safe_log("🌍 Using fallback ground bounds: %s" % ground_bounds, "generation", "debug")
+	var boundary_config = generation_params.simple_boundary_config
+	if not boundary_config:
+		_safe_log("❌ No SimpleBoundaryConfig found - skipping ground generation", "generation", "warn")
+		return
+
+	# Get rough bounds for iteration optimization (actual shape-following happens in should_have_ground_tile)
+	var ground_bounds = boundary_config.get_total_ground_bounds(generation_params)
+	_safe_log("🌍 Natural ground coverage: %s with %d tile extension" % [boundary_config.base_shape, boundary_config.ground_extension], "generation", "debug")
 
 	var tiles_placed = 0
-	# Place walkable tiles in the complete ground area
+	# Iterate through the bounds but use shape-following logic for placement
 	for x in range(ground_bounds.position.x, ground_bounds.end.x):
 		for y in range(ground_bounds.position.y, ground_bounds.end.y):
 			var tile_pos = Vector2i(x, y)
 
-			# Check if this position will have a tree or boundary element
-			if not _will_have_obstruction(tile_pos, rng):
+			# Natural boundary-following placement: ground follows shape + extension
+			if boundary_config.should_have_ground_tile(tile_pos, generation_params):
 				var walkable_tile = biome_config.get_random_walkable_floor_tile(rng)
 				ground_layer.set_cell(tile_pos, 0, walkable_tile)
 				tiles_placed += 1
 
-	_safe_log("🌍 Placed %d ground tiles in extended area" % tiles_placed, "generation", "debug")
+	_safe_log("🌍 Placed %d ground tiles naturally following %s boundary shape" % [tiles_placed, boundary_config.base_shape], "generation", "debug")
 
 func _generate_spawn_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate spawn layer for enemy placement"""
+	"""Generate natural spawn area following boundary shape with spacing"""
 	if not generation_params.enable_spawn_layer or not spawn_layer:
 		return
 
-	_safe_log("👾 Generating spawn layer", "generation", "debug")
+	_safe_log("👾 Generating natural spawn area following boundary shape", "generation", "debug")
 
-	# Get arena bounds and apply spawn border spacing
-	var arena_bounds = generation_params.get_arena_bounds()
-	var spawn_spacing = generation_params.spawn_border_spacing
+	var boundary_config = generation_params.simple_boundary_config
+	if not boundary_config:
+		_safe_log("❌ No SimpleBoundaryConfig found - skipping spawn generation", "generation", "warn")
+		return
 
-	# Create spawn area with spacing from boundaries
-	for x in range(arena_bounds.position.x + spawn_spacing, arena_bounds.end.x - spawn_spacing):
-		for y in range(arena_bounds.position.y + spawn_spacing, arena_bounds.end.y - spawn_spacing):
+	# Get rough bounds for iteration optimization (actual shape-following happens in should_have_spawn_tile)
+	var ground_bounds = boundary_config.get_total_ground_bounds(generation_params)
+	_safe_log("👾 Natural spawn coverage: %s with %d tile border spacing" % [boundary_config.base_shape, boundary_config.spawn_border_spacing], "generation", "debug")
+
+	var spawn_tiles_placed = 0
+	# Iterate through the bounds but use shape-following logic for placement
+	for x in range(ground_bounds.position.x, ground_bounds.end.x):
+		for y in range(ground_bounds.position.y, ground_bounds.end.y):
 			var tile_pos = Vector2i(x, y)
 
-			# Only place spawn tiles in open areas (not where trees will be)
-			if not _will_have_obstruction(tile_pos, rng):
+			# Natural boundary-following spawn placement: follows shape with spawn border spacing
+			if boundary_config.should_have_spawn_tile(tile_pos, generation_params):
 				var spawn_tile = biome_config.get_spawn_area_tile(rng)
 				spawn_layer.set_cell(tile_pos, 0, spawn_tile)
+				spawn_tiles_placed += 1
+
+	_safe_log("👾 Placed %d spawn tiles naturally following %s boundary shape" % [spawn_tiles_placed, boundary_config.base_shape], "generation", "debug")
 
 func _will_have_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
 	"""Check if a position will have a tree or other obstruction - simplified boundary system"""

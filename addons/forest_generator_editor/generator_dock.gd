@@ -9,13 +9,20 @@ var arena_size_y: SpinBox
 # Simplified Boundary Controls
 var boundary_shape_option: OptionButton
 var shape_length_input: SpinBox
+var shape_height_input: SpinBox
 var arena_base_size_input: SpinBox
-var tree_spacing_pixels_input: SpinBox
+var tree_spacing_horizontal_input: SpinBox
+var tree_spacing_vertical_input: SpinBox
 var tree_row_count_input: SpinBox
 var tree_density_input: SpinBox
 
-# Camera Extension
-var camera_extension_input: SpinBox
+# Natural Placement Controls
+var enable_staggered_toggle: CheckBox
+var placement_randomness_input: SpinBox
+var max_random_offset_input: SpinBox
+
+# Natural Coverage Extension
+var ground_extension_input: SpinBox
 var spawn_layer_toggle: CheckBox
 var spawn_border_spacing_input: SpinBox
 
@@ -59,8 +66,13 @@ func _init():
 
 	vbox.add_child(HSeparator.new())
 
-	# Camera Extension section
-	_create_camera_extension_controls(vbox)
+	# Natural Placement section
+	_create_natural_placement_controls(vbox)
+
+	vbox.add_child(HSeparator.new())
+
+	# Natural Coverage Extension section
+	_create_natural_coverage_controls(vbox)
 
 	vbox.add_child(HSeparator.new())
 
@@ -128,9 +140,9 @@ func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
 	boundary_shape_option.selected = 0  # Default to Circle
 	container.add_child(boundary_shape_option)
 
-	# Shape length
+	# Shape length (width)
 	var length_label = Label.new()
-	length_label.text = "Shape Length (1=circle/square, 2-5=cylinder/rectangle):"
+	length_label.text = "Shape Width (1=circle/square, 2-5=wide ellipse/rectangle):"
 	container.add_child(length_label)
 
 	shape_length_input = SpinBox.new()
@@ -140,28 +152,60 @@ func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
 	shape_length_input.value = 1.0
 	container.add_child(shape_length_input)
 
-	# Arena base size
+	# Shape height
+	var height_label = Label.new()
+	height_label.text = "Shape Height (1=circle/square, 2-5=tall ellipse/rectangle):"
+	container.add_child(height_label)
+
+	shape_height_input = SpinBox.new()
+	shape_height_input.min_value = 1.0
+	shape_height_input.max_value = 5.0
+	shape_height_input.step = 0.1
+	shape_height_input.value = 1.0
+	container.add_child(shape_height_input)
+
+	# Info about arena size connection
+	var connection_info = Label.new()
+	connection_info.text = "✅ Boundary shape automatically uses Arena Size above (150x150)"
+	connection_info.add_theme_font_size_override("font_size", 10)
+	connection_info.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(connection_info)
+
+	# Arena base size (kept for compatibility but not used)
 	var base_size_label = Label.new()
-	base_size_label.text = "Arena Base Size (radius/half-width):"
+	base_size_label.text = "Arena Base Size (not used - kept for compatibility):"
 	container.add_child(base_size_label)
 
 	arena_base_size_input = SpinBox.new()
 	arena_base_size_input.min_value = 10
 	arena_base_size_input.max_value = 100
 	arena_base_size_input.value = 30
+	arena_base_size_input.editable = false  # Make it clear this isn't used
 	container.add_child(arena_base_size_input)
 
-	# Tree spacing in pixels
-	var spacing_label = Label.new()
-	spacing_label.text = "Tree Spacing (pixels, 16-128):"
-	container.add_child(spacing_label)
+	# Tree spacing in pixels - horizontal
+	var spacing_h_label = Label.new()
+	spacing_h_label.text = "Tree Spacing Horizontal (pixels, 16-128):"
+	container.add_child(spacing_h_label)
 
-	tree_spacing_pixels_input = SpinBox.new()
-	tree_spacing_pixels_input.min_value = 16
-	tree_spacing_pixels_input.max_value = 128
-	tree_spacing_pixels_input.step = 8
-	tree_spacing_pixels_input.value = 48
-	container.add_child(tree_spacing_pixels_input)
+	tree_spacing_horizontal_input = SpinBox.new()
+	tree_spacing_horizontal_input.min_value = 16
+	tree_spacing_horizontal_input.max_value = 128
+	tree_spacing_horizontal_input.step = 8
+	tree_spacing_horizontal_input.value = 48
+	container.add_child(tree_spacing_horizontal_input)
+
+	# Tree spacing in pixels - vertical
+	var spacing_v_label = Label.new()
+	spacing_v_label.text = "Tree Spacing Vertical (pixels, 16-128):"
+	container.add_child(spacing_v_label)
+
+	tree_spacing_vertical_input = SpinBox.new()
+	tree_spacing_vertical_input.min_value = 16
+	tree_spacing_vertical_input.max_value = 128
+	tree_spacing_vertical_input.step = 8
+	tree_spacing_vertical_input.value = 32
+	container.add_child(tree_spacing_vertical_input)
 
 	# Tree row count
 	var row_count_label = Label.new()
@@ -186,39 +230,83 @@ func _create_simplified_boundary_controls(container: VBoxContainer) -> void:
 	tree_density_input.value = 0.95
 	container.add_child(tree_density_input)
 
-func _create_camera_extension_controls(container: VBoxContainer) -> void:
-	"""Create camera extension controls"""
-	var camera_title = Label.new()
-	camera_title.text = "Camera & Spawn Settings"
-	camera_title.add_theme_font_size_override("font_size", 12)
-	container.add_child(camera_title)
+func _create_natural_placement_controls(container: VBoxContainer) -> void:
+	"""Create natural placement controls for staggered and random placement"""
+	var natural_title = Label.new()
+	natural_title.text = "Natural Placement Settings"
+	natural_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(natural_title)
 
-	# Camera boundary extension
-	var camera_label = Label.new()
-	camera_label.text = "Camera Extension (extra tiles):"
-	container.add_child(camera_label)
+	# Enable staggered placement toggle
+	enable_staggered_toggle = CheckBox.new()
+	enable_staggered_toggle.text = "Enable Net-like Staggered Placement"
+	enable_staggered_toggle.button_pressed = true
+	container.add_child(enable_staggered_toggle)
 
-	camera_extension_input = SpinBox.new()
-	camera_extension_input.min_value = 0
-	camera_extension_input.max_value = 50
-	camera_extension_input.value = 15
-	container.add_child(camera_extension_input)
+	# Placement randomness
+	var randomness_label = Label.new()
+	randomness_label.text = "Placement Randomness (0=perfect grid, 1=high variation):"
+	container.add_child(randomness_label)
+
+	placement_randomness_input = SpinBox.new()
+	placement_randomness_input.min_value = 0.0
+	placement_randomness_input.max_value = 1.0
+	placement_randomness_input.step = 0.1
+	placement_randomness_input.value = 0.3
+	container.add_child(placement_randomness_input)
+
+	# Maximum random offset
+	var offset_label = Label.new()
+	offset_label.text = "Max Random Offset (pixels, 0-16):"
+	container.add_child(offset_label)
+
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = 0
+	max_random_offset_input.max_value = 16
+	max_random_offset_input.step = 2
+	max_random_offset_input.value = 8
+	container.add_child(max_random_offset_input)
+
+func _create_natural_coverage_controls(container: VBoxContainer) -> void:
+	"""Create natural coverage extension controls"""
+	var coverage_title = Label.new()
+	coverage_title.text = "Natural Coverage Extension"
+	coverage_title.add_theme_font_size_override("font_size", 12)
+	container.add_child(coverage_title)
+
+	# Ground extension beyond boundaries
+	var ground_label = Label.new()
+	ground_label.text = "Ground Extension Beyond Boundaries (tiles):"
+	container.add_child(ground_label)
+
+	ground_extension_input = SpinBox.new()
+	ground_extension_input.min_value = 0
+	ground_extension_input.max_value = 30
+	ground_extension_input.value = 10
+	container.add_child(ground_extension_input)
 
 	# Spawn layer controls
 	spawn_layer_toggle = CheckBox.new()
-	spawn_layer_toggle.text = "Enable Spawn Layer"
+	spawn_layer_toggle.text = "Enable Natural Spawn Layer"
 	spawn_layer_toggle.button_pressed = true
 	container.add_child(spawn_layer_toggle)
 
 	var spawn_spacing_label = Label.new()
-	spawn_spacing_label.text = "Spawn Border Spacing:"
+	spawn_spacing_label.text = "Spawn Border Spacing from Boundaries (tiles):"
 	container.add_child(spawn_spacing_label)
 
 	spawn_border_spacing_input = SpinBox.new()
-	spawn_border_spacing_input.min_value = 0
-	spawn_border_spacing_input.max_value = 10
+	spawn_border_spacing_input.min_value = 1
+	spawn_border_spacing_input.max_value = 15
 	spawn_border_spacing_input.value = 5
 	container.add_child(spawn_border_spacing_input)
+
+	# Info label
+	var info_label = Label.new()
+	info_label.text = "✅ Ground and spawn areas naturally follow boundary shape"
+	info_label.add_theme_font_size_override("font_size", 10)
+	info_label.modulate = Color(0.2, 0.8, 0.2)
+	container.add_child(info_label)
 
 func _create_info_labels(container: VBoxContainer) -> void:
 	"""Create information and help labels"""
@@ -276,10 +364,14 @@ func _on_generate_pressed():
 		generator.generation_params.generation_seed = int(seed_input.value)
 		generator.generation_params.arena_size = Vector2i(int(arena_size_x.value), int(arena_size_y.value))
 
-		# Apply simplified camera settings
-		generator.generation_params.camera_boundary_extension = int(camera_extension_input.value)
+		# Apply natural coverage settings directly to boundary config
+		if generator.generation_params.simple_boundary_config:
+			var boundary_config = generator.generation_params.simple_boundary_config
+			boundary_config.ground_extension = int(ground_extension_input.value)
+			boundary_config.spawn_border_spacing = int(spawn_border_spacing_input.value)
+
+		# Apply spawn layer setting to generation params
 		generator.generation_params.enable_spawn_layer = spawn_layer_toggle.button_pressed
-		generator.generation_params.spawn_border_spacing = int(spawn_border_spacing_input.value)
 
 		# Enable simplified boundaries
 		generator.generation_params.use_simplified_boundaries = true
@@ -291,10 +383,17 @@ func _on_generate_pressed():
 			# Apply simplified boundary settings
 			boundary_config.base_shape = "Circle" if boundary_shape_option.selected == 0 else "Rectangle"
 			boundary_config.shape_length = shape_length_input.value
-			boundary_config.arena_base_size = int(arena_base_size_input.value)
-			boundary_config.tree_spacing_pixels = int(tree_spacing_pixels_input.value)
+			boundary_config.shape_height = shape_height_input.value
+			boundary_config.arena_base_size = int(arena_base_size_input.value)  # Kept for compatibility but not used
+			boundary_config.tree_spacing_horizontal = int(tree_spacing_horizontal_input.value)
+			boundary_config.tree_spacing_vertical = int(tree_spacing_vertical_input.value)
 			boundary_config.tree_row_count = int(tree_row_count_input.value)
 			boundary_config.tree_density = tree_density_input.value
+
+			# Apply natural placement settings
+			boundary_config.enable_staggered_placement = enable_staggered_toggle.button_pressed
+			boundary_config.placement_randomness = placement_randomness_input.value
+			boundary_config.max_random_offset = int(max_random_offset_input.value)
 
 	# Generate!
 	var current_seed = generator.generation_params.generation_seed if generator.generation_params else 0
