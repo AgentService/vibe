@@ -1,0 +1,23 @@
+[gd_resource type="Resource" script_class="PathAwareBoundaryConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/PathAwareBoundaryConfig.gd" id="1_0"]
+
+[resource]
+script = ExtResource("1_0")
+enable_path_aware_boundaries = true
+connection_points = 3
+min_point_distance = 80.0
+arena_size = 300.0
+path_width = 64.0
+boundary_thickness = 32.0
+path_smoothing = 0.4
+tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
+tree_spacing = 32.0
+tree_density = 0.9
+ground_extension = 20
+enable_path_variation = true
+max_path_variation = 20.0
+add_intermediate_waypoints = true
+waypoint_probability = 0.6
+debug_show_boundaries = false
+debug_show_points = false

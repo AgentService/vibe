@@ -4,9 +4,12 @@
 
 [resource]
 script = ExtResource("1_0")
-arena_width = 150
-arena_height = 150
-ground_extension = 15
+base_shape = "Circle"
+shape_length = 1.0
+shape_height = 1.0
+arena_width = 220
+arena_height = 75
+ground_extension = 50
 tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
 tree_spacing_horizontal = 48
 tree_spacing_vertical = 32
