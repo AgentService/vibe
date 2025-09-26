@@ -93,7 +93,7 @@ func _apply_event_visual_theme(pattern_data: Dictionary, event_def: EventDefinit
     for tile_pos in pattern_data.tile_positions:
         decorations_layer.set_cell_modulate(tile_pos, event_color.lerp(Color.WHITE, tint_strength))
 ```
-
+    
 ### 🎲 Event System Integration
 
 #### **4. Leverage Existing EventMasterySystem**

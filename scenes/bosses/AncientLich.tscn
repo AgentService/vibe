@@ -108,7 +108,7 @@ animations = [{
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
-radius = 9.0
+radius = 4.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(14, 15)
@@ -121,37 +121,36 @@ collision_layer = 2
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -3)
 sprite_frames = SubResource("SpriteFrames_mjtd6")
 frame = 2
+offset = Vector2(0, -9.765)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+position = Vector2(0, -3)
 shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
-visible = false
-position = Vector2(-1, -8.5)
+position = Vector2(-1, -9)
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(1, 8.5)
+position = Vector2(1, 2.5)
 shape = SubResource("RectangleShape2D_737yx")
 
 [node name="AttackTimer" type="Timer" parent="."]
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
-visible = false
 
 [node name="BossShadow" parent="." instance=ExtResource("4_o4kpg")]
-position = Vector2(333, -25)
-scale = Vector2(1.52555, 1.51302)
-centered = false
-offset = Vector2(-226, 22)
+scale = Vector2(2, 2)
+offset = Vector2(0, -0.115)
 opacity = 0.8
 
 [node name="PersonalSpaceArea" type="Area2D" parent="."]
+visible = false
 collision_layer = 0
 collision_mask = 2
 
 [node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
+position = Vector2(0, -6)
 shape = SubResource("CircleShape2D_ywjq4")

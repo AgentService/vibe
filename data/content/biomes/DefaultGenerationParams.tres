@@ -1,12 +1,13 @@
-[gd_resource type="Resource" script_class="GenerationParams" load_steps=2 format=3 uid="uid://dx4m8l2y6gk7n"]
+[gd_resource type="Resource" script_class="GenerationParams" load_steps=3 format=3 uid="uid://dx4m8l2y6gk7n"]
 
 [ext_resource type="Script" uid="uid://tjvmx0enlugx" path="res://scripts/resources/GenerationParams.gd" id="1_0"]
+[ext_resource type="Resource" uid="uid://50oqmbysowkn" path="res://data/content/boundaries/DefaultSimpleBoundary.tres" id="2_0"]
 
 [resource]
 script = ExtResource("1_0")
 arena_size = Vector2i(150, 150)
 boundary_width = 3
-generation_seed = 12382
+generation_seed = 12354
 auto_increment_seed = true
 decoration_density = 0.0525
 interactive_object_density = 0.01
@@ -20,35 +21,10 @@ decoration_zones = 11
 max_objects_per_zone = 5
 max_total_objects = 20
 enable_walkable_floor = true
-camera_boundary_extension = 22
+camera_boundary_extension = 15
 enable_spawn_layer = true
 spawn_border_spacing = 5
-edge_density_multiplier = 10.0
-invert_density_gradient = true
-organic_noise_octaves = 2
-organic_noise_lacunarity = 1.5
-organic_noise_gain = 0.3
-organic_amplitude_multiplier = 0.5
-organic_curvature_scale = 8.0
-enable_organic_boundaries = true
-boundary_noise_frequency = 0.05
-boundary_noise_amplitude = 3.0
-boundary_edge_fill_chance = 0.9
-fill_sample_spacing = 1
-fill_coverage_radius = 1.0
-fill_angular_density = 0.2
-fill_minimum_chance = 0.8
-fill_maximum_multiplier = 8.0
-fill_noise_variation = 0.1
-boundary_variation_range = Vector2(1, 8)
-pocket_frequency = 0.03
-pocket_depth = 6.0
-curvature_strength = 2.5
-layered_noise_octaves = 4
-noise_lacunarity = 2.0
-noise_gain = 0.5
-enable_erosion_effect = true
-erosion_strength = 1.5
-boundary_density_variation = 0.3
+use_simplified_boundaries = true
+simple_boundary_config = ExtResource("2_0")
 debug_generation = false
 debug_show_zones = false

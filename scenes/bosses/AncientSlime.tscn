@@ -1,6 +1,6 @@
 [gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
 
-[ext_resource type="Script" uid="uid://bt7og6sdb0rqd" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
+[ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="3_shadow"]
 [ext_resource type="Texture2D" uid="uid://lh7fpy0feqr" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_000.png" id="4_s0"]
@@ -208,8 +208,8 @@ animations = [{
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_83bbo"]
-radius = 9.5
-height = 42.0
+radius = 8.0
+height = 16.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hj45v"]
 size = Vector2(19, 38)
@@ -222,19 +222,19 @@ collision_layer = 2
 script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-position = Vector2(0, -1)
 sprite_frames = SubResource("SpriteFrames_slime")
 animation = &"walking_east"
+offset = Vector2(0, -15.585)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -1)
+position = Vector2(0, -4)
 shape = SubResource("CapsuleShape2D_83bbo")
 
 [node name="HitBox" type="Area2D" parent="."]
 visible = false
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0.5, 0)
+position = Vector2(0, -16)
 shape = SubResource("RectangleShape2D_hj45v")
 
 [node name="AttackTimer" type="Timer" parent="."]
@@ -242,8 +242,8 @@ shape = SubResource("RectangleShape2D_hj45v")
 [node name="BossHealthBar" parent="." instance=ExtResource("2_hbar")]
 
 [node name="BossShadow" parent="." instance=ExtResource("3_shadow")]
-position = Vector2(1, 27)
 scale = Vector2(1.93333, 1.88571)
+offset = Vector2(0, 0.165)
 opacity = 0.8
 
 [node name="PersonalSpaceArea" type="Area2D" parent="."]
@@ -251,4 +251,5 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
+visible = false
 shape = SubResource("CircleShape2D_83bbo")

@@ -1,0 +1,14 @@
+[gd_resource type="SimpleBoundaryConfig" format=3]
+
+[resource]
+base_shape = "Rectangle"
+shape_length = 1.5
+arena_base_size = 25
+tree_tile_variants = Array[Vector2i]([Vector2i(0, 1), Vector2i(1, 1), Vector2i(2, 1)])
+tree_spacing_pixels = 32
+tree_row_count = 4
+tree_density = 0.9
+enable_path_generation = true
+path_width = 2
+path_checkpoint_count = 8
+debug_show_boundary_preview = false

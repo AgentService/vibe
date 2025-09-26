@@ -301,7 +301,7 @@ func generate_arena() -> void:
 	_generate_spawn_layer(rng)  # Generate spawn areas right after ground
 	_generate_walkable_floor_layer(rng)  # Walkable areas for player movement
 	_generate_boundary_layer(rng)
-	_fill_boundary_edge_gaps(rng)  # Fill gaps in boundary edges to prevent escape routes
+	# Note: _fill_boundary_edge_gaps removed - simplified boundary system has no gaps
 	_generate_object_bases(rng)
 	_generate_decorations(rng)
 	_generate_interactive_objects(rng)
@@ -371,506 +371,167 @@ func _generate_floor_layer(rng: RandomNumberGenerator) -> void:
 			ground_layer.set_cell(tile_pos, 0, floor_tile)
 
 func _generate_boundary_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate boundary elements - organic or rectangular based on settings"""
+	"""Generate boundary elements - simplified or complex based on settings"""
 
-	if generation_params.enable_organic_boundaries:
-		_generate_organic_boundary_layer(rng)
-	else:
-		_generate_rectangular_boundary_layer(rng)
+	# Check if simplified boundaries are enabled and configured
+	var use_simplified = false
+	var boundary_config = null
 
-func _generate_organic_boundary_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate advanced organic boundary elements with configurable natural variation"""
-	_safe_log("🌲 Generating advanced organic boundary layer", "generation", "debug")
+	if "use_simplified_boundaries" in generation_params:
+		use_simplified = generation_params.use_simplified_boundaries
+	if "simple_boundary_config" in generation_params:
+		boundary_config = generation_params.simple_boundary_config
 
-	var arena_bounds = generation_params.get_arena_bounds()
-	var center_x = 0
-	var center_y = 0
-	var base_radius_x = arena_bounds.size.x / 2.0
-	var base_radius_y = arena_bounds.size.y / 2.0
-
-	# Camera extension expands the boundary (tree) area
-	var total_boundary_width = generation_params.boundary_width + generation_params.camera_boundary_extension
-
-	# Create advanced multi-layered noise system for natural variation
-	var primary_noise = _create_primary_boundary_noise()
-	var pocket_noise = _create_pocket_noise()
-	var erosion_noise = _create_erosion_noise() if generation_params.enable_erosion_effect else null
-
-	# Generate organic boundary using advanced distance field with multiple noise layers
-	for border_layer in range(total_boundary_width):
-		var layer_radius_x = base_radius_x + border_layer
-		var layer_radius_y = base_radius_y + border_layer
-
-		# Sample points around the perimeter with advanced organic variation
-		_generate_advanced_organic_perimeter_layer(center_x, center_y, layer_radius_x, layer_radius_y,
-													primary_noise, pocket_noise, erosion_noise, border_layer, rng)
-
-func _generate_rectangular_boundary_layer(rng: RandomNumberGenerator) -> void:
-	"""Generate traditional rectangular boundary elements"""
-	_safe_log("🌲 Generating rectangular boundary layer", "generation", "debug")
-
-	var arena_bounds = generation_params.get_arena_bounds()
-	var half_width = arena_bounds.size.x / 2
-	var half_height = arena_bounds.size.y / 2
-
-	# Camera extension expands the boundary (tree) area
-	var total_boundary_width = generation_params.boundary_width + generation_params.camera_boundary_extension
-
-	# Generate boundary elements with spacing - traditional rectangular approach
-	for border_layer in range(total_boundary_width):
-		var layer_half_width = half_width + border_layer
-		var layer_half_height = half_height + border_layer
-
-		var potential_positions: Array[Vector2i] = []
-
-		# Collect boundary positions
-		for x in range(-layer_half_width, layer_half_width + 1):
-			potential_positions.append(Vector2i(x, -layer_half_height))  # Top
-			potential_positions.append(Vector2i(x, layer_half_height))   # Bottom
-		for y in range(-layer_half_height + 1, layer_half_height):
-			potential_positions.append(Vector2i(-layer_half_width, y))   # Left
-			potential_positions.append(Vector2i(layer_half_width, y))    # Right
-
-		# Place boundary elements with layer-based density gradient
-		for pos in potential_positions:
-			if _should_place_boundary_element_with_density(pos, border_layer, total_boundary_width, rng):
-				_place_boundary_element(pos, rng)
-
-func _create_primary_boundary_noise() -> FastNoiseLite:
-	"""Create simplified primary noise for organic boundary variation"""
-	var noise = FastNoiseLite.new()
-	noise.seed = generation_params.generation_seed
-	noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	noise.frequency = max(0.001, generation_params.boundary_noise_frequency)  # Prevent zero frequency
-	# Simplified - fewer octaves for more reliable boundaries
-	noise.fractal_type = FastNoiseLite.FRACTAL_FBM
-	noise.fractal_octaves = generation_params.organic_noise_octaves
-	noise.fractal_lacunarity = max(1.0, generation_params.organic_noise_lacunarity)  # Prevent < 1.0
-	noise.fractal_gain = generation_params.organic_noise_gain
-	return noise
-
-func _create_pocket_noise() -> FastNoiseLite:
-	"""Create noise for pocket generation (inward/outward bulges)"""
-	var noise = FastNoiseLite.new()
-	noise.seed = generation_params.generation_seed + 1000  # Different seed for variation
-	noise.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
-	noise.frequency = generation_params.pocket_frequency
-	noise.fractal_type = FastNoiseLite.FRACTAL_RIDGED
-	noise.fractal_octaves = 3
-	return noise
-
-func _create_erosion_noise() -> FastNoiseLite:
-	"""Create noise for erosion effects (weathered natural boundaries)"""
-	var noise = FastNoiseLite.new()
-	noise.seed = generation_params.generation_seed + 2000  # Different seed for variation
-	noise.noise_type = FastNoiseLite.TYPE_CELLULAR
-	noise.frequency = 0.02  # Very low frequency for large erosion patterns
-	noise.cellular_distance_function = FastNoiseLite.DISTANCE_EUCLIDEAN
-	noise.cellular_return_type = FastNoiseLite.RETURN_DISTANCE2_SUB
-	return noise
-
-func _generate_advanced_organic_perimeter_layer(center_x: float, center_y: float, radius_x: float, radius_y: float,
-											   primary_noise: FastNoiseLite, pocket_noise: FastNoiseLite, erosion_noise: FastNoiseLite,
-											   border_layer: int, rng: RandomNumberGenerator) -> void:
-	"""Generate highly organic perimeter with pockets, curves, and natural variation"""
-
-	# Configurable organic variation
-	var base_amplitude = generation_params.boundary_noise_amplitude * generation_params.organic_amplitude_multiplier
-	var variation_range = generation_params.boundary_variation_range
-	var layer_progress = float(border_layer) / float(max(1, generation_params.boundary_width))
-	var noise_amplitude = lerp(variation_range.x, variation_range.y, layer_progress)
-	var noise_scale = generation_params.organic_curvature_scale
-
-	# Sample points around elliptical perimeter with adaptive resolution
-	var circumference = PI * (radius_x + radius_y)  # Approximate ellipse circumference
-	var angle_step = TAU / max(80, circumference * 0.8)  # Higher resolution for smoother curves
-	var angle = rng.randf() * TAU  # Random starting angle for variation
-
-	var perimeter_points: Array[Vector2i] = []
-
-	var points_generated = 0
-	var max_points = int(circumference * 2)  # Prevent infinite loops
-
-	while points_generated < max_points:
-		# Base elliptical position
-		var base_x = center_x + radius_x * cos(angle)
-		var base_y = center_y + radius_y * sin(angle)
-
-		# Sample primary noise for general organic variation
-		var primary_x = primary_noise.get_noise_2d(base_x * noise_scale, base_y * noise_scale)
-		var primary_y = primary_noise.get_noise_2d((base_x + 1000) * noise_scale, (base_y + 1000) * noise_scale)
-
-		# Sample pocket noise for inward/outward bulges
-		var pocket_influence = pocket_noise.get_noise_2d(base_x * 0.1, base_y * 0.1)
-		var pocket_variation = pocket_influence * generation_params.pocket_depth
-
-		# Sample erosion noise for weathered natural appearance
-		var erosion_variation = 0.0
-		if erosion_noise:
-			var erosion_sample = erosion_noise.get_noise_2d(base_x * 0.05, base_y * 0.05)
-			erosion_variation = erosion_sample * generation_params.erosion_strength
-
-		# Combine all noise layers for complex organic shape
-		var total_variation_x = (primary_x * noise_amplitude) + pocket_variation + erosion_variation
-		var total_variation_y = (primary_y * noise_amplitude) + (pocket_variation * 0.7) + (erosion_variation * 0.5)
-
-		# Apply variations to create highly organic shape
-		var organic_x = base_x + total_variation_x
-		var organic_y = base_y + total_variation_y
-
-		# Convert to tile coordinates
-		var tile_pos = Vector2i(round(organic_x), round(organic_y))
-
-		# Avoid duplicate positions
-		if not perimeter_points.has(tile_pos):
-			perimeter_points.append(tile_pos)
-
-		angle += angle_step
-		if angle >= TAU + (TAU * 0.1):  # Allow slight overlap for completeness
-			break
-		points_generated += 1
-
-	# Place boundary elements at organic perimeter points with density variation
-	var total_boundary_width = generation_params.boundary_width + generation_params.camera_boundary_extension
-	for pos in perimeter_points:
-		if _should_place_organic_boundary_element_with_density(pos, primary_noise, border_layer, total_boundary_width, rng):
-			_place_boundary_element(pos, rng)
-
-			# Add simplified organic fill for natural thickness
-			if border_layer < 2:  # Reduced from 3 to 2 for less complexity
-				_add_simplified_organic_fill(pos, primary_noise, rng)
-
-func _should_place_organic_boundary_element(pos: Vector2i, noise: FastNoiseLite, rng: RandomNumberGenerator) -> bool:
-	"""Determine if an organic boundary element should be placed with density variation"""
-	# Standard placement chance check
-	var placement_chance = generation_params.get_effective_tree_placement_chance(biome_config)
-
-	# Apply density variation using noise for organic gaps
-	var density_noise = noise.get_noise_2d(pos.x * 0.15, pos.y * 0.15)
-	var density_modifier = 1.0 + (density_noise * generation_params.boundary_density_variation)
-	var adjusted_chance = placement_chance * density_modifier
-
-	if rng.randf() >= adjusted_chance:
-		return false
-
-	# Check spacing against existing trees
-	var min_spacing = generation_params.get_effective_tree_spacing_min(biome_config)
-	var max_spacing = generation_params.get_effective_tree_spacing_max(biome_config)
-
-	for existing_tree in _placed_trees:
-		var distance = pos.distance_to(existing_tree)
-		var required_spacing = rng.randi_range(min_spacing, max_spacing)
-		if distance < required_spacing:
-			return false
-
-	return true
-
-func _fill_boundary_edge_gaps(rng: RandomNumberGenerator) -> void:
-	"""Post-process to fill gaps in boundary edges with organic distance-based placement"""
-	if generation_params.boundary_edge_fill_chance <= 0.0:
+	if use_simplified and boundary_config:
+		_generate_simplified_boundary_layer_with_config(boundary_config, rng)
 		return
 
-	var arena_bounds = generation_params.get_arena_bounds()
-	var center = Vector2(0, 0)  # Arena center
-
-	# Calculate organic fill area - much larger and more natural
-	var max_fill_radius = max(arena_bounds.size.x, arena_bounds.size.y) / 2 + generation_params.camera_boundary_extension
-	var min_arena_radius = max(arena_bounds.size.x, arena_bounds.size.y) / 2 - generation_params.boundary_width
-
-	# Use configurable sampling with adjustable spacing for gap-free coverage
-	var sample_spacing = generation_params.fill_sample_spacing
-	var coverage_radius = generation_params.fill_coverage_radius
-	var fill_positions: Array[Vector2i] = []
-
-	# Generate configurable sample pattern with adjustable coverage
-	for radius in range(int(min_arena_radius), int(max_fill_radius), sample_spacing):
-		var circumference = 2 * PI * radius
-		var angle_step = (2 * PI) / max(8, circumference * generation_params.fill_angular_density)
-		var angle_offset = rng.randf() * PI  # Random rotation per radius
-
-		var angle = angle_offset
-		while angle < 2 * PI + angle_offset:
-			var sample_x = center.x + radius * cos(angle)
-			var sample_y = center.y + radius * sin(angle)
-			var sample_pos = Vector2i(int(sample_x), int(sample_y))
-
-			# Add configurable coverage around each position
-			var coverage_int = int(ceil(coverage_radius))  # Convert to integer for grid iteration
-			for offset_x in range(-coverage_int, coverage_int + 1):
-				for offset_y in range(-coverage_int, coverage_int + 1):
-					# Check if position is within the fractional radius
-					var distance = sqrt(offset_x * offset_x + offset_y * offset_y)
-					if distance <= coverage_radius:
-						var coverage_pos = Vector2i(sample_pos.x + offset_x, sample_pos.y + offset_y)
-						fill_positions.append(coverage_pos)
-
-			var angle_variation = generation_params.fill_noise_variation * angle_step
-			angle += angle_step + rng.randf_range(-angle_variation, angle_variation)
-
-	# Apply organic fill with gradual density increase
-	for pos in fill_positions:
-		if not boundaries_layer or boundaries_layer.get_cell_source_id(pos) != -1:  # If no boundaries_layer or tree already exists
-			var distance_from_center = pos.distance_to(Vector2.ZERO)
-			var organic_fill_chance = _calculate_organic_fill_chance(distance_from_center, min_arena_radius, max_fill_radius, rng)
-
-			if rng.randf() < organic_fill_chance:
-				_place_boundary_element(pos, rng)
-
-func _get_distance_from_nearest_corner(pos: Vector2i, arena_bounds: Rect2i) -> float:
-	"""Calculate distance from position to nearest arena corner for natural distribution"""
-	var half_w = arena_bounds.size.x / 2
-	var half_h = arena_bounds.size.y / 2
-	var corners = [
-		Vector2i(-half_w, -half_h), Vector2i(half_w, -half_h),
-		Vector2i(-half_w, half_h), Vector2i(half_w, half_h)
-	]
-
-	var min_distance = 999.0
-	for corner in corners:
-		var distance = pos.distance_to(corner)
-		min_distance = min(min_distance, distance)
-
-	return min_distance
-
-func _calculate_organic_fill_chance(distance_from_center: float, min_radius: float, max_radius: float, rng: RandomNumberGenerator) -> float:
-	"""Calculate ultra-strong fill chance to eliminate all gaps"""
-	var base_chance = generation_params.boundary_edge_fill_chance
-
-	# Calculate normalized distance (0.0 at min_radius, 1.0 at max_radius)
-	var radius_range = max_radius - min_radius
-	var normalized_distance = 0.0
-	if radius_range > 0:
-		normalized_distance = clamp((distance_from_center - min_radius) / radius_range, 0.0, 1.0)
-
-	# Configurable density - use parameters for gap-free coverage
-	var distance_modifier = lerp(3.0, generation_params.fill_maximum_multiplier, normalized_distance)
-
-	# Configurable noise variation
-	var noise_variation = generation_params.fill_noise_variation
-	var noise_modifier = (1.0 - noise_variation) + (rng.randf() * noise_variation * 2.0)
-
-	# Inner boundary gets strong coverage too - no weak spots
-	if distance_from_center < min_radius + 2:
-		distance_modifier = max(distance_modifier, generation_params.fill_maximum_multiplier * 0.5)
-
-	# Force configurable minimum chance
-	var final_chance = max(base_chance, base_chance * distance_modifier * noise_modifier)
-
-	# Use configurable minimum placement chance
-	return clamp(final_chance, generation_params.fill_minimum_chance, 1.0)
-
-func _should_place_organic_boundary_element_with_density(pos: Vector2i, noise: FastNoiseLite, layer: int, total_layers: int, rng: RandomNumberGenerator) -> bool:
-	"""Determine if an organic boundary element should be placed with density variation and camera extension gradient"""
-	# Standard placement chance check
-	var placement_chance = generation_params.get_effective_tree_placement_chance(biome_config)
-
-	# Calculate density gradient - trees get denser toward outer edge
-	var base_boundary_layers = generation_params.boundary_width
-	var density_modifier = 1.0
+	# All boundary generation now uses simplified system only
+	_safe_log("❌ Simplified boundaries not configured - no boundary generation", "generation", "warn")
 
 
-	if layer >= base_boundary_layers:
-		# In camera extension area - trees get MUCH denser toward outer edge
-		var extension_layer = layer - base_boundary_layers
-		var max_extension_layers = generation_params.camera_boundary_extension
-		if max_extension_layers > 0:
-			var gradient_progress = float(extension_layer) / float(max_extension_layers)
-			var edge_density_multiplier = generation_params.edge_density_multiplier
+# Old rectangular boundary function removed - using simplified boundary system only
 
-			# Apply density gradient based on inversion setting
-			if generation_params.invert_density_gradient:
-				# Trees get denser toward outer edge (normal expectation)
-				density_modifier = lerp(1.0, edge_density_multiplier, gradient_progress)
-			else:
-				# Trees get denser toward inner edge (inverted)
-				density_modifier = lerp(edge_density_multiplier, 1.0, gradient_progress)
+func _generate_simplified_boundary_layer_with_config(boundary_config: Resource, rng: RandomNumberGenerator) -> void:
+	"""Generate simplified boundary with reliable spacing and no escape gaps"""
+	_safe_log("🌲 Generating simplified boundary layer with guaranteed gap-free coverage", "generation", "debug")
 
+	if not boundary_config:
+		_safe_log("❌ No SimpleBoundaryConfig found - skipping boundary generation", "generation", "warn")
+		return
 
-	# Increase placement chance based on density (like rectangular boundary logic)
-	var placement_boost = density_modifier - 1.0
-	placement_chance = min(1.0, placement_chance * (1.0 + placement_boost * 0.5))
+	# Ensure layer references are populated - critical for boundaries_layer
+	if not boundaries_layer:
+		_populate_layer_references()
+		if not boundaries_layer:
+			_safe_log("❌ Could not initialize boundaries_layer for simplified boundary system", "generation", "error")
+			return
 
-	# Simplified density variation - less aggressive for reliable boundaries
-	var density_noise = noise.get_noise_2d(pos.x * 0.2, pos.y * 0.2)
-	var density_variation_modifier = 1.0 + (density_noise * generation_params.boundary_density_variation * 0.5)  # Reduced impact
-	var adjusted_chance = placement_chance * density_variation_modifier
+	_safe_log("✅ Boundaries layer initialized: %s" % boundaries_layer.name, "generation", "debug")
 
-	if rng.randf() >= adjusted_chance:
-		return false
+	# Calculate tree spacing in tile units
+	var tree_spacing_tiles = boundary_config.tree_spacing_pixels / 16.0
+	var tree_count_placed = 0
 
-	# Check spacing against existing trees with density modification
-	var min_spacing = generation_params.get_effective_tree_spacing_min(biome_config) * (1.0 / density_modifier)
-	var max_spacing = generation_params.get_effective_tree_spacing_max(biome_config) * (1.0 / density_modifier)
+	_safe_log("🔧 Boundary config: shape=%s, length=%.1f, spacing=%.1f tiles, rows=%d" % [
+		boundary_config.base_shape, boundary_config.shape_length, tree_spacing_tiles, boundary_config.tree_row_count
+	], "generation", "debug")
 
+	# Generate trees in layers from inside to outside for consistent coverage
+	for row_layer in range(boundary_config.tree_row_count):
+		var layer_trees_placed = _generate_simplified_boundary_row(boundary_config, row_layer, tree_spacing_tiles, rng)
+		tree_count_placed += layer_trees_placed
 
-	for existing_tree in _placed_trees:
-		var distance = pos.distance_to(existing_tree)
-		var required_spacing = rng.randf_range(min_spacing, max_spacing)
-		if distance < required_spacing:
-			return false
+		_safe_log("🌲 Layer %d: Placed %d trees" % [row_layer, layer_trees_placed], "generation", "debug")
 
-	return true
+	_safe_log("✅ Simplified boundary complete: %d trees placed in %d rows" % [
+		tree_count_placed, boundary_config.tree_row_count
+	], "generation")
 
-func _add_simplified_organic_fill(center_pos: Vector2i, noise: FastNoiseLite, rng: RandomNumberGenerator) -> void:
-	"""Add simplified organic fill around boundary positions for reliable thickness"""
-	var fill_radius = 1.2
-	var base_fill_chance = 0.8  # Higher chance for more reliable boundaries
+func _generate_simplified_boundary_row(boundary_config: Resource, row_layer: int, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+	"""Generate one row/layer of trees around the boundary perimeter"""
+	var trees_placed = 0
+	var arena_bounds = boundary_config.get_arena_bounds()
 
-	# Simple 3x3 area around position
-	for x_offset in range(-1, 2):
-		for y_offset in range(-1, 2):
-			if x_offset == 0 and y_offset == 0:
-				continue  # Skip center position (already placed)
+	# Calculate the distance from arena edge for this row
+	var row_distance = (row_layer + 1) * spacing_tiles
 
-			var test_pos = center_pos + Vector2i(x_offset, y_offset)
-			var distance = Vector2(x_offset, y_offset).length()
+	match boundary_config.base_shape:
+		"Circle":
+			trees_placed = _generate_circular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng)
+		"Rectangle":
+			trees_placed = _generate_rectangular_boundary_row(boundary_config, row_layer, row_distance, spacing_tiles, rng)
+		_:
+			_safe_log("❌ Unknown boundary shape: %s" % boundary_config.base_shape, "generation", "error")
 
-			if distance <= fill_radius:
-				# Simple noise-based chance without complex calculations
-				var noise_value = noise.get_noise_2d(test_pos.x * 0.3, test_pos.y * 0.3)
-				var adjusted_chance = base_fill_chance + (noise_value * 0.2)
+	return trees_placed
 
-				if rng.randf() < clamp(adjusted_chance, 0.3, 0.95):
-					# Only place if no tree already exists there
-					var already_has_tree = false
-					for existing_tree in _placed_trees:
-						if existing_tree == test_pos:
-							already_has_tree = true
-							break
+func _generate_circular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+	"""Generate trees in a circular pattern around the arena"""
+	var trees_placed = 0
+	var base_radius = boundary_config.arena_base_size
+	var circle_radius = base_radius + row_distance
 
-					if not already_has_tree:
-						_place_boundary_element(test_pos, rng)
+	# Calculate circumference and required number of trees for even spacing
+	var circumference = 2.0 * PI * circle_radius
+	var tree_count = max(8, int(circumference / spacing_tiles))  # Minimum 8 trees per circle
 
-func _add_advanced_organic_fill_around_position(center_pos: Vector2i, primary_noise: FastNoiseLite,
-												pocket_noise: FastNoiseLite, layer: int, rng: RandomNumberGenerator) -> void:
-	"""Add advanced organic fill around boundary positions for natural thickness"""
-	var fill_radius = 2.0 + (layer * 0.3)  # Larger fill radius for outer layers
-	var base_fill_chance = 0.6
+	for i in range(tree_count):
+		var angle = (i * 2.0 * PI) / tree_count
+		var x = int(circle_radius * cos(angle))
+		var y = int(circle_radius * sin(angle))
+		var tree_pos = Vector2i(x, y)
 
-	# Larger sampling area for more organic fill patterns
-	var sample_range = int(ceil(fill_radius)) + 1
-	for x_offset in range(-sample_range, sample_range + 1):
-		for y_offset in range(-sample_range, sample_range + 1):
-			var test_pos = center_pos + Vector2i(x_offset, y_offset)
-			var distance = Vector2(x_offset, y_offset).length()
+		# Use density check to maintain reliable coverage
+		if rng.randf() < boundary_config.tree_density:
+			_place_simplified_boundary_tree(tree_pos, boundary_config, rng)
+			trees_placed += 1
 
-			if distance <= fill_radius:
-				# Use multiple noise layers for complex fill patterns
-				var primary_noise_value = primary_noise.get_noise_2d(test_pos.x * 8.0, test_pos.y * 8.0)
-				var pocket_noise_value = pocket_noise.get_noise_2d(test_pos.x * 0.2, test_pos.y * 0.2)
+	return trees_placed
 
-				# Combine noise influences for natural variation
-				var noise_influence = (primary_noise_value * 0.7) + (pocket_noise_value * 0.3)
-				var distance_falloff = 1.0 - (distance / fill_radius)  # Closer to center = higher chance
-				var adjusted_chance = base_fill_chance * distance_falloff + (noise_influence * 0.4)
+func _generate_rectangular_boundary_row(boundary_config: Resource, row_layer: int, row_distance: float, spacing_tiles: float, rng: RandomNumberGenerator) -> int:
+	"""Generate trees in a rectangular pattern around the arena"""
+	var trees_placed = 0
+	var arena_bounds = boundary_config.get_arena_bounds()
 
-				if rng.randf() < clamp(adjusted_chance, 0.0, 0.9):
-					# Only place if it doesn't conflict with existing trees
-					if _should_place_organic_boundary_element(test_pos, primary_noise, rng):
-						_place_boundary_element(test_pos, rng)
+	# Expand the rectangle by row_distance
+	var expanded_bounds = Rect2i(
+		arena_bounds.position.x - int(row_distance),
+		arena_bounds.position.y - int(row_distance),
+		arena_bounds.size.x + int(row_distance * 2),
+		arena_bounds.size.y + int(row_distance * 2)
+	)
 
-func _add_organic_fill_around_position(center_pos: Vector2i, noise: FastNoiseLite, rng: RandomNumberGenerator) -> void:
-	"""Legacy organic fill function for compatibility"""
-	var fill_radius = 1.5
-	var fill_chance = 0.7
+	# Generate trees along the perimeter with consistent spacing
+	var spacing_int = max(1, int(spacing_tiles))
 
-	for x_offset in range(-2, 3):
-		for y_offset in range(-2, 3):
-			var test_pos = center_pos + Vector2i(x_offset, y_offset)
-			var distance = Vector2(x_offset, y_offset).length()
+	# Top and bottom edges
+	for x in range(expanded_bounds.position.x, expanded_bounds.end.x, spacing_int):
+		var top_pos = Vector2i(x, expanded_bounds.position.y)
+		var bottom_pos = Vector2i(x, expanded_bounds.end.y - 1)
 
-			if distance <= fill_radius:
-				# Use noise to determine if we fill this position
-				var noise_value = noise.get_noise_2d(test_pos.x * 10.0, test_pos.y * 10.0)
-				var adjusted_chance = fill_chance + (noise_value * 0.3)
+		if rng.randf() < boundary_config.tree_density:
+			_place_simplified_boundary_tree(top_pos, boundary_config, rng)
+			trees_placed += 1
 
-				if rng.randf() < adjusted_chance:
-					_place_boundary_element(test_pos, rng)
+		if rng.randf() < boundary_config.tree_density:
+			_place_simplified_boundary_tree(bottom_pos, boundary_config, rng)
+			trees_placed += 1
 
-func _should_place_boundary_element(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
-	"""Determine if a boundary element should be placed"""
-	var placement_chance = generation_params.get_effective_tree_placement_chance(biome_config)
-	if rng.randf() >= placement_chance:
-		return false
+	# Left and right edges (excluding corners to avoid double placement)
+	for y in range(expanded_bounds.position.y + spacing_int, expanded_bounds.end.y - spacing_int, spacing_int):
+		var left_pos = Vector2i(expanded_bounds.position.x, y)
+		var right_pos = Vector2i(expanded_bounds.end.x - 1, y)
 
-	# Check spacing against existing trees
-	var min_spacing = generation_params.get_effective_tree_spacing_min(biome_config)
-	var max_spacing = generation_params.get_effective_tree_spacing_max(biome_config)
+		if rng.randf() < boundary_config.tree_density:
+			_place_simplified_boundary_tree(left_pos, boundary_config, rng)
+			trees_placed += 1
 
-	for existing_tree in _placed_trees:
-		var distance = pos.distance_to(existing_tree)
-		var required_spacing = rng.randi_range(min_spacing, max_spacing)
-		if distance < required_spacing:
-			return false
+		if rng.randf() < boundary_config.tree_density:
+			_place_simplified_boundary_tree(right_pos, boundary_config, rng)
+			trees_placed += 1
 
-	return true
+	return trees_placed
 
-func _should_place_boundary_element_with_density(pos: Vector2i, layer: int, total_layers: int, rng: RandomNumberGenerator) -> bool:
-	"""Determine if a boundary element should be placed with camera extension density gradient"""
-	var placement_chance = generation_params.get_effective_tree_placement_chance(biome_config)
+func _place_simplified_boundary_tree(pos: Vector2i, boundary_config: Resource, rng: RandomNumberGenerator) -> void:
+	"""Place a tree using simplified boundary system with alternative tree tiles"""
+	if not boundaries_layer:
+		_safe_log("❌ No boundaries layer found for tree placement", "generation", "error")
+		return
 
-	# Calculate density gradient - trees get denser toward outer edge
-	var base_boundary_layers = generation_params.boundary_width
-	var density_modifier = 1.0
+	# Get tree tile variant (supports alternative trees with bigger collision)
+	var tree_tile = boundary_config.get_random_tree_tile(rng)
 
-	if layer >= base_boundary_layers:
-		# In camera extension area - trees get MUCH denser toward outer edge
-		var extension_layer = layer - base_boundary_layers
-		var max_extension_layers = generation_params.camera_boundary_extension
-		if max_extension_layers > 0:
-			var gradient_progress = float(extension_layer) / float(max_extension_layers)
-			var edge_density_multiplier = generation_params.edge_density_multiplier
+	# Place tree with source ID 0 (standard tileset source)
+	boundaries_layer.set_cell(pos, 0, tree_tile)
 
-			# Apply density gradient based on inversion setting
-			if generation_params.invert_density_gradient:
-				# Trees get denser toward outer edge (normal expectation)
-				density_modifier = lerp(1.0, edge_density_multiplier, gradient_progress)
-			else:
-				# Trees get denser toward inner edge (inverted)
-				density_modifier = lerp(edge_density_multiplier, 1.0, gradient_progress)
-
-			# Increase placement chance based on density
-			var placement_boost = density_modifier - 1.0
-			placement_chance = min(1.0, placement_chance * (1.0 + placement_boost * 0.5))
-
-	if rng.randf() >= placement_chance:
-		return false
-
-	# Apply density modification to spacing requirements
-	var min_spacing = generation_params.get_effective_tree_spacing_min(biome_config) * (1.0 / density_modifier)
-	var max_spacing = generation_params.get_effective_tree_spacing_max(biome_config) * (1.0 / density_modifier)
-
-	for existing_tree in _placed_trees:
-		var distance = pos.distance_to(existing_tree)
-		var required_spacing = rng.randf_range(min_spacing, max_spacing)
-		if distance < required_spacing:
-			return false
-
-	return true
-
-func _place_boundary_element(pos: Vector2i, rng: RandomNumberGenerator) -> void:
-	"""Place a boundary element (tree) using single tree tile with Y-sorting"""
-
-	if boundaries_layer:
-		# Place single tree tile with Y-sorting enabled
-		var tree_tile = Vector2i(9, 28)  # Single tree tile with proper Y-sort origin and texture origin
-		boundaries_layer.set_cell(pos, 0, tree_tile)
-
-		# Tree collision handled by tileset physics layer - no manual collision needed
-
+	# Track placed trees for conflict detection
 	_placed_trees.append(pos)
 
-func _place_large_flower_element(pos: Vector2i, rng: RandomNumberGenerator) -> void:
-	"""Place a large flower (15, 0) using single tile with Y-sort origin"""
+	_safe_log("🌲 Placed tree variant %s at %s" % [tree_tile, pos], "generation", "debug")
 
-	# CRITICAL: Place in decorations_layer which is inside YSort_Objects
-	if decorations_layer:
-		# Place single flower tile - Y-sorting handled by tileset Y-Sort Origin
-		var flower_tile = Vector2i(15, 0)  # Single 3x6 flower tile
-		decorations_layer.set_cell(pos, 0, flower_tile)
 
-		# Flower collision handled by tileset physics layer - no manual collision needed
-
+# OLD COMPLEX BOUNDARY FUNCTIONS REMOVED - See git history if needed
 
 func _generate_object_bases(rng: RandomNumberGenerator) -> void:
 	"""Generate tree bases and other foundation objects"""
@@ -1028,59 +689,32 @@ func _generate_spawn_layer(rng: RandomNumberGenerator) -> void:
 				spawn_layer.set_cell(tile_pos, 0, spawn_tile)
 
 func _will_have_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
-	"""Check if a position will have a tree or other obstruction"""
+	"""Check if a position will have a tree or other obstruction - simplified boundary system"""
+	# Use simplified boundary system for obstruction detection
+	return _will_have_simplified_boundary_obstruction(pos, rng)
 
-	if generation_params.enable_organic_boundaries:
-		return _will_have_organic_obstruction(pos, rng)
-	else:
-		return _will_have_rectangular_obstruction(pos, rng)
-
-func _will_have_organic_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
-	"""Check obstruction using organic boundary shape"""
-	var arena_bounds = generation_params.get_arena_bounds()
-	var center_x = 0
-	var center_y = 0
-	var base_radius_x = arena_bounds.size.x / 2.0
-	var base_radius_y = arena_bounds.size.y / 2.0
-
-	# Calculate distance from center using elliptical distance
-	var dx = float(pos.x - center_x) / base_radius_x
-	var dy = float(pos.y - center_y) / base_radius_y
-	var elliptical_distance = sqrt(dx * dx + dy * dy)
-
-	# Create noise for organic shape checking (same parameters as boundary generation)
-	var boundary_noise = FastNoiseLite.new()
-	boundary_noise.seed = generation_params.generation_seed
-	boundary_noise.noise_type = FastNoiseLite.TYPE_PERLIN
-	boundary_noise.frequency = generation_params.boundary_noise_frequency
-	boundary_noise.fractal_octaves = 3
-
-	# Sample noise at this position to match organic boundary
-	var noise_scale = 20.0
-	var noise_x = boundary_noise.get_noise_2d(pos.x * noise_scale, pos.y * noise_scale)
-	var noise_y = boundary_noise.get_noise_2d((pos.x + 100) * noise_scale, (pos.y + 100) * noise_scale)
-
-	# Calculate organic distance threshold
-	var base_threshold = 1.0 - (generation_params.spawn_border_spacing / base_radius_x)
-	var noise_variation = (noise_x + noise_y) * 0.5 * 0.05  # Small variation for spawn area
-	var organic_threshold = base_threshold + noise_variation
-
-	# Position is obstructed if it's outside the organic spawn area
-	return elliptical_distance > organic_threshold
-
-func _will_have_rectangular_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
-	"""Check obstruction using rectangular boundary shape"""
-	var arena_bounds = generation_params.get_arena_bounds()
-	var boundary_width = generation_params.boundary_width
-
-	# Check if position is in boundary area (traditional rectangular check)
-	if pos.x <= arena_bounds.position.x + boundary_width or \
-	   pos.x >= arena_bounds.end.x - boundary_width or \
-	   pos.y <= arena_bounds.position.y + boundary_width or \
-	   pos.y >= arena_bounds.end.y - boundary_width:
-		return true
-
-	return false
+func _will_have_simplified_boundary_obstruction(pos: Vector2i, rng: RandomNumberGenerator) -> bool:
+	"""Check obstruction using simplified boundary system"""
+	# Get simplified boundary config if available
+	var boundary_config = null
+	if "simple_boundary_config" in generation_params:
+		boundary_config = generation_params.simple_boundary_config
+	
+	if not boundary_config:
+		# Fallback to basic arena bounds check
+		var arena_bounds = generation_params.get_arena_bounds()
+		var boundary_width = generation_params.boundary_width
+		
+		if pos.x <= arena_bounds.position.x + boundary_width or \
+		   pos.x >= arena_bounds.end.x - boundary_width or \
+		   pos.y <= arena_bounds.position.y + boundary_width or \
+		   pos.y >= arena_bounds.end.y - boundary_width:
+			return true
+		return false
+	
+	# Use simplified boundary config for more accurate obstruction detection
+	# Check if position is outside the arena (inside boundary area)
+	return not boundary_config.is_inside_arena(pos)
 
 
 func _set_player_spawn() -> void:
