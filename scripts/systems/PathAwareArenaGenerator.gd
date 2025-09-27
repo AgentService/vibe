@@ -463,8 +463,19 @@ func _generate_boundary_trees():
 		# Convert world position to tile position
 		var tile_pos = Vector2i(int(world_pos.x / tile_size), int(world_pos.y / tile_size))
 
-		# Skip if tile already has a tree (prevents branch overlap density)
-		if tree_layer.get_cell_source_id(tile_pos) != -1:
+		# Skip if tile or nearby tiles already have trees (prevents branch overlap density)
+		var has_nearby_tree = false
+		var check_radius = 1  # Check 3x3 area around position
+		for dx in range(-check_radius, check_radius + 1):
+			for dy in range(-check_radius, check_radius + 1):
+				var check_pos = tile_pos + Vector2i(dx, dy)
+				if tree_layer.get_cell_source_id(check_pos) != -1:
+					has_nearby_tree = true
+					break
+			if has_nearby_tree:
+				break
+
+		if has_nearby_tree:
 			continue
 
 		# Get random tree variant from TreeBoundaryConfiguration for visual diversity
