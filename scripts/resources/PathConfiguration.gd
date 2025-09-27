@@ -279,10 +279,8 @@ func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], o
 		# Fallback to random direction
 		main_direction = Vector2(cos(rng.randf() * TAU), sin(rng.randf() * TAU))
 
-	# Add random angle variation (45-90 degrees from perpendicular)
-	var angle_variation = rng.randf_range(deg_to_rad(45), deg_to_rad(90))
-	if rng.randf() > 0.5:
-		angle_variation = -angle_variation
+	# Add small random angle variation (±15 degrees from perpendicular for more 90° branching)
+	var angle_variation = rng.randf_range(deg_to_rad(-15), deg_to_rad(15))
 	main_direction = main_direction.rotated(angle_variation)
 
 	# Random branch length
