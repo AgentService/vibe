@@ -273,7 +273,7 @@ func generate_path_extensions(ground_positions: Array[Vector2]) -> Array[Vector2
 
 	return unique_extensions
 
-## Generate dual-layer forest rings using single width parameter for consistent ring spacing
+## Generate dual-layer forest rings using optimized spatial collision detection
 func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array = []) -> Dictionary:
 	if path_extension_width <= 0:
 		return {"green": [], "dark": []}
@@ -282,6 +282,12 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array =
 	Logger.debug("Ring generation parameters: width1=%.1f, width2=%.1f, path_width=%.1f" % [
 		path_extension_width, path_extension_width2, path_width
 	], "pathgen")
+
+	# Build fast spatial collision grid for path corridors (performance optimization)
+	var collision_grid: Dictionary = {}
+	var grid_size = 96.0  # 2x tile size for good granularity vs performance
+	if not paths.is_empty():
+		collision_grid = _build_path_collision_grid(paths, grid_size)
 
 	var green_tiles: Dictionary = {}  # Vector2i -> bool for deduplication
 	var dark_tiles: Dictionary = {}   # Vector2i -> bool for deduplication
@@ -324,14 +330,14 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array =
 				# Green ring: path_edge_distance < distance <= path_edge_distance + path_extension_width
 				# Dark ring: path_edge_distance + path_extension_width < distance <= path_edge_distance + 2 * path_extension_width
 				if distance_sq > green_inner_threshold_sq and distance_sq <= green_outer_threshold_sq:
-					# Collision-aware generation: only add if not in walkable corridor
+					# Fast collision-aware generation using spatial grid
 					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
-					if paths.is_empty() or not is_position_in_walkable_corridor(world_pos, paths):
+					if paths.is_empty() or not _is_position_in_collision_grid(world_pos, collision_grid, grid_size):
 						green_tiles[tile_pos] = true
 				elif distance_sq > green_outer_threshold_sq and distance_sq <= dark_outer_threshold_sq:
-					# Collision-aware generation: only add if not in walkable corridor
+					# Fast collision-aware generation using spatial grid
 					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
-					if paths.is_empty() or not is_position_in_walkable_corridor(world_pos, paths):
+					if paths.is_empty() or not _is_position_in_collision_grid(world_pos, collision_grid, grid_size):
 						dark_tiles[tile_pos] = true
 
 	# Convert to position arrays for tile placement
@@ -344,7 +350,7 @@ func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array =
 	for tile_coord in dark_tiles.keys():
 		dark_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
 
-	Logger.debug("Generated dual forest rings using widths %.1f/%.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f)" % [
+	Logger.debug("Generated dual forest rings using widths %.1f/%.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f) [SPATIAL OPTIMIZED]" % [
 		path_extension_width, path_extension_width2, green_positions.size(), green_inner_radius, green_outer_radius, dark_positions.size(), green_outer_radius, dark_outer_radius
 	], "pathgen")
 
@@ -378,6 +384,67 @@ func _point_to_line_distance(point: Vector2, line_start: Vector2, line_end: Vect
 	var t = max(0, min(1, (point - line_start).dot(line_vec) / line_length_squared))
 	var projection = line_start + t * line_vec
 	return point.distance_to(projection)
+
+## Build fast spatial collision grid for path corridors (performance optimization)
+func _build_path_collision_grid(paths: Array[PathSegment], grid_size: float) -> Dictionary:
+	var collision_grid: Dictionary = {}
+	var half_width = path_width * 0.5
+
+	for path in paths:
+		var path_points = path.get_full_path()
+
+		# Process each path segment
+		for i in range(path_points.size() - 1):
+			var start_point = path_points[i]
+			var end_point = path_points[i + 1]
+
+			# Calculate bounding box for this segment
+			var min_x = min(start_point.x, end_point.x) - half_width
+			var max_x = max(start_point.x, end_point.x) + half_width
+			var min_y = min(start_point.y, end_point.y) - half_width
+			var max_y = max(start_point.y, end_point.y) + half_width
+
+			# Mark all grid cells that this segment affects
+			var start_grid_x = int(floor(min_x / grid_size))
+			var end_grid_x = int(ceil(max_x / grid_size))
+			var start_grid_y = int(floor(min_y / grid_size))
+			var end_grid_y = int(ceil(max_y / grid_size))
+
+			for grid_x in range(start_grid_x, end_grid_x + 1):
+				for grid_y in range(start_grid_y, end_grid_y + 1):
+					var grid_key = Vector2i(grid_x, grid_y)
+					if not collision_grid.has(grid_key):
+						collision_grid[grid_key] = []
+					collision_grid[grid_key].append([start_point, end_point])
+
+	Logger.debug("Built collision grid: %d cells covering %d path segments" % [
+		collision_grid.size(), paths.size()
+	], "pathgen")
+
+	return collision_grid
+
+## Fast collision check using spatial grid (O(1) average case vs O(n) for full path check)
+func _is_position_in_collision_grid(position: Vector2, collision_grid: Dictionary, grid_size: float) -> bool:
+	var grid_x = int(floor(position.x / grid_size))
+	var grid_y = int(floor(position.y / grid_size))
+	var grid_key = Vector2i(grid_x, grid_y)
+
+	if not collision_grid.has(grid_key):
+		return false
+
+	var segments: Array = collision_grid[grid_key]
+	var half_width = path_width * 0.5
+
+	# Only check segments in this grid cell (massive reduction vs checking all segments)
+	for segment in segments:
+		var start_point = segment[0]
+		var end_point = segment[1]
+		var distance = _point_to_line_distance(position, start_point, end_point)
+
+		if distance <= half_width:
+			return true
+
+	return false
 
 ## Get ground corridor tile positions for walkable areas
 func get_ground_corridor_positions(paths: Array[PathSegment], corridor_bounds: Rect2) -> Array[Vector2]:

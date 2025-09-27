@@ -83,7 +83,7 @@ func _build_ui():
 	path_count_input = SpinBox.new()
 	path_count_input.min_value = 2
 	path_count_input.max_value = 8
-	path_count_input.value = 3
+	path_count_input.value = 3  # From DefaultPathConfiguration.tres
 	path_count_input.step = 1
 	vbox.add_child(path_count_input)
 	
@@ -95,7 +95,7 @@ func _build_ui():
 	arena_size_input = SpinBox.new()
 	arena_size_input.min_value = 200
 	arena_size_input.max_value = 800
-	arena_size_input.value = 300
+	arena_size_input.value = 300  # From DefaultPathConfiguration.tres
 	arena_size_input.step = 50
 	vbox.add_child(arena_size_input)
 
@@ -107,7 +107,7 @@ func _build_ui():
 	corridor_width_input = SpinBox.new()
 	corridor_width_input.min_value = 50
 	corridor_width_input.max_value = 5000  # Unlimited
-	corridor_width_input.value = 900
+	corridor_width_input.value = 2000  # Current plugin default
 	corridor_width_input.step = 50
 	corridor_width_input.suffix = "px"
 	vbox.add_child(corridor_width_input)
@@ -120,7 +120,7 @@ func _build_ui():
 	tree_spacing_input = SpinBox.new()
 	tree_spacing_input.min_value = 20
 	tree_spacing_input.max_value = 150
-	tree_spacing_input.value = 30
+	tree_spacing_input.value = 44
 	tree_spacing_input.step = 1
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
@@ -185,8 +185,8 @@ func _build_ui():
 	path_extension_width_input = SpinBox.new()
 	path_extension_width_input.min_value = 0
 	path_extension_width_input.max_value = 1000  # Unlimited extension width
-	path_extension_width_input.value = 60
-	path_extension_width_input.step = 10
+	path_extension_width_input.value = 2  # Current plugin default
+	path_extension_width_input.step = 1
 	path_extension_width_input.suffix = "px"
 	vbox.add_child(path_extension_width_input)
 
@@ -198,8 +198,8 @@ func _build_ui():
 	path_extension_width2_input = SpinBox.new()
 	path_extension_width2_input.min_value = 0
 	path_extension_width2_input.max_value = 1000  # Unlimited extension width
-	path_extension_width2_input.value = 60
-	path_extension_width2_input.step = 10
+	path_extension_width2_input.value = 1  # Current plugin default
+	path_extension_width2_input.step = 1
 	path_extension_width2_input.suffix = "px"
 	vbox.add_child(path_extension_width2_input)
 
@@ -244,12 +244,13 @@ func _load_default_configs():
 	if not path_config:
 		Logger.warn("Could not load DefaultPathConfiguration, creating new one", "plugin")
 		path_config = PathConfiguration.new()
-	
+
 	# Load default tree boundary configuration
 	tree_config = load("res://data/content/DefaultTreeBoundaryConfiguration.tres")
 	if not tree_config:
 		Logger.warn("Could not load DefaultTreeBoundaryConfiguration, creating new one", "plugin")
 		tree_config = TreeBoundaryConfiguration.new()
+
 
 func _connect_signals():
 	if generate_button:

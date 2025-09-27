@@ -13,6 +13,7 @@ chain_length = 6
 min_point_distance = 80.0
 point_space_radius = 100.0
 path_extension_width = 48.0
+path_extension_width2 = 48.0
 arena_size = 300.0
 path_width = 64.0
 path_smoothing = 0.4
