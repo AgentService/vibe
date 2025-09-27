@@ -463,6 +463,10 @@ func _generate_boundary_trees():
 		# Convert world position to tile position
 		var tile_pos = Vector2i(int(world_pos.x / tile_size), int(world_pos.y / tile_size))
 
+		# Skip if tile already has a tree (prevents branch overlap density)
+		if tree_layer.get_cell_source_id(tile_pos) != -1:
+			continue
+
 		# Get random tree variant from TreeBoundaryConfiguration for visual diversity
 		var selected_tree_variant = tree_config.get_random_tree_tile(rng)
 
