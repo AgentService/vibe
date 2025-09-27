@@ -29,7 +29,7 @@ var tree_config: TreeBoundaryConfiguration
 func _init():
 	# Set dock name and minimum size
 	name = "Path Generator"
-	custom_minimum_size = Vector2(200, 300)
+	custom_minimum_size = Vector2(500, 800)
 	
 	_build_ui()
 	_load_default_configs()
@@ -94,8 +94,8 @@ func _build_ui():
 
 	arena_size_input = SpinBox.new()
 	arena_size_input.min_value = 200
-	arena_size_input.max_value = 800
-	arena_size_input.value = 300  # From DefaultPathConfiguration.tres
+	arena_size_input.max_value = 6000
+	arena_size_input.value = 1500  # From DefaultPathConfiguration.tres
 	arena_size_input.step = 50
 	vbox.add_child(arena_size_input)
 

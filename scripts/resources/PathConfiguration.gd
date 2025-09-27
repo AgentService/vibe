@@ -179,7 +179,35 @@ func _create_path_network(points: Array[PathPoint], rng: RandomNumberGenerator) 
 		var path = PathSegment.new(start_point, end_point, path_width)
 		paths.append(path)
 
-	Logger.debug("Created single linear chain: %d path segments" % paths.size(), "pathgen")
+	# TEST: Add a branch path from the second point (index 1) to test boundary response
+	if points.size() >= 3:
+		var branch_point = points[1]  # Second point
+
+		# Create branch direction perpendicular to main path direction
+		var main_direction = (points[2].position - points[1].position).normalized()
+		var branch_direction = Vector2(-main_direction.y, main_direction.x)  # 90-degree rotation
+
+		# Create two branch points extending outward
+		var branch_pos1 = branch_point.position + branch_direction * min_point_distance * 1.2
+		var branch_pos2 = branch_pos1 + branch_direction * min_point_distance * 1.0
+
+		var branch_point1 = PathPoint.new(branch_pos1, points.size())
+		var branch_point2 = PathPoint.new(branch_pos2, points.size() + 1)
+
+		# Connect branch points
+		_connect_points(branch_point, branch_point1)
+		_connect_points(branch_point1, branch_point2)
+
+		# Create branch path segments
+		var branch_path1 = PathSegment.new(branch_point, branch_point1, path_width)
+		var branch_path2 = PathSegment.new(branch_point1, branch_point2, path_width)
+
+		paths.append(branch_path1)
+		paths.append(branch_path2)
+
+		Logger.debug("Added test branch: 2 additional path segments from point 1", "pathgen")
+
+	Logger.debug("Created path network with branches: %d path segments total" % paths.size(), "pathgen")
 
 	# Add waypoints for natural path variation
 	if add_intermediate_waypoints:
