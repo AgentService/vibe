@@ -348,8 +348,8 @@ func _create_connection_line(path) -> Line2D:
 	return line
 
 func _generate_ground_tiles():
-	"""Generate ground tiles using dual-layer forest ring approach"""
-	Logger.debug("_generate_ground_tiles() called - using dual-layer ring approach", "pathgen")
+	"""Generate ground tiles using distance-based green/dark placement"""
+	Logger.debug("_generate_ground_tiles() called - using distance-based approach", "pathgen")
 
 	var green_layer = _find_layer_node(GROUND_LAYER_NAME)
 	var dark_layer = _find_layer_node(GROUND2_LAYER_NAME)
@@ -370,13 +370,21 @@ func _generate_ground_tiles():
 	# Clear existing tiles first
 	green_layer.clear()
 	dark_layer.clear()
-	Logger.debug("Using dual-layer forest ring approach", "pathgen")
+	Logger.debug("Using distance-based green/dark tile placement", "pathgen")
 
 	# Get ground positions from DungeonPathGenerator
 	var ground_positions = path_generator.get_ground_positions()
+	Logger.debug("Path generator provided %d ground positions" % ground_positions.size(), "pathgen")
+
+	# If no ground positions from path generator, create our own sampling around paths
 	if ground_positions.is_empty():
-		Logger.warn("No corridor ground positions available from path generator", "pathgen")
-		return
+		Logger.warn("No corridor ground positions from path generator, generating our own sampling", "pathgen")
+		ground_positions = _generate_path_area_sampling()
+		Logger.debug("Generated %d sampled positions around paths" % ground_positions.size(), "pathgen")
+
+		if ground_positions.is_empty():
+			Logger.warn("No ground positions available after sampling, skipping ground tile generation", "pathgen")
+			return
 
 	# Atlas coordinates for forest tileset
 	var ground_source_id = 0
@@ -388,51 +396,54 @@ func _generate_ground_tiles():
 	var path_data = path_generator.get_current_path_data()
 	var paths: Array = path_data.get("paths", [])
 
-	# Generate dual forest rings with collision-aware optimization
-	var ring_data = path_config.generate_dual_forest_rings(ground_positions, paths)
-	var green_positions: Array[Vector2] = ring_data.get("green", [])
-	var dark_positions: Array[Vector2] = ring_data.get("dark", [])
+	# SIMPLIFIED: Use distance-based approach for green/dark tile placement
+	Logger.debug("Using simplified distance-based green/dark tile placement", "pathgen")
 
-	# VALIDATION: Run old filtering approach to verify optimization works correctly
-	var filtered_green_positions: Array[Vector2] = []
-	var filtered_dark_positions: Array[Vector2] = []
-
-	for green_pos in green_positions:
-		if not path_config.is_position_in_walkable_corridor(green_pos, paths):
-			filtered_green_positions.append(green_pos)
-
-	for dark_pos in dark_positions:
-		if not path_config.is_position_in_walkable_corridor(dark_pos, paths):
-			filtered_dark_positions.append(dark_pos)
-
-	# Validation logging: optimized vs filtered counts should match
-	var green_match = green_positions.size() == filtered_green_positions.size()
-	var dark_match = dark_positions.size() == filtered_dark_positions.size()
-	Logger.debug("Optimization validation - Green: %d optimized vs %d filtered (%s), Dark: %d vs %d (%s)" % [
-		green_positions.size(), filtered_green_positions.size(), "✓" if green_match else "✗",
-		dark_positions.size(), filtered_dark_positions.size(), "✓" if dark_match else "✗"
-	], "pathgen")
-
-	# Convert to tile coordinates for deduplication tracking
+	# Convert to tile coordinates for placement
 	var green_tiles: Dictionary = {}
 	var dark_tiles: Dictionary = {}
 
-	# Paint green layer first
-	for green_pos in green_positions:
-		var tile_pos = Vector2i(int(green_pos.x / tile_size), int(green_pos.y / tile_size))
-		green_tiles[tile_pos] = true
-		green_layer.set_cell(tile_pos, ground_source_id, green_atlas_coords)
+	# Use direct pixel distance from paths for green vs dark green placement
+	var green_zone_radius = tree_config.green_zone_radius_px
 
-	# Paint dark layer with overlap guard
-	for dark_pos in dark_positions:
-		var tile_pos = Vector2i(int(dark_pos.x / tile_size), int(dark_pos.y / tile_size))
-		# Guard dark placement: don't overwrite green tiles
-		if not tile_pos in green_tiles:
+	Logger.debug("Green zone radius: %.1fpx (green ≤ %.1fpx, dark green > %.1fpx)" % [green_zone_radius, green_zone_radius, green_zone_radius], "pathgen")
+
+	# Place ground tiles based on simple distance to path logic
+	var positions_processed = 0
+	var positions_in_corridor = 0
+	var positions_placed_green = 0
+	var positions_placed_dark = 0
+
+	for ground_pos in ground_positions:
+		positions_processed += 1
+
+		# Skip if position is in walkable corridor (these are the actual path areas)
+		if path_config.is_position_in_walkable_corridor(ground_pos, paths):
+			positions_in_corridor += 1
+			continue
+
+		var tile_pos = Vector2i(int(ground_pos.x / tile_size), int(ground_pos.y / tile_size))
+
+		# Calculate distance to nearest path for green vs dark decision
+		var distance_to_path = _get_distance_to_nearest_path(ground_pos, current_path_data)
+
+		if distance_to_path <= green_zone_radius:
+			# Within green zone: normal green (0,12) in Green layer
+			green_tiles[tile_pos] = true
+			green_layer.set_cell(tile_pos, ground_source_id, green_atlas_coords)
+			positions_placed_green += 1
+		else:
+			# Beyond green zone: dark green (15,12) in DarkGreen layer for deeper forest
 			dark_tiles[tile_pos] = true
 			dark_layer.set_cell(tile_pos, ground_source_id, dark_atlas_coords)
+			positions_placed_dark += 1
 
-	Logger.info("Generated dual forest rings: %d green (0,12), %d dark (15,12)" % [
-		green_tiles.size(), dark_tiles.size()
+	Logger.debug("Ground position stats: %d total, %d in corridor (skipped), %d placed green, %d placed dark" % [
+		positions_processed, positions_in_corridor, positions_placed_green, positions_placed_dark
+	], "pathgen")
+
+	Logger.info("Generated distance-based forest tiles: %d green (0,12) in '%s' layer, %d dark green (15,12) in '%s' layer" % [
+		green_tiles.size(), GROUND_LAYER_NAME, dark_tiles.size(), GROUND2_LAYER_NAME
 	], "pathgen")
 
 func _generate_boundary_trees():
@@ -485,17 +496,104 @@ func _generate_boundary_trees():
 		# Place tree tile with selected variant using alternative tile 1
 		tree_layer.set_cell(tile_pos, tree_source_id, selected_tree_variant, tree_alternative_id)
 
-		# Place ground tile beneath tree using Green layer tileset (0,12)
+		# Place ground tile beneath tree using distance-based green/dark logic
 		if green_layer and green_layer is TileMapLayer:
+			# Get DarkGreen layer for dark tiles
+			var dark_layer = _find_layer_node(GROUND2_LAYER_NAME)
+
 			# Place ground tile at the exact same position as the tree
-			# tile_pos already accounts for random offset, so no additional offset needed
 			var ground_tile_pos = tile_pos  # Same position as tree
 
-			# Place Green layer tileset (0,12) beneath tree for consistency
-			green_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
-			ground_tiles_placed += 1
+			# Calculate distance to nearest path for green vs dark green decision
+			var distance_to_path = _get_distance_to_nearest_path(world_pos, current_path_data)
+			var green_zone_radius = tree_config.green_zone_radius_px  # Use direct pixel distance
 
-	Logger.info("Placed %d boundary trees (using alternative tile 1 for variants: 0,28 & 9,28) and %d tree ground tiles using Green layer tileset (0,12)" % [current_tree_data.size(), ground_tiles_placed], "treegen")
+			# Choose layer and tile type based on distance to paths
+			if distance_to_path <= green_zone_radius:
+				# Near paths: normal green (0,12) in Green layer
+				green_layer.set_cell(ground_tile_pos, tree_source_id, Vector2i(0, 12))
+				ground_tiles_placed += 1
+			else:
+				# Far from paths: dark green (15,12) in DarkGreen layer
+				if dark_layer and dark_layer is TileMapLayer:
+					dark_layer.set_cell(ground_tile_pos, tree_source_id, Vector2i(15, 12))
+					ground_tiles_placed += 1
+
+	Logger.info("Placed %d boundary trees (using alternative tile 1 for variants: 0,28 & 9,28) and %d tree ground tiles using distance-based green/dark logic" % [current_tree_data.size(), ground_tiles_placed], "treegen")
+
+## Calculate distance from position to nearest path or branch
+func _get_distance_to_nearest_path(position: Vector2, path_data: Dictionary) -> float:
+	var paths: Array = path_data.get("paths", [])
+	var min_distance = INF
+
+	for path in paths:
+		var path_points: Array[Vector2] = path.get_full_path()
+
+		# Check distance to each path segment
+		for i in range(path_points.size() - 1):
+			var start_point = path_points[i]
+			var end_point = path_points[i + 1]
+			var distance = _point_to_line_segment_distance(position, start_point, end_point)
+			min_distance = min(min_distance, distance)
+
+	return min_distance if min_distance != INF else 1000.0  # Default large distance
+
+## Calculate distance from point to line segment (utility function)
+func _point_to_line_segment_distance(point: Vector2, line_start: Vector2, line_end: Vector2) -> float:
+	var line_vector = line_end - line_start
+	var point_vector = point - line_start
+	var line_length_squared = line_vector.length_squared()
+
+	if line_length_squared == 0:
+		return point.distance_to(line_start)
+
+	var t = clamp(point_vector.dot(line_vector) / line_length_squared, 0.0, 1.0)
+	var projection = line_start + t * line_vector
+	return point.distance_to(projection)
+
+## Generate ground position sampling around paths when path generator doesn't provide positions
+func _generate_path_area_sampling() -> Array[Vector2]:
+	var sampled_positions: Array[Vector2] = []
+	var paths: Array = current_path_data.get("paths", [])
+
+	if paths.is_empty():
+		return sampled_positions
+
+	var tile_size = 48
+	var sample_distance = tile_size * 2  # Sample every 2 tiles around paths
+	var max_radius = tree_config.boundary_distance + tree_config.boundary_thickness  # Sample within tree boundary area
+
+	Logger.debug("Sampling around %d paths with max radius: %.1fpx" % [paths.size(), max_radius], "pathgen")
+
+	# Sample positions around each path
+	for path in paths:
+		var path_points: Array[Vector2] = path.get_full_path()
+
+		# Sample along each path segment
+		for i in range(path_points.size() - 1):
+			var start_point = path_points[i]
+			var end_point = path_points[i + 1]
+			var segment_length = start_point.distance_to(end_point)
+			var segment_steps = max(1, int(segment_length / sample_distance))
+
+			# Sample positions perpendicular to path segment
+			for step in range(segment_steps + 1):
+				var t = float(step) / float(segment_steps) if segment_steps > 0 else 0.0
+				var path_pos = start_point.lerp(end_point, t)
+
+				# Get perpendicular direction
+				var segment_dir = (end_point - start_point).normalized()
+				var perpendicular = Vector2(-segment_dir.y, segment_dir.x)
+
+				# Sample positions on both sides of the path
+				for side in [-1, 1]:
+					for radius_step in range(1, int(max_radius / tile_size) + 1):
+						var sample_radius = radius_step * tile_size
+						var sample_pos = path_pos + perpendicular * side * sample_radius
+						sampled_positions.append(sample_pos)
+
+	Logger.debug("Generated %d sampled positions around paths" % sampled_positions.size(), "pathgen")
+	return sampled_positions
 
 # Editor tool functionality
 func _get_configuration_warnings() -> PackedStringArray:
