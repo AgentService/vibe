@@ -267,21 +267,20 @@ func _connect_points(point1: PathPoint, point2: PathPoint) -> void:
 func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], origin_index: int, start_id: int, rng: RandomNumberGenerator) -> Array[PathPoint]:
 	var branch_points: Array[PathPoint] = [origin]  # Start with the origin point
 
-	# Determine branch direction (avoid main path direction)
+	# Determine branch direction by finding clearest path (avoids existing paths/branches)
 	var main_direction: Vector2
 	if origin_index > 0 and origin_index < main_points.size() - 1:
-		# Use direction perpendicular to main path flow
+		# Calculate base perpendicular directions
 		var before_to_origin = (origin.position - main_points[origin_index - 1].position).normalized()
 		var origin_to_after = (main_points[origin_index + 1].position - origin.position).normalized()
 		var avg_direction = (before_to_origin + origin_to_after).normalized()
-		main_direction = Vector2(-avg_direction.y, avg_direction.x)  # Perpendicular
+		var perpendicular = Vector2(-avg_direction.y, avg_direction.x)
+
+		# Test multiple directions and pick the clearest one
+		main_direction = _find_clearest_branch_direction(origin.position, perpendicular, main_points, rng)
 	else:
 		# Fallback to random direction
 		main_direction = Vector2(cos(rng.randf() * TAU), sin(rng.randf() * TAU))
-
-	# Add small random angle variation (±15 degrees from perpendicular for more 90° branching)
-	var angle_variation = rng.randf_range(deg_to_rad(-15), deg_to_rad(15))
-	main_direction = main_direction.rotated(angle_variation)
 
 	# Random branch length
 	var total_branch_length = rng.randf_range(min_branch_length, max_branch_length)
@@ -334,6 +333,57 @@ func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], o
 	], "pathgen")
 
 	return branch_points
+
+## Find the clearest direction for a branch by testing multiple options
+func _find_clearest_branch_direction(origin_pos: Vector2, base_perpendicular: Vector2, existing_points: Array[PathPoint], rng: RandomNumberGenerator) -> Vector2:
+	# Test 4 candidate directions: both perpendiculars + slight variations
+	var candidate_directions = [
+		base_perpendicular,  # Right perpendicular
+		-base_perpendicular,  # Left perpendicular
+		base_perpendicular.rotated(deg_to_rad(15)),  # Right + 15°
+		base_perpendicular.rotated(deg_to_rad(-15))   # Right - 15°
+	]
+
+	var best_direction = base_perpendicular
+	var best_clearance_score = -1.0
+	var test_distance = 150.0  # How far to test along each direction
+
+	for direction in candidate_directions:
+		var clearance_score = _calculate_direction_clearance(origin_pos, direction, existing_points, test_distance)
+
+		if clearance_score > best_clearance_score:
+			best_clearance_score = clearance_score
+			best_direction = direction
+
+	# Add small random variation to the best direction (±8° for natural feel)
+	var final_variation = rng.randf_range(deg_to_rad(-8), deg_to_rad(8))
+	return best_direction.rotated(final_variation)
+
+## Calculate how clear a direction is from existing paths (higher = better)
+func _calculate_direction_clearance(origin_pos: Vector2, direction: Vector2, existing_points: Array[PathPoint], test_distance: float) -> float:
+	var clearance_score = 100.0  # Start with perfect clearance
+	var test_steps = 8  # Number of points to test along the direction
+	var step_size = test_distance / test_steps
+
+	# Test points along the proposed direction
+	for i in range(1, test_steps + 1):
+		var test_pos = origin_pos + direction * (step_size * i)
+
+		# Find minimum distance to any existing path point
+		var min_distance_to_existing = INF
+		for point in existing_points:
+			var distance = test_pos.distance_to(point.position)
+			min_distance_to_existing = min(min_distance_to_existing, distance)
+
+		# Penalize based on proximity to existing paths (closer = worse)
+		var proximity_penalty = max(0, 80.0 - min_distance_to_existing) / 80.0
+		clearance_score -= proximity_penalty * 10.0
+
+		# Early exit if this direction is clearly bad
+		if clearance_score <= 0:
+			break
+
+	return max(0, clearance_score)
 
 ## Get all endpoint positions for circular clearing generation
 func _get_all_endpoints(paths: Array[PathSegment]) -> Array[Vector2]:
