@@ -231,8 +231,13 @@ func _create_path_network(points: Array[PathPoint], rng: RandomNumberGenerator) 
 				Logger.debug("Creating %d branch(es) from point %d" % [branch_count, i], "pathgen")
 
 				for b in range(branch_count):
+					# Check if this point has a stored branch direction (for sub-branches)
+					var parent_dir = Vector2.ZERO
+					if branch_origin.has_meta("branch_direction"):
+						parent_dir = branch_origin.get_meta("branch_direction")
+
 					var branch_points = _generate_curved_branch(
-						branch_origin, points, i, branch_id_counter, rng
+						branch_origin, points, i, branch_id_counter, rng, parent_dir
 					)
 
 					if not branch_points.is_empty():
@@ -247,8 +252,42 @@ func _create_path_network(points: Array[PathPoint], rng: RandomNumberGenerator) 
 
 						branch_id_counter += branch_points.size()
 
+		# Second pass: Generate sub-branches from branch points
+		var sub_branch_count = 0
+		if all_branch_points.size() > 2:
+			# Process branch points for potential sub-branching (reduced probability)
+			for i in range(1, all_branch_points.size() - 1):
+				# Lower probability for sub-branches to avoid over-branching
+				if rng.randf() < (branch_probability * 0.3):  # 30% of main branch probability
+					var sub_branch_origin = all_branch_points[i]
+					var sub_branch_count_per_point = 1  # Only 1 sub-branch per point
+
+					# Get parent branch direction
+					var parent_dir = Vector2.ZERO
+					if sub_branch_origin.has_meta("branch_direction"):
+						parent_dir = sub_branch_origin.get_meta("branch_direction")
+
+					var sub_branch_points = _generate_curved_branch(
+						sub_branch_origin, all_branch_points, i, branch_id_counter, rng, parent_dir
+					)
+
+					if not sub_branch_points.is_empty():
+						# Create path segments for sub-branches
+						for sbp in range(sub_branch_points.size() - 1):
+							var sub_branch_path = PathSegment.new(
+								sub_branch_points[sbp], sub_branch_points[sbp + 1], path_width
+							)
+							paths.append(sub_branch_path)
+
+						branch_id_counter += sub_branch_points.size()
+						sub_branch_count += 1
+
+			Logger.debug("Generated %d sub-branches from %d branch points" % [
+				sub_branch_count, all_branch_points.size()
+			], "pathgen")
+
 		Logger.debug("Generated %d dynamic branches with %d total branch points" % [
-			all_branch_points.size(), all_branch_points.size()
+			all_branch_points.size() - sub_branch_count, all_branch_points.size()
 		], "pathgen")
 
 	Logger.debug("Created path network: %d path segments total" % paths.size(), "pathgen")
@@ -264,13 +303,17 @@ func _connect_points(point1: PathPoint, point2: PathPoint) -> void:
 	point1.add_connection(point2)
 
 ## Generate a curved branch from a chain point with random length and direction
-func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], origin_index: int, start_id: int, rng: RandomNumberGenerator) -> Array[PathPoint]:
+func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], origin_index: int, start_id: int, rng: RandomNumberGenerator, parent_direction: Vector2 = Vector2.ZERO) -> Array[PathPoint]:
 	var branch_points: Array[PathPoint] = [origin]  # Start with the origin point
 
-	# Determine branch direction by finding clearest path (avoids existing paths/branches)
+	# Determine branch direction based on whether this is a main path branch or sub-branch
 	var main_direction: Vector2
-	if origin_index > 0 and origin_index < main_points.size() - 1:
-		# Calculate base perpendicular directions
+
+	if parent_direction != Vector2.ZERO:
+		# This is a sub-branch - continue in parent direction with slight variation
+		main_direction = _get_sub_branch_direction(parent_direction, rng)
+	elif origin_index > 0 and origin_index < main_points.size() - 1:
+		# This is a main path branch - find clearest perpendicular direction
 		var before_to_origin = (origin.position - main_points[origin_index - 1].position).normalized()
 		var origin_to_after = (main_points[origin_index + 1].position - origin.position).normalized()
 		var avg_direction = (before_to_origin + origin_to_after).normalized()
@@ -332,6 +375,11 @@ func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], o
 		num_segments, total_branch_length
 	], "pathgen")
 
+	# Store the branch direction with the first point for potential sub-branching
+	if branch_points.size() > 1:
+		# Store direction as a custom property on the first branch point
+		branch_points[0].set_meta("branch_direction", main_direction)
+
 	return branch_points
 
 ## Find the clearest direction for a branch by testing multiple options
@@ -384,6 +432,12 @@ func _calculate_direction_clearance(origin_pos: Vector2, direction: Vector2, exi
 			break
 
 	return max(0, clearance_score)
+
+## Get direction for sub-branch that continues parent branch direction with variation
+func _get_sub_branch_direction(parent_direction: Vector2, rng: RandomNumberGenerator) -> Vector2:
+	# Continue in parent direction with small angular variation (±30°)
+	var angle_variation = rng.randf_range(deg_to_rad(-30), deg_to_rad(30))
+	return parent_direction.rotated(angle_variation).normalized()
 
 ## Get all endpoint positions for circular clearing generation
 func _get_all_endpoints(paths: Array[PathSegment]) -> Array[Vector2]:
