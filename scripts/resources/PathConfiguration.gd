@@ -296,14 +296,26 @@ func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], o
 	var current_direction = main_direction
 	var current_id = start_id
 
+	# Determine a consistent curve bias for the entire branch (more directional)
+	var branch_curve_bias = 0.0
+	if branch_curve_intensity > 0.0:
+		# One consistent curve direction for the entire branch
+		branch_curve_bias = rng.randf_range(
+			-deg_to_rad(15) * branch_curve_intensity,
+			deg_to_rad(15) * branch_curve_intensity
+		)
+
 	for segment in range(num_segments):
-		# Apply curve variation for natural bending
-		var curve_variation = 0.0
+		# Apply consistent gradual curve instead of random variations
+		var curve_variation = branch_curve_bias
+		# Add small momentum-based variation (much smaller than before)
 		if branch_curve_intensity > 0.0:
-			curve_variation = rng.randf_range(
-				-deg_to_rad(30) * branch_curve_intensity,
-				deg_to_rad(30) * branch_curve_intensity
+			var small_variation = rng.randf_range(
+				-deg_to_rad(8) * branch_curve_intensity,
+				deg_to_rad(8) * branch_curve_intensity
 			)
+			curve_variation += small_variation * 0.3  # Reduce impact of random variation
+
 		current_direction = current_direction.rotated(curve_variation).normalized()
 
 		# Calculate next position
