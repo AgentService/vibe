@@ -189,10 +189,18 @@ func _generate_radial_trees_around_point(center: Vector2, path_width: float, til
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = center + Vector2(cos(angle), sin(angle)) * distance
 
-			# Snap to tile grid
+			# Add random offset for natural placement (zigzag effect)
+			var random_offset = Vector2.ZERO
+			if enable_staggered_placement:
+				random_offset = Vector2(
+					rng.randf_range(-max_random_offset, max_random_offset),
+					rng.randf_range(-max_random_offset, max_random_offset)
+				)
+
+			# Snap to tile grid with random offset
 			tree_pos = Vector2(
-				round(tree_pos.x / tile_size) * tile_size,
-				round(tree_pos.y / tile_size) * tile_size
+				round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
+				round((tree_pos.y + random_offset.y) / tile_size) * tile_size
 			)
 
 			# Check if this position respects tree_spacing from existing trees
@@ -224,10 +232,18 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = endpoint + Vector2(cos(angle), sin(angle)) * distance
 
-			# Snap to tile grid
+			# Add random offset for natural placement (zigzag effect)
+			var random_offset = Vector2.ZERO
+			if enable_staggered_placement:
+				random_offset = Vector2(
+					rng.randf_range(-max_random_offset, max_random_offset),
+					rng.randf_range(-max_random_offset, max_random_offset)
+				)
+
+			# Snap to tile grid with random offset
 			tree_pos = Vector2(
-				round(tree_pos.x / tile_size) * tile_size,
-				round(tree_pos.y / tile_size) * tile_size
+				round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
+				round((tree_pos.y + random_offset.y) / tile_size) * tile_size
 			)
 
 			# Calculate gradient density based on distance from endpoint
@@ -347,10 +363,18 @@ func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: f
 			if rng.randf() > combined_density_factor * tree_density:
 				continue
 
-			# Snap to tile grid
+			# Add random offset for natural placement (zigzag effect)
+			var random_offset = Vector2.ZERO
+			if enable_staggered_placement:
+				random_offset = Vector2(
+					rng.randf_range(-max_random_offset, max_random_offset),
+					rng.randf_range(-max_random_offset, max_random_offset)
+				)
+
+			# Snap to tile grid with random offset
 			var tree_pos = Vector2(
-				round(sample_pos.x / tile_size) * tile_size,
-				round(sample_pos.y / tile_size) * tile_size
+				round((sample_pos.x + random_offset.x) / tile_size) * tile_size,
+				round((sample_pos.y + random_offset.y) / tile_size) * tile_size
 			)
 
 			# Check spacing and add tree
@@ -818,12 +842,16 @@ func _point_to_line_distance(point: Vector2, line_start: Vector2, line_end: Vect
 	var projection = line_start + t * line_vec
 	return point.distance_to(projection)
 
-## Get random tree tile variant for visual variety
+## Get random tree tile variant for visual variety with alternative tile support
 func get_random_tree_tile(rng: RandomNumberGenerator) -> Vector2i:
 	if tree_tile_variants.is_empty():
 		return Vector2i(0, 28)  # Default tree tile
 
 	return tree_tile_variants[rng.randi() % tree_tile_variants.size()]
+
+## Get alternative tile ID for tree variants (use alternative 1 instead of base tile 0)
+func get_tree_alternative_tile() -> int:
+	return 1  # Use alternative tile 1 instead of base tile 0
 
 ## Calculate 5-screen path length target for path generation validation
 func calculate_target_path_length() -> float:
@@ -883,18 +911,18 @@ func _generate_trees_around_segment_efficient(start_point: Vector2, end_point: V
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Add some randomness for natural placement
+				# Add random offset for natural placement (zigzag effect)
+				var random_offset = Vector2.ZERO
 				if enable_staggered_placement:
-					var random_offset = Vector2(
+					random_offset = Vector2(
 						rng.randf_range(-max_random_offset, max_random_offset),
 						rng.randf_range(-max_random_offset, max_random_offset)
 					)
-					tree_pos += random_offset
 
-				# Snap to tile grid
+				# Snap to tile grid with random offset
 				tree_pos = Vector2(
-					round(tree_pos.x / tile_size) * tile_size,
-					round(tree_pos.y / tile_size) * tile_size
+					round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
+					round((tree_pos.y + random_offset.y) / tile_size) * tile_size
 				)
 
 				# Check if this tile is already used
@@ -959,10 +987,18 @@ func _generate_dense_trees_around_segment(start_point: Vector2, end_point: Vecto
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Snap to tile grid
+				# Add random offset for natural placement (zigzag effect)
+				var random_offset = Vector2.ZERO
+				if enable_staggered_placement:
+					random_offset = Vector2(
+						rng.randf_range(-max_random_offset, max_random_offset),
+						rng.randf_range(-max_random_offset, max_random_offset)
+					)
+
+				# Snap to tile grid with random offset
 				tree_pos = Vector2(
-					round(tree_pos.x / tile_size) * tile_size,
-					round(tree_pos.y / tile_size) * tile_size
+					round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
+					round((tree_pos.y + random_offset.y) / tile_size) * tile_size
 				)
 
 				# Check if this position respects tree_spacing from existing trees

@@ -14,6 +14,12 @@ var path_width_input: SpinBox
 var boundary_thickness_input: SpinBox
 var path_smoothing_input: SpinBox
 
+# Tree Configuration
+var tree_spacing_input: SpinBox
+var tree_density_input: SpinBox
+var enable_staggered_placement_toggle: CheckBox
+var max_random_offset_input: SpinBox
+
 # Natural Generation
 var enable_variation_toggle: CheckBox
 var max_variation_input: SpinBox
@@ -202,10 +208,42 @@ func _create_tree_config_controls(container: VBoxContainer) -> void:
 	spacing_label.text = "Tree Spacing (pixels):"
 	container.add_child(spacing_label)
 
+	tree_spacing_input = SpinBox.new()
+	tree_spacing_input.min_value = 16
+	tree_spacing_input.max_value = 128
+	tree_spacing_input.step = 4
+	tree_spacing_input.value = 88
+	container.add_child(tree_spacing_input)
+
 	# Tree density
 	var density_label = Label.new()
 	density_label.text = "Tree Density (0.5-1.0):"
 	container.add_child(density_label)
+
+	tree_density_input = SpinBox.new()
+	tree_density_input.min_value = 0.5
+	tree_density_input.max_value = 1.0
+	tree_density_input.step = 0.05
+	tree_density_input.value = 0.95
+	container.add_child(tree_density_input)
+
+	# Enable staggered placement (zigzag effect)
+	enable_staggered_placement_toggle = CheckBox.new()
+	enable_staggered_placement_toggle.text = "Enable Zigzag Placement (Natural Look)"
+	enable_staggered_placement_toggle.button_pressed = true
+	container.add_child(enable_staggered_placement_toggle)
+
+	# Max random offset
+	var offset_label = Label.new()
+	offset_label.text = "Random Offset Amount (pixels):"
+	container.add_child(offset_label)
+
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = 0
+	max_random_offset_input.max_value = 32
+	max_random_offset_input.step = 2
+	max_random_offset_input.value = 8
+	container.add_child(max_random_offset_input)
 	
 func _create_natural_generation_controls(container: VBoxContainer) -> void:
 	"""Create natural generation controls"""
@@ -337,6 +375,14 @@ func _on_generate_pressed():
 	path_config.add_intermediate_waypoints = enable_waypoints_toggle.button_pressed
 	path_config.waypoint_probability = waypoint_probability_input.value
 	path_config.ground_extension = int(ground_extension_input.value)
+
+	# Apply tree configuration to generator's tree_config if it exists
+	if "tree_config" in generator and generator.tree_config:
+		generator.tree_config.tree_spacing = tree_spacing_input.value
+		generator.tree_config.tree_density = tree_density_input.value
+		generator.tree_config.enable_staggered_placement = enable_staggered_placement_toggle.button_pressed
+		generator.tree_config.max_random_offset = max_random_offset_input.value
+		print("🌲 Applied tree configuration: spacing=", tree_spacing_input.value, ", density=", tree_density_input.value, ", zigzag=", enable_staggered_placement_toggle.button_pressed, ", offset=", max_random_offset_input.value)
 
 	# Set seed for old generator
 	if "generation_params" in generator and generator.generation_params:

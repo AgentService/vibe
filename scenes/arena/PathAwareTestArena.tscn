@@ -39,6 +39,7 @@ script = ExtResource("3_niqtg")
 tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
 tree_spacing = 32.0
 tree_density = 0.9
+min_density_near_path = 0.01
 max_density_near_path = 1.0
 min_density_at_edges = 0.1
 density_falloff_curve = 1.0

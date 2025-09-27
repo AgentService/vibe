@@ -480,9 +480,10 @@ func _generate_boundary_trees():
 
 		# Get random tree variant from TreeBoundaryConfiguration for visual diversity
 		var selected_tree_variant = tree_config.get_random_tree_tile(rng)
+		var tree_alternative_id = tree_config.get_tree_alternative_tile()
 
-		# Place tree tile with selected variant
-		tree_layer.set_cell(tile_pos, tree_source_id, selected_tree_variant)
+		# Place tree tile with selected variant using alternative tile 1
+		tree_layer.set_cell(tile_pos, tree_source_id, selected_tree_variant, tree_alternative_id)
 
 		# Place ground tile beneath tree using Green layer tileset (0,12)
 		if green_layer and green_layer is TileMapLayer:
@@ -494,7 +495,7 @@ func _generate_boundary_trees():
 			green_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
 			ground_tiles_placed += 1
 
-	Logger.info("Placed %d boundary trees (variants: 0,28 & 9,28) and %d tree ground tiles using Green layer tileset (0,12)" % [current_tree_data.size(), ground_tiles_placed], "treegen")
+	Logger.info("Placed %d boundary trees (using alternative tile 1 for variants: 0,28 & 9,28) and %d tree ground tiles using Green layer tileset (0,12)" % [current_tree_data.size(), ground_tiles_placed], "treegen")
 
 # Editor tool functionality
 func _get_configuration_warnings() -> PackedStringArray:

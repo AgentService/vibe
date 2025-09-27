@@ -36,6 +36,10 @@ var max_density_near_path_input: SpinBox
 var min_density_at_edges_input: SpinBox
 var density_falloff_curve_input: SpinBox
 
+# Random offset controls (zigzag effect)
+var enable_staggered_placement_checkbox: CheckBox
+var max_random_offset_input: SpinBox
+
 # Generator reference
 var path_generator: DungeonPathGenerator
 var tree_generator: TreeBoundaryGenerator
@@ -309,7 +313,7 @@ func _build_ui():
 	min_branch_length_input = SpinBox.new()
 	min_branch_length_input.min_value = 50
 	min_branch_length_input.max_value = 5000
-	min_branch_length_input.value = 100
+	min_branch_length_input.value = 2100
 	min_branch_length_input.step = 25
 	min_branch_length_input.suffix = "px"
 	length_hbox.add_child(min_branch_length_input)
@@ -321,7 +325,7 @@ func _build_ui():
 	max_branch_length_input = SpinBox.new()
 	max_branch_length_input.min_value = 200
 	max_branch_length_input.max_value = 5000
-	max_branch_length_input.value = 500
+	max_branch_length_input.value = 2500
 	max_branch_length_input.step = 50
 	max_branch_length_input.suffix = "px"
 	length_hbox.add_child(max_branch_length_input)
@@ -426,6 +430,32 @@ func _build_ui():
 	density_falloff_curve_input.value = 0.1
 	density_falloff_curve_input.step = 0.001
 	vbox.add_child(density_falloff_curve_input)
+
+	# Random offset controls (Natural Placement)
+	var offset_section_label = Label.new()
+	offset_section_label.text = "🎲 Natural Placement"
+	offset_section_label.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(offset_section_label)
+
+	# Enable zigzag placement
+	enable_staggered_placement_checkbox = CheckBox.new()
+	enable_staggered_placement_checkbox.text = "Enable Zigzag Tree Placement"
+	enable_staggered_placement_checkbox.button_pressed = true
+	enable_staggered_placement_checkbox.tooltip_text = "Adds random offset to eliminate grid patterns for natural appearance"
+	vbox.add_child(enable_staggered_placement_checkbox)
+
+	# Random offset amount
+	var offset_label = Label.new()
+	offset_label.text = "Random Offset Amount (px):"
+	offset_label.tooltip_text = "Maximum random displacement in pixels for natural zigzag effect"
+	vbox.add_child(offset_label)
+
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = 0.0
+	max_random_offset_input.max_value = 32.0
+	max_random_offset_input.value = 8.0
+	max_random_offset_input.step = 1.0
+	vbox.add_child(max_random_offset_input)
 
 	# Final separator
 	var separator4 = HSeparator.new()
@@ -565,6 +595,11 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 			generator.tree_config.min_density_at_edges = min_density_at_edges_input.value
 		if density_falloff_curve_input:
 			generator.tree_config.density_falloff_curve = density_falloff_curve_input.value
+		# Update random offset controls
+		if enable_staggered_placement_checkbox:
+			generator.tree_config.enable_staggered_placement = enable_staggered_placement_checkbox.button_pressed
+		if max_random_offset_input:
+			generator.tree_config.max_random_offset = max_random_offset_input.value
 
 	# Update arena base radius
 	generator.arena_base_radius = arena_base_radius_input.value
