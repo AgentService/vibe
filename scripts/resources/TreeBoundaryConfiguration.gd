@@ -9,11 +9,11 @@ extends Resource
 ## Tree tile variants to use for boundary trees
 @export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 28), Vector2i(9, 28)]
 
-## Tree spacing between boundary trees (pixels)
-@export_range(16, 64, 4) var tree_spacing: float = 32.0
+## Tree spacing between boundary trees (pixels) - reduced for better coverage
+@export_range(16, 64, 4) var tree_spacing: float = 25.0
 
-## Tree density along boundaries (0.8+ recommended for natural look)
-@export_range(0.5, 1.0, 0.05) var tree_density: float = 0.9
+## Tree density along boundaries (higher for robust coverage)
+@export_range(0.5, 1.0, 0.05) var tree_density: float = 0.95
 
 @export_group("Boundary Adaptation")
 ## Additional buffer around paths before placing trees (pixels)
@@ -87,10 +87,24 @@ func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng
 	var tree_positions: Array[Vector2] = []
 	var tile_size = 48  # Match forest tileset 48x48 tiles
 
-	# Expand bounds for full coverage
+	# Adaptive expansion based on arena size and network complexity
+	var arena_diagonal = corridor_bounds.size.length()
+	var network_complexity_factor = min(paths.size() / 3.0, 2.0)  # Scale with path count, cap at 2x
+
+	# Reduced expansion: 800px base + 25% arena + 15% network scaling (much more reasonable)
+	var base_expansion = 800.0
+	var arena_scaling = arena_diagonal * 0.25
+	var network_scaling = arena_diagonal * 0.15 * network_complexity_factor
+	var total_expansion = base_expansion + arena_scaling + network_scaling
+
+	Logger.debug("Tree boundary expansion: %.1fpx (base: %.1f + arena: %.1f + network: %.1f)" % [
+		total_expansion, base_expansion, arena_scaling, network_scaling
+	], "treegen")
+
+	# Expand bounds for full coverage with adaptive scaling
 	var extended_bounds = Rect2(
-		corridor_bounds.position - Vector2(50, 50),
-		corridor_bounds.size + Vector2(100, 100)
+		corridor_bounds.position - Vector2(total_expansion, total_expansion),
+		corridor_bounds.size + Vector2(total_expansion * 2, total_expansion * 2)
 	)
 
 	# Grid-based approach for comprehensive coverage with asymmetric placement
@@ -176,22 +190,41 @@ func _apply_natural_clustering(tree_positions: Array[Vector2], rng: RandomNumber
 	Logger.debug("Applied clustering: %d → %d trees" % [tree_positions.size(), clustered_positions.size()], "treegen")
 	return clustered_positions
 
-## Optimize boundary continuity to ensure arena containment
+## Optimize boundary continuity to ensure arena containment with adaptive expansion
 func _optimize_boundary_continuity(tree_positions: Array[Vector2], corridor_bounds: Rect2, rng: RandomNumberGenerator) -> Array[Vector2]:
 	var optimized_positions = tree_positions.duplicate()
 
-	# Identify boundary perimeter
-	var perimeter_points = _get_boundary_perimeter(corridor_bounds)
+	# Calculate adaptive expansion for perimeter (same as tree generation)
+	var arena_diagonal = corridor_bounds.size.length()
+	var base_expansion = 800.0
+	var arena_scaling = arena_diagonal * 0.25
+	var network_scaling = arena_diagonal * 0.15  # Simplified for perimeter
+	var total_expansion = base_expansion + arena_scaling + network_scaling
 
-	# Fill gaps in boundary coverage
+	# Use expanded bounds for perimeter gap-filling
+	var expanded_perimeter_bounds = Rect2(
+		corridor_bounds.position - Vector2(total_expansion, total_expansion),
+		corridor_bounds.size + Vector2(total_expansion * 2, total_expansion * 2)
+	)
+
+	# Get perimeter points from expanded boundary
+	var perimeter_points = _get_boundary_perimeter(expanded_perimeter_bounds)
+
+	# Enhanced gap-filling with smaller gap tolerance for robust coverage
+	var adaptive_gap_tolerance = min(max_boundary_gap, tree_spacing * 1.5)
+	var supplemental_trees = 0
+
 	for perimeter_point in perimeter_points:
 		var nearest_tree_distance = _find_nearest_tree_distance(perimeter_point, optimized_positions)
 
-		# Add tree if gap is too large
-		if nearest_tree_distance > max_boundary_gap:
+		# Add tree if gap is too large (more aggressive gap-filling)
+		if nearest_tree_distance > adaptive_gap_tolerance:
 			optimized_positions.append(perimeter_point)
+			supplemental_trees += 1
 
-	Logger.debug("Boundary optimization: %d → %d trees" % [tree_positions.size(), optimized_positions.size()], "treegen")
+	Logger.debug("Boundary optimization: %d → %d trees (added %d supplemental trees for %.1fpx expansion)" % [
+		tree_positions.size(), optimized_positions.size(), supplemental_trees, total_expansion
+	], "treegen")
 	return optimized_positions
 
 ## Get perimeter points around boundary for continuity checking

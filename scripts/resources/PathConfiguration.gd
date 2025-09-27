@@ -114,8 +114,8 @@ func generate_path_network(rng: RandomNumberGenerator) -> Dictionary:
 	# Create path network
 	var paths = _create_path_network(points, rng)
 
-	# Calculate corridor bounds for ground generation
-	var corridor_bounds = _calculate_corridor_bounds(points)
+	# Calculate corridor bounds for ground generation (include ALL path segments)
+	var corridor_bounds = _calculate_corridor_bounds_from_paths(paths)
 
 	Logger.info("Generated %d connection points, %d paths" % [points.size(), paths.size()], "pathgen")
 
@@ -258,6 +258,42 @@ func _calculate_corridor_bounds(points: Array[PathPoint]) -> Rect2:
 	var total_extension = path_width + (ground_extension * 16) + point_space_radius  # Include point space radius
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
+
+	return Rect2(min_pos, max_pos - min_pos)
+
+## Calculate bounding rectangle from ALL path segments (includes branches)
+func _calculate_corridor_bounds_from_paths(paths: Array[PathSegment]) -> Rect2:
+	if paths.is_empty():
+		return Rect2()
+
+	# Extract all endpoints from all path segments (main + branches)
+	var all_positions: Array[Vector2] = []
+
+	for path in paths:
+		var path_points = path.get_full_path()
+		all_positions.append_array(path_points)
+
+	if all_positions.is_empty():
+		return Rect2()
+
+	# Calculate bounding rect of ALL path positions (including branch endpoints)
+	var min_pos = all_positions[0]
+	var max_pos = all_positions[0]
+
+	for pos in all_positions:
+		min_pos.x = min(min_pos.x, pos.x)
+		min_pos.y = min(min_pos.y, pos.y)
+		max_pos.x = max(max_pos.x, pos.x)
+		max_pos.y = max(max_pos.y, pos.y)
+
+	# Extend bounds for path width, ground extension, and point space radius
+	var total_extension = path_width + (ground_extension * 16) + point_space_radius
+	min_pos -= Vector2(total_extension, total_extension)
+	max_pos += Vector2(total_extension, total_extension)
+
+	Logger.debug("Corridor bounds from paths: %.1f x %.1f at (%.1f, %.1f)" % [
+		max_pos.x - min_pos.x, max_pos.y - min_pos.y, min_pos.x, min_pos.y
+	], "pathgen")
 
 	return Rect2(min_pos, max_pos - min_pos)
 
