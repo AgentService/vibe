@@ -48,10 +48,6 @@ extends Resource
 ## Enable Perlin noise for realistic tree clustering
 @export var enable_natural_clustering: bool = true
 
-@export_group("Distance-Based Ground Tiles")
-## Direct pixel distance from paths where green tiles are placed
-## Beyond this distance, dark green tiles are used for deeper forest feel
-@export_range(50.0, 500.0, 25.0) var green_zone_radius_px: float = 150.0
 
 ## Noise scale for tree clustering (larger = more spread out clusters)
 @export_range(0.01, 0.2, 0.01) var clustering_noise_scale: float = 0.05

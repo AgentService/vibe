@@ -40,8 +40,6 @@ var density_falloff_curve_input: SpinBox
 var enable_staggered_placement_checkbox: CheckBox
 var max_random_offset_input: SpinBox
 
-# Distance threshold controls (green/dark green)
-var green_zone_radius_input: SpinBox
 
 # Generator reference
 var path_generator: DungeonPathGenerator
@@ -460,33 +458,9 @@ func _build_ui():
 	max_random_offset_input.step = 1.0
 	vbox.add_child(max_random_offset_input)
 
-	# Distance threshold controls separator
+	# Final separator
 	var separator4 = HSeparator.new()
 	vbox.add_child(separator4)
-
-	# Distance threshold section header
-	var distance_header = Label.new()
-	distance_header.text = "Green/Dark Green Distance Control"
-	distance_header.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
-	vbox.add_child(distance_header)
-
-	# Green zone radius
-	var distance_label = Label.new()
-	distance_label.text = "Green Zone Radius (px):"
-	distance_label.tooltip_text = "Direct pixel distance from paths where green tiles are placed\nBeyond this distance = dark green for deeper forest"
-	vbox.add_child(distance_label)
-
-	green_zone_radius_input = SpinBox.new()
-	green_zone_radius_input.min_value = 50.0
-	green_zone_radius_input.max_value = 500.0
-	green_zone_radius_input.value = 150.0
-	green_zone_radius_input.step = 25.0
-	green_zone_radius_input.tooltip_text = "150px = balanced, 75px = tight green zone, 300px = wide green zone"
-	vbox.add_child(green_zone_radius_input)
-
-	# Final separator
-	var separator5 = HSeparator.new()
-	vbox.add_child(separator5)
 
 	# Generate button
 	generate_button = Button.new()
@@ -627,9 +601,6 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 			generator.tree_config.enable_staggered_placement = enable_staggered_placement_checkbox.button_pressed
 		if max_random_offset_input:
 			generator.tree_config.max_random_offset = max_random_offset_input.value
-		# Update distance threshold controls
-		if green_zone_radius_input:
-			generator.tree_config.green_zone_radius_px = green_zone_radius_input.value
 
 	# Update arena base radius
 	generator.arena_base_radius = arena_base_radius_input.value
