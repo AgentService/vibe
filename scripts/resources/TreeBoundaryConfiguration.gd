@@ -301,11 +301,6 @@ func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: f
 		for x in range(start_x, end_x, sample_spacing):
 			var sample_pos = Vector2(x, y)
 
-			# Early check: Skip if tile already has a tree (prevents branch overlap density)
-			var tile_coord = Vector2i(int(sample_pos.x / tile_size), int(sample_pos.y / tile_size))
-			if tree_layer.get_cell_source_id(tile_coord) != -1:
-				continue
-
 			# Find distance to nearest path point or segment
 			var min_distance_to_path = _get_min_distance_to_path_with_endpoints(sample_pos, path_points, endpoints)
 
