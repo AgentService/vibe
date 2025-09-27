@@ -29,6 +29,7 @@ var max_branches_per_point_input: SpinBox
 
 # Tree boundary controls
 # boundary_thickness_input removed
+var tree_boundary_width_input: SpinBox
 var use_path_radius_checkbox: CheckBox
 # Gradient density controls removed
 
@@ -138,10 +139,24 @@ func _build_ui():
 	tree_spacing_input = SpinBox.new()
 	tree_spacing_input.min_value = 1
 	tree_spacing_input.max_value = 150
-	tree_spacing_input.value = 15
-	tree_spacing_input.step = 1
+	tree_spacing_input.value = 22
+	tree_spacing_input.step = 15
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
+
+	# Tree boundary width control (outward extension)
+	var tree_boundary_width_label = Label.new()
+	tree_boundary_width_label.text = "Tree Boundary Width (Outward Extension):"
+	vbox.add_child(tree_boundary_width_label)
+
+	tree_boundary_width_input = SpinBox.new()
+	tree_boundary_width_input.min_value = 50
+	tree_boundary_width_input.max_value = 99999  # No limit for testing
+	tree_boundary_width_input.value = 300  # Default from TreeBoundaryConfiguration
+	tree_boundary_width_input.step = 50
+	tree_boundary_width_input.suffix = "px"
+	tree_boundary_width_input.tooltip_text = "How far outward from paths to place trees - larger values create wider boundaries"
+	vbox.add_child(tree_boundary_width_input)
 
 	# Arena base radius control removed
 
@@ -416,6 +431,8 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 	# Update tree configuration
 	if generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
+		if tree_boundary_width_input:
+			generator.tree_config.tree_boundary_width = tree_boundary_width_input.value
 		# boundary_distance parameter removed
 		# boundary_thickness parameter removed
 		if use_path_radius_checkbox:
@@ -425,11 +442,12 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 
 	# Arena base radius parameter removed
 
-	Logger.debug("Updated generator settings: seed=%d, points=%d, corridor=%.1f, spacing=%.1f, chain=%d, min_dist=%.1f" % [
+	Logger.debug("Updated generator settings: seed=%d, points=%d, corridor=%.1f, spacing=%.1f, boundary_width=%.1f, chain=%d, min_dist=%.1f" % [
 		generator.generation_seed,
 		int(path_count_input.value),
 		corridor_width_input.value,
 		tree_spacing_input.value,
+		tree_boundary_width_input.value if tree_boundary_width_input else 300.0,
 		int(chain_length_input.value if chain_length_input else 4),
 		min_distance_input.value if min_distance_input else 80.0
 	], "plugin")
