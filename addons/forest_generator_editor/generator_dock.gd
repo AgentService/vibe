@@ -235,7 +235,7 @@ func _create_natural_placement_controls(container: VBoxContainer) -> void:
 
 	max_random_offset_input = SpinBox.new()
 	max_random_offset_input.min_value = 0
-	max_random_offset_input.max_value = 16
+	max_random_offset_input.max_value = 555
 	max_random_offset_input.step = 2
 	max_random_offset_input.value = 8
 	container.add_child(max_random_offset_input)

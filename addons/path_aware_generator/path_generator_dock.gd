@@ -452,9 +452,9 @@ func _build_ui():
 	vbox.add_child(offset_label)
 
 	max_random_offset_input = SpinBox.new()
-	max_random_offset_input.min_value = 0.0
-	max_random_offset_input.max_value = 32.0
-	max_random_offset_input.value = 8.0
+	max_random_offset_input.min_value = -550.0
+	max_random_offset_input.max_value = 732.0
+	max_random_offset_input.value = 54.0
 	max_random_offset_input.step = 1.0
 	vbox.add_child(max_random_offset_input)
 
