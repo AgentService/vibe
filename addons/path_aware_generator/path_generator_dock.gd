@@ -18,6 +18,23 @@ var path_extension_width2_input: SpinBox
 var boundary_distance_input: SpinBox
 var status_label: Label
 
+# Dynamic branching controls
+var enable_branching_checkbox: CheckBox
+var branch_probability_input: SpinBox
+var min_branch_length_input: SpinBox
+var max_branch_length_input: SpinBox
+var branch_curve_intensity_input: SpinBox
+var min_branches_per_point_input: SpinBox
+var max_branches_per_point_input: SpinBox
+
+# Tree boundary controls
+var boundary_thickness_input: SpinBox
+var use_path_radius_checkbox: CheckBox
+# Gradient density controls
+var max_density_near_path_input: SpinBox
+var min_density_at_edges_input: SpinBox
+var density_falloff_curve_input: SpinBox
+
 # Generator reference
 var path_generator: DungeonPathGenerator
 var tree_generator: TreeBoundaryGenerator
@@ -27,18 +44,26 @@ var path_config: PathConfiguration
 var tree_config: TreeBoundaryConfiguration
 
 func _init():
-	# Set dock name and minimum size
+	# Set dock name and minimum size (smaller since we now have scrolling)
 	name = "Path Generator"
-	custom_minimum_size = Vector2(500, 800)
+	custom_minimum_size = Vector2(480, 600)
 	
 	_build_ui()
 	_load_default_configs()
 	_connect_signals()
 
 func _build_ui():
-	# Create vertical layout
+	# Create scroll container for all controls
+	var scroll_container = ScrollContainer.new()
+	scroll_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	add_child(scroll_container)
+
+	# Create vertical layout inside scroll container
 	var vbox = VBoxContainer.new()
-	add_child(vbox)
+	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_container.add_child(vbox)
 	
 	# Title
 	var title = Label.new()
@@ -95,7 +120,7 @@ func _build_ui():
 	arena_size_input = SpinBox.new()
 	arena_size_input.min_value = 200
 	arena_size_input.max_value = 6000
-	arena_size_input.value = 1500  # From DefaultPathConfiguration.tres
+	arena_size_input.value = 500  # From DefaultPathConfiguration.tres
 	arena_size_input.step = 50
 	vbox.add_child(arena_size_input)
 
@@ -107,7 +132,7 @@ func _build_ui():
 	corridor_width_input = SpinBox.new()
 	corridor_width_input.min_value = 50
 	corridor_width_input.max_value = 5000  # Unlimited
-	corridor_width_input.value = 2000  # Current plugin default
+	corridor_width_input.value = 500  # Current plugin default
 	corridor_width_input.step = 50
 	corridor_width_input.suffix = "px"
 	vbox.add_child(corridor_width_input)
@@ -120,7 +145,7 @@ func _build_ui():
 	tree_spacing_input = SpinBox.new()
 	tree_spacing_input.min_value = 20
 	tree_spacing_input.max_value = 150
-	tree_spacing_input.value = 44
+	tree_spacing_input.value = 88
 	tree_spacing_input.step = 1
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
@@ -220,7 +245,178 @@ func _build_ui():
 	# Separator
 	var separator2 = HSeparator.new()
 	vbox.add_child(separator2)
-	
+
+	# Dynamic Branching Section
+	var branching_title = Label.new()
+	branching_title.text = "Dynamic Branching"
+	branching_title.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(branching_title)
+
+	# Enable branching checkbox
+	enable_branching_checkbox = CheckBox.new()
+	enable_branching_checkbox.text = "Enable Dynamic Branching"
+	enable_branching_checkbox.button_pressed = true  # Default enabled
+	vbox.add_child(enable_branching_checkbox)
+
+	# Branch probability
+	var branch_prob_label = Label.new()
+	branch_prob_label.text = "Branch Probability (%):"
+	vbox.add_child(branch_prob_label)
+
+	branch_probability_input = SpinBox.new()
+	branch_probability_input.min_value = 0
+	branch_probability_input.max_value = 100
+	branch_probability_input.value = 80  # 60% default
+	branch_probability_input.step = 5
+	branch_probability_input.suffix = "%"
+	vbox.add_child(branch_probability_input)
+
+	# Branches per point
+	var branches_per_point_label = Label.new()
+	branches_per_point_label.text = "Branches per Point (Min-Max):"
+	vbox.add_child(branches_per_point_label)
+
+	var branches_hbox = HBoxContainer.new()
+	vbox.add_child(branches_hbox)
+
+	min_branches_per_point_input = SpinBox.new()
+	min_branches_per_point_input.min_value = 1
+	min_branches_per_point_input.max_value = 40
+	min_branches_per_point_input.value = 1
+	min_branches_per_point_input.step = 1
+	branches_hbox.add_child(min_branches_per_point_input)
+
+	var to_label = Label.new()
+	to_label.text = " to "
+	branches_hbox.add_child(to_label)
+
+	max_branches_per_point_input = SpinBox.new()
+	max_branches_per_point_input.min_value = 1
+	max_branches_per_point_input.max_value = 40
+	max_branches_per_point_input.value = 2
+	max_branches_per_point_input.step = 1
+	branches_hbox.add_child(max_branches_per_point_input)
+
+	# Branch length
+	var branch_length_label = Label.new()
+	branch_length_label.text = "Branch Length (Min-Max px):"
+	vbox.add_child(branch_length_label)
+
+	var length_hbox = HBoxContainer.new()
+	vbox.add_child(length_hbox)
+
+	min_branch_length_input = SpinBox.new()
+	min_branch_length_input.min_value = 50
+	min_branch_length_input.max_value = 5000
+	min_branch_length_input.value = 100
+	min_branch_length_input.step = 25
+	min_branch_length_input.suffix = "px"
+	length_hbox.add_child(min_branch_length_input)
+
+	var to_label2 = Label.new()
+	to_label2.text = " to "
+	length_hbox.add_child(to_label2)
+
+	max_branch_length_input = SpinBox.new()
+	max_branch_length_input.min_value = 200
+	max_branch_length_input.max_value = 5000
+	max_branch_length_input.value = 500
+	max_branch_length_input.step = 50
+	max_branch_length_input.suffix = "px"
+	length_hbox.add_child(max_branch_length_input)
+
+	# Branch curve intensity
+	var curve_label = Label.new()
+	curve_label.text = "Branch Curve Intensity:"
+	vbox.add_child(curve_label)
+
+	branch_curve_intensity_input = SpinBox.new()
+	branch_curve_intensity_input.min_value = 0.0
+	branch_curve_intensity_input.max_value = 100.0
+	branch_curve_intensity_input.value = 0.3
+	branch_curve_intensity_input.step = 0.1
+	vbox.add_child(branch_curve_intensity_input)
+
+	# Another separator
+	var separator3 = HSeparator.new()
+	vbox.add_child(separator3)
+
+	# Tree Boundary Section
+	var boundary_title = Label.new()
+	boundary_title.text = "Tree Boundaries"
+	boundary_title.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(boundary_title)
+
+	# Boundary thickness control
+	var boundary_thickness_label = Label.new()
+	boundary_thickness_label.text = "Boundary Thickness (px):"
+	boundary_thickness_label.tooltip_text = "Controls how much outer tree space is generated around paths"
+	vbox.add_child(boundary_thickness_label)
+
+	boundary_thickness_input = SpinBox.new()
+	boundary_thickness_input.min_value = -5000
+	boundary_thickness_input.max_value = 2000
+	boundary_thickness_input.value = 775  # Default value
+	boundary_thickness_input.step = 25
+	boundary_thickness_input.suffix = "px"
+	vbox.add_child(boundary_thickness_input)
+
+	# Path-radius generation checkbox
+	use_path_radius_checkbox = CheckBox.new()
+	use_path_radius_checkbox.text = "Use Path-Radius Generation (Efficient)"
+	use_path_radius_checkbox.button_pressed = true  # Default to new efficient method
+	use_path_radius_checkbox.tooltip_text = "Generate trees only around actual paths (eliminates massive unused forest areas)"
+	vbox.add_child(use_path_radius_checkbox)
+
+	# Gradient density controls
+	var density_title = Label.new()
+	density_title.text = "Gradient Density"
+	density_title.add_theme_font_size_override("font_size", 12)
+	vbox.add_child(density_title)
+
+	# Max density near path
+	var max_density_label = Label.new()
+	max_density_label.text = "Max Density Near Path:"
+	max_density_label.tooltip_text = "Density of trees closest to paths (1.0 = full density)"
+	vbox.add_child(max_density_label)
+
+	max_density_near_path_input = SpinBox.new()
+	max_density_near_path_input.min_value = 0.0
+	max_density_near_path_input.max_value = 1.0
+	max_density_near_path_input.value = 1.0
+	max_density_near_path_input.step = 0.05
+	vbox.add_child(max_density_near_path_input)
+
+	# Min density at edges
+	var min_density_label = Label.new()
+	min_density_label.text = "Min Density at Edges:"
+	min_density_label.tooltip_text = "Density at boundary edges (0.1 = sparse, 0.5 = moderate)"
+	vbox.add_child(min_density_label)
+
+	min_density_at_edges_input = SpinBox.new()
+	min_density_at_edges_input.min_value = 0.05
+	min_density_at_edges_input.max_value = 0.5
+	min_density_at_edges_input.value = 0.1
+	min_density_at_edges_input.step = 0.05
+	vbox.add_child(min_density_at_edges_input)
+
+	# Density falloff curve
+	var falloff_curve_label = Label.new()
+	falloff_curve_label.text = "Density Falloff Curve:"
+	falloff_curve_label.tooltip_text = "Gradient steepness (1.0 = linear, 2.0 = steep, 0.5 = gentle)"
+	vbox.add_child(falloff_curve_label)
+
+	density_falloff_curve_input = SpinBox.new()
+	density_falloff_curve_input.min_value = -50.0
+	density_falloff_curve_input.max_value = 55.0
+	density_falloff_curve_input.value = 1.0
+	density_falloff_curve_input.step = 0.1
+	vbox.add_child(density_falloff_curve_input)
+
+	# Final separator
+	var separator4 = HSeparator.new()
+	vbox.add_child(separator4)
+
 	# Generate button
 	generate_button = Button.new()
 	generate_button.text = "Generate Random Paths"
@@ -321,11 +517,38 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		if path_extension_width2_input:
 			generator.path_config.path_extension_width2 = path_extension_width2_input.value
 
+		# Dynamic branching settings
+		if enable_branching_checkbox:
+			generator.path_config.enable_dynamic_branching = enable_branching_checkbox.button_pressed
+		if branch_probability_input:
+			generator.path_config.branch_probability = branch_probability_input.value / 100.0  # Convert % to decimal
+		if min_branches_per_point_input:
+			generator.path_config.min_branches_per_point = int(min_branches_per_point_input.value)
+		if max_branches_per_point_input:
+			generator.path_config.max_branches_per_point = int(max_branches_per_point_input.value)
+		if min_branch_length_input:
+			generator.path_config.min_branch_length = min_branch_length_input.value
+		if max_branch_length_input:
+			generator.path_config.max_branch_length = max_branch_length_input.value
+		if branch_curve_intensity_input:
+			generator.path_config.branch_curve_intensity = branch_curve_intensity_input.value
+
 	# Update tree configuration
 	if generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
 		if boundary_distance_input:
 			generator.tree_config.boundary_distance = boundary_distance_input.value
+		if boundary_thickness_input:
+			generator.tree_config.boundary_thickness = boundary_thickness_input.value
+		if use_path_radius_checkbox:
+			generator.tree_config.use_path_radius_generation = use_path_radius_checkbox.button_pressed
+		# Update gradient density parameters
+		if max_density_near_path_input:
+			generator.tree_config.max_density_near_path = max_density_near_path_input.value
+		if min_density_at_edges_input:
+			generator.tree_config.min_density_at_edges = min_density_at_edges_input.value
+		if density_falloff_curve_input:
+			generator.tree_config.density_falloff_curve = density_falloff_curve_input.value
 
 	# Update arena base radius
 	generator.arena_base_radius = arena_base_radius_input.value

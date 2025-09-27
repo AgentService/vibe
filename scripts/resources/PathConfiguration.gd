@@ -50,6 +50,35 @@ extends Resource
 ## Probability of adding waypoints (0.0-1.0)
 @export_range(0.0, 1.0, 0.1) var waypoint_probability: float = 0.6
 
+@export_group("Dynamic Branching System")
+## Enable dynamic branch generation at chain points
+@export var enable_dynamic_branching: bool = true
+
+## Probability each eligible point spawns branches (0.0-1.0)
+@export_range(0.0, 1.0, 0.1) var branch_probability: float = 0.4
+
+## Minimum branches per selected point
+@export_range(1, 2, 1) var min_branches_per_point: int = 1
+
+## Maximum branches per selected point
+@export_range(1, 3, 1) var max_branches_per_point: int = 2
+
+## Minimum branch length (pixels)
+@export_range(50, 300, 25) var min_branch_length: float = 100.0
+
+## Maximum branch length (pixels)
+@export_range(200, 800, 50) var max_branch_length: float = 500.0
+
+## Branch curve intensity (0=straight, 1=very curved)
+@export_range(0.0, 1.0, 0.1) var branch_curve_intensity: float = 0.3
+
+@export_group("Endpoint Event Areas")
+## Create circular clearings at all endpoints for events
+@export var create_endpoint_clearings: bool = true
+
+## Radius of circular clearings at endpoints (pixels)
+@export_range(75, 200, 25) var endpoint_clearing_radius: float = 125.0
+
 @export_group("Ground Corridor Coverage")
 ## Ground extension beyond path centerline (tiles)
 @export_range(5, 50, 5) var ground_extension: int = 20
@@ -114,15 +143,24 @@ func generate_path_network(rng: RandomNumberGenerator) -> Dictionary:
 	# Create path network
 	var paths = _create_path_network(points, rng)
 
-	# Calculate corridor bounds for ground generation (include ALL path segments)
-	var corridor_bounds = _calculate_corridor_bounds_from_paths(paths)
+	# Get endpoint positions for circular clearings
+	var endpoints: Array[Vector2] = []
+	if create_endpoint_clearings:
+		endpoints = _get_all_endpoints(paths)
 
-	Logger.info("Generated %d connection points, %d paths" % [points.size(), paths.size()], "pathgen")
+	# Calculate corridor bounds including path segments and endpoint clearings
+	var corridor_bounds = _calculate_corridor_bounds_with_endpoints(paths, endpoints)
+
+	Logger.info("Generated %d connection points, %d paths, %d endpoints" % [
+		points.size(), paths.size(), endpoints.size()
+	], "pathgen")
 
 	return {
 		"points": points,
 		"paths": paths,
-		"corridor_bounds": corridor_bounds
+		"corridor_bounds": corridor_bounds,
+		"endpoints": endpoints,
+		"endpoint_clearing_radius": endpoint_clearing_radius if create_endpoint_clearings else 0.0
 	}
 
 ## Generate connection points for single outward-extending chain
@@ -179,35 +217,41 @@ func _create_path_network(points: Array[PathPoint], rng: RandomNumberGenerator) 
 		var path = PathSegment.new(start_point, end_point, path_width)
 		paths.append(path)
 
-	# TEST: Add a branch path from the second point (index 1) to test boundary response
-	if points.size() >= 3:
-		var branch_point = points[1]  # Second point
+	# Dynamic branching system: generate branches from eligible chain points
+	if enable_dynamic_branching and points.size() >= 3:
+		var all_branch_points: Array[PathPoint] = []
+		var branch_id_counter = points.size()
 
-		# Create branch direction perpendicular to main path direction
-		var main_direction = (points[2].position - points[1].position).normalized()
-		var branch_direction = Vector2(-main_direction.y, main_direction.x)  # 90-degree rotation
+		# Check each point from index 1 to second-to-last for branching
+		for i in range(1, points.size() - 1):
+			if rng.randf() < branch_probability:
+				var branch_origin = points[i]
+				var branch_count = rng.randi_range(min_branches_per_point, max_branches_per_point)
 
-		# Create two branch points extending outward
-		var branch_pos1 = branch_point.position + branch_direction * min_point_distance * 1.2
-		var branch_pos2 = branch_pos1 + branch_direction * min_point_distance * 1.0
+				Logger.debug("Creating %d branch(es) from point %d" % [branch_count, i], "pathgen")
 
-		var branch_point1 = PathPoint.new(branch_pos1, points.size())
-		var branch_point2 = PathPoint.new(branch_pos2, points.size() + 1)
+				for b in range(branch_count):
+					var branch_points = _generate_curved_branch(
+						branch_origin, points, i, branch_id_counter, rng
+					)
 
-		# Connect branch points
-		_connect_points(branch_point, branch_point1)
-		_connect_points(branch_point1, branch_point2)
+					if not branch_points.is_empty():
+						all_branch_points.append_array(branch_points)
 
-		# Create branch path segments
-		var branch_path1 = PathSegment.new(branch_point, branch_point1, path_width)
-		var branch_path2 = PathSegment.new(branch_point1, branch_point2, path_width)
+						# Create path segments for this branch
+						for bp in range(branch_points.size() - 1):
+							var branch_path = PathSegment.new(
+								branch_points[bp], branch_points[bp + 1], path_width
+							)
+							paths.append(branch_path)
 
-		paths.append(branch_path1)
-		paths.append(branch_path2)
+						branch_id_counter += branch_points.size()
 
-		Logger.debug("Added test branch: 2 additional path segments from point 1", "pathgen")
+		Logger.debug("Generated %d dynamic branches with %d total branch points" % [
+			all_branch_points.size(), all_branch_points.size()
+		], "pathgen")
 
-	Logger.debug("Created path network with branches: %d path segments total" % paths.size(), "pathgen")
+	Logger.debug("Created path network: %d path segments total" % paths.size(), "pathgen")
 
 	# Add waypoints for natural path variation
 	if add_intermediate_waypoints:
@@ -218,6 +262,113 @@ func _create_path_network(points: Array[PathPoint], rng: RandomNumberGenerator) 
 ## Connect two points bidirectionally
 func _connect_points(point1: PathPoint, point2: PathPoint) -> void:
 	point1.add_connection(point2)
+
+## Generate a curved branch from a chain point with random length and direction
+func _generate_curved_branch(origin: PathPoint, main_points: Array[PathPoint], origin_index: int, start_id: int, rng: RandomNumberGenerator) -> Array[PathPoint]:
+	var branch_points: Array[PathPoint] = [origin]  # Start with the origin point
+
+	# Determine branch direction (avoid main path direction)
+	var main_direction: Vector2
+	if origin_index > 0 and origin_index < main_points.size() - 1:
+		# Use direction perpendicular to main path flow
+		var before_to_origin = (origin.position - main_points[origin_index - 1].position).normalized()
+		var origin_to_after = (main_points[origin_index + 1].position - origin.position).normalized()
+		var avg_direction = (before_to_origin + origin_to_after).normalized()
+		main_direction = Vector2(-avg_direction.y, avg_direction.x)  # Perpendicular
+	else:
+		# Fallback to random direction
+		main_direction = Vector2(cos(rng.randf() * TAU), sin(rng.randf() * TAU))
+
+	# Add random angle variation (45-90 degrees from perpendicular)
+	var angle_variation = rng.randf_range(deg_to_rad(45), deg_to_rad(90))
+	if rng.randf() > 0.5:
+		angle_variation = -angle_variation
+	main_direction = main_direction.rotated(angle_variation)
+
+	# Random branch length
+	var total_branch_length = rng.randf_range(min_branch_length, max_branch_length)
+
+	# Create curved branch with 2-4 segments for natural curves
+	var num_segments = rng.randi_range(2, 4)
+	var segment_length = total_branch_length / num_segments
+
+	var current_pos = origin.position
+	var current_direction = main_direction
+	var current_id = start_id
+
+	for segment in range(num_segments):
+		# Apply curve variation for natural bending
+		var curve_variation = 0.0
+		if branch_curve_intensity > 0.0:
+			curve_variation = rng.randf_range(
+				-deg_to_rad(30) * branch_curve_intensity,
+				deg_to_rad(30) * branch_curve_intensity
+			)
+		current_direction = current_direction.rotated(curve_variation).normalized()
+
+		# Calculate next position
+		var segment_distance = segment_length * rng.randf_range(0.8, 1.2)  # Length variation
+		current_pos += current_direction * segment_distance
+
+		# Create branch point
+		var branch_point = PathPoint.new(current_pos, current_id)
+		branch_points.append(branch_point)
+
+		# Connect to previous point
+		_connect_points(branch_points[branch_points.size() - 2], branch_point)
+
+		current_id += 1
+
+	Logger.debug("Generated curved branch: %d segments, %.1fpx total length" % [
+		num_segments, total_branch_length
+	], "pathgen")
+
+	return branch_points
+
+## Get all endpoint positions for circular clearing generation
+func _get_all_endpoints(paths: Array[PathSegment]) -> Array[Vector2]:
+	var endpoints: Array[Vector2] = []
+	var collected_positions: Dictionary = {}  # Avoid duplicates
+
+	for path in paths:
+		var path_points = path.get_full_path()
+		if path_points.size() >= 2:
+			var start_pos = path_points[0]
+			var end_pos = path_points[-1]
+
+			# Check if these are true endpoints (not connected to other paths)
+			var start_key = str(start_pos.x) + "," + str(start_pos.y)
+			var end_key = str(end_pos.x) + "," + str(end_pos.y)
+
+			if not collected_positions.has(start_key):
+				var is_start_endpoint = _is_true_endpoint(start_pos, paths)
+				if is_start_endpoint:
+					endpoints.append(start_pos)
+					collected_positions[start_key] = true
+
+			if not collected_positions.has(end_key):
+				var is_end_endpoint = _is_true_endpoint(end_pos, paths)
+				if is_end_endpoint:
+					endpoints.append(end_pos)
+					collected_positions[end_key] = true
+
+	Logger.debug("Found %d true endpoints for circular clearings" % endpoints.size(), "pathgen")
+	return endpoints
+
+## Check if a position is a true endpoint (appears in only one path)
+func _is_true_endpoint(position: Vector2, paths: Array[PathSegment]) -> bool:
+	var count = 0
+	var tolerance = 5.0  # Small tolerance for floating point comparison
+
+	for path in paths:
+		var path_points = path.get_full_path()
+		for point in path_points:
+			if position.distance_to(point) < tolerance:
+				count += 1
+				if count > 1:
+					return false  # This position is shared, not an endpoint
+
+	return count == 1
 
 ## Add intermediate waypoints to paths for natural variation
 func _add_waypoints_to_paths(paths: Array[PathSegment], rng: RandomNumberGenerator) -> void:
@@ -258,6 +409,52 @@ func _calculate_corridor_bounds(points: Array[PathPoint]) -> Rect2:
 	var total_extension = path_width + (ground_extension * 16) + point_space_radius  # Include point space radius
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
+
+	return Rect2(min_pos, max_pos - min_pos)
+
+## Calculate bounding rectangle from paths AND endpoint clearings
+func _calculate_corridor_bounds_with_endpoints(paths: Array[PathSegment], endpoints: Array[Vector2]) -> Rect2:
+	if paths.is_empty():
+		return Rect2()
+
+	# Start with path bounds
+	var all_positions: Array[Vector2] = []
+
+	# Collect all path positions
+	for path in paths:
+		var path_points = path.get_full_path()
+		all_positions.append_array(path_points)
+
+	# Add endpoint clearing areas
+	for endpoint in endpoints:
+		# Add points around each endpoint to expand the bounds
+		var clearing_radius = endpoint_clearing_radius
+		all_positions.append(endpoint + Vector2(-clearing_radius, -clearing_radius))
+		all_positions.append(endpoint + Vector2(clearing_radius, clearing_radius))
+		all_positions.append(endpoint + Vector2(-clearing_radius, clearing_radius))
+		all_positions.append(endpoint + Vector2(clearing_radius, -clearing_radius))
+
+	if all_positions.is_empty():
+		return Rect2()
+
+	# Calculate bounding rect of ALL positions (paths + endpoint clearings)
+	var min_pos = all_positions[0]
+	var max_pos = all_positions[0]
+
+	for pos in all_positions:
+		min_pos.x = min(min_pos.x, pos.x)
+		min_pos.y = min(min_pos.y, pos.y)
+		max_pos.x = max(max_pos.x, pos.x)
+		max_pos.y = max(max_pos.y, pos.y)
+
+	# Extend bounds for path width, ground extension, and point space radius
+	var total_extension = path_width + (ground_extension * 16) + point_space_radius
+	min_pos -= Vector2(total_extension, total_extension)
+	max_pos += Vector2(total_extension, total_extension)
+
+	Logger.debug("Corridor bounds with endpoints: %.1f x %.1f, %d endpoints with %.1fpx clearings" % [
+		max_pos.x - min_pos.x, max_pos.y - min_pos.y, endpoints.size(), endpoint_clearing_radius
+	], "pathgen")
 
 	return Rect2(min_pos, max_pos - min_pos)
 

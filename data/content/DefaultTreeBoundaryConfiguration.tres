@@ -2,14 +2,28 @@
 
 [resource]
 tree_tile_variants = Array[Vector2i]([Vector2i(0, 28), Vector2i(9, 28)])
-tree_spacing = 32.0
-tree_density = 0.9
-path_buffer_distance = 32.0
+tree_spacing = 25.0
+tree_density = 0.95
+path_buffer_distance = 48.0
+boundary_distance = 96.0
 boundary_extension = 20
+boundary_thickness = 75.0
+use_path_radius_generation = true
 enable_natural_clustering = true
 clustering_noise_scale = 0.05
 clustering_threshold = 0.2
+enable_staggered_placement = true
+placement_randomness = 0.3
+max_random_offset = 8.0
 enforce_boundary_continuity = true
 max_boundary_gap = 48.0
+max_density_near_path = 1.0
+min_density_at_edges = 0.1
+density_falloff_curve = 1.0
+use_prebuilt_tree_field = false
+prebuilt_field_density = 0.7
+use_localized_path_corridors = false
+corridor_tree_width = 200.0
+endpoint_extension = 100.0
 debug_show_tree_boundaries = false
 debug_show_path_buffers = false

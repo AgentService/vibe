@@ -172,10 +172,10 @@ func _create_path_config_controls(container: VBoxContainer) -> void:
 	container.add_child(boundary_thickness_label)
 
 	boundary_thickness_input = SpinBox.new()
-	boundary_thickness_input.min_value = 16
-	boundary_thickness_input.max_value = 64
-	boundary_thickness_input.step = 4
-	boundary_thickness_input.value = 32
+	boundary_thickness_input.min_value = -5000
+	boundary_thickness_input.max_value = 6400
+	boundary_thickness_input.step = 50
+	boundary_thickness_input.value = 50
 	container.add_child(boundary_thickness_input)
 
 	# Path smoothing
@@ -185,7 +185,7 @@ func _create_path_config_controls(container: VBoxContainer) -> void:
 
 	path_smoothing_input = SpinBox.new()
 	path_smoothing_input.min_value = 0.0
-	path_smoothing_input.max_value = 1.0
+	path_smoothing_input.max_value = 111.0
 	path_smoothing_input.step = 0.1
 	path_smoothing_input.value = 0.4
 	container.add_child(path_smoothing_input)
