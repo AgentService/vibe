@@ -487,9 +487,9 @@ func _generate_boundary_trees():
 
 		# Place ground tile beneath tree using Green layer tileset (0,12)
 		if green_layer and green_layer is TileMapLayer:
-			# Southern offset: move ground tile slightly south to center around tree base
-			var ground_offset = Vector2i(0, -1)  # 1 tile south offset
-			var ground_tile_pos = tile_pos + ground_offset
+			# Place ground tile at the exact same position as the tree
+			# tile_pos already accounts for random offset, so no additional offset needed
+			var ground_tile_pos = tile_pos  # Same position as tree
 
 			# Place Green layer tileset (0,12) beneath tree for consistency
 			green_layer.set_cell(ground_tile_pos, tree_source_id, tree_ground_atlas_coords)
