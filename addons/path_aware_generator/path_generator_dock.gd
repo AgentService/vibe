@@ -31,6 +31,7 @@ var max_branches_per_point_input: SpinBox
 var boundary_thickness_input: SpinBox
 var use_path_radius_checkbox: CheckBox
 # Gradient density controls
+var min_density_near_path_input: SpinBox
 var max_density_near_path_input: SpinBox
 var min_density_at_edges_input: SpinBox
 var density_falloff_curve_input: SpinBox
@@ -374,16 +375,29 @@ func _build_ui():
 	density_title.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(density_title)
 
+	# Min density near path (baseline)
+	var min_density_near_label = Label.new()
+	min_density_near_label.text = "Min Density Near Path:"
+	min_density_near_label.tooltip_text = "Baseline density near paths (always maintained, 0.01 = sparse baseline)"
+	vbox.add_child(min_density_near_label)
+
+	min_density_near_path_input = SpinBox.new()
+	min_density_near_path_input.min_value = 0.01
+	min_density_near_path_input.max_value = 1.0
+	min_density_near_path_input.value = 0.01
+	min_density_near_path_input.step = 0.01
+	vbox.add_child(min_density_near_path_input)
+
 	# Max density near path
 	var max_density_label = Label.new()
 	max_density_label.text = "Max Density Near Path:"
-	max_density_label.tooltip_text = "Density of trees closest to paths (1.0 = full density)"
+	max_density_label.tooltip_text = "Peak density closest to paths (1.0 = full density)"
 	vbox.add_child(max_density_label)
 
 	max_density_near_path_input = SpinBox.new()
-	max_density_near_path_input.min_value = 0.0
+	max_density_near_path_input.min_value = 0.05
 	max_density_near_path_input.max_value = 1.0
-	max_density_near_path_input.value = 1.0
+	max_density_near_path_input.value = 0.05
 	max_density_near_path_input.step = 0.05
 	vbox.add_child(max_density_near_path_input)
 
@@ -395,8 +409,8 @@ func _build_ui():
 
 	min_density_at_edges_input = SpinBox.new()
 	min_density_at_edges_input.min_value = 0.05
-	min_density_at_edges_input.max_value = 0.5
-	min_density_at_edges_input.value = 0.1
+	min_density_at_edges_input.max_value = 500
+	min_density_at_edges_input.value = 1
 	min_density_at_edges_input.step = 0.05
 	vbox.add_child(min_density_at_edges_input)
 
@@ -409,8 +423,8 @@ func _build_ui():
 	density_falloff_curve_input = SpinBox.new()
 	density_falloff_curve_input.min_value = -50.0
 	density_falloff_curve_input.max_value = 55.0
-	density_falloff_curve_input.value = 1.0
-	density_falloff_curve_input.step = 0.1
+	density_falloff_curve_input.value = 0.1
+	density_falloff_curve_input.step = 0.001
 	vbox.add_child(density_falloff_curve_input)
 
 	# Final separator
@@ -543,6 +557,8 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		if use_path_radius_checkbox:
 			generator.tree_config.use_path_radius_generation = use_path_radius_checkbox.button_pressed
 		# Update gradient density parameters
+		if min_density_near_path_input:
+			generator.tree_config.min_density_near_path = min_density_near_path_input.value
 		if max_density_near_path_input:
 			generator.tree_config.max_density_near_path = max_density_near_path_input.value
 		if min_density_at_edges_input:

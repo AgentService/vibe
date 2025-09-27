@@ -16,14 +16,17 @@ extends Resource
 @export_range(0.5, 1.0, 0.05) var tree_density: float = 0.95
 
 @export_group("Gradient Density Control")
-## Maximum density near paths (1.0 = full density, 0.5 = half density)
-@export_range(0.3, 1.0, 0.05) var max_density_near_path: float = 1.0
+## Minimum baseline density near paths (always maintained, even in sparse areas)
+@export_range(0.01, 1.0, 0.01) var min_density_near_path: float = 0.01
 
-## Minimum density at boundary edges (0.1 = sparse, 0.5 = moderate)
-@export_range(0.05, 0.5, 0.05) var min_density_at_edges: float = 0.1
+## Maximum density near paths (1.0 = full density, 0.5 = half density, <0.3 = very sparse)
+@export_range(0.05, 1.0, 0.05) var max_density_near_path: float = 0.05
 
-## Density falloff curve (1.0 = linear, 2.0 = steep falloff, 0.5 = gentle)
-@export_range(0.5, 3.0, 0.1) var density_falloff_curve: float = 1.0
+## Minimum density at boundary edges (0.1 = sparse, 0.5 = moderate, >1.0 = super dense)
+@export_range(0.05, 50.0, 0.05) var min_density_at_edges: float = 50.0
+
+## Density falloff curve (1.0 = linear, 2.0 = steep falloff, 0.5 = gentle, <0.1 = very gentle)
+@export_range(0.01, 3.0, 0.01) var density_falloff_curve: float = 0.013
 
 @export_group("Boundary Adaptation")
 ## Additional buffer around paths before placing trees (pixels)
@@ -232,10 +235,24 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 			var max_boundary_distance = tree_radius - 12.0
 			var normalized_distance = distance_from_endpoint / max_boundary_distance
 
-			# Apply configurable density curve
+			# Apply configurable density curve with three-point gradient
 			var curve_factor = pow(1.0 - normalized_distance, density_falloff_curve)
-			var density_factor = lerp(min_density_at_edges, max_density_near_path, curve_factor)
-			density_factor = clamp(density_factor, min_density_at_edges, max_density_near_path)
+			# Calculate density using three-point gradient for endpoints
+			var density_factor: float
+			if normalized_distance <= 0.5:
+				# Near endpoint area: interpolate from min_density_near_path to max_density_near_path
+				var near_curve = curve_factor * 2.0
+				density_factor = lerp(min_density_near_path, max_density_near_path, near_curve)
+			else:
+				# Far from endpoint area: interpolate from max_density_near_path to min_density_at_edges
+				var far_curve = (curve_factor - 0.5) * 2.0
+				if min_density_at_edges <= max_density_near_path:
+					# Normal case: dense near path, sparse at edges
+					density_factor = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
+				else:
+					# Inverted case: sparse near path, dense at edges
+					density_factor = lerp(max_density_near_path, min_density_at_edges, far_curve)
+			density_factor = clamp(density_factor, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
 
 			# Apply density probability
 			if rng.randf() > density_factor * tree_density:
@@ -295,18 +312,39 @@ func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: f
 			if min_distance_to_path > total_radius:
 				continue
 
-			# Calculate density based on distance from path with configurable gradient
+			# Calculate radial density based on distance from path with configurable gradient
 			var distance_from_path_edge = min_distance_to_path - (path_half_width + 12.0)
 			var max_boundary_distance = tree_radius - 12.0
-			var normalized_distance = distance_from_path_edge / max_boundary_distance
+			var normalized_radial_distance = distance_from_path_edge / max_boundary_distance
 
-			# Apply configurable density curve
-			var curve_factor = pow(1.0 - normalized_distance, density_falloff_curve)
-			var density_factor = lerp(min_density_at_edges, max_density_near_path, curve_factor)
-			density_factor = clamp(density_factor, min_density_at_edges, max_density_near_path)
+			# Apply configurable density curve for radial falloff with three-point gradient
+			var radial_curve_factor = pow(1.0 - normalized_radial_distance, density_falloff_curve)
+			# Calculate density using three-point gradient: min_near → max_near → edges
+			var radial_density_factor: float
+			if normalized_radial_distance <= 0.5:
+				# Near path area: interpolate from min_density_near_path to max_density_near_path
+				var near_curve = radial_curve_factor * 2.0  # Stretch curve for near area
+				radial_density_factor = lerp(min_density_near_path, max_density_near_path, near_curve)
+			else:
+				# Far from path area: interpolate from max_density_near_path to min_density_at_edges
+				var far_curve = (radial_curve_factor - 0.5) * 2.0  # Stretch curve for far area
+				if min_density_at_edges <= max_density_near_path:
+					# Normal case: dense near path, sparse at edges
+					radial_density_factor = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
+				else:
+					# Inverted case: sparse near path, dense at edges
+					radial_density_factor = lerp(max_density_near_path, min_density_at_edges, far_curve)
+
+
+			# Calculate lateral density based on distance to path corridor edges
+			var lateral_density_factor = _calculate_lateral_density_factor(sample_pos, path_points, path_half_width, tree_radius)
+
+			# Combine radial and lateral density factors (take minimum for conservative approach)
+			var combined_density_factor = min(radial_density_factor, lateral_density_factor)
+			combined_density_factor = clamp(combined_density_factor, min_density_at_edges, max_density_near_path)
 
 			# Apply density probability
-			if rng.randf() > density_factor * tree_density:
+			if rng.randf() > combined_density_factor * tree_density:
 				continue
 
 			# Snap to tile grid
@@ -607,12 +645,26 @@ func _generate_endpoint_extension(endpoint: Vector2, adjacent_point: Vector2, is
 			var dot_product = (world_pos - endpoint).dot(back_direction)
 
 			if dist_to_center <= extension_radius and dot_product > 0:
-				# Apply gradient density - use max density near path for endpoints
+				# Apply gradient density with three-point gradient for endpoints
 				var distance_from_endpoint = dist_to_center
 				var normalized_distance = distance_from_endpoint / extension_radius
 				var curve_factor = pow(1.0 - normalized_distance, density_falloff_curve)
-				var endpoint_density = lerp(min_density_at_edges, max_density_near_path, curve_factor)
-				endpoint_density = clamp(endpoint_density, min_density_at_edges, max_density_near_path)
+				# Calculate endpoint density using three-point gradient
+				var endpoint_density: float
+				if normalized_distance <= 0.5:
+					# Near endpoint area: interpolate from min_density_near_path to max_density_near_path
+					var near_curve = curve_factor * 2.0
+					endpoint_density = lerp(min_density_near_path, max_density_near_path, near_curve)
+				else:
+					# Far from endpoint area: interpolate from max_density_near_path to min_density_at_edges
+					var far_curve = (curve_factor - 0.5) * 2.0
+					if min_density_at_edges <= max_density_near_path:
+						# Normal case: dense near path, sparse at edges
+						endpoint_density = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
+					else:
+						# Inverted case: sparse near path, dense at edges
+						endpoint_density = lerp(max_density_near_path, min_density_at_edges, far_curve)
+				endpoint_density = clamp(endpoint_density, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
 
 				if rng.randf() < endpoint_density * tree_density:
 					var random_offset = Vector2(
@@ -965,3 +1017,66 @@ func _is_valid_tree_position(new_pos: Vector2, existing_trees: Array[Vector2]) -
 			return false  # Too close to existing tree
 
 	return true  # Position is valid
+
+## Calculate lateral density factor based on distance to path corridor edges
+func _calculate_lateral_density_factor(sample_pos: Vector2, path_points: Array[Vector2], path_half_width: float, tree_radius: float) -> float:
+	var min_lateral_distance = INF
+
+	# For each path segment, calculate perpendicular distance to left and right edges
+	for i in range(path_points.size() - 1):
+		var segment_start = path_points[i]
+		var segment_end = path_points[i + 1]
+
+		# Get the segment direction vector
+		var segment_vector = segment_end - segment_start
+		var segment_length = segment_vector.length()
+
+		if segment_length < 0.1:  # Skip very short segments
+			continue
+
+		var segment_normal = segment_vector.normalized()
+		var segment_perpendicular = Vector2(-segment_normal.y, segment_normal.x)  # Perpendicular vector
+
+		# Find the closest point on the segment line (infinite line, not just segment)
+		var start_to_sample = sample_pos - segment_start
+		var projection_length = start_to_sample.dot(segment_normal)
+		var closest_point_on_line = segment_start + segment_normal * projection_length
+
+		# Check if the projection falls within the segment bounds
+		var projection_ratio = projection_length / segment_length
+		if projection_ratio >= 0.0 and projection_ratio <= 1.0:
+			# The closest point is within the segment
+			var vector_to_sample = sample_pos - closest_point_on_line
+			var perpendicular_distance = abs(vector_to_sample.dot(segment_perpendicular))
+
+			# Calculate distance to corridor edges (left and right edges of the path)
+			var distance_to_edge = abs(perpendicular_distance - path_half_width)
+			min_lateral_distance = min(min_lateral_distance, distance_to_edge)
+
+	# If no valid segments found, return max density (no lateral fading)
+	if min_lateral_distance == INF:
+		return max_density_near_path
+
+	# Calculate lateral density based on distance to nearest corridor edge
+	var lateral_fade_distance = tree_radius * 0.5  # Use half the tree radius for lateral fading
+	var normalized_lateral_distance = min_lateral_distance / lateral_fade_distance
+
+	# Apply density curve with three-point gradient for lateral fading
+	var lateral_curve_factor = pow(1.0 - clamp(normalized_lateral_distance, 0.0, 1.0), density_falloff_curve)
+	# Calculate lateral density using three-point gradient
+	var lateral_density: float
+	if normalized_lateral_distance <= 0.5:
+		# Near corridor edge: interpolate from min_density_near_path to max_density_near_path
+		var near_curve = lateral_curve_factor * 2.0
+		lateral_density = lerp(min_density_near_path, max_density_near_path, near_curve)
+	else:
+		# Far from corridor edge: interpolate from max_density_near_path to min_density_at_edges
+		var far_curve = (lateral_curve_factor - 0.5) * 2.0
+		if min_density_at_edges <= max_density_near_path:
+			# Normal case: dense near path, sparse at edges
+			lateral_density = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
+		else:
+			# Inverted case: sparse near path, dense at edges
+			lateral_density = lerp(max_density_near_path, min_density_at_edges, far_curve)
+
+	return clamp(lateral_density, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
