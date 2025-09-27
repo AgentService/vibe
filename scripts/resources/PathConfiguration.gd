@@ -18,17 +18,7 @@ extends Resource
 ## Minimum distance between connection points (pixels)
 @export_range(50, 500, 10) var min_point_distance: float = 120.0
 
-## Point space radius - circular area around each point that pushes boundaries outward
-@export_range(50, 200, 10) var point_space_radius: float = 100.0
-
-## Path extension width - Green ring thickness for forest layers (pixels) - unlimited
-@export_range(0, 999999, 12) var path_extension_width: float = 48.0
-
-## Second extension width - Dark ring thickness for deeper forest layers (pixels) - unlimited
-@export_range(0, 999999, 12) var path_extension_width2: float = 48.0
-
-## Arena size for point generation bounds
-@export_range(100, 500, 20) var arena_size: float = 300.0
+# path_extension_width parameter removed
 
 @export_group("Path Properties")
 ## Path corridor width for navigation (pixels)
@@ -382,7 +372,7 @@ func _calculate_corridor_bounds(points: Array[PathPoint]) -> Rect2:
 		max_pos.y = max(max_pos.y, point.position.y)
 
 	# Extend bounds for path width, ground extension, and point space radius
-	var total_extension = path_width + (ground_extension * 16) + point_space_radius  # Include point space radius
+	var total_extension = path_width + (ground_extension * 16)  # Simplified extension calculation
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
 
@@ -423,8 +413,8 @@ func _calculate_corridor_bounds_with_endpoints(paths: Array[PathSegment], endpoi
 		max_pos.x = max(max_pos.x, pos.x)
 		max_pos.y = max(max_pos.y, pos.y)
 
-	# Extend bounds for path width, ground extension, and point space radius
-	var total_extension = path_width + (ground_extension * 16) + point_space_radius
+	# Extend bounds for path width and ground extension
+	var total_extension = path_width + (ground_extension * 16)
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
 
@@ -459,8 +449,8 @@ func _calculate_corridor_bounds_from_paths(paths: Array[PathSegment]) -> Rect2:
 		max_pos.x = max(max_pos.x, pos.x)
 		max_pos.y = max(max_pos.y, pos.y)
 
-	# Extend bounds for path width, ground extension, and point space radius
-	var total_extension = path_width + (ground_extension * 16) + point_space_radius
+	# Extend bounds for path width and ground extension
+	var total_extension = path_width + (ground_extension * 16)
 	min_pos -= Vector2(total_extension, total_extension)
 	max_pos += Vector2(total_extension, total_extension)
 
@@ -472,126 +462,13 @@ func _calculate_corridor_bounds_from_paths(paths: Array[PathSegment]) -> Rect2:
 
 ## Generate path extension positions around existing path tiles
 func generate_path_extensions(ground_positions: Array[Vector2]) -> Array[Vector2]:
-	if path_extension_width <= 0:
-		return []
-
-	var extension_positions: Array[Vector2] = []
-	var tile_size = 48  # Forest tileset uses 48x48 tiles
-
-	# Convert extension width to tile count
-	var extension_tiles = int(ceil(path_extension_width / tile_size))
-
-	# For each ground position, generate extension tiles around it
-	for ground_pos in ground_positions:
-		for x_offset in range(-extension_tiles, extension_tiles + 1):
-			for y_offset in range(-extension_tiles, extension_tiles + 1):
-				# Skip the center position (already has ground tile)
-				if x_offset == 0 and y_offset == 0:
-					continue
-
-				# Calculate distance to determine if within extension radius
-				var distance = sqrt(x_offset * x_offset + y_offset * y_offset) * tile_size
-				if distance <= path_extension_width:
-					var extension_pos = ground_pos + Vector2(x_offset * tile_size, y_offset * tile_size)
-
-					# Only add if not already a ground position
-					if not extension_pos in ground_positions:
-						extension_positions.append(extension_pos)
-
-	# Remove duplicates
-	var unique_extensions: Array[Vector2] = []
-	for ext_pos in extension_positions:
-		if not ext_pos in unique_extensions:
-			unique_extensions.append(ext_pos)
-
-	Logger.debug("Generated %d path extension positions with width %.1fpx" % [
-		unique_extensions.size(), path_extension_width
-	], "pathgen")
-
-	return unique_extensions
+	# path_extension_width parameter removed - no extensions generated
+	return []
 
 ## Generate dual-layer forest rings using optimized spatial collision detection
 func generate_dual_forest_rings(ground_positions: Array[Vector2], paths: Array = []) -> Dictionary:
-	if path_extension_width <= 0:
-		return {"green": [], "dark": []}
-
-	# Debug parameter values
-	Logger.debug("Ring generation parameters: width1=%.1f, width2=%.1f, path_width=%.1f" % [
-		path_extension_width, path_extension_width2, path_width
-	], "pathgen")
-
-	# Build fast spatial collision grid for path corridors (performance optimization)
-	var collision_grid: Dictionary = {}
-	var grid_size = 96.0  # 2x tile size for good granularity vs performance
-	if not paths.is_empty():
-		collision_grid = _build_path_collision_grid(paths, grid_size)
-
-	var green_tiles: Dictionary = {}  # Vector2i -> bool for deduplication
-	var dark_tiles: Dictionary = {}   # Vector2i -> bool for deduplication
-	var tile_size = 48.0
-
-	# Calculate path edge distance (where Green ring should start)
-	var path_edge_distance = path_width * 0.5  # Half-width = edge of walkable corridor
-
-	# Use independent width parameters for each ring, starting from path edge:
-	# Green ring: path_edge_distance to path_edge_distance + path_extension_width
-	# Dark ring: path_edge_distance + path_extension_width to path_edge_distance + path_extension_width + path_extension_width2
-	var green_inner_radius = path_edge_distance
-	var green_outer_radius = path_edge_distance + path_extension_width
-	var dark_outer_radius = path_edge_distance + path_extension_width + path_extension_width2
-
-	# Compute once the max tile radius we need (tight loop bounds)
-	var max_radius_tiles = int(ceil(dark_outer_radius / tile_size))
-
-	# Squared thresholds in tile space to avoid sqrt
-	var green_inner_threshold_sq = (green_inner_radius / tile_size) * (green_inner_radius / tile_size)
-	var green_outer_threshold_sq = (green_outer_radius / tile_size) * (green_outer_radius / tile_size)
-	var dark_outer_threshold_sq = (dark_outer_radius / tile_size) * (dark_outer_radius / tile_size)
-
-	# Single pass generation: both layers from same loop
-	for ground_pos in ground_positions:
-		var base_tile_x = int(ground_pos.x / tile_size)
-		var base_tile_y = int(ground_pos.y / tile_size)
-
-		for x_offset in range(-max_radius_tiles, max_radius_tiles + 1):
-			for y_offset in range(-max_radius_tiles, max_radius_tiles + 1):
-				# Skip center position (walkable area)
-				if x_offset == 0 and y_offset == 0:
-					continue
-
-				# Use squared distance in tile space (no sqrt needed)
-				var distance_sq = x_offset * x_offset + y_offset * y_offset
-				var tile_pos = Vector2i(base_tile_x + x_offset, base_tile_y + y_offset)
-
-				# Split distance thresholds for proper ring assignment:
-				# Green ring: path_edge_distance < distance <= path_edge_distance + path_extension_width
-				# Dark ring: path_edge_distance + path_extension_width < distance <= path_edge_distance + 2 * path_extension_width
-				if distance_sq > green_inner_threshold_sq and distance_sq <= green_outer_threshold_sq:
-					# Fast collision-aware generation using spatial grid
-					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
-					if paths.is_empty() or not _is_position_in_collision_grid(world_pos, collision_grid, grid_size):
-						green_tiles[tile_pos] = true
-				elif distance_sq > green_outer_threshold_sq and distance_sq <= dark_outer_threshold_sq:
-					# Fast collision-aware generation using spatial grid
-					var world_pos = Vector2(tile_pos.x * tile_size, tile_pos.y * tile_size)
-					if paths.is_empty() or not _is_position_in_collision_grid(world_pos, collision_grid, grid_size):
-						dark_tiles[tile_pos] = true
-
-	# Convert to position arrays for tile placement
-	var green_positions: Array[Vector2] = []
-	var dark_positions: Array[Vector2] = []
-
-	for tile_coord in green_tiles.keys():
-		green_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
-
-	for tile_coord in dark_tiles.keys():
-		dark_positions.append(Vector2(tile_coord.x * tile_size, tile_coord.y * tile_size))
-
-	Logger.debug("Generated dual forest rings using widths %.1f/%.1fpx: %d green (%.1f-%.1f), %d dark (%.1f-%.1f) [SPATIAL OPTIMIZED]" % [
-		path_extension_width, path_extension_width2, green_positions.size(), green_inner_radius, green_outer_radius, dark_positions.size(), green_outer_radius, dark_outer_radius
-	], "pathgen")
-
-	return {"green": green_positions, "dark": dark_positions}
+	# path_extension_width parameter removed - no forest rings generated
+	return {"green": [], "dark": []}
 
 ## Check if position is within walkable corridor (path width only)
 func is_position_in_walkable_corridor(position: Vector2, paths: Array[PathSegment]) -> bool:

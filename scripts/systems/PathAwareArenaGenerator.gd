@@ -105,11 +105,9 @@ func generate_path_aware_arena():
 		Logger.error("TreeBoundaryGenerator is null, cannot generate trees", "treegen")
 		return
 
-	# Trees should avoid the complete visual area (path corridors + extensions) for natural boundaries
-	var extension_data = {
-		"path_extension_width": path_config.path_extension_width
-	}
-	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed, extension_data)
+	# Trees should avoid the complete visual area (path corridors only) for natural boundaries
+	# path_extension_width parameter removed - no extension data needed
+	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed, {})
 
 	# Phase 3: Create visual debug markers
 	if show_debug_markers:

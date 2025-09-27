@@ -6,16 +6,16 @@ class_name PathGeneratorDock
 var generate_button: Button
 var seed_input: SpinBox
 var path_count_input: SpinBox
-var arena_size_input: SpinBox
+# arena_size_input removed
 var corridor_width_input: SpinBox
 var tree_spacing_input: SpinBox
-var arena_base_radius_input: SpinBox
+# arena_base_radius_input removed
 var chain_length_input: SpinBox
 var min_distance_input: SpinBox
-var point_radius_input: SpinBox
-var path_extension_width_input: SpinBox
-var path_extension_width2_input: SpinBox
-var boundary_distance_input: SpinBox
+# point_radius_input removed
+# path_extension_width_input removed
+# path_extension_width2_input removed
+# boundary_distance_input removed
 var status_label: Label
 
 # Dynamic branching controls
@@ -28,17 +28,13 @@ var min_branches_per_point_input: SpinBox
 var max_branches_per_point_input: SpinBox
 
 # Tree boundary controls
-var boundary_thickness_input: SpinBox
+# boundary_thickness_input removed
 var use_path_radius_checkbox: CheckBox
-# Gradient density controls
-var min_density_near_path_input: SpinBox
-var max_density_near_path_input: SpinBox
-var min_density_at_edges_input: SpinBox
-var density_falloff_curve_input: SpinBox
+# Gradient density controls removed
 
-# Random offset controls (zigzag effect)
-var enable_staggered_placement_checkbox: CheckBox
-var max_random_offset_input: SpinBox
+# Random offset controls removed
+# var enable_staggered_placement_checkbox: CheckBox (removed)
+# var max_random_offset_input: SpinBox (removed)
 
 
 # Generator reference
@@ -119,16 +115,7 @@ func _build_ui():
 	vbox.add_child(path_count_input)
 	
 	# Arena size control
-	var arena_size_label = Label.new()
-	arena_size_label.text = "Arena Size:"
-	vbox.add_child(arena_size_label)
-
-	arena_size_input = SpinBox.new()
-	arena_size_input.min_value = 200
-	arena_size_input.max_value = 6000
-	arena_size_input.value = 500  # From DefaultPathConfiguration.tres
-	arena_size_input.step = 50
-	vbox.add_child(arena_size_input)
+	# Arena Size parameter removed
 
 	# Corridor width control (unlimited)
 	var corridor_width_label = Label.new()
@@ -138,7 +125,7 @@ func _build_ui():
 	corridor_width_input = SpinBox.new()
 	corridor_width_input.min_value = 50
 	corridor_width_input.max_value = 5000  # Unlimited
-	corridor_width_input.value = 500  # Current plugin default
+	corridor_width_input.value = 1500  # Current plugin default
 	corridor_width_input.step = 50
 	corridor_width_input.suffix = "px"
 	vbox.add_child(corridor_width_input)
@@ -149,25 +136,14 @@ func _build_ui():
 	vbox.add_child(tree_spacing_label)
 
 	tree_spacing_input = SpinBox.new()
-	tree_spacing_input.min_value = 20
+	tree_spacing_input.min_value = 1
 	tree_spacing_input.max_value = 150
-	tree_spacing_input.value = 88
+	tree_spacing_input.value = 15
 	tree_spacing_input.step = 1
 	tree_spacing_input.suffix = "px"
 	vbox.add_child(tree_spacing_input)
 
-	# Arena base radius control
-	var arena_base_radius_label = Label.new()
-	arena_base_radius_label.text = "Arena Base Radius:"
-	vbox.add_child(arena_base_radius_label)
-
-	arena_base_radius_input = SpinBox.new()
-	arena_base_radius_input.min_value = 200
-	arena_base_radius_input.max_value = 999999  # No limits
-	arena_base_radius_input.value = 1800
-	arena_base_radius_input.step = 50
-	arena_base_radius_input.suffix = "px"
-	vbox.add_child(arena_base_radius_input)
+	# Arena base radius control removed
 
 	# Chain length control
 	var chain_length_label = Label.new()
@@ -189,64 +165,19 @@ func _build_ui():
 
 	min_distance_input = SpinBox.new()
 	min_distance_input.min_value = 100
-	min_distance_input.max_value = 1600
-	min_distance_input.value = 800
+	min_distance_input.max_value = 2600
+	min_distance_input.value = 1800
 	min_distance_input.step = 100
 	min_distance_input.suffix = "px"
 	vbox.add_child(min_distance_input)
 
-	# Point radius control
-	var point_radius_label = Label.new()
-	point_radius_label.text = "Point Space Radius:"
-	vbox.add_child(point_radius_label)
+	# Point Space Radius parameter removed
 
-	point_radius_input = SpinBox.new()
-	point_radius_input.min_value = 50
-	point_radius_input.max_value = 200
-	point_radius_input.value = 100
-	point_radius_input.step = 10
-	point_radius_input.suffix = "px"
-	vbox.add_child(point_radius_input)
+	# Path extension width control removed
 
-	# Path extension width control
-	var path_extension_width_label = Label.new()
-	path_extension_width_label.text = "Path Extension Width:"
-	vbox.add_child(path_extension_width_label)
+	# Dark extension width control removed
 
-	path_extension_width_input = SpinBox.new()
-	path_extension_width_input.min_value = 0
-	path_extension_width_input.max_value = 1000  # Unlimited extension width
-	path_extension_width_input.value = 2  # Current plugin default
-	path_extension_width_input.step = 1
-	path_extension_width_input.suffix = "px"
-	vbox.add_child(path_extension_width_input)
-
-	# Second path extension width control
-	var path_extension_width2_label = Label.new()
-	path_extension_width2_label.text = "Dark Extension Width:"
-	vbox.add_child(path_extension_width2_label)
-
-	path_extension_width2_input = SpinBox.new()
-	path_extension_width2_input.min_value = 0
-	path_extension_width2_input.max_value = 1000  # Unlimited extension width
-	path_extension_width2_input.value = 1  # Current plugin default
-	path_extension_width2_input.step = 1
-	path_extension_width2_input.suffix = "px"
-	vbox.add_child(path_extension_width2_input)
-
-	# Boundary distance control
-	var boundary_distance_label = Label.new()
-	boundary_distance_label.text = "Boundary Distance:"
-	boundary_distance_label.tooltip_text = "Distance from paths to tree boundaries. Negative values allow tree overlap."
-	vbox.add_child(boundary_distance_label)
-
-	boundary_distance_input = SpinBox.new()
-	boundary_distance_input.min_value = -500  # Allow negative values for tree overlap
-	boundary_distance_input.max_value = 500  # Unlimited boundary distance
-	boundary_distance_input.value = -150
-	boundary_distance_input.step = 50
-	boundary_distance_input.suffix = "px"
-	vbox.add_child(boundary_distance_input)
+	# Boundary Distance parameter removed
 
 	# Separator
 	var separator2 = HSeparator.new()
@@ -337,10 +268,10 @@ func _build_ui():
 	vbox.add_child(curve_label)
 
 	branch_curve_intensity_input = SpinBox.new()
-	branch_curve_intensity_input.min_value = 0.0
-	branch_curve_intensity_input.max_value = 100.0
-	branch_curve_intensity_input.value = 0.3
-	branch_curve_intensity_input.step = 0.1
+	branch_curve_intensity_input.min_value = -550.0
+	branch_curve_intensity_input.max_value = 1001.0
+	branch_curve_intensity_input.value = 333
+	branch_curve_intensity_input.step = 111
 	vbox.add_child(branch_curve_intensity_input)
 
 	# Another separator
@@ -353,19 +284,7 @@ func _build_ui():
 	boundary_title.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(boundary_title)
 
-	# Boundary thickness control
-	var boundary_thickness_label = Label.new()
-	boundary_thickness_label.text = "Boundary Thickness (px):"
-	boundary_thickness_label.tooltip_text = "Controls how much outer tree space is generated around paths"
-	vbox.add_child(boundary_thickness_label)
-
-	boundary_thickness_input = SpinBox.new()
-	boundary_thickness_input.min_value = -5000
-	boundary_thickness_input.max_value = 2000
-	boundary_thickness_input.value = 775  # Default value
-	boundary_thickness_input.step = 25
-	boundary_thickness_input.suffix = "px"
-	vbox.add_child(boundary_thickness_input)
+	# Boundary thickness control removed
 
 	# Path-radius generation checkbox
 	use_path_radius_checkbox = CheckBox.new()
@@ -374,89 +293,9 @@ func _build_ui():
 	use_path_radius_checkbox.tooltip_text = "Generate trees only around actual paths (eliminates massive unused forest areas)"
 	vbox.add_child(use_path_radius_checkbox)
 
-	# Gradient density controls
-	var density_title = Label.new()
-	density_title.text = "Gradient Density"
-	density_title.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(density_title)
+	# Gradient density controls removed
 
-	# Min density near path (baseline)
-	var min_density_near_label = Label.new()
-	min_density_near_label.text = "Min Density Near Path:"
-	min_density_near_label.tooltip_text = "Baseline density near paths (always maintained, 0.01 = sparse baseline)"
-	vbox.add_child(min_density_near_label)
-
-	min_density_near_path_input = SpinBox.new()
-	min_density_near_path_input.min_value = 0.01
-	min_density_near_path_input.max_value = 1.0
-	min_density_near_path_input.value = 0.01
-	min_density_near_path_input.step = 0.01
-	vbox.add_child(min_density_near_path_input)
-
-	# Max density near path
-	var max_density_label = Label.new()
-	max_density_label.text = "Max Density Near Path:"
-	max_density_label.tooltip_text = "Peak density closest to paths (1.0 = full density)"
-	vbox.add_child(max_density_label)
-
-	max_density_near_path_input = SpinBox.new()
-	max_density_near_path_input.min_value = 0.05
-	max_density_near_path_input.max_value = 1.0
-	max_density_near_path_input.value = 0.05
-	max_density_near_path_input.step = 0.05
-	vbox.add_child(max_density_near_path_input)
-
-	# Min density at edges
-	var min_density_label = Label.new()
-	min_density_label.text = "Min Density at Edges:"
-	min_density_label.tooltip_text = "Density at boundary edges (0.1 = sparse, 0.5 = moderate)"
-	vbox.add_child(min_density_label)
-
-	min_density_at_edges_input = SpinBox.new()
-	min_density_at_edges_input.min_value = 0.05
-	min_density_at_edges_input.max_value = 500
-	min_density_at_edges_input.value = 1
-	min_density_at_edges_input.step = 0.05
-	vbox.add_child(min_density_at_edges_input)
-
-	# Density falloff curve
-	var falloff_curve_label = Label.new()
-	falloff_curve_label.text = "Density Falloff Curve:"
-	falloff_curve_label.tooltip_text = "Gradient steepness (1.0 = linear, 2.0 = steep, 0.5 = gentle)"
-	vbox.add_child(falloff_curve_label)
-
-	density_falloff_curve_input = SpinBox.new()
-	density_falloff_curve_input.min_value = -50.0
-	density_falloff_curve_input.max_value = 55.0
-	density_falloff_curve_input.value = 0.1
-	density_falloff_curve_input.step = 0.001
-	vbox.add_child(density_falloff_curve_input)
-
-	# Random offset controls (Natural Placement)
-	var offset_section_label = Label.new()
-	offset_section_label.text = "🎲 Natural Placement"
-	offset_section_label.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(offset_section_label)
-
-	# Enable zigzag placement
-	enable_staggered_placement_checkbox = CheckBox.new()
-	enable_staggered_placement_checkbox.text = "Enable Zigzag Tree Placement"
-	enable_staggered_placement_checkbox.button_pressed = true
-	enable_staggered_placement_checkbox.tooltip_text = "Adds random offset to eliminate grid patterns for natural appearance"
-	vbox.add_child(enable_staggered_placement_checkbox)
-
-	# Random offset amount
-	var offset_label = Label.new()
-	offset_label.text = "Random Offset Amount (px):"
-	offset_label.tooltip_text = "Maximum random displacement in pixels for natural zigzag effect"
-	vbox.add_child(offset_label)
-
-	max_random_offset_input = SpinBox.new()
-	max_random_offset_input.min_value = -550.0
-	max_random_offset_input.max_value = 732.0
-	max_random_offset_input.value = 54.0
-	max_random_offset_input.step = 1.0
-	vbox.add_child(max_random_offset_input)
+	# Random offset controls (Natural Placement) removed
 
 	# Final separator
 	var separator4 = HSeparator.new()
@@ -549,18 +388,15 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 	# Update path configuration
 	if generator.path_config:
 		generator.path_config.connection_points = int(path_count_input.value)
-		generator.path_config.arena_size = arena_size_input.value
+		# arena_size parameter removed
 		generator.path_config.path_width = corridor_width_input.value
 		if chain_length_input:
 			generator.path_config.chain_length = int(chain_length_input.value)
 		if min_distance_input:
 			generator.path_config.min_point_distance = min_distance_input.value
-		if point_radius_input:
-			generator.path_config.point_space_radius = point_radius_input.value
-		if path_extension_width_input:
-			generator.path_config.path_extension_width = path_extension_width_input.value
-		if path_extension_width2_input:
-			generator.path_config.path_extension_width2 = path_extension_width2_input.value
+		# point_space_radius parameter removed
+		# path_extension_width parameter removed
+		# path_extension_width2 parameter removed
 
 		# Dynamic branching settings
 		if enable_branching_checkbox:
@@ -575,49 +411,27 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 			generator.path_config.min_branch_length = min_branch_length_input.value
 		if max_branch_length_input:
 			generator.path_config.max_branch_length = max_branch_length_input.value
-		if branch_curve_intensity_input:
-			generator.path_config.branch_curve_intensity = branch_curve_intensity_input.value
+		# branch_curve_intensity parameter removed
 
 	# Update tree configuration
 	if generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
-		if boundary_distance_input:
-			generator.tree_config.boundary_distance = boundary_distance_input.value
-		if boundary_thickness_input:
-			generator.tree_config.boundary_thickness = boundary_thickness_input.value
+		# boundary_distance parameter removed
+		# boundary_thickness parameter removed
 		if use_path_radius_checkbox:
 			generator.tree_config.use_path_radius_generation = use_path_radius_checkbox.button_pressed
-		# Update gradient density parameters
-		if min_density_near_path_input:
-			generator.tree_config.min_density_near_path = min_density_near_path_input.value
-		if max_density_near_path_input:
-			generator.tree_config.max_density_near_path = max_density_near_path_input.value
-		if min_density_at_edges_input:
-			generator.tree_config.min_density_at_edges = min_density_at_edges_input.value
-		if density_falloff_curve_input:
-			generator.tree_config.density_falloff_curve = density_falloff_curve_input.value
-		# Update random offset controls
-		if enable_staggered_placement_checkbox:
-			generator.tree_config.enable_staggered_placement = enable_staggered_placement_checkbox.button_pressed
-		if max_random_offset_input:
-			generator.tree_config.max_random_offset = max_random_offset_input.value
+		# Gradient density parameters removed
+		# Random offset controls removed
 
-	# Update arena base radius
-	generator.arena_base_radius = arena_base_radius_input.value
+	# Arena base radius parameter removed
 
-	Logger.debug("Updated generator settings: seed=%d, points=%d, size=%.1f, corridor=%.1f, spacing=%.1f, base_radius=%.1f, chain=%d, min_dist=%.1f, point_radius=%.1f, ext1=%.1f, ext2=%.1f, boundary=%.1f" % [
+	Logger.debug("Updated generator settings: seed=%d, points=%d, corridor=%.1f, spacing=%.1f, chain=%d, min_dist=%.1f" % [
 		generator.generation_seed,
 		int(path_count_input.value),
-		arena_size_input.value,
 		corridor_width_input.value,
 		tree_spacing_input.value,
-		arena_base_radius_input.value,
 		int(chain_length_input.value if chain_length_input else 4),
-		min_distance_input.value if min_distance_input else 80.0,
-		point_radius_input.value if point_radius_input else 100.0,
-		path_extension_width_input.value if path_extension_width_input else 48.0,
-		path_extension_width2_input.value if path_extension_width2_input else 48.0,
-		boundary_distance_input.value if boundary_distance_input else 96.0
+		min_distance_input.value if min_distance_input else 80.0
 	], "plugin")
 
 func _show_error(message: String):

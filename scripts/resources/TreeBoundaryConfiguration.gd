@@ -15,31 +15,16 @@ extends Resource
 ## Tree density along boundaries (higher for robust coverage)
 @export_range(0.5, 1.0, 0.05) var tree_density: float = 0.95
 
-@export_group("Gradient Density Control")
-## Minimum baseline density near paths (always maintained, even in sparse areas)
-@export_range(0.01, 1.0, 0.01) var min_density_near_path: float = 0.01
-
-## Maximum density near paths (1.0 = full density, 0.5 = half density, <0.3 = very sparse)
-@export_range(0.05, 1.0, 0.05) var max_density_near_path: float = 0.05
-
-## Minimum density at boundary edges (0.1 = sparse, 0.5 = moderate, >1.0 = super dense)
-@export_range(0.05, 50.0, 0.05) var min_density_at_edges: float = 50.0
-
-## Density falloff curve (1.0 = linear, 2.0 = steep falloff, 0.5 = gentle, <0.1 = very gentle)
-@export_range(0.01, 3.0, 0.01) var density_falloff_curve: float = 0.013
 
 @export_group("Boundary Adaptation")
 ## Additional buffer around paths before placing trees (pixels)
 @export_range(24, 96, 4) var path_buffer_distance: float = 48.0
 
-## Distance of tree boundaries away from paths (pixels) - negative values allow tree overlap
-@export_range(-999999, 999999, 24) var boundary_distance: float = 96.0
+## Tree boundary width - how far from paths to place trees (no limit)
+@export_range(50, 99999, 50) var tree_boundary_width: float = 300.0
 
 ## How much to extend tree boundaries beyond path network (tiles)
 @export_range(5, 50, 5) var boundary_extension: int = 20
-
-## Base tree boundary thickness (pixels) - controls outer tree space around paths
-@export_range(25, 200, 25) var boundary_thickness: float = 75.0
 
 ## Use efficient path-radius generation (only trees around paths, no huge rectangles)
 @export var use_path_radius_generation: bool = true
@@ -55,15 +40,6 @@ extends Resource
 ## Noise threshold for tree placement (higher = fewer trees)
 @export_range(-1.0, 1.0, 0.1) var clustering_threshold: float = 0.2
 
-@export_group("Asymmetric Placement")
-## Enable staggered placement for natural asymmetric pattern
-@export var enable_staggered_placement: bool = true
-
-## Placement randomness factor (0=perfect grid, 1=high variation)
-@export_range(0.0, 1.0, 0.1) var placement_randomness: float = 0.3
-
-## Maximum random offset in pixels for asymmetric placement
-@export_range(0, 32, 2) var max_random_offset: float = 8.0
 
 @export_group("Boundary Optimization")
 ## Ensure trees form continuous boundary for arena containment
@@ -150,7 +126,7 @@ func _generate_path_radius_trees(paths: Array, corridor_bounds: Rect2, rng: Rand
 	var used_tiles: Dictionary = {}
 	var tile_size = 48  # Match forest tileset 48x48 tiles
 
-	Logger.debug("Generating dense trees with path-radius approach, boundary_thickness: %.1fpx" % [boundary_thickness], "treegen")
+	Logger.debug("Generating dense trees with path-radius approach, tree_boundary_width: %.1fpx" % [tree_boundary_width], "treegen")
 
 	# Generate trees with gradient density: dense near path, sparse farther away
 	for path in paths:
@@ -173,7 +149,7 @@ func _generate_path_radius_trees(paths: Array, corridor_bounds: Rect2, rng: Rand
 ## Generate radial trees around a specific path point for complete coverage
 func _generate_radial_trees_around_point(center: Vector2, path_width: float, tile_size: int, rng: RandomNumberGenerator, tree_positions: Array[Vector2], used_tiles: Dictionary) -> void:
 	var path_half_width = path_width * 0.5
-	var tree_radius = abs(boundary_thickness)
+	var tree_radius = abs(tree_boundary_width)
 	var total_radius = path_half_width + tree_radius
 
 	# Create concentric rings around the point
@@ -190,13 +166,8 @@ func _generate_radial_trees_around_point(center: Vector2, path_width: float, til
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = center + Vector2(cos(angle), sin(angle)) * distance
 
-			# Add random offset for natural placement (zigzag effect)
+			# Simplified placement without random offset
 			var random_offset = Vector2.ZERO
-			if enable_staggered_placement:
-				random_offset = Vector2(
-					rng.randf_range(-max_random_offset, max_random_offset),
-					rng.randf_range(-max_random_offset, max_random_offset)
-				)
 
 			# Snap to tile grid with random offset
 			tree_pos = Vector2(
@@ -216,7 +187,7 @@ func _generate_radial_trees_around_point(center: Vector2, path_width: float, til
 ## Generate circular coverage around path endpoints (reusing branch-like logic)
 func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, tile_size: int, rng: RandomNumberGenerator, tree_positions: Array[Vector2], used_tiles: Dictionary) -> void:
 	var path_half_width = path_width * 0.5
-	var tree_radius = abs(boundary_thickness)
+	var tree_radius = abs(tree_boundary_width)
 	var total_radius = path_half_width + tree_radius
 
 	# Create concentric rings around the endpoint (similar to branch endpoint coverage)
@@ -233,13 +204,8 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = endpoint + Vector2(cos(angle), sin(angle)) * distance
 
-			# Add random offset for natural placement (zigzag effect)
+			# Simplified placement without random offset
 			var random_offset = Vector2.ZERO
-			if enable_staggered_placement:
-				random_offset = Vector2(
-					rng.randf_range(-max_random_offset, max_random_offset),
-					rng.randf_range(-max_random_offset, max_random_offset)
-				)
 
 			# Snap to tile grid with random offset
 			tree_pos = Vector2(
@@ -252,27 +218,8 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 			var max_boundary_distance = tree_radius - 12.0
 			var normalized_distance = distance_from_endpoint / max_boundary_distance
 
-			# Apply configurable density curve with three-point gradient
-			var curve_factor = pow(1.0 - normalized_distance, density_falloff_curve)
-			# Calculate density using three-point gradient for endpoints
-			var density_factor: float
-			if normalized_distance <= 0.5:
-				# Near endpoint area: interpolate from min_density_near_path to max_density_near_path
-				var near_curve = curve_factor * 2.0
-				density_factor = lerp(min_density_near_path, max_density_near_path, near_curve)
-			else:
-				# Far from endpoint area: interpolate from max_density_near_path to min_density_at_edges
-				var far_curve = (curve_factor - 0.5) * 2.0
-				if min_density_at_edges <= max_density_near_path:
-					# Normal case: dense near path, sparse at edges
-					density_factor = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
-				else:
-					# Inverted case: sparse near path, dense at edges
-					density_factor = lerp(max_density_near_path, min_density_at_edges, far_curve)
-			density_factor = clamp(density_factor, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
-
-			# Apply density probability
-			if rng.randf() > density_factor * tree_density:
+			# Apply simple uniform density
+			if rng.randf() > tree_density:
 				continue
 
 			# Check if this position respects tree_spacing from existing trees
@@ -287,7 +234,7 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 ## Generate trees with gradient density around path network (unified approach)
 func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: float, tile_size: int, rng: RandomNumberGenerator, tree_positions: Array[Vector2], used_tiles: Dictionary) -> void:
 	var path_half_width = path_width * 0.5
-	var tree_radius = abs(boundary_thickness)
+	var tree_radius = abs(tree_boundary_width)
 	var total_radius = path_half_width + tree_radius
 
 	# Identify endpoints (first and last points) for special treatment
@@ -334,43 +281,12 @@ func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: f
 			var max_boundary_distance = tree_radius - 12.0
 			var normalized_radial_distance = distance_from_path_edge / max_boundary_distance
 
-			# Apply configurable density curve for radial falloff with three-point gradient
-			var radial_curve_factor = pow(1.0 - normalized_radial_distance, density_falloff_curve)
-			# Calculate density using three-point gradient: min_near → max_near → edges
-			var radial_density_factor: float
-			if normalized_radial_distance <= 0.5:
-				# Near path area: interpolate from min_density_near_path to max_density_near_path
-				var near_curve = radial_curve_factor * 2.0  # Stretch curve for near area
-				radial_density_factor = lerp(min_density_near_path, max_density_near_path, near_curve)
-			else:
-				# Far from path area: interpolate from max_density_near_path to min_density_at_edges
-				var far_curve = (radial_curve_factor - 0.5) * 2.0  # Stretch curve for far area
-				if min_density_at_edges <= max_density_near_path:
-					# Normal case: dense near path, sparse at edges
-					radial_density_factor = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
-				else:
-					# Inverted case: sparse near path, dense at edges
-					radial_density_factor = lerp(max_density_near_path, min_density_at_edges, far_curve)
-
-
-			# Calculate lateral density based on distance to path corridor edges
-			var lateral_density_factor = _calculate_lateral_density_factor(sample_pos, path_points, path_half_width, tree_radius)
-
-			# Combine radial and lateral density factors (take minimum for conservative approach)
-			var combined_density_factor = min(radial_density_factor, lateral_density_factor)
-			combined_density_factor = clamp(combined_density_factor, min_density_at_edges, max_density_near_path)
-
-			# Apply density probability
-			if rng.randf() > combined_density_factor * tree_density:
+			# Apply simple uniform density
+			if rng.randf() > tree_density:
 				continue
 
-			# Add random offset for natural placement (zigzag effect)
+			# Simplified placement without random offset
 			var random_offset = Vector2.ZERO
-			if enable_staggered_placement:
-				random_offset = Vector2(
-					rng.randf_range(-max_random_offset, max_random_offset),
-					rng.randf_range(-max_random_offset, max_random_offset)
-				)
 
 			# Snap to tile grid with random offset
 			var tree_pos = Vector2(
@@ -452,7 +368,7 @@ func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng
 	var tile_size = 48  # Match forest tileset 48x48 tiles
 
 	# Simple configurable boundary thickness
-	var total_expansion = boundary_thickness
+	var total_expansion = tree_boundary_width
 
 	Logger.debug("Tree boundary expansion: %.1fpx (configurable boundary thickness)" % [
 		total_expansion
@@ -634,13 +550,7 @@ func _generate_trees_along_segment(start: Vector2, end: Vector2, rng: RandomNumb
 				var tree_distance = (64.0 * 0.5) + (row * tree_spacing)  # Use default path width
 				var tree_pos = segment_point + (perpendicular * side * tree_distance)
 
-				# Add natural variation
-				if placement_randomness > 0.0:
-					var random_offset = Vector2(
-						(rng.randf() - 0.5) * max_random_offset * placement_randomness,
-						(rng.randf() - 0.5) * max_random_offset * placement_randomness
-					)
-					tree_pos += random_offset
+				# Simplified placement without variation
 
 				# Apply density filter
 				if rng.randf() < tree_density:
@@ -670,33 +580,10 @@ func _generate_endpoint_extension(endpoint: Vector2, adjacent_point: Vector2, is
 			var dot_product = (world_pos - endpoint).dot(back_direction)
 
 			if dist_to_center <= extension_radius and dot_product > 0:
-				# Apply gradient density with three-point gradient for endpoints
-				var distance_from_endpoint = dist_to_center
-				var normalized_distance = distance_from_endpoint / extension_radius
-				var curve_factor = pow(1.0 - normalized_distance, density_falloff_curve)
-				# Calculate endpoint density using three-point gradient
-				var endpoint_density: float
-				if normalized_distance <= 0.5:
-					# Near endpoint area: interpolate from min_density_near_path to max_density_near_path
-					var near_curve = curve_factor * 2.0
-					endpoint_density = lerp(min_density_near_path, max_density_near_path, near_curve)
-				else:
-					# Far from endpoint area: interpolate from max_density_near_path to min_density_at_edges
-					var far_curve = (curve_factor - 0.5) * 2.0
-					if min_density_at_edges <= max_density_near_path:
-						# Normal case: dense near path, sparse at edges
-						endpoint_density = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
-					else:
-						# Inverted case: sparse near path, dense at edges
-						endpoint_density = lerp(max_density_near_path, min_density_at_edges, far_curve)
-				endpoint_density = clamp(endpoint_density, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
-
-				if rng.randf() < endpoint_density * tree_density:
-					var random_offset = Vector2(
-						(rng.randf() - 0.5) * max_random_offset,
-						(rng.randf() - 0.5) * max_random_offset
-					)
-					extension_trees.append(world_pos + random_offset)
+				# Apply simple uniform density
+				if rng.randf() < tree_density:
+					# Simplified placement without offset
+					extension_trees.append(world_pos)
 
 	return extension_trees
 
@@ -718,16 +605,7 @@ func _is_position_in_path_buffer_zone_with_endpoints(position: Vector2, paths: A
 func _apply_asymmetric_placement(base_position: Vector2, row_index: int, col_index: int, rng: RandomNumberGenerator) -> Vector2:
 	var final_position = base_position
 
-	# Apply staggered placement offset (net-like pattern)
-	if enable_staggered_placement and (row_index % 2 == 1):
-		# Offset every other row by half spacing for staggered pattern
-		final_position.x += tree_spacing * 0.5
-
-	# Apply random offset for natural variation
-	if placement_randomness > 0.0:
-		var random_range = max_random_offset * placement_randomness
-		final_position.x += (rng.randf() - 0.5) * 2.0 * random_range
-		final_position.y += (rng.randf() - 0.5) * 2.0 * random_range
+	# Simplified grid placement without offsets
 
 	return final_position
 
@@ -735,10 +613,8 @@ func _apply_asymmetric_placement(base_position: Vector2, row_index: int, col_ind
 func _is_position_in_path_buffer_zone(position: Vector2, paths: Array) -> bool:
 	for path in paths:
 		var path_points: Array[Vector2] = path.get_full_path()
-		# Use path width plus configurable boundary thickness for tree separation
-		# boundary_thickness controls both expansion area AND tree-to-path distance
-		# Negative boundary_thickness allows trees to be placed closer to paths
-		var buffer_width = (path.width * 0.5) + boundary_thickness + (tree_spacing * 0.5)
+		# Use path width plus tree boundary width for tree separation
+		var buffer_width = (path.width * 0.5) + tree_boundary_width + (tree_spacing * 0.5)
 		# Allow negative buffer for tight boundaries (don't enforce minimum of 0)
 		# Only ensure we don't go completely negative to prevent trees inside path centers
 		buffer_width = max(-(path.width * 0.25), buffer_width)
@@ -776,7 +652,7 @@ func _optimize_boundary_continuity(tree_positions: Array[Vector2], corridor_boun
 	var optimized_positions = tree_positions.duplicate()
 
 	# Use configurable boundary thickness for perimeter
-	var total_expansion = boundary_thickness
+	var total_expansion = tree_boundary_width
 
 	# Use expanded bounds for perimeter gap-filling
 	var expanded_perimeter_bounds = Rect2(
@@ -889,7 +765,7 @@ func _generate_trees_around_segment_efficient(start_point: Vector2, end_point: V
 
 	# Calculate tree placement area around this segment
 	var path_half_width = path_width * 0.5
-	var tree_radius = abs(boundary_thickness)  # How far from path to place trees
+	var tree_radius = abs(tree_boundary_width)  # How far from path to place trees
 	var total_width = path_half_width + tree_radius  # Total distance from path center
 
 	# Step along the segment length (denser spacing for complete coverage)
@@ -912,13 +788,8 @@ func _generate_trees_around_segment_efficient(start_point: Vector2, end_point: V
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Add random offset for natural placement (zigzag effect)
+				# Simplified placement without random offset
 				var random_offset = Vector2.ZERO
-				if enable_staggered_placement:
-					random_offset = Vector2(
-						rng.randf_range(-max_random_offset, max_random_offset),
-						rng.randf_range(-max_random_offset, max_random_offset)
-					)
 
 				# Snap to tile grid with random offset
 				tree_pos = Vector2(
@@ -967,7 +838,7 @@ func _generate_dense_trees_around_segment(start_point: Vector2, end_point: Vecto
 	var perpendicular = Vector2(-segment_direction.y, segment_direction.x)
 
 	var path_half_width = path_width * 0.5
-	var tree_radius = abs(boundary_thickness)
+	var tree_radius = abs(tree_boundary_width)
 	var total_width = path_half_width + tree_radius
 
 	# Use normal tree_spacing (let user control density)
@@ -988,13 +859,8 @@ func _generate_dense_trees_around_segment(start_point: Vector2, end_point: Vecto
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Add random offset for natural placement (zigzag effect)
+				# Simplified placement without random offset
 				var random_offset = Vector2.ZERO
-				if enable_staggered_placement:
-					random_offset = Vector2(
-						rng.randf_range(-max_random_offset, max_random_offset),
-						rng.randf_range(-max_random_offset, max_random_offset)
-					)
 
 				# Snap to tile grid with random offset
 				tree_pos = Vector2(
@@ -1090,30 +956,5 @@ func _calculate_lateral_density_factor(sample_pos: Vector2, path_points: Array[V
 			var distance_to_edge = abs(perpendicular_distance - path_half_width)
 			min_lateral_distance = min(min_lateral_distance, distance_to_edge)
 
-	# If no valid segments found, return max density (no lateral fading)
-	if min_lateral_distance == INF:
-		return max_density_near_path
-
-	# Calculate lateral density based on distance to nearest corridor edge
-	var lateral_fade_distance = tree_radius * 0.5  # Use half the tree radius for lateral fading
-	var normalized_lateral_distance = min_lateral_distance / lateral_fade_distance
-
-	# Apply density curve with three-point gradient for lateral fading
-	var lateral_curve_factor = pow(1.0 - clamp(normalized_lateral_distance, 0.0, 1.0), density_falloff_curve)
-	# Calculate lateral density using three-point gradient
-	var lateral_density: float
-	if normalized_lateral_distance <= 0.5:
-		# Near corridor edge: interpolate from min_density_near_path to max_density_near_path
-		var near_curve = lateral_curve_factor * 2.0
-		lateral_density = lerp(min_density_near_path, max_density_near_path, near_curve)
-	else:
-		# Far from corridor edge: interpolate from max_density_near_path to min_density_at_edges
-		var far_curve = (lateral_curve_factor - 0.5) * 2.0
-		if min_density_at_edges <= max_density_near_path:
-			# Normal case: dense near path, sparse at edges
-			lateral_density = lerp(max_density_near_path, min_density_at_edges, 1.0 - far_curve)
-		else:
-			# Inverted case: sparse near path, dense at edges
-			lateral_density = lerp(max_density_near_path, min_density_at_edges, far_curve)
-
-	return clamp(lateral_density, min(min_density_near_path, min_density_at_edges), max(max_density_near_path, min_density_at_edges))
+	# Simplified: return uniform density
+	return 1.0
