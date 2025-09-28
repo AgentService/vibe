@@ -76,7 +76,7 @@ func get_category_weight(category: PathSpawnCategory) -> float:
 		PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
 		PathSpawnCategory.AROUND_PATHS:
-			return 0.6
+			return 0.0  # Disabled - logic removed
 		_:
 			return 1.0
 
@@ -128,7 +128,7 @@ func get_category_name(category: PathSpawnCategory) -> String:
 		PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
 		PathSpawnCategory.AROUND_PATHS:
-			return "AroundPaths"
+			return "AroundPaths"  # Enum preserved, logic removed
 		_:
 			return "Unknown"
 
@@ -156,7 +156,7 @@ static func create_enemy_profile() -> PathSpawnProfile:
 	profile.spawn_categories.append(PathSpawnCategory.ALONG_MAIN_PATH)
 	profile.spawn_categories.append(PathSpawnCategory.ALONG_BRANCHES)
 	profile.spawn_categories.append(PathSpawnCategory.IN_CLEARINGS)
-	profile.spawn_categories.append(PathSpawnCategory.AROUND_PATHS)
+	# profile.spawn_categories.append(PathSpawnCategory.AROUND_PATHS)  # Disabled - logic removed
 	profile.priority_weight = 1.0
 	profile.proximity_preference = ProximityPreference.BALANCED
 	profile.max_spawn_range = 800.0

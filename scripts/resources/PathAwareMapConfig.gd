@@ -63,7 +63,7 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return _get_clearing_positions()
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return _get_around_path_positions()
+			return []  # Logic removed - enum preserved
 		_:
 			return []
 
@@ -173,59 +173,17 @@ func _get_clearing_positions() -> Array:
 	return positions
 
 ## Get positions around paths (buffer zones covering all walkable areas)
+## DISABLED: Logic removed but function preserved for API compatibility
 func _get_around_path_positions() -> Array:
-	var positions: Array = []
+	# Function disabled - AROUND_PATHS logic removed
+	# Return empty array to maintain API compatibility
+	return []
 
-	if not path_snapshot:
-		return positions
-
-	# Get arena bounds for comprehensive coverage
-	var arena_bounds = path_snapshot.total_arena_bounds
-	var min_distance_from_path = 80.0  # Minimum distance from any path - could use arena width/20 for scaling
-	var sample_spacing = 96.0  # Slightly larger grid spacing for better coverage
-
-	# Create grid of potential positions across entire arena
-	var start_x = arena_bounds.position.x
-	var start_y = arena_bounds.position.y
-	var end_x = arena_bounds.position.x + arena_bounds.size.x
-	var end_y = arena_bounds.position.y + arena_bounds.size.y
-
-	# Sample positions in grid pattern across entire walkable area
-	var y = start_y
-	while y <= end_y:
-		var x = start_x
-		while x <= end_x:
-			var test_position = Vector2(x, y)
-
-			# Check if position is far enough from all paths
-			if _is_position_away_from_paths(test_position, min_distance_from_path):
-				positions.append(test_position)
-
-			x += sample_spacing
-		y += sample_spacing
-
-	return positions
-
-## Check if position is far enough from all paths
+## DISABLED: Check if position is far enough from all paths
+## Function removed along with AROUND_PATHS logic
 func _is_position_away_from_paths(test_position: Vector2, min_distance: float) -> bool:
-	# Check distance to main path points
-	if path_snapshot and not path_snapshot.main_path_points.is_empty():
-		var main_points = _convert_to_vector2_array(path_snapshot.main_path_points)
-		for main_pos in main_points:
-			if test_position.distance_to(main_pos) < min_distance:
-				return false
-
-	# Check distance to branch paths
-	if path_snapshot and not path_snapshot.branch_data.is_empty():
-		for branch_info in path_snapshot.branch_data:
-			if branch_info.has_method("get_full_path"):
-				var branch_points = branch_info.get_full_path()
-				if branch_points.size() > 0:
-					for branch_pos in branch_points:
-						if test_position.distance_to(branch_pos) < min_distance:
-							return false
-
-	return true
+	# Function disabled - AROUND_PATHS logic removed
+	return false
 
 ## Sample positions around a line with specified buffer distance
 func _sample_positions_around_line(line_points: Array, buffer_distance: float) -> Array:
@@ -347,7 +305,7 @@ func _get_category_weight(category: PathSpawnProfile.PathSpawnCategory) -> float
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return 0.6
+			return 0.0  # Disabled - logic removed
 		_:
 			return 1.0
 
@@ -367,7 +325,7 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return "AroundPaths"
+			return "AroundPaths"  # Enum preserved, logic removed
 		_:
 			return "Unknown"
 

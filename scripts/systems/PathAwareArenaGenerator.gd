@@ -23,6 +23,7 @@ const BASE_LAYER_NAME = "BaseGreen"        # Renamed from "Base" - base layer
 const GROUND_LAYER_NAME = "Green"          # Renamed from "Ground2" - first extension layer
 const GROUND2_LAYER_NAME = "DarkGreen"     # Second extension layer - deeper forest
 const TREES_LAYER_NAME = "Trees2"          # In YSort_Objects - needs depth sorting
+const SPAWNABLE_LAYER_NAME = "SpawnableAreas"  # Hidden layer for spawn validation
 
 # Visual debug nodes
 var debug_markers: Array[Node2D] = []

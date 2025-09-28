@@ -481,63 +481,11 @@ static func render_branch_points(generator: PathAwareArenaGenerator) -> void:
 	pass
 
 static func _create_around_path_markers(generator: PathAwareArenaGenerator) -> void:
-	"""Create green circle markers for AROUND_PATHS spawn category"""
-	Logger.debug("_create_around_path_markers called", "pathdebug")
-
-	# Create a temporary PathAwareMapConfig to calculate around path positions
-	var map_config = PathAwareMapConfig.new()
-
-	# Set up the path snapshot from current path data
-	if not generator.current_path_data.is_empty():
-		var path_snapshot = PathAwarePathSnapshot.new()
-		path_snapshot.main_path_points = generator.current_path_data.get("points", [])
-		path_snapshot.branch_data = generator.current_path_data.get("paths", [])
-
-		# Set arena bounds
-		var arena_bounds = generator.current_path_data.get("corridor_bounds", Rect2())
-		if arena_bounds != Rect2():
-			path_snapshot.total_arena_bounds = arena_bounds
-		else:
-			# Fallback bounds calculation
-			path_snapshot.total_arena_bounds = Rect2(-1000, -1000, 2000, 2000)
-
-		map_config.path_snapshot = path_snapshot
-		map_config.auto_optimize_spawns = true
-
-		var around_positions = map_config._get_around_path_positions()
-		Logger.info("Creating %d AROUND_PATHS markers" % around_positions.size(), "pathdebug")
-
-		for i in range(around_positions.size()):
-			var position = around_positions[i]
-			var marker = _create_around_path_marker(position, i)
-			generator.add_child(marker)
-			generator.debug_markers.append(marker)
-	else:
-		Logger.warn("No path data available for AROUND_PATHS markers", "pathdebug")
+	"""DISABLED: Create green circle markers for AROUND_PATHS spawn category"""
+	Logger.debug("_create_around_path_markers called - DISABLED (logic removed)", "pathdebug")
+	# Function disabled - AROUND_PATHS logic removed
 
 static func _create_around_path_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a cyan circle marker for AROUND_PATHS category"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "AroundPath_" + str(index)
-
-	# Create green circle (small for coverage visualization)
-	var circle = ColorRect.new()
-	circle.name = "AroundCircle"
-	circle.color = Color.GREEN
-	var size = 8  # Smaller than other markers due to quantity
-	circle.size = Vector2(size, size)
-	circle.position = Vector2(-size/2, -size/2)
-	marker.add_child(circle)
-
-	# Create black border for visibility
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.BLACK
-	var border_size = size + 2
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	return marker
+	"""DISABLED: Create a cyan circle marker for AROUND_PATHS category"""
+	# Function disabled - AROUND_PATHS logic removed
+	return Node2D.new()  # Return empty node for API compatibility

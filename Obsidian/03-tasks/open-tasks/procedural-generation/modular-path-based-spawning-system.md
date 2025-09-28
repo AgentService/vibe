@@ -519,4 +519,5 @@ data/content/
 | Date       | Phase    | Notes |
 |------------|----------|-------|
 | 2025-09-28 | Planning | Document aligned to PathAwareMapConfig approach, visualization-first milestone defined, awaiting Milestone 0 kickoff. |
+| 2025-01-09 | Milestone 1 - Visualization | PathSpawnCategory visualization implemented via editor plugin approach instead of standalone UI. All categories working (ALONG_MAIN_PATH, ALONG_BRANCHES, AT_ENDPOINTS, IN_CLEARINGS) except AROUND_PATHS. AROUND_PATHS logic removed due to performance issues - need spawnable layer approach for replacement. |
 
