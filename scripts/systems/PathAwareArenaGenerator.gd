@@ -109,21 +109,9 @@ func generate_path_aware_arena():
 	# path_extension_width parameter removed - no extension data needed
 	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed, {})
 
-	# Phase 3: Create visual debug markers
+	# Phase 3: Create visual debug markers using dedicated renderer
 	Logger.debug("Debug settings: show_debug_markers=%s, show_path_connections=%s" % [show_debug_markers, show_path_connections], "pathdebug")
-
-	if show_debug_markers:
-		Logger.debug("Creating debug markers...", "pathdebug")
-		_create_debug_markers()
-		_create_main_path_markers()
-	else:
-		Logger.debug("Debug markers disabled, skipping creation", "pathdebug")
-
-	if show_path_connections:
-		Logger.debug("Creating debug connections...", "pathdebug")
-		_create_debug_connections()
-	else:
-		Logger.debug("Debug connections disabled, skipping creation", "pathdebug")
+	PathAwareDebugRenderer.render_debug_visualization(self)
 
 	# Phase 4: Generate tiles (arena base, ground corridors, and trees)
 	_generate_arena_base()
@@ -190,105 +178,6 @@ func _validate_configurations() -> bool:
 
 	return is_valid
 
-func _create_debug_markers():
-	"""Create visual markers - just the START marker for now"""
-	var points: Array = current_path_data.get("points", [])
-	Logger.debug("_create_debug_markers called with %d points" % points.size(), "pathdebug")
-
-	# Only create the START marker (first point)
-	if points.size() > 0:
-		var point = points[0]
-		var marker = _create_start_point_marker(point.position)
-		Logger.debug("Created START marker at position %s" % point.position, "pathdebug")
-		add_child(marker)
-		debug_markers.append(marker)
-
-	Logger.debug("Finished creating START marker", "pathdebug")
-
-func _create_main_path_markers():
-	"""Create numbered markers for each point along the main path chain"""
-	var paths: Array = current_path_data.get("paths", [])
-	var connection_points: Array = current_path_data.get("points", [])
-	Logger.debug("Creating main path markers - paths: %d, connection points: %d, chain_length: %d" % [paths.size(), connection_points.size(), path_config.chain_length if path_config else 0], "pathdebug")
-
-	# Use connection points instead of path points - these represent the main chain
-	# Skip the first point (index 0) since we already have START marker there
-	for i in range(1, connection_points.size()):
-		var point = connection_points[i]
-		var marker = _create_main_path_point_marker(point.position, i)
-		add_child(marker)
-		debug_markers.append(marker)
-		Logger.debug("Created main path marker %d at position %s" % [i, point.position], "pathdebug")
-
-
-func _create_main_path_point_marker(position: Vector2, point_index: int) -> Node2D:
-	"""Create a blue numbered marker for main path points"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "MainPathPoint_" + str(point_index)
-
-	# Create blue circle using ColorRect
-	var circle = ColorRect.new()
-	circle.name = "PathCircle"
-	circle.color = Color.BLUE
-	var size = 24  # Smaller than START marker
-	circle.size = Vector2(size, size)
-	circle.position = Vector2(-size/2, -size/2)  # Center it
-	marker.add_child(circle)
-
-	# Create white border
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	var border_size = size + 3
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)  # Center it
-	marker.add_child(border)
-	marker.move_child(border, 0)  # Put border behind circle
-
-	# Create text label for point number
-	var label = Label.new()
-	label.name = "PathLabel"
-	label.text = str(point_index)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(-5, -8)  # Center text roughly
-	marker.add_child(label)
-
-	return marker
-
-## Create a special start point marker (larger and different color)
-func _create_start_point_marker(position: Vector2) -> Node2D:
-	"""Create a special visual marker for the start point using simple ColorRect approach"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "StartPointMarker"
-
-	# Create yellow circle using ColorRect (simple and visible)
-	var circle = ColorRect.new()
-	circle.name = "StartCircle"
-	circle.color = Color.YELLOW
-	circle.size = Vector2(40, 40)  # 40x40 pixel circle
-	circle.position = Vector2(-20, -20)  # Center it
-	marker.add_child(circle)
-
-	# Create border using another ColorRect
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	border.size = Vector2(44, 44)  # Slightly larger for border effect
-	border.position = Vector2(-22, -22)  # Center it
-	marker.add_child(border)
-	marker.move_child(border, 0)  # Put border behind circle
-
-	# Create text label
-	var label = Label.new()
-	label.name = "StartLabel"
-	label.text = "START"
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.position = Vector2(-15, -5)  # Center text roughly
-	marker.add_child(label)
-
-	return marker
 
 ## Helper method to find TileMapLayer nodes
 func _find_layer_node(layer_name: String) -> TileMapLayer:
@@ -379,30 +268,6 @@ func _generate_arena_base():
 		int(arena_base_radius)
 	], "pathgen")
 
-func _create_debug_connections():
-	"""Create visual lines showing path connections"""
-	var paths: Array = current_path_data.get("paths", [])
-
-	for path in paths:
-		if path.has_method("get_full_path"):
-			var line = _create_connection_line(path)
-			add_child(line)
-			debug_lines.append(line)
-
-func _create_connection_line(path) -> Line2D:
-	"""Create a visual line for a path connection"""
-	var line = Line2D.new()
-	line.name = "PathConnection"
-	line.width = line_width
-	line.default_color = Color.CYAN
-	line.antialiased = true
-
-	# Add points for the full path
-	var path_points = path.get_full_path()
-	for point in path_points:
-		line.add_point(point)
-
-	return line
 
 func _generate_ground_tiles():
 	"""Simplified ground tile generation - just clear layers, trees will handle their own ground tiles"""
