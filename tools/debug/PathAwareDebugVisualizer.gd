@@ -14,7 +14,7 @@ class_name PathAwareDebugVisualizer
 		queue_redraw()
 
 ## Which spawn categories to display
-@export var display_categories: Array[PathSpawnProfile.PathSpawnCategory] = [
+@export var display_categories: Array = [
 	PathSpawnProfile.PathSpawnCategory.ALONG_MAIN_PATH,
 	PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES,
 	PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS,
@@ -257,16 +257,28 @@ func _update_spawn_data_from_snapshot() -> void:
 		var positions = _get_spawn_positions_for_category(category)
 		cached_spawn_positions[category] = positions
 
-	Logger.debug("Updated spawn data from snapshot for %d categories" % display_categories.size(), "pathdebug")
+	Logger.debug("Updated spawn data from snapshot for %d categories" % display_categories.size(), "pathgen")
+
+## Convert PathPoint objects to Vector2 array
+func _convert_to_vector2_array(path_points: Array) -> Array:
+	var vector_points: Array = []
+	for point in path_points:
+		if point is Vector2:
+			vector_points.append(point)
+		elif point != null:
+			# Try to access position property directly
+			if point.get("position") != null:
+				vector_points.append(point.position)
+	return vector_points
 
 ## Get spawn positions for a category (mirrors PathAwareMapConfig logic)
-func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCategory) -> Array[Vector2]:
+func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCategory) -> Array:
 	if not snapshot:
 		return []
 
 	match category:
 		PathSpawnProfile.PathSpawnCategory.ALONG_MAIN_PATH:
-			return _sample_positions_along_path(snapshot.main_path_points, 64.0)
+			return _sample_positions_along_path(_convert_to_vector2_array(snapshot.main_path_points), 64.0)
 		PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES:
 			return _sample_positions_along_branches()
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
@@ -279,42 +291,46 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return []
 
 ## Sample positions along a path with specified spacing (mirrors PathAwareMapConfig)
-func _sample_positions_along_path(path_points: Array[Vector2], spacing: float) -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_along_path(path_points: Array, spacing: float) -> Array:
+	var positions: Array = []
 
 	if path_points.size() < 2:
 		return positions
 
 	for i in range(path_points.size() - 1):
-		var start = path_points[i]
-		var end = path_points[i + 1]
-		var segment_length = start.distance_to(end)
+		var start_vec: Vector2 = path_points[i] if path_points[i] is Vector2 else Vector2.ZERO
+		var end_vec: Vector2 = path_points[i + 1] if path_points[i + 1] is Vector2 else Vector2.ZERO
+
+		if start_vec == Vector2.ZERO or end_vec == Vector2.ZERO:
+			continue
+
+		var segment_length = start_vec.distance_to(end_vec)
 		var steps = int(segment_length / spacing)
 
 		for j in range(steps):
 			var t = float(j) / float(steps)
-			var position = start.lerp(end, t)
+			var position = start_vec.lerp(end_vec, t)
 			positions.append(position)
 
 	return positions
 
 ## Sample positions along branch paths
-func _sample_positions_along_branches() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_along_branches() -> Array:
+	var positions: Array = []
 
 	if not snapshot or snapshot.branch_data.is_empty():
 		return positions
 
 	for branch_info in snapshot.branch_data:
 		if branch_info.points.size() > 0:
-			var branch_positions = _sample_positions_along_path(branch_info.points, 64.0)
+			var branch_positions = _sample_positions_along_path(_convert_to_vector2_array(branch_info.points), 64.0)
 			positions.append_array(branch_positions)
 
 	return positions
 
 ## Get positions in clearing areas
-func _get_clearing_positions() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _get_clearing_positions() -> Array:
+	var positions: Array = []
 
 	if not snapshot or snapshot.clearings.is_empty():
 		return positions
@@ -334,8 +350,8 @@ func _get_clearing_positions() -> Array[Vector2]:
 	return positions
 
 ## Get positions around paths (buffer zones)
-func _get_around_path_positions() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _get_around_path_positions() -> Array:
+	var positions: Array = []
 
 	if not snapshot or snapshot.path_corridors.is_empty():
 		return positions
@@ -349,8 +365,8 @@ func _get_around_path_positions() -> Array[Vector2]:
 	return positions
 
 ## Sample positions around a line with specified buffer distance
-func _sample_positions_around_line(line_points: Array[Vector2], buffer_distance: float) -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_around_line(line_points: Array, buffer_distance: float) -> Array:
+	var positions: Array = []
 
 	if line_points.size() < 2:
 		return positions
@@ -383,7 +399,7 @@ func _on_arena_snapshot_ready(payload: EventBus.ArenaPathSnapshotReadyPayload_Ty
 		_update_spawn_data_from_snapshot()
 		queue_redraw()
 
-		Logger.debug("PathAwareDebugVisualizer updated from arena snapshot: %s" % payload.arena_id, "pathdebug")
+		Logger.debug("PathAwareDebugVisualizer updated from arena snapshot: %s" % payload.arena_id, "pathgen")
 
 ## Public API for runtime debugging
 func set_arena_data(new_arena_id: String, new_snapshot: PathAwarePathSnapshot) -> void:

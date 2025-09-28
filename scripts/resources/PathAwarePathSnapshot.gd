@@ -7,30 +7,30 @@ extends Resource
 
 @export_group("Core Path Geometry")
 ## Main path points in world coordinates (center spine of the arena)
-@export var main_path_points: Array[Vector2] = []
+@export var main_path_points: Array = []
 
 ## Branch information including connection points and path segments
-@export var branch_data: Array[PathBranchInfo] = []
+@export var branch_data: Array = []
 
 ## Connection points where paths meet (intersections and endpoints)
-@export var connection_points: Array[PathConnectionPoint] = []
+@export var connection_points: Array = []
 
 @export_group("Derived Spatial Data")
 ## Width-aware path segments with corridor boundaries
-@export var path_corridors: Array[PathCorridor] = []
+@export var path_corridors: Array = []
 
 ## Open areas between path boundaries suitable for spawning
-@export var clearings: Array[PathClearing] = []
+@export var clearings: Array = []
 
 ## Tree/obstacle boundary areas where spawning should be avoided
-@export var boundary_zones: Array[PathBoundaryZone] = []
+@export var boundary_zones: Array = []
 
 @export_group("Spawn-Relevant Metadata")
 ## Endpoint positions (branch terminals, good for boss spawns)
-@export var endpoint_positions: Array[Vector2] = []
+@export var endpoint_positions: Array = []
 
 ## Checkpoint positions along paths (for progression-based spawning)
-@export var checkpoint_positions: Array[Vector2] = []
+@export var checkpoint_positions: Array = []
 
 ## Total bounding rectangle of the entire arena
 @export var total_arena_bounds: Rect2
@@ -42,8 +42,8 @@ extends Resource
 @export var generation_timestamp: float
 
 ## Get all path points in a flat array (main + branches)
-func get_all_path_points() -> Array[Vector2]:
-	var all_points: Array[Vector2] = []
+func get_all_path_points() -> Array:
+	var all_points: Array = []
 	all_points.append_array(main_path_points)
 
 	for branch in branch_data:
@@ -79,8 +79,8 @@ func get_nearest_endpoint(position: Vector2) -> Vector2:
 	return nearest_endpoint
 
 ## Get clearings within a specified radius of a position
-func get_clearings_in_range(center: Vector2, radius: float) -> Array[PathClearing]:
-	var nearby_clearings: Array[PathClearing] = []
+func get_clearings_in_range(center: Vector2, radius: float) -> Array:
+	var nearby_clearings: Array = []
 
 	for clearing in clearings:
 		if clearing.center.distance_to(center) <= radius:
@@ -89,8 +89,8 @@ func get_clearings_in_range(center: Vector2, radius: float) -> Array[PathClearin
 	return nearby_clearings
 
 ## Get path corridors that intersect with a given area
-func get_corridors_in_area(area: Rect2) -> Array[PathCorridor]:
-	var intersecting_corridors: Array[PathCorridor] = []
+func get_corridors_in_area(area: Rect2) -> Array:
+	var intersecting_corridors: Array = []
 
 	for corridor in path_corridors:
 		if _corridor_intersects_rect(corridor, area):
@@ -130,7 +130,7 @@ func get_total_path_length() -> float:
 	return total_length
 
 ## Calculate the length of a path given its points
-func _calculate_path_length(points: Array[Vector2]) -> float:
+func _calculate_path_length(points: Array) -> float:
 	if points.size() < 2:
 		return 0.0
 
@@ -220,7 +220,7 @@ func is_valid() -> bool:
 ## Information about a branch path
 class PathBranchInfo extends Resource:
 	@export var branch_id: int = 0
-	@export var points: Array[Vector2] = []
+	@export var points: Array = []
 	@export var parent_connection_point: Vector2 = Vector2.ZERO
 	@export var branch_type: String = ""  # "main", "secondary", etc.
 	@export var length: float = 0.0
@@ -239,7 +239,7 @@ class PathBranchInfo extends Resource:
 ## Connection point where paths meet
 class PathConnectionPoint extends Resource:
 	@export var position: Vector2 = Vector2.ZERO
-	@export var connected_branch_ids: Array[int] = []
+	@export var connected_branch_ids: Array = []
 	@export var connection_type: String = ""  # "intersection", "endpoint", "split"
 
 	func _init(pos: Vector2 = Vector2.ZERO):
@@ -250,7 +250,7 @@ class PathConnectionPoint extends Resource:
 
 ## Width-aware path corridor
 class PathCorridor extends Resource:
-	@export var center_line: Array[Vector2] = []
+	@export var center_line: Array = []
 	@export var width: float = 64.0
 	@export var bounds: Rect2 = Rect2()
 	@export var corridor_type: String = ""  # "main", "branch", "connector"

@@ -10,7 +10,7 @@ extends Resource
 @export var system_name: String = ""
 
 ## Categories of path locations this system can spawn in
-@export var spawn_categories: Array[PathSpawnCategory] = []
+@export var spawn_categories: Array = []
 
 ## Priority weight for this system when multiple systems compete for spawn locations
 @export_range(0.1, 5.0, 0.1) var priority_weight: float = 1.0
@@ -146,12 +146,11 @@ func get_proximity_preference_name() -> String:
 static func create_enemy_profile() -> PathSpawnProfile:
 	var profile = PathSpawnProfile.new()
 	profile.system_name = "enemies"
-	profile.spawn_categories = [
-		PathSpawnCategory.ALONG_MAIN_PATH,
-		PathSpawnCategory.ALONG_BRANCHES,
-		PathSpawnCategory.IN_CLEARINGS,
-		PathSpawnCategory.AROUND_PATHS
-	]
+	profile.spawn_categories.clear()
+	profile.spawn_categories.append(PathSpawnCategory.ALONG_MAIN_PATH)
+	profile.spawn_categories.append(PathSpawnCategory.ALONG_BRANCHES)
+	profile.spawn_categories.append(PathSpawnCategory.IN_CLEARINGS)
+	profile.spawn_categories.append(PathSpawnCategory.AROUND_PATHS)
 	profile.priority_weight = 1.0
 	profile.proximity_preference = ProximityPreference.BALANCED
 	profile.max_spawn_range = 800.0
@@ -167,10 +166,9 @@ static func create_enemy_profile() -> PathSpawnProfile:
 static func create_breach_profile() -> PathSpawnProfile:
 	var profile = PathSpawnProfile.new()
 	profile.system_name = "breach"
-	profile.spawn_categories = [
-		PathSpawnCategory.AT_ENDPOINTS,
-		PathSpawnCategory.IN_CLEARINGS
-	]
+	profile.spawn_categories.clear()
+	profile.spawn_categories.append(PathSpawnCategory.AT_ENDPOINTS)
+	profile.spawn_categories.append(PathSpawnCategory.IN_CLEARINGS)
 	profile.priority_weight = 2.0  # Higher priority for special events
 	profile.proximity_preference = ProximityPreference.FAR_FROM_PLAYER
 	profile.max_spawn_range = 1200.0
@@ -190,11 +188,10 @@ static func create_breach_profile() -> PathSpawnProfile:
 static func create_powerup_profile() -> PathSpawnProfile:
 	var profile = PathSpawnProfile.new()
 	profile.system_name = "powerups"
-	profile.spawn_categories = [
-		PathSpawnCategory.ALONG_MAIN_PATH,
-		PathSpawnCategory.AT_ENDPOINTS,
-		PathSpawnCategory.IN_CLEARINGS
-	]
+	profile.spawn_categories.clear()
+	profile.spawn_categories.append(PathSpawnCategory.ALONG_MAIN_PATH)
+	profile.spawn_categories.append(PathSpawnCategory.AT_ENDPOINTS)
+	profile.spawn_categories.append(PathSpawnCategory.IN_CLEARINGS)
 	profile.priority_weight = 0.8
 	profile.proximity_preference = ProximityPreference.NEAR_PLAYER
 	profile.max_spawn_range = 600.0
