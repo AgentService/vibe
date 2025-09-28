@@ -21,6 +21,8 @@ static func render_debug_visualization(generator: PathAwareArenaGenerator) -> vo
 		_create_start_marker(generator)
 		_create_spawn_position_preview(generator)
 		_create_checkpoint_markers(generator)
+		_create_branch_spawn_markers(generator)
+		_create_branch_endpoint_markers(generator)
 
 	if generator.show_path_connections:
 		_create_path_connection_lines(generator)
@@ -302,6 +304,126 @@ static func _create_checkpoint_marker(position: Vector2, index: int) -> Node2D:
 	label.text = "C" + str(index)
 	label.add_theme_color_override("font_color", Color.WHITE)
 	label.position = Vector2(-8, -10)
+	marker.add_child(label)
+
+	return marker
+
+static func _create_branch_spawn_markers(generator: PathAwareArenaGenerator) -> void:
+	"""Create cyan markers for ALONG_BRANCHES spawn category"""
+	# Create a temporary PathAwareMapConfig to get the branch positions
+	var test_config = PathAwareMapConfig.new()
+	var snapshot = generator.get_path_snapshot()
+
+	if not snapshot:
+		Logger.warn("Cannot create branch markers - no path snapshot available", "pathdebug")
+		return
+
+	test_config.path_snapshot = snapshot
+
+	# Get the branch positions that the spawn system would use
+	var branch_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES)
+
+	Logger.debug("Creating branch spawn markers: %d positions" % branch_positions.size(), "pathdebug")
+
+	for i in range(branch_positions.size()):
+		var position = branch_positions[i]
+		var marker = _create_branch_spawn_marker(position, i)
+		generator.add_child(marker)
+		generator.debug_markers.append(marker)
+		Logger.debug("Created cyan branch spawn marker %d at %s" % [i, position], "pathdebug")
+
+static func _create_branch_spawn_marker(position: Vector2, index: int) -> Node2D:
+	"""Create a cyan square marker for ALONG_BRANCHES category"""
+	var marker = Node2D.new()
+	marker.position = position
+	marker.name = "BranchSpawn_" + str(index)
+
+	# Create cyan square (square shape to distinguish from circles/diamonds)
+	var square = ColorRect.new()
+	square.name = "BranchSquare"
+	square.color = Color.CYAN
+	var size = 14
+	square.size = Vector2(size, size)
+	square.position = Vector2(-size/2, -size/2)
+	marker.add_child(square)
+
+	# Create black border for better contrast
+	var border = ColorRect.new()
+	border.name = "Border"
+	border.color = Color.BLACK
+	var border_size = size + 2
+	border.size = Vector2(border_size, border_size)
+	border.position = Vector2(-border_size/2, -border_size/2)
+	marker.add_child(border)
+	marker.move_child(border, 0)
+
+	# Create text label (B for Branch)
+	var label = Label.new()
+	label.name = "BranchLabel"
+	label.text = "B" + str(index)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.position = Vector2(-8, -8)
+	marker.add_child(label)
+
+	return marker
+
+static func _create_branch_endpoint_markers(generator: PathAwareArenaGenerator) -> void:
+	"""Create red triangle markers for AT_BRANCH_ENDPOINTS spawn category"""
+	# Create a temporary PathAwareMapConfig to get the branch endpoint positions
+	var test_config = PathAwareMapConfig.new()
+	var snapshot = generator.get_path_snapshot()
+
+	if not snapshot:
+		Logger.warn("Cannot create branch endpoint markers - no path snapshot available", "pathdebug")
+		return
+
+	test_config.path_snapshot = snapshot
+
+	# Get the branch endpoint positions that the spawn system would use
+	var branch_endpoint_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS)
+
+	Logger.debug("Creating branch endpoint markers: %d positions" % branch_endpoint_positions.size(), "pathdebug")
+
+	for i in range(branch_endpoint_positions.size()):
+		var position = branch_endpoint_positions[i]
+		var marker = _create_branch_endpoint_marker(position, i)
+		generator.add_child(marker)
+		generator.debug_markers.append(marker)
+		Logger.debug("Created red branch endpoint marker %d at %s" % [i, position], "pathdebug")
+
+static func _create_branch_endpoint_marker(position: Vector2, index: int) -> Node2D:
+	"""Create a red triangular marker for AT_BRANCH_ENDPOINTS category"""
+	var marker = Node2D.new()
+	marker.position = position
+	marker.name = "BranchEndpoint_" + str(index)
+
+	# Create red triangle using rotated ColorRect (triangle pointing up)
+	var triangle = ColorRect.new()
+	triangle.name = "BranchTriangle"
+	triangle.color = Color.RED
+	var size = 16
+	triangle.size = Vector2(size, size)
+	triangle.position = Vector2(-size/2, -size/2)
+	triangle.rotation = deg_to_rad(45)  # Rotate to make it triangular appearance
+	marker.add_child(triangle)
+
+	# Create white border for better contrast
+	var border = ColorRect.new()
+	border.name = "Border"
+	border.color = Color.WHITE
+	var border_size = size + 3
+	border.size = Vector2(border_size, border_size)
+	border.position = Vector2(-border_size/2, -border_size/2)
+	border.rotation = deg_to_rad(45)
+	marker.add_child(border)
+	marker.move_child(border, 0)
+
+	# Create text label (E for Endpoint)
+	var label = Label.new()
+	label.name = "EndpointLabel"
+	label.text = "E" + str(index)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.position = Vector2(-8, -8)
 	marker.add_child(label)
 
 	return marker

@@ -39,6 +39,7 @@ enum PathSpawnCategory {
 	ALONG_MAIN_PATH,    ## Along the primary path spine (interpolated 64px intervals)
 	ALONG_BRANCHES,     ## Along branch paths extending from main path
 	AT_ENDPOINTS,       ## At the ends of paths (good for bosses, special events)
+	AT_BRANCH_ENDPOINTS, ## At the ends of branch paths (specialized branch termination points)
 	MAIN_CHECKPOINTS,   ## At main path control points/waypoints (strategic spawn locations)
 	IN_CLEARINGS,       ## In open areas between path boundaries
 	AROUND_PATHS        ## In buffer zones around paths but not directly on them
@@ -70,6 +71,8 @@ func get_category_weight(category: PathSpawnCategory) -> float:
 			return 0.8
 		PathSpawnCategory.AT_ENDPOINTS:
 			return 1.5
+		PathSpawnCategory.AT_BRANCH_ENDPOINTS:
+			return 1.3  # Slightly lower than main endpoints but higher than regular spawns
 		PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
 		PathSpawnCategory.AROUND_PATHS:
@@ -120,6 +123,8 @@ func get_category_name(category: PathSpawnCategory) -> String:
 			return "Branches"
 		PathSpawnCategory.AT_ENDPOINTS:
 			return "Endpoints"
+		PathSpawnCategory.AT_BRANCH_ENDPOINTS:
+			return "BranchEndpoints"
 		PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
 		PathSpawnCategory.AROUND_PATHS:

@@ -56,6 +56,8 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return _sample_positions_along_branches()
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return path_snapshot.endpoint_positions.duplicate()
+		PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS:
+			return _get_branch_endpoint_positions()
 		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
 			return _get_main_checkpoint_positions()
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
@@ -195,6 +197,24 @@ func _get_main_checkpoint_positions() -> Array:
 
 	return positions
 
+## Get branch endpoint positions (terminus points of branch paths)
+func _get_branch_endpoint_positions() -> Array:
+	var positions: Array = []
+
+	if not path_snapshot or path_snapshot.branch_data.is_empty():
+		return positions
+
+	for branch_info in path_snapshot.branch_data:
+		if branch_info.points.size() > 0:
+			# Get the last point of each branch as the endpoint
+			var last_point = branch_info.points[-1]
+			if last_point is Vector2:
+				positions.append(last_point)
+			elif last_point != null and last_point.get("position") != null:
+				positions.append(last_point.position)
+
+	return positions
+
 ## Create a spawn zone for a specific category
 func _create_spawn_zone_for_category(category: PathSpawnProfile.PathSpawnCategory, positions: Array) -> SpawnZone:
 	var zone = SpawnZone.new()
@@ -219,6 +239,8 @@ func _get_category_weight(category: PathSpawnProfile.PathSpawnCategory) -> float
 			return 0.8
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return 1.5  # Higher weight for endpoints (good for bosses)
+		PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS:
+			return 1.3  # Specialized branch termination points
 		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
 			return 2.0  # Highest weight for strategic checkpoint spawning
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
@@ -237,6 +259,8 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 			return "Branches"
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return "Endpoints"
+		PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS:
+			return "BranchEndpoints"
 		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
 			return "MainCheckpoints"
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
