@@ -10,7 +10,7 @@ extends MapConfig
 @export var path_snapshot: PathAwarePathSnapshot
 
 ## Configuration profiles for different spawn system behaviors
-@export var spawn_profiles: Array[PathSpawnProfile] = []
+@export var spawn_profiles: Array = []
 
 ## Seed used for arena generation (for reproducibility)
 @export var generation_seed: int = 0
@@ -19,7 +19,7 @@ extends MapConfig
 @export var auto_optimize_spawns: bool = true
 
 ## Get effective spawn zones - either from path analysis or manual zones
-func get_effective_spawn_zones() -> Array[SpawnZone]:
+func get_effective_spawn_zones() -> Array:
 	if path_snapshot and auto_optimize_spawns:
 		return _generate_zones_from_paths()
 	else:
@@ -27,12 +27,12 @@ func get_effective_spawn_zones() -> Array[SpawnZone]:
 		return _convert_legacy_spawn_zones()
 
 ## Generate spawn zones from path data
-func _generate_zones_from_paths() -> Array[SpawnZone]:
+func _generate_zones_from_paths() -> Array:
 	if not path_snapshot:
 		Logger.warn("PathAwareMapConfig: No path snapshot available for zone generation", "pathspawn")
 		return []
 
-	var zones: Array[SpawnZone] = []
+	var zones: Array = []
 
 	# Generate spawn zones for each category
 	for category in PathSpawnProfile.PathSpawnCategory.values():
@@ -45,7 +45,7 @@ func _generate_zones_from_paths() -> Array[SpawnZone]:
 	return zones
 
 ## Get spawn positions for a specific category from path snapshot
-func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCategory) -> Array[Vector2]:
+func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCategory) -> Array:
 	if not path_snapshot:
 		return []
 
@@ -64,15 +64,18 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return []
 
 ## Sample positions along a path with specified spacing
-func _sample_positions_along_path(path_points: Array[Vector2], spacing: float) -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_along_path(path_points: Array, spacing: float) -> Array:
+	var positions: Array = []
 
 	if path_points.size() < 2:
 		return positions
 
-	for i in range(path_points.size() - 1):
-		var start = path_points[i]
-		var end = path_points[i + 1]
+	# Convert PathPoints to Vector2 if needed
+	var vector_points = _convert_to_vector2_array(path_points)
+
+	for i in range(vector_points.size() - 1):
+		var start: Vector2 = vector_points[i]
+		var end: Vector2 = vector_points[i + 1]
 		var segment_length = start.distance_to(end)
 		var steps = int(segment_length / spacing)
 
@@ -83,9 +86,19 @@ func _sample_positions_along_path(path_points: Array[Vector2], spacing: float) -
 
 	return positions
 
+## Convert PathPoint objects to Vector2 array
+func _convert_to_vector2_array(path_points: Array) -> Array:
+	var vector_points: Array = []
+	for point in path_points:
+		if point is Vector2:
+			vector_points.append(point)
+		elif point != null and point.get("position") != null:
+			vector_points.append(point.position)
+	return vector_points
+
 ## Sample positions along branch paths
-func _sample_positions_along_branches() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_along_branches() -> Array:
+	var positions: Array = []
 
 	if not path_snapshot or path_snapshot.branch_data.is_empty():
 		return positions
@@ -98,8 +111,8 @@ func _sample_positions_along_branches() -> Array[Vector2]:
 	return positions
 
 ## Get positions in clearing areas
-func _get_clearing_positions() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _get_clearing_positions() -> Array:
+	var positions: Array = []
 
 	if not path_snapshot or path_snapshot.clearings.is_empty():
 		return positions
@@ -119,15 +132,15 @@ func _get_clearing_positions() -> Array[Vector2]:
 	return positions
 
 ## Get positions around paths (buffer zones)
-func _get_around_path_positions() -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _get_around_path_positions() -> Array:
+	var positions: Array = []
 
 	if not path_snapshot or path_snapshot.path_corridors.is_empty():
 		return positions
 
 	for corridor in path_snapshot.path_corridors:
 		if corridor.center_line.size() > 0:
-			var center_line: Array[Vector2] = corridor.center_line
+			var center_line: Array = corridor.center_line
 			var buffer_distance = corridor.width * 0.75  # Position outside corridor but not too far
 
 			positions.append_array(_sample_positions_around_line(center_line, buffer_distance))
@@ -135,15 +148,18 @@ func _get_around_path_positions() -> Array[Vector2]:
 	return positions
 
 ## Sample positions around a line with specified buffer distance
-func _sample_positions_around_line(line_points: Array[Vector2], buffer_distance: float) -> Array[Vector2]:
-	var positions: Array[Vector2] = []
+func _sample_positions_around_line(line_points: Array, buffer_distance: float) -> Array:
+	var positions: Array = []
 
 	if line_points.size() < 2:
 		return positions
 
-	for i in range(line_points.size() - 1):
-		var start = line_points[i]
-		var end = line_points[i + 1]
+	# Convert PathPoints to Vector2 if needed
+	var vector_points = _convert_to_vector2_array(line_points)
+
+	for i in range(vector_points.size() - 1):
+		var start: Vector2 = vector_points[i]
+		var end: Vector2 = vector_points[i + 1]
 		var direction = (end - start).normalized()
 		var perpendicular = Vector2(-direction.y, direction.x)
 
@@ -162,7 +178,7 @@ func _sample_positions_around_line(line_points: Array[Vector2], buffer_distance:
 	return positions
 
 ## Create a spawn zone for a specific category
-func _create_spawn_zone_for_category(category: PathSpawnProfile.PathSpawnCategory, positions: Array[Vector2]) -> SpawnZone:
+func _create_spawn_zone_for_category(category: PathSpawnProfile.PathSpawnCategory, positions: Array) -> SpawnZone:
 	var zone = SpawnZone.new()
 	zone.category = category
 	zone.positions = positions
@@ -209,8 +225,8 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 			return "Unknown"
 
 ## Convert legacy spawn zone dictionaries to SpawnZone objects for compatibility
-func _convert_legacy_spawn_zones() -> Array[SpawnZone]:
-	var zones: Array[SpawnZone] = []
+func _convert_legacy_spawn_zones() -> Array:
+	var zones: Array = []
 
 	for zone_dict in spawn_zones:
 		var zone = SpawnZone.new()
@@ -269,5 +285,5 @@ func is_valid() -> bool:
 class SpawnZone:
 	var name: String
 	var category: PathSpawnProfile.PathSpawnCategory
-	var positions: Array[Vector2] = []
+	var positions: Array = []
 	var weight: float = 1.0

@@ -7,6 +7,25 @@ extends "res://scenes/arena/Arena.gd"
 @onready var arena_generator: PathAwareArenaGenerator = $PathAwareArenaGenerator
 @onready var player_spawn: Marker2D = $PlayerSpawnPoint
 
+@export_group("Debug Visualization")
+## Show debug markers for connection points and path visualization
+@export var show_path_debug: bool = true:
+	set(value):
+		show_path_debug = value
+		_update_debug_visualization()
+
+## Show path connection lines between points
+@export var show_path_connections: bool = true:
+	set(value):
+		show_path_connections = value
+		_update_debug_visualization()
+
+## Show simple start point marker for testing
+@export var show_start_point: bool = true:
+	set(value):
+		show_start_point = value
+		queue_redraw()
+
 var is_randomize_on_entry: bool = true
 
 func _ready() -> void:
@@ -18,11 +37,15 @@ func _ready() -> void:
 	# Check if we have context from StateManager for randomization
 	_check_for_randomization_context()
 
+	# Apply initial debug visualization settings BEFORE generation
+	_update_debug_visualization()
+
 	# Generate arena based on context
 	_generate_arena()
 
 	# Setup player if needed
 	_setup_player_spawn()
+
 
 func _check_for_randomization_context() -> void:
 	"""Check StateManager context for randomization settings."""
@@ -69,6 +92,9 @@ func _generate_arena() -> void:
 
 	# Emit ready signal for service registration
 	_emit_path_snapshot_ready_signal()
+
+	# Trigger redraw for debug visualizations
+	queue_redraw()
 
 func _setup_player_spawn() -> void:
 	"""Setup player spawn point for arena entry."""
@@ -180,3 +206,54 @@ func get_arena_id() -> String:
 
 	# Use scene instance ID as unique identifier
 	return "pathaware_forest_%d" % get_instance_id()
+
+## Update debug visualization settings in arena generator
+func _update_debug_visualization() -> void:
+	"""Update PathAwareArenaGenerator debug settings when properties change."""
+
+	if not arena_generator:
+		return
+
+	# Update arena generator debug settings
+	arena_generator.show_debug_markers = show_path_debug
+	arena_generator.show_path_connections = show_path_connections
+
+	Logger.debug("Updated debug visualization: markers=%s, connections=%s" % [show_path_debug, show_path_connections], "pathdebug")
+
+## Public interface for runtime debug toggling
+func toggle_path_debug() -> void:
+	"""Toggle path debug markers on/off."""
+	show_path_debug = not show_path_debug
+
+func toggle_path_connections() -> void:
+	"""Toggle path connection lines on/off."""
+	show_path_connections = not show_path_connections
+
+## Draw debug visualization overlays
+func _draw() -> void:
+	"""Draw simple start point for testing."""
+
+	if not show_start_point:
+		return
+
+	if not map_config or not map_config.path_snapshot:
+		return
+
+	var snapshot = map_config.path_snapshot
+
+	# Just draw the first main path point as a big red circle
+	if snapshot.main_path_points.size() > 0:
+		var start_point = snapshot.main_path_points[0]
+
+		# Convert PathPoint to Vector2 if needed
+		var start_pos: Vector2
+		if start_point is Vector2:
+			start_pos = start_point
+		elif start_point != null and start_point.get("position") != null:
+			start_pos = start_point.position
+		else:
+			return  # Invalid point
+
+		# Draw big red circle for start point
+		draw_circle(start_pos, 20.0, Color.RED)
+		draw_arc(start_pos, 20.0, 0, TAU, 32, Color.WHITE, 3.0)
