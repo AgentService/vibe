@@ -203,20 +203,39 @@ func _get_main_checkpoint_positions() -> Array:
 
 	return positions
 
-## Get branch endpoint positions (reusing checkpoint logic for strategic endpoints)
+## Get branch endpoint positions (actual branch terminus points from checkpoint analysis)
 func _get_branch_endpoint_positions() -> Array:
 	var positions: Array = []
 
-	if not path_snapshot or path_snapshot.main_path_points.is_empty():
+	if not path_snapshot or path_snapshot.main_path_points.is_empty() or path_snapshot.branch_data.is_empty():
 		return positions
 
-	# Reuse the checkpoint positions as branch endpoints since they represent strategic waypoints
-	# This provides immediate working branch endpoint visualization using proven logic
-	var vector_points = _convert_to_vector2_array(path_snapshot.main_path_points)
+	# Find all actual branch endpoints by tracing from checkpoint positions
+	for i in range(path_snapshot.main_path_points.size()):
+		var main_point = path_snapshot.main_path_points[i]
+		var main_pos = main_point if main_point is Vector2 else main_point.position
 
-	# Skip index 0 (START point) - branch endpoints start from index 1
-	for i in range(1, vector_points.size()):
-		positions.append(vector_points[i])
+		# Find branches that originate from this checkpoint
+		for branch_info in path_snapshot.branch_data:
+			if branch_info.points.size() > 0:
+				var branch_start = branch_info.points[0]
+				var branch_start_pos = branch_start if branch_start is Vector2 else branch_start.position
+				var distance = main_pos.distance_to(branch_start_pos)
+
+				# If this branch starts near this checkpoint, collect its endpoint
+				if distance < 50.0:  # Close enough to be connected
+					var branch_end = branch_info.points[-1]
+					var branch_end_pos = branch_end if branch_end is Vector2 else branch_end.position
+
+					# Only add unique endpoints (avoid duplicates)
+					var is_duplicate = false
+					for existing_pos in positions:
+						if existing_pos.distance_to(branch_end_pos) < 10.0:
+							is_duplicate = true
+							break
+
+					if not is_duplicate:
+						positions.append(branch_end_pos)
 
 	return positions
 
