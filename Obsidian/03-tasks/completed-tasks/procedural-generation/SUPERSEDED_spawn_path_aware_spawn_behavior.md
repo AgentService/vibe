@@ -1,11 +1,22 @@
 # Path-Aware Enemy Spawn Behavior
 
 **Created:** 2025-01-21
-**Status:** 🟡 Planning
-**Priority:** High
-**Estimated Effort:** 1-2 Days
+**Status:** 🔄 SUPERSEDED - See Modular Path-Based Spawning System
+**Priority:** Replaced by comprehensive plan
+**Estimated Effort:** See modular-path-based-spawning-system.md
 
-## 📋 Task Description
+## 🔄 **SUPERSEDED NOTICE**
+
+**This task has been superseded by a more comprehensive approach:** [modular-path-based-spawning-system.md](modular-path-based-spawning-system.md)
+
+The new plan provides:
+- ✅ **All original requirements** covered in Milestones 3-4
+- ✅ **Enhanced architecture** with PathAwareMapConfig approach
+- ✅ **Visualization-first** development for better validation
+- ✅ **Comprehensive system** supporting multiple spawn types
+- ✅ **Future extensibility** for game development
+
+## 📋 Original Task Description (For Reference)
 
 Implement a spawn behavior system that uses the procedurally generated main path and branches to determine valid enemy spawn locations. Currently, enemies can spawn anywhere within the spawn radius, including in boundary trees or outside the arena. This task will create path-aware spawning that ensures enemies only spawn in accessible, valid arena areas.
 

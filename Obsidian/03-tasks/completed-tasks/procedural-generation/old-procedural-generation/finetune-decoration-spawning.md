@@ -1,9 +1,18 @@
 # Finetune Decoration Spawning & Fix Generation Time
 
-**Status**: In Progress
-**Priority**: High
+**Status**: 🔄 NEEDS EVALUATION - Old System vs PathAware
+**Priority**: TBD - Depends on system relevance
 **Created**: 2025-01-28
-**Category**: Procedural Generation
+**Category**: Procedural Generation (Legacy System)
+
+## ⚠️ **EVALUATION NEEDED**
+
+This task applies to the legacy `ProceduralArenaGenerator.gd` system, but the primary focus has shifted to `PathAware_Forest` using `PathAwareArenaGenerator.gd`.
+
+**Questions to resolve:**
+- Is `ProceduralArenaGenerator.gd` still used in the current workflow?
+- Should decoration optimization be applied to PathAware system instead?
+- Should this task be archived with other legacy procedural generation tasks?
 
 ## 🎯 Objective
 Optimize decoration spawning system to reduce generation time while maintaining natural stone formations and cross-layer attraction.
