@@ -108,6 +108,10 @@ func _sample_positions_along_branches() -> Array:
 		return positions
 
 	for branch_info in path_snapshot.branch_data:
+		# Skip main path - only include actual branches
+		if branch_info.branch_type == "main":
+			continue
+
 		if branch_info.points.size() > 0:
 			var branch_positions = _sample_positions_along_path(branch_info.points, 64.0)
 			positions.append_array(branch_positions)
@@ -205,6 +209,10 @@ func _get_branch_endpoint_positions() -> Array:
 		return positions
 
 	for branch_info in path_snapshot.branch_data:
+		# Skip main path - only include actual branch endpoints
+		if branch_info.branch_type == "main":
+			continue
+
 		if branch_info.points.size() > 0:
 			# Get the last point of each branch as the endpoint
 			var last_point = branch_info.points[-1]
