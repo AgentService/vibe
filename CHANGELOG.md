@@ -5,6 +5,15 @@
 ## [Current Week - In Progress]
 
 ### Systems
+- **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
+  - **Export Range Fix**: Expanded placement_randomness (0.0-100.0) and max_random_offset (0-200px) ranges to allow meaningful variation
+  - **Post-Snap Jitter System**: Implemented `_jitter_position()` to apply randomization AFTER tile grid snapping, preserving visual effects
+  - **Plugin UI Integration**: Enhanced Path-Aware Generator plugin (path_generator_dock.gd) with working randomization controls
+  - **Algorithm Fix**: Replaced all hardcoded `random_offset = Vector2.ZERO` with proper snap-then-jitter pattern across 6 generation methods
+  - **Visual Results**: Trees now display natural, organic placement instead of rigid grid alignment when using randomization controls
+  - **Error Resolution**: Fixed PathConfiguration and TreeBoundaryConfiguration class loading errors via explicit script references in .tres files
+  - **Code Cleanup**: Removed unused randomization code from forest_generator_editor plugin to avoid confusion
+  - **Performance**: Maintained zero-allocation optimization while enabling visible randomization effects
 - **Strategic Architecture Decision**: Created comprehensive analysis for procedural generation scope management
   - **Decision**: Keep existing procedural system dormant rather than removing it
   - **Rationale**: Focus on core gameplay polish while preserving future flexibility for decorative/event variations
