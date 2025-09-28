@@ -4,12 +4,6 @@ extends "res://scenes/arena/Arena.gd"
 ## Underworld-themed arena with volcanic/demonic atmosphere
 ## Extends BaseArena with underworld-specific features and configuration
 
-@export var map_config: MapConfig: ## Underworld arena configuration
-	set(value):
-		map_config = value
-		if is_node_ready():
-			_apply_map_config()
-
 @export_group("Underworld Atmosphere")
 ## Enable ember/fire particle effects
 @export var enable_fire_particles: bool = true
@@ -29,9 +23,8 @@ extends "res://scenes/arena/Arena.gd"
 @onready var fire_particles: GPUParticles2D = get_node_or_null("FireParticles")
 @onready var heat_distortion: Node2D = get_node_or_null("HeatDistortion")
 
-# Spawn zone management
+# Spawn zone management - now handled by base Arena class
 @onready var spawn_zones_container: Node2D = $SpawnZones
-var _spawn_zone_areas: Array[Area2D] = []
 
 func _ready() -> void:
 	Logger.info("=== UNDERWORLDARENA._READY() STARTING ===", "debug")
@@ -49,8 +42,7 @@ func _ready() -> void:
 	# Setup underworld-specific atmosphere after Arena systems are ready
 	_setup_underworld_atmosphere()
 
-	# Initialize spawn zone cache
-	_initialize_spawn_zones()
+	# Spawn zone cache now initialized by base Arena class
 
 	Logger.info("UnderworldArena initialization complete: %s" % arena_name, "arena")
 
@@ -65,27 +57,23 @@ func _load_default_config() -> void:
 			Logger.warn("Failed to load underworld config from %s" % config_path, "arena")
 
 func _apply_map_config() -> void:
-	"""Apply map configuration to arena properties"""
+	"""Apply underworld-specific map configuration after parent setup"""
+	# Call parent's map config application first
+	super._apply_map_config()
+
 	if not map_config or not map_config.is_valid():
-		Logger.warn("Invalid map config for UnderworldArena", "arena")
 		return
-	
-	# Apply basic arena properties
-	arena_id = map_config.map_id
-	arena_name = map_config.display_name
-	arena_bounds = map_config.arena_bounds_radius
-	spawn_radius = map_config.spawn_radius
-	
+
 	# Apply underworld-specific properties from custom_properties
 	if map_config.custom_properties.has("lava_damage_per_second"):
 		lava_damage_per_second = map_config.custom_properties.lava_damage_per_second
-	
+
 	# Apply ambient lighting
 	if ambient_light:
 		ambient_light.color = map_config.ambient_light_color
 		# Note: energy property doesn't exist on CanvasModulate, handled by lighting nodes
-	
-	Logger.debug("Applied map config: %s" % map_config.display_name, "arena")
+
+	Logger.debug("Applied underworld-specific map config: %s" % map_config.display_name, "arena")
 
 func _setup_underworld_atmosphere() -> void:
 	"""Configure underworld-specific visual atmosphere"""
@@ -149,13 +137,7 @@ func get_theme_tags() -> Array[StringName]:
 		return map_config.theme_tags
 	return [&"underworld"]
 
-## Initialize spawn zone cache for efficient access
-func _initialize_spawn_zones() -> void:
-	if spawn_zones_container:
-		for child in spawn_zones_container.get_children():
-			if child is Area2D:
-				_spawn_zone_areas.append(child)
-		Logger.debug("Initialized %d spawn zones" % _spawn_zone_areas.size(), "arena")
+# Spawn zone initialization moved to base Arena class
 
 ## Override spawn position to use proximity-based zone selection from scene Area2D nodes
 func get_random_spawn_position() -> Vector2:

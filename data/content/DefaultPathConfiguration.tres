@@ -1,6 +1,9 @@
-[gd_resource type="PathConfiguration" format=3]
+[gd_resource type="Resource" script_class="PathConfiguration" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/PathConfiguration.gd" id="1_PathConfigScript"]
 
 [resource]
+script = ExtResource("1_PathConfigScript")
 enable_path_generation = true
 connection_points = 3
 chain_length = 10
