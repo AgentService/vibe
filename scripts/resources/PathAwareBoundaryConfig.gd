@@ -28,15 +28,6 @@ extends Resource
 ## Smoothing factor for path curves (0=angular, 1=smooth)
 @export_range(0.0, 1.0, 0.1) var path_smoothing: float = 0.4
 
-@export_group("Tree Configuration")
-## Tree tile variants to use for boundary trees
-@export var tree_tile_variants: Array[Vector2i] = [Vector2i(0, 28), Vector2i(9, 28)]
-
-## Tree spacing along boundary paths (pixels)
-@export_range(16, 64, 4) var tree_spacing: float = 32.0
-
-## Tree density along boundaries (0.8+ recommended)
-@export_range(0.5, 1.0, 0.05) var tree_density: float = 0.9
 
 @export_group("Ground Coverage")
 ## Ground extension beyond boundary trees (tiles)
@@ -217,40 +208,39 @@ func _add_waypoints_to_paths(paths: Array[BoundaryPath], rng: RandomNumberGenera
 
 				path.add_waypoint(waypoint)
 
-## Generate boundary tree positions along paths
+## Generate boundary marker points along paths (for visualization/debug)
 func _generate_boundary_points_along_paths(paths: Array[BoundaryPath], rng: RandomNumberGenerator) -> Array[Vector2]:
 	var boundary_points: Array[Vector2] = []
 
 	for path in paths:
 		var path_points = path.get_full_path()
 
-		# Generate boundary points along both sides of the path
+		# Generate boundary marker points along both sides of the path
 		for i in range(path_points.size() - 1):
 			var segment_start = path_points[i]
 			var segment_end = path_points[i + 1]
 			var segment_length = segment_start.distance_to(segment_end)
 
-			# Calculate number of tree points along this segment
-			var tree_count = int(segment_length / tree_spacing)
+			# Calculate number of marker points along this segment
+			var point_spacing = 32.0  # Fixed spacing for boundary markers
+			var point_count = int(segment_length / point_spacing)
 
-			for j in range(tree_count):
-				var t = float(j) / float(tree_count)
+			for j in range(point_count):
+				var t = float(j) / float(point_count)
 				var point_on_path = segment_start.lerp(segment_end, t)
 
 				# Get direction perpendicular to path
 				var path_direction = (segment_end - segment_start).normalized()
 				var perpendicular = Vector2(-path_direction.y, path_direction.x)
 
-				# Place trees on both sides of path
+				# Place markers on both sides of path
 				var total_width = path.get_total_width()
 				var left_offset = perpendicular * (total_width * 0.5)
 				var right_offset = perpendicular * (-total_width * 0.5)
 
-				# Apply density filter
-				if rng.randf() < tree_density:
-					boundary_points.append(point_on_path + left_offset)
-				if rng.randf() < tree_density:
-					boundary_points.append(point_on_path + right_offset)
+				# Add boundary marker points
+				boundary_points.append(point_on_path + left_offset)
+				boundary_points.append(point_on_path + right_offset)
 
 	return boundary_points
 
@@ -290,21 +280,6 @@ func _point_to_line_distance(point: Vector2, line_start: Vector2, line_end: Vect
 	var projection = line_start + t * line_vec
 	return point.distance_to(projection)
 
-## Get all boundary tree positions using corridor-based approach
-func get_boundary_tree_positions(rng: RandomNumberGenerator = null) -> Array[Vector2]:
-	if not rng:
-		rng = RandomNumberGenerator.new()
-		rng.seed = 12345
-
-	# Generate path network first
-	var boundary_data = generate_path_aware_boundaries(rng)
-	var paths: Array = boundary_data.get("paths", [])
-
-	if paths.is_empty():
-		return []
-
-	# Create corridor-based tree placement
-	return _generate_corridor_boundary_trees(paths, rng)
 
 ## Get all path points for ground tile generation
 func get_path_corridor_bounds() -> Rect2:
@@ -334,43 +309,7 @@ func get_path_corridor_bounds() -> Rect2:
 
 	return Rect2(min_pos, max_pos - min_pos)
 
-## Get random tree tile variant
-func get_random_tree_tile(rng: RandomNumberGenerator) -> Vector2i:
-	if tree_tile_variants.is_empty():
-		return Vector2i(0, 28)  # Default tree
 
-	return tree_tile_variants[rng.randi() % tree_tile_variants.size()]
-
-## Generate corridor-based boundary trees (dark green areas in the image)
-func _generate_corridor_boundary_trees(paths: Array[BoundaryPath], rng: RandomNumberGenerator) -> Array[Vector2]:
-	var tree_positions: Array[Vector2] = []
-	var arena_bounds = get_path_corridor_bounds()
-	var tile_size = 16  # Standard tile size
-
-	# Expand bounds slightly to ensure full coverage
-	var extended_bounds = Rect2(
-		arena_bounds.position - Vector2(50, 50),
-		arena_bounds.size + Vector2(100, 100)
-	)
-
-	# Grid-based approach for comprehensive coverage
-	var start_x = int(extended_bounds.position.x / tile_size) * tile_size
-	var start_y = int(extended_bounds.position.y / tile_size) * tile_size
-	var end_x = start_x + extended_bounds.size.x
-	var end_y = start_y + extended_bounds.size.y
-
-	# Sample grid positions and place trees where not in corridors
-	for x in range(start_x, end_x, tree_spacing):
-		for y in range(start_y, end_y, tree_spacing):
-			var test_position = Vector2(x, y)
-
-			# Check if position is NOT in any path corridor AND has separation buffer (these become tree areas)
-			if not _is_position_in_ground_corridor_with_buffer(test_position, paths):
-				# Apply density filter and some randomness
-				if rng.randf() < tree_density:
-					tree_positions.append(test_position)
-
-	return tree_positions
 
 ## Check if position is within any path corridor (walkable area)
 func _is_position_in_any_corridor(position: Vector2, paths: Array[BoundaryPath]) -> bool:
@@ -396,25 +335,6 @@ func _is_position_in_path_corridor_extended(position: Vector2, path: BoundaryPat
 
 	return false
 
-## Check if position is within ground corridor with additional buffer for tree separation
-func _is_position_in_ground_corridor_with_buffer(position: Vector2, paths: Array[BoundaryPath]) -> bool:
-	for path in paths:
-		var path_points = path.get_full_path()
-		# Use only path width for ground tiles, then add buffer for tree separation
-		var ground_half_width = path.width * 0.5
-		var tree_buffer = 16.0  # Additional separation between ground and trees (1 tile)
-		var total_buffer_width = ground_half_width + tree_buffer
-
-		# Check distance to each path segment
-		for i in range(path_points.size() - 1):
-			var start_point = path_points[i]
-			var end_point = path_points[i + 1]
-			var distance = _point_to_line_distance(position, start_point, end_point)
-
-			if distance <= total_buffer_width:
-				return true
-
-	return false
 
 ## Check if position is within walkable corridor (path width only, no boundary thickness)
 func _is_position_in_walkable_corridor(position: Vector2, paths: Array[BoundaryPath]) -> bool:

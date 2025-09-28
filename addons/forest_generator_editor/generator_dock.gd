@@ -17,8 +17,6 @@ var tree_density_input: SpinBox
 
 # Natural Placement Controls
 var enable_staggered_toggle: CheckBox
-var placement_randomness_input: SpinBox
-var max_random_offset_input: SpinBox
 
 # Simple Ground Extension
 var ground_extension_input: SpinBox
@@ -165,7 +163,7 @@ func _create_boundary_controls(container: VBoxContainer) -> void:
 	tree_spacing_horizontal_input.min_value = 16
 	tree_spacing_horizontal_input.max_value = 128
 	tree_spacing_horizontal_input.step = 8
-	tree_spacing_horizontal_input.value = 48
+	tree_spacing_horizontal_input.value = 60
 	container.add_child(tree_spacing_horizontal_input)
 
 	# Tree spacing in pixels - vertical
@@ -216,29 +214,6 @@ func _create_natural_placement_controls(container: VBoxContainer) -> void:
 	enable_staggered_toggle.button_pressed = true
 	container.add_child(enable_staggered_toggle)
 
-	# Placement randomness
-	var randomness_label = Label.new()
-	randomness_label.text = "Placement Randomness (0=perfect grid, 1=high variation):"
-	container.add_child(randomness_label)
-
-	placement_randomness_input = SpinBox.new()
-	placement_randomness_input.min_value = 0.0
-	placement_randomness_input.max_value = 1.0
-	placement_randomness_input.step = 0.1
-	placement_randomness_input.value = 0.3
-	container.add_child(placement_randomness_input)
-
-	# Maximum random offset
-	var offset_label = Label.new()
-	offset_label.text = "Max Random Offset (pixels, 0-16):"
-	container.add_child(offset_label)
-
-	max_random_offset_input = SpinBox.new()
-	max_random_offset_input.min_value = 0
-	max_random_offset_input.max_value = 16
-	max_random_offset_input.step = 2
-	max_random_offset_input.value = 8
-	container.add_child(max_random_offset_input)
 
 func _create_simple_ground_controls(container: VBoxContainer) -> void:
 	"""Create ultra simple ground extension controls"""
@@ -340,8 +315,6 @@ func _on_generate_pressed():
 
 			# Apply natural placement settings
 			boundary_config.enable_staggered_placement = enable_staggered_toggle.button_pressed
-			boundary_config.placement_randomness = placement_randomness_input.value
-			boundary_config.max_random_offset = int(max_random_offset_input.value)
 
 			# Apply simple ground extension
 			boundary_config.ground_extension = int(ground_extension_input.value)

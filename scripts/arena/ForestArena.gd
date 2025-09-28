@@ -5,12 +5,6 @@ extends Arena
 ## Extends Arena with forest-specific features and procedural terrain generation
 ## Integrates ProceduralArenaGenerator as a component for modular design
 
-@export var map_config: MapConfig: ## Forest arena configuration
-	set(value):
-		map_config = value
-		if is_node_ready():
-			_apply_map_config()
-
 @export_group("Forest Atmosphere")
 ## Enable forest ambient sounds
 @export var enable_forest_sounds: bool = true
@@ -37,9 +31,7 @@ func _ready() -> void:
 	Logger.info("=== FORESTARENA._READY() STARTING ===", "debug")
 
 	# Apply forest configuration first
-	if map_config and map_config.is_valid():
-		_apply_map_config()
-	else:
+	if not map_config or not map_config.is_valid():
 		# Load default forest config if none assigned or invalid
 		_load_default_config()
 
@@ -261,15 +253,12 @@ func _load_default_config() -> void:
 		map_config = load(config_path) as MapConfig
 		if map_config:
 			Logger.info("Loaded default forest config", "arena")
-			_apply_map_config()
 		else:
 			Logger.warn("Failed to load forest config from %s" % config_path, "arena")
 			_create_default_config()
-			_apply_map_config()
 	else:
 		# Create a default config if file doesn't exist
 		_create_default_config()
-		_apply_map_config()
 
 func _create_default_config() -> void:
 	"""Create a default forest configuration"""
@@ -309,35 +298,6 @@ func _create_default_config() -> void:
 	}
 
 	Logger.info("Created default forest config", "arena")
-
-func _apply_map_config() -> void:
-	"""Apply map configuration to arena properties"""
-	if not map_config:
-		Logger.warn("No map config for ForestArena", "arena")
-		return
-
-	if not map_config.is_valid():
-		Logger.warn("Invalid map config for ForestArena:", "arena")
-		Logger.warn("  map_id: '%s'" % map_config.map_id, "arena")
-		Logger.warn("  display_name: '%s'" % map_config.display_name, "arena")
-		Logger.warn("  arena_bounds_radius: %s" % map_config.arena_bounds_radius, "arena")
-		return
-
-	# Apply basic arena properties
-	arena_id = map_config.map_id
-	arena_name = map_config.display_name
-	arena_bounds = map_config.arena_bounds_radius
-	spawn_radius = map_config.spawn_radius
-
-	# Apply forest-specific properties from custom_properties
-	if map_config.custom_properties.has("biome_type"):
-		biome_preference = map_config.custom_properties.biome_type
-
-	# Apply ambient lighting
-	if ambient_light:
-		ambient_light.color = map_config.ambient_light_color
-
-	Logger.debug("Applied map config: %s" % map_config.display_name, "arena")
 
 # Override arena properties for forest-specific defaults
 func _apply_default_config() -> void:

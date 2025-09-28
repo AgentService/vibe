@@ -18,6 +18,13 @@ var player_instance: Node2D
 func _get_player_scene_path() -> String:
 	var current_profile := CharacterManager.get_current()
 	if not current_profile:
+		# Try to get character type from debug config (for editor scene testing)
+		var debug_character_type = _get_debug_character_type()
+		if debug_character_type != "":
+			var scene_path: String = PLAYER_SCENES.get(debug_character_type, DEFAULT_PLAYER_SCENE)
+			Logger.info("No CharacterManager profile, using debug config character: %s → %s" % [debug_character_type, scene_path], "spawner")
+			return scene_path
+
 		Logger.warn("No current character profile found, using default player scene", "spawner")
 		return DEFAULT_PLAYER_SCENE
 	
@@ -26,6 +33,24 @@ func _get_player_scene_path() -> String:
 	
 	Logger.info("Using player scene: %s for class: %s" % [scene_path, character_class], "spawner")
 	return scene_path
+
+## Get character type from debug configuration (fallback for editor testing)
+func _get_debug_character_type() -> String:
+	var debug_config = load("res://config/debug.tres") as DebugConfig
+	if not debug_config:
+		return ""
+
+	var debug_character = debug_config.get_debug_character_id()
+	if not debug_character.is_empty():
+		# Convert StringName to String and capitalize first letter for PLAYER_SCENES key
+		var char_type = str(debug_character).capitalize()
+		return char_type
+
+	# Use character_selection setting if no specific ID
+	if debug_config.character_selection in ["knight", "ranger"]:
+		return debug_config.character_selection.capitalize()
+
+	return ""
 
 func spawn_player(spawn_point_id: String, parent_node: Node2D) -> Node2D:
 	"""

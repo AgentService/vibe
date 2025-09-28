@@ -4,7 +4,35 @@
 
 ## [Current Week - In Progress]
 
+### Debug Configuration
+- **Arena Discovery System**: ✅ **COMPLETED** - Enhanced debug configuration with automatic arena discovery
+  - **File Organization**: Moved PathAware_Forest from tests/ to scenes/arena/ directory for proper categorization
+  - **Dynamic Arena Dropdown**: Implemented custom property system using `_get_property_list()` for runtime arena discovery
+  - **Arena Auto-Discovery**: Enhanced `get_available_arenas()` to scan scenes/arena/ directory and find all arena files
+  - **Character Selection Fix**: Updated character selection to use correct IDs ("knight", "ranger") instead of invalid ones
+  - **Smart Filtering**: Arena discovery excludes Player scenes and XPOrb, includes all legitimate arena files
+  - **Maintainable System**: No need to manually update arena lists - new arena files are automatically discovered
+  - **Found Arenas**: Arena, ForestArena, PathAware_Forest, ProceduralArena, UnderworldArena, Custom Path
+  - **Path Reference Cleanup**: Fixed remaining references to old tests/ location in SceneTransitionManager and removed leftover files
+  - **Godot Cache Cleanup**: Removed .godot/editor/ cache files to force refresh of scene references
+  - **File Cleanup**: Removed PathAwareTestArena.tscn and updated all references to use PathAware_Forest.tscn
+  - **Player Scene Selection Fix**: Modified PlayerSpawner to check debug config when CharacterManager has no current character
+  - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
+
 ### Systems
+- **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
+  - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working
+    - **Jitter Math Fix**: Removed incorrect `/100.0` division - now randomness=1.0 gives full offset range instead of 1%
+    - **RNG Determinism Fix**: TreeBoundaryGenerator passes seeded RNG to TreeBoundaryConfiguration, maintaining deterministic generation per run
+    - **Property Error Fix**: Removed invalid `enable_staggered_placement` assignments that caused runtime errors
+  - **Export Range Fix**: Expanded placement_randomness (0.0-100.0) and max_random_offset (0-200px) ranges to allow meaningful variation
+  - **Post-Snap Jitter System**: Implemented `_jitter_position()` to apply randomization AFTER tile grid snapping, preserving visual effects
+  - **Plugin UI Integration**: Enhanced Path-Aware Generator plugin (path_generator_dock.gd) with working randomization controls
+  - **Algorithm Fix**: Replaced all hardcoded `random_offset = Vector2.ZERO` with proper snap-then-jitter pattern across 6 generation methods
+  - **🎯 Visual Results**: Trees now display dramatic natural, organic placement - randomness=16.5 + offset=32px produces beautiful forest boundaries
+  - **Error Resolution**: Fixed PathConfiguration and TreeBoundaryConfiguration class loading errors via explicit script references in .tres files
+  - **Code Cleanup**: Removed unused randomization code from forest_generator_editor plugin to avoid confusion
+  - **Performance**: Maintained zero-allocation optimization while enabling visible randomization effects
 - **Strategic Architecture Decision**: Created comprehensive analysis for procedural generation scope management
   - **Decision**: Keep existing procedural system dormant rather than removing it
   - **Rationale**: Focus on core gameplay polish while preserving future flexibility for decorative/event variations

@@ -21,6 +21,13 @@ const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjec
 const ArenaInputHandlerScript := preload("res://scripts/systems/ArenaInputHandler.gd")
 const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
 
+# Map configuration for arena properties
+@export var map_config: MapConfig: ## Arena configuration (spawn zones, bounds, etc.)
+	set(value):
+		map_config = value
+		if is_node_ready():
+			_apply_map_config()
+
 # Scene-based rendering approach
 @onready var melee_effects: Node2D = $MeleeEffects
 var melee_system: MeleeSystem
@@ -39,6 +46,9 @@ var system_injection_manager: SystemInjectionManager
 var arena_input_handler: ArenaInputHandler
 var entity_selector: EntitySelector
 var debug_system_controls: DebugSystemControls
+
+# Spawn zone management for breach events
+var _spawn_zone_areas: Array[Area2D] = []
 
 # Death state management now handled in BaseArena
 
@@ -99,6 +109,10 @@ func _ready() -> void:
 
 	# Call BaseArena._ready() first to setup base functionality
 	super._ready()
+
+	# Apply map configuration if available
+	if map_config:
+		_apply_map_config()
 
 	# Arena should pause game entities but allow debug controls
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -218,10 +232,24 @@ func _ready() -> void:
 	_setup_enemy_transforms()
 	
 	
+	# Initialize spawn zones for breach events
+	_initialize_spawn_zones()
+
 	# Debug help now provided by DebugController
 	Logger.info("Arena ready", "ui")
 
 
+
+## Initialize spawn zone cache for efficient access and breach events
+func _initialize_spawn_zones() -> void:
+	var spawn_zones_container = get_node_or_null("SpawnZones")
+	if spawn_zones_container:
+		for child in spawn_zones_container.get_children():
+			if child is Area2D:
+				_spawn_zone_areas.append(child)
+		Logger.debug("Initialized %d spawn zones" % _spawn_zone_areas.size(), "arena")
+	else:
+		Logger.warn("SpawnZones container not found in arena", "arena")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -508,3 +536,18 @@ func on_teardown() -> void:
 			connection[0].disconnect(Callable(self, connection[1]))
 	
 	Logger.info("Arena teardown completed", "arena")
+
+## MapConfig support - base implementation for all arenas
+func _apply_map_config() -> void:
+	"""Apply map configuration to arena properties"""
+	if not map_config or not map_config.is_valid():
+		Logger.warn("Invalid map config for arena: %s" % get_scene_file_path(), "arena")
+		return
+
+	# Apply basic arena properties
+	arena_id = map_config.map_id
+	arena_name = map_config.display_name
+	arena_bounds = map_config.arena_bounds_radius
+	spawn_radius = map_config.spawn_radius
+
+	Logger.debug("Applied map config: %s" % map_config.display_name, "arena")

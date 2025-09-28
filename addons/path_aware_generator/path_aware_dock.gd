@@ -17,6 +17,9 @@ var path_smoothing_input: SpinBox
 # Tree Configuration
 var tree_spacing_input: SpinBox
 var tree_density_input: SpinBox
+# Removed enable_staggered_placement_toggle - using jitter system instead
+var placement_randomness_input: SpinBox
+var max_random_offset_input: SpinBox
 
 # Natural Generation
 var enable_variation_toggle: CheckBox
@@ -176,10 +179,10 @@ func _create_path_config_controls(container: VBoxContainer) -> void:
 	container.add_child(boundary_thickness_label)
 
 	boundary_thickness_input = SpinBox.new()
-	boundary_thickness_input.min_value = 16
-	boundary_thickness_input.max_value = 64
-	boundary_thickness_input.step = 4
-	boundary_thickness_input.value = 32
+	boundary_thickness_input.min_value = -5000
+	boundary_thickness_input.max_value = 6400
+	boundary_thickness_input.step = 50
+	boundary_thickness_input.value = 50
 	container.add_child(boundary_thickness_input)
 
 	# Path smoothing
@@ -189,7 +192,7 @@ func _create_path_config_controls(container: VBoxContainer) -> void:
 
 	path_smoothing_input = SpinBox.new()
 	path_smoothing_input.min_value = 0.0
-	path_smoothing_input.max_value = 1.0
+	path_smoothing_input.max_value = 111.0
 	path_smoothing_input.step = 0.1
 	path_smoothing_input.value = 0.4
 	container.add_child(path_smoothing_input)
@@ -208,9 +211,9 @@ func _create_tree_config_controls(container: VBoxContainer) -> void:
 
 	tree_spacing_input = SpinBox.new()
 	tree_spacing_input.min_value = 16
-	tree_spacing_input.max_value = 64
+	tree_spacing_input.max_value = 128
 	tree_spacing_input.step = 4
-	tree_spacing_input.value = 32
+	tree_spacing_input.value = 88
 	container.add_child(tree_spacing_input)
 
 	# Tree density
@@ -222,9 +225,35 @@ func _create_tree_config_controls(container: VBoxContainer) -> void:
 	tree_density_input.min_value = 0.5
 	tree_density_input.max_value = 1.0
 	tree_density_input.step = 0.05
-	tree_density_input.value = 0.9
+	tree_density_input.value = 0.95
 	container.add_child(tree_density_input)
 
+	# Removed staggered placement toggle - using jitter system for natural placement instead
+
+	# Placement randomness intensity
+	var randomness_label = Label.new()
+	randomness_label.text = "Placement Randomness (0.0-1.0):"
+	container.add_child(randomness_label)
+
+	placement_randomness_input = SpinBox.new()
+	placement_randomness_input.min_value = 0.0
+	placement_randomness_input.max_value = 1.0
+	placement_randomness_input.step = 0.1
+	placement_randomness_input.value = 0.3
+	container.add_child(placement_randomness_input)
+
+	# Max random offset
+	var offset_label = Label.new()
+	offset_label.text = "Random Offset Amount (pixels):"
+	container.add_child(offset_label)
+
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = 0
+	max_random_offset_input.max_value = 32
+	max_random_offset_input.step = 2
+	max_random_offset_input.value = 8
+	container.add_child(max_random_offset_input)
+	
 func _create_natural_generation_controls(container: VBoxContainer) -> void:
 	"""Create natural generation controls"""
 	var natural_title = Label.new()
@@ -298,7 +327,7 @@ func _create_info_labels(container: VBoxContainer) -> void:
 
 	# Info label
 	var info_label = Label.new()
-	info_label.text = "Generates single outward-extending path chain: center → point1 → point2 → point3. Creates natural winding corridor with organic boundaries. Open PathAwareTestArena.tscn or add PathAwareArenaGenerator to any scene, then click Generate."
+	info_label.text = "Generates single outward-extending path chain: center → point1 → point2 → point3. Creates natural winding corridor with organic boundaries. Open PathAware_Forest.tscn or add PathAwareArenaGenerator to any scene, then click Generate."
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_label.add_theme_font_size_override("font_size", 10)
 	container.add_child(info_label)
@@ -321,7 +350,7 @@ func _on_generate_pressed():
 
 	var generator = _find_arena_generator(current_scene)
 	if not generator:
-		push_error("No arena generator found in current scene. Please open PathAwareTestArena.tscn or add PathAwareArenaGenerator to your scene.")
+		push_error("No arena generator found in current scene. Please open PathAware_Forest.tscn or add PathAwareArenaGenerator to your scene.")
 		return
 
 	# Check if this is the old generator that needs resources
@@ -350,13 +379,20 @@ func _on_generate_pressed():
 	path_config.path_width = path_width_input.value
 	path_config.boundary_thickness = boundary_thickness_input.value
 	path_config.path_smoothing = path_smoothing_input.value
-	path_config.tree_spacing = tree_spacing_input.value
-	path_config.tree_density = tree_density_input.value
 	path_config.enable_path_variation = enable_variation_toggle.button_pressed
 	path_config.max_path_variation = max_variation_input.value
 	path_config.add_intermediate_waypoints = enable_waypoints_toggle.button_pressed
 	path_config.waypoint_probability = waypoint_probability_input.value
 	path_config.ground_extension = int(ground_extension_input.value)
+
+	# Apply tree configuration to generator's tree_config if it exists
+	if "tree_config" in generator and generator.tree_config:
+		generator.tree_config.tree_spacing = tree_spacing_input.value
+		generator.tree_config.tree_density = tree_density_input.value
+		# Removed enable_staggered_placement assignment - property doesn't exist and jitter system handles natural placement
+		generator.tree_config.placement_randomness = placement_randomness_input.value
+		generator.tree_config.max_random_offset = max_random_offset_input.value
+		print("🌲 Applied tree configuration: spacing=", tree_spacing_input.value, ", density=", tree_density_input.value, ", randomness=", placement_randomness_input.value, ", offset=", max_random_offset_input.value)
 
 	# Set seed for old generator
 	if "generation_params" in generator and generator.generation_params:
@@ -388,7 +424,6 @@ func _generate_path_aware_arena(generator: Node, path_config: PathAwareBoundaryC
 	print("  - Arena size: ", path_config.arena_size)
 	print("  - Path width: ", path_config.path_width)
 	print("  - Boundary thickness: ", path_config.boundary_thickness)
-	print("  - Tree spacing: ", path_config.tree_spacing)
 
 	# Check if this is a PathAwareArenaGenerator
 	if generator.has_method("generate_path_aware_arena"):

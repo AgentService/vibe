@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="PathConfiguration" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/PathConfiguration.gd" id="1_PathConfigScript"]
+
+[resource]
+script = ExtResource("1_PathConfigScript")
+enable_path_generation = true
+connection_points = 3
+chain_length = 10
+min_point_distance = 1000.0
+point_space_radius = 100.0
+path_extension_width = 2.0
+path_extension_width2 = 1.0
+arena_size = 500.0
+path_width = 1150.0
+path_smoothing = 0.4
+enable_path_variation = true
+max_path_variation = 20.0
+add_intermediate_waypoints = true
+waypoint_probability = 0.6
+enable_dynamic_branching = true
+branch_probability = 1.0
+min_branches_per_point = 1
+max_branches_per_point = 2
+min_branch_length = 500.0
+max_branch_length = 1150.0
+branch_curve_intensity = 333.0
+create_endpoint_clearings = true
+endpoint_clearing_radius = 125.0
+ground_extension = 20
+debug_show_paths = false
+debug_show_points = false
