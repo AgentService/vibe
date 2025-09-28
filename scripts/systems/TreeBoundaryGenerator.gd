@@ -28,9 +28,16 @@ func generate_tree_boundaries(path_data: Dictionary, seed: int, extension_data: 
 	# Store extension data for proper boundary calculations around complete visual area
 	current_extension_data = extension_data
 
-	# Initialize deterministic RNG
-	rng = RandomNumberGenerator.new()
-	rng.seed = generation_seed
+	# Initialize deterministic RNG without polluting global streams
+	# Handle tool mode where autoloads may not be fully available
+	if Engine.is_editor_hint():
+		# Always use local RNG in tool mode to avoid autoload issues
+		rng = RandomNumberGenerator.new()
+		rng.seed = generation_seed
+	else:
+		# Runtime mode - use local RNG with hashed seed to avoid global pollution
+		rng = RandomNumberGenerator.new()
+		rng.seed = _hash_seed_for_trees(generation_seed)
 
 	# Validate configuration
 	if not tree_config:
@@ -43,7 +50,7 @@ func generate_tree_boundaries(path_data: Dictionary, seed: int, extension_data: 
 		return []
 
 	# Generate tree boundaries using configuration (trees avoid only base path corridors)
-	var tree_positions = tree_config.generate_tree_boundaries(path_data, rng)
+	var tree_positions = tree_config.generate_tree_boundaries(path_data)
 
 	# Validate boundary quality (trees should only avoid base path corridors)
 	var validation_result = _validate_boundary_quality(tree_positions, path_data)
@@ -188,7 +195,7 @@ func _validate_path_avoidance(tree_positions: Array[Vector2], paths: Array) -> b
 ## Get random tree tile for placement
 func get_random_tree_tile() -> Vector2i:
 	if tree_config:
-		return tree_config.get_random_tree_tile(rng)
+		return tree_config.get_random_tree_tile()
 	else:
 		return Vector2i(0, 28)  # Default tree tile
 
@@ -326,3 +333,9 @@ func validate_system_health() -> Dictionary:
 		Logger.warn("TreeBoundaryGenerator system health issues: %s" % ", ".join(health.issues), "treegen")
 
 	return health
+
+## Hash seed specifically for tree generation to avoid global RNG pollution
+func _hash_seed_for_trees(base_seed: int) -> int:
+	# Create deterministic hash specific to tree generation
+	# Uses simple multiplicative hashing to create isolated seed space
+	return (base_seed * 1664525 + 1013904223) & 0x7FFFFFFF

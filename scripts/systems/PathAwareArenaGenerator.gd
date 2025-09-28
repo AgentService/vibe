@@ -404,7 +404,7 @@ func _generate_boundary_trees():
 			continue
 
 		# Get random tree variant from TreeBoundaryConfiguration for visual diversity
-		var selected_tree_variant = tree_config.get_random_tree_tile(rng)
+		var selected_tree_variant = tree_config.get_random_tree_tile()  # Zero-allocation RNG
 		var tree_alternative_id = tree_config.get_tree_alternative_tile()
 
 		# Place tree tile with selected variant using alternative tile 1

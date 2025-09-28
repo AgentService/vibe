@@ -100,14 +100,17 @@ func preload_paths(paths: Array) -> void:
 	# Debug: Cache performance
 	if cache_misses > 0:
 		var stats = get_cache_stats()
+		var message = "PathDataCache preloaded: %d segments, hit rate: %.1f%%" % [
+			stats.cached_segments, stats.hit_rate * 100
+		]
 		if Engine.is_editor_hint():
-			print("PathDataCache preloaded: %d segments, hit rate: %.1f%%" % [
-				stats.cached_segments, stats.hit_rate * 100
-			])
+			# Use Logger even in editor mode for consistency
+			if Logger:
+				Logger.debug(message, "pathgen")
+			else:
+				print(message)  # Fallback only if Logger unavailable
 		else:
-			Logger.debug("PathDataCache preloaded: %d segments, hit rate: %.1f%%" % [
-				stats.cached_segments, stats.hit_rate * 100
-			], "pathgen")
+			Logger.debug(message, "pathgen")
 
 ## Memory cleanup when cache no longer needed
 func cleanup() -> void:
