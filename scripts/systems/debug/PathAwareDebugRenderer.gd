@@ -308,7 +308,7 @@ static func _create_checkpoint_marker(position: Vector2, index: int) -> Node2D:
 	return marker
 
 static func _create_branch_spawn_markers(generator: PathAwareArenaGenerator) -> void:
-	"""Create cyan markers for ALONG_BRANCHES spawn category"""
+	"""Create magenta markers for ALONG_BRANCHES spawn category"""
 	# Create a temporary PathAwareMapConfig to get the branch positions
 	var test_config = PathAwareMapConfig.new()
 	var snapshot = generator.get_path_snapshot()
@@ -329,18 +329,18 @@ static func _create_branch_spawn_markers(generator: PathAwareArenaGenerator) -> 
 		var marker = _create_branch_spawn_marker(position, i)
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
-		Logger.info("🔍 Created cyan branch spawn marker %d at %s" % [i, position], "pathdebug")
+		Logger.info("🔍 Created magenta branch spawn marker %d at %s" % [i, position], "pathdebug")
 
 static func _create_branch_spawn_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a cyan square marker for ALONG_BRANCHES category"""
+	"""Create a magenta square marker for ALONG_BRANCHES category"""
 	var marker = Node2D.new()
 	marker.position = position
 	marker.name = "BranchSpawn_" + str(index)
 
-	# Create cyan square (square shape to distinguish from circles/diamonds)
+	# Create magenta square (square shape to distinguish from circles/diamonds)
 	var square = ColorRect.new()
 	square.name = "BranchSquare"
-	square.color = Color.CYAN
+	square.color = Color.MAGENTA
 	var size = 14
 	square.size = Vector2(size, size)
 	square.position = Vector2(-size/2, -size/2)

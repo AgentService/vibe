@@ -100,25 +100,56 @@ func _convert_to_vector2_array(path_points: Array) -> Array:
 			vector_points.append(point.position)
 	return vector_points
 
-## Sample positions along branch paths
+## Sample positions along branch paths (exclude main path spine segments)
 func _sample_positions_along_branches() -> Array:
 	var positions: Array = []
 
 	if not path_snapshot or path_snapshot.branch_data.is_empty():
 		return positions
 
+	# Process only true branch extensions, not main path segments
+	# A branch is considered a "true branch" if it extends from a main path point
+	# but doesn't connect to the next main path point in sequence
+	var main_path_positions = _convert_to_vector2_array(path_snapshot.main_path_points)
+
 	for i in range(path_snapshot.branch_data.size()):
 		var branch_info = path_snapshot.branch_data[i]
 
-		# Skip main path segments - only include actual branches
-		if branch_info.branch_type == "main":
-			continue
+		if branch_info.points.size() > 1:  # Need at least 2 points to interpolate
+			# Check if this is a main path segment by seeing if it connects consecutive main points
+			var is_main_path_segment = _is_main_path_segment(branch_info, main_path_positions)
 
-		# Only include actual branches (not main path segments or other types)
-		if branch_info.branch_type == "branch" and branch_info.points.size() > 0:
-			var branch_positions = _sample_positions_along_path(branch_info.points, 64.0)
-			positions.append_array(branch_positions)
+			if not is_main_path_segment:
+				var branch_positions = _sample_positions_along_path(branch_info.points, 64.0)
+				positions.append_array(branch_positions)
+
 	return positions
+
+## Check if a branch represents a main path segment (connecting consecutive main points)
+func _is_main_path_segment(branch_info, main_path_positions: Array) -> bool:
+	if branch_info.points.size() < 2 or main_path_positions.size() < 2:
+		return false
+
+	var branch_start = branch_info.points[0]
+	var branch_start_pos = branch_start if branch_start is Vector2 else branch_start.position
+	var branch_end = branch_info.points[-1]
+	var branch_end_pos = branch_end if branch_end is Vector2 else branch_end.position
+
+	# Check if this branch connects two consecutive main path points
+	for i in range(main_path_positions.size() - 1):
+		var main_point_a = main_path_positions[i]
+		var main_point_b = main_path_positions[i + 1]
+
+		# Check if branch connects these two main points (in either direction)
+		var connects_a_to_b = (branch_start_pos.distance_to(main_point_a) < 20.0 and
+							   branch_end_pos.distance_to(main_point_b) < 20.0)
+		var connects_b_to_a = (branch_start_pos.distance_to(main_point_b) < 20.0 and
+							   branch_end_pos.distance_to(main_point_a) < 20.0)
+
+		if connects_a_to_b or connects_b_to_a:
+			return true
+
+	return false
 
 ## Get positions in clearing areas
 func _get_clearing_positions() -> Array:
@@ -203,14 +234,17 @@ func _get_main_checkpoint_positions() -> Array:
 
 	return positions
 
-## Get branch endpoint positions (actual branch terminus points from checkpoint analysis)
+## Get branch endpoint positions (branch terminus points - may overlap with checkpoints)
 func _get_branch_endpoint_positions() -> Array:
 	var positions: Array = []
 
 	if not path_snapshot or path_snapshot.main_path_points.is_empty() or path_snapshot.branch_data.is_empty():
 		return positions
 
-	# Find all actual branch endpoints by tracing from checkpoint positions
+	# Find all branch endpoints by tracing from checkpoint positions
+	# Red triangles indicate branch start/end points for additional spawn targeting
+	var main_path_positions = _convert_to_vector2_array(path_snapshot.main_path_points)
+
 	for i in range(path_snapshot.main_path_points.size()):
 		var main_point = path_snapshot.main_path_points[i]
 		var main_pos = main_point if main_point is Vector2 else main_point.position
@@ -224,18 +258,31 @@ func _get_branch_endpoint_positions() -> Array:
 
 				# If this branch starts near this checkpoint, collect its endpoint
 				if distance < 50.0:  # Close enough to be connected
-					var branch_end = branch_info.points[-1]
-					var branch_end_pos = branch_end if branch_end is Vector2 else branch_end.position
+					# Skip main path segments - only collect true branch endpoints
+					var is_main_path_segment = _is_main_path_segment(branch_info, main_path_positions)
 
-					# Only add unique endpoints (avoid duplicates)
-					var is_duplicate = false
-					for existing_pos in positions:
-						if existing_pos.distance_to(branch_end_pos) < 10.0:
-							is_duplicate = true
-							break
+					if not is_main_path_segment:
+						var branch_end = branch_info.points[-1]
+						var branch_end_pos = branch_end if branch_end is Vector2 else branch_end.position
 
-					if not is_duplicate:
-						positions.append(branch_end_pos)
+						# Skip branch endpoints that are too close to any main path point
+						# This prevents red markers from appearing at main path points
+						var is_on_main_path = false
+						for main_pos in main_path_positions:
+							if branch_end_pos.distance_to(main_pos) < 30.0:
+								is_on_main_path = true
+								break
+
+						if not is_on_main_path:
+							# Only add unique endpoints (avoid duplicates)
+							var is_duplicate = false
+							for existing_pos in positions:
+								if existing_pos.distance_to(branch_end_pos) < 10.0:
+									is_duplicate = true
+									break
+
+							if not is_duplicate:
+								positions.append(branch_end_pos)
 
 	return positions
 
