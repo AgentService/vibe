@@ -185,7 +185,6 @@ static func _create_spawn_position_preview(generator: PathAwareArenaGenerator) -
 		var marker = _create_spawn_position_marker(position, i)
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
-		Logger.debug("Created green spawn marker %d at %s" % [i, position], "pathdebug")
 
 static func _sample_positions_along_path(path_points: Array, spacing: float) -> Array:
 	"""Mirror the sampling logic from PathAwareMapConfig"""
@@ -323,14 +322,14 @@ static func _create_branch_spawn_markers(generator: PathAwareArenaGenerator) -> 
 	# Get the branch positions that the spawn system would use
 	var branch_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES)
 
-	Logger.debug("Creating branch spawn markers: %d positions" % branch_positions.size(), "pathdebug")
+	Logger.info("🔍 Creating branch spawn markers: %d positions" % branch_positions.size(), "pathdebug")
 
 	for i in range(branch_positions.size()):
 		var position = branch_positions[i]
 		var marker = _create_branch_spawn_marker(position, i)
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
-		Logger.debug("Created cyan branch spawn marker %d at %s" % [i, position], "pathdebug")
+		Logger.info("🔍 Created cyan branch spawn marker %d at %s" % [i, position], "pathdebug")
 
 static func _create_branch_spawn_marker(position: Vector2, index: int) -> Node2D:
 	"""Create a cyan square marker for ALONG_BRANCHES category"""

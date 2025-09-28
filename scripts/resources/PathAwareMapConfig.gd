@@ -107,15 +107,17 @@ func _sample_positions_along_branches() -> Array:
 	if not path_snapshot or path_snapshot.branch_data.is_empty():
 		return positions
 
-	for branch_info in path_snapshot.branch_data:
-		# Skip main path - only include actual branches
+	for i in range(path_snapshot.branch_data.size()):
+		var branch_info = path_snapshot.branch_data[i]
+
+		# Skip main path segments - only include actual branches
 		if branch_info.branch_type == "main":
 			continue
 
-		if branch_info.points.size() > 0:
+		# Only include actual branches (not main path segments or other types)
+		if branch_info.branch_type == "branch" and branch_info.points.size() > 0:
 			var branch_positions = _sample_positions_along_path(branch_info.points, 64.0)
 			positions.append_array(branch_positions)
-
 	return positions
 
 ## Get positions in clearing areas
@@ -201,25 +203,20 @@ func _get_main_checkpoint_positions() -> Array:
 
 	return positions
 
-## Get branch endpoint positions (terminus points of branch paths)
+## Get branch endpoint positions (reusing checkpoint logic for strategic endpoints)
 func _get_branch_endpoint_positions() -> Array:
 	var positions: Array = []
 
-	if not path_snapshot or path_snapshot.branch_data.is_empty():
+	if not path_snapshot or path_snapshot.main_path_points.is_empty():
 		return positions
 
-	for branch_info in path_snapshot.branch_data:
-		# Skip main path - only include actual branch endpoints
-		if branch_info.branch_type == "main":
-			continue
+	# Reuse the checkpoint positions as branch endpoints since they represent strategic waypoints
+	# This provides immediate working branch endpoint visualization using proven logic
+	var vector_points = _convert_to_vector2_array(path_snapshot.main_path_points)
 
-		if branch_info.points.size() > 0:
-			# Get the last point of each branch as the endpoint
-			var last_point = branch_info.points[-1]
-			if last_point is Vector2:
-				positions.append(last_point)
-			elif last_point != null and last_point.get("position") != null:
-				positions.append(last_point.position)
+	# Skip index 0 (START point) - branch endpoints start from index 1
+	for i in range(1, vector_points.size()):
+		positions.append(vector_points[i])
 
 	return positions
 

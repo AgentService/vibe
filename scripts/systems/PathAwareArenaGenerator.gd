@@ -408,10 +408,16 @@ func _extract_branch_info() -> Array[PathAwarePathSnapshot.PathBranchInfo]:
 			branch.calculate_length()
 
 		# Determine branch type based on path structure
-		if i == 0:
+		# More intelligent detection: actual branches are typically the last few paths
+		# Main path segments are usually the first several paths in sequence
+		var total_paths = paths.size()
+		var branch_count = current_path_data.get("branch_count", 0)
+		var main_segment_count = total_paths - branch_count
+
+		if i < main_segment_count:
 			branch.branch_type = "main"
 		else:
-			branch.branch_type = "secondary"
+			branch.branch_type = "branch"
 
 		# Set parent connection point (first point of the branch)
 		if not branch.points.is_empty():
