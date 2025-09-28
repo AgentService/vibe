@@ -32,11 +32,13 @@ var debug_lines: Array[Line2D] = []
 # System components
 var path_generator: DungeonPathGenerator
 var tree_generator: Node
+var spawn_zone_generator: Node
 
 # Generated data
 var current_path_data: Dictionary = {}
 var current_tree_data: Array[Vector2] = []
 var rng: RandomNumberGenerator
+var generated_spawn_zones: Array = []
 
 func _ready():
 	# Initialize system components
@@ -119,10 +121,14 @@ func generate_path_aware_arena():
 	_generate_ground_tiles()
 	_generate_boundary_trees()
 
+	# Phase 5: Generate spawn zones at branch endpoints
+	_generate_spawn_zones()
+
 	Logger.info("🛤️ Path-aware arena generation completed!", "pathgen")
 	Logger.info("  - Points generated: %d" % current_path_data.get("points", []).size(), "pathgen")
 	Logger.info("  - Paths generated: %d" % current_path_data.get("paths", []).size(), "pathgen")
 	Logger.info("  - Trees generated: %d" % current_tree_data.size(), "pathgen")
+	Logger.info("  - Spawn zones generated: %d" % generated_spawn_zones.size(), "pathgen")
 
 func clear_arena():
 	"""Clear all generated content"""
@@ -137,6 +143,12 @@ func clear_arena():
 		if is_instance_valid(line):
 			line.queue_free()
 	debug_lines.clear()
+
+	# Clear spawn zones
+	for zone in generated_spawn_zones:
+		if is_instance_valid(zone):
+			zone.queue_free()
+	generated_spawn_zones.clear()
 
 	# Clear tile map layers
 	var base_layer = _find_layer_node(BASE_LAYER_NAME)
@@ -669,3 +681,90 @@ func get_system_debug_info() -> Dictionary:
 		debug_info.tree_system = tree_generator.get_debug_info()
 
 	return debug_info
+
+## Generate spawn zones at branch endpoints
+func _generate_spawn_zones() -> void:
+	"""Generate circular spawn zones at all branch endpoint positions"""
+	# Use the same logic as PathAwareMapConfig to get branch endpoint positions
+	var snapshot = get_path_snapshot()
+	if not snapshot:
+		Logger.warn("No path snapshot available for spawn zone generation", "spawnzones")
+		return
+
+	# Create a temporary PathAwareMapConfig to get consistent endpoint positions
+	var temp_config = PathAwareMapConfig.new()
+	temp_config.path_snapshot = snapshot
+
+	# Get branch endpoint positions that match the red markers
+	var endpoint_positions = temp_config._get_branch_endpoint_positions()
+
+	if endpoint_positions.is_empty():
+		Logger.info("No branch endpoints found for spawn zone generation", "spawnzones")
+		return
+
+	Logger.info("🎯 Generating spawn zones at %d branch endpoints..." % endpoint_positions.size(), "spawnzones")
+
+	# Create spawn zones directly in the generator
+	_create_spawn_zones_directly(endpoint_positions)
+
+	Logger.info("✅ Spawn zone generation completed: %d zones created" % generated_spawn_zones.size(), "spawnzones")
+
+## Create spawn zones directly without separate script
+func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
+	"""Create spawn zone visual indicators directly at endpoint positions"""
+	# Clear any existing spawn zones
+	for zone in generated_spawn_zones:
+		if is_instance_valid(zone):
+			zone.queue_free()
+	generated_spawn_zones.clear()
+
+	var spawn_zone_radius = 100.0
+	var zone_color = Color.CYAN
+	var zone_alpha = 0.5
+
+	for i in range(endpoint_positions.size()):
+		var endpoint_pos: Vector2 = endpoint_positions[i]
+		Logger.debug("Creating spawn zone %d at position %s" % [i, endpoint_pos], "spawnzones")
+
+		# Create spawn zone visual indicator
+		var zone_node = Node2D.new()
+		zone_node.name = "SpawnZone_%d" % i
+		zone_node.global_position = endpoint_pos
+
+		# Create visual circle using Line2D
+		var circle_line = Line2D.new()
+		circle_line.name = "SpawnZoneCircle"
+		circle_line.width = 4.0
+		circle_line.default_color = Color(zone_color.r, zone_color.g, zone_color.b, zone_alpha)
+		circle_line.antialiased = true
+
+		# Create circle points
+		var segments = 32
+		for j in range(segments + 1):
+			var angle = (float(j) / segments) * TAU
+			var point = Vector2.from_angle(angle) * spawn_zone_radius
+			circle_line.add_point(point)
+
+		zone_node.add_child(circle_line)
+
+		# Add center dot
+		var center_dot = ColorRect.new()
+		center_dot.name = "CenterDot"
+		center_dot.size = Vector2(8, 8)
+		center_dot.position = Vector2(-4, -4)
+		center_dot.color = zone_color
+		zone_node.add_child(center_dot)
+
+		# Add zone ID label
+		var label = Label.new()
+		label.name = "ZoneLabel"
+		label.text = "Z%d" % i
+		label.position = Vector2(-12, spawn_zone_radius + 10)
+		label.add_theme_color_override("font_color", zone_color)
+		zone_node.add_child(label)
+
+		# Add to scene and track
+		add_child(zone_node)
+		generated_spawn_zones.append(zone_node)
+
+		Logger.debug("Created spawn zone %d successfully" % i, "spawnzones")
