@@ -16,8 +16,11 @@ extends Resource
 ## Tree placement density (0.0-1.0, higher = more trees)
 @export_range(0.1, 1.0, 0.05) var tree_density: float = 0.95
 
+## Placement randomness intensity (0.0-100.0, higher = more random)
+@export_range(0.0, 100.0, 0.1) var placement_randomness: float = 0.3
 
-
+## Maximum pixel offset for random placement variation
+@export_range(0, 200, 2) var max_random_offset: int = 8
 
 @export_group("Boundary Adaptation")
 
@@ -417,14 +420,12 @@ func _generate_radial_trees_around_point(center: Vector2, path_width: float, til
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = center + Vector2(cos(angle), sin(angle)) * distance
 
-			# Simplified placement without random offset
-			var random_offset = Vector2.ZERO
-
-			# Snap to tile grid with random offset
+			# Snap to tile grid first, then apply jitter to preserve randomization
 			tree_pos = Vector2(
-				round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
-				round((tree_pos.y + random_offset.y) / tile_size) * tile_size
+				round(tree_pos.x / tile_size) * tile_size,
+				round(tree_pos.y / tile_size) * tile_size
 			)
+			tree_pos = _jitter_position(tree_pos, rng)
 
 			# Check if this position respects tree_spacing from existing trees
 			if _is_valid_tree_position(tree_pos, tree_positions):
@@ -455,14 +456,12 @@ func _generate_endpoint_circular_coverage(endpoint: Vector2, path_width: float, 
 			var angle = (float(i) / float(tree_count)) * TAU
 			var tree_pos = endpoint + Vector2(cos(angle), sin(angle)) * distance
 
-			# Simplified placement without random offset
-			var random_offset = Vector2.ZERO
-
-			# Snap to tile grid with random offset
+			# Snap to tile grid first, then apply jitter to preserve randomization
 			tree_pos = Vector2(
-				round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
-				round((tree_pos.y + random_offset.y) / tile_size) * tile_size
+				round(tree_pos.x / tile_size) * tile_size,
+				round(tree_pos.y / tile_size) * tile_size
 			)
+			tree_pos = _jitter_position(tree_pos, rng)
 
 			# Calculate gradient density based on distance from endpoint
 			var distance_from_endpoint = distance - (path_half_width + 12.0)
@@ -530,14 +529,12 @@ func _generate_gradient_density_trees(path_points: Array[Vector2], path_width: f
 			var normalized_radial_distance = distance_from_path_edge / max_boundary_distance
 
 
-			# Simplified placement without random offset
-			var random_offset = Vector2.ZERO
-
-			# Snap to tile grid with random offset
+			# Snap to tile grid first, then apply jitter to preserve randomization
 			var tree_pos = Vector2(
-				round((sample_pos.x + random_offset.x) / tile_size) * tile_size,
-				round((sample_pos.y + random_offset.y) / tile_size) * tile_size
+				round(sample_pos.x / tile_size) * tile_size,
+				round(sample_pos.y / tile_size) * tile_size
 			)
+			tree_pos = _jitter_position(tree_pos, rng)
 
 			# Check spacing and add tree
 			if _is_valid_tree_position(tree_pos, tree_positions):
@@ -645,8 +642,12 @@ func _generate_corridor_avoiding_trees(paths: Array, corridor_bounds: Rect2, rng
 		for x in range(start_x, end_x, tree_spacing):
 			var base_position = Vector2(x, y)
 
-			# Apply asymmetric staggered placement pattern
-			var final_position = _apply_asymmetric_placement(base_position, row_index, col_index, rng)
+			# Snap to tile grid first, then apply jitter to preserve randomization
+			var final_position = Vector2(
+				round(base_position.x / tile_size) * tile_size,
+				round(base_position.y / tile_size) * tile_size
+			)
+			final_position = _jitter_position(final_position, rng)
 
 			# Check if position is NOT in any path corridor with buffer
 			if not _is_position_in_path_buffer_zone(final_position, paths):
@@ -688,7 +689,12 @@ func _generate_prebuilt_tree_field_with_carving(paths: Array, corridor_bounds: R
 		var col_index = 0
 		for x in range(start_x, end_x, tree_spacing):
 			var base_position = Vector2(x, y)
-			var final_position = _apply_asymmetric_placement(base_position, row_index, col_index, rng)
+			# Snap to tile grid first, then apply jitter to preserve randomization
+			var final_position = Vector2(
+				round(base_position.x / tile_size) * tile_size,
+				round(base_position.y / tile_size) * tile_size
+			)
+			final_position = _jitter_position(final_position, rng)
 
 			# Apply prebuilt field density (most positions become trees)
 			if rng.randf() < prebuilt_field_density:
@@ -732,11 +738,26 @@ func _is_position_in_path_buffer_zone_with_endpoints(position: Vector2, paths: A
 
 	return false
 
-## Apply asymmetric staggered placement pattern to tree position
+## Apply jitter to world position after tile grid snapping (preserves randomization)
+func _jitter_position(world_pos: Vector2, rng: RandomNumberGenerator) -> Vector2:
+	if placement_randomness <= 0.0 or max_random_offset <= 0:
+		return world_pos
+	var jitter_range := max_random_offset * (placement_randomness / 100.0)  # Convert percentage to 0-1 range
+	return world_pos + Vector2(
+		rng.randf_range(-jitter_range, jitter_range),
+		rng.randf_range(-jitter_range, jitter_range)
+	)
+
+## Apply asymmetric staggered placement pattern to tree position (LEGACY - replaced by _jitter_position)
 func _apply_asymmetric_placement(base_position: Vector2, row_index: int, col_index: int, rng: RandomNumberGenerator) -> Vector2:
 	var final_position = base_position
 
-	# Simplified grid placement without offsets
+	# Apply organic random offset if enabled
+	if placement_randomness > 0.0 and max_random_offset > 0:
+		var random_range = max_random_offset * (placement_randomness / 100.0)  # Convert percentage to 0-1 range
+		var offset_x = (rng.randf() - 0.5) * 2.0 * random_range
+		var offset_y = (rng.randf() - 0.5) * 2.0 * random_range
+		final_position += Vector2(offset_x, offset_y)
 
 	return final_position
 
@@ -916,14 +937,12 @@ func _generate_trees_around_segment_efficient(start_point: Vector2, end_point: V
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Simplified placement without random offset
-				var random_offset = Vector2.ZERO
-
-				# Snap to tile grid with random offset
+				# Snap to tile grid first, then apply jitter to preserve randomization
 				tree_pos = Vector2(
-					round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
-					round((tree_pos.y + random_offset.y) / tile_size) * tile_size
+					round(tree_pos.x / tile_size) * tile_size,
+					round(tree_pos.y / tile_size) * tile_size
 				)
+				tree_pos = _jitter_position(tree_pos, rng)
 
 				# Check if this tile is already used
 				var tile_coord = Vector2i(
@@ -987,14 +1006,12 @@ func _generate_dense_trees_around_segment(start_point: Vector2, end_point: Vecto
 			while distance <= end_distance:
 				var tree_pos = segment_point + (perpendicular * side * distance)
 
-				# Simplified placement without random offset
-				var random_offset = Vector2.ZERO
-
-				# Snap to tile grid with random offset
+				# Snap to tile grid first, then apply jitter to preserve randomization
 				tree_pos = Vector2(
-					round((tree_pos.x + random_offset.x) / tile_size) * tile_size,
-					round((tree_pos.y + random_offset.y) / tile_size) * tile_size
+					round(tree_pos.x / tile_size) * tile_size,
+					round(tree_pos.y / tile_size) * tile_size
 				)
+				tree_pos = _jitter_position(tree_pos, rng)
 
 				# Check if this position respects tree_spacing from existing trees
 				if _is_valid_tree_position(tree_pos, tree_positions):

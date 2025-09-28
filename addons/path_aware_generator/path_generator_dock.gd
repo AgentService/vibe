@@ -38,18 +38,18 @@ var use_prebuilt_tree_field_checkbox: CheckBox
 
 # Gradient density controls removed
 
-# Random offset controls removed
-# var enable_staggered_placement_checkbox: CheckBox (removed)
-# var max_random_offset_input: SpinBox (removed)
+# Tree randomization controls
+var placement_randomness_input: SpinBox
+var max_random_offset_input: SpinBox
 
 
 # Generator reference
 var path_generator: DungeonPathGenerator
 var tree_generator: TreeBoundaryGenerator
 
-# Configuration resources
-var path_config: PathConfiguration
-var tree_config: TreeBoundaryConfiguration
+# Configuration resources (untyped to avoid class resolution issues at startup)
+var path_config
+var tree_config
 
 func _init():
 	# Set dock name and minimum size (smaller since we now have scrolling)
@@ -218,7 +218,38 @@ func _build_ui():
 	tree_boundary_width_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boundary_hbox.add_child(tree_boundary_width_input)
 
+	# Tree randomization controls - compact layout
+	var randomness_hbox = HBoxContainer.new()
+	path_vbox.add_child(randomness_hbox)
+	var randomness_label = Label.new()
+	randomness_label.text = "Randomness:"
+	randomness_label.custom_minimum_size.x = 80
+	randomness_hbox.add_child(randomness_label)
+	placement_randomness_input = SpinBox.new()
+	placement_randomness_input.min_value = 0.0
+	placement_randomness_input.max_value = 100.0
+	placement_randomness_input.step = 0.5
+	placement_randomness_input.value = 0.1
+	placement_randomness_input.tooltip_text = "Tree placement randomness (0=grid, 1=organic)"
+	placement_randomness_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	randomness_hbox.add_child(placement_randomness_input)
 
+	# Max random offset - compact layout
+	var offset_hbox = HBoxContainer.new()
+	path_vbox.add_child(offset_hbox)
+	var offset_label = Label.new()
+	offset_label.text = "Max Offset:"
+	offset_label.custom_minimum_size.x = 80
+	offset_hbox.add_child(offset_label)
+	max_random_offset_input = SpinBox.new()
+	max_random_offset_input.min_value = -2222
+	max_random_offset_input.max_value = 22224
+	max_random_offset_input.step = 2
+	max_random_offset_input.value = 8
+	max_random_offset_input.suffix = "px"
+	max_random_offset_input.tooltip_text = "Maximum random offset distance"
+	max_random_offset_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	offset_hbox.add_child(max_random_offset_input)
 
 	# Chain length - compact layout
 	var chain_hbox = HBoxContainer.new()
@@ -429,13 +460,25 @@ func _load_default_configs():
 	path_config = load("res://data/content/DefaultPathConfiguration.tres")
 	if not path_config:
 		Logger.warn("Could not load DefaultPathConfiguration, creating new one", "plugin")
-		path_config = PathConfiguration.new()
+		# Create new PathConfiguration by loading the script directly
+		var path_config_script = load("res://scripts/resources/PathConfiguration.gd")
+		if path_config_script:
+			path_config = path_config_script.new()
+		else:
+			Logger.error("Could not load PathConfiguration script", "plugin")
+			return
 
 	# Load default tree boundary configuration
 	tree_config = load("res://data/content/DefaultTreeBoundaryConfiguration.tres")
 	if not tree_config:
 		Logger.warn("Could not load DefaultTreeBoundaryConfiguration, creating new one", "plugin")
-		tree_config = TreeBoundaryConfiguration.new()
+		# Create new TreeBoundaryConfiguration by loading the script directly
+		var tree_config_script = load("res://scripts/resources/TreeBoundaryConfiguration.gd")
+		if tree_config_script:
+			tree_config = tree_config_script.new()
+		else:
+			Logger.error("Could not load TreeBoundaryConfiguration script", "plugin")
+			return
 
 
 func _connect_signals():
@@ -527,6 +570,11 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		if use_path_radius_checkbox:
 			generator.tree_config.use_path_radius_generation = use_path_radius_checkbox.button_pressed
 
+		# Tree randomization settings
+		if placement_randomness_input:
+			generator.tree_config.placement_randomness = placement_randomness_input.value
+		if max_random_offset_input:
+			generator.tree_config.max_random_offset = max_random_offset_input.value
 
 		# Performance optimization settings
 		if use_prebuilt_tree_field_checkbox:
