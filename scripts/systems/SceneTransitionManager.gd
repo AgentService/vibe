@@ -127,8 +127,9 @@ func _resolve_map_path(map_id: String) -> String:
 			var debug_config_path = "res://config/debug.tres"
 			if ResourceLoader.exists(debug_config_path):
 				var debug_config = load(debug_config_path) as DebugConfig
-				if debug_config and debug_config.has_method("get_arena_scene_path"):
-					var arena_path = debug_config.get_arena_scene_path()
+				if debug_config and debug_config.has_method("get_arena_scene_name"):
+					var arena_name = debug_config.get_arena_scene_name()
+					var arena_path = "res://scenes/arena/" + arena_name + ".tscn"
 					Logger.info("SceneTransitionManager: Using debug arena selection: %s" % arena_path, "transition")
 					return arena_path
 			
@@ -144,7 +145,7 @@ func _resolve_map_path(map_id: String) -> String:
 		"forest_arena":
 			return "res://scenes/arena/ForestArena.tscn"
 		"pathgen_arena":
-			return "res://tests/PathAware_Forest.tscn"
+			return "res://scenes/arena/PathAware_Forest.tscn"
 		"forest":
 			return "res://scenes/maps/Forest.tscn"  # Future maps
 		"dungeon":

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cyujd3420lcts" path="res://scripts/systems/PathAwareArenaGenerator.gd" id="1_2vw51"]
 [ext_resource type="Script" uid="uid://6ag6n3yvhf0p" path="res://scripts/resources/PathConfiguration.gd" id="2_xp5hq"]
-[ext_resource type="Script" uid="uid://dhfwcwe8ug0sk" path="res://tests/PathAware_Forest.gd" id="3_pathgen_test"]
+[ext_resource type="Script" uid="uid://dg60kmsp2ca2c" path="res://scenes/arena/PathAware_Forest.gd" id="3_pathgen_test"]
 [ext_resource type="Script" uid="uid://dphmif6hr76ry" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="3_ya1e2"]
 [ext_resource type="Texture2D" uid="uid://cgibtnsrlhtst" path="res://assets/sprites/raven/Raven Fantasy - 2D PixelArt Tileset and Sprites - Green Forest 2/All Tileset/48x48.png" id="4_ya1e2"]
 [ext_resource type="Resource" uid="uid://b5i03b8kfxd4v" path="res://data/content/maps/pathaware_forest_config.tres" id="6_config"]

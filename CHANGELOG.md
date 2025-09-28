@@ -4,6 +4,21 @@
 
 ## [Current Week - In Progress]
 
+### Debug Configuration
+- **Arena Discovery System**: ✅ **COMPLETED** - Enhanced debug configuration with automatic arena discovery
+  - **File Organization**: Moved PathAware_Forest from tests/ to scenes/arena/ directory for proper categorization
+  - **Dynamic Arena Dropdown**: Implemented custom property system using `_get_property_list()` for runtime arena discovery
+  - **Arena Auto-Discovery**: Enhanced `get_available_arenas()` to scan scenes/arena/ directory and find all arena files
+  - **Character Selection Fix**: Updated character selection to use correct IDs ("knight", "ranger") instead of invalid ones
+  - **Smart Filtering**: Arena discovery excludes Player scenes and XPOrb, includes all legitimate arena files
+  - **Maintainable System**: No need to manually update arena lists - new arena files are automatically discovered
+  - **Found Arenas**: Arena, ForestArena, PathAware_Forest, ProceduralArena, UnderworldArena, Custom Path
+  - **Path Reference Cleanup**: Fixed remaining references to old tests/ location in SceneTransitionManager and removed leftover files
+  - **Godot Cache Cleanup**: Removed .godot/editor/ cache files to force refresh of scene references
+  - **File Cleanup**: Removed PathAwareTestArena.tscn and updated all references to use PathAware_Forest.tscn
+  - **Player Scene Selection Fix**: Modified PlayerSpawner to check debug config when CharacterManager has no current character
+  - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
+
 ### Systems
 - **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
   - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working

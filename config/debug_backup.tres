@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DebugConfig" load_steps=2 format=3 uid="uid://cfi2smq1cq850"]
+[gd_resource type="Resource" script_class="DebugConfig" load_steps=2 format=3 uid="uid://toi87rf0f7nc"]
 
 [ext_resource type="Script" uid="uid://dgbxuf076ac4s" path="res://scripts/domain/DebugConfig.gd" id="1_xkk1l"]
 
@@ -7,7 +7,7 @@ script = ExtResource("1_xkk1l")
 debug_panels_enabled = true
 start_mode = "hideout"
 skip_main_menu = true
-arena_selection = "PathAware_Forest"
+arena_selection = "Arena"
 custom_arena_path = ""
 character_selection = "ranger"
 character_id = &""

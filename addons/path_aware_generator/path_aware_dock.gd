@@ -327,7 +327,7 @@ func _create_info_labels(container: VBoxContainer) -> void:
 
 	# Info label
 	var info_label = Label.new()
-	info_label.text = "Generates single outward-extending path chain: center → point1 → point2 → point3. Creates natural winding corridor with organic boundaries. Open PathAwareTestArena.tscn or add PathAwareArenaGenerator to any scene, then click Generate."
+	info_label.text = "Generates single outward-extending path chain: center → point1 → point2 → point3. Creates natural winding corridor with organic boundaries. Open PathAware_Forest.tscn or add PathAwareArenaGenerator to any scene, then click Generate."
 	info_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	info_label.add_theme_font_size_override("font_size", 10)
 	container.add_child(info_label)
@@ -350,7 +350,7 @@ func _on_generate_pressed():
 
 	var generator = _find_arena_generator(current_scene)
 	if not generator:
-		push_error("No arena generator found in current scene. Please open PathAwareTestArena.tscn or add PathAwareArenaGenerator to your scene.")
+		push_error("No arena generator found in current scene. Please open PathAware_Forest.tscn or add PathAwareArenaGenerator to your scene.")
 		return
 
 	# Check if this is the old generator that needs resources

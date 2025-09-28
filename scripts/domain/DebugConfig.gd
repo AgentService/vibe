@@ -9,11 +9,12 @@ class_name DebugConfig
 @export var skip_main_menu: bool = false
 
 @export_group("Arena Selection")
-@export_enum("Default Arena", "Underworld Arena", "Custom Path") var arena_selection: String = "Default Arena"
+## Arena to load for debug mode - auto-discovered from scenes/arena/
+@export_enum("Arena", "ForestArena", "PathAware_Forest", "ProceduralArena", "UnderworldArena", "Custom Path") var arena_selection: String = "Arena"
 @export var custom_arena_path: String = ""  # Used when arena_selection is "Custom Path"
 
 @export_group("Character Selection")
-@export_enum("auto", "custom_id", "create_new") var character_selection: String = "auto"
+@export_enum("auto", "knight", "ranger", "custom_id", "create_new") var character_selection: String = "auto"
 @export var character_id: StringName = &""  # Used when character_selection is "custom_id"
 
 @export_group("Boss Debug")
@@ -29,9 +30,9 @@ class_name DebugConfig
 
 func _init(
 	p_debug_panels_enabled: bool = false,
-	p_start_mode: String = "arena", 
+	p_start_mode: String = "arena",
 	p_skip_main_menu: bool = false,
-	p_arena_selection: String = "Default Arena",
+	p_arena_selection: String = "Arena",
 	p_character_selection: String = "auto"
 ) -> void:
 	debug_panels_enabled = p_debug_panels_enabled
@@ -40,21 +41,17 @@ func _init(
 	arena_selection = p_arena_selection
 	character_selection = p_character_selection
 
-func get_arena_scene_path() -> String:
-	"""Get the arena scene path based on the selected arena."""
-	match arena_selection:
-		"Default Arena":
-			return "res://scenes/arena/Arena.tscn"
-		"Underworld Arena":
-			return "res://scenes/arena/UnderworldArena.tscn"
-		"Custom Path":
-			if custom_arena_path.is_empty():
-				Logger.warn("Debug: Custom arena path is empty, falling back to default", "debug")
-				return "res://scenes/arena/Arena.tscn"
+
+func get_arena_scene_name() -> String:
+	"""Get the arena scene name based on the selected arena."""
+	if arena_selection == "Custom Path":
+		if custom_arena_path.is_empty():
+			Logger.warn("Debug: Custom arena path is empty, falling back to default", "debug")
 			return custom_arena_path
-		_:
-			Logger.warn("Debug: Unknown arena selection '%s', using default" % arena_selection, "debug")
-			return "res://scenes/arena/Arena.tscn"
+		return custom_arena_path
+
+	# Return just the scene name, let caller construct full path
+	return arena_selection
 
 func get_debug_character_id() -> StringName:
 	"""Get the character ID to use for debug mode, supporting auto-selection."""
@@ -66,10 +63,16 @@ func get_debug_character_id() -> StringName:
 				var last_played = characters[0]  # Already sorted by last_played
 				Logger.info("Debug: Auto-selecting last played character: %s (%s)" % [last_played.name, last_played.id], "debug")
 				return last_played.id
-		
+
 		# Fallback to creating a default character
 		Logger.info("Debug: No characters found, will create default character", "debug")
 		return &""  # Empty means create default
+	elif character_selection == "knight":
+		Logger.info("Debug: Selecting Knight character", "debug")
+		return &"knight"
+	elif character_selection == "ranger":
+		Logger.info("Debug: Selecting Ranger character", "debug")
+		return &"ranger"
 	elif character_selection == "custom_id":
 		# Use custom character_id if specified
 		if not character_id.is_empty():
