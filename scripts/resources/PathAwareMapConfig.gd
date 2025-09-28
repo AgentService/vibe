@@ -265,24 +265,15 @@ func _get_branch_endpoint_positions() -> Array:
 						var branch_end = branch_info.points[-1]
 						var branch_end_pos = branch_end if branch_end is Vector2 else branch_end.position
 
-						# Skip branch endpoints that are too close to any main path point
-						# This prevents red markers from appearing at main path points
-						var is_on_main_path = false
-						for main_pos in main_path_positions:
-							if branch_end_pos.distance_to(main_pos) < 30.0:
-								is_on_main_path = true
+						# Only add unique endpoints (avoid duplicates)
+						var is_duplicate = false
+						for existing_pos in positions:
+							if existing_pos.distance_to(branch_end_pos) < 10.0:
+								is_duplicate = true
 								break
 
-						if not is_on_main_path:
-							# Only add unique endpoints (avoid duplicates)
-							var is_duplicate = false
-							for existing_pos in positions:
-								if existing_pos.distance_to(branch_end_pos) < 10.0:
-									is_duplicate = true
-									break
-
-							if not is_duplicate:
-								positions.append(branch_end_pos)
+						if not is_duplicate:
+							positions.append(branch_end_pos)
 
 	return positions
 

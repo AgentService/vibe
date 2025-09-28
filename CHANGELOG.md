@@ -20,6 +20,13 @@
   - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
 
 ### Systems
+- **Path-Aware Spawning System**: ✅ **COMPLETED** - Strategic spawn position optimization for procedural arenas
+  - **Branch Endpoint Optimization**: Red triangles (AT_BRANCH_ENDPOINTS) now only appear at true branch terminations, not main path endpoints
+  - **Dual Filter Architecture**: Implemented geometric analysis (`_is_main_path_segment()`) plus 30px proximity exclusion for precise classification
+  - **Semantic Accuracy**: Each marker type represents distinct strategic locations - yellow START, purple strategic checkpoints, orange regular spawns, magenta branch exploration, red branch terminations
+  - **Visual Distinction**: Complete marker hierarchy with different shapes/colors for each spawn category
+  - **Integration Validation**: Debug markers now exactly match actual PathAwareMapConfig spawn position calculations
+
 - **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
   - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working
     - **Jitter Math Fix**: Removed incorrect `/100.0` division - now randomness=1.0 gives full offset range instead of 1%
