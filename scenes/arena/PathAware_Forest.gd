@@ -2,6 +2,7 @@ extends "res://scenes/arena/Arena.gd"
 
 ## PathAware_Forest - PathAware Arena Generator forest scene
 ## Handles arena randomization on entry from hideout and manages player spawn
+## Uses PathAwareMapConfig for generated arenas with path-aware spawning capabilities
 
 @onready var arena_generator: PathAwareArenaGenerator = $PathAwareArenaGenerator
 @onready var player_spawn: Marker2D = $PlayerSpawnPoint
@@ -40,6 +41,12 @@ func _generate_arena() -> void:
 		Logger.error("PathAwareArenaGenerator not found in scene", "pathgen")
 		return
 
+	# Ensure we have a PathAwareMapConfig (cast from parent class)
+	if not map_config is PathAwareMapConfig:
+		Logger.info("Creating default PathAwareMapConfig", "pathgen")
+		map_config = PathAwareMapConfig.new()
+		_setup_default_map_config()
+
 	if is_randomize_on_entry:
 		# Use a new random seed for each entry
 		var new_seed = randi()
@@ -56,6 +63,12 @@ func _generate_arena() -> void:
 	else:
 		Logger.info("Generating PathGenerator Arena with existing configuration", "pathgen")
 		arena_generator.generate_path_aware_arena()
+
+	# Create and populate path snapshot after generation
+	_create_and_populate_path_snapshot()
+
+	# Emit ready signal for service registration
+	_emit_path_snapshot_ready_signal()
 
 func _setup_player_spawn() -> void:
 	"""Setup player spawn point for arena entry."""
@@ -93,3 +106,77 @@ func _return_to_hideout() -> void:
 
 	Logger.info("Returning to hideout from PathAware_Forest", "pathgen")
 	StateManager.go_to_hideout({"source": "pathgen_arena_exit"})
+
+## Setup default configuration for PathAwareMapConfig
+func _setup_default_map_config() -> void:
+	"""Initialize default values for PathAwareMapConfig."""
+
+	map_config.map_id = "pathaware_forest"
+	map_config.display_name = "Generated Forest Arena"
+	map_config.description = "Procedurally generated forest arena with path-aware spawning"
+
+	# Basic arena properties
+	map_config.arena_bounds_radius = 600.0
+	map_config.spawn_radius = 500.0
+	map_config.player_spawn_position = Vector2.ZERO
+
+	# Path-aware specific settings
+	map_config.auto_optimize_spawns = true
+	map_config.generation_seed = 0  # Will be set after generation
+
+	# Create default spawn profiles
+	map_config.spawn_profiles = [
+		PathSpawnProfile.create_enemy_profile(),
+		PathSpawnProfile.create_breach_profile(),
+		PathSpawnProfile.create_powerup_profile()
+	]
+
+	Logger.debug("Setup default PathAwareMapConfig", "pathgen")
+
+## Create and populate path snapshot from generated data
+func _create_and_populate_path_snapshot() -> void:
+	"""Create path snapshot from arena generator and populate map config."""
+
+	if not arena_generator:
+		Logger.warn("Cannot create path snapshot: arena_generator is null", "pathgen")
+		return
+
+	# Create snapshot from generated data
+	var snapshot = arena_generator.get_path_snapshot()
+	if not snapshot or not snapshot.is_valid():
+		Logger.warn("Failed to create valid path snapshot", "pathgen")
+		return
+
+	# Populate PathAwareMapConfig
+	map_config.path_snapshot = snapshot
+	map_config.generation_seed = arena_generator.generation_seed
+
+	# Update arena bounds from snapshot
+	if snapshot.total_arena_bounds != Rect2():
+		map_config.arena_bounds_radius = max(
+			snapshot.total_arena_bounds.size.x,
+			snapshot.total_arena_bounds.size.y
+		) * 0.5
+
+	Logger.info("Created path snapshot: %s" % snapshot.get_debug_summary(), "pathgen")
+
+## Emit path snapshot ready signal for spawning systems
+func _emit_path_snapshot_ready_signal() -> void:
+	"""Emit EventBus signal for PathAwareSpaceService registration."""
+
+	if not map_config or not map_config.path_snapshot:
+		Logger.warn("Cannot emit path snapshot ready: missing map_config or path_snapshot", "pathgen")
+		return
+
+	var arena_id = get_arena_id()
+	var payload = EventBus.ArenaPathSnapshotReadyPayload_Type.new(arena_id, map_config.path_snapshot)
+
+	EventBus.arena_path_snapshot_ready.emit(payload)
+	Logger.debug("Emitted arena_path_snapshot_ready signal for arena: %s" % arena_id, "pathgen")
+
+## Get unique arena identifier for this scene instance
+func get_arena_id() -> String:
+	"""Get unique identifier for this arena instance."""
+
+	# Use scene instance ID as unique identifier
+	return "pathaware_forest_%d" % get_instance_id()
