@@ -172,21 +172,60 @@ func _get_clearing_positions() -> Array:
 
 	return positions
 
-## Get positions around paths (buffer zones)
+## Get positions around paths (buffer zones covering all walkable areas)
 func _get_around_path_positions() -> Array:
 	var positions: Array = []
 
-	if not path_snapshot or path_snapshot.path_corridors.is_empty():
+	if not path_snapshot:
 		return positions
 
-	for corridor in path_snapshot.path_corridors:
-		if corridor.center_line.size() > 0:
-			var center_line: Array = corridor.center_line
-			var buffer_distance = corridor.width * 0.75  # Position outside corridor but not too far
+	# Get arena bounds for comprehensive coverage
+	var arena_bounds = path_snapshot.total_arena_bounds
+	var min_distance_from_path = 80.0  # Minimum distance from any path - could use arena width/20 for scaling
+	var sample_spacing = 96.0  # Slightly larger grid spacing for better coverage
 
-			positions.append_array(_sample_positions_around_line(center_line, buffer_distance))
+	# Create grid of potential positions across entire arena
+	var start_x = arena_bounds.position.x
+	var start_y = arena_bounds.position.y
+	var end_x = arena_bounds.position.x + arena_bounds.size.x
+	var end_y = arena_bounds.position.y + arena_bounds.size.y
+
+	# Sample positions in grid pattern across entire walkable area
+	var y = start_y
+	while y <= end_y:
+		var x = start_x
+		while x <= end_x:
+			var test_position = Vector2(x, y)
+
+			# Check if position is far enough from all paths
+			if _is_position_away_from_paths(test_position, min_distance_from_path):
+				positions.append(test_position)
+
+			x += sample_spacing
+		y += sample_spacing
 
 	return positions
+
+## Check if position is far enough from all paths
+func _is_position_away_from_paths(test_position: Vector2, min_distance: float) -> bool:
+	# Check distance to main path points
+	if path_snapshot and not path_snapshot.main_path_points.is_empty():
+		var main_points = _convert_to_vector2_array(path_snapshot.main_path_points)
+		for main_pos in main_points:
+			if test_position.distance_to(main_pos) < min_distance:
+				return false
+
+	# Check distance to branch paths
+	if path_snapshot and not path_snapshot.branch_data.is_empty():
+		for branch_info in path_snapshot.branch_data:
+			if branch_info.has_method("get_full_path"):
+				var branch_points = branch_info.get_full_path()
+				if branch_points.size() > 0:
+					for branch_pos in branch_points:
+						if test_position.distance_to(branch_pos) < min_distance:
+							return false
+
+	return true
 
 ## Sample positions around a line with specified buffer distance
 func _sample_positions_around_line(line_points: Array, buffer_distance: float) -> Array:
