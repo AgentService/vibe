@@ -19,8 +19,8 @@ static func render_debug_visualization(generator: PathAwareArenaGenerator) -> vo
 	# Create debug markers based on generator settings
 	if generator.show_debug_markers:
 		_create_start_marker(generator)
-		_create_main_path_markers(generator)
 		_create_spawn_position_preview(generator)
+		_create_checkpoint_markers(generator)
 
 	if generator.show_path_connections:
 		_create_path_connection_lines(generator)
@@ -242,6 +242,67 @@ static func _create_spawn_position_marker(position: Vector2, index: int) -> Node
 	border.position = Vector2(-border_size/2, -border_size/2)
 	marker.add_child(border)
 	marker.move_child(border, 0)
+
+	return marker
+
+static func _create_checkpoint_markers(generator: PathAwareArenaGenerator) -> void:
+	"""Create purple markers for MAIN_CHECKPOINTS spawn category"""
+	# Create a temporary PathAwareMapConfig to get the checkpoint positions
+	var test_config = PathAwareMapConfig.new()
+	var snapshot = generator.get_path_snapshot()
+
+	if not snapshot:
+		Logger.warn("Cannot create checkpoint markers - no path snapshot available", "pathdebug")
+		return
+
+	test_config.path_snapshot = snapshot
+
+	# Get the checkpoint positions that the spawn system would use
+	var checkpoint_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS)
+
+	Logger.debug("Creating checkpoint markers: %d positions" % checkpoint_positions.size(), "pathdebug")
+
+	for i in range(checkpoint_positions.size()):
+		var position = checkpoint_positions[i]
+		var marker = _create_checkpoint_marker(position, i)
+		generator.add_child(marker)
+		generator.debug_markers.append(marker)
+		Logger.debug("Created purple checkpoint marker %d at %s" % [i, position], "pathdebug")
+
+static func _create_checkpoint_marker(position: Vector2, index: int) -> Node2D:
+	"""Create a purple marker for MAIN_CHECKPOINTS category"""
+	var marker = Node2D.new()
+	marker.position = position
+	marker.name = "MainCheckpoint_" + str(index)
+
+	# Create purple diamond (larger and distinct shape)
+	var diamond = ColorRect.new()
+	diamond.name = "CheckpointDiamond"
+	diamond.color = Color.PURPLE
+	var size = 18
+	diamond.size = Vector2(size, size)
+	diamond.position = Vector2(-size/2, -size/2)
+	diamond.rotation = deg_to_rad(45)  # Rotate to make it diamond-shaped
+	marker.add_child(diamond)
+
+	# Create white border
+	var border = ColorRect.new()
+	border.name = "Border"
+	border.color = Color.WHITE
+	var border_size = size + 4
+	border.size = Vector2(border_size, border_size)
+	border.position = Vector2(-border_size/2, -border_size/2)
+	border.rotation = deg_to_rad(45)
+	marker.add_child(border)
+	marker.move_child(border, 0)
+
+	# Create text label
+	var label = Label.new()
+	label.name = "CheckpointLabel"
+	label.text = "C" + str(index)
+	label.add_theme_color_override("font_color", Color.WHITE)
+	label.position = Vector2(-8, -10)
+	marker.add_child(label)
 
 	return marker
 

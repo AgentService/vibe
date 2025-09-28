@@ -56,6 +56,8 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return _sample_positions_along_branches()
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return path_snapshot.endpoint_positions.duplicate()
+		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
+			return _get_main_checkpoint_positions()
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return _get_clearing_positions()
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
@@ -177,6 +179,22 @@ func _sample_positions_around_line(line_points: Array, buffer_distance: float) -
 
 	return positions
 
+## Get main path checkpoint positions (strategic waypoints)
+func _get_main_checkpoint_positions() -> Array:
+	var positions: Array = []
+
+	if not path_snapshot or path_snapshot.main_path_points.is_empty():
+		return positions
+
+	# Convert PathPoints to Vector2 and skip the first point (START point)
+	var vector_points = _convert_to_vector2_array(path_snapshot.main_path_points)
+
+	# Skip index 0 (START point) - strategic checkpoints start from index 1
+	for i in range(1, vector_points.size()):
+		positions.append(vector_points[i])
+
+	return positions
+
 ## Create a spawn zone for a specific category
 func _create_spawn_zone_for_category(category: PathSpawnProfile.PathSpawnCategory, positions: Array) -> SpawnZone:
 	var zone = SpawnZone.new()
@@ -201,6 +219,8 @@ func _get_category_weight(category: PathSpawnProfile.PathSpawnCategory) -> float
 			return 0.8
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return 1.5  # Higher weight for endpoints (good for bosses)
+		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
+			return 2.0  # Highest weight for strategic checkpoint spawning
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
@@ -217,6 +237,8 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 			return "Branches"
 		PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS:
 			return "Endpoints"
+		PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS:
+			return "MainCheckpoints"
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
 		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:

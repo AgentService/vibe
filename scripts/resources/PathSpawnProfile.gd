@@ -36,9 +36,10 @@ extends Resource
 
 ## Path spawn categories defining where systems can spawn relative to path geometry
 enum PathSpawnCategory {
-	ALONG_MAIN_PATH,    ## Along the primary path spine
+	ALONG_MAIN_PATH,    ## Along the primary path spine (interpolated 64px intervals)
 	ALONG_BRANCHES,     ## Along branch paths extending from main path
 	AT_ENDPOINTS,       ## At the ends of paths (good for bosses, special events)
+	MAIN_CHECKPOINTS,   ## At main path control points/waypoints (strategic spawn locations)
 	IN_CLEARINGS,       ## In open areas between path boundaries
 	AROUND_PATHS        ## In buffer zones around paths but not directly on them
 }
