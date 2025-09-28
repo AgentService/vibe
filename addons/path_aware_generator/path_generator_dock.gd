@@ -31,6 +31,11 @@ var max_branches_per_point_input: SpinBox
 # boundary_thickness_input removed
 var tree_boundary_width_input: SpinBox
 var use_path_radius_checkbox: CheckBox
+
+
+# Performance optimization controls
+var use_prebuilt_tree_field_checkbox: CheckBox
+
 # Gradient density controls removed
 
 # Random offset controls removed
@@ -66,26 +71,44 @@ func _build_ui():
 	# Create vertical layout inside scroll container
 	var vbox = VBoxContainer.new()
 	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	vbox.add_theme_constant_override("separation", 8)  # Compact spacing
 	scroll_container.add_child(vbox)
-	
+
 	# Title
 	var title = Label.new()
 	title.text = "Path-Aware Generator"
 	title.add_theme_font_size_override("font_size", 14)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	vbox.add_child(title)
 	
+	# === GENERATION SETTINGS GROUP ===
+	var generation_group = VBoxContainer.new()
+	generation_group.add_theme_constant_override("separation", 4)
+	vbox.add_child(generation_group)
+
+	# Group title
+	var gen_title = Label.new()
+	gen_title.text = "⚙️ Generation Settings"
+	gen_title.add_theme_font_size_override("font_size", 11)
+	gen_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+	generation_group.add_child(gen_title)
+
 	# Separator
-	var separator1 = HSeparator.new()
-	vbox.add_child(separator1)
-	
-	# Seed control
+	var gen_sep = HSeparator.new()
+	generation_group.add_child(gen_sep)
+
+	var gen_vbox = VBoxContainer.new()
+	gen_vbox.add_theme_constant_override("separation", 4)
+	generation_group.add_child(gen_vbox)
+
+	# Seed control - compact layout
+	var seed_hbox = HBoxContainer.new()
+	gen_vbox.add_child(seed_hbox)
+
 	var seed_label = Label.new()
 	seed_label.text = "Seed:"
-	vbox.add_child(seed_label)
-
-	# Seed input and random button in horizontal container
-	var seed_hbox = HBoxContainer.new()
-	vbox.add_child(seed_hbox)
+	seed_label.custom_minimum_size.x = 80
+	seed_hbox.add_child(seed_label)
 
 	seed_input = SpinBox.new()
 	seed_input.min_value = 1
@@ -102,39 +125,70 @@ func _build_ui():
 	random_seed_button.custom_minimum_size.x = 30
 	random_seed_button.pressed.connect(_generate_random_seed)
 	seed_hbox.add_child(random_seed_button)
-	
-	# Path count control
+
+	# Connection Points - compact layout
+	var points_hbox = HBoxContainer.new()
+	gen_vbox.add_child(points_hbox)
+
 	var path_count_label = Label.new()
-	path_count_label.text = "Connection Points:"
-	vbox.add_child(path_count_label)
-	
+	path_count_label.text = "Points:"
+	path_count_label.custom_minimum_size.x = 80
+	points_hbox.add_child(path_count_label)
+
 	path_count_input = SpinBox.new()
 	path_count_input.min_value = 2
 	path_count_input.max_value = 8
-	path_count_input.value = 3  # From DefaultPathConfiguration.tres
+	path_count_input.value = 3
 	path_count_input.step = 1
-	vbox.add_child(path_count_input)
+	path_count_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	points_hbox.add_child(path_count_input)
 	
-	# Arena size control
-	# Arena Size parameter removed
+	# === PATH & TREE SETTINGS GROUP ===
+	var path_group = VBoxContainer.new()
+	path_group.add_theme_constant_override("separation", 4)
+	vbox.add_child(path_group)
 
-	# Corridor width control (unlimited)
+	# Group title
+	var path_title = Label.new()
+	path_title.text = "🛤️ Path & Tree Settings"
+	path_title.add_theme_font_size_override("font_size", 11)
+	path_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+	path_group.add_child(path_title)
+
+	# Separator
+	var path_sep = HSeparator.new()
+	path_group.add_child(path_sep)
+
+	var path_vbox = VBoxContainer.new()
+	path_vbox.add_theme_constant_override("separation", 4)
+	path_group.add_child(path_vbox)
+
+	# Corridor width - compact layout
+	var corridor_hbox = HBoxContainer.new()
+	path_vbox.add_child(corridor_hbox)
+
 	var corridor_width_label = Label.new()
-	corridor_width_label.text = "Corridor Width:"
-	vbox.add_child(corridor_width_label)
+	corridor_width_label.text = "Width:"
+	corridor_width_label.custom_minimum_size.x = 80
+	corridor_hbox.add_child(corridor_width_label)
 
 	corridor_width_input = SpinBox.new()
 	corridor_width_input.min_value = 50
-	corridor_width_input.max_value = 5000  # Unlimited
-	corridor_width_input.value = 1500  # Current plugin default
+	corridor_width_input.max_value = 5000
+	corridor_width_input.value = 1500
 	corridor_width_input.step = 50
 	corridor_width_input.suffix = "px"
-	vbox.add_child(corridor_width_input)
+	corridor_width_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	corridor_hbox.add_child(corridor_width_input)
 
-	# Tree spacing control
+	# Tree spacing - compact layout
+	var spacing_hbox = HBoxContainer.new()
+	path_vbox.add_child(spacing_hbox)
+
 	var tree_spacing_label = Label.new()
-	tree_spacing_label.text = "Tree Spacing:"
-	vbox.add_child(tree_spacing_label)
+	tree_spacing_label.text = "Spacing:"
+	tree_spacing_label.custom_minimum_size.x = 80
+	spacing_hbox.add_child(tree_spacing_label)
 
 	tree_spacing_input = SpinBox.new()
 	tree_spacing_input.min_value = 1
@@ -142,94 +196,117 @@ func _build_ui():
 	tree_spacing_input.value = 22
 	tree_spacing_input.step = 15
 	tree_spacing_input.suffix = "px"
-	vbox.add_child(tree_spacing_input)
+	tree_spacing_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	spacing_hbox.add_child(tree_spacing_input)
 
-	# Tree boundary width control (outward extension)
+	# Tree boundary width - compact layout
+	var boundary_hbox = HBoxContainer.new()
+	path_vbox.add_child(boundary_hbox)
+
 	var tree_boundary_width_label = Label.new()
-	tree_boundary_width_label.text = "Tree Boundary Width (Outward Extension):"
-	vbox.add_child(tree_boundary_width_label)
+	tree_boundary_width_label.text = "Boundary:"
+	tree_boundary_width_label.custom_minimum_size.x = 80
+	boundary_hbox.add_child(tree_boundary_width_label)
 
 	tree_boundary_width_input = SpinBox.new()
 	tree_boundary_width_input.min_value = 50
-	tree_boundary_width_input.max_value = 99999  # No limit for testing
-	tree_boundary_width_input.value = 300  # Default from TreeBoundaryConfiguration
+	tree_boundary_width_input.max_value = 99999
+	tree_boundary_width_input.value = 300
 	tree_boundary_width_input.step = 50
 	tree_boundary_width_input.suffix = "px"
-	tree_boundary_width_input.tooltip_text = "How far outward from paths to place trees - larger values create wider boundaries"
-	vbox.add_child(tree_boundary_width_input)
+	tree_boundary_width_input.tooltip_text = "Tree boundary width (outward extension)"
+	tree_boundary_width_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boundary_hbox.add_child(tree_boundary_width_input)
 
-	# Arena base radius control removed
 
-	# Chain length control
+
+	# Chain length - compact layout
+	var chain_hbox = HBoxContainer.new()
+	path_vbox.add_child(chain_hbox)
+
 	var chain_length_label = Label.new()
-	chain_length_label.text = "Chain Length:"
-	vbox.add_child(chain_length_label)
+	chain_length_label.text = "Chain Len:"
+	chain_length_label.custom_minimum_size.x = 80
+	chain_hbox.add_child(chain_length_label)
 
 	chain_length_input = SpinBox.new()
 	chain_length_input.min_value = 2
 	chain_length_input.max_value = 15
-	chain_length_input.value = 7
+	chain_length_input.value = 5
 	chain_length_input.step = 1
-	chain_length_input.suffix = " points"
-	vbox.add_child(chain_length_input)
+	chain_length_input.suffix = " pts"
+	chain_length_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	chain_hbox.add_child(chain_length_input)
 
-	# Min distance control
+	# Min distance - compact layout
+	var distance_hbox = HBoxContainer.new()
+	path_vbox.add_child(distance_hbox)
+
 	var min_distance_label = Label.new()
-	min_distance_label.text = "Min Point Distance:"
-	vbox.add_child(min_distance_label)
+	min_distance_label.text = "Min Dist:"
+	min_distance_label.custom_minimum_size.x = 80
+	distance_hbox.add_child(min_distance_label)
 
 	min_distance_input = SpinBox.new()
 	min_distance_input.min_value = 100
 	min_distance_input.max_value = 2600
-	min_distance_input.value = 1800
+	min_distance_input.value = 800
 	min_distance_input.step = 100
 	min_distance_input.suffix = "px"
-	vbox.add_child(min_distance_input)
+	min_distance_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	distance_hbox.add_child(min_distance_input)
 
-	# Point Space Radius parameter removed
+	# === DYNAMIC BRANCHING GROUP ===
+	var branching_group = VBoxContainer.new()
+	branching_group.add_theme_constant_override("separation", 4)
+	vbox.add_child(branching_group)
 
-	# Path extension width control removed
-
-	# Dark extension width control removed
-
-	# Boundary Distance parameter removed
+	# Group title
+	var branch_title = Label.new()
+	branch_title.text = "🌿 Dynamic Branching"
+	branch_title.add_theme_font_size_override("font_size", 11)
+	branch_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+	branching_group.add_child(branch_title)
 
 	# Separator
-	var separator2 = HSeparator.new()
-	vbox.add_child(separator2)
+	var branch_sep = HSeparator.new()
+	branching_group.add_child(branch_sep)
 
-	# Dynamic Branching Section
-	var branching_title = Label.new()
-	branching_title.text = "Dynamic Branching"
-	branching_title.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(branching_title)
+	var branch_vbox = VBoxContainer.new()
+	branch_vbox.add_theme_constant_override("separation", 4)
+	branching_group.add_child(branch_vbox)
 
 	# Enable branching checkbox
 	enable_branching_checkbox = CheckBox.new()
 	enable_branching_checkbox.text = "Enable Dynamic Branching"
-	enable_branching_checkbox.button_pressed = true  # Default enabled
-	vbox.add_child(enable_branching_checkbox)
+	enable_branching_checkbox.button_pressed = true
+	branch_vbox.add_child(enable_branching_checkbox)
 
-	# Branch probability
+	# Branch probability - compact layout
+	var prob_hbox = HBoxContainer.new()
+	branch_vbox.add_child(prob_hbox)
+
 	var branch_prob_label = Label.new()
-	branch_prob_label.text = "Branch Probability (%):"
-	vbox.add_child(branch_prob_label)
+	branch_prob_label.text = "Probability:"
+	branch_prob_label.custom_minimum_size.x = 80
+	prob_hbox.add_child(branch_prob_label)
 
 	branch_probability_input = SpinBox.new()
 	branch_probability_input.min_value = 0
 	branch_probability_input.max_value = 100
-	branch_probability_input.value = 80  # 60% default
+	branch_probability_input.value = 80
 	branch_probability_input.step = 5
 	branch_probability_input.suffix = "%"
-	vbox.add_child(branch_probability_input)
+	branch_probability_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	prob_hbox.add_child(branch_probability_input)
 
-	# Branches per point
+	# Branches per point - compact layout
 	var branches_per_point_label = Label.new()
-	branches_per_point_label.text = "Branches per Point (Min-Max):"
-	vbox.add_child(branches_per_point_label)
+	branches_per_point_label.text = "Per Point (Min-Max):"
+	branch_vbox.add_child(branches_per_point_label)
 
 	var branches_hbox = HBoxContainer.new()
-	vbox.add_child(branches_hbox)
+	branch_vbox.add_child(branches_hbox)
 
 	min_branches_per_point_input = SpinBox.new()
 	min_branches_per_point_input.min_value = 1
@@ -249,18 +326,18 @@ func _build_ui():
 	max_branches_per_point_input.step = 1
 	branches_hbox.add_child(max_branches_per_point_input)
 
-	# Branch length
+	# Branch length - compact layout
 	var branch_length_label = Label.new()
-	branch_length_label.text = "Branch Length (Min-Max px):"
-	vbox.add_child(branch_length_label)
+	branch_length_label.text = "Length (Min-Max px):"
+	branch_vbox.add_child(branch_length_label)
 
 	var length_hbox = HBoxContainer.new()
-	vbox.add_child(length_hbox)
+	branch_vbox.add_child(length_hbox)
 
 	min_branch_length_input = SpinBox.new()
 	min_branch_length_input.min_value = 50
 	min_branch_length_input.max_value = 5000
-	min_branch_length_input.value = 2100
+	min_branch_length_input.value = 500
 	min_branch_length_input.step = 25
 	min_branch_length_input.suffix = "px"
 	length_hbox.add_child(min_branch_length_input)
@@ -272,66 +349,80 @@ func _build_ui():
 	max_branch_length_input = SpinBox.new()
 	max_branch_length_input.min_value = 200
 	max_branch_length_input.max_value = 5000
-	max_branch_length_input.value = 2500
+	max_branch_length_input.value = 1500
 	max_branch_length_input.step = 50
 	max_branch_length_input.suffix = "px"
 	length_hbox.add_child(max_branch_length_input)
 
-	# Branch curve intensity
+	# Branch curve intensity - compact layout
+	var curve_hbox = HBoxContainer.new()
+	branch_vbox.add_child(curve_hbox)
+
 	var curve_label = Label.new()
-	curve_label.text = "Branch Curve Intensity:"
-	vbox.add_child(curve_label)
+	curve_label.text = "Curve:"
+	curve_label.custom_minimum_size.x = 80
+	curve_hbox.add_child(curve_label)
 
 	branch_curve_intensity_input = SpinBox.new()
 	branch_curve_intensity_input.min_value = -550.0
 	branch_curve_intensity_input.max_value = 1001.0
 	branch_curve_intensity_input.value = 333
 	branch_curve_intensity_input.step = 111
-	vbox.add_child(branch_curve_intensity_input)
+	branch_curve_intensity_input.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	curve_hbox.add_child(branch_curve_intensity_input)
 
-	# Another separator
-	var separator3 = HSeparator.new()
-	vbox.add_child(separator3)
+	# === TREE BOUNDARY OPTIONS GROUP ===
+	var tree_options_group = VBoxContainer.new()
+	tree_options_group.add_theme_constant_override("separation", 4)
+	vbox.add_child(tree_options_group)
 
-	# Tree Boundary Section
-	var boundary_title = Label.new()
-	boundary_title.text = "Tree Boundaries"
-	boundary_title.add_theme_font_size_override("font_size", 12)
-	vbox.add_child(boundary_title)
+	# Group title
+	var tree_title = Label.new()
+	tree_title.text = "🌲 Tree Options"
+	tree_title.add_theme_font_size_override("font_size", 11)
+	tree_title.add_theme_color_override("font_color", Color(0.8, 0.9, 1.0))
+	tree_options_group.add_child(tree_title)
 
-	# Boundary thickness control removed
+	# Separator
+	var tree_sep = HSeparator.new()
+	tree_options_group.add_child(tree_sep)
+
+	var tree_vbox = VBoxContainer.new()
+	tree_vbox.add_theme_constant_override("separation", 4)
+	tree_options_group.add_child(tree_vbox)
 
 	# Path-radius generation checkbox
 	use_path_radius_checkbox = CheckBox.new()
 	use_path_radius_checkbox.text = "Use Path-Radius Generation (Efficient)"
-	use_path_radius_checkbox.button_pressed = true  # Default to new efficient method
-	use_path_radius_checkbox.tooltip_text = "Generate trees only around actual paths (eliminates massive unused forest areas)"
-	vbox.add_child(use_path_radius_checkbox)
+	use_path_radius_checkbox.button_pressed = true
+	use_path_radius_checkbox.tooltip_text = "Generate trees only around actual paths"
+	tree_vbox.add_child(use_path_radius_checkbox)
 
-	# Gradient density controls removed
+	# Pre-built tree field checkbox (keep checkbox only)
+	use_prebuilt_tree_field_checkbox = CheckBox.new()
+	use_prebuilt_tree_field_checkbox.text = "Use Pre-built Tree Field (Faster)"
+	use_prebuilt_tree_field_checkbox.button_pressed = true
+	use_prebuilt_tree_field_checkbox.tooltip_text = "Use pre-built tree field for better performance"
+	tree_vbox.add_child(use_prebuilt_tree_field_checkbox)
 
-	# Random offset controls (Natural Placement) removed
 
-	# Final separator
-	var separator4 = HSeparator.new()
-	vbox.add_child(separator4)
 
-	# Generate button
+
+
+	# === GENERATION BUTTON ===
 	generate_button = Button.new()
-	generate_button.text = "Generate Random Paths"
-	generate_button.custom_minimum_size.y = 30
+	generate_button.text = "🌱 Generate Path Arena"
+	generate_button.custom_minimum_size.y = 35
+	generate_button.add_theme_font_size_override("font_size", 12)
 	vbox.add_child(generate_button)
 	
 	# Status label
 	status_label = Label.new()
 	status_label.text = "Ready to generate"
 	status_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	status_label.add_theme_font_size_override("font_size", 10)
 	vbox.add_child(status_label)
-	
-	# Spacer to push controls to top
-	var spacer = Control.new()
-	spacer.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	vbox.add_child(spacer)
 
 func _load_default_configs():
 	# Load default path configuration
@@ -433,12 +524,14 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		generator.tree_config.tree_spacing = tree_spacing_input.value
 		if tree_boundary_width_input:
 			generator.tree_config.tree_boundary_width = tree_boundary_width_input.value
-		# boundary_distance parameter removed
-		# boundary_thickness parameter removed
 		if use_path_radius_checkbox:
 			generator.tree_config.use_path_radius_generation = use_path_radius_checkbox.button_pressed
-		# Gradient density parameters removed
-		# Random offset controls removed
+
+
+		# Performance optimization settings
+		if use_prebuilt_tree_field_checkbox:
+			generator.tree_config.use_prebuilt_tree_field = use_prebuilt_tree_field_checkbox.button_pressed
+
 
 	# Arena base radius parameter removed
 
@@ -447,9 +540,9 @@ func _update_generator_settings(generator: PathAwareArenaGenerator):
 		int(path_count_input.value),
 		corridor_width_input.value,
 		tree_spacing_input.value,
-		tree_boundary_width_input.value if tree_boundary_width_input else 300.0,
-		int(chain_length_input.value if chain_length_input else 4),
-		min_distance_input.value if min_distance_input else 80.0
+		tree_boundary_width_input.value,
+		int(chain_length_input.value),
+		min_distance_input.value
 	], "plugin")
 
 func _show_error(message: String):

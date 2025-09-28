@@ -248,10 +248,10 @@ func _log_generation_metrics(elapsed_ms: float, tree_count: int, validation_resu
 
 	# Configuration summary
 	if tree_config:
-		Logger.debug("Config: spacing=%.1f, density=%.2f, clustering=%s" % [
+		Logger.debug("Config: spacing=%.1f, density=%.2f, optimization=%s" % [
 			tree_config.tree_spacing,
 			tree_config.tree_density,
-			"✓" if tree_config.enable_natural_clustering else "✗"
+			"✓" if tree_config.use_optimized_path_collision else "✗"
 		], "treegen")
 
 ## Get comprehensive debug information
@@ -279,7 +279,7 @@ func get_debug_info() -> Dictionary:
 			"tree_spacing": tree_config.tree_spacing,
 			"tree_density": tree_config.tree_density,
 			"path_buffer_distance": tree_config.path_buffer_distance,
-			"enable_clustering": tree_config.enable_natural_clustering,
+			"use_optimized_collision": tree_config.use_optimized_path_collision,
 			"enforce_continuity": tree_config.enforce_boundary_continuity
 		}
 
