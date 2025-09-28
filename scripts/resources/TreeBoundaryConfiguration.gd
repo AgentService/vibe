@@ -138,16 +138,18 @@ func _safe_log(message: String, level: String = "info", category: String = "tree
 
 
 ## Generate tree boundary positions that respond to path data
-func generate_tree_boundaries(path_data: Dictionary) -> Array[Vector2]:
-	# Use local RNG for deterministic tree generation without global pollution
-	# Handle tool mode where autoloads may not be fully available
+func generate_tree_boundaries(path_data: Dictionary, provided_rng: RandomNumberGenerator = null) -> Array[Vector2]:
+	# Use provided RNG for deterministic generation, fallback to local RNG if none provided
 	var rng: RandomNumberGenerator
-	if Engine.is_editor_hint():
+	if provided_rng:
+		# Use the deterministic RNG from TreeBoundaryGenerator (maintains determinism per run)
+		rng = provided_rng
+	elif Engine.is_editor_hint():
 		# Always use local RNG in tool mode to avoid autoload issues
 		rng = RandomNumberGenerator.new()
 		rng.seed = 12345  # Default seed for tool mode
 	else:
-		# Runtime mode - use local RNG to avoid polluting global streams
+		# Runtime mode fallback - use local RNG to avoid polluting global streams
 		rng = RandomNumberGenerator.new()
 		rng.seed = _hash_seed_for_trees(12345)  # Default hashed seed
 	var paths: Array = path_data.get("paths", [])
@@ -742,7 +744,7 @@ func _is_position_in_path_buffer_zone_with_endpoints(position: Vector2, paths: A
 func _jitter_position(world_pos: Vector2, rng: RandomNumberGenerator) -> Vector2:
 	if placement_randomness <= 0.0 or max_random_offset <= 0:
 		return world_pos
-	var jitter_range := max_random_offset * (placement_randomness / 100.0)  # Convert percentage to 0-1 range
+	var jitter_range := max_random_offset * placement_randomness  # Direct multiplication - no division needed
 	return world_pos + Vector2(
 		rng.randf_range(-jitter_range, jitter_range),
 		rng.randf_range(-jitter_range, jitter_range)
@@ -754,7 +756,7 @@ func _apply_asymmetric_placement(base_position: Vector2, row_index: int, col_ind
 
 	# Apply organic random offset if enabled
 	if placement_randomness > 0.0 and max_random_offset > 0:
-		var random_range = max_random_offset * (placement_randomness / 100.0)  # Convert percentage to 0-1 range
+		var random_range = max_random_offset * placement_randomness  # Direct multiplication - no division needed
 		var offset_x = (rng.randf() - 0.5) * 2.0 * random_range
 		var offset_y = (rng.randf() - 0.5) * 2.0 * random_range
 		final_position += Vector2(offset_x, offset_y)

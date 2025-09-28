@@ -17,7 +17,8 @@ var path_smoothing_input: SpinBox
 # Tree Configuration
 var tree_spacing_input: SpinBox
 var tree_density_input: SpinBox
-var enable_staggered_placement_toggle: CheckBox
+# Removed enable_staggered_placement_toggle - using jitter system instead
+var placement_randomness_input: SpinBox
 var max_random_offset_input: SpinBox
 
 # Natural Generation
@@ -227,11 +228,19 @@ func _create_tree_config_controls(container: VBoxContainer) -> void:
 	tree_density_input.value = 0.95
 	container.add_child(tree_density_input)
 
-	# Enable staggered placement (zigzag effect)
-	enable_staggered_placement_toggle = CheckBox.new()
-	enable_staggered_placement_toggle.text = "Enable Zigzag Placement (Natural Look)"
-	enable_staggered_placement_toggle.button_pressed = true
-	container.add_child(enable_staggered_placement_toggle)
+	# Removed staggered placement toggle - using jitter system for natural placement instead
+
+	# Placement randomness intensity
+	var randomness_label = Label.new()
+	randomness_label.text = "Placement Randomness (0.0-1.0):"
+	container.add_child(randomness_label)
+
+	placement_randomness_input = SpinBox.new()
+	placement_randomness_input.min_value = 0.0
+	placement_randomness_input.max_value = 1.0
+	placement_randomness_input.step = 0.1
+	placement_randomness_input.value = 0.3
+	container.add_child(placement_randomness_input)
 
 	# Max random offset
 	var offset_label = Label.new()
@@ -380,9 +389,10 @@ func _on_generate_pressed():
 	if "tree_config" in generator and generator.tree_config:
 		generator.tree_config.tree_spacing = tree_spacing_input.value
 		generator.tree_config.tree_density = tree_density_input.value
-		generator.tree_config.enable_staggered_placement = enable_staggered_placement_toggle.button_pressed
+		# Removed enable_staggered_placement assignment - property doesn't exist and jitter system handles natural placement
+		generator.tree_config.placement_randomness = placement_randomness_input.value
 		generator.tree_config.max_random_offset = max_random_offset_input.value
-		print("🌲 Applied tree configuration: spacing=", tree_spacing_input.value, ", density=", tree_density_input.value, ", zigzag=", enable_staggered_placement_toggle.button_pressed, ", offset=", max_random_offset_input.value)
+		print("🌲 Applied tree configuration: spacing=", tree_spacing_input.value, ", density=", tree_density_input.value, ", randomness=", placement_randomness_input.value, ", offset=", max_random_offset_input.value)
 
 	# Set seed for old generator
 	if "generation_params" in generator and generator.generation_params:

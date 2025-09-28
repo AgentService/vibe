@@ -49,8 +49,8 @@ func generate_tree_boundaries(path_data: Dictionary, seed: int, extension_data: 
 		Logger.warn("Invalid path data provided for tree boundary generation", "treegen")
 		return []
 
-	# Generate tree boundaries using configuration (trees avoid only base path corridors)
-	var tree_positions = tree_config.generate_tree_boundaries(path_data)
+	# Generate tree boundaries using configuration with deterministic RNG (trees avoid only base path corridors)
+	var tree_positions = tree_config.generate_tree_boundaries(path_data, rng)
 
 	# Validate boundary quality (trees should only avoid base path corridors)
 	var validation_result = _validate_boundary_quality(tree_positions, path_data)
