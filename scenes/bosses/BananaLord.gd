@@ -16,7 +16,7 @@ func _ready() -> void:
 	max_health = 200.0
 	current_health = 200.0
 	damage = 25.0
-	speed = 60.0
+	# speed will be set by BaseBoss from SpawnConfig - no override needed
 	attack_damage = 25.0
 	attack_cooldown = 1.5
 	attack_range = 60.0
@@ -38,7 +38,7 @@ func _setup_banana_lord_behavior() -> void:
 		animated_sprite.play("wake_up")
 		animated_sprite.pause()  # Stay on first frame until aggroed
 		animated_sprite.connect("animation_finished", _on_animation_finished)
-		Logger.debug("BananaLord spawned in dormant state", "bosses")
+		# BananaLord spawned in dormant state
 
 # Override _exit_tree to call parent cleanup
 func _exit_tree() -> void:
@@ -83,7 +83,7 @@ func _update_ai(_dt: float) -> void:
 
 # Override parent attack with BananaLord-specific attack
 func _perform_attack() -> void:
-	Logger.debug("BananaLord attacks for %.1f damage!" % attack_damage, "bosses")
+	# BananaLord attacks for damage
 	
 	# Apply physical damage to player via unified DamageService
 	var distance_to_player: float = global_position.distance_to(target_position)
@@ -98,14 +98,14 @@ func _aggro() -> void:
 	if is_aggroed:
 		return
 	is_aggroed = true
-	Logger.debug("BananaLord aggroed - beginning wake up sequence!", "bosses")
+	# BananaLord aggroed - beginning wake up sequence
 	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
 
 func _on_animation_finished() -> void:
 	if animated_sprite.animation == "wake_up":
 		has_woken_up = true
 		animated_sprite.play("default")
-		Logger.debug("BananaLord fully awakened", "bosses")
+		# BananaLord fully awakened
 	elif animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")

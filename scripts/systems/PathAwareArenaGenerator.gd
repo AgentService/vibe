@@ -33,12 +33,13 @@ var debug_lines: Array[Line2D] = []
 var path_generator: DungeonPathGenerator
 var tree_generator: Node
 var spawn_zone_generator: Node
+var spawn_zone_container: Node2D
 
 # Generated data
 var current_path_data: Dictionary = {}
 var current_tree_data: Array[Vector2] = []
 var rng: RandomNumberGenerator
-var generated_spawn_zones: Array = []
+var generated_spawn_zones: Array[Area2D] = []
 
 func _ready():
 	# Initialize system components
@@ -71,7 +72,12 @@ func _initialize_systems():
 	add_child(tree_node)
 	tree_generator = tree_node
 
-	Logger.debug("Initialized DungeonPathGenerator and TreeBoundaryGenerator systems", "pathgen")
+	# Create spawn zone container for organizing spawn zones
+	spawn_zone_container = Node2D.new()
+	spawn_zone_container.name = "SpawnZones"
+	add_child(spawn_zone_container)
+
+	Logger.debug("Initialized DungeonPathGenerator, TreeBoundaryGenerator, and SpawnZone container", "pathgen")
 
 func generate_path_aware_arena():
 	Logger.info("🛤️ Starting path-aware arena generation...", "pathgen")
@@ -118,11 +124,16 @@ func generate_path_aware_arena():
 
 	# Phase 4: Generate tiles (arena base, ground corridors, and trees)
 	_generate_arena_base()
+	Logger.debug("Arena base generation completed", "pathgen")
 	_generate_ground_tiles()
+	Logger.debug("Ground tiles generation completed", "pathgen")
 	_generate_boundary_trees()
+	Logger.debug("Boundary trees generation completed", "pathgen")
 
 	# Phase 5: Generate spawn zones at branch endpoints
+	Logger.debug("About to call _generate_spawn_zones()...", "spawnzones")
 	_generate_spawn_zones()
+	Logger.debug("Finished calling _generate_spawn_zones()", "spawnzones")
 
 	Logger.info("🛤️ Path-aware arena generation completed!", "pathgen")
 	Logger.info("  - Points generated: %d" % current_path_data.get("points", []).size(), "pathgen")
@@ -685,8 +696,11 @@ func get_system_debug_info() -> Dictionary:
 ## Generate spawn zones at branch endpoints
 func _generate_spawn_zones() -> void:
 	"""Generate circular spawn zones at all branch endpoint positions"""
+	Logger.info("🎯 Starting spawn zone generation...", "spawnzones")
+
 	# Use the same logic as PathAwareMapConfig to get branch endpoint positions
 	var snapshot = get_path_snapshot()
+	Logger.debug("Path snapshot result: %s" % (snapshot != null), "spawnzones")
 	if not snapshot:
 		Logger.warn("No path snapshot available for spawn zone generation", "spawnzones")
 		return
@@ -711,7 +725,7 @@ func _generate_spawn_zones() -> void:
 
 ## Create spawn zones directly without separate script
 func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
-	"""Create spawn zone visual indicators directly at endpoint positions"""
+	"""Create functional Area2D spawn zones with visual indicators at endpoint positions"""
 	# Clear any existing spawn zones
 	for zone in generated_spawn_zones:
 		if is_instance_valid(zone):
@@ -724,12 +738,25 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 
 	for i in range(endpoint_positions.size()):
 		var endpoint_pos: Vector2 = endpoint_positions[i]
-		Logger.debug("Creating spawn zone %d at position %s" % [i, endpoint_pos], "spawnzones")
+		Logger.debug("Creating functional spawn zone %d at position %s" % [i, endpoint_pos], "spawnzones")
 
-		# Create spawn zone visual indicator
-		var zone_node = Node2D.new()
-		zone_node.name = "SpawnZone_%d" % i
-		zone_node.global_position = endpoint_pos
+		# Create functional Area2D spawn zone (required by SpawnDirector)
+		var spawn_zone = Area2D.new()
+		spawn_zone.name = "SpawnZone_%d" % i
+		spawn_zone.global_position = endpoint_pos
+
+		# Add CollisionShape2D with CircleShape2D for functional area detection
+		var collision_shape = CollisionShape2D.new()
+		collision_shape.name = "CollisionShape2D"
+		var circle_shape = CircleShape2D.new()
+		circle_shape.radius = spawn_zone_radius
+		collision_shape.shape = circle_shape
+		spawn_zone.add_child(collision_shape)
+
+		# Add visual indicators container
+		var visual_container = Node2D.new()
+		visual_container.name = "VisualIndicator"
+		spawn_zone.add_child(visual_container)
 
 		# Create visual circle using Line2D
 		var circle_line = Line2D.new()
@@ -745,7 +772,7 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 			var point = Vector2.from_angle(angle) * spawn_zone_radius
 			circle_line.add_point(point)
 
-		zone_node.add_child(circle_line)
+		visual_container.add_child(circle_line)
 
 		# Add center dot
 		var center_dot = ColorRect.new()
@@ -753,7 +780,7 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 		center_dot.size = Vector2(8, 8)
 		center_dot.position = Vector2(-4, -4)
 		center_dot.color = zone_color
-		zone_node.add_child(center_dot)
+		visual_container.add_child(center_dot)
 
 		# Add zone ID label
 		var label = Label.new()
@@ -761,10 +788,31 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 		label.text = "Z%d" % i
 		label.position = Vector2(-12, spawn_zone_radius + 10)
 		label.add_theme_color_override("font_color", zone_color)
-		zone_node.add_child(label)
+		visual_container.add_child(label)
 
-		# Add to scene and track
-		add_child(zone_node)
-		generated_spawn_zones.append(zone_node)
+		# Add to spawn zone container and track
+		spawn_zone_container.add_child(spawn_zone)
+		generated_spawn_zones.append(spawn_zone)
 
-		Logger.debug("Created spawn zone %d successfully" % i, "spawnzones")
+		Logger.debug("Created functional spawn zone %d successfully" % i, "spawnzones")
+
+## Get all generated spawn zones for SpawnDirector integration
+func get_spawn_zones() -> Array[Area2D]:
+	"""Get all generated functional Area2D spawn zones"""
+	return generated_spawn_zones
+
+## Get spawn zone count
+func get_spawn_zone_count() -> int:
+	"""Get the number of generated spawn zones"""
+	return generated_spawn_zones.size()
+
+## Get random spawn zone
+func get_random_spawn_zone() -> Area2D:
+	"""Get a random spawn zone from generated zones"""
+	if generated_spawn_zones.is_empty():
+		Logger.warn("No spawn zones available for random selection", "spawnzones")
+		return null
+
+	var spawn_rng = RNG.stream("spawn")
+	var random_index = spawn_rng.randi() % generated_spawn_zones.size()
+	return generated_spawn_zones[random_index]

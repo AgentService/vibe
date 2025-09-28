@@ -58,11 +58,28 @@ func _generate_arena() -> void:
 		Logger.error("PathAwareArenaGenerator not found in scene", "pathgen")
 		return
 
-	# Ensure we have a PathAwareMapConfig (cast from parent class)
+	# Ensure we have a PathAwareMapConfig (prefer assigned resource over new creation)
+	if not map_config:
+		Logger.info("No map_config assigned, loading default PathAware forest config", "pathgen")
+		map_config = load("res://data/content/maps/pathaware_forest_config.tres") as MapConfig
+
 	if not map_config is PathAwareMapConfig:
-		Logger.info("Creating default PathAwareMapConfig", "pathgen")
-		map_config = PathAwareMapConfig.new()
-		_setup_default_map_config()
+		Logger.info("Converting to PathAwareMapConfig", "pathgen")
+		var path_aware_config = PathAwareMapConfig.new()
+		# Copy basic properties from the loaded config
+		if map_config:
+			path_aware_config.map_id = map_config.map_id
+			path_aware_config.display_name = map_config.display_name
+			path_aware_config.description = map_config.description
+			path_aware_config.arena_bounds_radius = map_config.arena_bounds_radius
+			path_aware_config.spawn_radius = map_config.spawn_radius
+			path_aware_config.player_spawn_position = map_config.player_spawn_position
+			path_aware_config.auto_spawn_range = map_config.auto_spawn_range
+			path_aware_config.auto_spawn_min_distance = map_config.auto_spawn_min_distance
+			path_aware_config.activation_method = map_config.activation_method
+		else:
+			_setup_default_map_config_on_instance(path_aware_config)
+		map_config = path_aware_config
 
 	if is_randomize_on_entry:
 		# Use a new random seed for each entry
@@ -86,6 +103,27 @@ func _generate_arena() -> void:
 
 	# Emit ready signal for service registration
 	_emit_path_snapshot_ready_signal()
+
+	# Update spawn zones for SpawnDirector integration
+	_update_spawn_zones()
+
+
+func _update_spawn_zones() -> void:
+	"""Collect generated spawn zones and make them available to SpawnDirector"""
+	if not arena_generator:
+		Logger.warn("Arena generator not found for spawn zone collection", "spawnzones")
+		return
+
+	# Clear existing spawn zones
+	_spawn_zone_areas.clear()
+
+	# Collect Area2D spawn zones from the generator
+	var spawn_zones = arena_generator.get_spawn_zones()
+	for zone in spawn_zones:
+		if zone is Area2D:
+			_spawn_zone_areas.append(zone)
+
+	Logger.info("Updated arena spawn zones: %d zones available for SpawnDirector" % _spawn_zone_areas.size(), "spawnzones")
 
 
 func _setup_player_spawn() -> void:
@@ -126,24 +164,25 @@ func _return_to_hideout() -> void:
 	StateManager.go_to_hideout({"source": "pathgen_arena_exit"})
 
 ## Setup default configuration for PathAwareMapConfig
-func _setup_default_map_config() -> void:
+func _setup_default_map_config_on_instance(path_aware_config: PathAwareMapConfig) -> void:
 	"""Initialize default values for PathAwareMapConfig."""
 
-	map_config.map_id = "pathaware_forest"
-	map_config.display_name = "Generated Forest Arena"
-	map_config.description = "Procedurally generated forest arena with path-aware spawning"
+	path_aware_config.map_id = "pathaware_forest"
+	path_aware_config.display_name = "Generated Forest Arena"
+	path_aware_config.description = "Procedurally generated forest arena with path-aware spawning"
 
 	# Basic arena properties
-	map_config.arena_bounds_radius = 600.0
-	map_config.spawn_radius = 500.0
-	map_config.player_spawn_position = Vector2.ZERO
+	path_aware_config.arena_bounds_radius = 600.0
+	path_aware_config.spawn_radius = 500.0
+	path_aware_config.player_spawn_position = Vector2.ZERO
 
 	# Path-aware specific settings
-	map_config.auto_optimize_spawns = true
-	map_config.generation_seed = 0  # Will be set after generation
+	path_aware_config.auto_optimize_spawns = true
+	path_aware_config.generation_seed = 0  # Will be set after generation
+	path_aware_config.activation_method = MapConfig.ActivationMethod.AREA_TRIGGERS  # Default to area triggers
 
 	# Create default spawn profiles
-	map_config.spawn_profiles = [
+	path_aware_config.spawn_profiles = [
 		PathSpawnProfile.create_enemy_profile(),
 		PathSpawnProfile.create_breach_profile(),
 		PathSpawnProfile.create_powerup_profile()

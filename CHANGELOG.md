@@ -20,6 +20,16 @@
   - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
 
 ### Systems
+- **Data-Driven Spawn System**: ✅ **COMPLETED** - Eliminated manual spawn overrides through MapConfig activation methods
+  - **SpawnDirector Refactor**: Replaced hardcoded `has_method("get_random_spawn_position")` checks with proper `MapConfig.activation_method` evaluation
+  - **AREA_TRIGGERS Implementation**: When `activation_method = 2`, automatically uses Area2D spawn zones with proximity filtering
+  - **Configuration-Based Arenas**: PathAware_Forest now loads `.tres` files instead of creating default values, making arenas purely data-driven
+  - **Code Reduction**: Removed 30+ lines of manual spawn logic from PathAware_Forest.gd - no longer needs custom `get_random_spawn_position()` override
+  - **Activation Methods**: DISTANCE (0) for radius spawning, AREA_TRIGGERS (2) for zone-based spawning, with VIEWPORT and HYBRID planned
+  - **Automatic Zone Detection**: SpawnDirector reads `_spawn_zone_areas` and applies proximity filtering based on `auto_spawn_range`/`auto_spawn_min_distance`
+  - **YSort Container Fix**: Enhanced YSort_Objects detection with recursive search to find nested containers (e.g., PathAwareArenaGenerator/YSort_Objects)
+  - **Proper Visual Layering**: Bosses now spawn in correct Y-sorted containers instead of falling back to ArenaRoot, ensuring proper depth rendering
+
 - **Path-Aware Spawning System**: ✅ **COMPLETED** - Strategic spawn position optimization for procedural arenas
   - **Branch Endpoint Optimization**: Red triangles (AT_BRANCH_ENDPOINTS) now only appear at true branch terminations, not main path endpoints
   - **Dual Filter Architecture**: Implemented geometric analysis (`_is_main_path_segment()`) plus 30px proximity exclusion for precise classification
@@ -28,6 +38,15 @@
   - **Integration Validation**: Debug markers now exactly match actual PathAwareMapConfig spawn position calculations
 
 - **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
+
+- **Spawn Zone Generation**: ✅ **COMPLETED** - Functional Area2D spawn zones at path branch endpoints
+  - **Strategic Placement**: Spawn zones automatically generated at red markers (branch endpoints) during PathAware arena generation
+  - **Visual Indicators**: Cyan circular indicators (100px radius) with zone labels (Z0-Z4) for easy editor identification
+  - **Functional Integration**: Area2D nodes with CollisionShape2D for proper SpawnDirector compatibility
+  - **Direct Implementation**: Embedded generation in PathAwareArenaGenerator with spawn_zone_container organization
+  - **SpawnDirector Bridge**: `_update_spawn_zones()` method collects zones into `_spawn_zone_areas` array for breach event spawning
+  - **Breach Integration**: Enemies now spawn properly in generated zones instead of falling back to ArenaRoot
+  - **Reusable Pattern**: Established spawn zone creation pattern for future arena types with path-based spawning
   - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working
     - **Jitter Math Fix**: Removed incorrect `/100.0` division - now randomness=1.0 gives full offset range instead of 1%
     - **RNG Determinism Fix**: TreeBoundaryGenerator passes seeded RNG to TreeBoundaryConfiguration, maintaining deterministic generation per run

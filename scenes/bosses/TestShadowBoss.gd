@@ -10,7 +10,7 @@ func _ready() -> void:
 	max_health = 150.0
 	current_health = 150.0
 	damage = 20.0
-	speed = 40.0
+	# speed will be set by BaseBoss from SpawnConfig - no override needed
 	attack_damage = 20.0
 	attack_cooldown = 2.5
 	attack_range = 70.0

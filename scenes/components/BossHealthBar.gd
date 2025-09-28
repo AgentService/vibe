@@ -23,19 +23,16 @@ func _ready() -> void:
 func auto_adjust_to_hitbox() -> void:
 	var parent_node = get_parent()
 	if not parent_node:
-		Logger.warn("BossHealthBar has no parent - cannot auto-adjust", "bosses")
 		return
 	
 	# Find HitBox node in parent
 	var hitbox_node = parent_node.get_node_or_null("HitBox")
 	if not hitbox_node:
-		Logger.warn("Parent has no HitBox node - cannot auto-adjust BossHealthBar", "bosses")
 		return
 	
 	# Find HitBox collision shape
 	var hitbox_shape_node = hitbox_node.get_node_or_null("HitBoxShape")
 	if not hitbox_shape_node or not hitbox_shape_node.shape:
-		Logger.warn("HitBox has no collision shape - cannot auto-adjust BossHealthBar", "bosses")
 		return
 	
 	var shape = hitbox_shape_node.shape
@@ -74,7 +71,6 @@ func auto_adjust_to_hitbox() -> void:
 	size.y = health_bar_height
 	
 	auto_sized = true
-	Logger.debug("BossHealthBar auto-adjusted: width=%.1f, y=%.1f (hitbox_scale: %.1fx%.1f)" % [health_bar_width, health_bar_y, hitbox_scale.x, hitbox_scale.y], "bosses")
 
 func update_health(current: float, max_health: float) -> void:
 	if max_health > 0.0:
@@ -85,7 +81,6 @@ func update_health(current: float, max_health: float) -> void:
 		if not has_taken_damage and current < max_health:
 			has_taken_damage = true
 			visible = true
-			Logger.debug("Boss health bar now visible after first damage", "bosses")
 		
 		# MEMORY LEAK FIX: Removed frequent debug logging that was causing memory allocation every frame
 		# Logger.debug("Boss health updated: %.1f/%.1f (%.0f%%)" % [current, max_health, health_percentage], "bosses")

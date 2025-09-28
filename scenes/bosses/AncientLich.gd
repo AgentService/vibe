@@ -16,7 +16,7 @@ func _ready() -> void:
 	max_health = 200.0
 	current_health = 200.0
 	damage = 25.0
-	speed = 60.0
+	# speed will be set by BaseBoss from SpawnConfig - no override needed
 	attack_damage = 25.0
 	attack_cooldown = 1.5
 	attack_range = 60.0
@@ -108,14 +108,12 @@ func _aggro() -> void:
 	if is_aggroed:
 		return
 	is_aggroed = true
-	Logger.debug("AncientLich aggroed - beginning wake up sequence!", "bosses")
 	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
 
 func _on_animation_finished() -> void:
 	if animated_sprite.animation == "wake_up":
 		has_woken_up = true
 		animated_sprite.play("default")
-		Logger.debug("AncientLich fully awakened", "bosses")
 	elif animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")
