@@ -9,7 +9,7 @@ func _ready() -> void:
 	max_health = 500.0
 	current_health = 500.0
 	damage = 40.0
-	speed = 60.0  # Slower than demon overlord (slime physics)
+	# speed will be set by BaseBoss from SpawnConfig - no override needed
 	attack_damage = 40.0
 	attack_cooldown = 2.5  # Slightly slower attacks
 	attack_range = 85.0

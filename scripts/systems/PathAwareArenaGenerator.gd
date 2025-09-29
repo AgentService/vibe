@@ -15,14 +15,15 @@ class_name PathAwareArenaGenerator
 @export_group("Visual Debug")
 @export var show_debug_markers: bool = true
 @export var show_path_connections: bool = true
-@export var marker_size: float = 8.0
-@export var line_width: float = 2.0
+@export var marker_size: float = 118.0
+@export var line_width: float = 5.0
 
 # Layer name constants
 const BASE_LAYER_NAME = "BaseGreen"        # Renamed from "Base" - base layer
 const GROUND_LAYER_NAME = "Green"          # Renamed from "Ground2" - first extension layer
 const GROUND2_LAYER_NAME = "DarkGreen"     # Second extension layer - deeper forest
 const TREES_LAYER_NAME = "Trees2"          # In YSort_Objects - needs depth sorting
+const SPAWNABLE_LAYER_NAME = "SpawnableAreas"  # Hidden layer for spawn validation
 
 # Visual debug nodes
 var debug_markers: Array[Node2D] = []
@@ -31,11 +32,14 @@ var debug_lines: Array[Line2D] = []
 # System components
 var path_generator: DungeonPathGenerator
 var tree_generator: Node
+var spawn_zone_generator: Node
+var spawn_zone_container: Node2D
 
 # Generated data
 var current_path_data: Dictionary = {}
 var current_tree_data: Array[Vector2] = []
 var rng: RandomNumberGenerator
+var generated_spawn_zones: Array[Area2D] = []
 
 func _ready():
 	# Initialize system components
@@ -68,7 +72,12 @@ func _initialize_systems():
 	add_child(tree_node)
 	tree_generator = tree_node
 
-	Logger.debug("Initialized DungeonPathGenerator and TreeBoundaryGenerator systems", "pathgen")
+	# Create spawn zone container for organizing spawn zones
+	spawn_zone_container = Node2D.new()
+	spawn_zone_container.name = "SpawnZones"
+	add_child(spawn_zone_container)
+
+	Logger.debug("Initialized DungeonPathGenerator, TreeBoundaryGenerator, and SpawnZone container", "pathgen")
 
 func generate_path_aware_arena():
 	Logger.info("🛤️ Starting path-aware arena generation...", "pathgen")
@@ -109,22 +118,28 @@ func generate_path_aware_arena():
 	# path_extension_width parameter removed - no extension data needed
 	current_tree_data = tree_generator.generate_tree_boundaries(current_path_data, generation_seed, {})
 
-	# Phase 3: Create visual debug markers
-	if show_debug_markers:
-		_create_debug_markers()
-
-	if show_path_connections:
-		_create_debug_connections()
+	# Phase 3: Create visual debug markers using dedicated renderer
+	Logger.debug("Debug settings: show_debug_markers=%s, show_path_connections=%s" % [show_debug_markers, show_path_connections], "pathdebug")
+	PathAwareDebugRenderer.render_debug_visualization(self)
 
 	# Phase 4: Generate tiles (arena base, ground corridors, and trees)
 	_generate_arena_base()
+	Logger.debug("Arena base generation completed", "pathgen")
 	_generate_ground_tiles()
+	Logger.debug("Ground tiles generation completed", "pathgen")
 	_generate_boundary_trees()
+	Logger.debug("Boundary trees generation completed", "pathgen")
+
+	# Phase 5: Generate spawn zones at branch endpoints
+	Logger.debug("About to call _generate_spawn_zones()...", "spawnzones")
+	_generate_spawn_zones()
+	Logger.debug("Finished calling _generate_spawn_zones()", "spawnzones")
 
 	Logger.info("🛤️ Path-aware arena generation completed!", "pathgen")
 	Logger.info("  - Points generated: %d" % current_path_data.get("points", []).size(), "pathgen")
 	Logger.info("  - Paths generated: %d" % current_path_data.get("paths", []).size(), "pathgen")
 	Logger.info("  - Trees generated: %d" % current_tree_data.size(), "pathgen")
+	Logger.info("  - Spawn zones generated: %d" % generated_spawn_zones.size(), "pathgen")
 
 func clear_arena():
 	"""Clear all generated content"""
@@ -139,6 +154,12 @@ func clear_arena():
 		if is_instance_valid(line):
 			line.queue_free()
 	debug_lines.clear()
+
+	# Clear spawn zones
+	for zone in generated_spawn_zones:
+		if is_instance_valid(zone):
+			zone.queue_free()
+	generated_spawn_zones.clear()
 
 	# Clear tile map layers
 	var base_layer = _find_layer_node(BASE_LAYER_NAME)
@@ -181,55 +202,6 @@ func _validate_configurations() -> bool:
 
 	return is_valid
 
-func _create_debug_markers():
-	"""Create visual markers for connection points"""
-	var points: Array = current_path_data.get("points", [])
-
-	for i in range(points.size()):
-		var point = points[i]
-		var marker = _create_point_marker(point.position, i)
-		add_child(marker)
-		debug_markers.append(marker)
-
-func _create_point_marker(position: Vector2, point_id: int) -> Node2D:
-	"""Create a visual marker for a connection point"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "PointMarker_" + str(point_id)
-
-	# Create circle visual
-	var circle = Node2D.new()
-	circle.name = "Circle"
-	marker.add_child(circle)
-
-	# Draw method for the circle
-	var draw_script = GDScript.new()
-	draw_script.source_code = """
-extends Node2D
-
-var radius: float = %f
-var color: Color = Color.RED
-var point_id: int = %d
-
-func _draw():
-	# Draw filled circle
-	draw_circle(Vector2.ZERO, radius, color)
-	# Draw border
-	draw_arc(Vector2.ZERO, radius, 0, TAU, 32, Color.WHITE, 2.0)
-
-	# Draw point ID text
-	var font = ThemeDB.fallback_font
-	var text = str(point_id)
-	var text_size = font.get_string_size(text, HORIZONTAL_ALIGNMENT_CENTER, -1, 12)
-	draw_string(font, Vector2(-text_size.x * 0.5, text_size.y * 0.25), text, HORIZONTAL_ALIGNMENT_CENTER, -1, 12, Color.WHITE)
-""" % [marker_size, point_id]
-
-	circle.set_script(draw_script)
-	circle.call("set", "radius", marker_size)
-	circle.call("set", "color", Color.RED)
-	circle.call("set", "point_id", point_id)
-
-	return marker
 
 ## Helper method to find TileMapLayer nodes
 func _find_layer_node(layer_name: String) -> TileMapLayer:
@@ -320,30 +292,6 @@ func _generate_arena_base():
 		int(arena_base_radius)
 	], "pathgen")
 
-func _create_debug_connections():
-	"""Create visual lines showing path connections"""
-	var paths: Array = current_path_data.get("paths", [])
-
-	for path in paths:
-		if path.has_method("get_full_path"):
-			var line = _create_connection_line(path)
-			add_child(line)
-			debug_lines.append(line)
-
-func _create_connection_line(path) -> Line2D:
-	"""Create a visual line for a path connection"""
-	var line = Line2D.new()
-	line.name = "PathConnection"
-	line.width = line_width
-	line.default_color = Color.CYAN
-	line.antialiased = true
-
-	# Add points for the full path
-	var path_points = path.get_full_path()
-	for point in path_points:
-		line.add_point(point)
-
-	return line
 
 func _generate_ground_tiles():
 	"""Simplified ground tile generation - just clear layers, trees will handle their own ground tiles"""
@@ -446,6 +394,285 @@ func get_path_connections() -> Array:
 func get_boundary_tree_positions() -> Array[Vector2]:
 	return current_tree_data
 
+## Create a comprehensive path snapshot for spawning systems
+func get_path_snapshot() -> PathAwarePathSnapshot:
+	var snapshot = PathAwarePathSnapshot.new()
+
+	# Core path data
+	snapshot.main_path_points = current_path_data.get("points", [])
+	snapshot.branch_data = _extract_branch_info()
+	snapshot.connection_points = current_path_data.get("connections", [])
+
+	# Derived spatial analysis
+	snapshot.path_corridors = _calculate_corridors()
+	snapshot.clearings = _detect_clearings()
+	snapshot.boundary_zones = _analyze_boundaries()
+	snapshot.endpoint_positions = _identify_endpoints()
+	snapshot.checkpoint_positions = _generate_checkpoints()
+
+	# Metadata
+	snapshot.total_arena_bounds = _calculate_arena_bounds()
+	snapshot.generation_seed = generation_seed
+	snapshot.generation_timestamp = Time.get_ticks_msec()
+
+	Logger.debug("Created path snapshot: %s" % snapshot.get_debug_summary(), "pathgen")
+	return snapshot
+
+## Extract branch information from current path data
+func _extract_branch_info() -> Array[PathAwarePathSnapshot.PathBranchInfo]:
+	var branches: Array[PathAwarePathSnapshot.PathBranchInfo] = []
+	var paths: Array = current_path_data.get("paths", [])
+
+	for i in range(paths.size()):
+		var path = paths[i]
+		var branch = PathAwarePathSnapshot.PathBranchInfo.new(i)
+
+		if path.has_method("get_full_path"):
+			branch.points = path.get_full_path()
+			branch.calculate_length()
+
+		# Determine branch type based on path structure
+		# More intelligent detection: actual branches are typically the last few paths
+		# Main path segments are usually the first several paths in sequence
+		var total_paths = paths.size()
+		var branch_count = current_path_data.get("branch_count", 0)
+		var main_segment_count = total_paths - branch_count
+
+		if i < main_segment_count:
+			branch.branch_type = "main"
+		else:
+			branch.branch_type = "branch"
+
+		# Set parent connection point (first point of the branch)
+		if not branch.points.is_empty():
+			branch.parent_connection_point = branch.points[0]
+
+		branches.append(branch)
+
+	return branches
+
+## Calculate path corridors with width information
+func _calculate_corridors() -> Array[PathAwarePathSnapshot.PathCorridor]:
+	var corridors: Array[PathAwarePathSnapshot.PathCorridor] = []
+	var paths: Array = current_path_data.get("paths", [])
+
+	for i in range(paths.size()):
+		var path = paths[i]
+		var corridor = PathAwarePathSnapshot.PathCorridor.new()
+
+		if path.has_method("get_full_path"):
+			corridor.center_line = path.get_full_path()
+			corridor.width = 64.0  # Default corridor width
+			corridor.corridor_type = "main" if i == 0 else "branch"
+			corridor.calculate_bounds()
+			corridors.append(corridor)
+
+	return corridors
+
+## Detect clearing areas between paths and boundaries
+func _detect_clearings() -> Array[PathAwarePathSnapshot.PathClearing]:
+	var clearings: Array[PathAwarePathSnapshot.PathClearing] = []
+	var paths: Array = current_path_data.get("paths", [])
+
+	# Simple clearing detection: create clearings at path intersections and endpoints
+	var all_points: Array = current_path_data.get("points", [])
+
+	for position in all_points:
+		# DungeonPathGenerator returns Array[Vector2] points
+		if not position is Vector2:
+			continue
+
+		# Check if this point is an intersection or endpoint
+		var connections = _count_connections_at_point(position)
+
+		if connections >= 2:  # Intersection
+			var clearing = PathAwarePathSnapshot.PathClearing.new(position, 80.0)
+			clearing.clearing_type = "intersection"
+			clearing.spawn_priority = 1.5
+			clearings.append(clearing)
+		elif connections == 1:  # Endpoint
+			var clearing = PathAwarePathSnapshot.PathClearing.new(position, 60.0)
+			clearing.clearing_type = "endpoint"
+			clearing.spawn_priority = 2.0
+			clearings.append(clearing)
+
+	# Add natural clearings between paths
+	_add_natural_clearings(clearings, all_points)
+
+	Logger.debug("Detected %d clearings" % clearings.size(), "pathgen")
+	return clearings
+
+## Add natural clearings in open areas
+func _add_natural_clearings(clearings: Array[PathAwarePathSnapshot.PathClearing], path_points: Array) -> void:
+	# Create a grid to find open areas
+	var grid_size = 100
+	var bounds = _calculate_arena_bounds()
+
+	for x in range(int(bounds.position.x), int(bounds.position.x + bounds.size.x), grid_size):
+		for y in range(int(bounds.position.y), int(bounds.position.y + bounds.size.y), grid_size):
+			var test_point = Vector2(x, y)
+
+			# Check if this point is far enough from paths and trees
+			if _is_suitable_for_clearing(test_point):
+				var clearing = PathAwarePathSnapshot.PathClearing.new(test_point, 50.0)
+				clearing.clearing_type = "natural"
+				clearing.spawn_priority = 1.0
+				clearings.append(clearing)
+
+## Check if a point is suitable for a natural clearing
+func _is_suitable_for_clearing(point: Vector2) -> bool:
+	var min_distance_to_path = 80.0
+	var min_distance_to_tree = 60.0
+
+	# Check distance to paths
+	var nearest_path_distance = _get_distance_to_nearest_path_point(point)
+	if nearest_path_distance < min_distance_to_path:
+		return false
+
+	# Check distance to trees
+	for tree_pos in current_tree_data:
+		if point.distance_to(tree_pos) < min_distance_to_tree:
+			return false
+
+	return true
+
+## Get distance to nearest path point
+func _get_distance_to_nearest_path_point(point: Vector2) -> float:
+	var min_distance = float('inf')
+	var all_points: Array = current_path_data.get("points", [])
+
+	for path_point in all_points:
+		# DungeonPathGenerator returns Array[Vector2] points
+		if not path_point is Vector2:
+			continue
+
+		var distance = point.distance_to(path_point)
+		if distance < min_distance:
+			min_distance = distance
+
+	return min_distance if min_distance != float('inf') else 1000.0
+
+## Count how many path connections exist at a specific point
+func _count_connections_at_point(point: Vector2, tolerance: float = 20.0) -> int:
+	var connection_count = 0
+	var paths: Array = current_path_data.get("paths", [])
+
+	for path in paths:
+		if path.has_method("get_full_path"):
+			var path_points = path.get_full_path()
+			for path_point in path_points:
+				if point.distance_to(path_point) <= tolerance:
+					connection_count += 1
+					break  # Only count each path once
+
+	return connection_count
+
+## Analyze boundary zones from tree data
+func _analyze_boundaries() -> Array[PathAwarePathSnapshot.PathBoundaryZone]:
+	var boundaries: Array[PathAwarePathSnapshot.PathBoundaryZone] = []
+
+	for tree_pos in current_tree_data:
+		var boundary = PathAwarePathSnapshot.PathBoundaryZone.new(tree_pos, 32.0)
+		boundary.zone_type = "tree"
+		boundary.avoidance_priority = 1.0
+		boundaries.append(boundary)
+
+	Logger.debug("Analyzed %d boundary zones" % boundaries.size(), "pathgen")
+	return boundaries
+
+## Identify endpoint positions for boss spawns
+func _identify_endpoints() -> Array[Vector2]:
+	var endpoints: Array[Vector2] = []
+	var all_points: Array = current_path_data.get("points", [])
+
+	for position in all_points:
+		# DungeonPathGenerator returns Array[Vector2] points
+		if not position is Vector2:
+			continue
+
+		# A point is an endpoint if it has exactly one connection
+		if _count_connections_at_point(position) == 1:
+			endpoints.append(position)
+
+	Logger.debug("Identified %d endpoints" % endpoints.size(), "pathgen")
+	return endpoints
+
+## Generate checkpoint positions along paths
+func _generate_checkpoints() -> Array[Vector2]:
+	var checkpoints: Array[Vector2] = []
+	var paths: Array = current_path_data.get("paths", [])
+	var checkpoint_spacing = 120.0  # Distance between checkpoints
+
+	for path in paths:
+		if path.has_method("get_full_path"):
+			var path_points = path.get_full_path()
+			var current_distance = 0.0
+
+			for i in range(path_points.size() - 1):
+				var start = path_points[i]
+				var end = path_points[i + 1]
+				var segment_length = start.distance_to(end)
+
+				# Add checkpoints along this segment
+				while current_distance + checkpoint_spacing < segment_length:
+					current_distance += checkpoint_spacing
+					var t = current_distance / segment_length
+					var checkpoint = start.lerp(end, t)
+					checkpoints.append(checkpoint)
+
+				current_distance += segment_length - current_distance
+
+	Logger.debug("Generated %d checkpoints" % checkpoints.size(), "pathgen")
+	return checkpoints
+
+## Calculate total arena bounds
+func _calculate_arena_bounds() -> Rect2:
+	var all_positions: Array[Vector2] = []
+
+	# Include path points
+	var all_points: Array = current_path_data.get("points", [])
+	for position in all_points:
+		# DungeonPathGenerator returns Array[Vector2] points
+		if not position is Vector2:
+			continue
+		all_positions.append(position)
+
+	# Include tree positions
+	all_positions.append_array(current_tree_data)
+
+	if all_positions.is_empty():
+		return Rect2(-arena_base_radius, -arena_base_radius, arena_base_radius * 2, arena_base_radius * 2)
+
+	# Find min/max positions
+	var min_pos = all_positions[0]
+	var max_pos = all_positions[0]
+
+	for pos in all_positions:
+		min_pos.x = min(min_pos.x, pos.x)
+		min_pos.y = min(min_pos.y, pos.y)
+		max_pos.x = max(max_pos.x, pos.x)
+		max_pos.y = max(max_pos.y, pos.y)
+
+	# Add padding
+	var padding = 100.0
+	min_pos -= Vector2(padding, padding)
+	max_pos += Vector2(padding, padding)
+
+	var bounds = Rect2(min_pos, max_pos - min_pos)
+	Logger.debug("Calculated arena bounds: %s" % bounds, "pathgen")
+	return bounds
+
+## Calculate the length of a path given its points
+func _calculate_path_length(points: Array[Vector2]) -> float:
+	if points.size() < 2:
+		return 0.0
+
+	var length = 0.0
+	for i in range(points.size() - 1):
+		length += points[i].distance_to(points[i + 1])
+
+	return length
+
 ## Get comprehensive debug information from both systems
 func get_system_debug_info() -> Dictionary:
 	var debug_info = {
@@ -465,3 +692,127 @@ func get_system_debug_info() -> Dictionary:
 		debug_info.tree_system = tree_generator.get_debug_info()
 
 	return debug_info
+
+## Generate spawn zones at branch endpoints
+func _generate_spawn_zones() -> void:
+	"""Generate circular spawn zones at all branch endpoint positions"""
+	Logger.info("🎯 Starting spawn zone generation...", "spawnzones")
+
+	# Use the same logic as PathAwareMapConfig to get branch endpoint positions
+	var snapshot = get_path_snapshot()
+	Logger.debug("Path snapshot result: %s" % (snapshot != null), "spawnzones")
+	if not snapshot:
+		Logger.warn("No path snapshot available for spawn zone generation", "spawnzones")
+		return
+
+	# Create a temporary PathAwareMapConfig to get consistent endpoint positions
+	var temp_config = PathAwareMapConfig.new()
+	temp_config.path_snapshot = snapshot
+
+	# Get branch endpoint positions that match the red markers
+	var endpoint_positions = temp_config._get_branch_endpoint_positions()
+
+	if endpoint_positions.is_empty():
+		Logger.info("No branch endpoints found for spawn zone generation", "spawnzones")
+		return
+
+	Logger.info("🎯 Generating spawn zones at %d branch endpoints..." % endpoint_positions.size(), "spawnzones")
+
+	# Create spawn zones directly in the generator
+	_create_spawn_zones_directly(endpoint_positions)
+
+	Logger.info("✅ Spawn zone generation completed: %d zones created" % generated_spawn_zones.size(), "spawnzones")
+
+## Create spawn zones directly without separate script
+func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
+	"""Create functional Area2D spawn zones with visual indicators at endpoint positions"""
+	# Clear any existing spawn zones
+	for zone in generated_spawn_zones:
+		if is_instance_valid(zone):
+			zone.queue_free()
+	generated_spawn_zones.clear()
+
+	var spawn_zone_radius = 100.0
+	var zone_color = Color.CYAN
+	var zone_alpha = 0.5
+
+	for i in range(endpoint_positions.size()):
+		var endpoint_pos: Vector2 = endpoint_positions[i]
+		Logger.debug("Creating functional spawn zone %d at position %s" % [i, endpoint_pos], "spawnzones")
+
+		# Create functional Area2D spawn zone (required by SpawnDirector)
+		var spawn_zone = Area2D.new()
+		spawn_zone.name = "SpawnZone_%d" % i
+		spawn_zone.global_position = endpoint_pos
+
+		# Add CollisionShape2D with CircleShape2D for functional area detection
+		var collision_shape = CollisionShape2D.new()
+		collision_shape.name = "CollisionShape2D"
+		var circle_shape = CircleShape2D.new()
+		circle_shape.radius = spawn_zone_radius
+		collision_shape.shape = circle_shape
+		spawn_zone.add_child(collision_shape)
+
+		# Add visual indicators container
+		var visual_container = Node2D.new()
+		visual_container.name = "VisualIndicator"
+		spawn_zone.add_child(visual_container)
+
+		# Create visual circle using Line2D
+		var circle_line = Line2D.new()
+		circle_line.name = "SpawnZoneCircle"
+		circle_line.width = 4.0
+		circle_line.default_color = Color(zone_color.r, zone_color.g, zone_color.b, zone_alpha)
+		circle_line.antialiased = true
+
+		# Create circle points
+		var segments = 32
+		for j in range(segments + 1):
+			var angle = (float(j) / segments) * TAU
+			var point = Vector2.from_angle(angle) * spawn_zone_radius
+			circle_line.add_point(point)
+
+		visual_container.add_child(circle_line)
+
+		# Add center dot
+		var center_dot = ColorRect.new()
+		center_dot.name = "CenterDot"
+		center_dot.size = Vector2(8, 8)
+		center_dot.position = Vector2(-4, -4)
+		center_dot.color = zone_color
+		visual_container.add_child(center_dot)
+
+		# Add zone ID label
+		var label = Label.new()
+		label.name = "ZoneLabel"
+		label.text = "Z%d" % i
+		label.position = Vector2(-12, spawn_zone_radius + 10)
+		label.add_theme_color_override("font_color", zone_color)
+		visual_container.add_child(label)
+
+		# Add to spawn zone container and track
+		spawn_zone_container.add_child(spawn_zone)
+		generated_spawn_zones.append(spawn_zone)
+
+		Logger.debug("Created functional spawn zone %d successfully" % i, "spawnzones")
+
+## Get all generated spawn zones for SpawnDirector integration
+func get_spawn_zones() -> Array[Area2D]:
+	"""Get all generated functional Area2D spawn zones"""
+	return generated_spawn_zones
+
+## Get spawn zone count
+func get_spawn_zone_count() -> int:
+	"""Get the number of generated spawn zones"""
+	return generated_spawn_zones.size()
+
+## Get random spawn zone
+func get_random_spawn_zone() -> Area2D:
+	"""Get a random spawn zone from generated zones"""
+	if generated_spawn_zones.is_empty():
+		Logger.warn("No spawn zones available for random selection", "spawnzones")
+		return null
+
+	var spawn_rng = RNG.stream("spawn")
+	var random_index = spawn_rng.randi() % generated_spawn_zones.size()
+	return generated_spawn_zones[random_index]

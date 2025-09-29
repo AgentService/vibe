@@ -44,8 +44,6 @@ func _perform_attack() -> void:
 	# Child classes should implement specific attack behavior
 
 func _ready() -> void:
-	Logger.info(get_boss_name() + " spawned with " + str(max_health) + " HP", "bosses")
-	
 	# Start default animation if available
 	if animated_sprite and animated_sprite.sprite_frames:
 		var default_anim = animation_prefix + "_south"
@@ -120,8 +118,6 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	apply_unified_scaling(scale_factor)
 	
 	
-	Logger.info(get_boss_name() + " configured: HP=%.1f DMG=%.1f SPD=%.1f Scale=%.2fx" % [max_health, damage, speed, scale_factor], "bosses")
-
 ## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
 func apply_unified_scaling(scale_factor: float) -> void:
 
@@ -509,8 +505,6 @@ func _validate_sprite_scaling(expected_scale: float) -> void:
 	
 	if abs(actual_scale - expected_scale) > scale_tolerance:
 		Logger.warn("Sprite scaling mismatch for %s: expected %.2f, got %.2f" % [get_boss_name(), expected_scale, actual_scale], "bosses")
-	else:
-		Logger.debug("Sprite scaling validated for %s: %.2f" % [get_boss_name(), actual_scale], "bosses")
 
 ## DEBUG TOOLS: Get comprehensive scaling information for debugging
 func get_scaling_debug_info() -> Dictionary:

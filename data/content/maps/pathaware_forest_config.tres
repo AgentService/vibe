@@ -16,13 +16,13 @@ player_spawn_position = Vector2(0, 0)
 spawn_zones = Array[Dictionary]([])
 boss_spawn_positions = Array[Vector2]([Vector2(0, -400), Vector2(400, 300), Vector2(-400, 300)])
 max_concurrent_enemies = 300
-auto_spawn_range = 800.0
-auto_spawn_min_distance = 250.0
-pack_spawn_range = 1200.0
-pack_spawn_min_distance = 600.0
-use_viewport_culling = false
+auto_spawn_range = 8002.0
+auto_spawn_min_distance = 0.0
+pack_spawn_range = 0.0
+pack_spawn_min_distance = 0.0
+use_viewport_culling = true
 viewport_margin = 200.0
-activation_method = 0
+activation_method = 2
 base_spawn_scaling = {
 "max_scaling_multiplier": 2.0,
 "pack_base_size_max": 6,

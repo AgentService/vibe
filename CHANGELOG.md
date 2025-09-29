@@ -20,7 +20,50 @@
   - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
 
 ### Systems
+- **Data-Driven Spawn System**: ✅ **COMPLETED** - Eliminated manual spawn overrides through MapConfig activation methods
+  - **SpawnDirector Refactor**: Replaced hardcoded `has_method("get_random_spawn_position")` checks with proper `MapConfig.activation_method` evaluation
+  - **AREA_TRIGGERS Implementation**: When `activation_method = 2`, automatically uses Area2D spawn zones with proximity filtering
+  - **Configuration-Based Arenas**: PathAware_Forest now loads `.tres` files instead of creating default values, making arenas purely data-driven
+  - **Code Reduction**: Removed 30+ lines of manual spawn logic from PathAware_Forest.gd - no longer needs custom `get_random_spawn_position()` override
+  - **Activation Methods**: DISTANCE (0) for radius spawning, AREA_TRIGGERS (2) for zone-based spawning, with VIEWPORT and HYBRID planned
+  - **Automatic Zone Detection**: SpawnDirector reads `_spawn_zone_areas` and applies proximity filtering based on `auto_spawn_range`/`auto_spawn_min_distance`
+  - **YSort Container Fix**: Enhanced YSort_Objects detection with recursive search to find nested containers (e.g., PathAwareArenaGenerator/YSort_Objects)
+
+- **Boss Speed Configuration Fix**: ✅ **COMPLETED** - Removed hardcoded speed overrides to enable data-driven boss tuning
+  - **All Boss Scripts Updated**: Removed `speed = X.X` assignments from BananaLord, AncientSlime, DemonOverlord, DragonLord, AncientLich, TestShadowBoss
+  - **BaseBoss Integration**: Boss speed now properly applied from `speed_range` values in `.tres` files through BaseBoss inheritance
+  - **Configuration Files Working**: Speed changes in `enemy-variations/*.tres` files now immediately affect boss movement speed
+  - **BananaLord Example**: Changed from hardcoded 60.0 to Vector2(500, 600) range from banana_lord.tres configuration
+  - **Debug Log Cleanup**: Converted debug logs to comments in BananaLord for cleaner console output
+  - **Systemic Fix**: Issue was present across entire boss system - all 6 boss types were overriding configuration data
+
+- **SpawnDirector Refactoring Task Update**: ✅ **ANALYSIS COMPLETED** - Ultra-phased extraction plan with /spawn subfolder organization
+  - **Current State**: SpawnDirector has grown to 1,797 lines (vs estimated 1,600) with 7+ mixed responsibilities
+  - **Improved Organization**: Create `/spawn` subfolder following existing `/boss`, `/events`, `/enemy_v2` patterns
+  - **4-Phase Plan**: Event System (250 lines) → Zone Management (200 lines) → Position Management (300 lines) → Pack Formation (250 lines)
+  - **User Verification**: Each phase includes verification checkpoints to ensure game stability before proceeding
+  - **Target Architecture**: SpawnDirector (~800 lines coordinator) + scripts/systems/spawn/ with 4 extracted systems (250-300 lines each)
+  - **Organization Benefits**: Logical grouping, easier navigation, clear boundaries, future-proof for new spawn types
+  - **Next Step**: Ready for Phase 1 implementation (Event System extraction, 25-30 minutes estimated)
+  - **Proper Visual Layering**: Bosses now spawn in correct Y-sorted containers instead of falling back to ArenaRoot, ensuring proper depth rendering
+
+- **Path-Aware Spawning System**: ✅ **COMPLETED** - Strategic spawn position optimization for procedural arenas
+  - **Branch Endpoint Optimization**: Red triangles (AT_BRANCH_ENDPOINTS) now only appear at true branch terminations, not main path endpoints
+  - **Dual Filter Architecture**: Implemented geometric analysis (`_is_main_path_segment()`) plus 30px proximity exclusion for precise classification
+  - **Semantic Accuracy**: Each marker type represents distinct strategic locations - yellow START, purple strategic checkpoints, orange regular spawns, magenta branch exploration, red branch terminations
+  - **Visual Distinction**: Complete marker hierarchy with different shapes/colors for each spawn category
+  - **Integration Validation**: Debug markers now exactly match actual PathAwareMapConfig spawn position calculations
+
 - **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
+
+- **Spawn Zone Generation**: ✅ **COMPLETED** - Functional Area2D spawn zones at path branch endpoints
+  - **Strategic Placement**: Spawn zones automatically generated at red markers (branch endpoints) during PathAware arena generation
+  - **Visual Indicators**: Cyan circular indicators (100px radius) with zone labels (Z0-Z4) for easy editor identification
+  - **Functional Integration**: Area2D nodes with CollisionShape2D for proper SpawnDirector compatibility
+  - **Direct Implementation**: Embedded generation in PathAwareArenaGenerator with spawn_zone_container organization
+  - **SpawnDirector Bridge**: `_update_spawn_zones()` method collects zones into `_spawn_zone_areas` array for breach event spawning
+  - **Breach Integration**: Enemies now spawn properly in generated zones instead of falling back to ArenaRoot
+  - **Reusable Pattern**: Established spawn zone creation pattern for future arena types with path-based spawning
   - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working
     - **Jitter Math Fix**: Removed incorrect `/100.0` division - now randomness=1.0 gives full offset range instead of 1%
     - **RNG Determinism Fix**: TreeBoundaryGenerator passes seeded RNG to TreeBoundaryConfiguration, maintaining deterministic generation per run

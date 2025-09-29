@@ -242,13 +242,11 @@ func _auto_adjust_to_hitbox() -> void:
 	# Find HitBox node in target entity
 	var hitbox_node = _target_entity.get_node_or_null("HitBox")
 	if not hitbox_node:
-		Logger.warn("Target entity has no HitBox node - cannot auto-adjust health bar", "ui")
 		return
 	
 	# Find HitBox collision shape
 	var hitbox_shape_node = hitbox_node.get_node_or_null("HitBoxShape")
 	if not hitbox_shape_node or not hitbox_shape_node.shape:
-		Logger.warn("HitBox has no collision shape - cannot auto-adjust health bar", "ui")
 		return
 	
 	var shape = hitbox_shape_node.shape
@@ -288,7 +286,6 @@ func _auto_adjust_to_hitbox() -> void:
 	custom_minimum_size = Vector2(health_bar_width, health_bar_height)
 	
 	_auto_sized = true
-	Logger.debug("Boss health bar auto-adjusted: width=%.1f, y=%.1f" % [health_bar_width, health_bar_y], "ui")
 
 func _update_boss_positioning() -> void:
 	# Update position relative to boss entity if needed

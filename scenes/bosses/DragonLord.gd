@@ -11,7 +11,6 @@ func _ready() -> void:
 	max_health = 300.0  # DragonLord is stronger
 	current_health = 300.0
 	damage = 35.0
-	speed = 80.0
 	attack_damage = 35.0
 	attack_cooldown = 2.0
 	attack_range = 90.0

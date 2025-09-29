@@ -432,7 +432,7 @@ func _build_ui():
 	# Pre-built tree field checkbox (keep checkbox only)
 	use_prebuilt_tree_field_checkbox = CheckBox.new()
 	use_prebuilt_tree_field_checkbox.text = "Use Pre-built Tree Field (Faster)"
-	use_prebuilt_tree_field_checkbox.button_pressed = true
+	use_prebuilt_tree_field_checkbox.button_pressed = false
 	use_prebuilt_tree_field_checkbox.tooltip_text = "Use pre-built tree field for better performance"
 	tree_vbox.add_child(use_prebuilt_tree_field_checkbox)
 

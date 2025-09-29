@@ -18,6 +18,7 @@ const XpChangedPayload_Type = preload("res://scripts/domain/signal_payloads/XpCh
 const LevelUpPayload_Type = preload("res://scripts/domain/signal_payloads/LevelUpPayload.gd")
 const GamePausedChangedPayload_Type = preload("res://scripts/domain/signal_payloads/GamePausedChangedPayload.gd")
 const ArenaBoundsChangedPayload_Type = preload("res://scripts/domain/signal_payloads/ArenaBoundsChangedPayload.gd")
+const ArenaPathSnapshotReadyPayload_Type = preload("res://scripts/domain/signal_payloads/ArenaPathSnapshotReadyPayload.gd")
 const PlayerPositionChangedPayload_Type = preload("res://scripts/domain/signal_payloads/PlayerPositionChangedPayload.gd")
 const DamageDealtPayload_Type = preload("res://scripts/domain/signal_payloads/DamageDealtPayload.gd")
 const InteractionPromptChangedPayload_Type = preload("res://scripts/domain/signal_payloads/InteractionPromptChangedPayload.gd")
@@ -188,6 +189,10 @@ signal modal_hidden(modal_instance)
 ## Arena bounds changed - emitted by ArenaSystem when new arena loads
 @warning_ignore("unused_signal")
 signal arena_bounds_changed(payload)
+
+## Arena path snapshot ready - emitted by PathAware_Forest when path data is available for spawning systems
+@warning_ignore("unused_signal")
+signal arena_path_snapshot_ready(payload)
 
 ## Player position updated - emitted by PlayerState for camera following
 @warning_ignore("unused_signal")

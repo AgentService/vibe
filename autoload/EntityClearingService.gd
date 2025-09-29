@@ -51,11 +51,8 @@ func clear_all_entities() -> void:
 				enemy.queue_free()
 				cleared_count += 1
 
-	Logger.info("EntityClearingService: Semantically cleared %d entities (enemies + effects, preserving persistent events)" % cleared_count, "system")
-
 func clear_transient_objects() -> void:
 	"""Clear transient objects (XP orbs, items, projectiles, etc.) via semantic groups"""
-	Logger.info("EntityClearingService: Starting semantic transient object clear", "system")
 	var cleared_count := 0
 
 	# Clear objects marked for transient clearing
@@ -70,8 +67,6 @@ func clear_transient_objects() -> void:
 				Logger.debug("Legacy clear: transient object: %s" % obj.name, "system")
 				obj.queue_free()
 				cleared_count += 1
-
-	Logger.info("EntityClearingService: Semantically cleared %d transient objects" % cleared_count, "system")
 
 func clear_all_world_objects() -> void:
 	"""Combined clean clear for complete world reset - no death events or XP spawning"""
@@ -95,18 +90,13 @@ func clear_all_session_objects() -> void:
 	# Clear session-scoped persistent objects (breach indicators, etc.)
 	var cleared_session_objects = _clear_semantic_group(ClearingSemantics.PERSIST_ACROSS_ENEMY_CLEARS, "session-scoped persistent objects")
 
-	Logger.info("EntityClearingService: Session reset finished - cleared %d session-scoped objects" % cleared_session_objects, "system")
-
 ## Helper method to clear a specific semantic group
 func _clear_semantic_group(semantic_group: String, group_description: String) -> int:
 	var nodes := get_tree().get_nodes_in_group(semantic_group)
 	var cleared_count := 0
 
-	Logger.debug("Found %d objects in semantic group '%s' (%s)" % [nodes.size(), semantic_group, group_description], "system")
-
 	for obj in nodes:
 		if is_instance_valid(obj):
-			Logger.debug("Semantically clearing %s: %s" % [group_description, obj.name], "system")
 			obj.queue_free()
 			cleared_count += 1
 		else:

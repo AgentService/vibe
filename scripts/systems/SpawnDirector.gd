@@ -206,9 +206,29 @@ func _get_ysort_container_or_arena_root() -> Node2D:
 				Logger.debug("Found YSort_Objects container in BaseArena child: %s" % child.name, "waves")
 				return child_ysort
 
+	# Deep search for YSort_Objects in common nested locations
+	ysort_container = _find_ysort_objects_recursive(current_scene)
+	if ysort_container:
+		Logger.debug("Found YSort_Objects container via deep search: %s" % ysort_container.get_path(), "waves")
+		return ysort_container
+
 	# Fallback to ArenaRoot if no YSort_Objects container found
 	Logger.debug("YSort_Objects not found in scene %s, using ArenaRoot fallback" % current_scene.name, "waves")
 	return _get_arena_root()
+
+func _find_ysort_objects_recursive(node: Node) -> Node2D:
+	"""Recursively search for YSort_Objects container in the scene tree."""
+	# Check if this node is YSort_Objects
+	if node.name == "YSort_Objects" and node is Node2D:
+		return node as Node2D
+
+	# Search in children
+	for child in node.get_children():
+		var result = _find_ysort_objects_recursive(child)
+		if result:
+			return result
+
+	return null
 
 func _on_balance_reloaded() -> void:
 	_load_balance_values()
@@ -290,13 +310,112 @@ func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vect
 	var attempt = 0
 
 	while attempt < max_attempts:
-		var test_pos = arena_scene.get_random_spawn_position()
+		# CRITICAL FIX: Use bypass version to prevent infinite recursion
+		# _get_data_driven_spawn_position() calls _validate_spawn_position_for_breaches()
+		# which calls _get_alternative_spawn_position() again, causing stack overflow
+		var test_pos = _get_data_driven_spawn_position_bypass_validation()
 		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
 			return test_pos
 		attempt += 1
 
 	# No valid position found
 	return Vector2.ZERO
+
+func _get_data_driven_spawn_position_bypass_validation() -> Vector2:
+	"""Get spawn position using MapConfig activation_method WITHOUT breach validation.
+	Used by _get_alternative_spawn_position to prevent infinite recursion."""
+
+	# Get arena scene and map config
+	var arena_scene = _get_arena_scene()
+	if not arena_scene:
+		Logger.debug("No arena scene found, using fallback spawn", "arena")
+		return _get_fallback_spawn_position()
+
+	var map_config = null
+	if "map_config" in arena_scene:
+		map_config = arena_scene.map_config as MapConfig
+
+	if not map_config:
+		Logger.debug("No map_config available for bypass version", "arena")
+		return _get_fallback_spawn_position()
+
+	# Use data-driven activation method WITHOUT validation
+	var activation_method = map_config.activation_method
+	Logger.debug("Using activation method (bypass): %d for spawn position selection" % activation_method, "arena")
+
+	match activation_method:
+		MapConfig.ActivationMethod.AREA_TRIGGERS:
+			return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
+		MapConfig.ActivationMethod.DISTANCE:
+			return _get_distance_based_spawn_position_bypass_validation(map_config)
+		MapConfig.ActivationMethod.VIEWPORT:
+			return _get_viewport_based_spawn_position_bypass_validation(map_config)
+		MapConfig.ActivationMethod.HYBRID:
+			return _get_hybrid_spawn_position_bypass_validation(arena_scene, map_config)
+		_:
+			Logger.warn("Unknown activation method: %d, using fallback" % activation_method, "arena")
+			return _get_fallback_spawn_position()
+
+func _get_area_triggers_spawn_position_bypass_validation(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""AREA_TRIGGERS spawn position WITHOUT breach validation to prevent recursion."""
+
+	if not "_spawn_zone_areas" in arena_scene:
+		Logger.debug("AREA_TRIGGERS (bypass): No _spawn_zone_areas available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	var spawn_zones = arena_scene._spawn_zone_areas
+	if spawn_zones.is_empty():
+		Logger.debug("AREA_TRIGGERS (bypass): No spawn zones available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	# Get player position for proximity filtering
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+	if player_pos == Vector2.ZERO:
+		# No player position, select random zone
+		var selected_zone = spawn_zones[RNG.randi("spawn") % spawn_zones.size()]
+		return _generate_position_in_area2d_zone(selected_zone)
+
+	# Apply proximity filtering
+	var auto_spawn_range = map_config.auto_spawn_range
+	var auto_spawn_min_distance = map_config.auto_spawn_min_distance if "auto_spawn_min_distance" in map_config else 0.0
+
+	var zones_in_range = []
+	for zone in spawn_zones:
+		var zone_pos = zone.global_position
+		var distance_to_player = player_pos.distance_to(zone_pos)
+		if distance_to_player >= auto_spawn_min_distance and distance_to_player <= auto_spawn_range:
+			zones_in_range.append(zone)
+
+	if zones_in_range.is_empty():
+		Logger.debug("AREA_TRIGGERS (bypass): No zones in proximity range, no spawning", "arena")
+		return Vector2.ZERO
+
+	# Select random zone from those in range
+	var selected_zone = zones_in_range[RNG.randi("spawn") % zones_in_range.size()]
+	var spawn_position = _generate_position_in_area2d_zone(selected_zone)
+
+	# NO BREACH VALIDATION - This is the key difference to prevent recursion
+	Logger.debug("AREA_TRIGGERS (bypass): Using spawn zone at %s (no validation)" % spawn_position, "arena")
+	return spawn_position
+
+func _get_distance_based_spawn_position_bypass_validation(map_config: MapConfig) -> Vector2:
+	"""DISTANCE spawn position WITHOUT breach validation to prevent recursion."""
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var angle := RNG.randf_range("spawn", 0.0, TAU)
+	var spawn_radius = map_config.spawn_radius if map_config else 400.0
+	var spawn_pos = player_pos + Vector2.from_angle(angle) * spawn_radius
+	# NO BREACH VALIDATION
+	return spawn_pos
+
+func _get_viewport_based_spawn_position_bypass_validation(map_config: MapConfig) -> Vector2:
+	"""VIEWPORT spawn position WITHOUT breach validation to prevent recursion."""
+	# Simple implementation - just use distance-based as fallback for now
+	return _get_distance_based_spawn_position_bypass_validation(map_config)
+
+func _get_hybrid_spawn_position_bypass_validation(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""HYBRID spawn position WITHOUT breach validation to prevent recursion."""
+	# Simple implementation - use area triggers as primary method
+	return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
 
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
@@ -1140,54 +1259,11 @@ func _spawn_enemy_v2() -> void:
 	# Prefer a local preload so later removal is trivial
 	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 	
-	# Get spawn position from current arena (supports zone-based spawning)
-	var spawn_pos: Vector2
-	var current_scene = get_tree().current_scene
+	# Get spawn position using data-driven activation method
+	var spawn_pos: Vector2 = _get_data_driven_spawn_position()
+	if spawn_pos == Vector2.ZERO:
+		return  # No valid spawn position available
 
-	# Try to use arena's zone-based spawning if available (check both current scene and arena children)
-	var arena_scene = null
-	if current_scene and current_scene.has_method("get_random_spawn_position"):
-		arena_scene = current_scene
-	else:
-		var found_arena = _get_arena_scene()
-		if found_arena and found_arena.has_method("get_random_spawn_position"):
-			arena_scene = found_arena
-
-	if arena_scene:
-		spawn_pos = arena_scene.get_random_spawn_position()
-		# Check if arena returned zero position (no zones in range)
-		if spawn_pos == Vector2.ZERO:
-			return
-
-		# SPATIAL RESTRICTION: Don't spawn regular enemies inside active breach circles
-		if _is_position_inside_any_breach(spawn_pos):
-			spawn_pos = _get_alternative_spawn_position(arena_scene, spawn_pos)
-			if spawn_pos == Vector2.ZERO:
-				Logger.debug("No valid spawn position outside breach circles, skipping regular spawn", "arena")
-				return
-
-	elif arena_system and arena_system.has_method("get_random_spawn_position"):
-		spawn_pos = arena_system.get_random_spawn_position()
-
-		# SPATIAL RESTRICTION: Check for breach overlap
-		if _is_position_inside_any_breach(spawn_pos):
-			Logger.debug("Arena spawn position inside breach, skipping regular spawn", "arena")
-			return
-
-		Logger.debug("Using ArenaSystem spawn position: %s" % spawn_pos, "arena")
-	else:
-		# Fallback to legacy radius-based spawning
-		var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
-		var angle := RNG.randf_range("waves", 0.0, TAU)
-		var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
-		spawn_pos = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
-
-		# SPATIAL RESTRICTION: Check fallback position too
-		if _is_position_inside_any_breach(spawn_pos):
-			Logger.debug("Fallback spawn position inside breach, skipping regular spawn", "arena")
-			return
-
-		Logger.debug("Using fallback radius-based spawn position: %s" % spawn_pos, "arena")
 	
 	# Track spawn index for deterministic seeding
 	var local_spawn_counter: int = get_alive_enemies().size()  # Simple spawn indexing
@@ -1212,6 +1288,153 @@ func _spawn_enemy_v2() -> void:
 	
 	# Hand off to existing pooling/rendering system
 	_spawn_from_config_v2(legacy_enemy_type, cfg)
+
+## Data-driven spawn position selection based on MapConfig.activation_method
+func _get_data_driven_spawn_position() -> Vector2:
+	"""Get spawn position using MapConfig activation_method instead of hardcoded method checks."""
+
+	# Get arena scene and map config
+	var arena_scene = _get_arena_scene()
+	if not arena_scene:
+		Logger.debug("No arena scene found, using fallback spawn", "arena")
+		return _get_fallback_spawn_position()
+
+	var map_config = null
+	if "map_config" in arena_scene:
+		map_config = arena_scene.map_config as MapConfig
+
+	if not map_config:
+		Logger.debug("No map_config available, checking for manual override", "arena")
+		# Fallback to distance-based spawning if no config available
+		Logger.debug("No MapConfig found, using fallback distance-based spawning", "arena")
+		var spawn_pos = _get_fallback_spawn_position()
+		return _validate_spawn_position_for_breaches(spawn_pos, arena_scene)
+		return _get_fallback_spawn_position()
+
+	# Use data-driven activation method
+	var activation_method = map_config.activation_method
+	Logger.debug("Using activation method: %d for spawn position selection" % activation_method, "arena")
+
+	match activation_method:
+		MapConfig.ActivationMethod.AREA_TRIGGERS:
+			return _get_area_triggers_spawn_position(arena_scene, map_config)
+		MapConfig.ActivationMethod.DISTANCE:
+			return _get_distance_based_spawn_position(map_config)
+		MapConfig.ActivationMethod.VIEWPORT:
+			return _get_viewport_based_spawn_position(map_config)
+		MapConfig.ActivationMethod.HYBRID:
+			return _get_hybrid_spawn_position(arena_scene, map_config)
+		_:
+			Logger.warn("Unknown activation method: %d, using fallback" % activation_method, "arena")
+			return _get_fallback_spawn_position()
+
+func _get_area_triggers_spawn_position(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""AREA_TRIGGERS: Use Area2D spawn zones with proximity filtering."""
+
+	if not "_spawn_zone_areas" in arena_scene:
+		Logger.debug("AREA_TRIGGERS: No _spawn_zone_areas available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	var spawn_zones = arena_scene._spawn_zone_areas
+	if spawn_zones.is_empty():
+		Logger.debug("AREA_TRIGGERS: No spawn zones available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	# Get player position for proximity filtering
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+	if player_pos == Vector2.ZERO:
+		# No player position, select random zone
+		var selected_zone = spawn_zones[RNG.randi("spawn") % spawn_zones.size()]
+		return _generate_position_in_area2d_zone(selected_zone)
+
+	# Apply proximity filtering
+	var auto_spawn_range = map_config.auto_spawn_range
+	var auto_spawn_min_distance = map_config.auto_spawn_min_distance if "auto_spawn_min_distance" in map_config else 0.0
+
+	var zones_in_range = []
+	for zone in spawn_zones:
+		var zone_pos = zone.global_position
+		var distance_to_player = player_pos.distance_to(zone_pos)
+		if distance_to_player >= auto_spawn_min_distance and distance_to_player <= auto_spawn_range:
+			zones_in_range.append(zone)
+
+	if zones_in_range.is_empty():
+		Logger.debug("AREA_TRIGGERS: No zones in proximity range (%.0f-%.0fpx), no spawning" % [auto_spawn_min_distance, auto_spawn_range], "arena")
+		return Vector2.ZERO
+
+	# Select random zone from those in range
+	var selected_zone = zones_in_range[RNG.randi("spawn") % zones_in_range.size()]
+	var spawn_position = _generate_position_in_area2d_zone(selected_zone)
+
+	# Apply breach validation
+	spawn_position = _validate_spawn_position_for_breaches(spawn_position, arena_scene)
+
+	Logger.debug("AREA_TRIGGERS: Using spawn zone at %s (distance: %.0fpx)" % [spawn_position, player_pos.distance_to(spawn_position)], "arena")
+	return spawn_position
+
+func _get_distance_based_spawn_position(map_config: MapConfig) -> Vector2:
+	"""DISTANCE: Simple radius-based spawning around player."""
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var angle := RNG.randf_range("spawn", 0.0, TAU)
+	var spawn_radius = map_config.spawn_radius if map_config else 400.0
+	var spawn_pos = player_pos + Vector2.from_angle(angle) * spawn_radius
+
+	Logger.debug("DISTANCE: Using radius-based spawn at %s" % spawn_pos, "arena")
+	return _validate_spawn_position_for_breaches(spawn_pos, null)
+
+func _get_viewport_based_spawn_position(map_config: MapConfig) -> Vector2:
+	"""VIEWPORT: Camera frustum + margin based spawning."""
+	# TODO: Implement viewport-based spawning
+	Logger.warn("VIEWPORT activation method not implemented, using distance fallback", "arena")
+	return _get_distance_based_spawn_position(map_config)
+
+func _get_hybrid_spawn_position(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""HYBRID: Distance + viewport combined spawning."""
+	# TODO: Implement hybrid spawning approach
+	Logger.warn("HYBRID activation method not implemented, trying AREA_TRIGGERS fallback", "arena")
+	return _get_area_triggers_spawn_position(arena_scene, map_config)
+
+func _get_fallback_spawn_position() -> Vector2:
+	"""Legacy fallback spawning when no configuration is available."""
+	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var angle := RNG.randf_range("spawn", 0.0, TAU)
+	var effective_spawn_radius: float = arena_system.get_spawn_radius() if arena_system else spawn_radius
+	var spawn_pos = target_pos + Vector2.from_angle(angle) * effective_spawn_radius
+
+	Logger.debug("FALLBACK: Using legacy radius-based spawn at %s" % spawn_pos, "arena")
+	return _validate_spawn_position_for_breaches(spawn_pos, null)
+
+func _generate_position_in_area2d_zone(zone: Area2D) -> Vector2:
+	"""Generate a random position within an Area2D spawn zone."""
+	if zone.get_child_count() == 0:
+		return zone.global_position
+
+	var collision_shape = zone.get_child(0) as CollisionShape2D
+	if not collision_shape or not collision_shape.shape:
+		return zone.global_position
+
+	if collision_shape.shape is CircleShape2D:
+		var circle_shape = collision_shape.shape as CircleShape2D
+		var angle = RNG.randf_range("spawn", 0.0, TAU)
+		var distance = RNG.randf_range("spawn", 0.0, circle_shape.radius)
+		return zone.global_position + Vector2.from_angle(angle) * distance
+
+	# For other shapes, just use the zone center
+	return zone.global_position
+
+func _validate_spawn_position_for_breaches(spawn_pos: Vector2, arena_scene: Node) -> Vector2:
+	"""Validate spawn position against active breach circles."""
+	if _is_position_inside_any_breach(spawn_pos):
+		if arena_scene:
+			spawn_pos = _get_alternative_spawn_position(arena_scene, spawn_pos)
+			if spawn_pos == Vector2.ZERO:
+				Logger.debug("No valid spawn position outside breach circles", "arena")
+				return Vector2.ZERO
+		else:
+			Logger.debug("Spawn position inside breach, no arena scene for alternative", "arena")
+			return Vector2.ZERO
+
+	return spawn_pos
 
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> Node2D:
 	# DECISION: Switch to scene-based enemies only - no more MultiMesh pooled enemies
@@ -1257,7 +1480,6 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	
 	# Use YSort_Objects container for proper Y-sorting, fallback to ArenaRoot
 	var spawn_container = _get_ysort_container_or_arena_root()
-	Logger.debug("_spawn_boss_scene: Using spawn container: %s (type: %s)" % [spawn_container.name, spawn_container.get_class()], "waves")
 
 	spawn_container.add_child(enemy_instance)
 
@@ -1268,10 +1490,6 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Register with boss hit feedback system (only for actual bosses)
 	if spawn_config.render_tier == "boss" and boss_hit_feedback:
 		boss_hit_feedback.register_boss(enemy_instance)
-
-	Logger.info("Spawned scene enemy: %s (tier: %s) at %s in container %s" % [
-		spawn_config.template_id, spawn_config.render_tier, str(enemy_instance.global_position), spawn_container.name
-	], "waves")
 
 	return enemy_instance
 
@@ -1288,7 +1506,6 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 
 	# Try to spawn in YSort_Objects container for proper Y-sorting, otherwise use ArenaRoot
 	var spawn_container = _get_ysort_container_or_arena_root()
-	Logger.debug("_spawn_special_boss: Using spawn container: %s (type: %s)" % [spawn_container.name if spawn_container.has_method("get") else "Unknown", spawn_container.get_class()], "waves")
 
 	spawn_container.add_child(boss_node)
 	boss_node.global_position = position
@@ -1313,8 +1530,6 @@ func _spawn_special_boss(enemy_type: EnemyType, position: Vector2) -> void:
 	}
 	EntityTracker.register_entity(entity_id, entity_data)
 	DamageService.register_entity(entity_id, entity_data)
-
-	Logger.info("Spawned special boss: %s at %s in container %s, registered as %s" % [enemy_type.id, str(position), spawn_container.name, entity_id], "waves")
 
 func _spawn_pooled_enemy(enemy_type: EnemyType, position: Vector2) -> void:
 	# Existing pooled spawn logic - UNCHANGED
