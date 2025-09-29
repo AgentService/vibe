@@ -470,7 +470,3 @@ After Phase 4 completion, create comprehensive spawn-specific documentation:
 ---
 
 **Updated:** 2025-01-20 - Comprehensive ultra-phased approach with detailed implementation steps and verification checkpoints.
-
-
-
-final check: what about the map config of BASE SPAWN SCALING? should we also remove that?

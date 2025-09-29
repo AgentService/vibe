@@ -21,7 +21,7 @@ func _setup_test_systems() -> void:
 		},
 		{
 			"name": "SpawnDirector",
-			"script": preload("res://scripts/systems/SpawnDirector.gd"),
+			"script": preload("res://scripts/systems/spawn/SpawnDirector.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		},
 		# TODO: Phase 2 - Replace with AbilityModule autoload testing

@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://b422oywwjarc1" path="res://scripts/arena/ForestArena.gd" id="1_a5ui1"]
 [ext_resource type="Texture2D" uid="uid://cgibtnsrlhtst" path="res://assets/sprites/raven/Raven Fantasy - 2D PixelArt Tileset and Sprites - Green Forest 2/All Tileset/48x48.png" id="2_8iyod"]
-[ext_resource type="Script" uid="uid://413yu65qe1hj" path="res://scripts/systems/ProceduralArenaGenerator.gd" id="4_pojv8"]
+[ext_resource type="Script" uid="uid://413yu65qe1hj" path="res://scripts/systems/arena_generation/ProceduralArenaGenerator.gd" id="4_pojv8"]
 [ext_resource type="Script" uid="uid://cjyac8ykv6ihl" path="res://scripts/systems/debug/DebugSystemControls.gd" id="5_nrkuc"]
 [ext_resource type="Resource" uid="uid://c6i8y5m1kcg4v" path="res://data/content/biomes/ForestBiome.tres" id="5_qc2fx"]
 [ext_resource type="Resource" uid="uid://dx4m8l2y6gk7n" path="res://data/content/biomes/DefaultGenerationParams.tres" id="6_h4mw3"]

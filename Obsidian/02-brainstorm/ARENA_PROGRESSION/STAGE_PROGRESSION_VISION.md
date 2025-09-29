@@ -399,4 +399,316 @@ Stage 3: coefficient (Y + FIXED_JUMP) → climbs over time → ends at Z
 - If chest costs SCALE FASTER than gold income → diminishing returns
 - **Key question:** Should chest #10 cost more than chest #1?
 
-**Status:** 🟡 Multiple viable options - need to choose economic pressure system
+**Option 5: Simplest Solution - Pressure Waves**
+- ✅ Keep chest spawning SIMPLE (no decay, no cost scaling)
+- ✅ Add **dangerous pressure waves** over time
+- ✅ Waves create survival challenge, not economic pressure
+- ✅ **Waves STOP when rift activated** → incentive to progress
+- ✅ Much less balancing complexity
+
+**How it works:**
+- Chests spawn consistently throughout (e.g., every 60 seconds)
+- Normal enemy spawning continues
+- **At 4 minutes, 6 minutes, 8 minutes:** Special pressure wave spawns
+- Pressure waves = elite enemies, higher density, dangerous
+- Activating rift = escape from pressure waves
+
+**Benefits:**
+- ✅ No complex economic math to tune
+- ✅ Clear danger signal ("things are getting scary, leave soon!")
+- ✅ Leverages existing SpawnDirector system
+- ✅ Player feels pressure from combat, not artificial timers
+- ✅ Rewards player skill (can handle pressure = more chests)
+
+**Comparison:**
+- Hybrid (Option 4): Complex, lots of tuning, economic pressure
+- Pressure Waves (Option 5): Simple, clear feedback, survival pressure
+
+**CONFIRMED: Option 5 - Pressure Waves System**
+- ✅ Simple chest spawning (consistent rate, fixed costs)
+- ✅ Pressure waves at timed intervals (4min, 6min, 8min)
+- ✅ Waves stop when rift activated
+- ✅ Combat-focused pressure, not economic complexity
+- ✅ Leverages existing SpawnDirector system
+
+---
+
+### Question 5: Rift Event Enemy Scaling
+
+**Key Questions:**
+1. Do rift enemies **snapshot difficulty** at activation time?
+   - Example: Activate at 3 minutes → all rift enemies use coefficient 2.5
+
+2. Or do rift enemies **continue scaling** during the 90s event?
+   - Example: Activate at 3 minutes → enemies start at 2.5, reach 4.0 by end
+
+3. Are rift enemies **inherently harder** than shopping phase enemies?
+   - Same stats but more dense spawning?
+   - Stat boost (e.g., +20% HP/damage)?
+   - More elite variants?
+
+**Design Implications:**
+
+**Snapshot Scaling (Option A):**
+- ✅ Rewards early activation (easier rift event)
+- ✅ Punishes greed (late activation = hard rift)
+- ✅ Clear risk/reward trade-off
+- ❌ Might feel unfair if you barely survived to reach rift
+
+**Continuous Scaling (Option B):**
+- ✅ Consistent challenge regardless of activation time
+- ✅ Always feels "appropriately hard"
+- ❌ Removes activation timing strategy
+- ❌ No reward for efficient shopping
+
+**ROR2 Research Findings:**
+- Boss spawns based on "difficulty and number of players"
+- Director uses credits system that scales with coefficient
+- Difficulty continues increasing during teleporter event
+- **Unclear from documentation:** Exact snapshot timing
+
+**Community Wisdom:**
+- Players discuss "rushing teleporter vs farming" strategies
+- Early activation = easier boss fight (common advice)
+- This suggests **snapshot scaling** at activation time
+- Otherwise rushing wouldn't matter
+
+**DECISION NEEDED:** Choose between Option A (Snapshot) or Option B (Continuous)
+
+**CONFIRMED: Snapshot Scaling (Option A)**
+- ✅ Creates meaningful activation timing decisions
+- ✅ Rewards risk-taking (late activation = harder challenge)
+- ✅ Multiple viable strategies (speed vs farming)
+- ✅ Simple to implement: capture coefficient at activation
+
+**Boss Difficulty Scaling:**
+- Early activation (3min, coeff 2.5) → Boss at level ~5
+- Late activation (7min, coeff 5.0) → Boss at level ~12
+- **Both strategies viable for leaderboard competition**
+
+**Stage Transition Comparison (MEGABONK Philosophy):**
+
+**Speed Strategy (3 min Stage 1):**
+- Stage 1 ends: coefficient 2.5 + rift (90s) = ~4.0 total
+- Stage 2 starts: coefficient 4.0 + 1.0 (stage jump) = **5.0**
+- Player has: 4 upgrades
+- **Path:** Deep progression through many stages
+
+**Farming Strategy (7-10 min Stage 1):**
+- Stage 1 ends: coefficient 5.0 + rift (90s) = ~6.5 total
+- Stage 2 starts: coefficient 6.5 + 1.0 (stage jump) = **7.5**
+- Player has: 10+ upgrades
+- **Path:** Maximize kills per stage, fewer stages total
+
+**Both strategies valid for leaderboard:**
+- Speed = More stages = cumulative kills
+- Farming = More kills per stage = high density
+- Character builds optimize for different strategies
+
+---
+
+### MEGABONK Comparison Research
+
+**MEGABONK's Difficulty System:**
+- **Difficulty is a stat** you can actively increase (not just time-based)
+- **Time scaling:** Mobs scale over time (boss: 8k HP early → 30k+ HP late)
+- **Stage jumps:** Tier 1 → Tier 2 = massive difficulty spike (20k → 500k boss HP)
+- **Player choice:** Can increase difficulty via shrines (+5% or +8%)
+- **Reward scaling:** Higher difficulty = more XP and gold
+
+**Key Difference from ROR2:**
+- MEGABONK: **Encourages increasing difficulty** (better rewards)
+- ROR2: **Punishes staying too long** (exponential danger)
+
+**MEGABONK's Philosophy:**
+- ✅ Active difficulty control (shrines, curses)
+- ✅ Higher risk = higher reward (XP/gold scales)
+- ✅ "Holy Trinity" combo = exponential power growth possible
+- ✅ Rewards aggressive play and risk-taking
+
+**ROR2's Philosophy:**
+- ✅ Passive difficulty increase (time pressure)
+- ✅ Efficiency beats greed (exponential danger)
+- ✅ Teaches "get in, get out" gameplay
+- ✅ Rewards speed and smart exits
+
+**Question for Your System:** Which philosophy fits better?
+- **MEGABONK style:** Reward players for staying longer / taking risks?
+- **ROR2 style:** Punish greed, reward efficiency?
+- **Hybrid:** Some of both?
+
+**CRITICAL INSIGHT: Global Leaderboard Changes Everything**
+
+**If tracking "Most Kills" on leaderboard:**
+- ROR2 style = Speed-running dominates (low kill counts, fast exits)
+- MEGABONK style = **Encourages staying longer for more kills**
+- **MEGABONK philosophy aligns with leaderboard goals!**
+
+**Leaderboard Impact Analysis:**
+
+**With ROR2 "Efficiency" Philosophy:**
+- ❌ Optimal play = fast clears (minimize kills, maximize survival)
+- ❌ Leaderboard rewards avoidance, not engagement
+- ❌ Contradictory goals: "leave early" vs "get most kills"
+- ❌ Speedrunners dominate by avoiding combat
+
+**With MEGABONK "Risk/Reward" Philosophy:**
+- ✅ Optimal play = stay longer, take risks, maximize kills
+- ✅ Leaderboard rewards engagement and skill
+- ✅ Aligned goals: "push your limits" for high scores
+- ✅ Voluntary difficulty increases = more spawns = more kills
+
+**MEGABONK Features to Consider:**
+1. **Voluntary difficulty shrines** (+5-8% difficulty)
+   - Higher difficulty = more enemy spawns = more kill potential
+   - Rewards players who can handle the pressure
+
+2. **Reward scaling with difficulty**
+   - Higher difficulty = better gold/XP per kill
+   - Compensates for increased danger
+
+3. **"How far can you push?" mentality**
+   - Leaderboard becomes skill showcase
+   - High scores require mastering risk management
+
+**CONFIRMED DECISION: MEGABONK-style progression**
+- ✅ Rewards staying longer (more kills)
+- ✅ Voluntary difficulty control (shrines)
+- ✅ Higher difficulty = better rewards + more spawns
+- ✅ Aligns with leaderboard competition
+- ✅ Still has pressure waves to create tension
+
+**This changes the design!**
+
+**LEADERBOARD INSIGHT:**
+- Multiple paths to high kill counts: Stage 1 farming vs deep progression
+- Different character builds optimize for different strategies
+- AoE builds: early-stage farming specialists
+- Scaling builds: deep progression specialists
+- Creates natural meta diversity
+
+**CRITICAL DESIGN CHALLENGE:**
+**How to prevent "Stage 1 farming is always optimal" problem?**
+
+**The Risk:** If staying in Stage 1 is too safe/rewarding, all leaderboard runs become "farm Stage 1 forever"
+
+**Needed Pressure Mechanisms:**
+- Exponential difficulty must eventually overtake player power
+- Pressure waves need to be genuinely dangerous
+- Diminishing returns on kill-per-minute as time increases?
+- Enemy HP scaling faster than player DPS scaling?
+
+**MEGABONK's Solution: "Final Swarm" Mechanic**
+
+**How MEGABONK Forces Progression:**
+1. **Stage timer** - Each stage has a time limit
+2. **Time-based scaling** - Enemy stats increase continuously (8k HP → 30k+ HP)
+3. **Final Swarm trigger** - When timer expires:
+   - Overwhelming enemy spawn rate (spawn right next to player)
+   - All enemy stats cranked up (HP, damage, speed)
+   - Portal activates (escape or die)
+   - Spawn rate "insane after 1:30m" into Final Swarm
+
+**The Pressure:**
+- You CAN stay longer (voluntary risk-taking)
+- But eventually Final Swarm makes survival impossible
+- Timer creates "soft ceiling" - can farm until timer expires
+- Final Swarm creates "hard ceiling" - must leave or die
+
+**Translated to Our System:**
+
+**Option A: Direct Copy (Final Swarm)**
+- Stage timer (e.g., 10 minutes)
+- When timer expires → "Overwhelming Swarm" event
+- Massive spawn rate spike + stat buffs
+- Portal activates, player must escape or die
+- Clear escalation signal
+
+**Option B: Pressure Wave Evolution**
+- No hard timer, pressure waves escalate naturally
+- Wave 4+ become "proto-Final Swarm"
+- Eventually waves overlap and become continuous
+- Creates same pressure without artificial timer
+
+**CONFIRMED: Final Swarm Mechanic**
+- ✅ Stage timer (8-10 minutes)
+- ✅ Rift spawns at 90 seconds (early activation option)
+- ✅ Final Swarm triggers when timer expires
+- ✅ Swarm = overwhelming spawn rate + stat buffs
+- ✅ Forces portal activation or death
+- ✅ Prevents "farm Stage 1 forever" exploit
+
+**Timeline:**
+```
+0:00 - Stage start
+1:30 - Rift spawns (earliest activation)
+4:00 - Pressure Wave 1
+6:00 - Pressure Wave 2
+8:00 - Pressure Wave 3
+10:00 - FINAL SWARM BEGINS (timer expires)
+10:00-11:30 - Must activate rift or die
+```
+
+**MEGABONK Final Swarm Details (Additional Research):**
+- **Final Swarm = infinite duration** (continues until death)
+- **Used for leaderboard kill grinding** (not just forcing function)
+- **Silver multiplier scales with tier** (Tier 1 = 1x, Tier 3 = 1.2x)
+- **Silver = meta-progression currency** (permanent unlocks)
+- **Survival in Final Swarm requires:**
+  - AoE damage (clear spawns)
+  - Lifesteal/sustain (survive hits)
+  - Movement speed (dodge overwhelming numbers)
+- **Optimal strategy:** Survive Final Swarm AS LONG AS POSSIBLE for:
+  - More kills (leaderboard)
+  - More silver (meta-progression)
+  - More upgrades before next stage
+
+**Key Insight:** Final Swarm isn't just a "leave or die" - it's a **high-risk high-reward** endgame phase!
+
+**For Our System:**
+- Should Final Swarm be survivable indefinitely with right build?
+- Or should it be mathematically impossible after X time?
+- MEGABONK rewards staying in swarm = more kills + more currency
+- Creates "how long can you last?" challenge
+
+**CONFIRMED APPROACH: Hybrid System (Not Pure MEGABONK)**
+
+**Key Difference from MEGABONK:**
+- MEGABONK: High risk = always optimal strategy (infinite swarm survivable)
+- **Our System:** Final Swarm has **mathematical ceiling** (becomes impossible)
+
+**Final Swarm Design:**
+- ✅ Survivable for limited duration (2-4 minutes skill-based)
+- ✅ Rewards mastery (more kills, more gold)
+- ✅ **Becomes mathematically impossible** (exponential scaling)
+- ✅ Forces "find your sweet spot" decision
+- ✅ Death = lose all run progress
+
+**The Balance:**
+```
+10:00 - Final Swarm starts (challenging but manageable)
+11:00 - Very dangerous (requires strong build)
+12:00 - Extremely dangerous (only best builds survive)
+13:00 - Mathematically impossible (must have left by now)
+```
+
+**Strategic Tension:**
+- **Risk:** Stay in swarm = more kills BUT risk death
+- **Reward:** More kills for leaderboard, more gold/upgrades
+- **Penalty:** Death = game over, no carry-over
+- **Decision:** "Can I handle 30 more seconds, or should I progress NOW?"
+
+**Key Design Goal:**
+- Players must **find their personal ceiling**
+- Not about "always max duration" (MEGABONK problem)
+- About **risk assessment**: "Am I strong enough for one more minute?"
+- Survival >>> greed (death ends run)
+
+**This Creates:**
+- ✅ Multiple viable strategies (conservative vs aggressive)
+- ✅ Build-dependent ceiling (AoE builds last longer in swarm)
+- ✅ Skill expression (knowing your limits)
+- ✅ Tension between progression and death
+- ❌ NOT "always stay max duration" meta
+
+**Status:** 🟢 Final Swarm = limited survivability + mathematical ceiling
