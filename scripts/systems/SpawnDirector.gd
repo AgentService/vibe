@@ -276,39 +276,11 @@ func _on_breach_completed(breach_event: EventInstance, performance_data: Diction
 	"""Handle breach completion logging"""
 	Logger.debug("SpawnDirector: Breach completed with %d enemies spawned" % performance_data.get("enemies_spawned", 0), "events")
 
-# SPATIAL RESTRICTION HELPERS: Prevent regular spawning inside breach circles
-func _is_position_inside_any_breach(position: Vector2) -> bool:
-	"""Check if a position is inside any active breach circle"""
-	if not breach_handler:
-		return false
 
-	for breach_event in breach_handler.active_breach_events:
-		var distance = position.distance_to(breach_event.center_position)
-		if distance <= breach_event.current_radius:
-			return true
-
-	return false
-
-func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vector2:
-	"""Try to find alternative spawn position outside breach circles"""
-	var max_attempts = 10
-	var attempt = 0
-
-	while attempt < max_attempts:
-		# CRITICAL FIX: Use bypass version to prevent infinite recursion
-		# _get_data_driven_spawn_position() calls _validate_spawn_position_for_breaches()
-		# which calls _get_alternative_spawn_position() again, causing stack overflow
-		var test_pos = _get_data_driven_spawn_position_bypass_validation()
-		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
-			return test_pos
-		attempt += 1
-
-	# No valid position found
-	return Vector2.ZERO
 
 func _get_data_driven_spawn_position_bypass_validation() -> Vector2:
-	"""Get spawn position using MapConfig activation_method WITHOUT breach validation.
-	Used by _get_alternative_spawn_position to prevent infinite recursion."""
+	"""Get spawn position using Area2D zones.
+	Breach validation system removed."""
 
 	# Get arena scene and map config
 	var arena_scene = _get_arena_scene()
@@ -324,15 +296,8 @@ func _get_data_driven_spawn_position_bypass_validation() -> Vector2:
 		Logger.error("No map_config available for spawn position", "spawn")
 		return Vector2.ZERO
 
-	# Use data-driven activation method WITHOUT validation
-	var activation_method = map_config.activation_method
-
-	match activation_method:
-		MapConfig.ActivationMethod.AREA_TRIGGERS:
-			return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
-		_:
-			Logger.error("Unsupported activation method: %d - only AREA_TRIGGERS supported" % activation_method, "arena")
-			return Vector2.ZERO
+	# Use area triggers method without validation (only supported method)
+	return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
 
 func _get_area_triggers_spawn_position_bypass_validation(arena_scene: Node, map_config: MapConfig) -> Vector2:
 	"""AREA_TRIGGERS spawn position WITHOUT breach validation to prevent recursion."""
@@ -653,7 +618,7 @@ func _spawn_enemy_v2() -> void:
 
 ## Data-driven spawn position selection based on MapConfig.activation_method
 func _get_data_driven_spawn_position() -> Vector2:
-	"""Get spawn position using MapConfig activation_method instead of hardcoded method checks."""
+	"""Get spawn position using Area2D zones (only method currently supported)."""
 
 	# Get arena scene and map config
 	var arena_scene = _get_arena_scene()
@@ -669,15 +634,8 @@ func _get_data_driven_spawn_position() -> Vector2:
 		Logger.error("No map_config available for spawn position", "spawn")
 		return Vector2.ZERO
 
-	# Use data-driven activation method (AREA_TRIGGERS only)
-	var activation_method = map_config.activation_method
-
-	match activation_method:
-		MapConfig.ActivationMethod.AREA_TRIGGERS:
-			return _get_area_triggers_spawn_position(arena_scene, map_config)
-		_:
-			Logger.error("Unsupported activation method: %d - only AREA_TRIGGERS supported" % activation_method, "arena")
-			return Vector2.ZERO
+	# Use area triggers method (only supported method)
+	return _get_area_triggers_spawn_position(arena_scene, map_config)
 
 func _get_area_triggers_spawn_position(arena_scene: Node, map_config: MapConfig) -> Vector2:
 	"""AREA_TRIGGERS: Use Area2D spawn zones with proximity filtering."""
@@ -723,8 +681,7 @@ func _get_area_triggers_spawn_position(arena_scene: Node, map_config: MapConfig)
 	var selected_zone = zones_in_range[RNG.randi("spawn") % zones_in_range.size()]
 	var spawn_position = _generate_position_in_area2d_zone(selected_zone)
 
-	# Apply breach validation
-	spawn_position = _validate_spawn_position_for_breaches(spawn_position, arena_scene)
+	# Breach validation removed - spawn directly in zone
 
 	var center_distance = player_pos.distance_to(selected_zone.global_position)
 	var zone_radius = _get_zone_radius(selected_zone)
@@ -767,19 +724,6 @@ func _generate_position_in_area2d_zone(zone: Area2D) -> Vector2:
 	# For other shapes, just use the zone center
 	return zone.global_position
 
-func _validate_spawn_position_for_breaches(spawn_pos: Vector2, arena_scene: Node) -> Vector2:
-	"""Validate spawn position against active breach circles."""
-	if _is_position_inside_any_breach(spawn_pos):
-		if arena_scene:
-			spawn_pos = _get_alternative_spawn_position(arena_scene, spawn_pos)
-			if spawn_pos == Vector2.ZERO:
-				Logger.debug("No valid spawn position outside breach circles", "spawn")
-				return Vector2.ZERO
-		else:
-			Logger.debug("Spawn position inside breach, no arena scene for alternative", "spawn")
-			return Vector2.ZERO
-
-	return spawn_pos
 
 func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> Node2D:
 	# DECISION: Switch to scene-based enemies only - no more MultiMesh pooled enemies
