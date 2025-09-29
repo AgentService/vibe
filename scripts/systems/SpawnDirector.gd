@@ -80,9 +80,6 @@ var mastery_system
 # BREACH EVENT HANDLER: Separate handler for breach events
 var breach_handler: BreachEventHandler
 
-# ZONE PLAYER TRACKING: Local tracking for zone behavior analysis
-var _zone_player_presence: Dictionary = {}  # zone_name -> time_spent_nearby
-var _zone_last_combat: Dictionary = {}  # zone_name -> time_since_last_combat
 
 # ZERO-ALLOC: Entity update queue for batch processing (eliminates Dictionary allocations)
 var _entity_update_queue: RingBufferUtil
@@ -512,17 +509,6 @@ func _on_combat_step(payload) -> void:
 	_update_breach_system(payload.dt)
 	# DECISION: No longer emit enemies_updated signal for MultiMesh - scene enemies self-manage
 
-# _update_zone_cooldowns moved to EventSpawnManager
-
-# _is_zone_available moved to EventSpawnManager
-
-# _set_zone_cooldown moved to EventSpawnManager
-
-# _update_zone_threat_escalation moved to EventSpawnManager
-
-# _get_zone_threat_level moved to EventSpawnManager
-
-# _escalate_zone_threat moved to EventSpawnManager
 
 ## DAMAGE V3: Handle unified damage sync events for pooled enemies
 func _on_damage_entity_sync(payload: Dictionary) -> void:

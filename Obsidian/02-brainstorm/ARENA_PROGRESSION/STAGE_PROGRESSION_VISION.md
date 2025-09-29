@@ -102,6 +102,37 @@
 
 **KEY QUESTION:** In ROR2's Option A system, why ISN'T it always best to wait until the last possible second to activate the portal?
 
+**FOLLOW-UP QUESTION:** Why are early chests cheap and later chests expensive in ROR2 when they're pre-spawned?
+
+**ANSWER:** Chest costs are FIXED - the "expensive" feeling comes from gold income declining as enemies get tankier
+
+**CRITICAL QUESTION:** Enemies get tankier but players also get stronger - so why does efficiency decline?
+
+**ANSWER:** Exponential enemy scaling vs linear player progression creates mathematical tipping point
+
+**NEW PROBLEM:** With smaller arenas and pre-spawned chests - what prevents player from just opening everything before boss?
+
+**ROR2 GOLD MECHANICS RESEARCH:**
+- Gold converts to XP when leaving stage (2:1 ratio)
+- Enemy gold values vary by spawn timing:
+  - Pre-spawned enemies: Lowest value
+  - Natural spawns during exploration: Highest value
+  - Teleporter event spawns: Lower value
+  - Shrine of Combat spawns: Highest value
+- **Optimal strategy:** Wait to start teleporter until funding goal almost met
+
+**KEY INSIGHT:** Enemy spawn timing affects gold value - creates incentive to farm "fresh" spawns
+
+**ROR2 TELEPORTER TIMING EXPLANATION:**
+"Wait to start teleporter until funding goal almost met" means:
+- You explore/farm enemies BEFORE starting teleporter event
+- Once teleporter starts: must stay in radius + enemies give less gold
+- **Funding goal** = have enough gold to buy what you want
+- Start too early = stuck farming low-value teleporter enemies
+- Start too late = wasted time, could have moved to next stage already
+
+**FUNDING GOAL CONCEPT:** Calculate how much gold you need for remaining chests/shrines, then start teleporter when you're close to that amount
+
 ---
 
 ## Vision Development Log

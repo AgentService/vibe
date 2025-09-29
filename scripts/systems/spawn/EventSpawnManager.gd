@@ -15,14 +15,6 @@ var event_timer: float = 0.0
 var next_event_delay: float = 45.0
 var active_events: Array[Dictionary] = []
 
-# Zone cooldown system
-var _zone_cooldowns: Dictionary = {}  # zone_name -> cooldown_remaining
-var zone_cooldown_duration: float = 15.0
-
-# Zone threat escalation
-var _zone_threat_levels: Dictionary = {}  # zone_name -> threat_level (0.0 to 1.0)
-var threat_escalation_enabled: bool = true
-var threat_decay_rate: float = 0.1
 
 func initialize(parent_spawn_director: SpawnDirector, parent_mastery_system) -> void:
 	"""Initialize the event spawn manager with dependencies"""
@@ -39,26 +31,8 @@ func update(dt: float) -> void:
 	if not event_system_enabled:
 		return
 
-	_update_zone_cooldowns(dt)
-	_update_zone_threats(dt)
 	_handle_event_spawning(dt)
 
-func _update_zone_cooldowns(dt: float) -> void:
-	"""Update zone cooldown timers"""
-	for zone_name in _zone_cooldowns.keys():
-		_zone_cooldowns[zone_name] -= dt
-		if _zone_cooldowns[zone_name] <= 0.0:
-			_zone_cooldowns.erase(zone_name)
-
-func _update_zone_threats(dt: float) -> void:
-	"""Update zone threat level decay"""
-	if not threat_escalation_enabled:
-		return
-
-	for zone_name in _zone_threat_levels.keys():
-		_zone_threat_levels[zone_name] -= threat_decay_rate * dt
-		if _zone_threat_levels[zone_name] <= 0.0:
-			_zone_threat_levels.erase(zone_name)
 
 func _handle_event_spawning(dt: float) -> void:
 	"""Handle event-based spawning with mastery modifiers."""
@@ -115,11 +89,6 @@ func _handle_event_spawning(dt: float) -> void:
 	# Select zone for event spawning (prefer distant zones)
 	var selected_zone = _select_event_zone(available_zones, player_pos)
 
-	# Set zone cooldown to prevent immediate reuse
-	_set_zone_cooldown(selected_zone.name)
-
-	# Escalate threat in the zone where event spawned
-	_escalate_zone_threat(selected_zone.name, 0.20)  # 20% threat increase per event
 
 	# Spawn the event
 	_spawn_event_at_zone(event_def, modified_config, selected_zone)
@@ -141,16 +110,12 @@ func _get_available_event_zones(player_pos: Vector2, map_config: MapConfig) -> A
 
 	var available_zones: Array[Area2D] = []
 
-	# Filter zones by distance and cooldown
+	# Filter zones by distance only (zone cooldowns removed)
 	for zone_area in all_scene_zones:
 		var distance = player_pos.distance_to(zone_area.global_position)
 
 		# Check distance range (prefer off-screen spawning)
 		if distance < event_spawn_min_distance or distance > event_spawn_range:
-			continue
-
-		# Check zone cooldown
-		if not _is_zone_available(zone_area.name):
 			continue
 
 		available_zones.append(zone_area)
@@ -338,23 +303,3 @@ func check_event_completion(killed_entity_id: String) -> void:
 	# Remove completed events (iterate backwards to maintain indices)
 	for i in range(completed_events.size() - 1, -1, -1):
 		active_events.remove_at(completed_events[i])
-
-func _set_zone_cooldown(zone_name: String) -> void:
-	"""Set cooldown for a spawn zone"""
-	_zone_cooldowns[zone_name] = zone_cooldown_duration
-
-func _is_zone_available(zone_name: String) -> bool:
-	"""Check if a zone is available for spawning (not on cooldown)"""
-	return not _zone_cooldowns.has(zone_name)
-
-func _escalate_zone_threat(zone_name: String, threat_increase: float) -> void:
-	"""Escalate threat level in a zone"""
-	if not threat_escalation_enabled:
-		return
-
-	var current_threat = _zone_threat_levels.get(zone_name, 0.0)
-	_zone_threat_levels[zone_name] = min(1.0, current_threat + threat_increase)
-
-func get_zone_threat_level(zone_name: String) -> float:
-	"""Get current threat level for a zone"""
-	return _zone_threat_levels.get(zone_name, 0.0)
