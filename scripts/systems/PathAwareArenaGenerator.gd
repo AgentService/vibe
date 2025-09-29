@@ -35,7 +35,7 @@ var debug_lines: Array[Line2D] = []
 # System components
 var path_generator: DungeonPathGenerator
 var tree_generator: Node
-var spawn_zone_generator: Node
+var spawn_zone_manager: SpawnZoneManager
 var spawn_zone_container: Node2D
 
 # Generated data
@@ -80,7 +80,16 @@ func _initialize_systems():
 	spawn_zone_container.name = "SpawnZones"
 	add_child(spawn_zone_container)
 
-	Logger.debug("Initialized DungeonPathGenerator, TreeBoundaryGenerator, and SpawnZone container", "pathgen")
+	# Create spawn zone manager system (not used yet, preserving existing behavior)
+	spawn_zone_manager = SpawnZoneManager.new()
+	spawn_zone_manager.name = "SpawnZoneManager"
+	add_child(spawn_zone_manager)
+
+	# Configure SpawnZoneManager to use PathAwareArenaGenerator radius setting
+	spawn_zone_manager.default_zone_radius = spawn_zone_radius
+	spawn_zone_manager.show_visual_indicators = false
+
+	Logger.debug("Initialized DungeonPathGenerator, TreeBoundaryGenerator, SpawnZoneManager, and SpawnZone container", "pathgen")
 
 func generate_path_aware_arena():
 	Logger.info("🛤️ Starting path-aware arena generation...", "pathgen")
@@ -158,10 +167,9 @@ func clear_arena():
 			line.queue_free()
 	debug_lines.clear()
 
-	# Clear spawn zones
-	for zone in generated_spawn_zones:
-		if is_instance_valid(zone):
-			zone.queue_free()
+	# Clear spawn zones using SpawnZoneManager
+	if spawn_zone_manager:
+		spawn_zone_manager.clear_managed_zones()
 	generated_spawn_zones.clear()
 
 	# Clear tile map layers
@@ -699,11 +707,10 @@ func get_system_debug_info() -> Dictionary:
 ## Generate spawn zones at branch endpoints
 func _generate_spawn_zones() -> void:
 	"""Generate circular spawn zones at all branch endpoint positions"""
-	Logger.info("🎯 Starting spawn zone generation...", "spawnzones")
+	Logger.debug("🎯 Starting spawn zone generation...", "spawnzones")
 
 	# Use the same logic as PathAwareMapConfig to get branch endpoint positions
 	var snapshot = get_path_snapshot()
-	Logger.debug("Path snapshot result: %s" % (snapshot != null), "spawnzones")
 	if not snapshot:
 		Logger.warn("No path snapshot available for spawn zone generation", "spawnzones")
 		return
@@ -716,15 +723,13 @@ func _generate_spawn_zones() -> void:
 	var endpoint_positions = temp_config._get_branch_endpoint_positions()
 
 	if endpoint_positions.is_empty():
-		Logger.info("No branch endpoints found for spawn zone generation", "spawnzones")
+		Logger.debug("No branch endpoints found for spawn zone generation", "spawnzones")
 		return
-
-	Logger.info("🎯 Generating spawn zones at %d branch endpoints..." % endpoint_positions.size(), "spawnzones")
 
 	# Create spawn zones directly in the generator
 	_create_spawn_zones_directly(endpoint_positions)
 
-	Logger.info("✅ Spawn zone generation completed: %d zones created" % generated_spawn_zones.size(), "spawnzones")
+	Logger.debug("✅ Spawn zone generation completed: %d zones created" % generated_spawn_zones.size(), "spawnzones")
 
 ## Create spawn zones directly without separate script
 func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
@@ -735,70 +740,12 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 			zone.queue_free()
 	generated_spawn_zones.clear()
 
-	# Use configurable radius parameter
-	var zone_radius = spawn_zone_radius
-	var zone_color = Color.CYAN
-	var zone_alpha = 0.5
+	# Use SpawnZoneManager to create functional zones with visual indicators
+	generated_spawn_zones = spawn_zone_manager.create_spawn_zones_at_positions(
+		endpoint_positions, spawn_zone_container, spawn_zone_radius
+	)
 
-	for i in range(endpoint_positions.size()):
-		var endpoint_pos: Vector2 = endpoint_positions[i]
-		Logger.debug("Creating functional spawn zone %d at position %s" % [i, endpoint_pos], "spawnzones")
-
-		# Create functional Area2D spawn zone (required by SpawnDirector)
-		var spawn_zone = Area2D.new()
-		spawn_zone.name = "SpawnZone_%d" % i
-		spawn_zone.global_position = endpoint_pos
-
-		# Add CollisionShape2D with CircleShape2D for functional area detection
-		var collision_shape = CollisionShape2D.new()
-		collision_shape.name = "CollisionShape2D"
-		var circle_shape = CircleShape2D.new()
-		circle_shape.radius = zone_radius
-		collision_shape.shape = circle_shape
-		spawn_zone.add_child(collision_shape)
-
-		# Add visual indicators container
-		var visual_container = Node2D.new()
-		visual_container.name = "VisualIndicator"
-		spawn_zone.add_child(visual_container)
-
-		# Create visual circle using Line2D
-		var circle_line = Line2D.new()
-		circle_line.name = "SpawnZoneCircle"
-		circle_line.width = 4.0
-		circle_line.default_color = Color(zone_color.r, zone_color.g, zone_color.b, zone_alpha)
-		circle_line.antialiased = true
-
-		# Create circle points
-		var segments = 32
-		for j in range(segments + 1):
-			var angle = (float(j) / segments) * TAU
-			var point = Vector2.from_angle(angle) * zone_radius
-			circle_line.add_point(point)
-
-		visual_container.add_child(circle_line)
-
-		# Add center dot
-		var center_dot = ColorRect.new()
-		center_dot.name = "CenterDot"
-		center_dot.size = Vector2(8, 8)
-		center_dot.position = Vector2(-4, -4)
-		center_dot.color = zone_color
-		visual_container.add_child(center_dot)
-
-		# Add zone ID label
-		var label = Label.new()
-		label.name = "ZoneLabel"
-		label.text = "Z%d" % i
-		label.position = Vector2(-12, zone_radius + 10)
-		label.add_theme_color_override("font_color", zone_color)
-		visual_container.add_child(label)
-
-		# Add to spawn zone container and track
-		spawn_zone_container.add_child(spawn_zone)
-		generated_spawn_zones.append(spawn_zone)
-
-		Logger.debug("Created functional spawn zone %d successfully" % i, "spawnzones")
+	Logger.debug("✅ SpawnZoneManager created %d functional zones successfully" % generated_spawn_zones.size(), "spawnzones")
 
 ## Get all generated spawn zones for SpawnDirector integration
 func get_spawn_zones() -> Array[Area2D]:
