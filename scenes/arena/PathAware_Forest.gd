@@ -117,11 +117,15 @@ func _update_spawn_zones() -> void:
 	# Clear existing spawn zones
 	_spawn_zone_areas.clear()
 
-	# Collect Area2D spawn zones from the generator
-	var spawn_zones = arena_generator.get_spawn_zones()
-	for zone in spawn_zones:
-		if zone is Area2D:
-			_spawn_zone_areas.append(zone)
+	# Collect Area2D spawn zones directly from SpawnZoneManager
+	var spawn_zone_manager = arena_generator.spawn_zone_manager
+	if spawn_zone_manager:
+		var spawn_zones = spawn_zone_manager.get_spawn_zones()
+		for zone in spawn_zones:
+			if zone is Area2D:
+				_spawn_zone_areas.append(zone)
+	else:
+		Logger.warn("SpawnZoneManager not found in arena generator", "spawnzones")
 
 	Logger.info("Updated arena spawn zones: %d zones available for SpawnDirector" % _spawn_zone_areas.size(), "spawnzones")
 

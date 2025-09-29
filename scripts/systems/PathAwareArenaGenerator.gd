@@ -42,7 +42,6 @@ var spawn_zone_container: Node2D
 var current_path_data: Dictionary = {}
 var current_tree_data: Array[Vector2] = []
 var rng: RandomNumberGenerator
-var generated_spawn_zones: Array[Area2D] = []
 
 func _ready():
 	# Initialize system components
@@ -151,7 +150,7 @@ func generate_path_aware_arena():
 	Logger.info("  - Points generated: %d" % current_path_data.get("points", []).size(), "pathgen")
 	Logger.info("  - Paths generated: %d" % current_path_data.get("paths", []).size(), "pathgen")
 	Logger.info("  - Trees generated: %d" % current_tree_data.size(), "pathgen")
-	Logger.info("  - Spawn zones generated: %d" % generated_spawn_zones.size(), "pathgen")
+	Logger.info("  - Spawn zones generated: %d" % spawn_zone_manager.get_spawn_zone_count(), "pathgen")
 
 func clear_arena():
 	"""Clear all generated content"""
@@ -170,7 +169,6 @@ func clear_arena():
 	# Clear spawn zones using SpawnZoneManager
 	if spawn_zone_manager:
 		spawn_zone_manager.clear_managed_zones()
-	generated_spawn_zones.clear()
 
 	# Clear tile map layers
 	var base_layer = _find_layer_node(BASE_LAYER_NAME)
@@ -729,41 +727,16 @@ func _generate_spawn_zones() -> void:
 	# Create spawn zones directly in the generator
 	_create_spawn_zones_directly(endpoint_positions)
 
-	Logger.debug("✅ Spawn zone generation completed: %d zones created" % generated_spawn_zones.size(), "spawnzones")
+	Logger.debug("✅ Spawn zone generation completed: %d zones created" % spawn_zone_manager.get_spawn_zone_count(), "spawnzones")
 
 ## Create spawn zones directly without separate script
 func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 	"""Create functional Area2D spawn zones with visual indicators at endpoint positions"""
-	# Clear any existing spawn zones
-	for zone in generated_spawn_zones:
-		if is_instance_valid(zone):
-			zone.queue_free()
-	generated_spawn_zones.clear()
-
 	# Use SpawnZoneManager to create functional zones with visual indicators
-	generated_spawn_zones = spawn_zone_manager.create_spawn_zones_at_positions(
+	Logger.info("Creating spawn zones using SpawnZoneManager...", "spawnzones")
+	spawn_zone_manager.create_spawn_zones_at_positions(
 		endpoint_positions, spawn_zone_container, spawn_zone_radius
 	)
 
-	Logger.debug("✅ SpawnZoneManager created %d functional zones successfully" % generated_spawn_zones.size(), "spawnzones")
+	Logger.info("✅ SpawnZoneManager created %d functional zones successfully" % spawn_zone_manager.get_spawn_zone_count(), "spawnzones")
 
-## Get all generated spawn zones for SpawnDirector integration
-func get_spawn_zones() -> Array[Area2D]:
-	"""Get all generated functional Area2D spawn zones"""
-	return generated_spawn_zones
-
-## Get spawn zone count
-func get_spawn_zone_count() -> int:
-	"""Get the number of generated spawn zones"""
-	return generated_spawn_zones.size()
-
-## Get random spawn zone
-func get_random_spawn_zone() -> Area2D:
-	"""Get a random spawn zone from generated zones"""
-	if generated_spawn_zones.is_empty():
-		Logger.warn("No spawn zones available for random selection", "spawnzones")
-		return null
-
-	var spawn_rng = RNG.stream("spawn")
-	var random_index = spawn_rng.randi() % generated_spawn_zones.size()
-	return generated_spawn_zones[random_index]
