@@ -9,6 +9,7 @@ class_name SpawnDirector
 
 # Import ArenaSystem for dependency injection
 const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
+const EventSpawnManager = preload("res://scripts/systems/spawn/EventSpawnManager.gd")
 
 # ZERO-ALLOC: Import ring buffer utilities for entity update queue
 const RingBufferUtil = preload("res://scripts/utils/RingBuffer.gd")
@@ -74,26 +75,16 @@ var current_wave_level: int = 1
 var pack_spawn_timer: float = 0.0
 var pack_spawn_enabled: bool = true
 
-# EVENT SYSTEM: Event spawning state
-var event_system_enabled: bool = false
-var event_timer: float = 0.0
-var next_event_delay: float = 45.0
-var active_events: Array[Dictionary] = []
+# EVENT SYSTEM: Delegated to EventSpawnManager
+var event_spawn_manager: EventSpawnManager
 var mastery_system
 
 # BREACH EVENT HANDLER: Separate handler for breach events
 var breach_handler: BreachEventHandler
 
-# ZONE COOLDOWN SYSTEM: Prevent rapid consecutive spawns in same zones
-var _zone_cooldowns: Dictionary = {}  # zone_name -> cooldown_remaining
-var zone_cooldown_duration: float = 15.0  # Seconds before zone can be used again
-
-# ZONE THREAT ESCALATION: Track player behavior and respond with escalating threats
-var _zone_threat_levels: Dictionary = {}  # zone_name -> threat_level (0.0 to 1.0)
+# ZONE PLAYER TRACKING: Local tracking for zone behavior analysis
 var _zone_player_presence: Dictionary = {}  # zone_name -> time_spent_nearby
 var _zone_last_combat: Dictionary = {}  # zone_name -> time_since_last_combat
-var threat_escalation_enabled: bool = true
-var threat_decay_rate: float = 0.1  # How fast threat levels decay when not reinforced
 
 # ZERO-ALLOC: Entity update queue for batch processing (eliminates Dictionary allocations)
 var _entity_update_queue: RingBufferUtil
@@ -255,13 +246,15 @@ func _preload_boss_scenes() -> void:
 	Logger.info("Boss scenes preloaded for performance: %d bosses" % _preloaded_boss_scenes.size(), "waves")
 
 func _initialize_event_system() -> void:
-	"""Initialize the event mastery system"""
+	"""Initialize the event mastery system and event spawn manager"""
 	mastery_system = EventMasterySystem.mastery_system_instance
 
-	# Enable event system by default
-	event_system_enabled = true
+	# Create and initialize event spawn manager
+	event_spawn_manager = EventSpawnManager.new()
+	add_child(event_spawn_manager)
+	event_spawn_manager.initialize(self, mastery_system)
 
-	Logger.info("Event system initialized using autoload", "events")
+	Logger.info("Event system initialized with EventSpawnManager", "events")
 
 func _initialize_breach_handler() -> void:
 	"""Initialize the breach event handler"""
@@ -277,7 +270,7 @@ func _initialize_breach_handler() -> void:
 
 func _update_breach_system(dt: float) -> void:
 	"""Update the breach event system if enabled"""
-	if event_system_enabled and breach_handler:
+	if event_spawn_manager and event_spawn_manager.event_system_enabled and breach_handler:
 		breach_handler.update(dt)
 
 func _on_breach_activated(breach_event: EventInstance) -> void:
@@ -515,96 +508,23 @@ func _on_combat_step(payload) -> void:
 	if not PlayerState.has_player_reference():
 		return
 
-	_update_zone_cooldowns(payload.dt)
-	_update_zone_threat_escalation(payload.dt)
+	# Zone management now handled by EventSpawnManager.update()
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
 	_update_breach_system(payload.dt)
 	# DECISION: No longer emit enemies_updated signal for MultiMesh - scene enemies self-manage
 
-func _update_zone_cooldowns(dt: float) -> void:
-	"""Update cooldown timers for all spawn zones."""
-	var expired_zones: Array[String] = []
+# _update_zone_cooldowns moved to EventSpawnManager
 
-	for zone_name in _zone_cooldowns.keys():
-		_zone_cooldowns[zone_name] -= dt
-		if _zone_cooldowns[zone_name] <= 0.0:
-			expired_zones.append(zone_name)
+# _is_zone_available moved to EventSpawnManager
 
-	# Clean up expired cooldowns
-	for zone_name in expired_zones:
-		_zone_cooldowns.erase(zone_name)
+# _set_zone_cooldown moved to EventSpawnManager
 
-func _is_zone_available(zone_name: String) -> bool:
-	"""Check if a spawn zone is available (not on cooldown)."""
-	return not _zone_cooldowns.has(zone_name)
+# _update_zone_threat_escalation moved to EventSpawnManager
 
-func _set_zone_cooldown(zone_name: String) -> void:
-	"""Set cooldown for a spawn zone after successful pack spawn."""
-	_zone_cooldowns[zone_name] = zone_cooldown_duration
-	Logger.debug("Zone %s on cooldown for %.1f seconds" % [zone_name, zone_cooldown_duration], "arena")
+# _get_zone_threat_level moved to EventSpawnManager
 
-func _update_zone_threat_escalation(dt: float) -> void:
-	"""Update threat escalation tracking based on player behavior."""
-	if not threat_escalation_enabled:
-		return
-
-	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
-	if player_pos == Vector2.ZERO:
-		return
-
-	# Get all spawn zones from current arena
-	var arena_scene = _get_arena_scene()
-	if not arena_scene or not "_spawn_zone_areas" in arena_scene:
-		return
-
-	var spawn_zones = arena_scene._spawn_zone_areas
-	var player_proximity_range = 200.0  # Distance to track player presence
-
-	# Update player presence and threat decay for each zone
-	for zone_area in spawn_zones:
-		var zone_name = zone_area.name
-		var zone_pos = zone_area.global_position
-		var distance_to_player = player_pos.distance_to(zone_pos)
-
-		# Initialize zone data if needed
-		if not _zone_threat_levels.has(zone_name):
-			_zone_threat_levels[zone_name] = 0.0
-		if not _zone_player_presence.has(zone_name):
-			_zone_player_presence[zone_name] = 0.0
-		if not _zone_last_combat.has(zone_name):
-			_zone_last_combat[zone_name] = 0.0
-
-		# Track player presence near zone
-		if distance_to_player <= player_proximity_range:
-			_zone_player_presence[zone_name] += dt
-
-			# Gradual threat escalation when player lingers
-			if _zone_player_presence[zone_name] > 30.0:  # After 30 seconds
-				var escalation_rate = 0.02  # 2% per second when lingering
-				_zone_threat_levels[zone_name] = minf(1.0, _zone_threat_levels[zone_name] + escalation_rate * dt)
-		else:
-			# Decay presence tracking when player moves away
-			_zone_player_presence[zone_name] = maxf(0.0, _zone_player_presence[zone_name] - dt * 2.0)
-
-		# Decay threat levels over time (zones become "safer" if unused)
-		_zone_threat_levels[zone_name] = maxf(0.0, _zone_threat_levels[zone_name] - threat_decay_rate * dt)
-
-		# Update time since last combat in zone
-		_zone_last_combat[zone_name] += dt
-
-func _get_zone_threat_level(zone_name: String) -> float:
-	"""Get current threat level for a zone (0.0 to 1.0)."""
-	return _zone_threat_levels.get(zone_name, 0.0)
-
-func _escalate_zone_threat(zone_name: String, escalation_amount: float) -> void:
-	"""Increase threat level for a zone (called when combat occurs)."""
-	if not _zone_threat_levels.has(zone_name):
-		_zone_threat_levels[zone_name] = 0.0
-
-	_zone_threat_levels[zone_name] = minf(1.0, _zone_threat_levels[zone_name] + escalation_amount)
-	_zone_last_combat[zone_name] = 0.0  # Reset combat timer
-	Logger.debug("Zone %s threat escalated to %.2f" % [zone_name, _zone_threat_levels[zone_name]], "arena")
+# _escalate_zone_threat moved to EventSpawnManager
 
 ## DAMAGE V3: Handle unified damage sync events for pooled enemies
 func _on_damage_entity_sync(payload: Dictionary) -> void:
@@ -649,8 +569,9 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 		# Update EntityTracker
 		EntityTracker.unregister_entity(entity_id)
 
-		# Check for event completion
-		_check_event_completion(entity_id)
+		# Check for event completion via EventSpawnManager
+		if event_spawn_manager:
+			event_spawn_manager.check_event_completion(entity_id)
 	else:
 		# Update EntityTracker position/health data
 		var entity_data = EntityTracker.get_entity(entity_id)
@@ -673,9 +594,9 @@ func _handle_spawning(dt: float) -> void:
 	# Handle pack spawning (new unified functionality)
 	_handle_pack_spawning(dt)
 
-	# Handle event spawning
-	if event_system_enabled:
-		_handle_event_spawning(dt)
+	# Handle event spawning via EventSpawnManager
+	if event_spawn_manager:
+		event_spawn_manager.update(dt)
 
 	# Handle existing auto spawn (wave spawning)
 	spawn_timer += dt
@@ -747,7 +668,7 @@ func _handle_pack_spawning(dt: float) -> void:
 
 			# Further filter by zone availability (cooldown system)
 			for zone_area in distance_filtered_zones:
-				if _is_zone_available(zone_area.name):
+				if event_spawn_manager and event_spawn_manager._is_zone_available(zone_area.name):
 					zones_in_pack_range.append(zone_area)
 
 	if zones_in_pack_range.is_empty():
@@ -776,7 +697,7 @@ func _handle_pack_spawning(dt: float) -> void:
 	# Calculate average threat level of available zones (higher threat = larger packs)
 	var total_threat = 0.0
 	for zone_area in zones_in_pack_range:
-		total_threat += _get_zone_threat_level(zone_area.name)
+		total_threat += event_spawn_manager.get_zone_threat_level(zone_area.name) if event_spawn_manager else 0.0
 	var average_threat = total_threat / available_zone_count if available_zone_count > 0 else 0.0
 	var threat_multiplier = 1.0 + (average_threat * 0.5)  # Up to 50% size increase for high-threat zones
 
@@ -828,130 +749,20 @@ func _handle_pack_spawning(dt: float) -> void:
 			zone_radius = circle_shape.radius
 
 	# Set zone cooldown to prevent rapid re-use
-	_set_zone_cooldown(selected_zone.name)
+	if event_spawn_manager:
+		event_spawn_manager._set_zone_cooldown(selected_zone.name)
 
 	# Escalate threat in the zone where pack spawned
-	_escalate_zone_threat(selected_zone.name, 0.15)  # 15% threat increase per pack spawn
+	if event_spawn_manager:
+		event_spawn_manager._escalate_zone_threat(selected_zone.name, 0.15)  # 15% threat increase per pack spawn
 
 	_spawn_pack_formation(pack_size, spawn_position, zone_radius)
 
-func _handle_event_spawning(dt: float) -> void:
-	"""Handle event-based spawning with mastery modifiers."""
+# _handle_event_spawning moved to EventSpawnManager
 
-	# Update event timer
-	event_timer += dt
-	if event_timer < next_event_delay:
-		return
+# _get_available_event_zones moved to EventSpawnManager
 
-	# Reset timer
-	event_timer = 0.0
-
-	# Get current arena and map config
-	var arena_scene = _get_arena_scene()
-	if not arena_scene or not "map_config" in arena_scene:
-		Logger.debug("Event spawning: No arena scene or map config available", "events")
-		return
-
-	var map_config = arena_scene.map_config as MapConfig
-	if not map_config or not map_config.event_spawn_enabled:
-		Logger.debug("Event spawning: Events disabled in arena config", "events")
-		return
-
-	# Update event delay from map config
-	next_event_delay = map_config.event_spawn_interval
-
-	# Get player position for zone filtering
-	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
-	if player_pos == Vector2.ZERO:
-		Logger.debug("Event spawning: No valid player position", "events")
-		return
-
-	# Get available zones for event spawning (uses pack spawn range for events)
-	var available_zones = _get_available_event_zones(player_pos, map_config)
-	if available_zones.is_empty():
-		Logger.debug("Event spawning: No available zones (all on cooldown or out of range)", "events")
-		return
-
-	# Select random event type from arena configuration
-	var event_type = map_config.get_random_event_type()
-	if event_type == "":
-		Logger.debug("Event spawning: No event types configured for arena", "events")
-		return
-
-	# Get event definition from mastery system
-	var event_def = mastery_system.get_event_definition(event_type)
-	if not event_def:
-		Logger.warn("Event spawning: No definition found for event type: %s" % event_type, "events")
-		return
-
-	# Apply mastery modifiers to event configuration
-	var modified_config = mastery_system.apply_event_modifiers(event_def)
-
-	# Select zone for event spawning (prefer distant zones)
-	var selected_zone = _select_event_zone(available_zones, player_pos)
-
-	# Set zone cooldown to prevent immediate reuse
-	_set_zone_cooldown(selected_zone.name)
-
-	# Escalate threat in the zone where event spawned
-	_escalate_zone_threat(selected_zone.name, 0.20)  # 20% threat increase per event
-
-	# Spawn the event
-	_spawn_event_at_zone(event_def, modified_config, selected_zone)
-
-	Logger.info("Event spawned: %s at zone %s with %d enemies" % [
-		event_type, selected_zone.name, modified_config.get("monster_count", 0)
-	], "events")
-
-func _get_available_event_zones(player_pos: Vector2, map_config: MapConfig) -> Array[Area2D]:
-	"""Get zones available for event spawning with distance and cooldown filtering."""
-	var arena_scene = _get_arena_scene()
-	if not arena_scene or not "_spawn_zone_areas" in arena_scene:
-		return []
-
-	var all_scene_zones = arena_scene._spawn_zone_areas
-	var event_spawn_range = map_config.pack_spawn_range  # Use pack spawn range for events
-	var event_spawn_min_distance = map_config.pack_spawn_min_distance
-
-	var available_zones: Array[Area2D] = []
-
-	# Filter zones by distance and cooldown
-	for zone_area in all_scene_zones:
-		var distance = player_pos.distance_to(zone_area.global_position)
-
-		# Check distance range (prefer off-screen spawning)
-		if distance < event_spawn_min_distance or distance > event_spawn_range:
-			continue
-
-		# Check zone cooldown
-		if not _is_zone_available(zone_area.name):
-			continue
-
-		available_zones.append(zone_area)
-
-	return available_zones
-
-func _select_event_zone(available_zones: Array[Area2D], player_pos: Vector2) -> Area2D:
-	"""Select zone for event spawning, preferring distant zones."""
-	if available_zones.size() == 1:
-		return available_zones[0]
-
-	# Sort zones by distance (furthest first)
-	var zone_distances: Array[Dictionary] = []
-	for zone in available_zones:
-		var distance = player_pos.distance_to(zone.global_position)
-		zone_distances.append({"zone": zone, "distance": distance})
-
-	zone_distances.sort_custom(func(a, b): return a.distance > b.distance)
-
-	# Prefer distant zones (70% chance for furthest half)
-	var selection_pool_size = max(1, zone_distances.size() / 2)
-	if RNG.randf("events") < 0.7 and selection_pool_size > 0:
-		var distant_index = RNG.randi_range("events", 0, selection_pool_size - 1)
-		return zone_distances[distant_index].zone
-	else:
-		var random_index = RNG.randi_range("events", 0, zone_distances.size() - 1)
-		return zone_distances[random_index].zone
+# _select_event_zone moved to EventSpawnManager
 
 func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
 	"""Spawn event enemies at selected zone using pack formation system."""
@@ -981,16 +792,17 @@ func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
 	# Spawn event enemies using existing pack formation system
 	_spawn_event_formation(monster_count, spawn_position, zone_radius, event_def)
 
-	# Track event for completion detection
-	active_events.append({
-		"type": event_def.event_type,
-		"zone": zone,
-		"start_time": Time.get_time_dict_from_system(),
-		"config": config,
-		"event_def": event_def,
-		"monster_count": monster_count,
-		"spawned_enemies": []  # Track spawned enemy IDs for completion detection
-	})
+	# Track event for completion detection (delegated to EventSpawnManager)
+	if event_spawn_manager:
+		event_spawn_manager.active_events.append({
+			"type": event_def.event_type,
+			"zone": zone,
+			"start_time": Time.get_time_dict_from_system(),
+			"config": config,
+			"event_def": event_def,
+			"monster_count": monster_count,
+			"spawned_enemies": []  # Track spawned enemy IDs for completion detection
+		})
 
 func _spawn_event_formation(pack_size: int, center_pos: Vector2, formation_radius: float, event_def) -> void:
 	"""Spawn event enemies in formation (reuses pack formation logic)."""
@@ -1804,8 +1616,9 @@ func _check_event_completion(killed_entity_id: String) -> void:
 	# This could be enhanced later with more sophisticated event mechanics
 	var completed_events: Array[int] = []
 
-	for i in range(active_events.size()):
-		var event_data = active_events[i]
+	var events_to_check = event_spawn_manager.active_events if event_spawn_manager else []
+	for i in range(events_to_check.size()):
+		var event_data = events_to_check[i]
 		var event_def = event_data.event_def
 
 		# Simple completion: any kill in the event zone completes the event
@@ -1848,6 +1661,7 @@ func _check_event_completion(killed_entity_id: String) -> void:
 					], "events")
 
 	# Remove completed events (iterate backwards to avoid index issues)
-	for i in range(completed_events.size() - 1, -1, -1):
-		var event_index = completed_events[i]
-		active_events.remove_at(event_index)
+	if event_spawn_manager:
+		for i in range(completed_events.size() - 1, -1, -1):
+			var event_index = completed_events[i]
+			event_spawn_manager.active_events.remove_at(event_index)

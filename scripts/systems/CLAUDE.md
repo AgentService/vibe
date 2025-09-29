@@ -10,6 +10,7 @@
 | **DamageSystem.gd** | Collision detection & damage application | N/A (uses DamageService) | `combat_step` consumer |
 | **MeleeSystem.gd** | Cone-based AOE melee attacks | `melee_attack_started`, `enemies_hit` | `combat_step` consumer |
 | **SpawnDirector.gd** | AREA_TRIGGERS zone-based enemy spawning | `enemies_spawned` | Entity registration |
+| **spawn/EventSpawnManager.gd** | Event-based spawning with mastery modifiers | `event_started`, `event_completed` | Zone cooldowns & threat escalation |
 | **SimpleTileSpawnValidator.gd** | Tileset-based spawn validation & positioning | N/A (utility autoload) | Spatial partitioning |
 | **ArenaSystem.gd** | Arena bounds & spatial management | `arena_loaded` | Bounds configuration |
 | **CardSystem.gd** | Upgrade card selection & application | `card_selected`, `card_applied` | Player progression |

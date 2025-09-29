@@ -29,7 +29,6 @@ func add_semantic_group(node: Node, semantic: String) -> void:
 		return
 
 	node.add_to_group(semantic)
-	Logger.debug("Added semantic group '%s' to %s" % [semantic, node.name], "clearing")
 
 ## Helper method to check if object has semantic group
 func has_semantic_group(node: Node, semantic: String) -> bool:
