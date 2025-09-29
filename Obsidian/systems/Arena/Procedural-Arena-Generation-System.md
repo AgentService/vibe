@@ -1,8 +1,23 @@
-# Procedural Arena Generation System
+# Procedural Arena Generation System (Legacy)
 
 **Created:** 2025-09-23
-**Status:** ✅ Production Ready
+**Status:** 🔄 LEGACY SYSTEM - Superseded by PathAware Architecture
 **Category:** Arena Management & Spatial Systems
+**Current Primary System:** [PathAware Arena Generation](PathAware-Arena-Generation-System.md)
+
+## ⚠️ **LEGACY SYSTEM NOTICE**
+
+**This documentation describes the legacy tileset-based procedural generation system using `ProceduralArenaGenerator.gd`. The primary arena generation approach has evolved to use PathAware_Forest with `PathAwareArenaGenerator.gd`.**
+
+### **System Status:**
+- ✅ **Legacy System**: Still functional for older arena types
+- 🔄 **Superseded By**: PathAware_Forest arena generation
+- 📊 **Coexistence**: Both systems currently available in codebase
+- 🎯 **Current Focus**: PathAware system for new development
+
+### **When to Use Which System:**
+- **PathAware_Forest** (`PathAwareArenaGenerator.gd`): New development, natural path-based arenas
+- **Legacy Procedural** (`ProceduralArenaGenerator.gd`): Existing content, specific tileset needs
 
 ## Overview
 
@@ -384,7 +399,324 @@ generation_params.debug_show_zones = true
 
 ---
 
-**Architecture Status:** ✅ Production Ready
-**Integration:** ✅ Complete
-**Documentation:** ✅ Comprehensive
-**Testing:** ✅ Validated
+## 🔄 **Migration Information**
+
+### **Current Primary System**
+For new development, see: **[PathAware Arena Generation System](PathAware-Arena-Generation-System.md)**
+
+### **Legacy System Maintenance**
+This legacy system remains functional for:
+- Existing `ForestArena.tscn` and `ProceduralArena.tscn` scenes
+- Tileset-based procedural generation needs
+- Specific biome configurations requiring tile patterns
+
+### **When to Migrate**
+Consider migrating to PathAware system when:
+- Creating new arena content
+- Implementing path-aware spawning features
+- Building modular arena systems
+- Requiring natural exploration patterns
+
+---
+
+---
+
+## 🗑️ **COMPREHENSIVE LEGACY SYSTEM REMOVAL GUIDE**
+
+**⚠️ WARNING: Complete removal of the legacy system. Ensure PathAware system meets all requirements before proceeding.**
+
+### **📋 Pre-Removal Checklist**
+
+Before removing the legacy system, verify:
+- [ ] PathAware_Forest meets all arena generation needs
+- [ ] No active scenes depend on `ProceduralArenaGenerator.gd`
+- [ ] No gameplay features require `ProceduralMapManager` autoload
+- [ ] All team members are aware of the removal
+- [ ] Backup created (git commit recommended)
+
+### **🎯 Removal Strategy**
+
+The legacy system consists of **6 main components** that must be removed in the correct order to avoid dependency conflicts:
+
+1. **User Interface & Access Points** (Safest to remove first)
+2. **Scene Files** (Remove scenes using legacy system)
+3. **Autoload Services** (Remove from project.godot)
+4. **Core System Files** (Remove main generator classes)
+5. **Resource Files** (Remove configuration resources)
+6. **Plugin Components** (Remove legacy editor plugin)
+
+---
+
+### **Phase 1: User Interface & Access Points**
+
+#### **Step 1.1: Remove ProceduralMapAccess Device**
+
+**Files to Remove:**
+```bash
+# Remove procedural map access device
+rm "scenes/core/ProceduralMapAccess.gd"
+rm "scenes/core/ProceduralMapAccess.gd.uid"
+```
+
+**Update Hideout Scene:**
+1. Open `scenes/core/Hideout.tscn`
+2. Remove `ProceduralMapAccess` node (orange device)
+3. Update any UI layout affected by device removal
+4. Test hideout scene loads without errors
+
+**Verification:**
+- [ ] Hideout scene loads without ProceduralMapAccess references
+- [ ] No orange procedural device visible in hideout
+- [ ] No console errors related to ProceduralMapAccess
+
+#### **Step 1.2: Remove Legacy Editor Plugin**
+
+**Files to Remove:**
+```bash
+# Remove forest generator editor plugin
+rm -rf "addons/forest_generator_editor/"
+```
+
+**Update Project Configuration:**
+1. Open `project.godot`
+2. Remove `"res://addons/forest_generator_editor/plugin.cfg"` from `enabled` array in `[editor_plugins]`
+3. Save project.godot
+
+**Current Line to Modify:**
+```ini
+# BEFORE:
+enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg", "res://addons/path_aware_generator/plugin.cfg")
+
+# AFTER: (No change needed - forest_generator_editor not in list)
+enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg", "res://addons/path_aware_generator/plugin.cfg")
+```
+
+**Verification:**
+- [ ] No forest generator dock appears in Godot editor
+- [ ] Project loads without plugin errors
+- [ ] path_aware_generator plugin still functions
+
+---
+
+### **Phase 2: Scene Files**
+
+#### **Step 2.1: Remove Legacy Arena Scenes**
+
+**Files to Remove:**
+```bash
+# Remove legacy arena scenes
+rm "scenes/arena/ForestArena.tscn"
+rm "scenes/arena/ProceduralArena.tscn"
+```
+
+**Associated Script Files:**
+```bash
+# Remove forest arena script
+rm "scripts/arena/ForestArena.gd"
+```
+
+**Update Scene References:**
+1. Search all scenes for references to `ForestArena.tscn` or `ProceduralArena.tscn`
+2. Update any `StateManager` calls that reference these scenes
+3. Check `MapDevice.gd` for hardcoded scene paths
+
+**Verification:**
+- [ ] No scenes reference removed arena files
+- [ ] StateManager transitions work with remaining arenas
+- [ ] No console errors about missing scene files
+
+#### **Step 2.2: Remove Legacy Test Scenes**
+
+**Files to Remove:**
+```bash
+# Remove legacy test files
+rm "tests/test_procedural_arena_generation.gd"
+rm "tests/test_forest_generation.gd"
+rm "tests/test_procedural_arena_generation.tscn" # if exists
+rm "tests/test_forest_generation.tscn" # if exists
+```
+
+**Verification:**
+- [ ] Test runner still functions with remaining tests
+- [ ] No broken test references in test scenes
+
+---
+
+### **Phase 3: Autoload Services**
+
+#### **Step 3.1: Remove ProceduralMapManager Autoload**
+
+**Update project.godot:**
+1. Open `project.godot`
+2. Remove this line from `[autoload]` section:
+```ini
+# REMOVE THIS LINE:
+ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
+```
+
+**Files to Remove:**
+```bash
+# Remove procedural map manager autoload
+rm "autoload/ProceduralMapManager.gd"
+```
+
+**Code References to Update:**
+Search and remove all references to `ProceduralMapManager` in:
+- `scenes/core/ProceduralMapAccess.gd` (already removed in Phase 1)
+- Any arena or scene scripts that might reference it
+
+**Verification:**
+- [ ] Project starts without ProceduralMapManager autoload errors
+- [ ] No console warnings about missing autoload
+- [ ] Existing autoloads still function properly
+
+---
+
+### **Phase 4: Core System Files**
+
+#### **Step 4.1: Remove Main Generator Class**
+
+**Files to Remove:**
+```bash
+# Remove main procedural generator
+rm "scripts/systems/ProceduralArenaGenerator.gd"
+```
+
+**Dependencies to Check:**
+- Verify no scenes reference `ProceduralArenaGenerator` class
+- Check for inheritance: `extends ProceduralArenaGenerator`
+- Search for direct instantiation: `ProceduralArenaGenerator.new()`
+
+#### **Step 4.2: Remove Resource Classes**
+
+**Files to Remove:**
+```bash
+# Remove resource configuration classes
+rm "scripts/resources/BiomeConfig.gd"
+rm "scripts/resources/GenerationParams.gd"
+rm "scripts/resources/ForestTileMapping.gd" # if exists
+rm "scripts/resources/TilePatternConfig.gd" # if exists
+```
+
+**Documentation Files:**
+```bash
+# Remove related documentation
+rm "scripts/resources/TILE_PATTERNS_README.md"
+rm "data/content/biomes/THEMED_DECORATIONS_GUIDE.md"
+```
+
+**Verification:**
+- [ ] Global script class cache updates without errors
+- [ ] No scenes reference removed resource classes
+- [ ] PathAware system still loads its own resource classes
+
+---
+
+### **Phase 5: Resource Files**
+
+#### **Step 5.1: Remove Biome Configuration Files**
+
+**Files to Remove:**
+```bash
+# Remove biome resource files
+rm "data/content/biomes/ForestBiome.tres"
+rm "data/content/biome_with_patterns_example.tres"
+rm -rf "data/content/biomes/" # if no other files remain
+```
+
+**Verification:**
+- [ ] No scenes try to load removed resource files
+- [ ] PathAware configuration files remain intact
+- [ ] No resource loading errors in console
+
+---
+
+### **Phase 6: Cleanup & Final Verification**
+
+#### **Step 6.1: Update Global Script Class Cache**
+
+1. In Godot Editor: `Project > Reload Current Project`
+2. Check `Project > Project Settings > Autoload` tab
+3. Verify `ProceduralMapManager` no longer appears
+4. Check for any script errors in editor
+
+#### **Step 6.2: Remove Remaining References**
+
+**Search and Remove References:**
+```bash
+# Search for remaining references (manual cleanup needed)
+# These files may contain references that need manual removal:
+
+# Update CHANGELOG.md - remove legacy system entries or mark as removed
+# Check .godot cache files will auto-regenerate
+
+# Remove from documentation (keep historical references):
+# - Update any guides that mention the legacy system
+# - Add removal date to this documentation
+```
+
+#### **Step 6.3: Final Verification Tests**
+
+**Complete Testing Checklist:**
+- [ ] **Project Startup**: Project loads without errors
+- [ ] **Scene Loading**: All existing arena scenes load properly
+- [ ] **PathAware System**: PathAware_Forest generates arenas correctly
+- [ ] **Arena Transitions**: StateManager transitions work to remaining arenas
+- [ ] **Autoloads**: All remaining autoloads function properly
+- [ ] **Editor Plugin**: path_aware_generator plugin still works
+- [ ] **No Console Errors**: Clean console output during normal operation
+
+---
+
+### **🔄 Rollback Instructions**
+
+If issues arise during removal, rollback steps:
+
+1. **Git Rollback** (Recommended):
+```bash
+git checkout HEAD~1  # Rollback to pre-removal commit
+```
+
+2. **Manual Rollback** (If no git):
+   - Restore files from backup
+   - Re-add `ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"` to project.godot
+   - Re-enable forest_generator_editor plugin if needed
+   - Restart Godot editor
+
+3. **Verify Rollback**:
+   - [ ] Legacy system functions as before
+   - [ ] All scenes load properly
+   - [ ] No new errors introduced
+
+---
+
+### **📊 Removal Impact Summary**
+
+**Files Removed:** ~25-30 files including:
+- 1 Autoload service (`ProceduralMapManager.gd`)
+- 1 Editor plugin (`forest_generator_editor/`)
+- 2-3 Arena scenes (`ForestArena.tscn`, `ProceduralArena.tscn`)
+- 4-5 Core system files (`ProceduralArenaGenerator.gd`, etc.)
+- 5-10 Resource files and configurations
+- 5-10 Documentation and test files
+
+**Systems Affected:**
+- ✅ **Unaffected**: PathAware arena generation system
+- ✅ **Unaffected**: Core game systems and autoloads
+- ✅ **Unaffected**: path_aware_generator plugin
+- ❌ **Removed**: Legacy procedural arena generation
+- ❌ **Removed**: ProceduralMapAccess device in hideout
+
+**Benefits of Removal:**
+- **Reduced Complexity**: Single arena generation approach
+- **Cleaner Codebase**: No duplicate/competing systems
+- **Improved Maintenance**: Focus on PathAware system only
+- **Reduced Confusion**: Clear system boundaries for developers
+
+---
+
+**Legacy Architecture Status:** ✅ Functional but Superseded
+**Current Focus:** 🎯 PathAware Arena Generation System
+**Maintenance:** 🔧 Available for existing content
+**Documentation:** ✅ Preserved for reference
+**Removal Guide:** ✅ Comprehensive removal instructions available
