@@ -5,6 +5,39 @@ class_name PathAwareDebugRenderer
 ## Dedicated debug visualization renderer for PathAwareArenaGenerator
 ## Keeps debug logic separate from core generation logic
 
+# Unified marker configuration system
+enum MarkerShape {
+	CIRCLE,
+	SQUARE,
+	DIAMOND,
+	TRIANGLE
+}
+
+class MarkerConfig:
+	var color: Color
+	var border_color: Color
+	var shape: MarkerShape
+	var size: int
+	var label_text: String
+	var label_color: Color
+	var rotation_deg: float = 0.0
+
+	func _init(p_color: Color, p_shape: MarkerShape, p_size: int, p_label: String = ""):
+		color = p_color
+		border_color = Color.WHITE
+		shape = p_shape
+		size = p_size
+		label_text = p_label
+		label_color = Color.BLACK if color.get_luminance() > 0.5 else Color.WHITE
+
+static var MARKER_STYLES = {
+	"start": MarkerConfig.new(Color.YELLOW, MarkerShape.CIRCLE, 40, "START"),
+	"spawn_preview": MarkerConfig.new(Color.ORANGE, MarkerShape.CIRCLE, 12),
+	"checkpoint": MarkerConfig.new(Color.PURPLE, MarkerShape.DIAMOND, 18),
+	"branch_spawn": MarkerConfig.new(Color.MAGENTA, MarkerShape.SQUARE, 14),
+	"branch_endpoint": MarkerConfig.new(Color.RED, MarkerShape.TRIANGLE, 16),
+}
+
 static func render_debug_visualization(generator: PathAwareArenaGenerator) -> void:
 	"""Main entry point - render all debug visualization for the generator"""
 	if not generator:
@@ -18,12 +51,7 @@ static func render_debug_visualization(generator: PathAwareArenaGenerator) -> vo
 
 	# Create debug markers based on generator settings
 	if generator.show_debug_markers:
-		_create_start_marker(generator)
-		_create_spawn_position_preview(generator)
-		_create_checkpoint_markers(generator)
-		_create_branch_spawn_markers(generator)
-		_create_branch_endpoint_markers(generator)
-		_create_around_path_markers(generator)
+		_create_all_marker_types(generator)
 
 	if generator.show_path_connections:
 		_create_path_connection_lines(generator)
@@ -42,28 +70,91 @@ static func _clear_debug_markers(generator: PathAwareArenaGenerator) -> void:
 			line.queue_free()
 	generator.debug_lines.clear()
 
-static func _create_start_marker(generator: PathAwareArenaGenerator) -> void:
+static func _create_all_marker_types(generator: PathAwareArenaGenerator) -> void:
+	"""Create all marker types using unified system"""
+	_create_start_markers(generator)
+	_create_spawn_position_preview(generator)
+	_create_checkpoint_markers(generator)
+	_create_branch_spawn_markers(generator)
+	_create_branch_endpoint_markers(generator)
+
+static func _create_start_markers(generator: PathAwareArenaGenerator) -> void:
 	"""Create the yellow START marker"""
 	var points: Array = generator.current_path_data.get("points", [])
 	if points.size() > 0:
 		var point = points[0]
-		var marker = _create_start_point_marker(point.position)
+		var marker = _create_unified_marker(point.position, "start", "START")
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
 		Logger.debug("Created START marker at position %s" % point.position, "pathdebug")
 
-static func _create_main_path_markers(generator: PathAwareArenaGenerator) -> void:
-	"""Create numbered blue markers for main path chain points"""
-	var connection_points: Array = generator.current_path_data.get("points", [])
-	Logger.debug("Creating main path markers for %d connection points" % connection_points.size(), "pathdebug")
+static func _create_unified_marker(position: Vector2, style_key: String, label_override: String = "") -> Node2D:
+	"""Create a marker using the unified system"""
+	var config = MARKER_STYLES.get(style_key)
+	if not config:
+		Logger.warn("Unknown marker style: %s" % style_key, "pathdebug")
+		return Node2D.new()
 
-	# Skip the first point (index 0) since we already have START marker there
-	for i in range(1, connection_points.size()):
-		var point = connection_points[i]
-		var marker = _create_main_path_point_marker(point.position, i)
-		generator.add_child(marker)
-		generator.debug_markers.append(marker)
-		Logger.debug("Created main path marker %d at position %s" % [i, point.position], "pathdebug")
+	var marker = Node2D.new()
+	marker.position = position
+	marker.name = style_key.capitalize() + "Marker"
+
+	# Create shape based on config
+	var shape_node = _create_shape_node(config)
+	var border_node = _create_border_node(config)
+	var label_node = _create_label_node(config, label_override)
+
+	# Add nodes in correct order (border first for layering)
+	marker.add_child(border_node)
+	marker.add_child(shape_node)
+	if label_node:
+		marker.add_child(label_node)
+
+	return marker
+
+static func _create_shape_node(config: MarkerConfig) -> ColorRect:
+	"""Create the main shape node based on config"""
+	var shape = ColorRect.new()
+	shape.name = "Shape"
+	shape.color = config.color
+	shape.size = Vector2(config.size, config.size)
+	shape.position = Vector2(-config.size/2, -config.size/2)
+
+	# Apply rotation for diamond and triangle shapes
+	if config.shape == MarkerShape.DIAMOND or config.shape == MarkerShape.TRIANGLE:
+		shape.rotation = deg_to_rad(45.0)
+
+	return shape
+
+static func _create_border_node(config: MarkerConfig) -> ColorRect:
+	"""Create border node for better visibility"""
+	var border = ColorRect.new()
+	border.name = "Border"
+	border.color = config.border_color
+	var border_size = config.size + (4 if config.size > 20 else 2)
+	border.size = Vector2(border_size, border_size)
+	border.position = Vector2(-border_size/2, -border_size/2)
+
+	# Match shape rotation
+	if config.shape == MarkerShape.DIAMOND or config.shape == MarkerShape.TRIANGLE:
+		border.rotation = deg_to_rad(45.0)
+
+	return border
+
+static func _create_label_node(config: MarkerConfig, label_override: String = "") -> Label:
+	"""Create text label if needed"""
+	var label_text = label_override if not label_override.is_empty() else config.label_text
+	if label_text.is_empty():
+		return null
+
+	var label = Label.new()
+	label.name = "Label"
+	label.text = label_text
+	label.add_theme_color_override("font_color", config.label_color)
+	# Center the label approximately
+	label.position = Vector2(-label_text.length() * 4, -8)
+
+	return label
 
 static func _create_path_connection_lines(generator: PathAwareArenaGenerator) -> void:
 	"""Create cyan lines showing path connections"""
@@ -75,73 +166,6 @@ static func _create_path_connection_lines(generator: PathAwareArenaGenerator) ->
 			generator.add_child(line)
 			generator.debug_lines.append(line)
 
-static func _create_start_point_marker(position: Vector2) -> Node2D:
-	"""Create a yellow START marker"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "StartPointMarker"
-
-	# Create yellow circle using ColorRect
-	var circle = ColorRect.new()
-	circle.name = "StartCircle"
-	circle.color = Color.YELLOW
-	circle.size = Vector2(40, 40)
-	circle.position = Vector2(-20, -20)
-	marker.add_child(circle)
-
-	# Create border
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	border.size = Vector2(44, 44)
-	border.position = Vector2(-22, -22)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	# Create text label
-	var label = Label.new()
-	label.name = "StartLabel"
-	label.text = "START"
-	label.add_theme_color_override("font_color", Color.BLACK)
-	label.position = Vector2(-15, -5)
-	marker.add_child(label)
-
-	return marker
-
-static func _create_main_path_point_marker(position: Vector2, point_index: int) -> Node2D:
-	"""Create a blue numbered marker for main path points"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "MainPathPoint_" + str(point_index)
-
-	# Create blue circle
-	var circle = ColorRect.new()
-	circle.name = "PathCircle"
-	circle.color = Color.BLUE
-	var size = 24
-	circle.size = Vector2(size, size)
-	circle.position = Vector2(-size/2, -size/2)
-	marker.add_child(circle)
-
-	# Create border
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	var border_size = size + 3
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	# Create text label
-	var label = Label.new()
-	label.name = "PathLabel"
-	label.text = str(point_index)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(-5, -8)
-	marker.add_child(label)
-
-	return marker
 
 static func _create_connection_line(path, generator: PathAwareArenaGenerator) -> Line2D:
 	"""Create a cyan line for path connection"""
@@ -157,8 +181,6 @@ static func _create_connection_line(path, generator: PathAwareArenaGenerator) ->
 		line.add_point(point)
 
 	return line
-
-## Future extension points for additional visualizations:
 
 static func _create_spawn_position_preview(generator: PathAwareArenaGenerator) -> void:
 	"""Create small markers showing actual spawn positions (interpolated)"""
@@ -183,7 +205,7 @@ static func _create_spawn_position_preview(generator: PathAwareArenaGenerator) -
 
 	for i in range(spawn_positions.size()):
 		var position = spawn_positions[i]
-		var marker = _create_spawn_position_marker(position, i)
+		var marker = _create_unified_marker(position, "spawn_preview", str(i))
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
 
@@ -220,229 +242,71 @@ static func _convert_to_vector2_array(path_points: Array) -> Array:
 			vector_points.append(point.position)
 	return vector_points
 
-static func _create_spawn_position_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a small orange marker for actual spawn positions"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "SpawnPosition_" + str(index)
-
-	# Create small orange circle (more visible than green)
-	var circle = ColorRect.new()
-	circle.name = "SpawnCircle"
-	circle.color = Color.ORANGE
-	var size = 12  # Make them bigger and more visible
-	circle.size = Vector2(size, size)
-	circle.position = Vector2(-size/2, -size/2)
-	marker.add_child(circle)
-
-	# Create black border for better contrast
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.BLACK
-	var border_size = size + 2
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	return marker
 
 static func _create_checkpoint_markers(generator: PathAwareArenaGenerator) -> void:
 	"""Create purple markers for MAIN_CHECKPOINTS spawn category"""
-	# Create a temporary PathAwareMapConfig to get the checkpoint positions
-	var test_config = PathAwareMapConfig.new()
-	var snapshot = generator.get_path_snapshot()
-
-	if not snapshot:
-		Logger.warn("Cannot create checkpoint markers - no path snapshot available", "pathdebug")
+	var positions = _get_spawn_positions_for_category(generator, PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS)
+	if positions.is_empty():
 		return
 
-	test_config.path_snapshot = snapshot
+	Logger.debug("Creating checkpoint markers: %d positions" % positions.size(), "pathdebug")
 
-	# Get the checkpoint positions that the spawn system would use
-	var checkpoint_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.MAIN_CHECKPOINTS)
-
-	Logger.debug("Creating checkpoint markers: %d positions" % checkpoint_positions.size(), "pathdebug")
-
-	for i in range(checkpoint_positions.size()):
-		var position = checkpoint_positions[i]
-		var marker = _create_checkpoint_marker(position, i)
+	for i in range(positions.size()):
+		var position = positions[i]
+		var marker = _create_unified_marker(position, "checkpoint", "C" + str(i))
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
 		Logger.debug("Created purple checkpoint marker %d at %s" % [i, position], "pathdebug")
 
-static func _create_checkpoint_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a purple marker for MAIN_CHECKPOINTS category"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "MainCheckpoint_" + str(index)
-
-	# Create purple diamond (larger and distinct shape)
-	var diamond = ColorRect.new()
-	diamond.name = "CheckpointDiamond"
-	diamond.color = Color.PURPLE
-	var size = 18
-	diamond.size = Vector2(size, size)
-	diamond.position = Vector2(-size/2, -size/2)
-	diamond.rotation = deg_to_rad(45)  # Rotate to make it diamond-shaped
-	marker.add_child(diamond)
-
-	# Create white border
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	var border_size = size + 4
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	border.rotation = deg_to_rad(45)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	# Create text label
-	var label = Label.new()
-	label.name = "CheckpointLabel"
-	label.text = "C" + str(index)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(-8, -10)
-	marker.add_child(label)
-
-	return marker
 
 static func _create_branch_spawn_markers(generator: PathAwareArenaGenerator) -> void:
 	"""Create magenta markers for ALONG_BRANCHES spawn category"""
-	# Create a temporary PathAwareMapConfig to get the branch positions
-	var test_config = PathAwareMapConfig.new()
-	var snapshot = generator.get_path_snapshot()
-
-	if not snapshot:
-		Logger.warn("Cannot create branch markers - no path snapshot available", "pathdebug")
+	var positions = _get_spawn_positions_for_category(generator, PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES)
+	if positions.is_empty():
 		return
 
-	test_config.path_snapshot = snapshot
+	Logger.info("🔍 Creating branch spawn markers: %d positions" % positions.size(), "pathdebug")
 
-	# Get the branch positions that the spawn system would use
-	var branch_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES)
-
-	Logger.info("🔍 Creating branch spawn markers: %d positions" % branch_positions.size(), "pathdebug")
-
-	for i in range(branch_positions.size()):
-		var position = branch_positions[i]
-		var marker = _create_branch_spawn_marker(position, i)
+	for i in range(positions.size()):
+		var position = positions[i]
+		var marker = _create_unified_marker(position, "branch_spawn", "B" + str(i))
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
 		Logger.info("🔍 Created magenta branch spawn marker %d at %s" % [i, position], "pathdebug")
 
-static func _create_branch_spawn_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a magenta square marker for ALONG_BRANCHES category"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "BranchSpawn_" + str(index)
-
-	# Create magenta square (square shape to distinguish from circles/diamonds)
-	var square = ColorRect.new()
-	square.name = "BranchSquare"
-	square.color = Color.MAGENTA
-	var size = 14
-	square.size = Vector2(size, size)
-	square.position = Vector2(-size/2, -size/2)
-	marker.add_child(square)
-
-	# Create black border for better contrast
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.BLACK
-	var border_size = size + 2
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	# Create text label (B for Branch)
-	var label = Label.new()
-	label.name = "BranchLabel"
-	label.text = "B" + str(index)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(-8, -8)
-	marker.add_child(label)
-
-	return marker
 
 static func _create_branch_endpoint_markers(generator: PathAwareArenaGenerator) -> void:
 	"""Create red triangle markers for AT_BRANCH_ENDPOINTS spawn category"""
-	# Create a temporary PathAwareMapConfig to get the branch endpoint positions
-	var test_config = PathAwareMapConfig.new()
-	var snapshot = generator.get_path_snapshot()
-
-	if not snapshot:
-		Logger.warn("Cannot create branch endpoint markers - no path snapshot available", "pathdebug")
+	var positions = _get_spawn_positions_for_category(generator, PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS)
+	if positions.is_empty():
 		return
 
-	test_config.path_snapshot = snapshot
+	Logger.debug("Creating branch endpoint markers: %d positions" % positions.size(), "pathdebug")
 
-	# Get the branch endpoint positions that the spawn system would use
-	var branch_endpoint_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.AT_BRANCH_ENDPOINTS)
-
-	Logger.debug("Creating branch endpoint markers: %d positions" % branch_endpoint_positions.size(), "pathdebug")
-
-	for i in range(branch_endpoint_positions.size()):
-		var position = branch_endpoint_positions[i]
-		var marker = _create_branch_endpoint_marker(position, i)
+	for i in range(positions.size()):
+		var position = positions[i]
+		var marker = _create_unified_marker(position, "branch_endpoint", "E" + str(i))
 		generator.add_child(marker)
 		generator.debug_markers.append(marker)
 		Logger.debug("Created red branch endpoint marker %d at %s" % [i, position], "pathdebug")
 
-static func _create_branch_endpoint_marker(position: Vector2, index: int) -> Node2D:
-	"""Create a red triangular marker for AT_BRANCH_ENDPOINTS category"""
-	var marker = Node2D.new()
-	marker.position = position
-	marker.name = "BranchEndpoint_" + str(index)
 
-	# Create red triangle using rotated ColorRect (triangle pointing up)
-	var triangle = ColorRect.new()
-	triangle.name = "BranchTriangle"
-	triangle.color = Color.RED
-	var size = 16
-	triangle.size = Vector2(size, size)
-	triangle.position = Vector2(-size/2, -size/2)
-	triangle.rotation = deg_to_rad(45)  # Rotate to make it triangular appearance
-	marker.add_child(triangle)
-
-	# Create white border for better contrast
-	var border = ColorRect.new()
-	border.name = "Border"
-	border.color = Color.WHITE
-	var border_size = size + 3
-	border.size = Vector2(border_size, border_size)
-	border.position = Vector2(-border_size/2, -border_size/2)
-	border.rotation = deg_to_rad(45)
-	marker.add_child(border)
-	marker.move_child(border, 0)
-
-	# Create text label (E for Endpoint)
-	var label = Label.new()
-	label.name = "EndpointLabel"
-	label.text = "E" + str(index)
-	label.add_theme_color_override("font_color", Color.WHITE)
-	label.position = Vector2(-8, -8)
-	marker.add_child(label)
-
-	return marker
-
-static func _validate_spawn_positions_match_real_system(generator: PathAwareArenaGenerator, our_positions: Array) -> void:
-	"""PROOF: Verify our orange markers exactly match what PathAwareMapConfig would generate"""
-
-	# Create a temporary PathAwareMapConfig and populate it like the real system does
+static func _get_spawn_positions_for_category(generator: PathAwareArenaGenerator, category: PathSpawnProfile.PathSpawnCategory) -> Array:
+	"""Helper method to get spawn positions for a specific category"""
 	var test_config = PathAwareMapConfig.new()
 	var snapshot = generator.get_path_snapshot()
 
 	if not snapshot:
-		Logger.warn("Cannot validate - no path snapshot available", "pathdebug")
-		return
+		Logger.warn("Cannot get spawn positions - no path snapshot available", "pathdebug")
+		return []
 
 	test_config.path_snapshot = snapshot
+	return test_config._get_spawn_positions_for_category(category)
 
+static func _validate_spawn_positions_match_real_system(generator: PathAwareArenaGenerator, our_positions: Array) -> void:
+	"""PROOF: Verify our orange markers exactly match what PathAwareMapConfig would generate"""
 	# Get the REAL spawn positions that would be used by the spawn system
-	var real_positions = test_config._get_spawn_positions_for_category(PathSpawnProfile.PathSpawnCategory.ALONG_MAIN_PATH)
+	var real_positions = _get_spawn_positions_for_category(generator, PathSpawnProfile.PathSpawnCategory.ALONG_MAIN_PATH)
 
 	Logger.debug("🔍 VALIDATION: Our positions: %d, Real system positions: %d" % [our_positions.size(), real_positions.size()], "pathdebug")
 
@@ -465,27 +329,14 @@ static func _validate_spawn_positions_match_real_system(generator: PathAwareAren
 	else:
 		Logger.warn("❌ MISMATCH: Orange markers don't match real system (%d/%d matched)" % [matches, max_check], "pathdebug")
 
+# Future extension points for additional visualizations:
 static func render_spawn_zones(generator: PathAwareArenaGenerator) -> void:
 	"""Render spawn zone previews - to be implemented"""
-	# TODO: Add spawn zone visualization
+	# TODO: Add spawn zone visualization using unified marker system
 	pass
 
 static func render_clearings(generator: PathAwareArenaGenerator) -> void:
 	"""Render clearing area markers - to be implemented"""
-	# TODO: Add clearing visualization
+	# TODO: Add clearing visualization using unified marker system
 	pass
 
-static func render_branch_points(generator: PathAwareArenaGenerator) -> void:
-	"""Render branch connection points - to be implemented"""
-	# TODO: Add branch visualization
-	pass
-
-static func _create_around_path_markers(generator: PathAwareArenaGenerator) -> void:
-	"""DISABLED: Create green circle markers for AROUND_PATHS spawn category"""
-	Logger.debug("_create_around_path_markers called - DISABLED (logic removed)", "pathdebug")
-	# Function disabled - AROUND_PATHS logic removed
-
-static func _create_around_path_marker(position: Vector2, index: int) -> Node2D:
-	"""DISABLED: Create a cyan circle marker for AROUND_PATHS category"""
-	# Function disabled - AROUND_PATHS logic removed
-	return Node2D.new()  # Return empty node for API compatibility

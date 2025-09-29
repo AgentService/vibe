@@ -11,7 +11,7 @@ signal spawn_zones_cleared()
 # Configuration
 @export_group("Spawn Zone Configuration")
 @export var default_zone_radius: float = 100.0
-@export var zone_color: Color = Color.CYAN
+@export var zone_color: Color = Color.RED
 @export var zone_alpha: float = 0.5
 @export var show_visual_indicators: bool = true
 

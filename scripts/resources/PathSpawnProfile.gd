@@ -41,8 +41,7 @@ enum PathSpawnCategory {
 	AT_ENDPOINTS,       ## At the ends of paths (good for bosses, special events)
 	AT_BRANCH_ENDPOINTS, ## At the ends of branch paths (specialized branch termination points)
 	MAIN_CHECKPOINTS,   ## At main path control points/waypoints (strategic spawn locations)
-	IN_CLEARINGS,       ## In open areas between path boundaries
-	AROUND_PATHS        ## In buffer zones around paths but not directly on them
+	IN_CLEARINGS        ## In open areas between path boundaries
 }
 
 ## Proximity preferences for spawn positioning relative to player
@@ -75,8 +74,6 @@ func get_category_weight(category: PathSpawnCategory) -> float:
 			return 1.3  # Slightly lower than main endpoints but higher than regular spawns
 		PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
-		PathSpawnCategory.AROUND_PATHS:
-			return 0.0  # Disabled - logic removed
 		_:
 			return 1.0
 
@@ -127,8 +124,6 @@ func get_category_name(category: PathSpawnCategory) -> String:
 			return "BranchEndpoints"
 		PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
-		PathSpawnCategory.AROUND_PATHS:
-			return "AroundPaths"  # Enum preserved, logic removed
 		_:
 			return "Unknown"
 
@@ -156,7 +151,6 @@ static func create_enemy_profile() -> PathSpawnProfile:
 	profile.spawn_categories.append(PathSpawnCategory.ALONG_MAIN_PATH)
 	profile.spawn_categories.append(PathSpawnCategory.ALONG_BRANCHES)
 	profile.spawn_categories.append(PathSpawnCategory.IN_CLEARINGS)
-	# profile.spawn_categories.append(PathSpawnCategory.AROUND_PATHS)  # Disabled - logic removed
 	profile.priority_weight = 1.0
 	profile.proximity_preference = ProximityPreference.BALANCED
 	profile.max_spawn_range = 800.0
