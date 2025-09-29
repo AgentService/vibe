@@ -62,8 +62,6 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return _get_main_checkpoint_positions()
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return _get_clearing_positions()
-		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return []  # Logic removed - enum preserved
 		_:
 			return []
 
@@ -172,18 +170,6 @@ func _get_clearing_positions() -> Array:
 
 	return positions
 
-## Get positions around paths (buffer zones covering all walkable areas)
-## DISABLED: Logic removed but function preserved for API compatibility
-func _get_around_path_positions() -> Array:
-	# Function disabled - AROUND_PATHS logic removed
-	# Return empty array to maintain API compatibility
-	return []
-
-## DISABLED: Check if position is far enough from all paths
-## Function removed along with AROUND_PATHS logic
-func _is_position_away_from_paths(test_position: Vector2, min_distance: float) -> bool:
-	# Function disabled - AROUND_PATHS logic removed
-	return false
 
 ## Sample positions around a line with specified buffer distance
 func _sample_positions_around_line(line_points: Array, buffer_distance: float) -> Array:
@@ -304,8 +290,6 @@ func _get_category_weight(category: PathSpawnProfile.PathSpawnCategory) -> float
 			return 2.0  # Highest weight for strategic checkpoint spawning
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return 1.2
-		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return 0.0  # Disabled - logic removed
 		_:
 			return 1.0
 
@@ -324,8 +308,6 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 			return "MainCheckpoints"
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
-		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return "AroundPaths"  # Enum preserved, logic removed
 		_:
 			return "Unknown"
 

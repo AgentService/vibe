@@ -19,7 +19,6 @@ class_name PathAwareDebugVisualizer
 	PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES,
 	PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS,
 	PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS,
-	# PathSpawnProfile.PathSpawnCategory.AROUND_PATHS,  # Disabled - logic removed
 ]:
 	set(value):
 		display_categories = value
@@ -32,7 +31,6 @@ class_name PathAwareDebugVisualizer
 	PathSpawnProfile.PathSpawnCategory.ALONG_BRANCHES: Color.MAGENTA,
 	PathSpawnProfile.PathSpawnCategory.AT_ENDPOINTS: Color.YELLOW,
 	PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS: Color.GREEN,
-	# PathSpawnProfile.PathSpawnCategory.AROUND_PATHS: Color.ORANGE,  # Disabled - logic removed
 }:
 	set(value):
 		category_colors = value
@@ -233,8 +231,6 @@ func _get_category_display_name(category: PathSpawnProfile.PathSpawnCategory) ->
 			return "Endpoints"
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return "Clearings"
-		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return "Around Paths (Disabled)"  # Logic removed
 		_:
 			return "Unknown"
 
@@ -285,8 +281,6 @@ func _get_spawn_positions_for_category(category: PathSpawnProfile.PathSpawnCateg
 			return snapshot.endpoint_positions.duplicate()
 		PathSpawnProfile.PathSpawnCategory.IN_CLEARINGS:
 			return _get_clearing_positions()
-		PathSpawnProfile.PathSpawnCategory.AROUND_PATHS:
-			return []  # Logic removed - enum preserved
 		_:
 			return []
 
