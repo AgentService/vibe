@@ -21,12 +21,8 @@ auto_spawn_min_distance = 200.0
 use_viewport_culling = false
 viewport_margin = 200.0
 activation_method = 2
-base_spawn_scaling = {
-"max_scaling_multiplier": 2.0,
-"time_scaling_rate": 0.06,
-"wave_scaling_rate": 0.1
-}
-arena_scaling_overrides = {}
+# base_spawn_scaling removed - scaling moved to unified DifficultyDirector
+# arena_scaling_overrides removed - scaling moved to unified DifficultyDirector
 has_environmental_hazards = false
 weather_effects = Array[StringName]([&"forest_breeze", &"leaf_particles"])
 special_mechanics = Array[StringName]([&"path_generation", &"tree_randomization"])

@@ -39,15 +39,9 @@ enum ActivationMethod {
 	# Future extensibility: Additional activation methods can be added here
 }
 
-@export_group("Base Spawn Scaling")
-@export var base_spawn_scaling: Dictionary = {
-	"time_scaling_rate": 0.1,        # 10% per minute base
-	"wave_scaling_rate": 0.15,       # 15% per wave base
-	"max_scaling_multiplier": 2.5
-}
+# base_spawn_scaling removed - scattered scaling eliminated for unified DifficultyDirector
 
-@export_group("Arena-Specific Scaling")
-@export var arena_scaling_overrides: Dictionary = {} ## Override any base scaling values per arena
+# arena_scaling_overrides removed - scattered scaling eliminated for unified DifficultyDirector
 
 @export_group("Environmental Effects")
 @export var has_environmental_hazards: bool = false ## Enable environmental damage/effects
@@ -147,12 +141,7 @@ func get_weighted_spawn_zone_in_range(player_pos: Vector2) -> Dictionary:
 
 	return zones_in_range[0]  # Fallback to first zone in range
 
-## Get effective scaling combining base + arena overrides
-func get_effective_scaling() -> Dictionary:
-	var effective = base_spawn_scaling.duplicate()
-	for key in arena_scaling_overrides:
-		effective[key] = arena_scaling_overrides[key]
-	return effective
+# get_effective_scaling removed - scaling moved to unified DifficultyDirector system
 
 # get_zones_in_pack_range removed - pack spawning system eliminated
 
