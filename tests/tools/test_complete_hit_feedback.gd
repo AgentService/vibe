@@ -24,7 +24,7 @@ func _initialize() -> void:
 	
 	# Test 3: Boss system  
 	print("\n3. Testing Boss hit feedback system...")
-	var boss_hit_feedback = preload("res://scripts/systems/BossHitFeedback.gd").new()
+	var boss_hit_feedback = preload("res://scripts/systems/boss/BossHitFeedback.gd").new()
 	boss_hit_feedback.name = "TestBossHitFeedback"
 	root.add_child(boss_hit_feedback)
 	print("   ✓ BossHitFeedback system created")

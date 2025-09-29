@@ -244,7 +244,7 @@ func _spawn_event_enemy(position: Vector2, event_def) -> void:
 	cfg.position = position
 
 	# Spawn the enemy using SpawnDirector's infrastructure
-	var enemy = spawn_director._spawn_enemy_from_config(cfg)
+	var enemy = spawn_director._spawn_from_config_v2(cfg.enemy_type, cfg)
 	if enemy:
 		Logger.debug("Event enemy spawned: %s at %s for event %s" % [
 			cfg.enemy_type, str(position), event_def.event_type

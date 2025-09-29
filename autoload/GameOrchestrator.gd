@@ -6,7 +6,7 @@ extends Node
 # Import system classes - using _Type suffix to avoid conflicts with class names
 const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
 const SpawnDirector_Type = preload("res://scripts/systems/spawn/SpawnDirector.gd")
-const RadarSystem_Type = preload("res://scripts/systems/RadarSystem.gd")
+const RadarSystem_Type = preload("res://scripts/systems/radar/RadarSystem.gd")
 # TODO: Phase 2 - Remove when replaced with AbilityModule autoload
 # const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
 const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")

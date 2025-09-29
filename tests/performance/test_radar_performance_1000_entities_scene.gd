@@ -49,7 +49,7 @@ func _init_test_environment() -> void:
 		return
 	
 	# Create RadarUpdateManager for testing
-	var RadarUpdateManagerClass = preload("res://scripts/systems/RadarUpdateManager.gd")
+	var RadarUpdateManagerClass = preload("res://scripts/systems/radar/RadarUpdateManager.gd")
 	_radar_manager = RadarUpdateManagerClass.new()
 	_radar_manager.name = "TestRadarUpdateManager"
 	add_child(_radar_manager)

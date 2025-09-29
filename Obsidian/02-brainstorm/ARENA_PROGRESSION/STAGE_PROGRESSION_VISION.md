@@ -486,25 +486,6 @@ Stage 3: coefficient (Y + FIXED_JUMP) → climbs over time → ends at Z
 - Late activation (7min, coeff 5.0) → Boss at level ~12
 - **Both strategies viable for leaderboard competition**
 
-**Stage Transition Comparison (MEGABONK Philosophy):**
-
-**Speed Strategy (3 min Stage 1):**
-- Stage 1 ends: coefficient 2.5 + rift (90s) = ~4.0 total
-- Stage 2 starts: coefficient 4.0 + 1.0 (stage jump) = **5.0**
-- Player has: 4 upgrades
-- **Path:** Deep progression through many stages
-
-**Farming Strategy (7-10 min Stage 1):**
-- Stage 1 ends: coefficient 5.0 + rift (90s) = ~6.5 total
-- Stage 2 starts: coefficient 6.5 + 1.0 (stage jump) = **7.5**
-- Player has: 10+ upgrades
-- **Path:** Maximize kills per stage, fewer stages total
-
-**Both strategies valid for leaderboard:**
-- Speed = More stages = cumulative kills
-- Farming = More kills per stage = high density
-- Character builds optimize for different strategies
-
 ---
 
 ### MEGABONK Comparison Research
@@ -649,21 +630,35 @@ Stage 3: coefficient (Y + FIXED_JUMP) → climbs over time → ends at Z
 10:00-11:30 - Must activate rift or die
 ```
 
-**MEGABONK Final Swarm Details (Additional Research):**
+**MEGABONK Final Swarm Clarification:**
 - **Final Swarm = infinite duration** (continues until death)
-- **Used for leaderboard kill grinding** (not just forcing function)
-- **Silver multiplier scales with tier** (Tier 1 = 1x, Tier 3 = 1.2x)
-- **Silver = meta-progression currency** (permanent unlocks)
-- **Survival in Final Swarm requires:**
-  - AoE damage (clear spawns)
-  - Lifesteal/sustain (survive hits)
-  - Movement speed (dodge overwhelming numbers)
-- **Optimal strategy:** Survive Final Swarm AS LONG AS POSSIBLE for:
-  - More kills (leaderboard)
-  - More silver (meta-progression)
-  - More upgrades before next stage
+- **Triggered when stage timer expires** (e.g., 10 minutes)
+- **Boss must be killed BEFORE timer expires** to activate teleporter/portal
+- **If timer expires BEFORE boss kill:** Stuck in Final Swarm until death
+- **Progression path:** Kill boss → Portal opens → Enter next stage
+- **Final Swarm = end-of-run phase** for kill grinding/silver farming
 
-**Key Insight:** Final Swarm isn't just a "leave or die" - it's a **high-risk high-reward** endgame phase!
+**MEGABONK's Critical Mechanic:**
+
+**You must kill boss BEFORE timer expires to unlock portal**
+
+**Scenario A: Boss killed before timer (SUCCESS)**
+- Boss dies → Portal appears
+- Can enter portal immediately OR keep farming
+- Timer still running
+- Portal available even after timer expires
+- Can farm in Final Swarm then enter portal anytime
+- **Progression always available once boss is dead**
+
+**Scenario B: Timer expires before boss kill (FAILURE)**
+- Final Swarm begins
+- Boss becomes much harder or impossible to kill
+- Even if you kill boss in swarm, run usually ends in death
+- **Effective run over - no realistic progression**
+
+**Key Insight:** The timer deadline is for **BOSS KILL**, not portal activation
+- Kill boss by 10:00 = can progress anytime after
+- Miss boss by 10:00 = stuck in death swarm, run effectively over
 
 **For Our System:**
 - Should Final Swarm be survivable indefinitely with right build?
@@ -712,3 +707,41 @@ Stage 3: coefficient (Y + FIXED_JUMP) → climbs over time → ends at Z
 - ❌ NOT "always stay max duration" meta
 
 **Status:** 🟢 Final Swarm = limited survivability + mathematical ceiling
+
+---
+
+**CONFIRMED: MEGABONK-Style Boss Kill Deadline System**
+
+**Complete Stage Flow:**
+```
+0:00 - Stage starts, normal spawning
+1:30 - Rift spawns (visual only, NOT activatable yet)
+4:00 - Pressure Wave 1
+6:00 - Pressure Wave 2
+8:00 - Pressure Wave 3
+X:XX - Boss spawns (timing TBD - maybe with rift at 1:30?)
+9:30 - Best-case boss kill → Rift ACTIVATES (can enter anytime)
+10:00 - Timer expires → Final Swarm begins
+10:00-13:00 - Optional: Farm Final Swarm (rift still accessible)
+13:00 - Mathematical ceiling → Must enter rift or die
+```
+
+**The Boss Kill Mechanic:**
+- ✅ Boss must be killed BEFORE 10:00 timer expires
+- ✅ Boss death unlocks rift activation (permanent)
+- ✅ Can enter rift immediately OR farm Final Swarm first
+- ✅ Portal stays open during Final Swarm
+
+**Risk/Reward Tiers:**
+1. **Conservative (kill boss 5-7min):** Safe, reliable progression
+2. **Balanced (kill boss 8-9min):** More upgrades, moderate risk
+3. **Aggressive (kill boss 9:30-9:59):** Maximum pre-swarm power, high risk
+4. **Extreme (farm Final Swarm):** Leaderboard push, death risk
+
+**Design Philosophy:**
+- Exponential scaling creates natural ceiling (no artificial caps)
+- Players self-regulate based on build strength
+- Skilled players can push further (organic skill expression)
+- Multiple viable strategies (conservative to extreme)
+
+**Status:** 🟢 Boss deadline + Final Swarm + mathematical ceiling confirmed

@@ -38,7 +38,7 @@ func _init_test() -> void:
 		get_tree().quit(1)
 		return
 	
-	var RadarUpdateManagerClass = preload("res://scripts/systems/RadarUpdateManager.gd")
+	var RadarUpdateManagerClass = preload("res://scripts/systems/radar/RadarUpdateManager.gd")
 	radar_manager = RadarUpdateManagerClass.new()
 	add_child(radar_manager)
 	radar_manager.set_enabled(true)
