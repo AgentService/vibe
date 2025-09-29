@@ -1,8 +1,8 @@
 extends Node
 
-## Global map level system that provides centralized difficulty progression
-## Increases every 60 seconds and replaces scattered time-based calculations
-## All systems should reference MapLevel.current_level instead of tracking their own timers
+## Global map level system that provides centralized time-based progression tracking
+## Increases every 60 seconds and provides current_level access for systems
+## All systems should reference MapLevel.current_level for consistent progression state
 
 class_name MapLevelManager
 
@@ -91,31 +91,3 @@ func get_level_time_remaining() -> float:
 		return 0.0
 	return seconds_per_level - _level_timer
 
-func get_scaling_factor(base_rate: float = 0.1) -> float:
-	"""Get a scaling factor based on current level
-	base_rate: How much each level increases difficulty (0.1 = 10% per level)"""
-	return 1.0 + (base_rate * (current_level - 1))
-
-func get_exponential_scaling(base_rate: float = 0.05, cap: float = 3.0) -> float:
-	"""Get exponential scaling with a cap
-	base_rate: Base exponential growth rate
-	cap: Maximum scaling multiplier"""
-	var raw_scaling = 1.0 + (base_rate * pow(current_level, 1.2))
-	return minf(raw_scaling, cap)
-
-# Convenience methods for common scaling patterns
-func get_spawn_rate_scaling() -> float:
-	"""Standard scaling for enemy spawn rates"""
-	return get_scaling_factor(0.08)  # 8% faster spawning per level
-
-func get_health_scaling() -> float:
-	"""Standard scaling for enemy health"""
-	return get_scaling_factor(0.12)  # 12% more health per level
-
-func get_damage_scaling() -> float:
-	"""Standard scaling for enemy damage"""
-	return get_scaling_factor(0.10)  # 10% more damage per level
-
-func get_pack_size_scaling() -> float:
-	"""Standard scaling for pack sizes"""
-	return get_scaling_factor(0.15)  # 15% larger packs per level

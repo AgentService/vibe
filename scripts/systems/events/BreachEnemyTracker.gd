@@ -51,10 +51,6 @@ func add_enemy(enemy: Node2D) -> bool:
 	var success = _ring_buffer.try_push(enemy)
 	if success:
 		_current_count += 1
-		Logger.debug("BreachEnemyTracker: Added enemy %s (count: %d/%d)" % [
-			enemy.name, _current_count, _capacity
-		], "events")
-
 	return success
 
 ## Mark enemy for removal without immediate allocation/removal.
@@ -67,9 +63,6 @@ func mark_for_removal(enemy: Node2D) -> void:
 	if not _marked_for_removal.has(enemy_id):
 		_marked_for_removal[enemy_id] = true
 		_removal_count += 1
-		Logger.debug("BreachEnemyTracker: Marked enemy %s for removal (marked: %d)" % [
-			enemy.name, _removal_count
-		], "events")
 
 ## Get array of valid (non-marked) enemies for iteration.
 ## Safe to iterate while concurrent mark_for_removal() calls happen.
@@ -141,9 +134,6 @@ func cleanup_marked() -> void:
 	_marked_for_removal.clear()
 	_removal_count = 0
 
-	Logger.debug("BreachEnemyTracker: Cleaned up %d marked enemies (remaining: %d)" % [
-		cleaned_count, _current_count
-	], "events")
 
 ## Get current count of active (non-marked) enemies
 func count() -> int:

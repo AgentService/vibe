@@ -22,7 +22,7 @@ pack_spawn_range = 1500.0
 pack_spawn_min_distance = 800.0
 use_viewport_culling = false
 viewport_margin = 200.0
-activation_method = 0
+activation_method = 2
 base_spawn_scaling = {
 "max_scaling_multiplier": 2.5,
 "pack_base_size_max": 8,

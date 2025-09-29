@@ -33,13 +33,11 @@ extends Resource
 @export var pack_spawn_min_distance: float = 800.0 ## Pack spawn minimum distance (prefer off-screen spawning)
 @export var use_viewport_culling: bool = false ## Additional viewport-based culling for performance
 @export var viewport_margin: float = 200.0 ## Extra margin around viewport for spawn culling
-@export var activation_method: ActivationMethod = ActivationMethod.DISTANCE ## Proximity detection method
+@export var activation_method: ActivationMethod = ActivationMethod.AREA_TRIGGERS ## Proximity detection method
 
 enum ActivationMethod {
-	DISTANCE,           ## Simple radius check around player
-	VIEWPORT,          ## Camera frustum + margin
-	AREA_TRIGGERS,     ## Area2D collision detection
-	HYBRID             ## Distance + viewport combined
+	AREA_TRIGGERS = 2     ## Area2D collision detection (zone-based spawning)
+	# Future extensibility: Additional activation methods can be added here
 }
 
 @export_group("Base Spawn Scaling")
