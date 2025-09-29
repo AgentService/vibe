@@ -739,4 +739,3 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 	)
 
 	Logger.info("✅ SpawnZoneManager created %d functional zones successfully" % spawn_zone_manager.get_spawn_zone_count(), "spawnzones")
-
