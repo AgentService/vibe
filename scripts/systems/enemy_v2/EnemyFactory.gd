@@ -197,7 +197,6 @@ static func spawn_from_template(template: EnemyTemplate, context: Dictionary) ->
 		for tag in tags_array:
 			config.context_tags.append(str(tag))
 	
-	Logger.debug("Generated spawn config: " + config.debug_string(), "enemies")
 	return config
 
 ## Get template by ID (for editor/debug use)

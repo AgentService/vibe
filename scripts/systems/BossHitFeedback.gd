@@ -85,9 +85,6 @@ func register_boss(boss: Node) -> void:
 	var sprite = _find_animated_sprite(boss)
 	if sprite:
 		cached_boss_sprites[instance_id] = sprite
-		Logger.debug("Boss " + boss.name + " registered with cached sprite (ID: " + str(instance_id) + ")", "bosses")
-	else:
-		Logger.debug("Boss " + boss.name + " registered without sprite (ID: " + str(instance_id) + ")", "bosses")
 
 func unregister_boss(boss: Node) -> void:
 	"""Unregister a boss from hit feedback tracking"""
@@ -102,7 +99,6 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	var target_id_str = str(payload.target_id)
 	
 	# Debug all damage events to see what we're getting
-	Logger.debug("BossHitFeedback received damage event for: " + target_id_str, "bosses")
 	
 	# FIXED: Bosses have EntityId.Type.ENEMY with large instance IDs (not -1)
 	# Boss EntityIds are created from "boss_12345" where 12345 is the instance ID
@@ -114,12 +110,10 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 		if payload.target_id.index > 1000:  # Likely a boss instance ID
 			instance_id = payload.target_id.index
 			is_boss_target = true
-			Logger.debug("Detected potential boss with instance ID: " + str(instance_id), "bosses")
-	
+		
 	if not is_boss_target:
 		return
 	
-	Logger.debug("Processing boss hit feedback for instance ID: " + str(instance_id), "bosses")
 	
 	# Try to find boss in registered bosses first
 	var boss: Node = registered_bosses.get(instance_id, null)
@@ -180,7 +174,6 @@ func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	}
 	
 	boss_flash_effects[instance_id] = flash_data
-	Logger.debug("Started boss flash effect for " + boss.name + " (sprite found: " + str(cached_sprite != null) + ")", "bosses")
 
 func _find_animated_sprite(boss: Node) -> AnimatedSprite2D:
 	"""Find the AnimatedSprite2D node within the boss hierarchy"""
@@ -234,7 +227,6 @@ func _start_boss_knockback_effect(instance_id: int, boss: Node, source_pos: Vect
 	}
 	
 	boss_knockback_effects[instance_id] = knockback_data
-	Logger.debug("Started boss knockback effect for " + boss.name + " force: " + str(knockback_force), "bosses")
 
 func _process(delta: float) -> void:
 	_update_boss_flash_effects(delta)
@@ -281,7 +273,6 @@ func _update_boss_knockback_effects(delta: float) -> void:
 		
 		# Validate boss still exists
 		if not is_instance_valid(boss):
-			Logger.debug("Cleaning up knockback for invalid boss instance: " + str(instance_id), "bosses")
 			invalid_effects.append(instance_id)
 			continue
 		

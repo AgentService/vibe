@@ -36,7 +36,6 @@ func _setup_ancient_lich_specific_behavior() -> void:
 		animated_sprite.play("wake_up")
 		animated_sprite.pause()  # Stay on first frame until aggroed
 		animated_sprite.connect("animation_finished", _on_animation_finished)
-		Logger.debug("AncientLich spawned in dormant state", "bosses")
 
 # Override _exit_tree to call parent cleanup
 func _exit_tree() -> void:

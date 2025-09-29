@@ -31,6 +31,10 @@ class_name LogConfigResource
 @export var input: bool = false ## ArenaInputHandler, input processing
 @export var session: bool = false ## Session management, player registration
 @export var pathgen: bool = true ## Path-aware arena generation system
+@export var bosses: bool = false ## Boss spawning, AI, and combat behavior
+@export var characters: bool = false ## Character creation, selection, and management
+@export var clearing: bool = false ## Entity clearing and cleanup operations
+@export var spawn: bool = false ## Spawn position calculation and validation
 
 ## Get category state as dictionary for compatibility with Logger
 func get_categories() -> Dictionary:
@@ -56,7 +60,11 @@ func get_categories() -> Dictionary:
 		"progression": progression,
 		"input": input,
 		"session": session,
-		"pathgen": pathgen
+		"pathgen": pathgen,
+		"bosses": bosses,
+		"characters": characters,
+		"clearing": clearing,
+		"spawn": spawn
 	}
 
 ## Validate log level is valid

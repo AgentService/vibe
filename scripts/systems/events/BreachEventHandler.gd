@@ -331,7 +331,6 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 			# Try to find a valid position near the ring
 			spawn_pos = _find_valid_position_near_ring(breach_event, target_sector, ring_radius)
 			if spawn_pos == Vector2.ZERO:  # No valid position found
-				Logger.debug("Skipping enemy spawn - no valid position in zone for sector %d" % target_sector, "events")
 				continue
 
 		var enemy_node = _spawn_breach_enemy_at_position(spawn_pos, breach_event)

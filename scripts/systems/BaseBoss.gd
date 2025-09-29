@@ -49,7 +49,6 @@ func _ready() -> void:
 		var default_anim = animation_prefix + "_south"
 		if animated_sprite.sprite_frames.has_animation(default_anim):
 			animated_sprite.play(default_anim)
-			Logger.debug(get_boss_name() + " animation started: " + default_anim, "bosses")
 	
 	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
@@ -77,7 +76,6 @@ func _ready() -> void:
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
-	Logger.debug(get_boss_name() + " registered with DamageService and EntityTracker as " + entity_id, "bosses")
 	
 	# Initialize health bar
 	_update_health_bar()
@@ -321,7 +319,6 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 			tracker_data["hp"] = new_hp
 
 func _die() -> void:
-	Logger.info(get_boss_name() + " has been defeated!", "bosses")
 	died.emit()
 	queue_free()
 

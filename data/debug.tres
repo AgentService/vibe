@@ -24,3 +24,7 @@ progression = false
 input = false
 session = false
 pathgen = true
+bosses = true
+characters = false
+clearing = false
+spawn = true

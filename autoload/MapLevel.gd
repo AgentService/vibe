@@ -12,8 +12,8 @@ signal level_changed(old_level: int, new_level: int)
 # Current map level (starts at 1)
 var current_level: int = 1
 
-# Time per level in seconds (60 seconds = 1 level)
-var seconds_per_level: float = 60.0
+# Time per level in seconds (10 seconds = 1 level for testing)
+var seconds_per_level: float = 10.0
 
 # Internal timer
 var _level_timer: float = 0.0

@@ -12,6 +12,9 @@ class_name PathAwareArenaGenerator
 @export var auto_generate_on_ready: bool = false
 @export var arena_base_radius: float = 600.0
 
+@export_group("Spawn Zones")
+@export var spawn_zone_radius: float = 100.0
+
 @export_group("Visual Debug")
 @export var show_debug_markers: bool = true
 @export var show_path_connections: bool = true
@@ -732,7 +735,8 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 			zone.queue_free()
 	generated_spawn_zones.clear()
 
-	var spawn_zone_radius = 100.0
+	# Use configurable radius parameter
+	var zone_radius = spawn_zone_radius
 	var zone_color = Color.CYAN
 	var zone_alpha = 0.5
 
@@ -749,7 +753,7 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 		var collision_shape = CollisionShape2D.new()
 		collision_shape.name = "CollisionShape2D"
 		var circle_shape = CircleShape2D.new()
-		circle_shape.radius = spawn_zone_radius
+		circle_shape.radius = zone_radius
 		collision_shape.shape = circle_shape
 		spawn_zone.add_child(collision_shape)
 
@@ -769,7 +773,7 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 		var segments = 32
 		for j in range(segments + 1):
 			var angle = (float(j) / segments) * TAU
-			var point = Vector2.from_angle(angle) * spawn_zone_radius
+			var point = Vector2.from_angle(angle) * zone_radius
 			circle_line.add_point(point)
 
 		visual_container.add_child(circle_line)
@@ -786,7 +790,7 @@ func _create_spawn_zones_directly(endpoint_positions: Array) -> void:
 		var label = Label.new()
 		label.name = "ZoneLabel"
 		label.text = "Z%d" % i
-		label.position = Vector2(-12, spawn_zone_radius + 10)
+		label.position = Vector2(-12, zone_radius + 10)
 		label.add_theme_color_override("font_color", zone_color)
 		visual_container.add_child(label)
 

@@ -249,7 +249,7 @@ func _initialize_spawn_zones() -> void:
 				_spawn_zone_areas.append(child)
 		Logger.debug("Initialized %d spawn zones" % _spawn_zone_areas.size(), "arena")
 	else:
-		Logger.warn("SpawnZones container not found in arena", "arena")
+		Logger.debug("SpawnZones container not found at root level - using data-driven spawn zones", "arena")
 
 func _setup_enemy_transforms() -> void:
 	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
@@ -290,7 +290,6 @@ func _setup_player() -> void:
 	if player:
 		var ysort_container = get_node_or_null("YSort_Objects")
 		if ysort_container:
-			Logger.debug("Moving player to YSort_Objects container for Y-sorting", "arena")
 			player.reparent(ysort_container)
 
 			# Ensure camera is still active after reparenting

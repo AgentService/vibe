@@ -62,7 +62,6 @@ func _play_attack_animation() -> void:
 	# Play attack animation if it exists
 	if animated_sprite.sprite_frames.has_animation(attack_anim):
 		animated_sprite.play(attack_anim)
-		Logger.debug(get_boss_name() + " attack animation: " + attack_anim, "bosses")
 
 # Optional: Override AI for custom slime behavior
 func _update_ai(dt: float) -> void:
