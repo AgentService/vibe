@@ -10,6 +10,8 @@
 
 Integrate MapLevel's time-based progression system with difficulty scaling for bosses and spawning enemies. Create an MVP scaling system that increases enemy stats (health, damage, speed) and spawn rates as map level increases over time, inspired by Risk of Rain 2's director system but simplified for our needs.
 
+**UPDATED:** This task now serves as the technical foundation for the MEGABONK-inspired arena progression system detailed in `Obsidian/02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md`.
+
 **Current State Analysis:**
 - ✅ MapLevel autoload system exists (10s per level for testing)
 - ✅ SpawnDirector already uses `MapLevel.get_pack_size_scaling()` for pack spawning
@@ -18,16 +20,35 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - ⚠️ Individual enemy stats don't scale with MapLevel
 - ⚠️ Boss spawning isn't connected to difficulty progression
 
+**Progression System Integration Requirements:**
+- ⚠️ MapLevel needs to support **difficulty coefficient** concept (ROR2-style)
+- ⚠️ Need **fixed stage jump** mechanic (+1.0 coefficient per stage transition)
+- ⚠️ Need **timed event spawning** (mini-bosses at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
+- ⚠️ Need **Final Swarm trigger** at 10:00 timer expiration with exponential scaling
+- ⚠️ Need **boss-kill deadline** mechanic (must kill boss before 10:00)
+- ⚠️ Need **snapshot scaling** for rift events (capture difficulty at boss kill time)
+
 ## 🎯 Acceptance Criteria
 
+### Core Scaling (Original)
 - [ ] Regular enemy spawn rates increase with MapLevel progression (8% faster per level)
-- [ ] Individual enemy stats scale with MapLevel (health +12%, damage +10% per level)
+- [ ] Individual enemy stats scale with MapLevel (health +30%, damage +20% per level - UPDATED from progression design)
 - [ ] Boss spawning integrates with difficulty credit system
 - [ ] All scaling respects performance constraints (30Hz combat compatibility)
 - [ ] Balance data hot-reloadable via BalanceDB integration
 - [ ] Scaling can be toggled/configured for rapid balance iteration
 - [ ] Performance impact <2ms per combat step for scaling calculations
 - [ ] Comprehensive test suite validates scaling progression accuracy
+
+### Progression System Integration (NEW)
+- [ ] MapLevel exposes `get_difficulty_coefficient()` method (visible in UI bar)
+- [ ] MapLevel supports `add_stage_jump(float)` method for fixed stage transitions (+1.0 default)
+- [ ] SpawnDirector can trigger timed events (mini-boss at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
+- [ ] SpawnDirector supports Final Swarm mode with exponential spawn rate increase
+- [ ] BossSpawnManager enforces boss-kill deadline (10:00) and unlocks rift on success
+- [ ] MapLevel supports snapshot mechanism (capture coefficient at specific time for rift events)
+- [ ] EventBus signals support stage progression flow (`boss_killed`, `timer_expired`, `rift_activated`, `stage_completed`)
+- [ ] Mathematical ceiling implemented (Final Swarm becomes impossible around 13:00)
 
 ## 🔍 Technical Analysis
 
@@ -42,25 +63,44 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] **tests/test_difficulty_scaling.tscn** - Comprehensive scaling validation
 
 ### Dependencies & Patterns
-- **EventBus Signals:** `difficulty_level_changed`, `spawn_rate_modified`, `enemy_stats_scaled`
+- **EventBus Signals (Original):** `difficulty_level_changed`, `spawn_rate_modified`, `enemy_stats_scaled`
+- **EventBus Signals (Progression):** `boss_killed`, `timer_expired`, `rift_activated`, `stage_completed`, `mini_boss_spawn`, `pressure_wave_start`
 - **Resource Files:** `/data/balance/difficulty_scaling.tres` with credit thresholds and multipliers
 - **Performance Impact:** Cached scaling calculations, 30Hz combat step compatible
 - **Testing Strategy:** .tscn test scenes with accelerated MapLevel progression
+- **Stage Timer:** 10-minute countdown per stage, integrated with MapLevel progression
+- **Coefficient Formula:** `enemyLevel = 1 + (coefficient - playerFactor) / 0.33` (from progression design)
 
 ## 📊 Implementation Plan
 
 ### Phase 1: Foundation - Enhanced MapLevel Methods
-- [ ] Add `get_enemy_stat_scaling()` method to MapLevel autoload
+- [ ] Add `get_difficulty_coefficient()` method to MapLevel autoload (returns current coefficient value)
+- [ ] Add `get_enemy_stat_scaling()` method using coefficient (HP +30%, DMG +20% per level)
 - [ ] Add `get_spawn_interval_scaling()` method for spawn rate modifications
 - [ ] Add `get_event_frequency_scaling()` method for boss/event spawning
+- [ ] Add `add_stage_jump(float)` method to increase coefficient on stage transitions (+1.0 default)
+- [ ] Add `capture_coefficient_snapshot()` method for rift event scaling
 - [ ] Create `DifficultyConfig` resource class with scaling curves and thresholds
 - [ ] Implement scaling result caching to minimize per-frame calculations
-- [ ] Add EventBus signals for difficulty progression notifications
+- [ ] Add EventBus signals for difficulty progression notifications (original + progression signals)
+- [ ] Add stage timer system (10-minute countdown) integrated with MapLevel
 
 ### Phase 2: Core Implementation - SpawnDirector Integration
 - [ ] Modify regular enemy spawning to use `MapLevel.get_spawn_interval_scaling()`
 - [ ] Apply level scaling to spawn count ranges with proper caps
 - [ ] Integrate scaling with existing wave progression multipliers
+- [ ] Implement timed event spawning system:
+  - [ ] Mini-boss spawn at 3:00 (first)
+  - [ ] Pressure wave at 4:00 (elite enemies, increased spawn rate)
+  - [ ] Pressure wave at 6:00 (more elites, higher danger)
+  - [ ] Mini-boss spawn at 7:00 (second)
+  - [ ] Pressure wave at 8:00 (very dangerous, signals urgency)
+  - [ ] Main boss spawn at 8:00 (must kill before 10:00)
+  - [ ] Final Swarm trigger at 10:00 (exponential scaling)
+  - [ ] Black Ghosts spawn at 11:00 (1 min into Final Swarm, extreme danger)
+- [ ] Implement Final Swarm mode with exponential spawn rate increase
+- [ ] Implement mathematical ceiling (~13:00) that makes survival impossible
+- [ ] Stop timed events when rift is activated (player progresses to next stage)
 - [ ] Add performance monitoring for spawn scaling calculations
 - [ ] Create fallback mechanisms if scaling impacts performance
 
@@ -71,8 +111,22 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] Add debug logging for scaled enemy stats (bosses category)
 - [ ] Create stat scaling validation to ensure reasonable progression
 
-### Phase 4: Credit-Based Boss System - DifficultyDirector
-- [ ] Create `DifficultyDirector` system for credit accumulation
+### Phase 4: Boss-Kill Deadline & Rift System
+- [ ] Implement boss-kill deadline mechanic in BossSpawnManager:
+  - [ ] Boss must be killed before 10:00 timer expires
+  - [ ] Boss kill unlocks rift permanently (EventBus.boss_killed signal)
+  - [ ] If timer expires without boss kill → Final Swarm begins without escape
+  - [ ] If boss killed → rift accessible during Final Swarm (optional farming)
+- [ ] Implement rift activation mechanic:
+  - [ ] Rift visual spawns at 1:30 (not functional yet)
+  - [ ] Rift becomes functional only after boss kill
+  - [ ] Player can activate rift anytime after boss kill
+  - [ ] Rift activation triggers stage progression (EventBus.rift_activated signal)
+- [ ] Implement snapshot scaling for rift events:
+  - [ ] Capture difficulty coefficient at boss kill time
+  - [ ] Store snapshot for next stage initialization
+  - [ ] Apply fixed +1.0 stage jump on stage transition
+- [ ] Create `DifficultyDirector` system for credit accumulation (original task scope)
 - [ ] Implement credit-based boss spawning cost system
 - [ ] Integrate with existing BossSpawnManager for cost validation
 - [ ] Add credit generation scaling based on MapLevel progression
@@ -152,6 +206,16 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - Completed parallel agent analysis: code archaeology, technical research, risk assessment
 - Researched Godot documentation via Context7 MCP for timer and signal patterns
 
+### 2025-09-30 - Progression System Integration
+- Updated task to align with MEGABONK-inspired arena progression system
+- Added progression-specific acceptance criteria (difficulty coefficient, stage jumps, timed events)
+- Integrated boss-kill deadline and rift activation mechanics
+- Added Final Swarm trigger and mathematical ceiling requirements
+- Updated stat scaling values (HP +30%, DMG +20% per level to match progression design)
+- Added timed event spawning requirements (mini-bosses, pressure waves, boss spawn)
+- Added snapshot scaling mechanism for rift events
+- Referenced `STAGE_PROGRESSION_VISION.md` as design source
+
 ## 🚨 Risks & Considerations
 
 ### Performance Risks (CRITICAL)
@@ -218,4 +282,4 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ---
 
-**Related:** [MapLevel System](../systems/MapLevel-System.md) | [Spawn Director](../systems/Spawn-Director-System.md) | [Combat Architecture](../../ARCHITECTURE.md#fixed-step-combat-loop-decision-5a)
+**Related:** [MapLevel System](../systems/MapLevel-System.md) | [Spawn Director](../systems/Spawn-Director-System.md) | [Combat Architecture](../../ARCHITECTURE.md#fixed-step-combat-loop-decision-5a) | [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md)

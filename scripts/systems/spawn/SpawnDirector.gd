@@ -8,7 +8,7 @@ extends Node
 class_name SpawnDirector
 
 # Import ArenaSystem for dependency injection
-const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
+const ArenaSystem = preload("res://scripts/systems/arena/ArenaSystem.gd")
 const EventSpawnManager = preload("res://scripts/systems/spawn/EventSpawnManager.gd")
 
 # ZERO-ALLOC: Import ring buffer utilities for entity update queue

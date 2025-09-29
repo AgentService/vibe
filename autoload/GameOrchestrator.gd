@@ -4,14 +4,14 @@ extends Node
 ## Handles proper dependency injection and initialization order for all game systems.
 
 # Import system classes - using _Type suffix to avoid conflicts with class names
-const CardSystem_Type = preload("res://scripts/systems/CardSystem.gd")
+const CardSystem_Type = preload("res://scripts/systems/player/CardSystem.gd")
 const SpawnDirector_Type = preload("res://scripts/systems/spawn/SpawnDirector.gd")
 const RadarSystem_Type = preload("res://scripts/systems/radar/RadarSystem.gd")
 # TODO: Phase 2 - Remove when replaced with AbilityModule autoload
 # const AbilitySystem_Type = preload("res://scripts/systems/AbilitySystem.gd")
-const MeleeSystem_Type = preload("res://scripts/systems/MeleeSystem.gd")
-const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
-const XpSystem_Type = preload("res://scripts/systems/XpSystem.gd")
+const MeleeSystem_Type = preload("res://scripts/systems/combat/MeleeSystem.gd")
+const ArenaSystem = preload("res://scripts/systems/arena/ArenaSystem.gd")
+const XpSystem_Type = preload("res://scripts/systems/combat/XpSystem.gd")
 
 # Core orchestration events
 signal systems_initialized()

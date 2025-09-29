@@ -5,9 +5,9 @@ extends Node
 # Reduces Arena.gd boilerplate and provides clean injection interface
 
 # Type imports needed for system injection
-const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
+const ArenaSystem := preload("res://scripts/systems/arena/ArenaSystem.gd")
 # CameraSystem removed - players handle their own cameras
-const XpSystem_Type := preload("res://scripts/systems/XpSystem.gd")
+const XpSystem_Type := preload("res://scripts/systems/combat/XpSystem.gd")
 
 # Arena references needed for system setup
 var arena_ref: Node
