@@ -28,6 +28,14 @@
   - **Activation Methods**: DISTANCE (0) for radius spawning, AREA_TRIGGERS (2) for zone-based spawning, with VIEWPORT and HYBRID planned
   - **Automatic Zone Detection**: SpawnDirector reads `_spawn_zone_areas` and applies proximity filtering based on `auto_spawn_range`/`auto_spawn_min_distance`
   - **YSort Container Fix**: Enhanced YSort_Objects detection with recursive search to find nested containers (e.g., PathAwareArenaGenerator/YSort_Objects)
+
+- **Boss Speed Configuration Fix**: ✅ **COMPLETED** - Removed hardcoded speed overrides to enable data-driven boss tuning
+  - **All Boss Scripts Updated**: Removed `speed = X.X` assignments from BananaLord, AncientSlime, DemonOverlord, DragonLord, AncientLich, TestShadowBoss
+  - **BaseBoss Integration**: Boss speed now properly applied from `speed_range` values in `.tres` files through BaseBoss inheritance
+  - **Configuration Files Working**: Speed changes in `enemy-variations/*.tres` files now immediately affect boss movement speed
+  - **BananaLord Example**: Changed from hardcoded 60.0 to Vector2(500, 600) range from banana_lord.tres configuration
+  - **Debug Log Cleanup**: Converted debug logs to comments in BananaLord for cleaner console output
+  - **Systemic Fix**: Issue was present across entire boss system - all 6 boss types were overriding configuration data
   - **Proper Visual Layering**: Bosses now spawn in correct Y-sorted containers instead of falling back to ArenaRoot, ensuring proper depth rendering
 
 - **Path-Aware Spawning System**: ✅ **COMPLETED** - Strategic spawn position optimization for procedural arenas

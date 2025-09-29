@@ -2586,6 +2586,7 @@ tile_set = SubResource("TileSet_bdf5f")
 collision_visibility_mode = 1
 
 [node name="YSort_Objects" type="Node2D" parent="PathAwareArenaGenerator" index="2"]
+z_index = 5
 y_sort_enabled = true
 
 [node name="Trees2" type="TileMapLayer" parent="PathAwareArenaGenerator/YSort_Objects" index="0"]

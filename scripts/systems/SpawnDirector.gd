@@ -310,7 +310,7 @@ func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vect
 	var attempt = 0
 
 	while attempt < max_attempts:
-		var test_pos = arena_scene.get_random_spawn_position()
+		var test_pos = _get_data_driven_spawn_position()
 		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
 			return test_pos
 		attempt += 1
@@ -1206,10 +1206,10 @@ func _get_data_driven_spawn_position() -> Vector2:
 
 	if not map_config:
 		Logger.debug("No map_config available, checking for manual override", "arena")
-		# Fallback to manual method override if no config available
-		if arena_scene.has_method("get_random_spawn_position"):
-			var spawn_pos = arena_scene.get_random_spawn_position()
-			return _validate_spawn_position_for_breaches(spawn_pos, arena_scene)
+		# Fallback to distance-based spawning if no config available
+		Logger.debug("No MapConfig found, using fallback distance-based spawning", "arena")
+		var spawn_pos = _get_fallback_spawn_position()
+		return _validate_spawn_position_for_breaches(spawn_pos, arena_scene)
 		return _get_fallback_spawn_position()
 
 	# Use data-driven activation method
