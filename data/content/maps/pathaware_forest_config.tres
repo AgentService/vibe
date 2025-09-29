@@ -18,16 +18,11 @@ boss_spawn_positions = Array[Vector2]([Vector2(0, -400), Vector2(400, 300), Vect
 max_concurrent_enemies = 300
 auto_spawn_range = 1000.0
 auto_spawn_min_distance = 200.0
-pack_spawn_range = 0.0
-pack_spawn_min_distance = 200.0
-use_viewport_culling = true
+use_viewport_culling = false
 viewport_margin = 200.0
 activation_method = 2
 base_spawn_scaling = {
 "max_scaling_multiplier": 2.0,
-"pack_base_size_max": 6,
-"pack_base_size_min": 3,
-"pack_spawn_interval": 40.0,
 "time_scaling_rate": 0.06,
 "wave_scaling_rate": 0.1
 }

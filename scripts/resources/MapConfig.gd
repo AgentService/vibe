@@ -29,8 +29,7 @@ extends Resource
 @export_group("Proximity Spawning")
 @export var auto_spawn_range: float = 800.0 ## Auto spawn proximity range (max distance)
 @export var auto_spawn_min_distance: float = 300.0 ## Auto spawn minimum distance (prevent spawning too close)
-@export var pack_spawn_range: float = 1600.0 ## Pack pre-spawn proximity range (max distance, out of view)
-@export var pack_spawn_min_distance: float = 800.0 ## Pack spawn minimum distance (prefer off-screen spawning)
+# pack_spawn_range and pack_spawn_min_distance removed - pack spawning system eliminated
 @export var use_viewport_culling: bool = false ## Additional viewport-based culling for performance
 @export var viewport_margin: float = 200.0 ## Extra margin around viewport for spawn culling
 @export var activation_method: ActivationMethod = ActivationMethod.AREA_TRIGGERS ## Proximity detection method
@@ -44,10 +43,7 @@ enum ActivationMethod {
 @export var base_spawn_scaling: Dictionary = {
 	"time_scaling_rate": 0.1,        # 10% per minute base
 	"wave_scaling_rate": 0.15,       # 15% per wave base
-	"pack_base_size_min": 5,
-	"pack_base_size_max": 10,
-	"max_scaling_multiplier": 2.5,
-	"pack_spawn_interval": 5.0      # Seconds between pack spawns
+	"max_scaling_multiplier": 2.5
 }
 
 @export_group("Arena-Specific Scaling")
@@ -158,9 +154,7 @@ func get_effective_scaling() -> Dictionary:
 		effective[key] = arena_scaling_overrides[key]
 	return effective
 
-## Get zones within pack spawn range (larger range for pre-spawning)
-func get_zones_in_pack_range(player_pos: Vector2) -> Array[Dictionary]:
-	return get_zones_in_range(player_pos, pack_spawn_range)
+# get_zones_in_pack_range removed - pack spawning system eliminated
 
 ## Get zones within auto spawn range (smaller range for immediate spawning)
 func get_zones_in_auto_range(player_pos: Vector2) -> Array[Dictionary]:

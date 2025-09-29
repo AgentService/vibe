@@ -135,8 +135,9 @@ func _get_available_event_zones(player_pos: Vector2, map_config: MapConfig) -> A
 		return []
 
 	var all_scene_zones = arena_scene._spawn_zone_areas
-	var event_spawn_range = map_config.pack_spawn_range  # Use pack spawn range for events
-	var event_spawn_min_distance = map_config.pack_spawn_min_distance
+	# Use dedicated event spawn distances (fallback to reasonable defaults)
+	var event_spawn_range = 600.0  # Event spawn range
+	var event_spawn_min_distance = 200.0  # Event minimum distance from player
 
 	var available_zones: Array[Area2D] = []
 
@@ -218,32 +219,34 @@ func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
 	})
 
 func _spawn_event_formation(pack_size: int, center_pos: Vector2, formation_radius: float, event_def) -> void:
-	"""Spawn event enemies in formation (reuses pack formation logic)."""
+	"""Spawn event enemies in simple circle formation."""
 
-	# Use existing pack formation logic but mark enemies as event spawns
-	var formation_type = spawn_director._select_strategic_formation(pack_size, center_pos)
-	var min_enemy_separation = 32.0
-	var occupied_positions: Array[Vector2] = []
+	# Use simple circle formation instead of complex pack formation
 	var successful_spawns = 0
-	var max_attempts_per_enemy = 5
+	var min_separation = 40.0  # Minimum distance between enemies
 
 	for i in pack_size:
 		var spawn_pos: Vector2
-		var valid_position_found = false
 
-		for attempt in max_attempts_per_enemy:
-			spawn_pos = spawn_director._calculate_formation_position(formation_type, i, pack_size, center_pos, formation_radius, min_enemy_separation, attempt)
+		# Simple circle formation
+		if pack_size == 1:
+			spawn_pos = center_pos
+		else:
+			var angle = (float(i) / pack_size) * TAU
+			var distance = formation_radius * 0.7
+			spawn_pos = center_pos + Vector2.from_angle(angle) * distance
 
-			if spawn_director._is_position_clear(spawn_pos, min_enemy_separation, occupied_positions):
-				valid_position_found = true
-				occupied_positions.append(spawn_pos)
-				break
+		# Add some random jitter to avoid perfect positioning
+		var jitter = Vector2(
+			RNG.randf_range("events", -min_separation * 0.3, min_separation * 0.3),
+			RNG.randf_range("events", -min_separation * 0.3, min_separation * 0.3)
+		)
+		spawn_pos += jitter
 
-		if valid_position_found:
-			_spawn_event_enemy(spawn_pos, event_def)
-			successful_spawns += 1
+		_spawn_event_enemy(spawn_pos, event_def)
+		successful_spawns += 1
 
-	Logger.info("Event formation spawned: %d/%d enemies for %s event" % [
+	Logger.info("Event formation spawned: %d/%d enemies in circle formation for %s event" % [
 		successful_spawns, pack_size, event_def.event_type
 	], "events")
 

@@ -69,11 +69,9 @@ const POOL_EXHAUSTION_WARNING_COOLDOWN: float = 2.0  # Only warn every 2 seconds
 # AI pause functionality for debug interface
 var ai_paused: bool = false
 
-# UNIFIED SPAWNING: Pack spawning state (new functionality)
+# UNIFIED SPAWNING: Wave spawning state
 var current_run_time: float = 0.0
 var current_wave_level: int = 1
-var pack_spawn_timer: float = 0.0
-var pack_spawn_enabled: bool = true
 
 # EVENT SYSTEM: Delegated to EventSpawnManager
 var event_spawn_manager: EventSpawnManager
@@ -591,8 +589,7 @@ func _handle_spawning(dt: float) -> void:
 	# Update run time for scaling calculations
 	current_run_time += dt
 
-	# Handle pack spawning (new unified functionality)
-	_handle_pack_spawning(dt)
+	# Pack spawning removed - unified scaling via DifficultyDirector (future)
 
 	# Handle event spawning via EventSpawnManager
 	if event_spawn_manager:
@@ -606,157 +603,8 @@ func _handle_spawning(dt: float) -> void:
 		for i in spawn_count:
 			_spawn_enemy()
 
-func _handle_pack_spawning(dt: float) -> void:
-	"""Handle pack-based spawning with proximity detection and scaling.
-	Spawns enemy packs within pack_spawn_range (1600px) of player based on time intervals."""
-
-	if not pack_spawn_enabled:
-		return
-
-	# Update pack spawn timer
-	pack_spawn_timer += dt
-
-	# Get current arena scene
-	var arena_scene = _get_arena_scene()
-	if not arena_scene:
-		Logger.debug("Pack spawning: No arena scene available", "spawn")
-		return
-
-	var has_map_config_property = ("map_config" in arena_scene)
-	var map_config_value = arena_scene.map_config if has_map_config_property else null
-
-	if not has_map_config_property or not map_config_value:
-		Logger.debug("Pack spawning: No arena map_config available (scene=%s)" % arena_scene.name, "arena")
-		return
-
-	var map_config = arena_scene.map_config as MapConfig
-	if not map_config:
-		Logger.debug("Pack spawning: Invalid map_config type (scene=%s)" % arena_scene.name, "arena")
-		return
-
-	var scaling = map_config.get_effective_scaling()
-	var pack_interval = scaling.get("pack_spawn_interval", 60.0)
-
-
-	# Check if it's time to spawn a pack
-	if pack_spawn_timer < pack_interval:
-		return
-
-	# Reset timer
-	pack_spawn_timer = 0.0
-
-	# Get player position for proximity checking
-	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
-	if player_pos == Vector2.ZERO:
-		Logger.debug("Pack spawning: No valid player position", "spawn")
-		return
-
-	# Get zones within pack spawn range (prefer distant zones to spawn off-screen)
-	var pack_spawn_range = scaling.get("pack_spawn_range", 500.0)  # Use pack spawn range, not interval
-	var pack_spawn_min_distance = 800.0  # Default minimum distance
-	if map_config:
-		pack_spawn_range = map_config.pack_spawn_range
-		pack_spawn_min_distance = map_config.pack_spawn_min_distance if "pack_spawn_min_distance" in map_config else 800.0
-
-	# Use arena scene zones with min/max distance filtering + cooldown filtering
-	var zones_in_pack_range = []
-	if arena_scene and arena_scene.has_method("filter_zones_by_distance_range"):
-		# Get scene zones and filter by min/max pack spawn range
-		var scene_spawn_zones = arena_scene._spawn_zone_areas if "_spawn_zone_areas" in arena_scene else []
-		if not scene_spawn_zones.is_empty():
-			var distance_filtered_zones = arena_scene.filter_zones_by_distance_range(scene_spawn_zones, player_pos, pack_spawn_min_distance, pack_spawn_range)
-
-			# Further filter by zone availability (cooldown system)
-			for zone_area in distance_filtered_zones:
-				if event_spawn_manager and event_spawn_manager._is_zone_available(zone_area.name):
-					zones_in_pack_range.append(zone_area)
-
-	if zones_in_pack_range.is_empty():
-		Logger.debug("Pack spawning: No available zones (all in range on cooldown)", "spawn")
-		return
-
-	# Calculate base pack size from configuration (no artificial scaling)
-	var base_min = scaling.get("pack_base_size_min", 5)
-	var base_max = scaling.get("pack_base_size_max", 10)
-	var max_multiplier = scaling.get("max_scaling_multiplier", 2.5)
-
-	# DYNAMIC SCALING: Adjust pack size based on current enemy density and available zones
-	var current_enemy_count = _get_alive_count_fast()
-	var max_enemies_threshold = max_enemies * 0.7  # Don't spawn large packs when near capacity
-
-	# Density-based reduction: reduce pack size when arena is crowded
-	var density_factor = 1.0
-	if current_enemy_count > max_enemies_threshold:
-		density_factor = maxf(0.3, 1.0 - float(current_enemy_count - max_enemies_threshold) / (max_enemies * 0.3))
-
-	# Zone availability factor: prefer smaller packs when few zones available
-	var available_zone_count = zones_in_pack_range.size()
-	var total_zones = arena_scene._spawn_zone_areas.size() if "_spawn_zone_areas" in arena_scene else 5
-	var zone_availability_factor = float(available_zone_count) / total_zones
-
-	# Calculate average threat level of available zones (higher threat = larger packs)
-	var total_threat = 0.0
-	for zone_area in zones_in_pack_range:
-		total_threat += event_spawn_manager.get_zone_threat_level(zone_area.name) if event_spawn_manager else 0.0
-	var average_threat = total_threat / available_zone_count if available_zone_count > 0 else 0.0
-	var threat_multiplier = 1.0 + (average_threat * 0.5)  # Up to 50% size increase for high-threat zones
-
-	# Dynamic scaling based on arena conditions (density, zone availability, threat)
-	var final_multiplier = density_factor * zone_availability_factor * threat_multiplier
-	final_multiplier = maxf(0.5, minf(final_multiplier, max_multiplier))  # Clamp to reasonable range
-
-	var scaled_min = maxi(2, int(base_min * final_multiplier))  # Minimum 2 enemies per pack
-	var scaled_max = maxi(scaled_min + 1, int(base_max * final_multiplier))
-	var pack_size = RNG.randi_range("packs", scaled_min, scaled_max)
-
-	var current_level = MapLevel.current_level if MapLevel else 1
-	Logger.info("Pack spawning: size=%d, multiplier=%.2f (level=%d, wave=%d, density=%.2f, zones=%d/%d, threat=%.2f)" % [pack_size, final_multiplier, current_level, current_wave_level, density_factor, available_zone_count, total_zones, average_threat], "arena")
-
-	# Select zone from pack range, preferring distant zones for off-screen spawning
-	var selected_zone: Area2D
-	if zones_in_pack_range.size() == 1:
-		selected_zone = zones_in_pack_range[0]
-	else:
-		# Sort zones by distance (furthest first) and weight selection toward distant zones
-		var zone_distances: Array[Dictionary] = []
-		for zone in zones_in_pack_range:
-			var distance = player_pos.distance_to(zone.global_position)
-			zone_distances.append({"zone": zone, "distance": distance})
-
-		# Sort by distance descending (furthest first)
-		zone_distances.sort_custom(func(a, b): return a.distance > b.distance)
-
-		# Weight selection toward first half (furthest zones) - 70% chance for distant zones
-		var selection_pool_size = max(1, zone_distances.size() / 2)
-		if RNG.randf("packs") < 0.7 and selection_pool_size > 0:
-			# Select from distant zones (first half)
-			var distant_index = RNG.randi_range("packs", 0, selection_pool_size - 1)
-			selected_zone = zone_distances[distant_index].zone
-		else:
-			# Fallback to any available zone
-			var random_index = RNG.randi_range("packs", 0, zone_distances.size() - 1)
-			selected_zone = zone_distances[random_index].zone
-
-	# Use shared method to get proper position within zone radius
-	var spawn_position = arena_scene.generate_position_in_scene_zone(selected_zone)
-
-	# Get zone radius for formation (need for formation spread)
-	var zone_radius = 50.0  # Default
-	if selected_zone.get_child_count() > 0:
-		var collision_shape = selected_zone.get_child(0) as CollisionShape2D
-		if collision_shape and collision_shape.shape is CircleShape2D:
-			var circle_shape = collision_shape.shape as CircleShape2D
-			zone_radius = circle_shape.radius
-
-	# Set zone cooldown to prevent rapid re-use
-	if event_spawn_manager:
-		event_spawn_manager._set_zone_cooldown(selected_zone.name)
-
-	# Escalate threat in the zone where pack spawned
-	if event_spawn_manager:
-		event_spawn_manager._escalate_zone_threat(selected_zone.name, 0.15)  # 15% threat increase per pack spawn
-
-	_spawn_pack_formation(pack_size, spawn_position, zone_radius)
+# _handle_pack_spawning removed - pack spawning system eliminated
+# Future: Unified scaling via DifficultyDirector (see task 03)
 
 # _handle_event_spawning moved to EventSpawnManager
 
@@ -764,278 +612,20 @@ func _handle_pack_spawning(dt: float) -> void:
 
 # _select_event_zone moved to EventSpawnManager
 
-func _spawn_event_at_zone(event_def, config: Dictionary, zone: Area2D) -> void:
-	"""Spawn event enemies at selected zone using pack formation system."""
+# _spawn_event_at_zone moved to EventSpawnManager
 
-	# Use existing pack spawning logic with event-specific parameters
-	var monster_count = config.get("monster_count", 8)
-	var formation = config.get("formation", "circle")
+# _spawn_event_formation moved to EventSpawnManager
+# _spawn_event_enemy moved to EventSpawnManager
 
-	# Get spawn position and zone radius
-	var arena_scene = _get_arena_scene()
-	if not arena_scene:
-		Logger.warn("Event spawning: Failed to get arena scene", "events")
-		return
+# _spawn_pack_formation removed - pack spawning system eliminated
 
-	var spawn_position = arena_scene.generate_position_in_scene_zone(zone)
+# _select_strategic_formation removed - pack spawning system eliminated
 
-	var zone_radius = 50.0  # Default
-	if zone.get_child_count() > 0:
-		var collision_shape = zone.get_child(0) as CollisionShape2D
-		if collision_shape and collision_shape.shape is CircleShape2D:
-			var circle_shape = collision_shape.shape as CircleShape2D
-			zone_radius = circle_shape.radius
+# _calculate_formation_position removed - pack spawning system eliminated
 
-	# Emit event started signal
-	EventBus.event_started.emit(event_def.event_type, zone)
+# _is_position_clear removed - pack spawning system eliminated
 
-	# Spawn event enemies using existing pack formation system
-	_spawn_event_formation(monster_count, spawn_position, zone_radius, event_def)
-
-	# Track event for completion detection (delegated to EventSpawnManager)
-	if event_spawn_manager:
-		event_spawn_manager.active_events.append({
-			"type": event_def.event_type,
-			"zone": zone,
-			"start_time": Time.get_time_dict_from_system(),
-			"config": config,
-			"event_def": event_def,
-			"monster_count": monster_count,
-			"spawned_enemies": []  # Track spawned enemy IDs for completion detection
-		})
-
-func _spawn_event_formation(pack_size: int, center_pos: Vector2, formation_radius: float, event_def) -> void:
-	"""Spawn event enemies in formation (reuses pack formation logic)."""
-
-	# Use existing pack formation logic but mark enemies as event spawns
-	var formation_type = _select_strategic_formation(pack_size, center_pos)
-	var min_enemy_separation = 32.0
-	var occupied_positions: Array[Vector2] = []
-	var successful_spawns = 0
-	var max_attempts_per_enemy = 5
-
-	for i in pack_size:
-		var spawn_pos: Vector2
-		var valid_position_found = false
-
-		for attempt in max_attempts_per_enemy:
-			spawn_pos = _calculate_formation_position(formation_type, i, pack_size, center_pos, formation_radius, min_enemy_separation, attempt)
-
-			if _is_position_clear(spawn_pos, min_enemy_separation, occupied_positions):
-				valid_position_found = true
-				occupied_positions.append(spawn_pos)
-				break
-
-		if valid_position_found:
-			_spawn_event_enemy(spawn_pos, event_def)
-			successful_spawns += 1
-
-	Logger.info("Event formation spawned: %d/%d enemies for %s event" % [
-		successful_spawns, pack_size, event_def.event_type
-	], "events")
-
-func _spawn_event_enemy(position: Vector2, event_def) -> void:
-	"""Spawn a single event enemy using Enemy V2 system with event context."""
-
-	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-
-	# Track spawn index for deterministic seeding
-	var local_spawn_counter: int = get_alive_enemies().size()
-
-	# Create spawn context for EnemyFactory - mark as event spawn
-	var spawn_context := {
-		"run_id": RunManager.run_seed,
-		"wave_index": current_wave_level,
-		"spawn_index": local_spawn_counter,
-		"position": position,
-		"context_tags": ["event", event_def.event_type],  # Mark as event spawn with type
-		"spawn_type": "event",  # Additional metadata
-		"event_type": event_def.event_type  # Event-specific context
-	}
-
-	# Generate V2 spawn configuration using existing system
-	var cfg := EnemyFactoryScript.spawn_from_weights(spawn_context)
-	if not cfg:
-		Logger.warn("Event spawning: Failed to generate spawn config for %s" % event_def.event_type, "events")
-		return
-
-	# Apply event-specific modifiers to spawn config if needed
-	if event_def.base_config.has("xp_multiplier"):
-		# Apply event XP multiplier to spawned enemies
-		var xp_multiplier = event_def.base_config.get("xp_multiplier", 1.0)
-		# Note: This would require extending SpawnConfig to support XP modifiers
-		# For now, the multiplier will be applied during XP calculation
-
-	# Convert to legacy EnemyType for existing system
-	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
-
-	# Use existing spawn system
-	_spawn_from_config_v2(legacy_enemy_type, cfg)
-
-func _spawn_pack_formation(pack_size: int, center_pos: Vector2, formation_radius: float) -> void:
-	"""Spawn a pack of enemies in formation around a center point with overlap detection.
-	Enemies start with chase_enabled = false for PreSpawn behavior."""
-
-	# Enhanced formation patterns with strategic positioning
-	var formation_type = _select_strategic_formation(pack_size, center_pos)
-	var min_enemy_separation = 32.0  # Minimum distance between enemies
-	var occupied_positions: Array[Vector2] = []
-	var successful_spawns = 0
-	var max_attempts_per_enemy = 5
-
-	for i in pack_size:
-		var spawn_pos: Vector2
-		var valid_position_found = false
-
-		for attempt in max_attempts_per_enemy:
-			spawn_pos = _calculate_formation_position(formation_type, i, pack_size, center_pos, formation_radius, min_enemy_separation, attempt)
-
-			# Check if position conflicts with existing enemies or pack members
-			if _is_position_clear(spawn_pos, min_enemy_separation, occupied_positions):
-				valid_position_found = true
-				occupied_positions.append(spawn_pos)
-				break
-
-			# Add some randomization for subsequent attempts
-			if attempt == max_attempts_per_enemy - 1:
-				Logger.debug("Pack formation: Failed to find clear position for enemy %d after %d attempts" % [i, max_attempts_per_enemy], "arena")
-
-		if valid_position_found:
-			_spawn_pack_enemy(spawn_pos)
-			successful_spawns += 1
-
-	var spawn_efficiency = float(successful_spawns) / pack_size * 100.0
-	var formation_names = ["Circle", "Line", "Cluster", "Wedge", "Ambush", "Pincer"]
-	var formation_name = formation_names[formation_type] if formation_type < formation_names.size() else "Unknown"
-	Logger.info("Pack spawned: %d/%d enemies in %s formation at %s (%.1f%% efficiency)" % [successful_spawns, pack_size, formation_name, center_pos, spawn_efficiency], "arena")
-
-func _select_strategic_formation(pack_size: int, center_pos: Vector2) -> int:
-	"""Select formation type based on tactical considerations."""
-	var player_pos = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
-
-	# Consider pack size for formation selection
-	if pack_size <= 3:
-		# Small packs: prefer ambush formations (cluster, wedge)
-		return RNG.randi_range("packs", 2, 3)  # Cluster or Wedge
-	elif pack_size <= 6:
-		# Medium packs: balanced selection
-		return RNG.randi_range("packs", 0, 4)  # All formations except Pincer
-	else:
-		# Large packs: prefer organized formations
-		var organized_formations = [0, 1, 5]  # Circle, Line, Pincer
-		return organized_formations[RNG.randi_range("packs", 0, organized_formations.size() - 1)]
-
-func _calculate_formation_position(formation_type: int, enemy_index: int, pack_size: int, center_pos: Vector2, formation_radius: float, min_separation: float, attempt: int) -> Vector2:
-	"""Calculate spawn position for enemy in formation."""
-	match formation_type:
-		0: # Circle formation - classic surround
-			var base_angle = (float(enemy_index) / pack_size) * TAU
-			var angle_jitter = RNG.randf_range("packs", -0.2, 0.2) if attempt > 0 else 0.0
-			var distance_jitter = RNG.randf_range("packs", 0.8, 1.0) if attempt > 0 else 1.0
-			var distance = formation_radius * 0.7 * distance_jitter
-			return center_pos + Vector2.from_angle(base_angle + angle_jitter) * distance
-
-		1: # Line formation - wall of enemies
-			var line_length = formation_radius * 1.5
-			var step = line_length / max(pack_size - 1, 1)
-			var offset = (enemy_index - pack_size * 0.5) * step
-			var line_angle = RNG.randf_range("packs", 0.0, TAU)
-			var perpendicular_offset = RNG.randf_range("packs", -min_separation, min_separation) if attempt > 0 else 0.0
-			var base_pos = center_pos + Vector2.from_angle(line_angle) * offset
-			return base_pos + Vector2.from_angle(line_angle + PI/2) * perpendicular_offset
-
-		2: # Cluster formation - tight group
-			var cluster_angle = RNG.randf_range("packs", 0.0, TAU)
-			var max_distance = formation_radius * 0.6  # Tighter than other formations
-			var cluster_distance = RNG.randf_range("packs", min_separation, max_distance)
-			return center_pos + Vector2.from_angle(cluster_angle) * cluster_distance
-
-		3: # Wedge formation - arrow pointing toward player
-			var player_pos = PlayerState.position if PlayerState.has_player_reference() else center_pos + Vector2(0, -100)
-			var to_player = (player_pos - center_pos).normalized()
-			var wedge_angle = to_player.angle()
-			var layer = enemy_index / 2  # Two enemies per layer
-			var side = 1 if enemy_index % 2 == 0 else -1  # Alternate sides
-			var layer_distance = layer * min_separation * 1.5
-			var side_offset = side * layer * min_separation * 0.7
-			var base_pos = center_pos + Vector2.from_angle(wedge_angle) * layer_distance
-			return base_pos + Vector2.from_angle(wedge_angle + PI/2) * side_offset
-
-		4: # Ambush formation - scattered for flanking
-			var scatter_angle = RNG.randf_range("packs", 0.0, TAU)
-			var scatter_distance = RNG.randf_range("packs", formation_radius * 0.4, formation_radius * 0.9)
-			var jitter_x = RNG.randf_range("packs", -min_separation, min_separation)
-			var jitter_y = RNG.randf_range("packs", -min_separation, min_separation)
-			return center_pos + Vector2.from_angle(scatter_angle) * scatter_distance + Vector2(jitter_x, jitter_y)
-
-		5: # Pincer formation - two groups on opposite sides
-			var player_pos = PlayerState.position if PlayerState.has_player_reference() else center_pos + Vector2(0, -100)
-			var to_player = (player_pos - center_pos).normalized()
-			var pincer_side = 1 if enemy_index < pack_size / 2 else -1
-			var group_center_angle = to_player.angle() + pincer_side * PI * 0.4  # 72 degrees from center
-			var group_index = enemy_index % (pack_size / 2)
-			var group_size = pack_size / 2
-			var local_angle = (float(group_index) / group_size) * PI * 0.3 - PI * 0.15  # Spread within group
-			var distance = formation_radius * 0.8
-			return center_pos + Vector2.from_angle(group_center_angle + local_angle) * distance
-
-		_: # Default to cluster if invalid formation type
-			var cluster_angle = RNG.randf_range("packs", 0.0, TAU)
-			var max_distance = formation_radius * 0.8
-			var cluster_distance = RNG.randf_range("packs", min_separation, max_distance)
-			return center_pos + Vector2.from_angle(cluster_angle) * cluster_distance
-
-func _is_position_clear(test_pos: Vector2, min_separation: float, occupied_positions: Array[Vector2]) -> bool:
-	"""Check if a position is clear of existing enemies and pack members."""
-
-	# Check against other pack members being spawned
-	for occupied_pos in occupied_positions:
-		if test_pos.distance_to(occupied_pos) < min_separation:
-			return false
-
-	# Check against existing alive enemies using optimized bit-field iteration
-	var separation_squared = min_separation * min_separation
-	for i in range(max_enemies):
-		if not _is_enemy_alive_bitfield(i):
-			continue
-
-		var enemy_pos = enemies[i].pos
-		var distance_squared = test_pos.distance_squared_to(enemy_pos)
-		if distance_squared < separation_squared:
-			return false
-
-	return true
-
-func _spawn_pack_enemy(position: Vector2) -> void:
-	"""Spawn a single pack enemy using the existing Enemy V2 system."""
-
-	# Use the same enemy spawning system as regular spawning
-	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
-
-	# Track spawn index for deterministic seeding
-	var local_spawn_counter: int = get_alive_enemies().size()
-
-	# Create spawn context for EnemyFactory - mark as pack spawn
-	var spawn_context := {
-		"run_id": RunManager.run_seed,
-		"wave_index": current_wave_level,
-		"spawn_index": local_spawn_counter,
-		"position": position,
-		"context_tags": ["pack"],  # Mark as pack spawn for future behavior customization
-		"spawn_type": "pack"  # Additional metadata
-	}
-
-	# Generate V2 spawn configuration using existing system
-	var cfg := EnemyFactoryScript.spawn_from_weights(spawn_context)
-	if not cfg:
-		Logger.warn("Pack spawning: Failed to generate spawn config", "spawn")
-		return
-
-	# Convert to legacy EnemyType for existing system
-	var legacy_enemy_type: EnemyType = cfg.to_enemy_type()
-
-	# Use existing spawn system
-	_spawn_from_config_v2(legacy_enemy_type, cfg)
+# _spawn_pack_enemy removed - pack spawning system eliminated
 
 func _spawn_enemy() -> void:
 	_spawn_enemy_v2()
