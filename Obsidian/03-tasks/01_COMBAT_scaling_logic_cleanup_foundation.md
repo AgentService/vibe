@@ -1,39 +1,61 @@
-# Scaling Logic Cleanup - Foundation for Unified Difficulty System
+# Scaling Logic Cleanup + SpawnDirector Simplification - Foundation for Unified System
 
 **Created:** 2025-09-29
 **Status:** 🟡 Planning
 **Priority:** High
-**Estimated Effort:** 1-2 days
-**Category:** ⚔️ Combat System Cleanup
+**Estimated Effort:** 2-3 days
+**Category:** ⚔️ Combat System Cleanup + Architecture Simplification
 
 ## 📋 Task Description
 
-Remove all existing scattered scaling implementations to create a clean foundation for the unified DifficultyDirector system outlined in `COMBAT_map_level_difficulty_scaling_integration.md`. Currently, the codebase has 4 different scaling systems competing with each other, creating unpredictable behavior and making it impossible to implement the comprehensive scaling solution cleanly.
+Remove all existing scattered scaling implementations AND simplify SpawnDirector architecture to create a clean foundation for the unified DifficultyDirector system and multi-system spawn architecture outlined in `COMBAT_map_level_difficulty_scaling_integration.md`.
 
-**Current Problem:**
+**Current Problems:**
+
+**Scaling Issues:**
 - ❌ MapLevel has convenience scaling methods (8%-15% per level)
 - ❌ SpawnDirector combines MapLevel + wave scaling with complex multipliers
 - ❌ BossSpawnManager applies hardcoded stat multipliers (5x health, 2x damage)
 - ❌ Individual boss scripts have hardcoded stat assignments
 - ❌ Multiple scaling systems conflict and create unpredictable difficulty progression
 
+**Architecture Issues:**
+- ❌ SpawnDirector has unused activation methods (DISTANCE_BASED, VIEWPORT_BASED, HYBRID)
+- ❌ Complex fallback systems that are no longer needed with reliable spawn zones
+- ❌ Legacy POC code paths that complicate the main spawning logic
+- ❌ Single-system focus (enemies only) blocks multi-system architecture (powerups, events)
+
 **Target State:**
 - ✅ Clean MapLevel focused only on time progression tracking
-- ✅ SpawnDirector with core spawning logic (no scaling calculations)
+- ✅ Simplified SpawnDirector with AREA_TRIGGERS activation only + extensible design
+- ✅ Removed fallback complexity (reliable spawn zones make this unnecessary)
 - ✅ Boss systems ready for template-driven stat application
-- ✅ Clear foundation for DifficultyDirector implementation
+- ✅ Clear foundation for DifficultyDirector + multi-system spawn architecture
 
 ## 🎯 Acceptance Criteria
 
+**Scaling Cleanup:**
 - [ ] MapLevel.gd contains only level progression (time tracking, signals, current_level)
 - [ ] All convenience scaling methods removed from MapLevel (get_health_scaling, etc.)
 - [ ] SpawnDirector.gd multi-system scaling logic cleaned up (lines 777-792)
 - [ ] BossSpawnManager hardcoded stat multipliers removed
 - [ ] Individual boss scripts no longer assign hardcoded stats in _ready()
 - [ ] All existing scaling-related method calls updated/removed
+
+**Architecture Simplification:**
+- [ ] SpawnDirector only supports AREA_TRIGGERS activation (extensible design)
+- [ ] Unused activation methods removed (DISTANCE_BASED, VIEWPORT_BASED, HYBRID)
+- [ ] Fallback spawn systems removed (_get_fallback_spawn_position, etc.)
+- [ ] MapConfig.ActivationMethod enum cleaned up but extensible
+- [ ] Clear error handling replaces silent fallback degradation
+- [ ] UnderworldArena preserved for future boss map usage
+
+**Validation:**
 - [ ] Game runs without scaling-related errors
 - [ ] No regression in core spawning or boss functionality
-- [ ] Clean commit ready for DifficultyDirector implementation
+- [ ] PathAware_Forest spawning works reliably without fallbacks
+- [ ] Clean foundation ready for SpawnDirector refactoring (task 02)
+- [ ] Clean commit ready for DifficultyDirector implementation (task 03)
 
 ## 🔍 Technical Analysis
 
@@ -80,18 +102,29 @@ Remove all existing scattered scaling implementations to create a clean foundati
 - [ ] Ensure boss spawning and basic functionality still works
 - [ ] Document boss stat templates for future DifficultyDirector integration
 
-### Phase 5: Dependency Updates & Testing
+### Phase 5: SpawnDirector Architecture Simplification
+- [ ] Remove unused activation methods from MapConfig.ActivationMethod enum
+- [ ] Remove fallback spawn functions from SpawnDirector (_get_fallback_spawn_position, etc.)
+- [ ] Remove unused spawn method functions (_get_distance_based_spawn_position, etc.)
+- [ ] Simplify _get_data_driven_spawn_position to only support AREA_TRIGGERS
+- [ ] Replace fallback calls with proper error handling
+- [ ] Ensure UnderworldArena is preserved for future boss maps
+- [ ] Test PathAware_Forest spawning works reliably without fallbacks
+
+### Phase 6: Dependency Updates & Testing
 - [ ] Update all files that call removed MapLevel scaling methods
 - [ ] Remove any scaling-related imports that are no longer needed
-- [ ] Test enemy spawning works without scaling
+- [ ] Update any code calling removed activation methods
+- [ ] Test enemy spawning works without scaling or fallbacks
 - [ ] Test boss spawning and basic combat works
 - [ ] Verify no runtime errors from missing method calls
 
-### Phase 6: Documentation & Validation
-- [ ] Update relevant CLAUDE.md files to reflect removed scaling methods
-- [ ] Document the clean foundation state for DifficultyDirector implementation
-- [ ] Update CHANGELOG.md with cleanup summary
-- [ ] Prepare commit with conventional format: `feat(combat): remove scattered scaling logic for unified system foundation`
+### Phase 7: Documentation & Validation
+- [ ] Update relevant CLAUDE.md files to reflect scaling and architecture changes
+- [ ] Document the clean foundation state for DifficultyDirector + multi-system architecture
+- [ ] Update SpawnDirector refactoring task (02) with simplified line counts
+- [ ] Update CHANGELOG.md with comprehensive cleanup summary
+- [ ] Prepare commit: `feat(combat): remove scaling logic + simplify SpawnDirector for unified system foundation`
 
 ## 🔗 Related Files
 

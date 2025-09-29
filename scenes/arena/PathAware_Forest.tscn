@@ -1,6 +1,6 @@
 [gd_scene load_steps=16 format=4 uid="uid://cs8myq5vipmss"]
 
-[ext_resource type="Script" uid="uid://cyujd3420lcts" path="res://scripts/systems/PathAwareArenaGenerator.gd" id="1_2vw51"]
+[ext_resource type="Script" uid="uid://cyujd3420lcts" path="res://scripts/systems/arena_generation/PathAwareArenaGenerator.gd" id="1_2vw51"]
 [ext_resource type="Script" uid="uid://6ag6n3yvhf0p" path="res://scripts/resources/PathConfiguration.gd" id="2_xp5hq"]
 [ext_resource type="Script" uid="uid://dg60kmsp2ca2c" path="res://scenes/arena/PathAware_Forest.gd" id="3_pathgen_test"]
 [ext_resource type="Script" uid="uid://dphmif6hr76ry" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="3_ya1e2"]
