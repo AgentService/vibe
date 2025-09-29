@@ -310,13 +310,112 @@ func _get_alternative_spawn_position(arena_scene, original_pos: Vector2) -> Vect
 	var attempt = 0
 
 	while attempt < max_attempts:
-		var test_pos = _get_data_driven_spawn_position()
+		# CRITICAL FIX: Use bypass version to prevent infinite recursion
+		# _get_data_driven_spawn_position() calls _validate_spawn_position_for_breaches()
+		# which calls _get_alternative_spawn_position() again, causing stack overflow
+		var test_pos = _get_data_driven_spawn_position_bypass_validation()
 		if test_pos != Vector2.ZERO and not _is_position_inside_any_breach(test_pos):
 			return test_pos
 		attempt += 1
 
 	# No valid position found
 	return Vector2.ZERO
+
+func _get_data_driven_spawn_position_bypass_validation() -> Vector2:
+	"""Get spawn position using MapConfig activation_method WITHOUT breach validation.
+	Used by _get_alternative_spawn_position to prevent infinite recursion."""
+
+	# Get arena scene and map config
+	var arena_scene = _get_arena_scene()
+	if not arena_scene:
+		Logger.debug("No arena scene found, using fallback spawn", "arena")
+		return _get_fallback_spawn_position()
+
+	var map_config = null
+	if "map_config" in arena_scene:
+		map_config = arena_scene.map_config as MapConfig
+
+	if not map_config:
+		Logger.debug("No map_config available for bypass version", "arena")
+		return _get_fallback_spawn_position()
+
+	# Use data-driven activation method WITHOUT validation
+	var activation_method = map_config.activation_method
+	Logger.debug("Using activation method (bypass): %d for spawn position selection" % activation_method, "arena")
+
+	match activation_method:
+		MapConfig.ActivationMethod.AREA_TRIGGERS:
+			return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
+		MapConfig.ActivationMethod.DISTANCE:
+			return _get_distance_based_spawn_position_bypass_validation(map_config)
+		MapConfig.ActivationMethod.VIEWPORT:
+			return _get_viewport_based_spawn_position_bypass_validation(map_config)
+		MapConfig.ActivationMethod.HYBRID:
+			return _get_hybrid_spawn_position_bypass_validation(arena_scene, map_config)
+		_:
+			Logger.warn("Unknown activation method: %d, using fallback" % activation_method, "arena")
+			return _get_fallback_spawn_position()
+
+func _get_area_triggers_spawn_position_bypass_validation(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""AREA_TRIGGERS spawn position WITHOUT breach validation to prevent recursion."""
+
+	if not "_spawn_zone_areas" in arena_scene:
+		Logger.debug("AREA_TRIGGERS (bypass): No _spawn_zone_areas available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	var spawn_zones = arena_scene._spawn_zone_areas
+	if spawn_zones.is_empty():
+		Logger.debug("AREA_TRIGGERS (bypass): No spawn zones available, using fallback", "arena")
+		return _get_fallback_spawn_position()
+
+	# Get player position for proximity filtering
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else Vector2.ZERO
+	if player_pos == Vector2.ZERO:
+		# No player position, select random zone
+		var selected_zone = spawn_zones[RNG.randi("spawn") % spawn_zones.size()]
+		return _generate_position_in_area2d_zone(selected_zone)
+
+	# Apply proximity filtering
+	var auto_spawn_range = map_config.auto_spawn_range
+	var auto_spawn_min_distance = map_config.auto_spawn_min_distance if "auto_spawn_min_distance" in map_config else 0.0
+
+	var zones_in_range = []
+	for zone in spawn_zones:
+		var zone_pos = zone.global_position
+		var distance_to_player = player_pos.distance_to(zone_pos)
+		if distance_to_player >= auto_spawn_min_distance and distance_to_player <= auto_spawn_range:
+			zones_in_range.append(zone)
+
+	if zones_in_range.is_empty():
+		Logger.debug("AREA_TRIGGERS (bypass): No zones in proximity range, no spawning", "arena")
+		return Vector2.ZERO
+
+	# Select random zone from those in range
+	var selected_zone = zones_in_range[RNG.randi("spawn") % zones_in_range.size()]
+	var spawn_position = _generate_position_in_area2d_zone(selected_zone)
+
+	# NO BREACH VALIDATION - This is the key difference to prevent recursion
+	Logger.debug("AREA_TRIGGERS (bypass): Using spawn zone at %s (no validation)" % spawn_position, "arena")
+	return spawn_position
+
+func _get_distance_based_spawn_position_bypass_validation(map_config: MapConfig) -> Vector2:
+	"""DISTANCE spawn position WITHOUT breach validation to prevent recursion."""
+	var player_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
+	var angle := RNG.randf_range("spawn", 0.0, TAU)
+	var spawn_radius = map_config.spawn_radius if map_config else 400.0
+	var spawn_pos = player_pos + Vector2.from_angle(angle) * spawn_radius
+	# NO BREACH VALIDATION
+	return spawn_pos
+
+func _get_viewport_based_spawn_position_bypass_validation(map_config: MapConfig) -> Vector2:
+	"""VIEWPORT spawn position WITHOUT breach validation to prevent recursion."""
+	# Simple implementation - just use distance-based as fallback for now
+	return _get_distance_based_spawn_position_bypass_validation(map_config)
+
+func _get_hybrid_spawn_position_bypass_validation(arena_scene: Node, map_config: MapConfig) -> Vector2:
+	"""HYBRID spawn position WITHOUT breach validation to prevent recursion."""
+	# Simple implementation - use area triggers as primary method
+	return _get_area_triggers_spawn_position_bypass_validation(arena_scene, map_config)
 
 # PHASE 4 OPTIMIZATION: Get pre-generated entity ID (eliminates string concatenation)
 func get_enemy_entity_id(enemy_index: int) -> String:
