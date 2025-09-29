@@ -19,8 +19,7 @@ max_concurrent_enemies = 400
 auto_spawn_range = 1000.0
 auto_spawn_min_distance = 300.0
 # pack spawn configuration removed - pack spawning system eliminated
-use_viewport_culling = false
-viewport_margin = 200.0
+# use_viewport_culling and viewport_margin removed - unused in codebase
 activation_method = 2
 # base_spawn_scaling removed - scaling moved to unified DifficultyDirector
 # arena_scaling_overrides removed - scaling moved to unified DifficultyDirector

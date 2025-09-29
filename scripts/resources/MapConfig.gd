@@ -30,8 +30,7 @@ extends Resource
 @export var auto_spawn_range: float = 800.0 ## Auto spawn proximity range (max distance)
 @export var auto_spawn_min_distance: float = 300.0 ## Auto spawn minimum distance (prevent spawning too close)
 # pack_spawn_range and pack_spawn_min_distance removed - pack spawning system eliminated
-@export var use_viewport_culling: bool = false ## Additional viewport-based culling for performance
-@export var viewport_margin: float = 200.0 ## Extra margin around viewport for spawn culling
+# use_viewport_culling and viewport_margin removed - unused in codebase
 @export var activation_method: ActivationMethod = ActivationMethod.AREA_TRIGGERS ## Proximity detection method
 
 enum ActivationMethod {

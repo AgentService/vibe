@@ -68,7 +68,29 @@
 - Should distant rewards become harder to reach as difficulty climbs?
 - How does staying longer affect the NEXT stage difficulty?
 
-**A:** [To be explored]
+**A:** EXPLORING MECHANICS:
+
+**Chest System:**
+- Random chests spawn during procedural generation
+- Gold cost to open (earned from killing enemies)
+- Random boosts to specific stats/abilities
+- Shrines with different effects
+
+**PROBLEM IDENTIFIED:** Arena may be too small for "distance = risk" mechanic
+
+**ROR2 Enemy Spawning Answer:**
+- **Hybrid system:** Initial wave + continuous escalating spawns
+- **Spawn rate increases** with difficulty over time
+- **Enemy types escalate** (stronger variants appear)
+- **Director system** manages spawn pressure and budgets
+
+**Small Arena Solutions:**
+1. **Interaction Time Risk:** Chests take 3-5 seconds to open = vulnerability window
+2. **Spawn Pressure:** Enemy spawn rate increases while looting
+3. **Elite Guards:** Valuable chests spawn elite enemies nearby
+4. **Resource Scarcity:** Limited gold forces harder choices about which chests to buy
+
+**Question:** Should we use your existing SpawnDirector + MapLevel system for this escalation?
 
 ---
 
