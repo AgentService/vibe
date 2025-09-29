@@ -280,7 +280,6 @@ func _create_default_config() -> void:
 	map_config.player_spawn_position = Vector2.ZERO
 
 	# Spawning configuration
-	map_config.max_concurrent_enemies = 60  # Higher for open forest areas
 	map_config.auto_spawn_range = 900.0
 	map_config.auto_spawn_min_distance = 350.0
 

@@ -85,12 +85,22 @@
 - **Director system** manages spawn pressure and budgets
 
 **Small Arena Solutions:**
-1. **Interaction Time Risk:** Chests take 3-5 seconds to open = vulnerability window
+1. ~~**Interaction Time Risk:** Chests take 3-5 seconds to open = vulnerability window~~ ❌ **REJECTED - Game pauses during reward selection**
 2. **Spawn Pressure:** Enemy spawn rate increases while looting
 3. **Elite Guards:** Valuable chests spawn elite enemies nearby
 4. **Resource Scarcity:** Limited gold forces harder choices about which chests to buy
 
-**Question:** Should we use your existing SpawnDirector + MapLevel system for this escalation?
+**CONSTRAINT IDENTIFIED:** Game pauses when selecting rewards - eliminates interaction vulnerability
+
+**CORE GAMEPLAY LOOP CLARIFIED:**
+- Kill enemies to gather gold
+- Use gold to open chests for upgrades
+- Visit shrines for power boosts
+- Trigger events to spawn more enemies (more gold/rewards)
+- Scale efficiently to stay ahead of difficulty curve
+- Choose optimal time to activate portal
+
+**KEY QUESTION:** In ROR2's Option A system, why ISN'T it always best to wait until the last possible second to activate the portal?
 
 ---
 

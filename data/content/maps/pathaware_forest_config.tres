@@ -13,15 +13,9 @@ ambient_light_energy = 0.8
 arena_bounds_radius = 800.0
 spawn_radius = 600.0
 player_spawn_position = Vector2(0, 0)
-spawn_zones = Array[Dictionary]([])
-boss_spawn_positions = Array[Vector2]([Vector2(0, -400), Vector2(400, 300), Vector2(-400, 300)])
-max_concurrent_enemies = 300
 auto_spawn_range = 1000.0
 auto_spawn_min_distance = 200.0
-# use_viewport_culling and viewport_margin removed - unused in codebase
 activation_method = 2
-# base_spawn_scaling removed - scaling moved to unified DifficultyDirector
-# arena_scaling_overrides removed - scaling moved to unified DifficultyDirector
 has_environmental_hazards = false
 weather_effects = Array[StringName]([&"forest_breeze", &"leaf_particles"])
 special_mechanics = Array[StringName]([&"path_generation", &"tree_randomization"])
