@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "cheese"
+display_name = "Cheese"
+description = "Increases max health"
+flavor_text = "A wedge of aged cheese. Good for the bones."
+category = "items"
+icon_path = ""
+unlock_cost = 50
+rarity = "Common"
+stat_summary = "+10% Max HP"

@@ -1,17 +1,20 @@
 extends Control
 
-## MainMenu - Simple Character/Map/Tier Selection
-## Three screens: Main Menu → Character Select → Map/Tier Select → Arena
+## MainMenu - Character/Map/Tier Selection + Unlocks Shop
+## Four screens: Main Menu → Character Select → Map/Tier Select → Arena
+##              Main Menu → Unlocks Shop → Main Menu
 
 # Screen containers
 @onready var main_menu_container: Control = $BackgroundPanel/MainMenuContainer
 @onready var character_select_container: Control = $BackgroundPanel/CharacterSelectContainer
 @onready var map_select_container: Control = $BackgroundPanel/MapSelectContainer
+@onready var unlocks_shop_container: Control = $BackgroundPanel/UnlocksShopContainer
 
 # Main Menu elements
 @onready var title_label: Label = $BackgroundPanel/MainMenuContainer/VBoxContainer/TitleLabel
 @onready var rift_fragments_value: Label = $BackgroundPanel/MainMenuContainer/VBoxContainer/RiftFragmentsContainer/RiftFragmentsValue
 @onready var play_button: Button = $BackgroundPanel/MainMenuContainer/VBoxContainer/PlayButton
+@onready var shop_button: Button = $BackgroundPanel/MainMenuContainer/VBoxContainer/ShopButton
 @onready var quit_button: Button = $BackgroundPanel/MainMenuContainer/VBoxContainer/QuitButton
 
 # Character Select elements
@@ -34,26 +37,42 @@ extends Control
 # Leaderboard elements
 @onready var leaderboard_list: VBoxContainer = $BackgroundPanel/LeaderboardPanel/VBoxContainer/LeaderboardList
 
+# Unlocks Shop elements
+@onready var shop_rift_fragments_value: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay/RiftFragmentsValue
+@onready var items_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/ItemsTab
+@onready var tomes_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/TomesTab
+@onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
+@onready var shop_item_list: VBoxContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll/ItemList
+@onready var shop_back_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ShopBackButton
+
 # Selection state
 var selected_character: String = ""
 var selected_tier: int = 1
+var selected_shop_category: String = "items"
 
 # Character data
 var character_types: Dictionary = {}
+
+# Item metadata cache (loaded from /data/content/items/*.tres)
+var item_metadata_cache: Dictionary = {}  # {item_id: ItemMetadata}
 
 func _ready() -> void:
 	Logger.info("MainMenu initialized", "ui")
 
 	_load_character_types()
+	_load_item_metadata()
 	_show_main_menu()
 	_connect_signals()
 	_update_rift_fragments_display()
-	_update_leaderboard_display()
+
+	# Defer leaderboard display to ensure LocalLeaderboard has loaded
+	call_deferred("_update_leaderboard_display")
 
 	# Connect to EventBus for Rift Fragments updates
 	if EventBus:
 		EventBus.rift_fragments_changed.connect(_on_rift_fragments_changed)
 		EventBus.leaderboard_updated.connect(_on_leaderboard_updated)
+		EventBus.item_unlocked.connect(_on_item_unlocked)
 
 func _load_character_types() -> void:
 	"""Load character types from data file."""
@@ -64,10 +83,22 @@ func _load_character_types() -> void:
 	else:
 		Logger.error("Failed to load character-types.tres", "ui")
 
+func _load_item_metadata() -> void:
+	"""Load item metadata from /data/content/items/*.tres"""
+	var item_files = ["cheese.tres", "clover.tres", "feather.tres"]
+	for file_name in item_files:
+		var path = "res://data/content/items/" + file_name
+		var item_metadata = load(path) as ItemMetadata
+		if item_metadata:
+			item_metadata_cache[item_metadata.item_id] = item_metadata
+			Logger.debug("Loaded item metadata: %s" % item_metadata.item_id, "ui")
+	Logger.info("Loaded %d item metadata entries" % item_metadata_cache.size(), "ui")
+
 func _connect_signals() -> void:
 	"""Connect all button signals."""
 	# Main Menu
 	play_button.pressed.connect(_on_play_pressed)
+	shop_button.pressed.connect(_on_shop_pressed)
 	quit_button.pressed.connect(_on_quit_pressed)
 
 	# Character Select
@@ -83,6 +114,12 @@ func _connect_signals() -> void:
 	map_start_button.pressed.connect(_on_start_run_pressed)
 	map_back_button.pressed.connect(_show_character_select)
 
+	# Unlocks Shop
+	items_tab.pressed.connect(func(): _on_shop_category_selected("items"))
+	tomes_tab.pressed.connect(func(): _on_shop_category_selected("tomes"))
+	skills_tab.pressed.connect(func(): _on_shop_category_selected("skills"))
+	shop_back_button.pressed.connect(_show_main_menu)
+
 # ============================================================================
 # SCREEN NAVIGATION
 # ============================================================================
@@ -92,7 +129,9 @@ func _show_main_menu() -> void:
 	main_menu_container.visible = true
 	character_select_container.visible = false
 	map_select_container.visible = false
+	unlocks_shop_container.visible = false
 	play_button.grab_focus()
+	_update_rift_fragments_display()
 	Logger.debug("Showing main menu", "ui")
 
 func _show_character_select() -> void:
@@ -100,6 +139,7 @@ func _show_character_select() -> void:
 	main_menu_container.visible = false
 	character_select_container.visible = true
 	map_select_container.visible = false
+	unlocks_shop_container.visible = false
 
 	# Reset selection
 	selected_character = ""
@@ -112,12 +152,26 @@ func _show_map_select() -> void:
 	main_menu_container.visible = false
 	character_select_container.visible = false
 	map_select_container.visible = true
+	unlocks_shop_container.visible = false
 
 	# Default to Tier 1
 	selected_tier = 1
 	_update_tier_ui()
 	tier1_button.grab_focus()
 	Logger.debug("Showing map select", "ui")
+
+func _show_unlocks_shop() -> void:
+	"""Show unlocks shop screen."""
+	main_menu_container.visible = false
+	character_select_container.visible = false
+	map_select_container.visible = false
+	unlocks_shop_container.visible = true
+
+	# Update shop display
+	selected_shop_category = "items"
+	_update_shop_ui()
+	items_tab.grab_focus()
+	Logger.debug("Showing unlocks shop", "ui")
 
 # ============================================================================
 # MAIN MENU HANDLERS
@@ -127,6 +181,11 @@ func _on_play_pressed() -> void:
 	"""Handle Play button - go to character select."""
 	Logger.info("Play pressed", "ui")
 	_show_character_select()
+
+func _on_shop_pressed() -> void:
+	"""Handle Shop button - go to unlocks shop."""
+	Logger.info("Shop pressed", "ui")
+	_show_unlocks_shop()
 
 func _on_quit_pressed() -> void:
 	"""Handle Quit button."""
@@ -259,6 +318,10 @@ func _update_leaderboard_display() -> void:
 		Logger.warn("LocalLeaderboard not available", "ui")
 		return
 
+	# Debug: Check what maps exist
+	var maps = LocalLeaderboard.get_maps_with_entries()
+	Logger.debug("Maps with entries: %s" % str(maps), "ui")
+
 	# For each character type, find their personal best across all maps/tiers
 	for char_id in character_types.keys():
 		var best_kills = _get_character_best_kills(char_id)
@@ -268,9 +331,11 @@ func _update_leaderboard_display() -> void:
 		if best_kills > 0:
 			var char_name = character_types[char_id].display_name if character_types.has(char_id) else char_id.capitalize()
 			label.text = "%s: %d kills" % [char_name, best_kills]
+			Logger.debug("Character %s: %d kills" % [char_id, best_kills], "ui")
 		else:
 			var char_name = character_types[char_id].display_name if character_types.has(char_id) else char_id.capitalize()
 			label.text = "%s: No runs yet" % char_name
+			Logger.debug("Character %s: No runs found" % char_id, "ui")
 
 		leaderboard_list.add_child(label)
 
@@ -301,3 +366,125 @@ func _get_character_best_kills(char_id: String) -> int:
 func _on_leaderboard_updated(_map_id: String, _tier: int, _rank: int) -> void:
 	"""Handle leaderboard updates to refresh display."""
 	_update_leaderboard_display()
+
+# ============================================================================
+# UNLOCKS SHOP HANDLERS
+# ============================================================================
+
+func _on_shop_category_selected(category: String) -> void:
+	"""Handle category tab selection."""
+	selected_shop_category = category
+
+	# Update tab button states
+	items_tab.button_pressed = (category == "items")
+	tomes_tab.button_pressed = (category == "tomes")
+	skills_tab.button_pressed = (category == "skills")
+
+	_update_shop_ui()
+	Logger.debug("Shop category selected: %s" % category, "ui")
+
+func _update_shop_ui() -> void:
+	"""Update shop display with discovered items."""
+	# Clear existing items
+	for child in shop_item_list.get_children():
+		child.queue_free()
+
+	# Update Rift Fragments display
+	if MetaProgression:
+		var balance = MetaProgression.get_rift_fragments()
+		shop_rift_fragments_value.text = str(balance)
+
+	# Get discovered items for this category
+	if not MetaProgression:
+		Logger.warn("MetaProgression not available", "ui")
+		return
+
+	var discovered_items = MetaProgression.get_discovered_items(selected_shop_category)
+
+	# Show message if no items discovered yet
+	if discovered_items.is_empty():
+		var empty_label = Label.new()
+		empty_label.text = "No %s discovered yet. Find them in runs!" % selected_shop_category
+		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		shop_item_list.add_child(empty_label)
+		return
+
+	# Create item entry for each discovered item
+	for item_id in discovered_items:
+		var item_metadata = item_metadata_cache.get(item_id)
+		if not item_metadata:
+			Logger.warn("Item metadata not found for: %s" % item_id, "ui")
+			continue
+
+		_create_shop_item_entry(item_metadata)
+
+func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
+	"""Create a shop item entry UI."""
+	var entry_container = PanelContainer.new()
+	entry_container.custom_minimum_size = Vector2(550, 80)
+
+	var hbox = HBoxContainer.new()
+	hbox.add_theme_constant_override("separation", 15)
+	entry_container.add_child(hbox)
+
+	# Item info
+	var info_vbox = VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
+	var name_label = Label.new()
+	name_label.text = item_metadata.display_name + " (" + item_metadata.rarity + ")"
+	info_vbox.add_child(name_label)
+
+	var desc_label = Label.new()
+	desc_label.text = item_metadata.description
+	desc_label.modulate = Color(0.8, 0.8, 0.8)
+	info_vbox.add_child(desc_label)
+
+	var stat_label = Label.new()
+	stat_label.text = item_metadata.stat_summary
+	stat_label.modulate = Color(0.6, 1.0, 0.6)
+	info_vbox.add_child(stat_label)
+
+	hbox.add_child(info_vbox)
+
+	# Unlock button
+	var unlock_button = Button.new()
+	unlock_button.text = "UNLOCK\n%d 💎" % item_metadata.unlock_cost
+	unlock_button.custom_minimum_size = Vector2(100, 0)
+	unlock_button.pressed.connect(_on_unlock_item_pressed.bind(item_metadata))
+
+	# Disable if can't afford
+	if MetaProgression and not MetaProgression.can_afford(item_metadata.unlock_cost):
+		unlock_button.disabled = true
+
+	hbox.add_child(unlock_button)
+
+	shop_item_list.add_child(entry_container)
+
+func _on_unlock_item_pressed(item_metadata: ItemMetadata) -> void:
+	"""Handle unlock button press."""
+	if not MetaProgression:
+		return
+
+	# Check affordability
+	if not MetaProgression.can_afford(item_metadata.unlock_cost):
+		Logger.warn("Cannot afford item: %s" % item_metadata.display_name, "ui")
+		return
+
+	# Spend Rift Fragments
+	if MetaProgression.spend_rift_fragments(item_metadata.unlock_cost):
+		# Unlock the item
+		MetaProgression.unlock_item(selected_shop_category, item_metadata.item_id)
+
+		Logger.info("Unlocked item: %s for %d Rift Fragments" % [
+			item_metadata.display_name, item_metadata.unlock_cost
+		], "ui")
+
+		# Refresh shop display
+		_update_shop_ui()
+
+func _on_item_unlocked(_category: String, _item_id: String) -> void:
+	"""Handle item unlock event."""
+	# Refresh shop if visible
+	if unlocks_shop_container.visible:
+		_update_shop_ui()

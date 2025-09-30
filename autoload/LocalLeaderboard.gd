@@ -1,5 +1,7 @@
 extends Node
 
+const LeaderboardDataResource = preload("res://scripts/resources/LeaderboardDataResource.gd")
+
 ## LocalLeaderboard - Personal best scores per map+tier combination (Task 04 Phase 3)
 ##
 ## Stores the top N runs for each map+tier combination locally.
@@ -163,11 +165,40 @@ func _load_leaderboard() -> void:
 		return
 
 	var loaded_data = ResourceLoader.load(SAVE_PATH)
-	if loaded_data and loaded_data is Resource and loaded_data.has_method("get_data"):
+
+	if not loaded_data:
+		Logger.warn("ResourceLoader.load() returned null", "progression")
+		return
+
+	if not loaded_data is Resource:
+		Logger.warn("Loaded data is not a Resource (type: %s)" % typeof(loaded_data), "progression")
+		return
+
+	# Try to access the 'data' property from the loaded resource
+	# The .tres file stores data as: data = { "forest_arena": { ... } }
+
+	if loaded_data.has_method("get_data"):
+		# Proper LeaderboardDataResource class with get_data() method
 		_leaderboard_data = loaded_data.get_data()
-		Logger.info("Loaded local leaderboard data", "progression")
+		Logger.debug("Retrieved data via get_data() method", "progression")
+	elif loaded_data is LeaderboardDataResource:
+		# Direct access to LeaderboardDataResource.data property
+		_leaderboard_data = loaded_data.data
+		Logger.debug("Retrieved data via LeaderboardDataResource.data", "progression")
 	else:
-		Logger.warn("Failed to load leaderboard data, starting fresh", "progression")
+		# Old/incompatible save file format - start fresh
+		Logger.warn("Incompatible leaderboard save file format detected, starting fresh", "progression")
+		_leaderboard_data = {}
+		# Force save with new format
+		_save_leaderboard()
+		return
+
+	if _leaderboard_data == null or not _leaderboard_data is Dictionary:
+		Logger.warn("Loaded data is not a valid Dictionary", "progression")
+		_leaderboard_data = {}
+		return
+
+	Logger.info("Loaded local leaderboard with %d entries across %d maps" % [get_total_entries(), _leaderboard_data.size()], "progression")
 
 ## Save leaderboard data to disk
 func _save_leaderboard() -> void:
@@ -196,14 +227,3 @@ func get_stats() -> Dictionary:
 		"total_entries": get_total_entries(),
 		"maps": get_maps_with_entries()
 	}
-
-
-## Resource class for saving leaderboard data
-class LeaderboardDataResource extends Resource:
-	@export var data: Dictionary = {}
-
-	func set_data(new_data: Dictionary) -> void:
-		data = new_data
-
-	func get_data() -> Dictionary:
-		return data

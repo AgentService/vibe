@@ -25,16 +25,16 @@ rounded_corners = false
 
 [node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel"]
 layout_mode = 1
-anchors_preset = 6
-anchor_left = 1.0
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 1.0
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -320.0
-offset_top = -300.0
-offset_right = -20.0
-offset_bottom = 300.0
-grow_horizontal = 0
+offset_left = -276.0
+offset_top = -480.0
+offset_right = -123.0
+offset_bottom = -427.0
+grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
@@ -91,6 +91,11 @@ layout_mode = 2
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "PLAY"
+
+[node name="ShopButton" type="Button" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "Unlocks Shop"
 
 [node name="QuitButton" type="Button" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
@@ -203,6 +208,74 @@ layout_mode = 2
 text = "START RUN"
 
 [node name="MapBackButton" type="Button" parent="BackgroundPanel/MapSelectContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "BACK"
+
+[node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="ShopTitle" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
+layout_mode = 2
+text = "UNLOCKS SHOP"
+horizontal_alignment = 1
+
+[node name="RiftFragmentsDisplay" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="RiftFragmentsLabel" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay"]
+layout_mode = 2
+text = "💎 Rift Fragments:"
+
+[node name="RiftFragmentsValue" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay"]
+layout_mode = 2
+text = "0"
+
+[node name="CategoryTabs" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
+layout_mode = 2
+alignment = 1
+
+[node name="ItemsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+toggle_mode = true
+button_pressed = true
+text = "ITEMS"
+
+[node name="TomesTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+toggle_mode = true
+text = "TOMES"
+
+[node name="SkillsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs"]
+custom_minimum_size = Vector2(120, 40)
+layout_mode = 2
+toggle_mode = true
+text = "SKILLS"
+
+[node name="ItemListScroll" type="ScrollContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
+custom_minimum_size = Vector2(600, 400)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemList" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="ShopBackButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "BACK"

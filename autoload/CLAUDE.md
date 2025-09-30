@@ -182,7 +182,7 @@ var stats = SessionState.get_final_stats()
 **MetaProgression - Persistent Currency:**
 ```gdscript
 # Award Rift Fragments (persistent across runs)
-MetaProgression.add_rift_fragments(amount)  # Emits rift_fragments_changed signal
+MetaProgression.earn_rift_fragments(amount)  # Emits rift_fragments_changed signal
 
 # Check balance
 var balance = MetaProgression.get_rift_fragments()

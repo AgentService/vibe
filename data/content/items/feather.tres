@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "feather"
+display_name = "Feather"
+description = "Lightens your step"
+flavor_text = "A soft feather that makes you feel lighter"
+category = "items"
+icon_path = ""
+unlock_cost = 60
+rarity = "Common"
+stat_summary = "+15% Movement Speed"

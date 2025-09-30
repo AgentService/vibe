@@ -38,6 +38,23 @@
   - **Documentation Updates**: Updated autoload/CLAUDE.md with SessionState, MetaProgression, LocalLeaderboard patterns
   - **Architecture Notes**: Added progression autoload section documenting MEGABONK/ROR2-style architecture
 
+- **Phase 9: Item Discovery & Unlock System**: ✅ **SHOP COMPLETE** - In-game discovery pending
+  - **ItemMetadata Resource**: Created ItemMetadata.gd with unlock cost, rarity, stat summary fields
+  - **MEGABONK Items**: Created 3 passive items (Cheese: +10% Max HP, Clover: +10% Luck, Feather: +15% Move Speed)
+  - **UnlocksShop Integration**: Added 4th screen to MainMenu.tscn with category tabs (Items/Tomes/Skills)
+  - **Shop UI Architecture**: Dynamic item list population from MetaProgression.get_discovered_items()
+  - **Purchase Flow**: Check affordability → spend_rift_fragments() → unlock_item() → refresh UI
+  - **Shop Button**: Added "SHOP" button to main menu for accessing unlock screen
+  - **Category Switching**: Toggle buttons for Items/Tomes/Skills with reactive UI updates
+  - **Empty State**: "No items discovered yet. Find them in runs!" message for empty categories
+  - **Debug Commands**: Added console commands for testing (discover_item, give_fragments, progression_info)
+  - **LeaderboardDataResource**: Moved from inner class to external file for proper Godot serialization
+  - **Persistence Fix**: Uses `get_data()` method for clean Resource save/load cycle
+  - **MainMenu Fix**: Deferred leaderboard display to ensure data loads before UI refresh
+  - **Cleanup**: Removed debug print statements, code ready for production
+  - **Testing**: ✅ Shop functional, leaderboard persists across restarts, debug commands work
+  - **TODO**: In-game discovery notifications, end-of-run summary, drop table integration
+
 ### Systems Architecture Fixes
 - **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
   - **Runtime Error Resolution**: Fixed "Invalid access to property or key 'enemy_type' on SpawnConfig" during event enemy spawning

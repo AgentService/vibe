@@ -656,41 +656,49 @@ Return to Main Menu (session wiped)
 
 ---
 
-### Phase 9: Item Discovery & Unlock System (3-4 sessions)
+### Phase 9: Item Discovery & Unlock System ⏳ IN PROGRESS (3-4 sessions)
 **Goal:** MEGABONK-style item discovery and purchase flow
 **Test:** Items discovered in run can be purchased in shop
 
+**✅ Completed:**
+- [x] Add item metadata resource:
+  - [x] Create `ItemMetadata.gd` Resource class (scripts/resources/)
+  - [x] Define: item_id, display_name, description, unlock_cost, rarity, stat_summary
+  - [x] Create `/data/content/items/*.tres` files (cheese, clover, feather)
+- [x] Create Unlocks Shop UI integrated into MainMenu:
+  - [x] Added 4th screen to MainMenu.tscn (UnlocksShopContainer)
+  - [x] Add VBoxContainer for layout with title
+  - [x] Add HBoxContainer for category tabs: [Items] [Tomes] [Skills]
+  - [x] Add ScrollContainer with VBoxContainer for discovered items list
+  - [x] Add item entry template (name, description, stats, cost, [UNLOCK] button)
+  - [x] Attach script to populate discovered_items from MetaProgression
+- [x] Implement unlock purchase:
+  - [x] Check MetaProgression.can_afford(cost)
+  - [x] On purchase: MetaProgression.spend_rift_fragments() + unlock_item()
+  - [x] Move from discovered_items to unlocked_items
+  - [x] Deduct Rift Fragments
+  - [x] Shop refreshes immediately after purchase
+- [x] Add debug commands for testing:
+  - [x] `discover_item <category> <item_id>` - Simulate finding item
+  - [x] `give_fragments <amount>` - Award Rift Fragments
+  - [x] `progression_info` - Show current state
+- [x] Create testing guide: Obsidian/systems/Item-Discovery-Testing-Guide.md
+
+**⏳ Next Tasks:**
 - [ ] Create item discovery flow:
   - [ ] When item drops in run, check if already unlocked
   - [ ] If new: MetaProgression.discover_item(item_id)
   - [ ] Show "New Item Discovered!" notification in-game
-  - [ ] Item appears in end-of-run summary
-- [ ] Create Unlocks Shop scene using MCP Godot tools (`scenes/ui/UnlocksShop.tscn`):
-  - [ ] `create_scene("res://scenes/ui/UnlocksShop.tscn", "Control", "UnlocksShop")`
-  - [ ] Add VBoxContainer for layout
-  - [ ] Add HBoxContainer for filter tabs: [Items] [Tomes] [Weapons]
-  - [ ] Add ScrollContainer with GridContainer for discovered items list
-  - [ ] Add item entry template (icon, name, description, cost, [UNLOCK] button)
-  - [ ] Attach script to populate discovered_items (not yet purchased)
-- [ ] Implement unlock purchase:
-  - [ ] Check MetaProgression.can_afford(cost)
-  - [ ] On purchase: MetaProgression.unlock_item(item_id)
-  - [ ] Move from discovered_items to unlocked_items
-  - [ ] Deduct silver
-  - [ ] Show "Item Unlocked!" notification
+  - [ ] Item appears in end-of-run summary (ResultsScreen)
 - [ ] Update item spawning in runs:
   - [ ] Only spawn items from MetaProgression.unlocked_items pool
   - [ ] Unlocked items appear in RNG drop tables
-- [ ] Create Toggler system:
-  - [ ] Add "Toggler" unlock in shop (150 Silver, requires 40 unlocks)
+- [ ] Create Toggler system (requires 40 unlocks):
+  - [ ] Add "Toggler" unlock in shop (cost TBD)
   - [ ] When toggler_enabled = true, show [DISABLE] buttons in shop
-  - [ ] Disabled items added to toggler_disabled_items
+  - [ ] Disabled items added to toggler_disabled_{category}
   - [ ] Disabled items excluded from drop tables
-  - [ ] Categories: Items, Tomes, Weapons (separate toggle lists)
-- [ ] Add item metadata resource:
-  - [ ] Create `/data/content/items/*.tres` files
-  - [ ] Define: id, name, description, cost, category, rarity
-  - [ ] Load in MetaProgression for shop display
+  - [ ] Categories: Items, Tomes, Skills (separate toggle lists)
 
 **Deliverable:** Full item discovery → purchase → unlock flow working
 
