@@ -189,6 +189,10 @@ func _update_ai(_dt: float) -> void:
 			# Apply personal space forces - these work with collision layers
 			velocity += spacing_force
 
+			# Safety: Check if still valid before physics update
+			if not is_inside_tree() or is_queued_for_deletion():
+				return
+
 			move_and_slide()
 			
 			# Update directional animation automatically
