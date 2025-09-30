@@ -28,7 +28,6 @@ RNG="*res://autoload/RNG.gd"
 MapLevel="*res://autoload/MapLevel.gd"
 BalanceDB="*res://autoload/BalanceDB.gd"
 PlayerProgression="*res://autoload/PlayerProgression.gd"
-CharacterManager="*res://autoload/CharacterManager.gd"
 PlayerState="*res://autoload/PlayerState.gd"
 CheatSystem="*res://autoload/CheatSystem.gd"
 EntityClearingService="*res://autoload/EntityClearingService.gd"
@@ -55,15 +54,7 @@ window/size/initial_position=Vector2i(455, 555)
 window/size/initial_screen=2
 window/size/always_on_top=true
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"  # Maintain aspect ratio
-window/vsync/vsync_mode=1
-[rendering]
-# Anti-aliasing OFF for pixel art
-anti_aliasing/quality/msaa_2d=0
-anti_aliasing/quality/msaa_3d=0
-rendering/2d/snap/snap_2d_transforms_to_pixel=true
-rendering/2d/snap/snap_2d_vertices_to_pixel=true
-
+#Maintainaspectratiowindow/vsync/vsync_mode=1
 
 [editor_plugins]
 
@@ -157,5 +148,8 @@ enabled=PackedStringArray("gdai-mcp-plugin-godot", "limbo_console")
 textures/canvas_textures/default_texture_filter=0
 driver/threads/thread_model="safe"
 anti_aliasing/quality/msaa_2d=3
+#Anti-aliasingOFFforpixelartanti_aliasing/quality/msaa_2d=0
+rendering/2d/snap/snap_2d_transforms_to_pixel=true
+rendering/2d/snap/snap_2d_vertices_to_pixel=true
 2d/snap_2d_transforms_to_pixel=true
 2d/snap_2d_vertices_to_pixel=true

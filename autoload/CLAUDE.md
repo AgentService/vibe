@@ -14,8 +14,7 @@
 | **RNG.gd** | Deterministic random streams | `stream(name)` for seeded RNG | None (pure) |
 | **Logger.gd** | Centralized logging with categories | `info()`, `warn()`, `debug()` | BalanceDB for config |
 | **BalanceDB.gd** | Hot-reloadable balance data | `balance_reloaded` signal | None (foundation) |
-| **PlayerProgression.gd** | Character XP & leveling | `leveled_up`, `xp_gained` | CharacterManager |
-| **CharacterManager.gd** | Character CRUD & persistence | Character selection flow | PlayerProgression |
+| **PlayerProgression.gd** | In-run XP & leveling (simplified) | `leveled_up`, `xp_gained` | None (session-only) |
 | **MapLevel.gd** | Time-based progression tracking | `level_increased`, `level_changed` | StateManager for run lifecycle |
 
 ## Autoload Architecture Patterns
@@ -34,9 +33,8 @@
 6. StateManager     ← Scene management
 
 # Game Systems
-7. PlayerProgression ← Character progression
-8. CharacterManager  ← Character persistence
-9. GameOrchestrator  ← System initialization (last)
+7. PlayerProgression ← In-run XP (simplified, no persistence)
+8. GameOrchestrator  ← System initialization (last)
 ```
 
 ### 🔄 **EventBus Signal Architecture**

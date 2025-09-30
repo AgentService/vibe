@@ -52,9 +52,8 @@ func _setup_initial_state() -> void:
 	
 	# Check if we should skip main menu for development
 	if debug_config.skip_main_menu or (debug_config.start_mode != "menu"):
-		# Load character profile for debug mode
-		_load_debug_character()
-		
+		# TODO: New progression - Character loading removed (will use MetaProgression)
+
 		match debug_config.start_mode:
 			"menu":
 				if debug_config.skip_main_menu:
@@ -72,58 +71,8 @@ func _setup_initial_state() -> void:
 	
 	Logger.info("Initial state setup complete via StateManager", "main")
 
-func _load_debug_character() -> void:
-	"""Load character profile for debug mode when skipping menu."""
-	if not CharacterManager:
-		Logger.error("CharacterManager not available for debug character loading", "main")
-		return
-	
-	var debug_character_id = debug_config.get_debug_character_id()
-	
-	if debug_character_id.is_empty():
-		# Auto-load the most recently played character instead of creating new one
-		Logger.info("Loading most recently played character for debug mode", "main")
-		var characters = CharacterManager.list_characters()
-		
-		if characters.size() > 0:
-			# Characters are already sorted by last_played (most recent first) in CharacterManager
-			var most_recent_character = characters[0]
-			CharacterManager.load_character(most_recent_character.id)
-			PlayerProgression.load_from_profile(most_recent_character.get_progression_data())
-			Logger.info("Loaded most recent character for debug: %s (Level %d)" % [most_recent_character.name, most_recent_character.level], "main")
-		else:
-			# No characters exist - create a fallback
-			Logger.info("No existing characters found, creating fallback debug character", "main")
-			var profile = CharacterManager.create_character("Debug Knight", StringName("Knight"))
-			if profile:
-				CharacterManager.load_character(profile.id)
-				PlayerProgression.load_from_profile(profile.get_progression_data())
-				Logger.info("Created and loaded fallback debug character: %s" % profile.name, "main")
-			else:
-				Logger.error("Failed to create fallback debug character", "main")
-	else:
-		# Try to load existing character
-		var characters = CharacterManager.list_characters()
-		var found_character: CharacterProfile = null
-		
-		for character in characters:
-			if character.id == debug_character_id:
-				found_character = character
-				break
-		
-		if found_character:
-			# Load existing character
-			CharacterManager.load_character(debug_character_id)
-			PlayerProgression.load_from_profile(found_character.get_progression_data())
-			Logger.info("Loaded debug character: %s (Level %d)" % [found_character.name, found_character.level], "main")
-		else:
-			# Character not found, create a fallback
-			Logger.warn("Debug character ID '%s' not found, creating fallback" % debug_character_id, "main")
-			var profile = CharacterManager.create_character("Debug Fallback", StringName("Knight"))
-			if profile:
-				CharacterManager.load_character(profile.id)
-				PlayerProgression.load_from_profile(profile.get_progression_data())
-				Logger.info("Created fallback debug character: %s" % profile.name, "main")
+# TODO: New progression - Removed _load_debug_character() function
+# Character loading will be handled by MetaProgression system (Task 04)
 
 # NOTE: Initial scene loading now handled by StateManager + GameOrchestrator + SceneTransitionManager
 

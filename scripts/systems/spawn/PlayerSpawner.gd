@@ -14,25 +14,19 @@ const DEFAULT_PLAYER_SCENE: String = "res://scenes/arena/Player.tscn"
 
 var player_instance: Node2D
 
-## Get the correct player scene path based on character class
+## Get the correct player scene path based on debug config
+## TODO: New progression - Will use MetaProgression for character selection (Task 04)
 func _get_player_scene_path() -> String:
-	var current_profile := CharacterManager.get_current()
-	if not current_profile:
-		# Try to get character type from debug config (for editor scene testing)
-		var debug_character_type = _get_debug_character_type()
-		if debug_character_type != "":
-			var scene_path: String = PLAYER_SCENES.get(debug_character_type, DEFAULT_PLAYER_SCENE)
-			Logger.info("No CharacterManager profile, using debug config character: %s → %s" % [debug_character_type, scene_path], "spawner")
-			return scene_path
+	# Use debug config for character type selection
+	var debug_character_type = _get_debug_character_type()
+	if debug_character_type != "":
+		var scene_path: String = PLAYER_SCENES.get(debug_character_type, DEFAULT_PLAYER_SCENE)
+		Logger.info("Using debug config character: %s → %s" % [debug_character_type, scene_path], "spawner")
+		return scene_path
 
-		Logger.warn("No current character profile found, using default player scene", "spawner")
-		return DEFAULT_PLAYER_SCENE
-	
-	var character_class := str(current_profile.clazz)
-	var scene_path: String = PLAYER_SCENES.get(character_class, DEFAULT_PLAYER_SCENE)
-	
-	Logger.info("Using player scene: %s for class: %s" % [scene_path, character_class], "spawner")
-	return scene_path
+	# Fallback to default if no debug config
+	Logger.info("No character specified, using default player scene: %s" % DEFAULT_PLAYER_SCENE, "spawner")
+	return DEFAULT_PLAYER_SCENE
 
 ## Get character type from debug configuration (fallback for editor testing)
 func _get_debug_character_type() -> String:
