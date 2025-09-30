@@ -115,9 +115,9 @@ var extended_half_height = (total_size.y / 2) + camera_extension
 
 # Fill with aesthetic background tiles
 for x in range(-extended_half_width, extended_half_width + 1):
-    for y in range(-extended_half_height, extended_half_height + 1):
-        var floor_tile = biome_config.get_random_floor_tile(rng)
-        ground_layer.set_cell(Vector2i(x, y), 0, floor_tile)
+	for y in range(-extended_half_height, extended_half_height + 1):
+		var floor_tile = biome_config.get_random_floor_tile(rng)
+		ground_layer.set_cell(Vector2i(x, y), 0, floor_tile)
 ```
 
 #### Boundary Layer (Tree System)
@@ -127,9 +127,9 @@ var total_boundary_width = generation_params.boundary_width + generation_params.
 
 # Generate concentric tree rings
 for border_layer in range(total_boundary_width):
-    var layer_half_width = half_width + border_layer
-    var layer_half_height = half_height + border_layer
-    # Place trees with spacing and chance calculations
+	var layer_half_width = half_width + border_layer
+	var layer_half_height = half_height + border_layer
+	# Place trees with spacing and chance calculations
 ```
 
 #### Spawn Layer (Enemy Positioning)
@@ -137,10 +137,10 @@ for border_layer in range(total_boundary_width):
 # Generate spawn area with border spacing
 var spawn_spacing = generation_params.spawn_border_spacing
 for x in range(arena_bounds.position.x + spawn_spacing, arena_bounds.end.x - spawn_spacing):
-    for y in range(arena_bounds.position.y + spawn_spacing, arena_bounds.end.y - spawn_spacing):
-        if not _will_have_obstruction(tile_pos, rng):
-            var spawn_tile = biome_config.get_spawn_area_tile(rng)
-            spawn_layer.set_cell(tile_pos, 0, spawn_tile)
+	for y in range(arena_bounds.position.y + spawn_spacing, arena_bounds.end.y - spawn_spacing):
+		if not _will_have_obstruction(tile_pos, rng):
+			var spawn_tile = biome_config.get_spawn_area_tile(rng)
+			spawn_layer.set_cell(tile_pos, 0, spawn_tile)
 ```
 
 ### 📊 **Area Hierarchy**
@@ -225,11 +225,11 @@ var procedural_arena = ProceduralMapManager.generate_random_arena("standard")
 
 # StateManager handles transition with procedural context
 var context = {
-    "run_id": "procedural_run_12345",
-    "arena_id": &"procedural",
-    "procedural_arena": arena_scene,
-    "arena_type": "procedural",
-    "character_data": character_data
+	"run_id": "procedural_run_12345",
+	"arena_id": &"procedural",
+	"procedural_arena": arena_scene,
+	"arena_type": "procedural",
+	"character_data": character_data
 }
 
 StateManager.start_procedural_run(arena_scene, context)
@@ -308,11 +308,11 @@ Hideout Scene Structure:
 ```gdscript
 # Check biome configuration
 if not biome_config.is_valid():
-    Logger.error("Invalid biome configuration", "procedural")
+	Logger.error("Invalid biome configuration", "procedural")
 
 # Verify resource loading
 if not _available_biomes.has("forest"):
-    Logger.warn("Forest biome not loaded", "procedural")
+	Logger.warn("Forest biome not loaded", "procedural")
 ```
 
 **Performance Issues:**

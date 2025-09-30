@@ -8,9 +8,9 @@
 
 ## 📋 Task Description
 
-Integrate MapLevel's time-based progression system with difficulty scaling for bosses and spawning enemies. Create an MVP scaling system that increases enemy stats (health, damage, speed) and spawn rates as map level increases over time, inspired by Risk of Rain 2's director system but simplified for our needs.
+Integrate MapLevel's time-based progression system with difficulty scaling for bosses and spawning enemies. Create an MVP scaling system that increases enemy stats (health, damage, speed) and spawn rates as map level increases over time, inspired by MEGABONK's risk-engagement philosophy but adapted for our needs.
 
-**UPDATED:** This task now serves as the technical foundation for the MEGABONK-inspired arena progression system detailed in `Obsidian/02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md`.
+**UPDATED:** This task implements the MEGABONK-inspired arena progression system detailed in `Obsidian/02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md`. **Key Philosophy:** Reward players for taking risks and staying longer, with voluntary difficulty control and mathematical scaling limits.
 
 **Current State Analysis:**
 - ✅ MapLevel autoload system exists (10s per level for testing)
@@ -20,14 +20,16 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - ⚠️ Individual enemy stats don't scale with MapLevel
 - ⚠️ Boss spawning isn't connected to difficulty progression
 
-**Progression System Integration Requirements:**
-- ⚠️ MapLevel needs to support **difficulty coefficient** concept (ROR2-style)
+**MEGABONK System Integration Requirements:**
+- ⚠️ MapLevel needs to support **difficulty coefficient** concept (MEGABONK-style time scaling)
 - ⚠️ Need **fixed stage jump** mechanic (+1.0 coefficient per stage transition)
-- ⚠️ Need **timed event spawning** (mini-bosses at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
-- ⚠️ Need **Final Swarm trigger** at 10:00 timer expiration with exponential scaling
 - ⚠️ Need **boss-kill deadline** mechanic (must kill boss before 10:00 to unlock portal)
-- ⚠️ Need **simple portal** that unlocks on boss kill (no special rift event mechanics)
-- ⚠️ Boss/enemy difficulty determined by coefficient at spawn time (no snapshot needed)
+- ⚠️ Need **Final Swarm trigger** at 10:00 timer expiration with exponential scaling
+- ⚠️ Need **difficulty shrines** for voluntary +5% difficulty increases (Greed Shrine)
+- ⚠️ Need **reward scaling** with difficulty (higher coefficient = better gold/XP)
+- ⚠️ Need **mathematical ceiling** (~13:00 Final Swarm becomes impossible)
+- ⚠️ Need **simple portal** that unlocks on boss kill and stays open during Final Swarm
+- ⚠️ Boss/enemy difficulty determined by coefficient at spawn time
 
 ## 🎯 Acceptance Criteria
 
@@ -41,16 +43,19 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] Performance impact <2ms per combat step for scaling calculations
 - [ ] Comprehensive test suite validates scaling progression accuracy
 
-### Progression System Integration (NEW)
+### MEGABONK System Integration (NEW)
 - [ ] MapLevel exposes `get_difficulty_coefficient()` method (visible in UI bar)
 - [ ] MapLevel supports `add_stage_jump(float)` method for fixed stage transitions (+1.0 default)
-- [ ] SpawnDirector can trigger timed events (mini-boss at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
-- [ ] SpawnDirector supports Final Swarm mode with exponential spawn rate increase
-- [ ] BossSpawnManager enforces boss-kill deadline (10:00) and unlocks portal on success
-- [ ] Simple portal entity that becomes usable after boss kill (no special event mechanics)
-- [ ] Boss/enemy difficulty scales with coefficient at spawn time (real-time, no snapshot)
-- [ ] EventBus signals support stage progression flow (`boss_killed`, `timer_expired`, `portal_entered`, `stage_started`)
-- [ ] Mathematical ceiling implemented (Final Swarm becomes impossible around 13:00)
+- [ ] Stage timer (10 minutes) with visible countdown in UI
+- [ ] Boss spawns at fixed time (8:00) with difficulty scaled to current coefficient
+- [ ] Boss-kill deadline enforced (must kill boss before 10:00 to unlock portal)
+- [ ] Final Swarm triggers at 10:00 with exponential spawn rate + stat scaling
+- [ ] Mathematical ceiling at ~13:00 (Final Swarm becomes impossible)
+- [ ] Difficulty shrines (Greed Shrine) allow voluntary +5% difficulty increases
+- [ ] Reward scaling: higher difficulty coefficient = better gold/XP per kill
+- [ ] Simple portal entity unlocks on boss kill and stays accessible during Final Swarm
+- [ ] EventBus signals support progression flow (`boss_killed`, `timer_expired`, `portal_entered`, `stage_started`, `final_swarm_started`, `shrine_activated`)
+- [ ] Boss/enemy difficulty scales with coefficient at spawn time (real-time scaling)
 
 ## 🔍 Technical Analysis
 
@@ -60,13 +65,14 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [x] **scripts/systems/enemy_v2/EnemyFactory.gd** - Add stat scaling after template variation
 - [x] **scripts/systems/BossSpawnManager.gd** - Integrate credit-based spawning system
 - [ ] **data/balance/difficulty_scaling.tres** - New resource for scaling configuration
-- [ ] **scripts/systems/DifficultyDirector.gd** - New credit-based scaling coordinator
+- [ ] **scripts/systems/ShrineSystem.gd** - New difficulty shrine management
 - [ ] **scripts/domain/DifficultyConfig.gd** - New resource class for scaling data
+- [ ] **scripts/domain/ShrineConfig.gd** - New resource class for shrine definitions
 - [ ] **tests/test_difficulty_scaling.tscn** - Comprehensive scaling validation
 
 ### Dependencies & Patterns
 - **EventBus Signals (Original):** `difficulty_level_changed`, `spawn_rate_modified`, `enemy_stats_scaled`
-- **EventBus Signals (Progression):** `boss_killed`, `timer_expired`, `portal_entered`, `stage_started`, `mini_boss_spawn`, `pressure_wave_start`
+- **EventBus Signals (MEGABONK):** `boss_killed`, `timer_expired`, `portal_entered`, `stage_started`, `final_swarm_started`, `shrine_activated`, `boss_spawned`
 - **Resource Files:** `/data/balance/difficulty_scaling.tres` with credit thresholds and multipliers
 - **Performance Impact:** Cached scaling calculations, 30Hz combat step compatible
 - **Testing Strategy:** .tscn test scenes with accelerated MapLevel progression
@@ -78,8 +84,8 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 **Approach:** Vertical slice with isolated testing - each phase delivers a playable, testable increment.
 
-### Phase 1: Stage Timer Foundation (1-2 sessions) 🎯 START HERE
-**Goal:** Working stage timer with visual feedback
+### Phase 1: Stage Timer + Boss Deadline Foundation (1-2 sessions) 🎯 START HERE
+**Goal:** Working stage timer with boss deadline mechanics
 **Test Scene:** `tests/StageTimer_Isolated.tscn`
 
 - [ ] Create `StageTimer_Isolated.tscn` test scene with basic UI
@@ -87,37 +93,34 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] Implement 10-minute countdown timer in MapLevel (10:00 → 0:00)
 - [ ] Display timer + difficulty coefficient in test scene (Label updates)
 - [ ] Add time acceleration debug key (T = 100x speed for rapid testing)
-- [ ] Add visual markers at key times (3:00, 7:00, 8:00, 10:00) - print() statements
+- [ ] Add visual markers at key times (8:00 boss spawn, 10:00 Final Swarm) - print() statements
 - [ ] Add EventBus.timer_expired signal when countdown reaches 0:00
+- [ ] Add EventBus.boss_spawned signal at 8:00 mark
 - [ ] Test coefficient increases correctly over 10 minutes (1.0 → ~5.5)
 
-**Deliverable:** Can watch timer count down and coefficient increase in isolated test
+**Deliverable:** Can watch timer count down with boss spawn and Final Swarm triggers
 
 ---
 
-### Phase 2: Timed Event Spawning (2-3 sessions)
-**Goal:** All timed events fire at correct times with visual feedback
-**Test Scene:** Extend `StageTimer_Isolated.tscn` with enemy spawning
+### Phase 2: Boss Spawn + Final Swarm System (2-3 sessions)
+**Goal:** Boss deadline and Final Swarm mechanics working
+**Test Scene:** Extend `StageTimer_Isolated.tscn` with boss and swarm spawning
 
 - [ ] Add SpawnDirector to test scene for enemy spawning
-- [ ] Implement timed event trigger system in MapLevel:
-  - [ ] Mini-boss spawn trigger at 3:00 (EventBus.mini_boss_spawn signal)
-  - [ ] Pressure wave trigger at 4:00 (EventBus.pressure_wave_start signal)
-  - [ ] Pressure wave trigger at 6:00
-  - [ ] Mini-boss spawn trigger at 7:00
-  - [ ] Pressure wave trigger at 8:00
-  - [ ] Main boss spawn trigger at 8:00 (EventBus.boss_spawn signal)
-  - [ ] Final Swarm trigger at 10:00 (EventBus.final_swarm_start signal)
-  - [ ] Black Ghosts trigger at 11:00 (EventBus.black_ghosts_spawn signal)
-- [ ] Wire SpawnDirector to respond to event signals:
-  - [ ] Spawn 1 elite enemy on mini_boss_spawn
-  - [ ] Spawn burst of 20 enemies on pressure_wave_start
-  - [ ] Spawn 1 large boss enemy on boss_spawn
-  - [ ] Spawn continuous waves on final_swarm_start
-- [ ] Add on-screen event log (shows "3:00 - Mini Boss Spawned!" messages)
-- [ ] Stop timed events when portal entered (future-proof for Phase 4)
+- [ ] Implement boss spawn system:
+  - [ ] Boss spawns at 8:00 with difficulty scaled to current coefficient (~4.5)
+  - [ ] Boss tracked via EventBus.boss_spawned signal
+  - [ ] Boss kill tracked via EventBus.boss_killed signal
+  - [ ] Visual feedback for boss spawn ("Boss has arrived!")
+- [ ] Implement Final Swarm system:
+  - [ ] Final Swarm triggers at 10:00 (EventBus.final_swarm_started signal)
+  - [ ] Exponential spawn rate increase (3x → 5x → 10x normal)
+  - [ ] Enemy stat scaling during Final Swarm (+50% → +100% → +200%)
+  - [ ] Mathematical ceiling around 13:00 (spawn rate becomes impossible)
+- [ ] Add on-screen event log (shows "8:00 - Boss Spawned!", "10:00 - Final Swarm!")
+- [ ] Test boss-kill deadline (boss must die before 10:00)
 
-**Deliverable:** All events fire at correct times with visible enemy spawns
+**Deliverable:** Boss spawn at 8:00, Final Swarm escalation system working
 
 ---
 
@@ -143,58 +146,85 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ---
 
-### Phase 4: Boss-Kill Deadline & Portal (2-3 sessions)
-**Goal:** Complete stage cycle with win/lose conditions
-**Test Scene:** Add portal entity and boss-kill tracking
+### Phase 4: Difficulty Shrines + Reward Scaling (2-3 sessions)
+**Goal:** Voluntary difficulty control and risk/reward mechanics
+**Test Scene:** Add shrine system to existing test
 
-- [ ] Create simple Portal scene (Sprite2D + Area2D + interaction logic):
-  - [ ] Visual states: locked (gray), unlocked (green/glowing)
-  - [ ] Spawns at 1:30 in locked state
-  - [ ] Player can enter when unlocked (press E or walk into)
-- [ ] Implement boss-kill deadline in BossSpawnManager:
-  - [ ] Boss spawns at 8:00, scaled to current coefficient (~4.5)
-  - [ ] Track boss kill via EventBus.boss_killed signal
-  - [ ] Boss kill unlocks portal permanently
-  - [ ] Display "Portal Unlocked!" message on boss kill
-- [ ] Implement deadline failure handling:
-  - [ ] If timer expires (10:00) without boss kill → Portal stays locked
-  - [ ] Display "FINAL SWARM - NO ESCAPE" warning message
-  - [ ] Player must survive or die (no stage progression)
-- [ ] Implement success path:
-  - [ ] Portal entry triggers EventBus.portal_entered signal
-  - [ ] Display "Stage Completed!" message
-  - [ ] Stop all spawning and reset timer (prep for Phase 6)
-- [ ] Add portal accessibility during Final Swarm (if boss was killed)
+- [ ] Create ShrineSystem for managing difficulty shrines:
+  - [ ] Greed Shrine spawns randomly during stage (every 2-3 minutes)
+  - [ ] Shrine interaction: +5% difficulty coefficient
+  - [ ] Visual feedback: "Difficulty increased! (+5%)"
+  - [ ] EventBus.shrine_activated signal with difficulty delta
+- [ ] Implement reward scaling system:
+  - [ ] Higher difficulty coefficient = better gold per kill
+  - [ ] Higher difficulty coefficient = better XP per kill
+  - [ ] Formula: reward_multiplier = 1.0 + (coefficient * 0.1)
+  - [ ] Visual feedback: damage numbers show scaled rewards
+- [ ] Add shrine interaction UI:
+  - [ ] Shrine appears as interactable object (press E)
+  - [ ] Confirmation dialog: "Increase difficulty for better rewards?"
+  - [ ] Cost display (if any) and benefit explanation
+- [ ] Test risk/reward balance:
+  - [ ] More difficult enemies = more gold earned
+  - [ ] Higher spawn rates = more kill opportunities
+  - [ ] Shrines create strategic decision points
 
-**Deliverable:** Full stage cycle with clear win condition (kill boss + enter portal)
+**Deliverable:** Voluntary difficulty control with visible risk/reward mechanics
 
 ---
 
-### Phase 5: Final Swarm Intensity Tuning (1-2 sessions)
-**Goal:** Final Swarm feels overwhelming but survivable for 2-4 minutes
-**Test Scene:** Add Final Swarm mode testing
+### Phase 5: Portal System + Boss Deadline (2-3 sessions)
+**Goal:** Complete stage cycle with boss-kill deadline
+**Test Scene:** Add portal entity and deadline enforcement
 
-- [ ] Implement `get_spawn_interval_scaling()` method for spawn rate modifications
-- [ ] Implement Final Swarm spawn mode (triggered at 10:00):
+- [ ] Create simple Portal scene (Sprite2D + Area2D + interaction logic):
+  - [ ] Visual states: locked (gray), unlocked (green/glowing)
+  - [ ] Spawns at stage start in locked state
+  - [ ] Player can enter when unlocked (press E or walk into)
+- [ ] Implement boss-kill deadline mechanics:
+  - [ ] Boss must be killed before 10:00 timer expires
+  - [ ] Boss kill unlocks portal permanently (EventBus.boss_killed)
+  - [ ] Display "Portal Unlocked!" message on boss kill
+  - [ ] Portal stays accessible during Final Swarm
+- [ ] Implement deadline failure handling:
+  - [ ] If timer expires (10:00) without boss kill → Portal stays locked
+  - [ ] Display "FINAL SWARM - NO ESCAPE" warning message
+  - [ ] Player trapped in Final Swarm until death (no progression)
+- [ ] Implement success path:
+  - [ ] Portal entry triggers EventBus.portal_entered signal
+  - [ ] Display "Stage Completed!" message
+  - [ ] Reset for next stage (prep for Phase 7)
+
+**Deliverable:** Boss deadline creates clear objective, portal unlocks on success
+
+---
+
+### Phase 6: Final Swarm Intensity Tuning (1-2 sessions)
+**Goal:** Mathematical ceiling with escalating intensity
+**Test Scene:** Tune Final Swarm escalation curve
+
+- [ ] Implement Final Swarm intensity scaling:
   - [ ] 10:00-11:00: Spawn rate 3x normal, stat multiplier +50%
-  - [ ] 11:00-12:00: Black Ghosts spawn, stat multiplier +100%, faster enemies
-  - [ ] 12:00-13:00: Spawn rate 5x, stat multiplier +150%
-  - [ ] 13:00+: Mathematical ceiling (spawn rate 10x, stats +200%, survival impossible)
+  - [ ] 11:00-12:00: Spawn rate 5x, stat multiplier +100%
+  - [ ] 12:00-13:00: Spawn rate 8x, stat multiplier +150%
+  - [ ] 13:00+: Mathematical ceiling (spawn rate 10x, stats +200%, impossible)
 - [ ] Add visual intensity feedback:
   - [ ] Screen shake increases with swarm intensity
   - [ ] Red vignette effect at edges
   - [ ] Spawn counter (enemies/second display)
-- [ ] Playtest and tune for "feel":
-  - [ ] Strong builds should survive 3-4 minutes
+  - [ ] Audio cues for intensity escalation
+- [ ] Playtest and tune for balance:
+  - [ ] Strong builds should survive 2-4 minutes in Final Swarm
   - [ ] Weak builds die within 1-2 minutes
-  - [ ] Mathematical ceiling is unavoidable death
-- [ ] Add performance monitoring (enemy count cap at 1000)
+  - [ ] Mathematical ceiling provides hard stop
+  - [ ] Risk/reward: more kills vs death risk
+- [ ] Add performance safeguards (enemy count cap at 1000)
 
-**Deliverable:** Final Swarm provides optional high-skill challenge
+**Deliverable:** Final Swarm provides optional leaderboard challenge with clear limits
 
 ---
 
-### Phase 6: Stage Transition & Multi-Stage (2-3 sessions)
+### Phase 7: Stage Transition & Multi-Stage (2-3 sessions)
 **Goal:** Multi-stage progression with coefficient jumps
 **Test Scene:** Integrate with ProceduralMapManager
 
@@ -212,46 +242,32 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
   - [ ] Stage 3: Coeff 12.0 → 16.5, boss at coeff ~15.5
 - [ ] Add stage number display (top UI: "Stage 3")
 - [ ] Validate scaling feels appropriate across 5+ stages
-- [ ] Test that player can't progress past mathematical ceiling without dying
 
 **Deliverable:** Full multi-stage progression loop working
 
 ---
 
-### Phase 7: Polish & Configuration (2-3 sessions)
+### Phase 8: Polish & Configuration (2-3 sessions)
 **Goal:** Hot-reloadable balance and visual polish
 
 - [ ] Create `DifficultyConfig` resource class with scaling curves and thresholds
+- [ ] Create `ShrineConfig` resource class for shrine definitions
 - [ ] Create `/data/balance/difficulty_scaling.tres` with tunable values:
   - [ ] Stage duration (default 10 minutes)
   - [ ] Coefficient increase rate (default ~0.5 per minute)
   - [ ] Stage jump amount (default +1.0)
-  - [ ] Event timings (mini-boss, pressure waves, boss spawn)
+  - [ ] Boss spawn timing (default 8:00)
   - [ ] Final Swarm intensity curve
+  - [ ] Shrine spawn rates and effects
   - [ ] Stat scaling multipliers (HP +30%, DMG +20%)
+  - [ ] Reward scaling formulas
 - [ ] Implement BalanceDB integration for hot-reload
 - [ ] Add emergency scaling disable toggle (CheatSystem command)
 - [ ] Create difficulty bar UI in HUD (top right: Easy → Normal → Hard → INSANE)
 - [ ] Add timer display to HUD (top center: "8:32" countdown)
 - [ ] Add stage number display to HUD (top left: "Stage 3")
-- [ ] Document scaling formulas in `/Obsidian/systems/Difficulty-Scaling-System.md`
 
-**Deliverable:** Polished progression system with designer-friendly tuning
-
----
-
-### Phase 8: DifficultyDirector & Credits (Optional - Later)
-**Goal:** ROR2-style spawn budget system for fine-tuned control
-**Note:** This is the original task scope, deferred for later polish
-
-- [ ] Create `DifficultyDirector` system for credit accumulation
-- [ ] Implement credit-based boss spawning cost system
-- [ ] Integrate with existing BossSpawnManager for cost validation
-- [ ] Add credit generation scaling based on MapLevel progression
-- [ ] Create credit spending mechanics for boss spawn events
-- [ ] Add credit display for debugging (shows available credits)
-
-**Deliverable:** Spawn budget system for advanced balance tuning
+**Deliverable:** Polished MEGABONK-style progression system with designer-friendly tuning
 
 ## 🔗 Related Files
 
@@ -265,18 +281,20 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] `scripts/domain/LogConfigResource.gd` - Add scaling debug category
 
 ### Will Create:
-- [ ] `scripts/systems/DifficultyDirector.gd` - Credit-based scaling coordinator
+- [ ] `scripts/systems/ShrineSystem.gd` - Difficulty shrine management
 - [ ] `scripts/domain/DifficultyConfig.gd` - Scaling configuration resource
+- [ ] `scripts/domain/ShrineConfig.gd` - Shrine definitions resource
 - [ ] `data/balance/difficulty_scaling.tres` - Balance configuration
+- [ ] `data/balance/shrine_config.tres` - Shrine balance configuration
 - [ ] `tests/test_difficulty_scaling.tscn` - Comprehensive test suite
-- [ ] `tests/test_scaling_performance.tscn` - Performance validation
+- [ ] `tests/StageTimer_Isolated.tscn` - Isolated progression testing
 
 ### Documentation Updates Needed:
 - [ ] `autoload/CLAUDE.md` - MapLevel and EventBus pattern updates
-- [ ] `scripts/systems/CLAUDE.md` - DifficultyDirector integration patterns
-- [ ] `scripts/domain/CLAUDE.md` - New DifficultyConfig resource model
+- [ ] `scripts/systems/CLAUDE.md` - ShrineSystem integration patterns
+- [ ] `scripts/domain/CLAUDE.md` - New DifficultyConfig and ShrineConfig resource models
 - [ ] `tests/CLAUDE.md` - Scaling test execution patterns
-- [ ] `Obsidian/systems/Difficulty-Scaling-System.md` - Complete system documentation
+- [ ] `Obsidian/systems/MEGABONK-Difficulty-System.md` - Complete system documentation
 
 ## 📚 Official Godot Documentation Research
 
@@ -313,20 +331,19 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - Completed parallel agent analysis: code archaeology, technical research, risk assessment
 - Researched Godot documentation via Context7 MCP for timer and signal patterns
 
-### 2025-09-30 - Progression System Integration
-- Updated task to align with MEGABONK-inspired arena progression system
-- Added progression-specific acceptance criteria (difficulty coefficient, stage jumps, timed events)
-- Integrated boss-kill deadline and portal unlock mechanics
-- Added Final Swarm trigger and mathematical ceiling requirements
-- Updated stat scaling values (HP +30%, DMG +20% per level to match progression design)
-- Added timed event spawning requirements (mini-bosses, pressure waves, boss spawn)
-- Clarified: No snapshot scaling needed (spawn time = difficulty determination)
-- Clarified: Simple portal entity, no special rift event/bubble mechanics
-- Referenced `STAGE_PROGRESSION_VISION.md` as design source
-- **IMPLEMENTATION APPROACH:** Restructured to vertical slice + isolated testing methodology
-- Organized into 8 phases with clear deliverables and test scenes
-- Phase 1 START HERE: Create `StageTimer_Isolated.tscn` for immediate visual feedback
-- Deferred DifficultyDirector (ROR2 credits system) to Phase 8 (optional polish)
+### 2025-09-30 - MEGABONK System Conversion
+- **MAJOR UPDATE:** Converted from ROR2 approach to MEGABONK risk-engagement philosophy
+- **Key Change:** Shifted from "efficiency optimization" to "voluntary risk-taking" design
+- Updated all acceptance criteria for boss-kill deadline mechanics
+- Added Final Swarm system with mathematical ceiling (~13:00 impossible)
+- Added difficulty shrine system (Greed Shrine +5% voluntary difficulty)
+- Added reward scaling: higher difficulty = better gold/XP per kill
+- Simplified technical complexity: removed ROR2 credit/director system
+- Updated implementation phases to focus on core MEGABONK mechanics
+- **Philosophy:** Rewards staying longer and taking risks, aligns with kill-count leaderboards
+- **Boss Deadline:** Must kill boss before 10:00 to unlock portal progression
+- **Final Swarm:** Optional challenge for leaderboard pushing, not punishment mechanic
+- References MEGABONK Ultra Guide and Stage Progression Vision documents
 
 ## 🚨 Risks & Considerations
 
