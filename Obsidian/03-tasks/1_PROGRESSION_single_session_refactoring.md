@@ -229,10 +229,15 @@ Return to Main Menu (session wiped)
 **Approach:** Bottom-up refactoring - create new systems, migrate data, remove old systems.
 
 **UI Strategy:** Each UI phase offers two options:
-- **Option A (Recommended):** Minimal debug UI to test functionality (simple labels, buttons, lists)
+- **Option A (Recommended):** Minimal scene-based UI to test functionality (simple labels, buttons, lists)
 - **Option B (Future):** Polished UI matching mockups (defer to separate UI refactor task)
 
-**Rationale:** Backend architecture (MetaProgression, SessionState, LocalLeaderboard) is the priority. Simple functional UI proves the system works. Full visual design can be tackled in a dedicated UI consistency task across the entire game.
+**UI Implementation Approach:**
+- **Use Godot MCP Tools:** Create UI scenes using MCP tools (create_scene, add_node, update_property, etc.)
+- **Scene-Based Over Programmatic:** Build UI structure in .tscn files, not programmatically in GDScript
+- **Rationale:** MCP tools enable rapid scene creation and visual node setup without manual .tscn editing
+
+**Backend Priority:** Architecture (MetaProgression, SessionState, LocalLeaderboard) is the priority. Simple functional UI proves the system works. Full visual design can be tackled in a dedicated UI consistency task across the entire game.
 
 ### Phase 1: Create New Meta-Progression System (2-3 sessions)
 **Goal:** Replace CharacterManager with MetaProgression autoload
@@ -433,14 +438,16 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Can implement as simple debug panel first, polish UI in separate task later
 **⚠️ Core functionality:** Calculate rewards, save progression, return to menu (UI is secondary)
 
-- [ ] **Option A: Minimal Debug Panel (Recommended for MVP)**
-  - [ ] Create simple `scenes/ui/EndOfRunDebug.tscn` scene (single panel)
-  - [ ] Display core stats as text labels:
-    - [ ] Character, Kills, Time, Level, Stage Reached
-    - [ ] Boss killed: true/false, Boss kill time
-    - [ ] Final Swarm survival time (if applicable)
-    - [ ] Rift Fragments earned (with breakdown)
-  - [ ] [CONTINUE] button → return to main menu
+- [ ] **Option A: Minimal Scene-Based Panel (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/EndOfRunDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/EndOfRunDebug.tscn", "Control", "EndOfRunDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label nodes for stats (Character, Kills, Time, Level, Stage Reached)
+    - [ ] Add Label for Boss killed status and time
+    - [ ] Add Label for Final Swarm survival time (if applicable)
+    - [ ] Add Label for Rift Fragments earned (with breakdown)
+    - [ ] Add Button node for [CONTINUE] → return to main menu
+  - [ ] Attach `EndOfRun.gd` script to root node
   - [ ] **Skip detailed UI** (damage breakdown, inventory grid, visual polish)
   - [ ] Focus on backend: reward calculation, save progression, data flow
 
@@ -509,13 +516,18 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Minimal functional UI first, visual polish in separate UI task
 **⚠️ Core functionality:** Query unlocked characters, handle selection, navigate to map select
 
-- [ ] **Option A: Debug List (Recommended for MVP)**
-  - [ ] Create simple `scenes/ui/CharacterSelectDebug.tscn`
-  - [ ] VBoxContainer with character buttons (just names, no portraits)
-  - [ ] Query MetaProgression for unlocked_characters
-  - [ ] Locked characters show as disabled buttons with text label
-  - [ ] Click button → SessionState.current_character = id → Go to map select
-  - [ ] [BACK] button → Return to main menu
+- [ ] **Option A: Simple Scene-Based List (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/CharacterSelectDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/CharacterSelectDebug.tscn", "Control", "CharacterSelectDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label for title ("Select Character")
+    - [ ] Add ScrollContainer with VBoxContainer for character buttons list
+    - [ ] Add Button for [BACK] → Return to main menu
+  - [ ] Attach script to populate buttons dynamically:
+    - [ ] Query MetaProgression for unlocked_characters
+    - [ ] Create Button nodes for each character (just names, no portraits)
+    - [ ] Locked characters show as disabled buttons with text label
+    - [ ] Click button → SessionState.current_character = id → Go to map select
 
 - [ ] **Option B: Grid Layout with Portraits (Defer to Separate UI Task)**
   - [ ] 4x5 character grid matching mockup
@@ -537,13 +549,21 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Can implement as simple dropdown/buttons first, polish layout in separate UI task
 **⚠️ Core functionality:** Select map, select tier, display multipliers, start run
 
-- [ ] **Option A: Simple Dropdown UI (Recommended for MVP)**
-  - [ ] Create `scenes/ui/MapSelectionDebug.tscn`
-  - [ ] Map dropdown (OptionButton) - query MetaProgression.unlocked_maps
-  - [ ] Tier buttons (1, 2, 3) - display multiplier text next to each
-  - [ ] Personal best label: "Best: [kills] kills" (query LocalLeaderboard)
-  - [ ] [START RUN] button → SessionState.start_run(char, map, tier) → go_to_arena()
-  - [ ] [BACK] button → Return to character select
+- [ ] **Option A: Simple Scene-Based Dropdown UI (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/MapSelectionDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/MapSelectionDebug.tscn", "Control", "MapSelectionDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label for title ("Select Map & Tier")
+    - [ ] Add HBoxContainer with Label + OptionButton for map selection
+    - [ ] Add HBoxContainer with Label + three Button nodes for tier selection (1, 2, 3)
+    - [ ] Add Label for personal best: "Best: [kills] kills"
+    - [ ] Add HBoxContainer with [START RUN] and [BACK] buttons
+  - [ ] Attach script to handle:
+    - [ ] Query MetaProgression.unlocked_maps → populate OptionButton
+    - [ ] Display tier multipliers next to tier buttons
+    - [ ] Query LocalLeaderboard for personal bests
+    - [ ] [START RUN] → SessionState.start_run(char, map, tier) → go_to_arena()
+    - [ ] [BACK] → Return to character select
   - [ ] **Skip visual polish** (map thumbnails, character icons, detailed stats)
 
 - [ ] **Option B: Two-Panel Layout Matching Mockup (Defer to Separate UI Task)**
@@ -644,11 +664,13 @@ Return to Main Menu (session wiped)
   - [ ] If new: MetaProgression.discover_item(item_id)
   - [ ] Show "New Item Discovered!" notification in-game
   - [ ] Item appears in end-of-run summary
-- [ ] Create Unlocks Shop scene (`scenes/ui/UnlocksShop.tscn`):
-  - [ ] Display discovered_items (not yet purchased)
-  - [ ] Show item icon, name, description, cost
-  - [ ] [UNLOCK] button (costs silver)
-  - [ ] Filter tabs: [Items] [Tomes] [Weapons]
+- [ ] Create Unlocks Shop scene using MCP Godot tools (`scenes/ui/UnlocksShop.tscn`):
+  - [ ] `create_scene("res://scenes/ui/UnlocksShop.tscn", "Control", "UnlocksShop")`
+  - [ ] Add VBoxContainer for layout
+  - [ ] Add HBoxContainer for filter tabs: [Items] [Tomes] [Weapons]
+  - [ ] Add ScrollContainer with GridContainer for discovered items list
+  - [ ] Add item entry template (icon, name, description, cost, [UNLOCK] button)
+  - [ ] Attach script to populate discovered_items (not yet purchased)
 - [ ] Implement unlock purchase:
   - [ ] Check MetaProgression.can_afford(cost)
   - [ ] On purchase: MetaProgression.unlock_item(item_id)
