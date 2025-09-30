@@ -61,6 +61,7 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ### Affected Systems
 - [x] **autoload/MapLevel.gd** - Add enhanced scaling methods for different difficulty aspects
+- [x] **autoload/RunManager.gd** - Reference for 30Hz fixed-step timing pattern (already implemented)
 - [x] **scripts/systems/SpawnDirector.gd** - Apply MapLevel scaling to regular enemy spawning
 - [x] **scripts/systems/enemy_v2/EnemyFactory.gd** - Add stat scaling after template variation
 - [x] **scripts/systems/BossSpawnManager.gd** - Integrate credit-based spawning system
@@ -73,10 +74,18 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 ### Dependencies & Patterns
 - **EventBus Signals (Original):** `difficulty_level_changed`, `spawn_rate_modified`, `enemy_stats_scaled`
 - **EventBus Signals (MEGABONK):** `boss_killed`, `timer_expired`, `portal_entered`, `stage_started`, `final_swarm_started`, `shrine_activated`, `boss_spawned`
+- **RunManager Integration:** All difficulty scaling calculations must integrate with 30Hz fixed-step combat timing
+  - Scaling updates occur during `EventBus.combat_step` signal processing
+  - MapLevel timer progression syncs with RunManager's COMBAT_DT (33.33ms per step)
+  - Ensures deterministic difficulty progression regardless of frame rate
+  - See `autoload/RunManager.gd` for fixed-step accumulator pattern documentation
+  - **Note:** RunManager was simplified in Task 04a cleanup - stats tracking removed
+  - Stats (enemies_killed, damage_dealt, etc.) will move to SessionState autoload (Task 04 Phase 2)
+  - This task should reference SessionState for stat tracking once it exists
 - **Resource Files:** `/data/balance/difficulty_scaling.tres` with credit thresholds and multipliers
-- **Performance Impact:** Cached scaling calculations, 30Hz combat step compatible
+- **Performance Impact:** Cached scaling calculations, 30Hz combat step compatible (<2ms per step)
 - **Testing Strategy:** .tscn test scenes with accelerated MapLevel progression
-- **Stage Timer:** 10-minute countdown per stage, integrated with MapLevel progression
+- **Stage Timer:** 10-minute countdown per stage, integrated with MapLevel progression via RunManager timing
 - **Coefficient Formula:** `enemyLevel = 1 + (coefficient - playerFactor) / 0.33` (from progression design)
 - **Portal Mechanic:** Simple locked/unlocked state, no bubble event or special spawn logic
 
@@ -90,9 +99,14 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 **Goal:** Working stage timer with boss deadline mechanics
 **Test Scene:** `tests/StageTimer_Isolated.tscn`
 
+**RunManager Integration Note:** Timer progression must sync with RunManager's 30Hz fixed-step timing. See `autoload/RunManager.gd` for the accumulator pattern - MapLevel should increment its timer during `EventBus.combat_step` processing to ensure deterministic progression regardless of frame rate.
+
 - [ ] Create `StageTimer_Isolated.tscn` test scene with basic UI
 - [ ] Add `get_difficulty_coefficient()` method to MapLevel autoload (returns current coefficient value)
 - [ ] Implement 10-minute countdown timer in MapLevel (10:00 → 0:00)
+  - [ ] Timer updates in `_on_combat_step()` handler using COMBAT_DT (33.33ms per step)
+  - [ ] Ensures deterministic progression at exactly 30 Hz
+  - [ ] Accumulates fixed timesteps for precise timer countdown
 - [ ] Display timer + difficulty coefficient in test scene (Label updates)
 - [ ] Add time acceleration debug key (T = 100x speed for rapid testing)
 - [ ] Add visual markers at key times (8:00 boss spawn, 10:00 Final Swarm) - print() statements
