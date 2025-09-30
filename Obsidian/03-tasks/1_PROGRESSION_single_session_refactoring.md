@@ -626,29 +626,33 @@ Return to Main Menu (session wiped)
 
 **⏸️ CHECKPOINT:** Verify game runs successfully with new systems before deleting old code
 
-- [ ] Remove CharacterManager autoload:
-  - [ ] Delete `autoload/CharacterManager.gd`
-  - [ ] Remove from project.godot autoload section
-  - [ ] Remove references in other scripts
-- [ ] Simplify RunManager:
-  - [ ] Remove save/load logic
-  - [ ] Remove per-character state tracking
-  - [ ] Keep only 30Hz combat step (or move to SessionState)
-  - [ ] Consider renaming to `CombatClock` if only timing remains
-- [ ] Delete old save files:
-  - [ ] Remove `user://profiles/` directory handling
-  - [ ] Keep only `user://meta_progression.tres`
-  - [ ] Keep only `user://local_leaderboard.tres`
-- [ ] Update CharacterProfile resource:
-  - [ ] Remove if no longer needed
-  - [ ] Or simplify to just character definition (not save data)
-- [ ] Update autoload/CLAUDE.md:
-  - [ ] Document new SessionState autoload
-  - [ ] Document new MetaProgression autoload
-  - [ ] Document new LocalLeaderboard autoload
-  - [ ] Remove CharacterManager patterns
+- [x] Remove CharacterManager autoload:
+  - [x] Delete `autoload/CharacterManager.gd` (removed in Phase 1)
+  - [x] Remove from project.godot autoload section (removed in Phase 1)
+  - [x] Remove references in other scripts (cleaned up in Phases 1-6)
+- [x] Add leaderboard display to MainMenu:
+  - [x] Add LeaderboardPanel MarginContainer on right side (300x600 panel)
+  - [x] Display personal bests for each character (highest kill count across all maps/tiers)
+  - [x] Update display when new runs complete (EventBus.leaderboard_updated signal)
+- [x] Simplify RunManager:
+  - [x] Remove save/load logic (already done in Phase 2)
+  - [x] Remove per-character state tracking (already done in Phase 2)
+  - [x] Keep only 30Hz combat step + RNG seeding (verified complete)
+  - [x] Consider renaming to `CombatClock` (decided to keep RunManager name - still manages run timing + seeding)
+- [x] Delete old save files:
+  - [x] Remove `user://profiles/` directory handling (no active code references found)
+  - [x] Keep only `user://meta_progression.tres` (MetaProgression autoload)
+  - [x] Keep only `user://local_leaderboard.tres` (LocalLeaderboard autoload)
+- [x] Update CharacterProfile resource:
+  - [x] Remove if no longer needed (moved to _DELETED, removed leftover .uid file)
+  - [x] Or simplify to just character definition (not save data) (no longer used)
+- [x] Update autoload/CLAUDE.md:
+  - [x] Document new SessionState autoload (added with full API examples)
+  - [x] Document new MetaProgression autoload (added with currency management patterns)
+  - [x] Document new LocalLeaderboard autoload (added with personal best tracking)
+  - [x] Remove CharacterManager patterns (documented removal, added architecture notes)
 
-**Deliverable:** Codebase cleaned of old progression system
+**Deliverable:** Codebase cleaned of old progression system ✅
 
 ---
 

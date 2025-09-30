@@ -23,6 +23,37 @@ grow_vertical = 2
 show_border = false
 rounded_corners = false
 
+[node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel"]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -320.0
+offset_top = -300.0
+offset_right = -20.0
+offset_bottom = 300.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/LeaderboardPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="LeaderboardTitle" type="Label" parent="BackgroundPanel/LeaderboardPanel/VBoxContainer"]
+layout_mode = 2
+text = "PERSONAL BESTS"
+horizontal_alignment = 1
+
+[node name="LeaderboardList" type="VBoxContainer" parent="BackgroundPanel/LeaderboardPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
 [node name="MainMenuContainer" type="CenterContainer" parent="BackgroundPanel"]
 layout_mode = 1
 anchors_preset = 15

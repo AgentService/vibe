@@ -4,6 +4,40 @@
 
 ## [Current Week - In Progress]
 
+### Task 04: Single-Session Progression Refactoring
+- **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
+  - **MainMenu Integration**: Created 3-screen flow directly in MainMenu.tscn (main → character select → map/tier select)
+  - **Character Selection**: Knight/Ranger selection with info display and confirm button
+  - **Map/Tier System**: Tier 1/2/3 selection with difficulty descriptions and reward multipliers
+  - **SessionState Integration**: Character/map/tier stored in SessionState.current_character/map/tier
+  - **PlayerSpawner Fix**: Corrected SessionState API usage (is_run_active(), current_character access)
+  - **StateManager Update**: Allowed MENU → ARENA direct transition for new flow
+  - **Arena Entry**: Uses pathgen_arena matching hideout's MapDevice flow
+  - **Boss Death Handling**: Added _is_dying flag and player_died signal handler to prevent physics errors
+  - **ResultsScreen Simplification**: Removed hideout/restart options, menu-only navigation
+  - **LocalLeaderboard**: Integrated run tracking with tier-specific leaderboards
+
+- **Phase 7: Migrate Existing Systems**: ✅ **VERIFIED COMPLETE** - SessionState integration already functional
+  - **SessionState Tracking**: Already connected in SessionState._ready() (enemy_killed, damage_dealt, xp_gained signals)
+  - **Death Handling**: Player.gd:809 calls SessionState.end_run() with Rift Fragment calculation
+  - **LocalLeaderboard**: Player.gd:820-825 adds runs to leaderboard with tier/map tracking
+  - **Results Flow**: Player.gd:829 shows ResultsScreen modal with comprehensive stats
+  - **MeleeSystem Integration**: scripts/systems/combat/MeleeSystem.gd uses SessionState.player_modifiers
+  - **No RunManager.stats**: Zero references to old RunManager stats system found
+  - **Verification**: Bottom-up approach paid off - Phases 1-6 completed integration during implementation
+
+- **Phase 8: Remove Old Systems**: ✅ **COMPLETED** - Cleanup and documentation complete
+  - **CharacterManager Removal**: Already completed in Phase 1 (autoload removed, references cleaned)
+  - **Leaderboard Panel**: Added 300x600 MarginContainer on MainMenu right side with "PERSONAL BESTS" title
+  - **Personal Best Tracking**: Displays highest kill count for each character across all maps/tiers
+  - **Dynamic Updates**: Connects to EventBus.leaderboard_updated signal to refresh after new runs
+  - **Implementation**: MainMenu.gd:252-303 with _update_leaderboard_display() and _get_character_best_kills()
+  - **RunManager Verification**: Already simplified in Phase 2 - no save/load logic, only 30Hz combat timing + RNG seeding
+  - **Old Save Files**: Zero references to user://profiles/ in active code (only in _DELETED and documentation)
+  - **CharacterProfile Cleanup**: Removed leftover CharacterProfile.gd.uid file from scripts/resources/
+  - **Documentation Updates**: Updated autoload/CLAUDE.md with SessionState, MetaProgression, LocalLeaderboard patterns
+  - **Architecture Notes**: Added progression autoload section documenting MEGABONK/ROR2-style architecture
+
 ### Systems Architecture Fixes
 - **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
   - **Runtime Error Resolution**: Fixed "Invalid access to property or key 'enemy_type' on SpawnConfig" during event enemy spawning

@@ -31,6 +31,9 @@ extends Control
 @onready var map_start_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapStartButton
 @onready var map_back_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapBackButton
 
+# Leaderboard elements
+@onready var leaderboard_list: VBoxContainer = $BackgroundPanel/LeaderboardPanel/VBoxContainer/LeaderboardList
+
 # Selection state
 var selected_character: String = ""
 var selected_tier: int = 1
@@ -45,10 +48,12 @@ func _ready() -> void:
 	_show_main_menu()
 	_connect_signals()
 	_update_rift_fragments_display()
+	_update_leaderboard_display()
 
 	# Connect to EventBus for Rift Fragments updates
 	if EventBus:
 		EventBus.rift_fragments_changed.connect(_on_rift_fragments_changed)
+		EventBus.leaderboard_updated.connect(_on_leaderboard_updated)
 
 func _load_character_types() -> void:
 	"""Load character types from data file."""
@@ -239,3 +244,60 @@ func _on_rift_fragments_changed(new_balance: int) -> void:
 	"""Handle Rift Fragments balance changes."""
 	rift_fragments_value.text = str(new_balance)
 	Logger.debug("Rift Fragments updated to: %d" % new_balance, "ui")
+
+# ============================================================================
+# LEADERBOARD DISPLAY
+# ============================================================================
+
+func _update_leaderboard_display() -> void:
+	"""Update the leaderboard with personal bests for each character."""
+	# Clear existing entries
+	for child in leaderboard_list.get_children():
+		child.queue_free()
+
+	if not LocalLeaderboard:
+		Logger.warn("LocalLeaderboard not available", "ui")
+		return
+
+	# For each character type, find their personal best across all maps/tiers
+	for char_id in character_types.keys():
+		var best_kills = _get_character_best_kills(char_id)
+
+		# Create label for this character
+		var label = Label.new()
+		if best_kills > 0:
+			var char_name = character_types[char_id].display_name if character_types.has(char_id) else char_id.capitalize()
+			label.text = "%s: %d kills" % [char_name, best_kills]
+		else:
+			var char_name = character_types[char_id].display_name if character_types.has(char_id) else char_id.capitalize()
+			label.text = "%s: No runs yet" % char_name
+
+		leaderboard_list.add_child(label)
+
+	Logger.debug("Leaderboard display updated", "ui")
+
+func _get_character_best_kills(char_id: String) -> int:
+	"""Get the highest kill count for a character across all maps and tiers."""
+	var best_kills = 0
+
+	# Check all maps
+	var maps = LocalLeaderboard.get_maps_with_entries()
+	for map_id in maps:
+		# Check all tiers for this map
+		var tiers = LocalLeaderboard.get_tiers_with_entries(map_id)
+		for tier in tiers:
+			# Get leaderboard for this map+tier
+			var leaderboard = LocalLeaderboard.get_leaderboard(map_id, tier)
+
+			# Find best run for this character
+			for entry in leaderboard:
+				if entry.character_id == char_id:
+					var kills = entry.get("kills", 0)
+					if kills > best_kills:
+						best_kills = kills
+
+	return best_kills
+
+func _on_leaderboard_updated(_map_id: String, _tier: int, _rank: int) -> void:
+	"""Handle leaderboard updates to refresh display."""
+	_update_leaderboard_display()
