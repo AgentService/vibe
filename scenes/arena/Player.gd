@@ -816,15 +816,13 @@ func _handle_death_sequence() -> void:
 	final_stats["result_type"] = "death"
 	final_stats["death_cause"] = "Killed by enemy"
 
-	# Add to LocalLeaderboard (if character/map/tier are set)
-	if LocalLeaderboard and final_stats.has("character_id") and final_stats.has("map_id"):
-		var leaderboard_entry = LocalLeaderboard.create_entry_from_session_state(final_stats)
-		LocalLeaderboard.add_entry(
-			final_stats.character_id,
-			final_stats.map_id,
-			final_stats.tier,
-			leaderboard_entry
-		)
+	# Add to LocalLeaderboard (if map/tier are set)
+	if LocalLeaderboard and final_stats.has("map_id") and final_stats.has("tier"):
+		var map_id = final_stats.map_id
+		var tier = final_stats.tier
+		var rank = LocalLeaderboard.add_run(map_id, tier, final_stats)
+		if rank > 0:
+			Logger.info("Placed #%d on leaderboard for %s Tier %d" % [rank, map_id, tier], "player")
 
 	# Now show results modal with complete stats
 	Logger.info("Player: Death sequence complete, showing results modal", "player")
