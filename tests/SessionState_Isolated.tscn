@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bboykku3xhxx7"]
+
+[ext_resource type="Script" uid="uid://bgnbh3fdxh7d6" path="res://tests/SessionState_Isolated.gd" id="1_vmhdu"]
+
+[node name="SessionStateTest" type="Node"]
+script = ExtResource("1_vmhdu")

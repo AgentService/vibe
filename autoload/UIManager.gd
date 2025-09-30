@@ -74,9 +74,10 @@ func create_background_dimmer() -> void:
 	background_dimmer.color = Color(0.0, 0.0, 0.0, 0.0)  # Start transparent
 	background_dimmer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	background_dimmer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	
-	# Add to system modal layer (10) - dimmer appears behind system modals
-	canvas_layers[10].add_child(background_dimmer)
+
+	# Add to lowest layer (before all modals) so dimmer appears BEHIND all modals
+	canvas_layers[5].add_child(background_dimmer)
+	background_dimmer.z_index = -1  # Ensure it's behind modal content
 	background_dimmer.visible = false
 
 func setup_input_handling() -> void:
@@ -218,8 +219,9 @@ func _cleanup_modal(modal: BaseModal) -> void:
 
 func show_background_dimmer() -> void:
 	background_dimmer.visible = true
-	background_dimmer.mouse_filter = Control.MOUSE_FILTER_STOP
-	
+	# Keep mouse_filter as IGNORE - dimmer is decorative only, modals handle input blocking
+	background_dimmer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+
 	var tween = create_tween()
 	tween.tween_property(background_dimmer, "color:a", 0.7, 0.3).set_ease(Tween.EASE_OUT)
 
@@ -282,6 +284,7 @@ class ModalFactory:
 	
 	var modal_scenes: Dictionary = {
 		UIManager.ModalType.RESULTS_SCREEN: preload("res://scenes/ui/ResultsScreen.tscn"),
+		UIManager.ModalType.CHARACTER_SCREEN: preload("res://scenes/ui/RunSetupScreen.tscn"),
 		# Additional modals will be added here as they're converted
 	}
 	

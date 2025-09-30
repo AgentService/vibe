@@ -800,27 +800,35 @@ func _get_attack_direction() -> String:
 func _handle_death_sequence() -> void:
 	"""Handle the complete death sequence with proper cleanup and timing"""
 	Logger.info("Player: Starting death sequence", "player")
-	
-	# Prepare death result data
-	var death_result = {
-		"result_type": "death",
-		"death_cause": "Killed by enemy",
-		"time_survived": Time.get_ticks_msec() / 1000.0,
-		"level_reached": PlayerProgression.level if PlayerProgression else 1,
-		"enemies_killed": RunManager.stats.get("enemies_killed", 0),
-		"damage_dealt": int(RunManager.stats.get("total_damage_dealt", 0.0)),
-		"damage_taken": get_max_health() - current_health,
-		"xp_gained": RunManager.stats.get("xp_gained", 0),
-		"arena_id": StringName("arena")
-	}
-	
+
 	# Wait for systems to properly clean up (WaveDirector stops spawning, enemies cleared)
 	Logger.info("Player: Waiting for systems cleanup...", "player")
 	await get_tree().create_timer(0.5).timeout
-	
-	# Now show results modal over arena background
+
+	# Finalize the run in SessionState (calculates Rift Fragments, emits run_ended)
+	if SessionState and SessionState.is_run_active():
+		SessionState.end_run()
+
+	# Get comprehensive final stats from SessionState
+	var final_stats = SessionState.get_final_stats() if SessionState else {}
+
+	# Add death-specific info
+	final_stats["result_type"] = "death"
+	final_stats["death_cause"] = "Killed by enemy"
+
+	# Add to LocalLeaderboard (if character/map/tier are set)
+	if LocalLeaderboard and final_stats.has("character_id") and final_stats.has("map_id"):
+		var leaderboard_entry = LocalLeaderboard.create_entry_from_session_state(final_stats)
+		LocalLeaderboard.add_entry(
+			final_stats.character_id,
+			final_stats.map_id,
+			final_stats.tier,
+			leaderboard_entry
+		)
+
+	# Now show results modal with complete stats
 	Logger.info("Player: Death sequence complete, showing results modal", "player")
-	UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, {"run_result": death_result})
+	UIManager.show_modal(UIManager.ModalType.RESULTS_SCREEN, {"run_result": final_stats})
 
 # Death overlay method removed - no longer blocking result screen buttons
 

@@ -73,10 +73,10 @@ func apply_card(card: CardResource) -> void:
 	
 	if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 		Logger.debug("Applying card: " + card.name, "cards")
-	
-	# Apply card modifiers to RunManager stats
-	card.apply_to_stats(RunManager.stats)
-	
+
+	# Apply card modifiers to SessionState player modifiers
+	card.apply_to_stats(SessionState.player_modifiers)
+
 	Logger.info("Applied card: " + card.name + " to player stats", "cards")
 
 func get_pool_count() -> int:
