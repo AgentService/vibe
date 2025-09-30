@@ -11,5 +11,6 @@ flavor_text = "A soft feather that makes you feel lighter"
 category = "items"
 icon_path = ""
 unlock_cost = 60
-rarity = "Common"
+rarity = 0
+discovery_requirement = "Reach stage 3 in any run"
 stat_summary = "+15% Movement Speed"

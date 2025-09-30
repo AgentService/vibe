@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "rabbits_foot"
+display_name = "Rabbit's Foot"
+description = "Increases critical strike chance"
+flavor_text = "A lucky charm said to bring fortune in battle."
+category = "items"
+icon_path = ""
+unlock_cost = 150
+rarity = 3
+discovery_requirement = "Deal 1000 critical hits"
+stat_summary = "+5% Critical Strike Chance"

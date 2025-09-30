@@ -1,0 +1,268 @@
+[gd_scene load_steps=3 format=3 uid="uid://d128c4kosb2vl"]
+
+[ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
+[ext_resource type="PackedScene" uid="uid://daiogox3vei4r" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
+
+[node name="MainMenu" type="CanvasLayer"]
+script = ExtResource("1_vjtqc")
+
+[node name="Root" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel" parent="Root" instance=ExtResource("2_themed_panel")]
+layout_mode = 1
+show_border = false
+rounded_corners = false
+
+[node name="MainMenuContainer" type="Control" parent="Root/BackgroundPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel_MainMenuContainer#LeaderboardPanel" type="MarginContainer" parent="."]
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = -200.0
+offset_bottom = 200.0
+grow_horizontal = 0
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="BackgroundPanel_MainMenuContainer_LeaderboardPanel#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 10
+
+[node name="BackgroundPanel_MainMenuContainer_LeaderboardPanel_VBoxContainer#LeaderboardTitle" type="Label" parent="."]
+text = "PERSONAL BESTS"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_MainMenuContainer_LeaderboardPanel_VBoxContainer#LeaderboardList" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 5
+
+[node name="BackgroundPanel_MainMenuContainer#CenterContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 20
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#TitleLabel" type="Label" parent="."]
+text = "VIBE ROGUELIKE"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#RiftFragmentsContainer" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer_RiftFragmentsContainer#RiftFragmentsLabel" type="Label" parent="."]
+text = "💎 Rift Fragments:"
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer_RiftFragmentsContainer#RiftFragmentsValue" type="Label" parent="."]
+text = "0"
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#Spacer" type="Control" parent="."]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 3
+anchors_preset = 0
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#PlayButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "PLAY"
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#ShopButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "Unlocks Shop"
+
+[node name="BackgroundPanel_MainMenuContainer_CenterContainer_VBoxContainer#QuitButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "Quit"
+
+[node name="BackgroundPanel#CharacterSelectContainer" type="CenterContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel_CharacterSelectContainer#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 20
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer#CharTitle" type="Label" parent="."]
+text = "SELECT CHARACTER"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer#CharacterButtons" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer_CharacterButtons#KnightButton" type="Button" parent="."]
+custom_minimum_size = Vector2(150, 60)
+text = "KNIGHT"
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer_CharacterButtons#RangerButton" type="Button" parent="."]
+custom_minimum_size = Vector2(150, 60)
+text = "RANGER"
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer#CharInfoLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(400, 100)
+text = "Select a character"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer#CharConfirmButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+disabled = true
+text = "CONFIRM"
+
+[node name="BackgroundPanel_CharacterSelectContainer_VBoxContainer#CharBackButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "BACK"
+
+[node name="BackgroundPanel#MapSelectContainer" type="CenterContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel_MapSelectContainer#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 20
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#MapTitle" type="Label" parent="."]
+text = "SELECT DIFFICULTY"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#MapInfoLabel" type="Label" parent="."]
+text = "Map: Forest Arena"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#TierButtons" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer_TierButtons#Tier1Button" type="Button" parent="."]
+custom_minimum_size = Vector2(100, 60)
+text = "TIER 1"
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer_TierButtons#Tier2Button" type="Button" parent="."]
+custom_minimum_size = Vector2(100, 60)
+text = "TIER 2"
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer_TierButtons#Tier3Button" type="Button" parent="."]
+custom_minimum_size = Vector2(100, 60)
+text = "TIER 3"
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#TierInfoLabel" type="Label" parent="."]
+custom_minimum_size = Vector2(400, 80)
+text = "Tier 1: Normal difficulty
+Base Rift Fragments"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#MapStartButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "START RUN"
+
+[node name="BackgroundPanel_MapSelectContainer_VBoxContainer#MapBackButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "BACK"
+
+[node name="BackgroundPanel#UnlocksShopContainer" type="CenterContainer" parent="."]
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="BackgroundPanel_UnlocksShopContainer#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 20
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#ShopTitle" type="Label" parent="."]
+text = "UNLOCKS SHOP"
+horizontal_alignment = 1
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#RiftFragmentsDisplay" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_RiftFragmentsDisplay#RiftFragmentsLabel" type="Label" parent="."]
+text = "💎 Rift Fragments:"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_RiftFragmentsDisplay#RiftFragmentsValue" type="Label" parent="."]
+text = "0"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#CategoryTabs" type="HBoxContainer" parent="."]
+alignment = 1
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_CategoryTabs#ItemsTab" type="Button" parent="."]
+custom_minimum_size = Vector2(120, 40)
+toggle_mode = true
+button_pressed = true
+text = "ITEMS"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_CategoryTabs#TomesTab" type="Button" parent="."]
+custom_minimum_size = Vector2(120, 40)
+toggle_mode = true
+text = "TOMES"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_CategoryTabs#SkillsTab" type="Button" parent="."]
+custom_minimum_size = Vector2(120, 40)
+toggle_mode = true
+text = "SKILLS"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#ItemListScroll" type="ScrollContainer" parent="."]
+custom_minimum_size = Vector2(600, 400)
+size_flags_vertical = 3
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemListScroll#ItemList" type="GridContainer" parent="."]
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 2
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#ItemDetailsPanel" type="PanelContainer" parent="."]
+visible = false
+custom_minimum_size = Vector2(600, 120)
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel#MarginContainer" type="MarginContainer" parent="."]
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel_MarginContainer#VBoxContainer" type="VBoxContainer" parent="."]
+theme_override_constants/separation = 8
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel_MarginContainer_VBoxContainer#ItemName" type="Label" parent="."]
+text = "Item Name"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel_MarginContainer_VBoxContainer#ItemDescription" type="Label" parent="."]
+text = "Item description goes here"
+autowrap_mode = 3
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel_MarginContainer_VBoxContainer#ItemStats" type="Label" parent="."]
+text = "Stats"
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer_ItemDetailsPanel_MarginContainer_VBoxContainer#ItemFlavorText" type="Label" parent="."]
+text = "Flavor text"
+autowrap_mode = 3
+
+[node name="BackgroundPanel_UnlocksShopContainer_VBoxContainer#ShopBackButton" type="Button" parent="."]
+custom_minimum_size = Vector2(200, 0)
+text = "BACK"

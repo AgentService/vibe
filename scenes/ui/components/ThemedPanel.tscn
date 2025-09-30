@@ -1,15 +1,12 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=2 format=3 uid="uid://daiogox3vei4r"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/ThemedPanel.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://c01a4mdkdimpw" path="res://scenes/ui/components/ThemedPanel.gd" id="1_0"]
 
 [node name="ThemedPanel" type="Panel"]
 process_mode = 3
-custom_minimum_size = Vector2(200, 100)
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 script = ExtResource("1_0")
-panel_variant = ""
-auto_theme = true
-show_border = true
-rounded_corners = true
-drop_shadow = false
-glow_effect = false
-hover_highlight = false

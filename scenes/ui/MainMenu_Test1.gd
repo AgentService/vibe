@@ -5,50 +5,45 @@ extends Control
 ##              Main Menu → Unlocks Shop → Main Menu
 
 # Screen containers
-@onready var main_menu_container: Control = $BackgroundPanel/MainMenuContainer
-@onready var character_select_container: Control = $BackgroundPanel/CharacterSelectContainer
-@onready var map_select_container: Control = $BackgroundPanel/MapSelectContainer
-@onready var unlocks_shop_container: Control = $BackgroundPanel/UnlocksShopContainer
+@onready var main_menu_container: Control = $MainMenuContainer
+@onready var character_select_container: Control = $CharacterSelectContainer
+@onready var map_select_container: Control = $MapSelectContainer
+@onready var unlocks_shop_container: Control = $UnlocksShopContainer
 
 # Main Menu elements
-@onready var title_label: Label = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/TitleLabel
-@onready var rift_fragments_value: Label = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/RiftFragmentsContainer/RiftFragmentsValue
-@onready var play_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/PlayButton
-@onready var shop_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/ShopButton
-@onready var quit_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/QuitButton
+@onready var title_label: Label = $MainMenuContainer/VBoxContainer/TitleLabel
+@onready var rift_fragments_value: Label = $MainMenuContainer/VBoxContainer/RiftFragmentsContainer/RiftFragmentsValue
+@onready var play_button: Button = $MainMenuContainer/VBoxContainer/PlayButton
+@onready var shop_button: Button = $MainMenuContainer/VBoxContainer/ShopButton
+@onready var quit_button: Button = $MainMenuContainer/VBoxContainer/QuitButton
 
 # Character Select elements
-@onready var char_title: Label = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharTitle
-@onready var knight_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharacterButtons/KnightButton
-@onready var ranger_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharacterButtons/RangerButton
-@onready var char_info_label: Label = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharInfoLabel
-@onready var char_confirm_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharConfirmButton
-@onready var char_back_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharBackButton
+@onready var char_title: Label = $CharacterSelectContainer/VBoxContainer/CharTitle
+@onready var knight_button: Button = $CharacterSelectContainer/VBoxContainer/CharacterButtons/KnightButton
+@onready var ranger_button: Button = $CharacterSelectContainer/VBoxContainer/CharacterButtons/RangerButton
+@onready var char_info_label: Label = $CharacterSelectContainer/VBoxContainer/CharInfoLabel
+@onready var char_confirm_button: Button = $CharacterSelectContainer/VBoxContainer/CharConfirmButton
+@onready var char_back_button: Button = $CharacterSelectContainer/VBoxContainer/CharBackButton
 
 # Map Select elements
-@onready var map_title: Label = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapTitle
-@onready var tier1_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier1Button
-@onready var tier2_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier2Button
-@onready var tier3_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier3Button
-@onready var tier_info_label: Label = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierInfoLabel
-@onready var map_start_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapStartButton
-@onready var map_back_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapBackButton
+@onready var map_title: Label = $MapSelectContainer/VBoxContainer/MapTitle
+@onready var tier1_button: Button = $MapSelectContainer/VBoxContainer/TierButtons/Tier1Button
+@onready var tier2_button: Button = $MapSelectContainer/VBoxContainer/TierButtons/Tier2Button
+@onready var tier3_button: Button = $MapSelectContainer/VBoxContainer/TierButtons/Tier3Button
+@onready var tier_info_label: Label = $MapSelectContainer/VBoxContainer/TierInfoLabel
+@onready var map_start_button: Button = $MapSelectContainer/VBoxContainer/MapStartButton
+@onready var map_back_button: Button = $MapSelectContainer/VBoxContainer/MapBackButton
 
 # Leaderboard elements
-@onready var leaderboard_list: VBoxContainer = $BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer/LeaderboardList
+@onready var leaderboard_list: VBoxContainer = $LeaderboardPanel/VBoxContainer/LeaderboardList
 
 # Unlocks Shop elements
-@onready var shop_rift_fragments_value: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay/RiftFragmentsValue
-@onready var items_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/ItemsTab
-@onready var tomes_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/TomesTab
-@onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
-@onready var shop_item_list: GridContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll/ItemList
-@onready var shop_item_details_panel: PanelContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel
-@onready var shop_item_name: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemName
-@onready var shop_item_description: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemDescription
-@onready var shop_item_stats: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemStats
-@onready var shop_item_flavor: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemFlavorText
-@onready var shop_back_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ShopBackButton
+@onready var shop_rift_fragments_value: Label = $UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay/RiftFragmentsValue
+@onready var items_tab: Button = $UnlocksShopContainer/VBoxContainer/CategoryTabs/ItemsTab
+@onready var tomes_tab: Button = $UnlocksShopContainer/VBoxContainer/CategoryTabs/TomesTab
+@onready var skills_tab: Button = $UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
+@onready var shop_item_list: VBoxContainer = $UnlocksShopContainer/VBoxContainer/ItemListScroll/ItemList
+@onready var shop_back_button: Button = $UnlocksShopContainer/VBoxContainer/ShopBackButton
 
 # Selection state
 var selected_character: String = ""
@@ -81,7 +76,7 @@ func _ready() -> void:
 
 func _load_character_types() -> void:
 	"""Load character types from data file."""
-	var character_data = load("res://data/core/character-types.tres")
+	var character_data = load("res:/data/core/character-types.tres")
 	if character_data and character_data.character_types:
 		character_types = character_data.character_types
 		Logger.info("Loaded %d character types" % character_types.size(), "ui")
@@ -92,7 +87,7 @@ func _load_item_metadata() -> void:
 	"""Load item metadata from /data/content/items/*.tres"""
 	var item_files = ["cheese.tres", "clover.tres", "feather.tres"]
 	for file_name in item_files:
-		var path = "res://data/content/items/" + file_name
+		var path = "res:/data/content/items/" + file_name
 		var item_metadata = load(path) as ItemMetadata
 		if item_metadata:
 			item_metadata_cache[item_metadata.item_id] = item_metadata
@@ -410,27 +405,17 @@ func _update_shop_ui() -> void:
 		if metadata.category == selected_shop_category:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
-	)
-
 	# Show message if no items exist for this category
 	if category_items.is_empty():
 		var empty_label = Label.new()
 		empty_label.text = "No %s available yet." % selected_shop_category
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		shop_item_list.add_child(empty_label)
-		shop_item_details_panel.visible = false
 		return
 
 	# Create item entry for each item (regardless of discovery state)
 	for item_metadata in category_items:
 		_create_shop_item_entry(item_metadata)
-
-	# Auto-select first item to show details
-	if not category_items.is_empty():
-		_show_item_details(category_items[0])
 
 func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 	"""Create a shop item entry UI with proper state visualization."""
@@ -440,41 +425,56 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
 	var entry_container = PanelContainer.new()
-	entry_container.custom_minimum_size = Vector2(280, 60)
+	entry_container.custom_minimum_size = Vector2(550, 80)
 
-	# Greyed out if locked (not discovered AND not unlocked)
-	if not is_discovered and not is_unlocked:
+	# Greyed out if locked
+	if not is_discovered:
 		entry_container.modulate = Color(0.3, 0.3, 0.3)
 
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 15)
 	entry_container.add_child(hbox)
 
-	# Item info - just name with rarity color
+	# Item info
+	var info_vbox = VBoxContainer.new()
+	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+
 	var name_label = Label.new()
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	if is_discovered or is_unlocked:
+	if is_discovered:
 		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-		name_label.text = item_metadata.display_name
-		name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+		name_label.text = item_metadata.display_name + " (" + rarity_name + ")"
 	else:
 		name_label.text = "??? (Locked)"
-		name_label.modulate = Color(0.5, 0.5, 0.5)
-	hbox.add_child(name_label)
+	info_vbox.add_child(name_label)
 
-	# Make entry clickable (only if discovered or unlocked)
-	if is_discovered or is_unlocked:
-		entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
-		entry_container.gui_input.connect(func(event: InputEvent):
-			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-				_show_item_details(item_metadata)
-		)
+	var desc_label = Label.new()
+	if is_discovered:
+		desc_label.text = item_metadata.description
+	else:
+		desc_label.text = "Find this item in runs to unlock it"
+	desc_label.modulate = Color(0.8, 0.8, 0.8)
+	info_vbox.add_child(desc_label)
 
-	# Right side: Unlock button or lock status
+	var stat_label = Label.new()
+	if is_discovered:
+		stat_label.text = item_metadata.stat_summary
+	else:
+		stat_label.text = "???"
+	stat_label.modulate = Color(0.6, 1.0, 0.6)
+	info_vbox.add_child(stat_label)
+
+	hbox.add_child(info_vbox)
+
+	# Right side: Unlock button or status
 	if is_unlocked:
-		# No button/status needed - normal appearance indicates unlocked
-		pass
+		# Show UNLOCKED status
+		var status_label = Label.new()
+		status_label.text = "✓ UNLOCKED"
+		status_label.modulate = Color(0.4, 1.0, 0.4)
+		status_label.custom_minimum_size = Vector2(100, 0)
+		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hbox.add_child(status_label)
 	elif is_discovered:
 		# Show unlock button with cost
 		var unlock_button = Button.new()
@@ -522,34 +522,3 @@ func _on_item_unlocked(_category: String, _item_id: String) -> void:
 	# Refresh shop if visible
 	if unlocks_shop_container.visible:
 		_update_shop_ui()
-
-func _show_item_details(item_metadata: ItemMetadata) -> void:
-	"""Display item details in the details panel."""
-	var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-	shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
-	shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
-
-	shop_item_description.text = item_metadata.description
-	shop_item_description.modulate = Color.WHITE
-
-	# Show discovery requirement if not yet discovered
-	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
-	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
-
-	if not is_discovered and not is_unlocked and not item_metadata.discovery_requirement.is_empty():
-		shop_item_stats.text = "🔒 How to Discover: " + item_metadata.discovery_requirement
-		shop_item_stats.modulate = Color(1.0, 0.8, 0.3)
-	else:
-		shop_item_stats.text = item_metadata.stat_summary
-		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
-
-	if item_metadata.flavor_text.is_empty():
-		shop_item_flavor.text = ""
-		shop_item_flavor.visible = false
-	else:
-		shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
-		shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
-		shop_item_flavor.visible = true
-
-	shop_item_details_panel.visible = true
-	Logger.debug("Showing details for: %s" % item_metadata.display_name, "ui")

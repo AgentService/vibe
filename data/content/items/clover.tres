@@ -11,5 +11,6 @@ flavor_text = "A rare clover that brings good fortune"
 category = "items"
 icon_path = ""
 unlock_cost = 75
-rarity = "Uncommon"
+rarity = 1
+discovery_requirement = "Defeat 100 enemies in a single run"
 stat_summary = "+10% Luck"

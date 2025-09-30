@@ -1,9 +1,9 @@
-[gd_scene load_steps=3 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=3 format=3 uid="uid://ccolvviqqqtxm"]
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
 [ext_resource type="PackedScene" uid="uid://daiogox3vei4r" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
 
-[node name="MainMenu" type="Control"]
+[node name="MainMenu2" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -17,24 +17,17 @@ layout_mode = 1
 show_border = false
 rounded_corners = false
 
-[node name="MainMenuContainer" type="Control" parent="BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel/MainMenuContainer"]
+[node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel"]
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
 anchor_top = 0.5
 anchor_right = 1.0
 anchor_bottom = 0.5
-offset_left = -200.0
-offset_top = -200.0
-offset_bottom = 200.0
+offset_left = -220.0
+offset_top = -250.0
+offset_right = -20.0
+offset_bottom = 250.0
 grow_horizontal = 0
 grow_vertical = 2
 theme_override_constants/margin_left = 10
@@ -42,20 +35,20 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel"]
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/LeaderboardPanel"]
 layout_mode = 2
 theme_override_constants/separation = 10
 
-[node name="LeaderboardTitle" type="Label" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
+[node name="LeaderboardTitle" type="Label" parent="BackgroundPanel/LeaderboardPanel/VBoxContainer"]
 layout_mode = 2
 text = "PERSONAL BESTS"
 horizontal_alignment = 1
 
-[node name="LeaderboardList" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
+[node name="LeaderboardList" type="VBoxContainer" parent="BackgroundPanel/LeaderboardPanel/VBoxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 5
 
-[node name="CenterContainer" type="CenterContainer" parent="BackgroundPanel/MainMenuContainer"]
+[node name="MainMenuContainer" type="CenterContainer" parent="BackgroundPanel"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -63,42 +56,42 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/CenterContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer"]
 layout_mode = 2
 theme_override_constants/separation = 20
 
-[node name="TitleLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="TitleLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 layout_mode = 2
 text = "VIBE ROGUELIKE"
 horizontal_alignment = 1
 
-[node name="RiftFragmentsContainer" type="HBoxContainer" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="RiftFragmentsContainer" type="HBoxContainer" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 layout_mode = 2
 alignment = 1
 
-[node name="RiftFragmentsLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/RiftFragmentsContainer"]
+[node name="RiftFragmentsLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/VBoxContainer/RiftFragmentsContainer"]
 layout_mode = 2
 text = "💎 Rift Fragments:"
 
-[node name="RiftFragmentsValue" type="Label" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/RiftFragmentsContainer"]
+[node name="RiftFragmentsValue" type="Label" parent="BackgroundPanel/MainMenuContainer/VBoxContainer/RiftFragmentsContainer"]
 layout_mode = 2
 text = "0"
 
-[node name="Spacer" type="Control" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="Spacer" type="Control" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 
-[node name="PlayButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="PlayButton" type="Button" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "PLAY"
 
-[node name="ShopButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="ShopButton" type="Button" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "Unlocks Shop"
 
-[node name="QuitButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
+[node name="QuitButton" type="Button" parent="BackgroundPanel/MainMenuContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)
 layout_mode = 2
 text = "Quit"
@@ -271,46 +264,10 @@ custom_minimum_size = Vector2(600, 400)
 layout_mode = 2
 size_flags_vertical = 3
 
-[node name="ItemList" type="GridContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll"]
+[node name="ItemList" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll"]
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
-columns = 2
-
-[node name="ItemDetailsPanel" type="PanelContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
-visible = false
-custom_minimum_size = Vector2(600, 120)
-layout_mode = 2
-
-[node name="MarginContainer" type="MarginContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 15
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 15
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer"]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Item Name"
-
-[node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Item description goes here"
-autowrap_mode = 3
-
-[node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Stats"
-
-[node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
-layout_mode = 2
-text = "Flavor text"
-autowrap_mode = 3
+theme_override_constants/separation = 10
 
 [node name="ShopBackButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)

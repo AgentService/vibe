@@ -11,5 +11,6 @@ flavor_text = "A wedge of aged cheese. Good for the bones."
 category = "items"
 icon_path = ""
 unlock_cost = 50
-rarity = "Common"
+rarity = 0
+discovery_requirement = "Survive for 5 minutes in any run"
 stat_summary = "+10% Max HP"

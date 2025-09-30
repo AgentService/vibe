@@ -38,22 +38,35 @@
   - **Documentation Updates**: Updated autoload/CLAUDE.md with SessionState, MetaProgression, LocalLeaderboard patterns
   - **Architecture Notes**: Added progression autoload section documenting MEGABONK/ROR2-style architecture
 
-- **Phase 9: Item Discovery & Unlock System**: ✅ **SHOP COMPLETE** - In-game discovery pending
-  - **ItemMetadata Resource**: Created ItemMetadata.gd with unlock cost, rarity, stat summary fields
-  - **MEGABONK Items**: Created 3 passive items (Cheese: +10% Max HP, Clover: +10% Luck, Feather: +15% Move Speed)
-  - **UnlocksShop Integration**: Added 4th screen to MainMenu.tscn with category tabs (Items/Tomes/Skills)
-  - **Shop UI Architecture**: Dynamic item list population from MetaProgression.get_discovered_items()
+- **Phase 9: Item Discovery & Unlock System**: ✅ **SHOP UI COMPLETE** - In-game discovery pending
+  - **ItemMetadata Resource**: Created ItemMetadata.gd with unlock cost, rarity enum, stat summary, discovery requirements
+  - **Rarity System**: Enum-based rarity (COMMON/UNCOMMON/RARE/EPIC/LEGENDARY) with color coding:
+    - Common: Grey (0.6, 0.6, 0.6) | Uncommon: Green (0.3, 0.9, 0.3) | Rare: Blue (0.3, 0.5, 1.0)
+    - Epic: Purple (0.7, 0.3, 1.0) | Legendary: Gold (1.0, 0.8, 0.2)
+  - **Discovery Requirements**: Achievement-based unlock requirements (e.g., "Deal 1000 critical hits")
+  - **MEGABONK Items**: Created 5 items with varied rarities:
+    - Cheese (Common, 50💎): +10% Max HP - "Survive for 5 minutes"
+    - Feather (Common, 60💎): +15% Move Speed - "Reach stage 3"
+    - Four-Leaf Clover (Uncommon, 75💎): +10% Luck - "Defeat 100 enemies"
+    - Lucky Coin (Rare, 100💎): +15% Item Drop Rate - "Complete run with 3+ item types"
+    - Rabbit's Foot (Epic, 150💎): +5% Crit Chance - "Deal 1000 critical hits"
+  - **UnlocksShop Integration**: 4th screen in MainMenu.tscn with category tabs (Items/Tomes/Skills)
+  - **Grid Layout**: Items display in 2-column grid with auto-wrap (GridContainer)
+  - **Shop UI Architecture**: ALL items visible by default, showing LOCKED/DISCOVERED/UNLOCKED states
+  - **Three-State System**:
+    - LOCKED (grey, "???", 🔒 + cost) - Not discovered, shows requirement in details
+    - DISCOVERED (colored, UNLOCK button) - Found in run, can purchase
+    - UNLOCKED (colored, no button) - Purchased and available
+  - **Details Panel**: Auto-selects first item on shop open, shows:
+    - Name with rarity color | Description | Stats OR discovery requirement | Flavor text
   - **Purchase Flow**: Check affordability → spend_rift_fragments() → unlock_item() → refresh UI
-  - **Shop Button**: Added "SHOP" button to main menu for accessing unlock screen
+  - **Shop Button**: Added "Unlocks Shop" button to main menu
   - **Category Switching**: Toggle buttons for Items/Tomes/Skills with reactive UI updates
-  - **Empty State**: "No items discovered yet. Find them in runs!" message for empty categories
-  - **Debug Commands**: Added console commands for testing (discover_item, give_fragments, progression_info)
+  - **Debug Commands**: Console commands for testing (discover_item, give_fragments, progression_info)
   - **LeaderboardDataResource**: Moved from inner class to external file for proper Godot serialization
   - **Persistence Fix**: Uses `get_data()` method for clean Resource save/load cycle
   - **MainMenu Fix**: Deferred leaderboard display to ensure data loads before UI refresh
-  - **Cleanup**: Removed debug print statements, code ready for production
-  - **Testing**: ✅ Shop functional, leaderboard persists across restarts, debug commands work
-  - **TODO**: In-game discovery notifications, end-of-run summary, drop table integration
+  - **TODO**: In-game discovery notifications, achievement tracking, drop table integration
 
 ### Systems Architecture Fixes
 - **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
