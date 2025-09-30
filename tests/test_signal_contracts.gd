@@ -38,7 +38,7 @@ static func _run_minimal_simulation(tracker: SignalTracker) -> void:
 	var run_manager: Node = load("res://autoload/RunManager.gd").new()
 	# TODO: Phase 2 - Replace with AbilityModule autoload testing
 	# var ability_system: Node = load("res://scripts/systems/AbilitySystem.gd").new()
-	var spawn_director: Node = load("res://scripts/systems/SpawnDirector.gd").new()
+	var spawn_director: Node = load("res://scripts/systems/spawn/SpawnDirector.gd").new()
 	var damage_system: Node = load("res://scripts/systems/DamageSystem.gd").new()
 	var player_state: Node = load("res://autoload/PlayerState.gd").new()
 

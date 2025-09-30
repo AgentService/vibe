@@ -1,9 +1,16 @@
 # Procedural Arena Generation System (Legacy)
 
 **Created:** 2025-09-23
+**Updated:** 2025-09-30 - ForestArena Cleanup
 **Status:** 🔄 LEGACY SYSTEM - Superseded by PathAware Architecture
 **Category:** Arena Management & Spatial Systems
 **Current Primary System:** [PathAware Arena Generation](PathAware-Arena-Generation-System.md)
+
+## 📋 **Recent Updates (2025-09-30)**
+- ✅ **ForestArena Removed**: ForestArena.tscn and ForestArena.gd have been completely removed from the codebase
+- ✅ **Plugin Cleanup**: "Forest Arena Generator Editor" plugin has been removed from addons/
+- ✅ **Reference Updates**: SceneTransitionManager and DebugConfig updated to remove ForestArena options
+- 🎯 **Current State**: Only PathAware_Forest.tscn and ProceduralArena.tscn remain as procedural arena options
 
 ## ⚠️ **LEGACY SYSTEM NOTICE**
 
@@ -108,9 +115,9 @@ var extended_half_height = (total_size.y / 2) + camera_extension
 
 # Fill with aesthetic background tiles
 for x in range(-extended_half_width, extended_half_width + 1):
-    for y in range(-extended_half_height, extended_half_height + 1):
-        var floor_tile = biome_config.get_random_floor_tile(rng)
-        ground_layer.set_cell(Vector2i(x, y), 0, floor_tile)
+	for y in range(-extended_half_height, extended_half_height + 1):
+		var floor_tile = biome_config.get_random_floor_tile(rng)
+		ground_layer.set_cell(Vector2i(x, y), 0, floor_tile)
 ```
 
 #### Boundary Layer (Tree System)
@@ -120,9 +127,9 @@ var total_boundary_width = generation_params.boundary_width + generation_params.
 
 # Generate concentric tree rings
 for border_layer in range(total_boundary_width):
-    var layer_half_width = half_width + border_layer
-    var layer_half_height = half_height + border_layer
-    # Place trees with spacing and chance calculations
+	var layer_half_width = half_width + border_layer
+	var layer_half_height = half_height + border_layer
+	# Place trees with spacing and chance calculations
 ```
 
 #### Spawn Layer (Enemy Positioning)
@@ -130,10 +137,10 @@ for border_layer in range(total_boundary_width):
 # Generate spawn area with border spacing
 var spawn_spacing = generation_params.spawn_border_spacing
 for x in range(arena_bounds.position.x + spawn_spacing, arena_bounds.end.x - spawn_spacing):
-    for y in range(arena_bounds.position.y + spawn_spacing, arena_bounds.end.y - spawn_spacing):
-        if not _will_have_obstruction(tile_pos, rng):
-            var spawn_tile = biome_config.get_spawn_area_tile(rng)
-            spawn_layer.set_cell(tile_pos, 0, spawn_tile)
+	for y in range(arena_bounds.position.y + spawn_spacing, arena_bounds.end.y - spawn_spacing):
+		if not _will_have_obstruction(tile_pos, rng):
+			var spawn_tile = biome_config.get_spawn_area_tile(rng)
+			spawn_layer.set_cell(tile_pos, 0, spawn_tile)
 ```
 
 ### 📊 **Area Hierarchy**
@@ -218,11 +225,11 @@ var procedural_arena = ProceduralMapManager.generate_random_arena("standard")
 
 # StateManager handles transition with procedural context
 var context = {
-    "run_id": "procedural_run_12345",
-    "arena_id": &"procedural",
-    "procedural_arena": arena_scene,
-    "arena_type": "procedural",
-    "character_data": character_data
+	"run_id": "procedural_run_12345",
+	"arena_id": &"procedural",
+	"procedural_arena": arena_scene,
+	"arena_type": "procedural",
+	"character_data": character_data
 }
 
 StateManager.start_procedural_run(arena_scene, context)
@@ -301,11 +308,11 @@ Hideout Scene Structure:
 ```gdscript
 # Check biome configuration
 if not biome_config.is_valid():
-    Logger.error("Invalid biome configuration", "procedural")
+	Logger.error("Invalid biome configuration", "procedural")
 
 # Verify resource loading
 if not _available_biomes.has("forest"):
-    Logger.warn("Forest biome not loaded", "procedural")
+	Logger.warn("Forest biome not loaded", "procedural")
 ```
 
 **Performance Issues:**
@@ -406,7 +413,7 @@ For new development, see: **[PathAware Arena Generation System](PathAware-Arena-
 
 ### **Legacy System Maintenance**
 This legacy system remains functional for:
-- Existing `ForestArena.tscn` and `ProceduralArena.tscn` scenes
+- Existing `ProceduralArena.tscn` scenes (ForestArena.tscn has been removed)
 - Tileset-based procedural generation needs
 - Specific biome configurations requiring tile patterns
 
@@ -505,14 +512,14 @@ enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res:
 **Files to Remove:**
 ```bash
 # Remove legacy arena scenes
-rm "scenes/arena/ForestArena.tscn"
+# ✅ ForestArena.tscn - ALREADY REMOVED (2025-09-30)
 rm "scenes/arena/ProceduralArena.tscn"
 ```
 
 **Associated Script Files:**
 ```bash
 # Remove forest arena script
-rm "scripts/arena/ForestArena.gd"
+# ✅ ForestArena.gd - ALREADY REMOVED (2025-09-30)
 ```
 
 **Update Scene References:**
@@ -694,8 +701,8 @@ git checkout HEAD~1  # Rollback to pre-removal commit
 
 **Files Removed:** ~25-30 files including:
 - 1 Autoload service (`ProceduralMapManager.gd`)
-- 1 Editor plugin (`forest_generator_editor/`)
-- 2-3 Arena scenes (`ForestArena.tscn`, `ProceduralArena.tscn`)
+- ✅ 1 Editor plugin (`forest_generator_editor/`) - REMOVED 2025-09-30
+- ✅ 1-2 Arena scenes (`ForestArena.tscn` REMOVED, `ProceduralArena.tscn` remains)
 - 4-5 Core system files (`ProceduralArenaGenerator.gd`, etc.)
 - 5-10 Resource files and configurations
 - 5-10 Documentation and test files

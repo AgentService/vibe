@@ -1,6 +1,6 @@
 [gd_scene load_steps=4 format=3 uid="uid://bqx7n8w4vg3u0"]
 
-[ext_resource type="Script" path="res://scripts/systems/ProceduralArenaGenerator.gd" id="1_0k8ys"]
+[ext_resource type="Script" path="res://scripts/systems/arena_generation/ProceduralArenaGenerator.gd" id="1_0k8ys"]
 [ext_resource type="Resource" uid="uid://c6i8y5m1kcg4v" path="res://data/content/biomes/ForestBiome.tres" id="2_5qj2p"]
 [ext_resource type="Resource" uid="uid://dx4m8l2y6gk7n" path="res://data/content/biomes/DefaultGenerationParams.tres" id="3_x9m5k"]
 

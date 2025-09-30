@@ -3,7 +3,7 @@ extends Node
 ## RadarSystem isolated test - verifies radar data emission and state management.
 ## Tests RadarSystem functionality without full Arena context.
 
-const RadarSystem = preload("res://scripts/systems/RadarSystem.gd")
+const RadarSystem = preload("res://scripts/systems/radar/RadarSystem.gd")
 
 var radar_system
 var test_results: Array[String] = []

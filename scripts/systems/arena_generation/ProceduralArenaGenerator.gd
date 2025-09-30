@@ -3,7 +3,7 @@ class_name ProceduralArenaGenerator
 extends Node2D
 
 ## General-purpose procedural arena generator supporting multiple biomes
-## Replaces ForestArenaGenerator with tileset-agnostic approach
+## Tileset-agnostic approach for flexible arena generation
 
 signal generation_complete()
 

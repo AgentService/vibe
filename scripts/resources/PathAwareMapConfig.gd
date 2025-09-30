@@ -23,8 +23,8 @@ func get_effective_spawn_zones() -> Array:
 	if path_snapshot and auto_optimize_spawns:
 		return _generate_zones_from_paths()
 	else:
-		# Fall back to manual zones from base MapConfig
-		return _convert_legacy_spawn_zones()
+		# Legacy spawn_zones removed - return empty array
+		return []
 
 ## Generate spawn zones from path data
 func _generate_zones_from_paths() -> Array:
@@ -311,23 +311,6 @@ func _get_category_name(category: PathSpawnProfile.PathSpawnCategory) -> String:
 		_:
 			return "Unknown"
 
-## Convert legacy spawn zone dictionaries to SpawnZone objects for compatibility
-func _convert_legacy_spawn_zones() -> Array:
-	var zones: Array = []
-
-	for zone_dict in spawn_zones:
-		var zone = SpawnZone.new()
-		zone.name = zone_dict.get("name", "")
-		zone.weight = zone_dict.get("weight", 1.0)
-
-		# Convert single position to position array
-		var position = zone_dict.get("position", Vector2.ZERO)
-		var radius = zone_dict.get("radius", 50.0)
-		zone.positions = [position]  # Simple conversion for now
-
-		zones.append(zone)
-
-	return zones
 
 ## Get spawn profile by system name
 func get_spawn_profile(system_name: String) -> PathSpawnProfile:

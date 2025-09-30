@@ -12,18 +12,9 @@ var is_taking_damage: bool = false
 var is_aggroed: bool = false
 
 func _ready() -> void:
-	# Set AncientLich specific stats (override BaseBoss defaults)
-	max_health = 200.0
-	current_health = 200.0
-	damage = 25.0
-	attack_damage = 25.0
-	attack_cooldown = 1.5
-	attack_range = 60.0
-	# chase_range = 300.0  # Using BaseBoss default (5500.0)
-	
-	# Call parent _ready() to handle base initialization
+	# Call parent _ready() to handle base initialization (stats applied via SpawnConfig)
 	super._ready()
-	
+
 	# AncientLich specific setup after base initialization
 	_setup_ancient_lich_specific_behavior()
 

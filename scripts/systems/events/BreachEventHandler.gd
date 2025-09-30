@@ -426,7 +426,6 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 		var pos_key = _get_position_key(position)
 		breach_event.revealed_enemies[pos_key] = enemy_node
 
-		Logger.debug("Spawned and tagged breach enemy at %s for breach %s" % [position, breach_event.breach_id], "events")
 	else:
 		Logger.warn("Failed to spawn breach enemy at %s for breach %s" % [position, breach_event.breach_id], "events")
 

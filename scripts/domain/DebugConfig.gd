@@ -10,7 +10,7 @@ class_name DebugConfig
 
 @export_group("Arena Selection")
 ## Arena to load for debug mode - auto-discovered from scenes/arena/
-@export_enum("Arena", "ForestArena", "PathAware_Forest", "ProceduralArena", "UnderworldArena", "Custom Path") var arena_selection: String = "Arena"
+@export_enum("Arena", "PathAware_Forest", "ProceduralArena", "UnderworldArena", "Custom Path") var arena_selection: String = "Arena"
 @export var custom_arena_path: String = ""  # Used when arena_selection is "Custom Path"
 
 @export_group("Character Selection")

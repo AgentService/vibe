@@ -16,6 +16,7 @@
 | **BalanceDB.gd** | Hot-reloadable balance data | `balance_reloaded` signal | None (foundation) |
 | **PlayerProgression.gd** | Character XP & leveling | `leveled_up`, `xp_gained` | CharacterManager |
 | **CharacterManager.gd** | Character CRUD & persistence | Character selection flow | PlayerProgression |
+| **MapLevel.gd** | Time-based progression tracking | `level_increased`, `level_changed` | StateManager for run lifecycle |
 
 ## Autoload Architecture Patterns
 

@@ -62,7 +62,7 @@ func _initialize_systems():
 	add_child(path_generator)
 
 	# Create tree boundary generator system (using script resource to avoid class registration issues)
-	var tree_script = load("res://scripts/systems/TreeBoundaryGenerator.gd")
+	var tree_script = load("res://scripts/systems/arena_generation/TreeBoundaryGenerator.gd")
 	var tree_node = Node.new()
 	tree_node.set_script(tree_script)
 	tree_node.tree_config = tree_config

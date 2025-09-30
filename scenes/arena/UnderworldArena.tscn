@@ -22,25 +22,9 @@ ambient_light_energy = 0.3
 arena_bounds_radius = 500.0
 spawn_radius = 400.0
 player_spawn_position = Vector2(0, 0)
-spawn_zones = Array[Dictionary]([])
-boss_spawn_positions = Array[Vector2]([])
-max_concurrent_enemies = 50
 auto_spawn_range = 800.0
 auto_spawn_min_distance = 300.0
-pack_spawn_range = 1600.0
-pack_spawn_min_distance = 800.0
-use_viewport_culling = false
-viewport_margin = 200.0
-activation_method = 0
-base_spawn_scaling = {
-"max_scaling_multiplier": 2.5,
-"pack_base_size_max": 10,
-"pack_base_size_min": 5,
-"pack_spawn_interval": 5.0,
-"time_scaling_rate": 0.1,
-"wave_scaling_rate": 0.15
-}
-arena_scaling_overrides = {}
+activation_method = 2
 has_environmental_hazards = false
 weather_effects = Array[StringName]([])
 special_mechanics = Array[StringName]([])

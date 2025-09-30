@@ -3,7 +3,7 @@ extends Node2D
 ## Main scene that manages dynamic scene loading and transitions.
 ## Supports both debug config initial loading and runtime scene transitions via SceneTransitionManager.
 
-const SceneTransitionManagerScript = preload("res://scripts/systems/SceneTransitionManager.gd")
+const SceneTransitionManagerScript = preload("res://scripts/systems/arena/SceneTransitionManager.gd")
 
 var current_scene: Node
 var debug_config: DebugConfig

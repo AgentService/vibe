@@ -3,7 +3,7 @@ extends Node2D
 ## Hideout scene - the game's central hub for menus, character selection, and map entry.
 ## Spawns the player and provides access to game systems via interactive elements.
 
-const PlayerSpawner = preload("res://scripts/systems/PlayerSpawner.gd")
+const PlayerSpawner = preload("res://scripts/systems/spawn/PlayerSpawner.gd")
 
 var player_spawner: PlayerSpawner
 var player_instance: Node2D

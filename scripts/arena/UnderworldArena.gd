@@ -106,11 +106,6 @@ func get_arena_bounds() -> float:
 func get_spawn_zones() -> Array[Area2D]:
 	return _spawn_zone_areas
 
-## Get boss spawn positions
-func get_boss_spawn_positions() -> Array[Vector2]:
-	if map_config:
-		return map_config.boss_spawn_positions
-	return []
 
 ## Check if arena has environmental hazards
 func has_environmental_hazards() -> bool:
