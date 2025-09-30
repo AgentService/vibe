@@ -4,6 +4,9 @@
 
 This guide outlines implementing a flexible bullet upgrade system using the Strategy Pattern, integrated with the existing vibe game architecture. The system allows modular, data-driven upgrades that can be combined and reused across different abilities.
 
+## Additional ideas
+- we need a toggle option to auto target closest enemy or random
+
 ## 🏗️ Architecture Integration
 
 ### Existing System Alignment

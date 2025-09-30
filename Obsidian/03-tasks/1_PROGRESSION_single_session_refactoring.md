@@ -22,14 +22,14 @@ Refactor the progression system from character-slot-based saves to single-sessio
 - ⚠️ Session state in memory only (kills, damage, level, items collected)
 - ⚠️ End-of-run flow: Calculate silver → Save meta → Show stats → Leaderboard entry
 
-## 🎯 Player Flow (Based on Design Discussion)
+## 🎯 Player Flow (Based on Design Discussion + UI Mockups)
 
 ```
 Game Launch
     ↓
 Main Menu
-    ├── [PLAY] → Character Select → Arena (run starts)
-    ├── [UNLOCKS] → Purchase unlocked items/characters with silver
+    ├── [PLAY] → Character Select → Map + Tier Selection → Arena (run starts)
+    ├── [UNLOCKS] → Purchase unlocked items/characters with Rift Fragments
     ├── [QUESTS] → View active quests and progress
     ├── [SHOP] → Purchase meta-progression upgrades
     ├── [SETTINGS] (left side)
@@ -47,13 +47,22 @@ Main Menu Layout:
 │                     - SHOP            * Reset Timer    │
 └─────────────────────────────────────────────────────────┘
 
+Map Selection Screen (After Character Select)
+    ├── Left: Map list (Forest, etc.) with unlock conditions
+    ├── Right: Selected map details
+    │   ├── Tier selection (1, 2, 3) with Rift Fragment multipliers
+    │   ├── Personal highscore (kills) for selected tier
+    │   ├── Fastest run (time) for selected tier
+    │   ├── Characters completed (icons) for selected tier
+    │   └── [START RUN] button
+    ↓
 Arena (During Run)
     ↓ Death
 End-of-Run Screen
     ├── Left Column: Damage Breakdown (abilities, DPS, levels)
     ├── Center Column: Summary (character, kills, time, level, inventory)
     ├── Right Column: Completed Quests
-    ├── Bottom: [CONFIRM] + Unlocks earned + Silver gained
+    ├── Bottom: [CONFIRM] + Unlocks earned + Rift Fragments gained (with tier multiplier)
     └── Leaderboard placement notification
     ↓
 Return to Main Menu (session wiped)
@@ -79,21 +88,25 @@ Return to Main Menu (session wiped)
 - **Toggler System:** Special unlock (cost TBD) allows disabling specific items/tomes/weapons
 - **Categories:** Items, Tomes, Weapons (each has separate unlock/toggle mechanics)
 
-### Decision 4: Silver Economy
+### Decision 4: Rift Fragments Economy
+**Meta-Currency:** "Rift Fragments" (not "Silver") - mysterious crystals from the void
+
 **Earning Rates (Simple Initial System):**
-- Stage 1 completion: 10 Silver
-- Stage 2 completion: 15 Silver (+50% per stage)
-- Stage 3 completion: 22 Silver
-- Kill count bonus: +1 Silver per 100 kills
-- Survival time bonus: +1 Silver per minute
-- Final Swarm survived: +10 Silver
+- Stage 1 completion: 10 Rift Fragments
+- Stage 2 completion: 15 Rift Fragments (+50% per stage)
+- Stage 3 completion: 22 Rift Fragments
+- Kill count bonus: +1 Rift Fragment per 100 kills
+- Survival time bonus: +1 Rift Fragment per minute
+- Final Swarm survived: +10 Rift Fragments
 
 **Unlock Costs (Placeholder - needs balancing):**
-- New Character: 50-100 Silver
-- New Item: 20-30 Silver
-- Toggler Feature: 150 Silver (requires 40 unlocks first)
-- Extra weapon slot: 150 Silver
-- Extra tome slot: 150 Silver
+- New Character: 50-100 Rift Fragments
+- New Item: 20-30 Rift Fragments
+- Item Toggler Feature: 150 Rift Fragments (requires 40 item unlocks first)
+- Skill Toggler Feature: 150 Rift Fragments (requires 40 skill unlocks first)
+- Tome Toggler Feature: 150 Rift Fragments (requires 40 tome unlocks first)
+- Extra weapon slot: 150 Rift Fragments
+- Extra tome slot: 150 Rift Fragments
 
 ### Decision 5: Mid-Run Loss Handling
 - **Crash/Quit:** Run lost, no silver, no stats
@@ -123,7 +136,7 @@ Return to Main Menu (session wiped)
 **Bottom Section:**
 - [CONFIRM] button
 - "Unlocks this run: 3" (new items/characters)
-- "Silver earned: +73"
+- "Rift Fragments earned: +73"
 - Leaderboard placement: "Global Kills: #47"
 
 ### Decision 7: Leaderboard System
@@ -146,63 +159,130 @@ Return to Main Menu (session wiped)
 - **New Autoload:** `MetaProgression` (replaces CharacterManager)
 - **Save File:** `user://meta_progression.tres` (single file)
 - **Data Stored:**
-  - Silver balance (int)
+  - Rift Fragments balance (int)
   - Unlocked characters (Array[String])
   - Discovered items (Array[String]) - found in runs but not purchased
   - Unlocked items (Array[String]) - purchased and appear in future runs
+  - Discovered skills (Array[String]) - found in runs but not purchased
+  - Unlocked skills (Array[String]) - purchased and appear in future runs
+  - Discovered tomes (Array[String]) - found in runs but not purchased
+  - Unlocked tomes (Array[String]) - purchased and appear in future runs
   - Achievements (Dictionary) - `{"first_boss_kill": true, ...}`
-  - Toggler enabled (bool) - special unlock
+  - Toggler item enabled (bool) - special unlock (requires 40 item unlocks)
   - Toggler disabled items (Array[String]) - player-chosen exclusions
+  - Toggler skill enabled (bool) - special unlock (requires 40 skill unlocks)
+  - Toggler disabled skills (Array[String]) - player-chosen exclusions
+  - Toggler tome enabled (bool) - special unlock (requires 40 tome unlocks)
+  - Toggler disabled tomes (Array[String]) - player-chosen exclusions
 - **No Career Stats:** Don't track total kills/damage across all runs
 - **Personal Bests:** Separate `LocalLeaderboard` autoload
 
 ### Decision 10: Character Select Screen
 **UI Elements:**
-- Character portraits in grid (unlocked vs locked states)
+- Character portraits in 4x5 grid (20 character slots as per mockup)
 - Locked characters show unlock condition ("Complete Stage 5 to unlock")
 - No preview of locked character abilities (discover after unlock)
-- Unlocked characters show stats and abilities:
-  - Health, speed, damage
-  - Passive abilities
-  - Starting skills
-- No "random character" button
+- Unlocked characters show on right panel:
+  - Character name and rank
+  - Passive ability description
+  - Starting runs count ("0 Läufe")
+  - Character-specific achievements (unlocks skins)
+- Skins display at bottom (5 slots, initially locked)
+- [BESTÄTIGEN] (Confirm) button to proceed to map selection
+
+### Decision 11: Map + Tier Selection System
+**Map Selection Flow:**
+- After character select → Map selection screen appears
+- Left panel: List of available maps (Forest initially, more unlock over time)
+- Locked maps show unlock requirements (e.g., "Teleport to 2nd stage on Forest tier 2 as CL4NK")
+- Right panel shows selected map details:
+  - Map name, tier selection (Stufe 1/2/3)
+  - Tier multipliers for Rift Fragment earnings:
+    - Tier 1: 1x fragments (baseline difficulty)
+    - Tier 2: 1.1x fragments (+10% difficulty, +10% rewards)
+    - Tier 3: 1.2x fragments (+20% difficulty, +20% rewards)
+  - Personal bests for selected tier:
+    - Highscore (most kills)
+    - Speedrun (fastest clear time)
+  - Character completion icons (which characters beat this tier)
+  - [HERAUSFORDERUNGEN] (Challenges) button (future feature)
+  - [BESTÄTIGEN] (Confirm) to start run
+
+**Tier System Design:**
+- Each map has 3 tiers with increasing difficulty
+- Higher tiers increase enemy stats (HP, damage, spawn rates)
+- Rift Fragment multiplier incentivizes risk-taking
+- Personal bests tracked separately per tier (encourages tier 1 practice before tier 3 attempts)
+- Character completion tracking creates "badge collection" motivation
+
+### Decision 12: Character Achievements & Skins
+**Achievement System:**
+- Each character has simple achievements (e.g., "Kill 1000 enemies", "Reach Stage 5")
+- Achievements unlock skins (cosmetic only, no stat changes)
+- 5 skin slots per character (1 default + 4 unlockable)
+- Skins displayed on character select screen with lock icons
+- **Placeholder for MVP:** Simple achievement definitions, no complex tracking yet
+- **Future:** Achievement progress tracking, skin preview system
 
 ## 📊 Implementation Plan
 
 **Approach:** Bottom-up refactoring - create new systems, migrate data, remove old systems.
 
+**UI Strategy:** Each UI phase offers two options:
+- **Option A (Recommended):** Minimal debug UI to test functionality (simple labels, buttons, lists)
+- **Option B (Future):** Polished UI matching mockups (defer to separate UI refactor task)
+
+**Rationale:** Backend architecture (MetaProgression, SessionState, LocalLeaderboard) is the priority. Simple functional UI proves the system works. Full visual design can be tackled in a dedicated UI consistency task across the entire game.
+
 ### Phase 1: Create New Meta-Progression System (2-3 sessions)
 **Goal:** Replace CharacterManager with MetaProgression autoload
-**Test:** Can save/load silver and unlocks correctly
+**Test:** Can save/load Rift Fragments and unlocks correctly
+
+**⏸️ CHECKPOINT:** Review MetaProgression data structure and save/load implementation before proceeding
 
 - [ ] Create `MetaProgression` autoload (scripts/autoload/MetaProgression.gd)
 - [ ] Define meta-progression data structure:
-  - [ ] `silver: int` - currency balance
+  - [ ] `rift_fragments: int` - currency balance
   - [ ] `unlocked_characters: Array[String]` - character IDs
+  - [ ] `unlocked_maps: Array[String]` - map IDs (e.g., "forest", "desert")
   - [ ] `discovered_items: Array[String]` - seen but not purchased
   - [ ] `unlocked_items: Array[String]` - purchased and active
-  - [ ] `achievements: Dictionary` - achievement flags
-  - [ ] `toggler_enabled: bool` - can disable items
-  - [ ] `toggler_disabled_items: Array[String]` - excluded from runs
+  - [ ] `discovered_skills: Array[String]` - seen but not purchased
+  - [ ] `unlocked_skills: Array[String]` - purchased and active
+  - [ ] `discovered_tomes: Array[String]` - seen but not purchased
+  - [ ] `unlocked_tomes: Array[String]` - purchased and active
+  - [ ] `achievements: Dictionary` - global achievement flags (e.g., {"first_boss_kill": true})
+  - [ ] `character_achievements: Dictionary` - per-character achievements (e.g., {"fuchs": {"kills_1000": true, ...}})
+  - [ ] `unlocked_skins: Dictionary` - per-character skin unlocks (e.g., {"fuchs": ["default", "blue", ...], ...})
+  - [ ] `character_runs: Dictionary` - run count per character (e.g., {"fuchs": 15, ...})
+  - [ ] `toggler_item_enabled: bool` - can disable items (requires 40 item unlocks)
+  - [ ] `toggler_disabled_items: Array[String]` - excluded items
+  - [ ] `toggler_skill_enabled: bool` - can disable skills (requires 40 skill unlocks)
+  - [ ] `toggler_disabled_skills: Array[String]` - excluded skills
+  - [ ] `toggler_tome_enabled: bool` - can disable tomes (requires 40 tome unlocks)
+  - [ ] `toggler_disabled_tomes: Array[String]` - excluded tomes
 - [ ] Implement save/load methods:
   - [ ] `save()` → writes to `user://meta_progression.tres`
   - [ ] `load()` → reads from disk on game launch
   - [ ] `reset()` → creates fresh save (first time player)
-- [ ] Add silver transaction methods:
-  - [ ] `earn_silver(amount: int)` - add silver from run
-  - [ ] `spend_silver(amount: int) -> bool` - purchase unlock
+- [ ] Add Rift Fragments transaction methods:
+  - [ ] `earn_rift_fragments(amount: int)` - add currency from run
+  - [ ] `spend_rift_fragments(amount: int) -> bool` - purchase unlock
   - [ ] `can_afford(amount: int) -> bool` - check balance
-- [ ] Add unlock methods:
+- [ ] Add unlock methods (generic for all categories):
   - [ ] `unlock_character(id: String)` - add to unlocked_characters
   - [ ] `is_character_unlocked(id: String) -> bool` - check status
-  - [ ] `discover_item(id: String)` - add to discovered_items
-  - [ ] `unlock_item(id: String)` - move to unlocked_items
-  - [ ] `is_item_unlocked(id: String) -> bool` - check status
+  - [ ] `discover_item(category: String, id: String)` - add to discovered_{category}
+  - [ ] `unlock_item(category: String, id: String)` - move to unlocked_{category}
+  - [ ] `is_item_unlocked(category: String, id: String) -> bool` - check status
+  - [ ] `enable_toggler(category: String)` - unlock toggler for category
+  - [ ] `toggle_item(category: String, id: String, enabled: bool)` - add/remove from disabled list
 - [ ] Add EventBus signals:
   - [ ] `meta_progression_loaded` - fired after load
-  - [ ] `silver_changed(new_balance: int)` - UI update
-  - [ ] `item_unlocked(item_id: String)` - notification
+  - [ ] `rift_fragments_changed(new_balance: int)` - UI update
+  - [ ] `item_unlocked(category: String, item_id: String)` - notification
   - [ ] `character_unlocked(character_id: String)` - notification
+  - [ ] `toggler_unlocked(category: String)` - notification
 - [ ] Test with isolated scene (create `tests/MetaProgression_Isolated.tscn`)
 
 **Deliverable:** MetaProgression autoload working with save/load
@@ -213,15 +293,18 @@ Return to Main Menu (session wiped)
 **Goal:** Migrate stats tracking from RunManager to SessionState
 **Test:** Stats track correctly during run, reset on death
 
+**⏸️ CHECKPOINT:** Review SessionState structure and RunManager migration plan before implementing
+
 **⚠️ Current State:** RunManager handles TWO responsibilities:
 1. 30Hz fixed-step timing (KEEP - core engine feature)
 2. Run statistics tracking (MIGRATE to SessionState)
 
 **Migration Source:** See `autoload/RunManager.gd` for current implementation:
-- `stats: Dictionary` - enemies_killed, total_damage_dealt, xp_gained
+- `stats: Dictionary` - enemies_killed, total_damage_dealt, xp_gained, melee_damage_add, melee_damage_mult, etc.
 - `_on_enemy_killed()` - kill tracking
 - `_on_damage_dealt()` - damage tracking
 - `_on_xp_gained()` - XP tracking
+- **MeleeSystem Integration:** `_calculate_damage()`, `_get_effective_attack_speed()` read from RunManager.stats
 - All marked with "TODO: Task 04 Phase 2 - Move to SessionState"
 
 **Implementation Steps:**
@@ -234,9 +317,19 @@ Return to Main Menu (session wiped)
   - [ ] `time_survived: float` - seconds alive
   - [ ] `stage_reached: int` - highest stage this run
   - [ ] `current_character: String` - selected character ID
+  - [ ] `current_map: String` - selected map ID (e.g., "forest")
+  - [ ] `current_tier: int` - selected tier (1, 2, or 3)
   - [ ] `collected_items: Array[String]` - items found this run
-  - [ ] `active_abilities: Array[String]` - abilities unlocked
-  - [ ] `damage_breakdown: Dictionary` - per-ability damage stats
+  - [ ] `chosen_skills: Array[String]` - skills selected during run (eligible for unlock after)
+  - [ ] `damage_breakdown: Dictionary` - per-ability stats: `{"bone": {"level": 2, "total_damage": 2016, "hit_count": 180}, ...}`
+  - [ ] `player_modifiers: Dictionary` - additive/multiplicative stats (melee_damage_add, melee_damage_mult, etc.)
+  - [ ] `run_start_time: float` - timestamp when run started (for time_survived calculation)
+  - [ ] **Arena Progression Integration (see STAGE_PROGRESSION_VISION.md):**
+    - [ ] `boss_killed: bool` - tracks if boss was defeated before timer expired
+    - [ ] `boss_kill_time: float` - when boss was killed (e.g., 9:32 = 9.53 minutes)
+    - [ ] `final_swarm_entered: bool` - tracks if Final Swarm was reached (10:00 timer)
+    - [ ] `final_swarm_survival_time: float` - seconds survived in Final Swarm (bonus rewards)
+    - [ ] `difficulty_shrines_activated: int` - count of voluntary difficulty increases
 - [ ] Migrate stat tracking from RunManager:
   - [ ] Copy `_on_enemy_killed()` from RunManager → SessionState
   - [ ] Copy `_on_damage_dealt()` from RunManager → SessionState
@@ -244,16 +337,19 @@ Return to Main Menu (session wiped)
   - [ ] Copy EventBus signal connections from RunManager._ready()
   - [ ] Remove stat tracking from RunManager after migration
 - [ ] Add lifecycle methods:
-  - [ ] `start_run(character_id: String)` - reset and begin
-  - [ ] `end_run()` - calculate final stats and silver
+  - [ ] `start_run(character_id: String, map_id: String, tier: int)` - reset and begin
+  - [ ] `end_run()` - calculate final stats and Rift Fragments (apply tier multiplier)
   - [ ] `reset()` - wipe all session data
 - [ ] Add stat tracking methods:
   - [ ] `add_kill()` - increment kills
-  - [ ] `add_damage(ability_id: String, amount: float)` - track damage
+  - [ ] `add_damage(ability_id: String, amount: float, ability_level: int)` - track damage and update damage_breakdown
   - [ ] `add_xp(amount: float)` - handle leveling (emit level_up signal)
-  - [ ] `collect_item(item_id: String)` - add to inventory
-- [ ] Add silver calculation:
-  - [ ] `calculate_silver_earned() -> int` - based on stage, kills, time
+  - [ ] `collect_item(item_id: String)` - add to collected_items
+  - [ ] `choose_skill(skill_id: String)` - add to chosen_skills (player picked during run)
+  - [ ] `apply_modifier(key: String, value: float)` - update player_modifiers for combat systems
+  - [ ] `get_dps_for_ability(ability_id: String) -> float` - calculate DPS: total_damage / time_survived
+- [ ] Add Rift Fragments calculation:
+  - [ ] `calculate_rift_fragments_earned() -> int` - based on stage, kills, time
   - [ ] Formula: base (10 per stage) + bonuses (kills/time)
 - [ ] Add EventBus signals:
   - [ ] `run_started(character_id: String)` - notify systems
@@ -262,6 +358,11 @@ Return to Main Menu (session wiped)
 - [ ] Test with isolated scene (extend `tests/StageTimer_Isolated.tscn`)
 
 **Post-Migration Cleanup:**
+- [ ] Update MeleeSystem to use SessionState:
+  - [ ] Replace `RunManager.stats.get("melee_damage_add", 0.0)` → `SessionState.player_modifiers.get("melee_damage_add", 0.0)`
+  - [ ] Replace `RunManager.stats.get("melee_damage_mult", 1.0)` → `SessionState.player_modifiers.get("melee_damage_mult", 1.0)`
+  - [ ] Update `_get_effective_attack_speed()`, `_get_effective_range()`, `_get_effective_cone_angle()`, `_get_effective_knockback_distance()`
+  - [ ] Test melee combat still works with new SessionState modifiers
 - [ ] Remove stat tracking from RunManager:
   - [ ] Delete `stats: Dictionary` variable
   - [ ] Delete `_on_enemy_killed()`, `_on_damage_dealt()`, `_on_xp_gained()` methods
@@ -279,7 +380,7 @@ Return to Main Menu (session wiped)
 - [ ] Optionally rename RunManager → CombatClock (if desired)
 - [ ] Update documentation: autoload/CLAUDE.md with SessionState patterns
 
-**Deliverable:** SessionState tracks run stats, RunManager only handles 30Hz timing, deprecated shims removed
+**Deliverable:** SessionState tracks run stats + player modifiers, MeleeSystem uses SessionState, RunManager only handles 30Hz timing, deprecated shims removed
 
 ---
 
@@ -287,30 +388,34 @@ Return to Main Menu (session wiped)
 **Goal:** Track personal bests separate from meta-progression
 **Test:** Top 10 runs displayed correctly
 
+**⏸️ CHECKPOINT:** Review LocalLeaderboard data structure before implementing
+
 - [ ] Create `LocalLeaderboard` autoload (scripts/autoload/LocalLeaderboard.gd)
 - [ ] Define leaderboard entry structure:
   ```gdscript
   class LeaderboardEntry:
       var character_id: String
+      var map_id: String           # NEW: Which map was played
+      var tier: int                # NEW: Which tier (1, 2, or 3)
       var kills: int
       var stage_reached: int
       var time_survived: float
       var level_reached: int
       var timestamp: int  # Unix timestamp
   ```
-- [ ] Implement storage:
-  - [ ] `entries: Array[LeaderboardEntry]` - top 20 runs
+- [ ] Implement storage (per map + tier):
+  - [ ] `entries: Dictionary` - nested: `{"forest": {"1": [Entry, ...], "2": [...], "3": [...]}, ...}`
   - [ ] `save()` → writes to `user://local_leaderboard.tres`
   - [ ] `load()` → reads from disk
 - [ ] Add entry management:
   - [ ] `add_entry(stats: Dictionary) -> int` - returns placement (1-20 or -1)
-  - [ ] `get_top_entries(count: int) -> Array[LeaderboardEntry]` - retrieve top N
-  - [ ] `get_placement(kills: int) -> int` - calculate where entry would rank
+  - [ ] `get_top_entries(map_id: String, tier: int, count: int) -> Array[LeaderboardEntry]` - retrieve top N for specific map+tier
+  - [ ] `get_placement(map_id: String, tier: int, kills: int) -> int` - calculate where entry would rank
   - [ ] `_sort_entries()` - sort by kills (descending)
-- [ ] Add query methods:
-  - [ ] `get_personal_best_kills() -> int`
-  - [ ] `get_personal_best_stage() -> int`
-  - [ ] `get_personal_best_time() -> float`
+- [ ] Add query methods (per map + tier):
+  - [ ] `get_personal_best_kills(map_id: String, tier: int) -> int`
+  - [ ] `get_fastest_time(map_id: String, tier: int) -> float`
+  - [ ] `get_completed_characters(map_id: String, tier: int) -> Array[String]` - character IDs that completed this tier
 - [ ] Add EventBus signal:
   - [ ] `new_personal_best(entry: LeaderboardEntry)` - UI notification
 - [ ] Test with mock data
@@ -319,106 +424,136 @@ Return to Main Menu (session wiped)
 
 ---
 
-### Phase 4: Create End-of-Run Scene (2-3 sessions)
-**Goal:** Display stats, calculate rewards, save progression
-**Test:** Can view stats and return to main menu
+### Phase 4: Create End-of-Run Screen (3-4 sessions)
+**Goal:** Display full stats breakdown, calculate rewards, save progression
+**Test:** Can view detailed stats and return to main menu
 
-- [ ] Create `scenes/ui/EndOfRun.tscn` scene
-- [ ] Implement three-column layout:
-  - [ ] Left: Damage Breakdown (ScrollContainer with ability list)
-  - [ ] Center: Summary (character, kills, time, level, inventory display)
-  - [ ] Right: Completed Quests (quest list with checkmarks)
-- [ ] Add bottom section:
-  - [ ] "Unlocks this run: X" label
-  - [ ] "Silver earned: +Y" label
-  - [ ] [CONFIRM] button
+**⏸️ CHECKPOINT:** Review three-column end-of-run layout before implementing
+
+**⚠️ UI SCOPE NOTE:** Can implement as simple debug panel first, polish UI in separate task later
+**⚠️ Core functionality:** Calculate rewards, save progression, return to menu (UI is secondary)
+
+- [ ] **Option A: Minimal Debug Panel (Recommended for MVP)**
+  - [ ] Create simple `scenes/ui/EndOfRunDebug.tscn` scene (single panel)
+  - [ ] Display core stats as text labels:
+    - [ ] Character, Kills, Time, Level, Stage Reached
+    - [ ] Boss killed: true/false, Boss kill time
+    - [ ] Final Swarm survival time (if applicable)
+    - [ ] Rift Fragments earned (with breakdown)
+  - [ ] [CONTINUE] button → return to main menu
+  - [ ] **Skip detailed UI** (damage breakdown, inventory grid, visual polish)
+  - [ ] Focus on backend: reward calculation, save progression, data flow
+
+- [ ] **Option B: Full Three-Column Layout (Defer to Separate UI Task)**
+  - [ ] Left column: DAMAGE breakdown (ability list, DMG/DPS columns)
+  - [ ] Center column: SUMMARY (character portrait, inventory grid, stats)
+  - [ ] Right column: QUESTS (placeholder for future)
+  - [ ] Bottom section: Rift Fragments notification, CONFIRM button
+  - [ ] **Recommendation:** Implement Option A first, upgrade to B in UI refactor task
 - [ ] Implement `EndOfRun.gd` script:
-  - [ ] `show_run_results(stats: Dictionary)` - populate UI
-  - [ ] `_calculate_rewards()` - silver earned, achievements unlocked
-  - [ ] `_check_new_unlocks()` - discovered items, character achievements
+  - [ ] `show_run_results(stats: Dictionary)` - populate all columns
+  - [ ] `_calculate_rewards()` - Rift Fragments earned with:
+    - [ ] Base fragments (per stage completion)
+    - [ ] Tier multiplier (1x/1.1x/1.2x)
+    - [ ] Final Swarm survival bonus (if applicable)
+  - [ ] `_check_new_unlocks()` - discovered items/skills (add to MetaProgression.discovered_*)
+  - [ ] `_check_character_achievements()` - check if run unlocked character achievements (kills, stages, etc.)
   - [ ] `_save_progression()` - MetaProgression.save(), LocalLeaderboard.save()
   - [ ] `_on_confirm_pressed()` - return to main menu
-- [ ] Add leaderboard placement notification:
-  - [ ] Query LocalLeaderboard for placement
-  - [ ] Display popup: "Global Kills: #47" (local for now)
 - [ ] Wire to SessionState:
   - [ ] Connect to `EventBus.run_ended` signal
-  - [ ] Receive final stats from SessionState
-- [ ] Add animations/polish:
-  - [ ] Fade in effect
+  - [ ] Receive final stats from SessionState (damage_breakdown, kills, time, etc.)
+- [ ] Skip for MVP (polish phase):
+  - [ ] Fade-in animations
   - [ ] Counter animations (kills counting up)
-  - [ ] Sound effects for silver earned
+  - [ ] Sound effects for Rift Fragments earned
+  - [ ] Leaderboard placement notification (future)
 
-**Deliverable:** Complete end-of-run screen with rewards and leaderboard placement
-
----
-
-### Phase 5: Update Main Menu (2-3 sessions)
-**Goal:** Implement main menu layout with all sections
-**Test:** Can navigate to Play, Unlocks, Quests, Shop
-
-- [ ] Update `scenes/ui/MainMenu.tscn` with new layout
-- [ ] Implement layout sections:
-  - [ ] Top Left: Quest Progress widget (top 4 quests)
-  - [ ] Top Right: Silver Balance display
-  - [ ] Center: Main buttons (PLAY, UNLOCKS, QUESTS, SHOP)
-  - [ ] Left Side: Settings, Exit, Credits buttons
-  - [ ] Right Side: Leaderboard widget (top 20, reset timer placeholder)
-- [ ] Create quest progress widget:
-  - [ ] Query quest system (future) for top 4 active quests
-  - [ ] Display progress bars (e.g., "Kill 100 enemies: 47/100")
-  - [ ] Placeholder for now ("No active quests")
-- [ ] Create leaderboard widget:
-  - [ ] Query LocalLeaderboard for top 20 entries
-  - [ ] Display in scrollable list (character, kills, stage)
-  - [ ] Show reset timer placeholder ("Next reset: TBD")
-  - [ ] Tabs: [Global] [Friends] (friends grayed out for future)
-- [ ] Update silver display:
-  - [ ] Connect to MetaProgression.silver_changed signal
-  - [ ] Animate when silver updates
-- [ ] Wire button actions:
-  - [ ] PLAY → Go to Character Select
-  - [ ] UNLOCKS → Open unlocks shop (future scene)
-  - [ ] QUESTS → Open quest log (future scene)
-  - [ ] SHOP → Open meta-progression shop (future scene)
-  - [ ] SETTINGS → Open settings menu (existing)
-  - [ ] EXIT → Quit game
-  - [ ] CREDITS → Show credits (future scene)
-- [ ] Add background music and ambient effects
-
-**Deliverable:** Functional main menu with all navigation points
+**Deliverable (Option A):** Functional end-of-run flow with reward calculation and progression save (simple debug UI)
+**Deliverable (Option B):** Full three-column end-of-run screen matching mockup (defer to separate UI task)
 
 ---
 
-### Phase 6: Create Character Select Scene (2-3 sessions)
-**Goal:** Display unlocked/locked characters with stats
+### Phase 5: Update Main Menu - SIMPLIFIED (1-2 sessions)
+**Goal:** Add Rift Fragments display and navigation to Character Select
+**Test:** Can see Rift Fragments and click Play to start run
+
+**⏸️ CHECKPOINT:** Review main menu changes before implementing (defer full redesign to future UI task)
+
+**⚠️ SCOPE REDUCTION:** Minimal changes for MVP, full redesign in separate future task
+
+- [ ] Update `scenes/ui/MainMenu.tscn` with minimal changes:
+  - [ ] Add Rift Fragments display (top right corner)
+  - [ ] Wire [PLAY] button to Character Select (if exists) or directly to arena
+  - [ ] Keep existing menu structure unchanged
+- [ ] Connect Rift Fragments display:
+  - [ ] Connect to MetaProgression.rift_fragments_changed signal
+  - [ ] Update display when fragments change
+- [ ] Skip for MVP (defer to future UI refactor):
+  - [ ] Quest progress widget (no quest system yet)
+  - [ ] Leaderboard widget (future)
+  - [ ] UNLOCKS/QUESTS/SHOP buttons (future)
+  - [ ] Full layout redesign (future)
+  - [ ] Background music and ambient effects (future)
+
+**Deliverable:** Main menu shows Rift Fragments and navigates to character select (defers full redesign to future UI task)
+
+---
+
+### Phase 6: Create Character Select Scene - SIMPLIFIED (1-2 sessions)
+**Goal:** Select character and start run
 **Test:** Can select character and start run
 
-- [ ] Create `scenes/ui/CharacterSelect.tscn` scene
-- [ ] Implement character grid layout:
-  - [ ] Query MetaProgression for unlocked_characters
-  - [ ] Display character portraits (3x2 grid or scrollable)
-  - [ ] Show locked state (grayed out) with unlock condition
-  - [ ] Show unlocked state (clickable) with [SELECT] button
-- [ ] Create character info panel (right side):
-  - [ ] Character name and portrait
-  - [ ] Stats display (Health, Speed, Damage)
-  - [ ] Passive abilities description
-  - [ ] Starting skills list
-  - [ ] Only show for unlocked characters
-- [ ] Implement unlock condition display:
-  - [ ] Locked characters show text: "Complete Stage 5 to unlock"
-  - [ ] Or: "50 Silver to unlock" (if purchasable)
-  - [ ] No preview of abilities for locked characters
-- [ ] Wire selection logic:
-  - [ ] Click character → Update info panel
-  - [ ] [SELECT] button → Start run with character
-  - [ ] SessionState.start_run(character_id)
-  - [ ] StateManager.go_to_arena()
-- [ ] Add [BACK] button → Return to main menu
-- [ ] Add animations (character portraits, selection highlight)
+**⏸️ CHECKPOINT:** Review character select approach before implementing (defer full UI to future task)
 
-**Deliverable:** Character select screen with lock/unlock states
+**⚠️ UI SCOPE NOTE:** Minimal functional UI first, visual polish in separate UI task
+**⚠️ Core functionality:** Query unlocked characters, handle selection, navigate to map select
+
+- [ ] **Option A: Debug List (Recommended for MVP)**
+  - [ ] Create simple `scenes/ui/CharacterSelectDebug.tscn`
+  - [ ] VBoxContainer with character buttons (just names, no portraits)
+  - [ ] Query MetaProgression for unlocked_characters
+  - [ ] Locked characters show as disabled buttons with text label
+  - [ ] Click button → SessionState.current_character = id → Go to map select
+  - [ ] [BACK] button → Return to main menu
+
+- [ ] **Option B: Grid Layout with Portraits (Defer to Separate UI Task)**
+  - [ ] 4x5 character grid matching mockup
+  - [ ] Character portraits, skins display, info panel
+  - [ ] Animations, selection highlights
+  - [ ] **Recommendation:** Implement Option A first, upgrade to B in UI refactor
+
+**Deliverable (Option A):** Functional character selection flow (simple list UI)
+**Deliverable (Option B):** Full character select screen with portraits and skins (defer to UI task)
+
+---
+
+### Phase 6b: Create Map + Tier Selection Screen (2-3 sessions)
+**Goal:** Display map selection with tier choices and personal bests
+**Test:** Can select map+tier and start run with correct difficulty/multiplier
+
+**⏸️ CHECKPOINT:** Review map selection UI structure before implementing
+
+**⚠️ UI SCOPE NOTE:** Can implement as simple dropdown/buttons first, polish layout in separate UI task
+**⚠️ Core functionality:** Select map, select tier, display multipliers, start run
+
+- [ ] **Option A: Simple Dropdown UI (Recommended for MVP)**
+  - [ ] Create `scenes/ui/MapSelectionDebug.tscn`
+  - [ ] Map dropdown (OptionButton) - query MetaProgression.unlocked_maps
+  - [ ] Tier buttons (1, 2, 3) - display multiplier text next to each
+  - [ ] Personal best label: "Best: [kills] kills" (query LocalLeaderboard)
+  - [ ] [START RUN] button → SessionState.start_run(char, map, tier) → go_to_arena()
+  - [ ] [BACK] button → Return to character select
+  - [ ] **Skip visual polish** (map thumbnails, character icons, detailed stats)
+
+- [ ] **Option B: Two-Panel Layout Matching Mockup (Defer to Separate UI Task)**
+  - [ ] Left panel: Map list with thumbnails
+  - [ ] Right panel: Tier selection, personal bests, character completion icons
+  - [ ] Challenge button, detailed tier descriptions
+  - [ ] **Recommendation:** Implement Option A first, upgrade to B in UI refactor
+
+**Deliverable (Option A):** Functional map+tier selection flow (simple dropdown UI)
+**Deliverable (Option B):** Full two-panel layout matching mockup (defer to UI task)
 
 ---
 
@@ -426,10 +561,24 @@ Return to Main Menu (session wiped)
 **Goal:** Update Arena, DamageSystem, etc. to use SessionState
 **Test:** Full run works end-to-end (char select → arena → death → end screen)
 
+**⏸️ CHECKPOINT:** Review system migration plan and verify all SessionState integrations before cleanup
+
 - [ ] Update Arena.gd:
   - [ ] Remove references to old RunManager stats
   - [ ] Connect to SessionState for stat tracking
   - [ ] Remove character save/load logic
+  - [ ] Apply tier difficulty modifiers to enemies:
+    - [ ] Read SessionState.current_tier
+    - [ ] Tier 1: No modifiers (baseline)
+    - [ ] Tier 2: +30% enemy HP, +20% damage, +10% spawn rate
+    - [ ] Tier 3: +60% enemy HP, +40% damage, +20% spawn rate
+  - [ ] **Arena Progression Mechanics (see STAGE_PROGRESSION_VISION.md for full spec):**
+    - [ ] Boss spawn timing: Spawn boss at 8:00 mark (configurable)
+    - [ ] Boss kill detection: SessionState.boss_killed = true, SessionState.boss_kill_time = current_time
+    - [ ] Final Swarm trigger: At 10:00 timer, trigger overwhelming spawn event
+    - [ ] Final Swarm tracking: SessionState.final_swarm_entered = true, track survival time
+    - [ ] Difficulty shrine integration: Connect shrine activation → SessionState.difficulty_shrines_activated++
+    - [ ] Portal unlock: Boss death → enable rift/portal for stage progression
 - [ ] Update DamageSystem.gd:
   - [ ] Emit damage to SessionState.add_damage()
   - [ ] Track kills via SessionState.add_kill()
@@ -439,6 +588,7 @@ Return to Main Menu (session wiped)
   - [ ] Connect to SessionState.level_up signal
 - [ ] Update death handling:
   - [ ] On player death → SessionState.end_run()
+  - [ ] Calculate Rift Fragments with tier multiplier (tier 1: 1x, tier 2: 1.1x, tier 3: 1.2x)
   - [ ] Trigger EventBus.run_ended with stats
   - [ ] Show EndOfRun scene
 - [ ] Update quest system (if exists):
@@ -456,6 +606,8 @@ Return to Main Menu (session wiped)
 ### Phase 8: Remove Old Systems (1-2 sessions)
 **Goal:** Clean up CharacterManager, old RunManager code
 **Test:** Game still works without old files
+
+**⏸️ CHECKPOINT:** Verify game runs successfully with new systems before deleting old code
 
 - [ ] Remove CharacterManager autoload:
   - [ ] Delete `autoload/CharacterManager.gd`
