@@ -244,10 +244,11 @@ func _spawn_event_enemy(position: Vector2, event_def) -> void:
 	cfg.position = position
 
 	# Spawn the enemy using SpawnDirector's infrastructure
-	var enemy = spawn_director._spawn_from_config_v2(cfg.enemy_type, cfg)
+	var enemy_type = cfg.to_enemy_type()
+	var enemy = spawn_director._spawn_from_config_v2(enemy_type, cfg)
 	if enemy:
 		Logger.debug("Event enemy spawned: %s at %s for event %s" % [
-			cfg.enemy_type, str(position), event_def.event_type
+			enemy_type.id, str(position), event_def.event_type
 		], "events")
 
 func check_event_completion(killed_entity_id: String) -> void:
