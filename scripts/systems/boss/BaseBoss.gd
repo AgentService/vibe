@@ -62,6 +62,8 @@ func _ready() -> void:
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 		# DEBUG: Listen for cheat toggles (AI pause)
 		EventBus.cheat_toggled.connect(_on_cheat_toggled)
+		# LIFECYCLE: Stop AI when player dies to prevent physics errors
+		EventBus.player_died.connect(_on_player_died)
 	
 	# DAMAGE V3: Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
@@ -360,6 +362,11 @@ func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
+
+func _on_player_died() -> void:
+	# Immediately stop AI when player dies to prevent physics errors during cleanup
+	_is_dying = true
+	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
 ## Setup PersonalSpaceArea for signal-based boss spacing control
 func _setup_personal_space_area() -> void:
