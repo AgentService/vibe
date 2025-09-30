@@ -17,7 +17,7 @@ var player_instance: Node2D
 ## Get the correct player scene path based on SessionState or debug config
 func _get_player_scene_path() -> String:
 	# Priority 1: Check SessionState for character selection (Task 04)
-	if SessionState and SessionState.has_active_run():
+	if SessionState and SessionState.is_run_active():
 		var character_id = SessionState.get_character_id()
 		if not character_id.is_empty():
 			var capitalized = character_id.capitalize()  # "knight" → "Knight"
