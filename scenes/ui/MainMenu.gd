@@ -90,13 +90,30 @@ func _load_character_types() -> void:
 
 func _load_item_metadata() -> void:
 	"""Load item metadata from /data/content/items/*.tres"""
-	var item_files = ["cheese.tres", "clover.tres", "feather.tres"]
-	for file_name in item_files:
-		var path = "res://data/content/items/" + file_name
-		var item_metadata = load(path) as ItemMetadata
-		if item_metadata:
-			item_metadata_cache[item_metadata.item_id] = item_metadata
-			Logger.debug("Loaded item metadata: %s" % item_metadata.item_id, "ui")
+	var items_dir = "res://data/content/items/"
+	var dir = DirAccess.open(items_dir)
+
+	if not dir:
+		Logger.error("Failed to open items directory: %s" % items_dir, "ui")
+		return
+
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+
+	while file_name != "":
+		# Only load .tres files
+		if file_name.ends_with(".tres"):
+			var path = items_dir + file_name
+			var item_metadata = load(path) as ItemMetadata
+			if item_metadata:
+				item_metadata_cache[item_metadata.item_id] = item_metadata
+				Logger.debug("Loaded item metadata: %s" % item_metadata.item_id, "ui")
+			else:
+				Logger.warn("Failed to load item metadata from: %s" % path, "ui")
+
+		file_name = dir.get_next()
+
+	dir.list_dir_end()
 	Logger.info("Loaded %d item metadata entries" % item_metadata_cache.size(), "ui")
 
 func _connect_signals() -> void:
