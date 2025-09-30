@@ -8,17 +8,17 @@ extends BaseArena
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 
 # Player scene loaded dynamically to support @export hot-reload
-const ArenaSystem := preload("res://scripts/systems/ArenaSystem.gd")
+const ArenaSystem := preload("res://scripts/systems/arena/ArenaSystem.gd")
 # CameraSystem removed - players handle their own cameras
-const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderTier_Type := preload("res://scripts/systems/rendering/EnemyRenderTier.gd")
 const BossSpawnConfigScript := preload("res://scripts/domain/BossSpawnConfig.gd")
-const ArenaUIManagerScript := preload("res://scripts/systems/ArenaUIManager.gd")
+const ArenaUIManagerScript := preload("res://scripts/systems/arena/ArenaUIManager.gd")
 const BossSpawnManagerScript := preload("res://scripts/systems/spawn/BossSpawnManager.gd")
-const PlayerAttackHandlerScript := preload("res://scripts/systems/PlayerAttackHandler.gd")
+const PlayerAttackHandlerScript := preload("res://scripts/systems/combat/PlayerAttackHandler.gd")
 const PlayerSpawnerScript := preload("res://scripts/systems/spawn/PlayerSpawner.gd")
-const VisualEffectsManagerScript := preload("res://scripts/systems/VisualEffectsManager.gd")
+const VisualEffectsManagerScript := preload("res://scripts/systems/rendering/VisualEffectsManager.gd")
 const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjectionManager.gd")
-const ArenaInputHandlerScript := preload("res://scripts/systems/ArenaInputHandler.gd")
+const ArenaInputHandlerScript := preload("res://scripts/systems/arena/ArenaInputHandler.gd")
 const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
 
 # Map configuration for arena properties

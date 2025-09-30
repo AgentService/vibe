@@ -1,4 +1,4 @@
-extends "res://scenes/arena/Arena.gd"
+extends Arena
 
 ## PathAware_Forest - PathAware Arena Generator forest scene
 ## Handles arena randomization on entry from hideout and manages player spawn
