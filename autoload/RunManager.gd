@@ -1,13 +1,14 @@
 extends Node
 
-## Fixed-Step Combat Timing Manager (30 Hz)
+## Fixed-Step Combat Timing Manager (30 Hz) + Run Statistics Tracking
 ##
 ## ARCHITECTURE PATTERN: Fixed-Step Game Loop with Accumulator
 ## ============================================================
 ##
 ## PURPOSE:
-## Ensures deterministic, frame-rate-independent combat timing by running game logic
-## at a fixed 30 Hz timestep, regardless of the display's refresh rate (60Hz, 144Hz, etc).
+## 1. Ensures deterministic, frame-rate-independent combat timing by running game logic
+##    at a fixed 30 Hz timestep, regardless of the display's refresh rate (60Hz, 144Hz, etc).
+## 2. Tracks run statistics (kills, damage, XP) for end-of-run display and meta-progression.
 ##
 ## WHY 30 HZ?
 ## - Balance between performance and responsiveness
@@ -57,9 +58,19 @@ extends Node
 ## - No time accumulation during pause → freeze game state
 ## - Resume from exact same state when unpaused
 ##
-## HISTORICAL NOTE:
-## Stats tracking (enemies_killed, damage_dealt, xp_gained) was removed in Task 04a.
-## These stats now belong in SessionState autoload (Task 04 Phase 2).
+## TODO: Task 04 Phase 2 - SessionState Migration
+## ================================================
+## This RunManager currently handles TWO responsibilities:
+##   1. 30Hz fixed-step timing (KEEP - core engine feature)
+##   2. Run statistics tracking (MIGRATE to SessionState)
+##
+## Migration Plan:
+##   - Move stats Dictionary → SessionState.gd
+##   - Move _on_enemy_killed() → SessionState
+##   - Move _on_damage_dealt() → SessionState
+##   - Move _on_xp_gained() → SessionState
+##   - Keep: COMBAT_DT, _accumulator, _process(), EventBus.combat_step emission
+##   - Optionally rename to "CombatClock" after migration
 ##
 ## REFERENCES:
 ## - Glenn Fiedler's "Fix Your Timestep" article: https://gafferongames.com/post/fix_your_timestep/
@@ -73,6 +84,9 @@ const COMBAT_DT: float = 1.0 / 30.0  # 30 Hz fixed step (33.33ms per step)
 		run_seed = value
 		_seed_rng()
 
+# TODO: Task 04 Phase 2 - Migrate to SessionState.gd
+var stats: Dictionary = {}
+
 # Accumulator stores leftover frame time between combat steps
 var _accumulator: float = 0.0
 
@@ -85,7 +99,60 @@ func _ready() -> void:
 		run_seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
 
-	Logger.info("RunManager initialized (30Hz timing only)", "systems")
+	# TODO: Task 04 Phase 2 - Move to SessionState
+	# Connect to EventBus for stat tracking
+	EventBus.enemy_killed.connect(_on_enemy_killed)
+	EventBus.damage_dealt.connect(_on_damage_dealt)
+	EventBus.xp_gained.connect(_on_xp_gained)
+
+	# TODO: Task 04 Phase 2 - Move to SessionState
+	if BalanceDB:
+		BalanceDB.balance_reloaded.connect(_load_player_stats)
+		# Load stats after BalanceDB is ready
+		if BalanceDB._data.has("player"):
+			_load_player_stats()
+		else:
+			# Defer until next frame when BalanceDB is ready
+			call_deferred("_try_load_player_stats")
+
+	Logger.info("RunManager initialized (30Hz timing + stats tracking)", "systems")
+
+func _exit_tree() -> void:
+	# TODO: Task 04 Phase 2 - Move to SessionState
+	# Cleanup signal connections
+	if BalanceDB and BalanceDB.balance_reloaded.is_connected(_load_player_stats):
+		BalanceDB.balance_reloaded.disconnect(_load_player_stats)
+	if EventBus.enemy_killed.is_connected(_on_enemy_killed):
+		EventBus.enemy_killed.disconnect(_on_enemy_killed)
+	if EventBus.damage_dealt.is_connected(_on_damage_dealt):
+		EventBus.damage_dealt.disconnect(_on_damage_dealt)
+	if EventBus.xp_gained.is_connected(_on_xp_gained):
+		EventBus.xp_gained.disconnect(_on_xp_gained)
+
+func _try_load_player_stats() -> void:
+	# TODO: Task 04 Phase 2 - Move to SessionState
+	if BalanceDB and BalanceDB._data.has("player"):
+		_load_player_stats()
+
+func _load_player_stats() -> void:
+	# TODO: Task 04 Phase 2 - Move to SessionState
+	stats = {
+		"projectile_count_add": BalanceDB.get_player_value("projectile_count_add"),
+		"projectile_speed_mult": BalanceDB.get_player_value("projectile_speed_mult"),
+		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
+		"damage_mult": BalanceDB.get_player_value("damage_mult"),
+		"has_projectiles": false,
+		"level": 1,
+		"melee_damage_add": 0.0,
+		"enemies_killed": 0,
+		"total_damage_dealt": 0.0,
+		"xp_gained": 0,
+		"melee_attack_speed_add": 0.0,
+		"melee_range_add": 0.0,
+		"melee_cone_angle_add": 0.0,
+		"melee_damage_mult": 1.0
+	}
+	Logger.info("Reloaded player stats", "player")
 
 func _process(delta: float) -> void:
 	## Fixed-step accumulator loop
@@ -117,3 +184,20 @@ func pause_game(v: bool) -> void:
 func _seed_rng() -> void:
 	if RNG:
 		RNG.seed_run(run_seed)
+
+## TODO: Task 04 Phase 2 - Move to SessionState
+func _on_enemy_killed(_pos: Vector2, _xp_value: int) -> void:
+	"""Track enemy kills for run statistics"""
+	stats["enemies_killed"] = stats.get("enemies_killed", 0) + 1
+
+## TODO: Task 04 Phase 2 - Move to SessionState
+func _on_damage_dealt(payload) -> void:
+	"""Track total damage dealt for run statistics"""
+	# Only track player damage, not enemy damage
+	if payload.source == "player":
+		stats["total_damage_dealt"] = stats.get("total_damage_dealt", 0.0) + payload.damage
+
+## TODO: Task 04 Phase 2 - Move to SessionState
+func _on_xp_gained(amount: float, _new_total: float) -> void:
+	"""Track total XP gained for run statistics"""
+	stats["xp_gained"] = stats.get("xp_gained", 0) + int(amount)

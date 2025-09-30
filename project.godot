@@ -54,7 +54,7 @@ window/size/initial_position=Vector2i(455, 555)
 window/size/initial_screen=2
 window/size/always_on_top=true
 window/stretch/mode="canvas_items"
-#Maintainaspectratiowindow/vsync/vsync_mode=1
+window/vsync/vsync_mode=1
 
 [editor_plugins]
 

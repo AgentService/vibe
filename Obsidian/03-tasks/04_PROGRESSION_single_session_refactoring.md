@@ -210,26 +210,39 @@ Return to Main Menu (session wiped)
 ---
 
 ### Phase 2: Create SessionState System (2-3 sessions)
-**Goal:** Replace RunManager with simplified SessionState
+**Goal:** Migrate stats tracking from RunManager to SessionState
 **Test:** Stats track correctly during run, reset on death
 
+**⚠️ Current State:** RunManager handles TWO responsibilities:
+1. 30Hz fixed-step timing (KEEP - core engine feature)
+2. Run statistics tracking (MIGRATE to SessionState)
+
+**Migration Source:** See `autoload/RunManager.gd` for current implementation:
+- `stats: Dictionary` - enemies_killed, total_damage_dealt, xp_gained
+- `_on_enemy_killed()` - kill tracking
+- `_on_damage_dealt()` - damage tracking
+- `_on_xp_gained()` - XP tracking
+- All marked with "TODO: Task 04 Phase 2 - Move to SessionState"
+
+**Implementation Steps:**
 - [ ] Create `SessionState` autoload (scripts/autoload/SessionState.gd)
 - [ ] Define session-only state:
   - [ ] `current_level: int` - player level (starts at 1)
   - [ ] `current_xp: float` - XP progress (resets each run)
-  - [ ] `kills: int` - enemy kill count
-  - [ ] `damage_dealt: float` - total damage output
+  - [ ] `kills: int` - enemy kill count (migrate from RunManager.stats["enemies_killed"])
+  - [ ] `damage_dealt: float` - total damage output (migrate from RunManager.stats["total_damage_dealt"])
   - [ ] `time_survived: float` - seconds alive
   - [ ] `stage_reached: int` - highest stage this run
   - [ ] `current_character: String` - selected character ID
   - [ ] `collected_items: Array[String]` - items found this run
   - [ ] `active_abilities: Array[String]` - abilities unlocked
   - [ ] `damage_breakdown: Dictionary` - per-ability damage stats
-- [ ] Migrate 30Hz combat step from RunManager:
-  - [ ] Keep `COMBAT_DT: float = 1.0 / 30.0` constant
-  - [ ] Keep `_accumulator: float` and fixed-step loop
-  - [ ] Emit `EventBus.combat_step` signal at 30Hz
-  - [ ] Respect pause state via `PauseManager`
+- [ ] Migrate stat tracking from RunManager:
+  - [ ] Copy `_on_enemy_killed()` from RunManager → SessionState
+  - [ ] Copy `_on_damage_dealt()` from RunManager → SessionState
+  - [ ] Copy `_on_xp_gained()` from RunManager → SessionState
+  - [ ] Copy EventBus signal connections from RunManager._ready()
+  - [ ] Remove stat tracking from RunManager after migration
 - [ ] Add lifecycle methods:
   - [ ] `start_run(character_id: String)` - reset and begin
   - [ ] `end_run()` - calculate final stats and silver
@@ -248,7 +261,19 @@ Return to Main Menu (session wiped)
   - [ ] `level_up(new_level: int)` - player leveled up
 - [ ] Test with isolated scene (extend `tests/StageTimer_Isolated.tscn`)
 
-**Deliverable:** SessionState tracks run stats and emits 30Hz combat step
+**Post-Migration Cleanup:**
+- [ ] Remove stat tracking from RunManager:
+  - [ ] Delete `stats: Dictionary` variable
+  - [ ] Delete `_on_enemy_killed()`, `_on_damage_dealt()`, `_on_xp_gained()` methods
+  - [ ] Delete EventBus signal connections for stat tracking
+  - [ ] Delete `_load_player_stats()`, `_try_load_player_stats()` methods
+  - [ ] Remove BalanceDB.balance_reloaded connection for stats
+  - [ ] Delete `_exit_tree()` cleanup (no longer needed)
+  - [ ] Keep: COMBAT_DT, _accumulator, _process(), EventBus.combat_step emission, _seed_rng()
+- [ ] Optionally rename RunManager → CombatClock (if desired)
+- [ ] Update documentation: autoload/CLAUDE.md with SessionState patterns
+
+**Deliverable:** SessionState tracks run stats, RunManager only handles 30Hz timing
 
 ---
 
