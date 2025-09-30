@@ -75,27 +75,7 @@ layout_mode = 2
 layout_mode = 2
 alignment = 1
 
-[node name="ReviveButton" type="Button" parent="PopupPanel/VBoxContainer/ButtonContainer"]
-layout_mode = 2
-disabled = true
-text = "Revive (Coming Soon)"
-
-[node name="ButtonRow1" type="HBoxContainer" parent="PopupPanel/VBoxContainer/ButtonContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="RestartButton" type="Button" parent="PopupPanel/VBoxContainer/ButtonContainer/ButtonRow1"]
-layout_mode = 2
-text = "Restart Run"
-
-[node name="HideoutButton" type="Button" parent="PopupPanel/VBoxContainer/ButtonContainer/ButtonRow1"]
-layout_mode = 2
-text = "Return to Hideout"
-
-[node name="ButtonRow2" type="HBoxContainer" parent="PopupPanel/VBoxContainer/ButtonContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="MenuButton" type="Button" parent="PopupPanel/VBoxContainer/ButtonContainer/ButtonRow2"]
+[node name="MenuButton" type="Button" parent="PopupPanel/VBoxContainer/ButtonContainer"]
+custom_minimum_size = Vector2(200, 45)
 layout_mode = 2
 text = "Return to Menu"

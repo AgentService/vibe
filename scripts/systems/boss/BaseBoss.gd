@@ -162,7 +162,11 @@ func _update_ai(_dt: float) -> void:
 	# Skip AI updates if paused by debug system
 	if ai_paused:
 		return
-	
+
+	# Skip if boss is being removed or not in tree
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
