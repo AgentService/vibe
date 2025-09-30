@@ -82,7 +82,9 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ## 📊 Implementation Plan
 
-**Approach:** Vertical slice with isolated testing - each phase delivers a playable, testable increment.
+**Approach:** Technical foundation implementation - Phases 1-3 only due to missing player progression systems.
+
+**SCOPE LIMITATION:** Phases 4-8 require player progression systems (abilities, stats, upgrades, economy) that don't exist yet. This task will implement the core timing and scaling infrastructure that other systems can build upon.
 
 ### Phase 1: Stage Timer + Boss Deadline Foundation (1-2 sessions) 🎯 START HERE
 **Goal:** Working stage timer with boss deadline mechanics
@@ -146,7 +148,9 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ---
 
-### Phase 4: Difficulty Shrines + Reward Scaling (2-3 sessions)
+## 🔒 BLOCKED PHASES (Dependency Requirements)
+
+### Phase 4: Difficulty Shrines + Reward Scaling (BLOCKED)
 **Goal:** Voluntary difficulty control and risk/reward mechanics
 **Test Scene:** Add shrine system to existing test
 
@@ -169,11 +173,15 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
   - [ ] Higher spawn rates = more kill opportunities
   - [ ] Shrines create strategic decision points
 
-**Deliverable:** Voluntary difficulty control with visible risk/reward mechanics
+**DEPENDENCY REQUIREMENTS:**
+- ❌ Player progression system (stats, abilities)
+- ❌ Economy system (gold, XP, currency)
+- ❌ Upgrade/reward system (chests, items, powerups)
+- ❌ UI systems for rewards and progression feedback
 
 ---
 
-### Phase 5: Portal System + Boss Deadline (2-3 sessions)
+### Phase 5: Portal System + Boss Deadline (PARTIAL - Multi-Stage Blocked)
 **Goal:** Complete stage cycle with boss-kill deadline
 **Test Scene:** Add portal entity and deadline enforcement
 
@@ -195,11 +203,14 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
   - [ ] Display "Stage Completed!" message
   - [ ] Reset for next stage (prep for Phase 7)
 
-**Deliverable:** Boss deadline creates clear objective, portal unlocks on success
+**DEPENDENCY REQUIREMENTS:**
+- ❌ Procedural map generation system
+- ❌ Multi-stage progression framework
+- ⚠️ Portal mechanics can be implemented for single-stage testing
 
 ---
 
-### Phase 6: Final Swarm Intensity Tuning (1-2 sessions)
+### Phase 6: Final Swarm Intensity Tuning (BLOCKED)
 **Goal:** Mathematical ceiling with escalating intensity
 **Test Scene:** Tune Final Swarm escalation curve
 
@@ -220,11 +231,14 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
   - [ ] Risk/reward: more kills vs death risk
 - [ ] Add performance safeguards (enemy count cap at 1000)
 
-**Deliverable:** Final Swarm provides optional leaderboard challenge with clear limits
+**DEPENDENCY REQUIREMENTS:**
+- ❌ Player progression system to make risk/reward meaningful
+- ❌ Without player power scaling, Final Swarm is just "impossible difficulty"
+- ❌ Economy system for meaningful rewards during Final Swarm
 
 ---
 
-### Phase 7: Stage Transition & Multi-Stage (2-3 sessions)
+### Phase 7: Stage Transition & Multi-Stage (BLOCKED)
 **Goal:** Multi-stage progression with coefficient jumps
 **Test Scene:** Integrate with ProceduralMapManager
 
@@ -243,11 +257,14 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] Add stage number display (top UI: "Stage 3")
 - [ ] Validate scaling feels appropriate across 5+ stages
 
-**Deliverable:** Full multi-stage progression loop working
+**DEPENDENCY REQUIREMENTS:**
+- ❌ Procedural map generation system
+- ❌ Multi-stage progression framework
+- ❌ Player progression system for meaningful coefficient jumps
 
 ---
 
-### Phase 8: Polish & Configuration (2-3 sessions)
+### Phase 8: Polish & Configuration (BLOCKED)
 **Goal:** Hot-reloadable balance and visual polish
 
 - [ ] Create `DifficultyConfig` resource class with scaling curves and thresholds
@@ -267,7 +284,38 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] Add timer display to HUD (top center: "8:32" countdown)
 - [ ] Add stage number display to HUD (top left: "Stage 3")
 
-**Deliverable:** Polished MEGABONK-style progression system with designer-friendly tuning
+**DEPENDENCY REQUIREMENTS:**
+- ❌ Player progression system (abilities, stats, upgrades)
+- ❌ Economy system (gold, XP, rewards)
+- ❌ UI systems (difficulty bar, timer display, progression feedback)
+- ❌ Shrine system (difficulty shrines, reward scaling)
+
+## 🏗️ Required Systems for Full Implementation
+
+**To complete MEGABONK progression system, the following systems must be implemented first:**
+
+### Player Progression Systems
+- [ ] **Ability System:** Player skills, skill tree, ability upgrades
+- [ ] **Player Stats System:** Health, damage, speed, defensive stats
+- [ ] **Experience System:** XP gain, level progression, stat increases
+
+### Economy & Rewards
+- [ ] **Currency System:** Gold, XP, premium currencies
+- [ ] **Chest/Loot System:** Reward containers, random upgrades
+- [ ] **Item System:** Collectible upgrades, stat modifiers
+- [ ] **Upgrade Shop:** Spend currency for improvements
+
+### Core Game Systems
+- [ ] **Procedural Map Generation:** Multi-stage level creation
+- [ ] **Save/Load System:** Persist progression between sessions
+- [ ] **UI Framework:** HUD components, modal dialogs, feedback systems
+
+### Quality of Life
+- [ ] **Visual Effects:** Screen shake, damage numbers, intensity feedback
+- [ ] **Audio System:** Music progression, intensity-based audio cues
+- [ ] **Settings System:** Difficulty toggles, accessibility options
+
+**RECOMMENDATION:** Implement Phases 1-3 now to establish the timing and scaling framework, then return to complete Phases 4-8 after the above systems exist.
 
 ## 🔗 Related Files
 
@@ -371,23 +419,28 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - **Emergency Rollback**: Need ability to disable scaling if balance breaks
 - **Mitigation**: Scaling state validation, emergency disable toggle, comprehensive rollback testing
 
-## ✅ Definition of Done
+## ✅ Definition of Done (Phases 1-3 Only)
 
-- [ ] All acceptance criteria met and validated through testing
+**MVP Foundation Implementation:**
+- [ ] Phase 1: Stage timer and boss deadline foundation working
+- [ ] Phase 2: Boss spawn and Final Swarm system implemented
+- [ ] Phase 3: Difficulty coefficient scaling enemies over time
 - [ ] Code follows vibe project patterns (30Hz fixed-step, EventBus signals, layer boundaries)
 - [ ] MapLevel scaling methods properly integrated with existing systems
 - [ ] EnemyFactory stat scaling respects template ranges while adding level progression
 - [ ] SpawnDirector regular spawning scales with MapLevel without breaking pack spawning
-- [ ] DifficultyDirector credit system provides boss spawning cost control
 - [ ] EventBus signals properly typed with payload classes for performance
 - [ ] Logger used with appropriate categories (no print() statements)
-- [ ] Comprehensive test suite covering progression, performance, and edge cases
-- [ ] Balance data hot-reloadable with BalanceDB integration
-- [ ] Documentation updated for all affected systems and new patterns
-- [ ] CHANGELOG.md updated with scaling system integration summary
+- [ ] Test scene `StageTimer_Isolated.tscn` demonstrates all implemented features
 - [ ] Performance validated: <2ms scaling calculations, 30Hz combat compatibility maintained
-- [ ] Emergency controls implemented: scaling disable toggle, rollback capabilities
-- [ ] Commit ready with conventional format: `feat(combat): integrate MapLevel difficulty scaling with credit-based director system`
+- [ ] Documentation updated for implemented systems and integration patterns
+- [ ] CHANGELOG.md updated with foundation system summary
+
+**Future Phases (4-8) Documentation:**
+- [ ] Clear dependency requirements documented for each blocked phase
+- [ ] Integration points identified for future player progression systems
+- [ ] Scaling infrastructure ready for economy and reward systems
+- [ ] Commit ready with conventional format: `feat(combat): implement difficulty scaling foundation (phases 1-3) - MEGABONK progression framework`
 
 ## 🎯 Success Metrics
 
