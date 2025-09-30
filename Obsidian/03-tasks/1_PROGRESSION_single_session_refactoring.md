@@ -578,27 +578,24 @@ Return to Main Menu (session wiped)
 ---
 
 ### Phase 7: Migrate Existing Systems (2-3 sessions)
-**Goal:** Update Arena, DamageSystem, etc. to use SessionState
+**Goal:** Update Arena, DamageSystem, etc. to use SessionState for progression tracking
 **Test:** Full run works end-to-end (char select → arena → death → end screen)
 
 **⏸️ CHECKPOINT:** Review system migration plan and verify all SessionState integrations before cleanup
 
+**NOTE:** Tier difficulty scaling and arena progression mechanics (boss spawning, Final Swarm) are handled by Task 2 (COMBAT_map_level_difficulty_scaling_integration.md). This phase focuses on SESSION/META progression integration only.
+
 - [ ] Update Arena.gd:
   - [ ] Remove references to old RunManager stats
-  - [ ] Connect to SessionState for stat tracking
+  - [ ] Connect to SessionState for stat tracking (kills, damage, time)
   - [ ] Remove character save/load logic
-  - [ ] Apply tier difficulty modifiers to enemies:
-    - [ ] Read SessionState.current_tier
-    - [ ] Tier 1: No modifiers (baseline)
-    - [ ] Tier 2: +30% enemy HP, +20% damage, +10% spawn rate
-    - [ ] Tier 3: +60% enemy HP, +40% damage, +20% spawn rate
-  - [ ] **Arena Progression Mechanics (see STAGE_PROGRESSION_VISION.md for full spec):**
-    - [ ] Boss spawn timing: Spawn boss at 8:00 mark (configurable)
-    - [ ] Boss kill detection: SessionState.boss_killed = true, SessionState.boss_kill_time = current_time
-    - [ ] Final Swarm trigger: At 10:00 timer, trigger overwhelming spawn event
-    - [ ] Final Swarm tracking: SessionState.final_swarm_entered = true, track survival time
-    - [ ] Difficulty shrine integration: Connect shrine activation → SessionState.difficulty_shrines_activated++
-    - [ ] Portal unlock: Boss death → enable rift/portal for stage progression
+  - [ ] **SessionState Integration Only:**
+    - [ ] Read SessionState.current_tier for UI display (actual scaling in Task 2)
+    - [ ] Track SessionState.boss_killed when boss dies (progression mechanics in Task 2)
+    - [ ] Track SessionState.boss_kill_time timestamp
+    - [ ] Track SessionState.final_swarm_entered when triggered (mechanics in Task 2)
+    - [ ] Track SessionState.final_swarm_survival_time
+    - [ ] Track SessionState.difficulty_shrines_activated (shrine system in Task 2)
 - [ ] Update DamageSystem.gd:
   - [ ] Emit damage to SessionState.add_damage()
   - [ ] Track kills via SessionState.add_kill()
