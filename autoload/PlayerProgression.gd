@@ -108,6 +108,30 @@ func reset() -> void:
 	Logger.info("PlayerProgression reset for new run", "progression")
 	_emit_progression_changed()
 
+## Deprecated API shims for Task 04a compatibility
+## TODO: Remove these shims in Task 04 Phase 2 when callers are updated
+
+func load_from_profile(profile_data: Dictionary) -> void:
+	"""DEPRECATED: Load progression from character profile (Task 04a - no longer used)"""
+	Logger.warn("PlayerProgression.load_from_profile() is deprecated - progression is now session-only", "progression")
+	# For compatibility: restore level and XP if provided
+	if profile_data.has("level"):
+		level = profile_data.get("level", 1)
+	if profile_data.has("total_xp"):
+		experience = profile_data.get("total_xp", 0.0)
+	_update_xp_to_next()
+	_emit_progression_changed()
+
+func export_state() -> Dictionary:
+	"""DEPRECATED: Export progression state (Task 04a - no longer needed)"""
+	Logger.warn("PlayerProgression.export_state() is deprecated - progression is now session-only", "progression")
+	return get_progression_state()
+
+func has_unlock(unlock_id: String) -> bool:
+	"""DEPRECATED: Check for ability unlocks (Task 04a - moved to MetaProgression in Task 04)"""
+	Logger.warn("PlayerProgression.has_unlock() is deprecated - unlocks moved to MetaProgression (Task 04)", "progression")
+	return false  # Always return false - no persistent unlocks in session-only system
+
 ## Get current progression state as dictionary
 func get_progression_state() -> Dictionary:
 	# Calculate current level progress for proper XP bar display
