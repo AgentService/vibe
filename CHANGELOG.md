@@ -4,6 +4,27 @@
 
 ## [Current Week - In Progress]
 
+### Systems Architecture Fixes
+- **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
+  - **Runtime Error Resolution**: Fixed "Invalid access to property or key 'enemy_type' on SpawnConfig" during event enemy spawning
+  - **Object Model Separation**: Used `cfg.to_enemy_type()` method to properly convert SpawnConfig to EnemyType before spawn call
+  - **Architecture Boundary Fix**: Maintains proper separation between spawn configuration and enemy template objects
+  - **Error Location**: EventSpawnManager.gd line 247 - now properly handles SpawnConfig → EnemyType conversion
+
+- **Test Infrastructure Updates**: ✅ **COMPLETED** - Updated test import paths for new domain organization structure
+  - **Signal Cleanup Test Fix**: Updated import paths in test_signal_cleanup_validation.gd for XpSystem and MeleeSystem
+  - **Domain Organization Support**: Changed imports from flat scripts/systems/ to domain subfolders (combat/, spawn/)
+  - **Test Compatibility**: Signal cleanup validation now passes successfully with corrected import structure
+  - **Pre-commit Integration**: Tests now run cleanly in CI pipeline with new domain-organized file structure
+
+### Legacy Code Cleanup
+- **ForestArena Removal**: ✅ **COMPLETED** - Removed legacy ForestArena scene and old "Forest Arena Generator Editor" plugin
+  - **Scene Files Removed**: ForestArena.tscn, ForestArena.gd, and associated .uid files
+  - **Plugin Removal**: Completely removed addons/forest_generator_editor/ directory
+  - **Reference Updates**: Updated SceneTransitionManager.gd and DebugConfig.gd to remove ForestArena options
+  - **Preservation**: PathAware_Forest.tscn and current map generation systems remain intact
+  - **Test Cleanup**: Removed old test_forest_generation files specific to legacy system
+
 ### Combat System Foundation Cleanup
 - **Scaling Logic Cleanup**: ✅ **COMPLETED** - Removed scattered scaling implementations to create clean foundation for unified DifficultyDirector
   - **MapLevel Simplified**: Removed convenience scaling methods (`get_health_scaling()`, `get_damage_scaling()`, `get_pack_size_scaling()`, etc.)

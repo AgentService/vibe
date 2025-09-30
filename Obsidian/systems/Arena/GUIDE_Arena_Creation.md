@@ -1,8 +1,15 @@
 # New Arena Creation Guide
 
+**Updated:** 2025-09-30 - ForestArena removal updates
+
 ## 🎯 Overview
 
 This guide shows you how to create new arenas using the **MapConfig system** based on the proven UnderworldArena implementation. Follow these steps to create fully-functional arenas with zone-based spawning and hot-reloadable configuration.
+
+## 📋 **Update Notice (2025-09-30)**
+- 🗑️ **ForestArena Removed**: Examples updated to use PathAware_Forest.tscn instead of removed ForestArena.tscn
+- 🎯 **Current Examples**: PathAware_Forest and UnderworldArena are the primary arena references
+- 📊 **Recommended Approach**: Use PathAware system for new procedural arenas, UnderworldArena for fixed designs
 
 **★ Insight ─────────────────────────────────────**
 - **MapConfig Pattern**: Data-driven arena configuration using .tres resources
@@ -107,12 +114,12 @@ custom_properties = {
 
 ### Step 2: Create Arena Scene Structure
 
-**File**: `scenes/arena/ForestArena.tscn`
+**File**: `scenes/arena/PathAware_Forest.tscn` (ForestArena.tscn has been removed)
 
 Create scene with this node hierarchy:
 
 ```
-ForestArena (Node2D) [Script: ForestArena.gd]
+PathAware_Forest (Node2D) [Script: PathAware_Forest.gd]
 ├── SpawnZones (Node2D)                    # Spawn zone container
 │   ├── AncientGrove (Area2D)              # Zone 1: Ancient Grove
 │   │   └── CollisionShape2D               # CircleShape2D (radius: 90)
@@ -138,10 +145,10 @@ ForestArena (Node2D) [Script: ForestArena.gd]
 
 ### Step 3: Implement Arena Script
 
-**File**: `scenes/arena/ForestArena.gd`
+**File**: `scenes/arena/PathAware_Forest.gd`
 
 ```gdscript
-class_name ForestArena
+class_name PathAware_Forest
 extends "res://scenes/arena/Arena.gd"
 
 ## Enchanted forest arena with nature-themed mechanics
@@ -197,7 +204,7 @@ func _ready() -> void:
 	# Initialize spawn zones for efficient access
 	_initialize_spawn_zones()
 
-	Logger.info("ForestArena initialization complete: %s" %
+	Logger.info("PathAware_Forest initialization complete: %s" %
 		(map_config.display_name if map_config else "Default Forest"), "arena")
 
 func _load_default_config() -> void:
@@ -323,8 +330,8 @@ func _apply_nature_healing_to_entity(entity_id: EntityId) -> void:
 
 ### Step 4: Scene Configuration via Inspector
 
-1. **Open ForestArena.tscn in Godot**
-2. **Select root ForestArena node**
+1. **Open PathAware_Forest.tscn in Godot**
+2. **Select root PathAware_Forest node**
 3. **In Inspector, assign Map Config property**:
    - Click dropdown next to "Map Config"
    - Choose "Load" → Navigate to `data/content/maps/forest_config.tres`
@@ -367,10 +374,10 @@ StateManager.go_to_arena("forest_arena")
 ## 🧪 Testing Your Arena
 
 ### Basic Functionality Test
-1. **Open ForestArena.tscn and play scene**
+1. **Open PathAware_Forest.tscn and play scene**
 2. **Check console logs for**:
    ```
-   [INFO:ARENA] ForestArena initialization complete: Enchanted Forest
+   [INFO:ARENA] PathAware_Forest initialization complete: Enchanted Forest
    [DEBUG:ARENA] Initialized 4 spawn zones
    [DEBUG:ARENA] Applied map config: Enchanted Forest
    ```

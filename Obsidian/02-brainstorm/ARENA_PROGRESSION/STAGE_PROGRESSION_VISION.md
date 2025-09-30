@@ -26,17 +26,17 @@
 ### Timeline (Based on MEGABONK Structure)
 ```
 0:00 - Stage starts, normal spawning
-1:30 - Rift spawns (visual marker, NOT functional yet)
+1:30 - Portal spawns (visual marker, NOT functional yet)
 3:00 - First Mini Boss spawns (mini-objective)
 4:00 - Pressure Wave 1 (swarm phase)
 6:00 - Pressure Wave 2 (more dangerous)
 7:00 - Second Mini Boss spawns
 8:00 - Main Boss spawns (must kill before 10:00)
-9:30 - Optimal boss kill → Rift ACTIVATES (can enter anytime)
+9:30 - Optimal boss kill → Portal UNLOCKS (can enter anytime)
 10:00 - Timer expires → FINAL SWARM begins
-10:00-13:00 - Optional: Farm Final Swarm (rift still accessible)
+10:00-13:00 - Optional: Farm Final Swarm (portal still accessible)
 11:00 - Black Ghosts phase (extreme danger signal)
-13:00+ - Mathematical ceiling → Must enter rift or die
+13:00+ - Mathematical ceiling → Must enter portal or die
 ```
 
 **MEGABONK Reference Timings (Tier 1 & 2):**
@@ -63,16 +63,15 @@
 
 **Phase 2: Boss Fight**
 - Boss spawns at X:XX (early enough for comfortable kill by 10:00)
-- **Boss kill = unlock rift** (permanent access to portal)
-- Difficulty snapshot at boss kill time
-- Can activate rift immediately OR keep farming
+- **Boss kill = unlock portal** (becomes usable)
+- Can enter portal immediately OR keep farming
 
 **Phase 3: Final Swarm (10:00+)**
 - Timer expires → overwhelming spawn rate + stat buffs
 - **Only accessible if boss was killed** (otherwise stuck until death)
 - Survivable for 2-4 minutes (skill/build dependent)
 - Exponential scaling creates mathematical ceiling
-- Rift portal remains available (can leave anytime)
+- Portal remains available (can leave anytime)
 - Used for leaderboard kill grinding
 
 ---
@@ -129,17 +128,18 @@ Stage 2: Start at 6.0 (5.0 + 1.0 jump) → End at 10.0
 Stage 3: Start at 11.0 (10.0 + 1.0 jump) → Continue...
 ```
 
-### Rift Event Scaling
+### Stage Transition Scaling
 
-**Snapshot Scaling:**
-- Difficulty coefficient captured at rift activation time
-- All rift enemies use snapshotted difficulty
-- Boss difficulty based on coefficient when boss was killed
-- Creates strategic timing decisions (early vs late activation)
+**Fixed Stage Jump:**
+- When player enters portal, difficulty coefficient increases by +1.0
+- New map generated with higher starting difficulty
+- Stage timer resets to 10:00
+- Coefficient continues to increase during new stage
 
 **Example:**
-- Kill boss at 5min (coeff 3.0) → Boss level ~7
-- Kill boss at 9min (coeff 5.5) → Boss level ~14
+- Stage 1: Start at 1.0, boss spawns at 8:00 with coeff ~4.5
+- Kill boss at 9:00, enter portal
+- Stage 2: Start at 5.5 (4.5 + 1.0 jump), boss spawns with coeff ~9.0
 
 ---
 
@@ -297,10 +297,10 @@ Stage 3: Start at 11.0 (10.0 + 1.0 jump) → Continue...
 - Signals boss death to unlock rift
 
 **EventBus Signals:**
-- `boss_killed` → Unlock rift activation
+- `boss_killed` → Unlock portal (make it usable)
 - `timer_expired` → Trigger Final Swarm
-- `rift_activated` → Snapshot difficulty, start rift event
-- `stage_completed` → Add stage jump, generate new map
+- `portal_entered` → Apply +1.0 stage jump, generate new map
+- `stage_started` → Reset timer to 10:00, continue with new coefficient
 
 ---
 
@@ -308,15 +308,16 @@ Stage 3: Start at 11.0 (10.0 + 1.0 jump) → Continue...
 
 **Boss Spawn Timing:**
 - When should boss spawn? Options:
-  - With rift at 1:30 (long boss fight time)
+  - With portal at 1:30 (long boss fight time)
   - At 5:00 (moderate)
   - At 7:00 (creates urgency)
+  - At 8:00 (current placeholder - creates urgency)
   - Immediately at stage start (always present)
 
-**Rift Visual vs Functional:**
-- Rift spawns at 1:30 as visual marker
-- Becomes functional only after boss kill
-- Or: Rift spawns when boss spawns?
+**Portal Visual vs Functional:**
+- Portal spawns at 1:30 as visual marker (locked/disabled)
+- Becomes unlocked/usable only after boss kill
+- Or: Portal spawns when boss spawns?
 
 **Difficulty Shrine Mechanics:**
 - When can player activate shrines?

@@ -25,8 +25,9 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - ⚠️ Need **fixed stage jump** mechanic (+1.0 coefficient per stage transition)
 - ⚠️ Need **timed event spawning** (mini-bosses at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
 - ⚠️ Need **Final Swarm trigger** at 10:00 timer expiration with exponential scaling
-- ⚠️ Need **boss-kill deadline** mechanic (must kill boss before 10:00)
-- ⚠️ Need **snapshot scaling** for rift events (capture difficulty at boss kill time)
+- ⚠️ Need **boss-kill deadline** mechanic (must kill boss before 10:00 to unlock portal)
+- ⚠️ Need **simple portal** that unlocks on boss kill (no special rift event mechanics)
+- ⚠️ Boss/enemy difficulty determined by coefficient at spawn time (no snapshot needed)
 
 ## 🎯 Acceptance Criteria
 
@@ -45,9 +46,10 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - [ ] MapLevel supports `add_stage_jump(float)` method for fixed stage transitions (+1.0 default)
 - [ ] SpawnDirector can trigger timed events (mini-boss at 3:00, 7:00; pressure waves at 4:00, 6:00, 8:00)
 - [ ] SpawnDirector supports Final Swarm mode with exponential spawn rate increase
-- [ ] BossSpawnManager enforces boss-kill deadline (10:00) and unlocks rift on success
-- [ ] MapLevel supports snapshot mechanism (capture coefficient at specific time for rift events)
-- [ ] EventBus signals support stage progression flow (`boss_killed`, `timer_expired`, `rift_activated`, `stage_completed`)
+- [ ] BossSpawnManager enforces boss-kill deadline (10:00) and unlocks portal on success
+- [ ] Simple portal entity that becomes usable after boss kill (no special event mechanics)
+- [ ] Boss/enemy difficulty scales with coefficient at spawn time (real-time, no snapshot)
+- [ ] EventBus signals support stage progression flow (`boss_killed`, `timer_expired`, `portal_entered`, `stage_started`)
 - [ ] Mathematical ceiling implemented (Final Swarm becomes impossible around 13:00)
 
 ## 🔍 Technical Analysis
@@ -64,87 +66,192 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ### Dependencies & Patterns
 - **EventBus Signals (Original):** `difficulty_level_changed`, `spawn_rate_modified`, `enemy_stats_scaled`
-- **EventBus Signals (Progression):** `boss_killed`, `timer_expired`, `rift_activated`, `stage_completed`, `mini_boss_spawn`, `pressure_wave_start`
+- **EventBus Signals (Progression):** `boss_killed`, `timer_expired`, `portal_entered`, `stage_started`, `mini_boss_spawn`, `pressure_wave_start`
 - **Resource Files:** `/data/balance/difficulty_scaling.tres` with credit thresholds and multipliers
 - **Performance Impact:** Cached scaling calculations, 30Hz combat step compatible
 - **Testing Strategy:** .tscn test scenes with accelerated MapLevel progression
 - **Stage Timer:** 10-minute countdown per stage, integrated with MapLevel progression
 - **Coefficient Formula:** `enemyLevel = 1 + (coefficient - playerFactor) / 0.33` (from progression design)
+- **Portal Mechanic:** Simple locked/unlocked state, no bubble event or special spawn logic
 
 ## 📊 Implementation Plan
 
-### Phase 1: Foundation - Enhanced MapLevel Methods
+**Approach:** Vertical slice with isolated testing - each phase delivers a playable, testable increment.
+
+### Phase 1: Stage Timer Foundation (1-2 sessions) 🎯 START HERE
+**Goal:** Working stage timer with visual feedback
+**Test Scene:** `tests/StageTimer_Isolated.tscn`
+
+- [ ] Create `StageTimer_Isolated.tscn` test scene with basic UI
 - [ ] Add `get_difficulty_coefficient()` method to MapLevel autoload (returns current coefficient value)
-- [ ] Add `get_enemy_stat_scaling()` method using coefficient (HP +30%, DMG +20% per level)
-- [ ] Add `get_spawn_interval_scaling()` method for spawn rate modifications
-- [ ] Add `get_event_frequency_scaling()` method for boss/event spawning
-- [ ] Add `add_stage_jump(float)` method to increase coefficient on stage transitions (+1.0 default)
-- [ ] Add `capture_coefficient_snapshot()` method for rift event scaling
+- [ ] Implement 10-minute countdown timer in MapLevel (10:00 → 0:00)
+- [ ] Display timer + difficulty coefficient in test scene (Label updates)
+- [ ] Add time acceleration debug key (T = 100x speed for rapid testing)
+- [ ] Add visual markers at key times (3:00, 7:00, 8:00, 10:00) - print() statements
+- [ ] Add EventBus.timer_expired signal when countdown reaches 0:00
+- [ ] Test coefficient increases correctly over 10 minutes (1.0 → ~5.5)
+
+**Deliverable:** Can watch timer count down and coefficient increase in isolated test
+
+---
+
+### Phase 2: Timed Event Spawning (2-3 sessions)
+**Goal:** All timed events fire at correct times with visual feedback
+**Test Scene:** Extend `StageTimer_Isolated.tscn` with enemy spawning
+
+- [ ] Add SpawnDirector to test scene for enemy spawning
+- [ ] Implement timed event trigger system in MapLevel:
+  - [ ] Mini-boss spawn trigger at 3:00 (EventBus.mini_boss_spawn signal)
+  - [ ] Pressure wave trigger at 4:00 (EventBus.pressure_wave_start signal)
+  - [ ] Pressure wave trigger at 6:00
+  - [ ] Mini-boss spawn trigger at 7:00
+  - [ ] Pressure wave trigger at 8:00
+  - [ ] Main boss spawn trigger at 8:00 (EventBus.boss_spawn signal)
+  - [ ] Final Swarm trigger at 10:00 (EventBus.final_swarm_start signal)
+  - [ ] Black Ghosts trigger at 11:00 (EventBus.black_ghosts_spawn signal)
+- [ ] Wire SpawnDirector to respond to event signals:
+  - [ ] Spawn 1 elite enemy on mini_boss_spawn
+  - [ ] Spawn burst of 20 enemies on pressure_wave_start
+  - [ ] Spawn 1 large boss enemy on boss_spawn
+  - [ ] Spawn continuous waves on final_swarm_start
+- [ ] Add on-screen event log (shows "3:00 - Mini Boss Spawned!" messages)
+- [ ] Stop timed events when portal entered (future-proof for Phase 4)
+
+**Deliverable:** All events fire at correct times with visible enemy spawns
+
+---
+
+### Phase 3: Difficulty Coefficient Scaling (2-3 sessions)
+**Goal:** Enemies get visibly stronger over time
+**Test Scene:** Continue with `StageTimer_Isolated.tscn`
+
+- [ ] Add `get_enemy_stat_scaling(coefficient)` method to MapLevel
+  - [ ] Returns multipliers: HP = 1.0 + (coeff * 0.3), DMG = 1.0 + (coeff * 0.2)
+- [ ] Modify EnemyFactory to apply MapLevel stat multipliers:
+  - [ ] Get current coefficient from MapLevel on enemy spawn
+  - [ ] Apply scaling after template variation but before final config
+  - [ ] Add debug logging for scaled stats (Logger.debug with "bosses" category)
+- [ ] Implement stat scaling caps (max 10x multiplier) to prevent extreme values
+- [ ] Add visual feedback in test scene:
+  - [ ] Display enemy stats on spawn (HP, damage)
+  - [ ] Color-code enemies by difficulty tier (green→yellow→red)
+  - [ ] Show damage numbers when enemies take hits
+- [ ] Test progression: enemies at 3:00 weaker than enemies at 9:00
+- [ ] Create stat scaling validation (enemies should scale ~30%/20% per coefficient point)
+
+**Deliverable:** Enemies spawn with scaled stats based on game time
+
+---
+
+### Phase 4: Boss-Kill Deadline & Portal (2-3 sessions)
+**Goal:** Complete stage cycle with win/lose conditions
+**Test Scene:** Add portal entity and boss-kill tracking
+
+- [ ] Create simple Portal scene (Sprite2D + Area2D + interaction logic):
+  - [ ] Visual states: locked (gray), unlocked (green/glowing)
+  - [ ] Spawns at 1:30 in locked state
+  - [ ] Player can enter when unlocked (press E or walk into)
+- [ ] Implement boss-kill deadline in BossSpawnManager:
+  - [ ] Boss spawns at 8:00, scaled to current coefficient (~4.5)
+  - [ ] Track boss kill via EventBus.boss_killed signal
+  - [ ] Boss kill unlocks portal permanently
+  - [ ] Display "Portal Unlocked!" message on boss kill
+- [ ] Implement deadline failure handling:
+  - [ ] If timer expires (10:00) without boss kill → Portal stays locked
+  - [ ] Display "FINAL SWARM - NO ESCAPE" warning message
+  - [ ] Player must survive or die (no stage progression)
+- [ ] Implement success path:
+  - [ ] Portal entry triggers EventBus.portal_entered signal
+  - [ ] Display "Stage Completed!" message
+  - [ ] Stop all spawning and reset timer (prep for Phase 6)
+- [ ] Add portal accessibility during Final Swarm (if boss was killed)
+
+**Deliverable:** Full stage cycle with clear win condition (kill boss + enter portal)
+
+---
+
+### Phase 5: Final Swarm Intensity Tuning (1-2 sessions)
+**Goal:** Final Swarm feels overwhelming but survivable for 2-4 minutes
+**Test Scene:** Add Final Swarm mode testing
+
+- [ ] Implement `get_spawn_interval_scaling()` method for spawn rate modifications
+- [ ] Implement Final Swarm spawn mode (triggered at 10:00):
+  - [ ] 10:00-11:00: Spawn rate 3x normal, stat multiplier +50%
+  - [ ] 11:00-12:00: Black Ghosts spawn, stat multiplier +100%, faster enemies
+  - [ ] 12:00-13:00: Spawn rate 5x, stat multiplier +150%
+  - [ ] 13:00+: Mathematical ceiling (spawn rate 10x, stats +200%, survival impossible)
+- [ ] Add visual intensity feedback:
+  - [ ] Screen shake increases with swarm intensity
+  - [ ] Red vignette effect at edges
+  - [ ] Spawn counter (enemies/second display)
+- [ ] Playtest and tune for "feel":
+  - [ ] Strong builds should survive 3-4 minutes
+  - [ ] Weak builds die within 1-2 minutes
+  - [ ] Mathematical ceiling is unavoidable death
+- [ ] Add performance monitoring (enemy count cap at 1000)
+
+**Deliverable:** Final Swarm provides optional high-skill challenge
+
+---
+
+### Phase 6: Stage Transition & Multi-Stage (2-3 sessions)
+**Goal:** Multi-stage progression with coefficient jumps
+**Test Scene:** Integrate with ProceduralMapManager
+
+- [ ] Implement `add_stage_jump(float)` method in MapLevel (+1.0 default)
+- [ ] Implement stage transition on portal entry:
+  - [ ] Capture current coefficient (e.g., 5.5 at portal entry)
+  - [ ] Apply +1.0 stage jump → new stage starts at 6.5
+  - [ ] Emit EventBus.stage_started signal with new coefficient
+  - [ ] Generate new procedural map (call ProceduralMapManager)
+  - [ ] Reset stage timer to 10:00
+  - [ ] Clear all enemies and projectiles
+- [ ] Test multi-stage progression:
+  - [ ] Stage 1: Coeff 1.0 → 5.5, boss at coeff ~4.5
+  - [ ] Stage 2: Coeff 6.5 → 11.0, boss at coeff ~10.0
+  - [ ] Stage 3: Coeff 12.0 → 16.5, boss at coeff ~15.5
+- [ ] Add stage number display (top UI: "Stage 3")
+- [ ] Validate scaling feels appropriate across 5+ stages
+- [ ] Test that player can't progress past mathematical ceiling without dying
+
+**Deliverable:** Full multi-stage progression loop working
+
+---
+
+### Phase 7: Polish & Configuration (2-3 sessions)
+**Goal:** Hot-reloadable balance and visual polish
+
 - [ ] Create `DifficultyConfig` resource class with scaling curves and thresholds
-- [ ] Implement scaling result caching to minimize per-frame calculations
-- [ ] Add EventBus signals for difficulty progression notifications (original + progression signals)
-- [ ] Add stage timer system (10-minute countdown) integrated with MapLevel
+- [ ] Create `/data/balance/difficulty_scaling.tres` with tunable values:
+  - [ ] Stage duration (default 10 minutes)
+  - [ ] Coefficient increase rate (default ~0.5 per minute)
+  - [ ] Stage jump amount (default +1.0)
+  - [ ] Event timings (mini-boss, pressure waves, boss spawn)
+  - [ ] Final Swarm intensity curve
+  - [ ] Stat scaling multipliers (HP +30%, DMG +20%)
+- [ ] Implement BalanceDB integration for hot-reload
+- [ ] Add emergency scaling disable toggle (CheatSystem command)
+- [ ] Create difficulty bar UI in HUD (top right: Easy → Normal → Hard → INSANE)
+- [ ] Add timer display to HUD (top center: "8:32" countdown)
+- [ ] Add stage number display to HUD (top left: "Stage 3")
+- [ ] Document scaling formulas in `/Obsidian/systems/Difficulty-Scaling-System.md`
 
-### Phase 2: Core Implementation - SpawnDirector Integration
-- [ ] Modify regular enemy spawning to use `MapLevel.get_spawn_interval_scaling()`
-- [ ] Apply level scaling to spawn count ranges with proper caps
-- [ ] Integrate scaling with existing wave progression multipliers
-- [ ] Implement timed event spawning system:
-  - [ ] Mini-boss spawn at 3:00 (first)
-  - [ ] Pressure wave at 4:00 (elite enemies, increased spawn rate)
-  - [ ] Pressure wave at 6:00 (more elites, higher danger)
-  - [ ] Mini-boss spawn at 7:00 (second)
-  - [ ] Pressure wave at 8:00 (very dangerous, signals urgency)
-  - [ ] Main boss spawn at 8:00 (must kill before 10:00)
-  - [ ] Final Swarm trigger at 10:00 (exponential scaling)
-  - [ ] Black Ghosts spawn at 11:00 (1 min into Final Swarm, extreme danger)
-- [ ] Implement Final Swarm mode with exponential spawn rate increase
-- [ ] Implement mathematical ceiling (~13:00) that makes survival impossible
-- [ ] Stop timed events when rift is activated (player progresses to next stage)
-- [ ] Add performance monitoring for spawn scaling calculations
-- [ ] Create fallback mechanisms if scaling impacts performance
+**Deliverable:** Polished progression system with designer-friendly tuning
 
-### Phase 3: Enemy Stat Scaling - EnemyFactory Enhancement
-- [ ] Add MapLevel stat multipliers to spawn configuration generation
-- [ ] Apply scaling after template variation but before final config
-- [ ] Implement stat scaling caps to prevent extreme values
-- [ ] Add debug logging for scaled enemy stats (bosses category)
-- [ ] Create stat scaling validation to ensure reasonable progression
+---
 
-### Phase 4: Boss-Kill Deadline & Rift System
-- [ ] Implement boss-kill deadline mechanic in BossSpawnManager:
-  - [ ] Boss must be killed before 10:00 timer expires
-  - [ ] Boss kill unlocks rift permanently (EventBus.boss_killed signal)
-  - [ ] If timer expires without boss kill → Final Swarm begins without escape
-  - [ ] If boss killed → rift accessible during Final Swarm (optional farming)
-- [ ] Implement rift activation mechanic:
-  - [ ] Rift visual spawns at 1:30 (not functional yet)
-  - [ ] Rift becomes functional only after boss kill
-  - [ ] Player can activate rift anytime after boss kill
-  - [ ] Rift activation triggers stage progression (EventBus.rift_activated signal)
-- [ ] Implement snapshot scaling for rift events:
-  - [ ] Capture difficulty coefficient at boss kill time
-  - [ ] Store snapshot for next stage initialization
-  - [ ] Apply fixed +1.0 stage jump on stage transition
-- [ ] Create `DifficultyDirector` system for credit accumulation (original task scope)
+### Phase 8: DifficultyDirector & Credits (Optional - Later)
+**Goal:** ROR2-style spawn budget system for fine-tuned control
+**Note:** This is the original task scope, deferred for later polish
+
+- [ ] Create `DifficultyDirector` system for credit accumulation
 - [ ] Implement credit-based boss spawning cost system
 - [ ] Integrate with existing BossSpawnManager for cost validation
 - [ ] Add credit generation scaling based on MapLevel progression
 - [ ] Create credit spending mechanics for boss spawn events
+- [ ] Add credit display for debugging (shows available credits)
 
-### Phase 5: Testing & Validation
-- [ ] Create comprehensive scaling progression test suite
-- [ ] Implement accelerated time testing (0.1s per level for rapid validation)
-- [ ] Add performance regression tests for 30Hz combat compatibility
-- [ ] Create Monte-Carlo simulations for balance validation
-- [ ] Test edge cases (rapid level changes, extreme scaling values)
-
-### Phase 6: Balance & Configuration
-- [ ] Create hot-reloadable difficulty curves using Godot Curve resources
-- [ ] Implement BalanceDB integration for runtime configuration changes
-- [ ] Add emergency scaling disable toggle for balance emergencies
-- [ ] Create visual feedback for difficulty level changes in HUD
-- [ ] Document scaling formulas and balance considerations
+**Deliverable:** Spawn budget system for advanced balance tuning
 
 ## 🔗 Related Files
 
@@ -209,12 +316,17 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 ### 2025-09-30 - Progression System Integration
 - Updated task to align with MEGABONK-inspired arena progression system
 - Added progression-specific acceptance criteria (difficulty coefficient, stage jumps, timed events)
-- Integrated boss-kill deadline and rift activation mechanics
+- Integrated boss-kill deadline and portal unlock mechanics
 - Added Final Swarm trigger and mathematical ceiling requirements
 - Updated stat scaling values (HP +30%, DMG +20% per level to match progression design)
 - Added timed event spawning requirements (mini-bosses, pressure waves, boss spawn)
-- Added snapshot scaling mechanism for rift events
+- Clarified: No snapshot scaling needed (spawn time = difficulty determination)
+- Clarified: Simple portal entity, no special rift event/bubble mechanics
 - Referenced `STAGE_PROGRESSION_VISION.md` as design source
+- **IMPLEMENTATION APPROACH:** Restructured to vertical slice + isolated testing methodology
+- Organized into 8 phases with clear deliverables and test scenes
+- Phase 1 START HERE: Create `StageTimer_Isolated.tscn` for immediate visual feedback
+- Deferred DifficultyDirector (ROR2 credits system) to Phase 8 (optional polish)
 
 ## 🚨 Risks & Considerations
 

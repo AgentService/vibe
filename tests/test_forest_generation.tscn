@@ -1,9 +1,0 @@
-[gd_scene load_steps=3 format=3 uid="uid://duchsd15oq1os"]
-
-[ext_resource type="Script" uid="uid://draot7fw02r5y" path="res://tests/test_forest_generation.gd" id="1_34dns"]
-[ext_resource type="PackedScene" uid="uid://rh88l27aythn" path="res://scenes/arena/ForestArena.tscn" id="1_vv3wh"]
-
-[node name="TestForestGeneration" type="Node"]
-script = ExtResource("1_34dns")
-
-[node name="ForestArena" type="Node2D" parent="." instance=ExtResource("1_vv3wh")]

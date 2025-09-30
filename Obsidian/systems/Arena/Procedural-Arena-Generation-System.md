@@ -1,9 +1,16 @@
 # Procedural Arena Generation System (Legacy)
 
 **Created:** 2025-09-23
+**Updated:** 2025-09-30 - ForestArena Cleanup
 **Status:** 🔄 LEGACY SYSTEM - Superseded by PathAware Architecture
 **Category:** Arena Management & Spatial Systems
 **Current Primary System:** [PathAware Arena Generation](PathAware-Arena-Generation-System.md)
+
+## 📋 **Recent Updates (2025-09-30)**
+- ✅ **ForestArena Removed**: ForestArena.tscn and ForestArena.gd have been completely removed from the codebase
+- ✅ **Plugin Cleanup**: "Forest Arena Generator Editor" plugin has been removed from addons/
+- ✅ **Reference Updates**: SceneTransitionManager and DebugConfig updated to remove ForestArena options
+- 🎯 **Current State**: Only PathAware_Forest.tscn and ProceduralArena.tscn remain as procedural arena options
 
 ## ⚠️ **LEGACY SYSTEM NOTICE**
 
@@ -406,7 +413,7 @@ For new development, see: **[PathAware Arena Generation System](PathAware-Arena-
 
 ### **Legacy System Maintenance**
 This legacy system remains functional for:
-- Existing `ForestArena.tscn` and `ProceduralArena.tscn` scenes
+- Existing `ProceduralArena.tscn` scenes (ForestArena.tscn has been removed)
 - Tileset-based procedural generation needs
 - Specific biome configurations requiring tile patterns
 
@@ -505,14 +512,14 @@ enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res:
 **Files to Remove:**
 ```bash
 # Remove legacy arena scenes
-rm "scenes/arena/ForestArena.tscn"
+# ✅ ForestArena.tscn - ALREADY REMOVED (2025-09-30)
 rm "scenes/arena/ProceduralArena.tscn"
 ```
 
 **Associated Script Files:**
 ```bash
 # Remove forest arena script
-rm "scripts/arena/ForestArena.gd"
+# ✅ ForestArena.gd - ALREADY REMOVED (2025-09-30)
 ```
 
 **Update Scene References:**
@@ -694,8 +701,8 @@ git checkout HEAD~1  # Rollback to pre-removal commit
 
 **Files Removed:** ~25-30 files including:
 - 1 Autoload service (`ProceduralMapManager.gd`)
-- 1 Editor plugin (`forest_generator_editor/`)
-- 2-3 Arena scenes (`ForestArena.tscn`, `ProceduralArena.tscn`)
+- ✅ 1 Editor plugin (`forest_generator_editor/`) - REMOVED 2025-09-30
+- ✅ 1-2 Arena scenes (`ForestArena.tscn` REMOVED, `ProceduralArena.tscn` remains)
 - 4-5 Core system files (`ProceduralArenaGenerator.gd`, etc.)
 - 5-10 Resource files and configurations
 - 5-10 Documentation and test files
