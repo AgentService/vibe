@@ -1,5 +1,0 @@
-[gd_scene format=3 uid="uid://sl2mvct2kv3o"]
-
-[node name="UnlocksShop" type="Control"]
-layout_mode = 3
-anchors_preset = 0

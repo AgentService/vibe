@@ -384,7 +384,7 @@ func _on_shop_category_selected(category: String) -> void:
 	Logger.debug("Shop category selected: %s" % category, "ui")
 
 func _update_shop_ui() -> void:
-	"""Update shop display with discovered items."""
+	"""Update shop display with ALL items (showing locked/discovered/unlocked states)."""
 	# Clear existing items
 	for child in shop_item_list.get_children():
 		child.queue_free()
@@ -394,34 +394,42 @@ func _update_shop_ui() -> void:
 		var balance = MetaProgression.get_rift_fragments()
 		shop_rift_fragments_value.text = str(balance)
 
-	# Get discovered items for this category
 	if not MetaProgression:
 		Logger.warn("MetaProgression not available", "ui")
 		return
 
-	var discovered_items = MetaProgression.get_discovered_items(selected_shop_category)
+	# Get ALL items for this category from metadata cache
+	var category_items: Array[ItemMetadata] = []
+	for item_id in item_metadata_cache.keys():
+		var metadata = item_metadata_cache[item_id]
+		if metadata.category == selected_shop_category:
+			category_items.append(metadata)
 
-	# Show message if no items discovered yet
-	if discovered_items.is_empty():
+	# Show message if no items exist for this category
+	if category_items.is_empty():
 		var empty_label = Label.new()
-		empty_label.text = "No %s discovered yet. Find them in runs!" % selected_shop_category
+		empty_label.text = "No %s available yet." % selected_shop_category
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		shop_item_list.add_child(empty_label)
 		return
 
-	# Create item entry for each discovered item
-	for item_id in discovered_items:
-		var item_metadata = item_metadata_cache.get(item_id)
-		if not item_metadata:
-			Logger.warn("Item metadata not found for: %s" % item_id, "ui")
-			continue
-
+	# Create item entry for each item (regardless of discovery state)
+	for item_metadata in category_items:
 		_create_shop_item_entry(item_metadata)
 
 func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
-	"""Create a shop item entry UI."""
+	"""Create a shop item entry UI with proper state visualization."""
+	# Determine item state
+	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
+	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
+
 	var entry_container = PanelContainer.new()
 	entry_container.custom_minimum_size = Vector2(550, 80)
+
+	# Greyed out if locked
+	if not is_discovered:
+		entry_container.modulate = Color(0.3, 0.3, 0.3)
 
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 15)
@@ -432,32 +440,57 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 	info_vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 
 	var name_label = Label.new()
-	name_label.text = item_metadata.display_name + " (" + item_metadata.rarity + ")"
+	if is_discovered:
+		name_label.text = item_metadata.display_name + " (" + item_metadata.rarity + ")"
+	else:
+		name_label.text = "??? (Locked)"
 	info_vbox.add_child(name_label)
 
 	var desc_label = Label.new()
-	desc_label.text = item_metadata.description
+	if is_discovered:
+		desc_label.text = item_metadata.description
+	else:
+		desc_label.text = "Find this item in runs to unlock it"
 	desc_label.modulate = Color(0.8, 0.8, 0.8)
 	info_vbox.add_child(desc_label)
 
 	var stat_label = Label.new()
-	stat_label.text = item_metadata.stat_summary
+	if is_discovered:
+		stat_label.text = item_metadata.stat_summary
+	else:
+		stat_label.text = "???"
 	stat_label.modulate = Color(0.6, 1.0, 0.6)
 	info_vbox.add_child(stat_label)
 
 	hbox.add_child(info_vbox)
 
-	# Unlock button
-	var unlock_button = Button.new()
-	unlock_button.text = "UNLOCK\n%d 💎" % item_metadata.unlock_cost
-	unlock_button.custom_minimum_size = Vector2(100, 0)
-	unlock_button.pressed.connect(_on_unlock_item_pressed.bind(item_metadata))
-
-	# Disable if can't afford
-	if MetaProgression and not MetaProgression.can_afford(item_metadata.unlock_cost):
-		unlock_button.disabled = true
-
-	hbox.add_child(unlock_button)
+	# Right side: Unlock button or status
+	if is_unlocked:
+		# Show UNLOCKED status
+		var status_label = Label.new()
+		status_label.text = "✓ UNLOCKED"
+		status_label.modulate = Color(0.4, 1.0, 0.4)
+		status_label.custom_minimum_size = Vector2(100, 0)
+		status_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		status_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		hbox.add_child(status_label)
+	elif is_discovered:
+		# Show unlock button with cost
+		var unlock_button = Button.new()
+		unlock_button.text = "UNLOCK\n%d 💎" % item_metadata.unlock_cost
+		unlock_button.custom_minimum_size = Vector2(100, 0)
+		unlock_button.pressed.connect(_on_unlock_item_pressed.bind(item_metadata))
+		unlock_button.disabled = not can_afford
+		hbox.add_child(unlock_button)
+	else:
+		# Show locked icon/cost
+		var lock_label = Label.new()
+		lock_label.text = "🔒\n%d 💎" % item_metadata.unlock_cost
+		lock_label.custom_minimum_size = Vector2(100, 0)
+		lock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		lock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		lock_label.modulate = Color(0.5, 0.5, 0.5)
+		hbox.add_child(lock_label)
 
 	shop_item_list.add_child(entry_container)
 
