@@ -270,10 +270,16 @@ Return to Main Menu (session wiped)
   - [ ] Remove BalanceDB.balance_reloaded connection for stats
   - [ ] Delete `_exit_tree()` cleanup (no longer needed)
   - [ ] Keep: COMBAT_DT, _accumulator, _process(), EventBus.combat_step emission, _seed_rng()
+- [ ] Remove deprecated API shims from PlayerProgression:
+  - [ ] Delete `load_from_profile()` method (deprecated shim)
+  - [ ] Delete `export_state()` method (deprecated shim)
+  - [ ] Delete `has_unlock()` method (deprecated shim - replaced by MetaProgression)
+  - [ ] All marked with "TODO: Remove these shims in Task 04 Phase 2"
+  - [ ] Verify no remaining callers exist (search codebase)
 - [ ] Optionally rename RunManager → CombatClock (if desired)
 - [ ] Update documentation: autoload/CLAUDE.md with SessionState patterns
 
-**Deliverable:** SessionState tracks run stats, RunManager only handles 30Hz timing
+**Deliverable:** SessionState tracks run stats, RunManager only handles 30Hz timing, deprecated shims removed
 
 ---
 
