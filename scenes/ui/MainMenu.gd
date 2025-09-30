@@ -438,7 +438,8 @@ func _update_shop_ui() -> void:
 		empty_label.text = "No %s available yet." % selected_shop_category
 		empty_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		shop_item_list.add_child(empty_label)
-		shop_item_details_panel.visible = false
+		# Keep details panel visible but show placeholder
+		_show_empty_details()
 		return
 
 	# Create item entry for each item (regardless of discovery state)
@@ -459,10 +460,6 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 	var entry_container = PanelContainer.new()
 	entry_container.custom_minimum_size = Vector2(280, 60)
 
-	# Greyed out if locked (not discovered AND not unlocked)
-	if not is_discovered and not is_unlocked:
-		entry_container.modulate = Color(0.3, 0.3, 0.3)
-
 	var hbox = HBoxContainer.new()
 	hbox.add_theme_constant_override("separation", 15)
 	entry_container.add_child(hbox)
@@ -476,8 +473,8 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 		name_label.text = item_metadata.display_name
 		name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 	else:
-		name_label.text = "??? (Locked)"
-		name_label.modulate = Color(0.5, 0.5, 0.5)
+		name_label.text = "??? 🔒"
+		name_label.modulate = Color(0.6, 0.6, 0.6)
 	hbox.add_child(name_label)
 
 	# Make entry clickable (only if discovered or unlocked)
@@ -556,9 +553,11 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 	if not is_discovered and not is_unlocked and not item_metadata.discovery_requirement.is_empty():
 		shop_item_stats.text = "🔒 How to Discover: " + item_metadata.discovery_requirement
 		shop_item_stats.modulate = Color(1.0, 0.8, 0.3)
+		shop_item_stats.visible = true
 	else:
 		shop_item_stats.text = item_metadata.stat_summary
 		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
+		shop_item_stats.visible = true
 
 	if item_metadata.flavor_text.is_empty():
 		shop_item_flavor.text = ""
@@ -570,3 +569,17 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	shop_item_details_panel.visible = true
 	Logger.debug("Showing details for: %s" % item_metadata.display_name, "ui")
+
+func _show_empty_details() -> void:
+	"""Show placeholder text in details panel when no item selected."""
+	shop_item_name.text = "Select an item"
+	shop_item_name.modulate = Color(0.7, 0.7, 0.7)
+
+	shop_item_description.text = "Choose an item from the list to view details"
+	shop_item_description.modulate = Color(0.6, 0.6, 0.6)
+
+	shop_item_stats.text = ""
+	shop_item_stats.visible = false
+
+	shop_item_flavor.text = ""
+	shop_item_flavor.visible = false

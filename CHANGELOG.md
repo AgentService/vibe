@@ -4,6 +4,22 @@
 
 ## [Current Week - In Progress]
 
+### UI/UX Improvements
+- **MainMenu Layout Fix**: Resolved Control node anchoring issues when loaded under Main.tscn
+  - Changed Main.tscn from Node2D to Control for proper anchor support
+  - Removed Camera2D interference with Control coordinate system
+  - Implemented FULL_RECT overlapping container pattern for menu + leaderboard
+  - F5 (project run) and F6 (scene run) now display identical layouts
+- **Dynamic Item Loading**: Shop system now scans `res://data/content/items/*.tres` automatically
+  - No hardcoded item lists - add items by creating .tres files
+  - Maintains rarity sorting and three-state progression (locked/discovered/unlocked)
+- **Shop UI Improvements**: Enhanced shop visual clarity and layout
+  - Details panel now always visible (pre-allocates space instead of auto-showing)
+  - Removed dimming from locked items for better readability
+  - Changed locked display from "??? (Locked)" to "??? 🔒"
+  - Increased grid from 2 to 3 columns for better item visibility
+  - Added `_show_empty_details()` function for placeholder text when no items selected
+
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
   - **MainMenu Integration**: Created 3-screen flow directly in MainMenu.tscn (main → character select → map/tier select)
