@@ -210,26 +210,39 @@ Return to Main Menu (session wiped)
 ---
 
 ### Phase 2: Create SessionState System (2-3 sessions)
-**Goal:** Replace RunManager with simplified SessionState
+**Goal:** Migrate stats tracking from RunManager to SessionState
 **Test:** Stats track correctly during run, reset on death
 
+**⚠️ Current State:** RunManager handles TWO responsibilities:
+1. 30Hz fixed-step timing (KEEP - core engine feature)
+2. Run statistics tracking (MIGRATE to SessionState)
+
+**Migration Source:** See `autoload/RunManager.gd` for current implementation:
+- `stats: Dictionary` - enemies_killed, total_damage_dealt, xp_gained
+- `_on_enemy_killed()` - kill tracking
+- `_on_damage_dealt()` - damage tracking
+- `_on_xp_gained()` - XP tracking
+- All marked with "TODO: Task 04 Phase 2 - Move to SessionState"
+
+**Implementation Steps:**
 - [ ] Create `SessionState` autoload (scripts/autoload/SessionState.gd)
 - [ ] Define session-only state:
   - [ ] `current_level: int` - player level (starts at 1)
   - [ ] `current_xp: float` - XP progress (resets each run)
-  - [ ] `kills: int` - enemy kill count
-  - [ ] `damage_dealt: float` - total damage output
+  - [ ] `kills: int` - enemy kill count (migrate from RunManager.stats["enemies_killed"])
+  - [ ] `damage_dealt: float` - total damage output (migrate from RunManager.stats["total_damage_dealt"])
   - [ ] `time_survived: float` - seconds alive
   - [ ] `stage_reached: int` - highest stage this run
   - [ ] `current_character: String` - selected character ID
   - [ ] `collected_items: Array[String]` - items found this run
   - [ ] `active_abilities: Array[String]` - abilities unlocked
   - [ ] `damage_breakdown: Dictionary` - per-ability damage stats
-- [ ] Migrate 30Hz combat step from RunManager:
-  - [ ] Keep `COMBAT_DT: float = 1.0 / 30.0` constant
-  - [ ] Keep `_accumulator: float` and fixed-step loop
-  - [ ] Emit `EventBus.combat_step` signal at 30Hz
-  - [ ] Respect pause state via `PauseManager`
+- [ ] Migrate stat tracking from RunManager:
+  - [ ] Copy `_on_enemy_killed()` from RunManager → SessionState
+  - [ ] Copy `_on_damage_dealt()` from RunManager → SessionState
+  - [ ] Copy `_on_xp_gained()` from RunManager → SessionState
+  - [ ] Copy EventBus signal connections from RunManager._ready()
+  - [ ] Remove stat tracking from RunManager after migration
 - [ ] Add lifecycle methods:
   - [ ] `start_run(character_id: String)` - reset and begin
   - [ ] `end_run()` - calculate final stats and silver
@@ -248,7 +261,25 @@ Return to Main Menu (session wiped)
   - [ ] `level_up(new_level: int)` - player leveled up
 - [ ] Test with isolated scene (extend `tests/StageTimer_Isolated.tscn`)
 
-**Deliverable:** SessionState tracks run stats and emits 30Hz combat step
+**Post-Migration Cleanup:**
+- [ ] Remove stat tracking from RunManager:
+  - [ ] Delete `stats: Dictionary` variable
+  - [ ] Delete `_on_enemy_killed()`, `_on_damage_dealt()`, `_on_xp_gained()` methods
+  - [ ] Delete EventBus signal connections for stat tracking
+  - [ ] Delete `_load_player_stats()`, `_try_load_player_stats()` methods
+  - [ ] Remove BalanceDB.balance_reloaded connection for stats
+  - [ ] Delete `_exit_tree()` cleanup (no longer needed)
+  - [ ] Keep: COMBAT_DT, _accumulator, _process(), EventBus.combat_step emission, _seed_rng()
+- [ ] Remove deprecated API shims from PlayerProgression:
+  - [ ] Delete `load_from_profile()` method (deprecated shim)
+  - [ ] Delete `export_state()` method (deprecated shim)
+  - [ ] Delete `has_unlock()` method (deprecated shim - replaced by MetaProgression)
+  - [ ] All marked with "TODO: Remove these shims in Task 04 Phase 2"
+  - [ ] Verify no remaining callers exist (search codebase)
+- [ ] Optionally rename RunManager → CombatClock (if desired)
+- [ ] Update documentation: autoload/CLAUDE.md with SessionState patterns
+
+**Deliverable:** SessionState tracks run stats, RunManager only handles 30Hz timing, deprecated shims removed
 
 ---
 
@@ -626,4 +657,36 @@ Return to Main Menu (session wiped)
 
 ---
 
-**Related:** [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md) | [Difficulty Scaling Task](03_COMBAT_map_level_difficulty_scaling_integration.md)
+## 📦 Task 04a Cleanup - _DELETED/ Folder Reference
+
+**Context:** Task 04a removed the old character-slot-based progression system. All deleted code was backed up to `_DELETED/` folder for reference during Task 04 rebuild.
+
+**_DELETED/ Folder Contents:**
+```
+_DELETED/
+├── autoload/
+│   ├── CharacterManager.gd.backup       (Full old implementation - save/load patterns)
+│   ├── PlayerProgression.gd.backup      (Pre-simplification version - XP curve logic)
+│   └── RunManager.gd.backup             (Pre-simplification version - stats tracking)
+├── data/core/
+│   └── progression-xp-curve.tres        (Complex XP curve resource)
+└── scripts/resources/
+    ├── CharacterProfile.gd              (Character save data structure)
+    ├── CharacterTypeDict.gd             (Character type definitions)
+    └── PlayerXPCurve.gd                 (XP curve resource class)
+```
+
+**⚠️ Retention Policy:**
+- **Keep until:** Phase 1-2 complete (MetaProgression + SessionState implemented)
+- **Purpose:** Reference old CharacterManager save/load patterns when building MetaProgression
+- **After Task 04:** Delete entire `_DELETED/` folder (git history preserves everything)
+- **Key Reference:** `CharacterManager.gd.backup` shows how old save/load system worked
+
+**Useful References from _DELETED/:**
+- **MetaProgression save/load:** See `CharacterManager.gd.backup` lines 45-120 (save/load methods)
+- **XP curve logic:** See `PlayerProgression.gd.backup` lines 78-156 (if needed for balancing)
+- **Character data structure:** See `CharacterProfile.gd` (fields to migrate to new system)
+
+---
+
+**Related:** [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md) | [Difficulty Scaling Task](03_COMBAT_map_level_difficulty_scaling_integration.md) | [Task 04a Cleanup](completed-tasks/04a_CLEANUP_old_progression_removal.md)

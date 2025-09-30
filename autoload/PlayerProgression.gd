@@ -1,243 +1,177 @@
 extends Node
 
-## Player progression system autoload.
-## Manages player level, experience, and unlock validation.
-## Uses .tres resources for data-driven progression curves and unlock requirements.
+## Player progression system autoload (Simplified for Task 04a cleanup).
+## Manages in-run level and experience only - no persistence.
+## TODO: New progression - Will be replaced by SessionState (Task 04 Phase 2)
 
-# Import resource classes
-const PlayerXPCurveScript = preload("res://scripts/resources/PlayerXPCurve.gd")
-const PlayerUnlocksScript = preload("res://scripts/resources/PlayerUnlocks.gd")
-
-# Current progression state
+# Current progression state (in-run only)
 var level: int = 1
 var experience: float = 0.0
 var xp_to_next: float = 100.0
 
-# Resource references
-var xp_curve: PlayerXPCurveScript
-var unlocks: PlayerUnlocksScript
-
 # Internal state
 var _is_initialized: bool = false
-var _max_level_reached: bool = false
+var _max_level: int = 30  # Arbitrary cap for safety
 
 func _ready() -> void:
-	Logger.info("PlayerProgression initializing", "progression")
+	Logger.info("PlayerProgression initializing (simplified, in-run only)", "progression")
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	
-	# Load progression resources
-	_load_progression_resources()
-	
-	# Update initial state
-	_update_xp_to_next()
+
 	_is_initialized = true
-	
+	_update_xp_to_next()
+
 	Logger.info("PlayerProgression initialized - Level: %d, XP: %.1f, XP to next: %.1f" % [level, experience, xp_to_next], "progression")
-
-func _load_progression_resources() -> void:
-	# Load XP curve
-	var curve_resource = load("res://data/core/progression-xp-curve.tres")
-	if curve_resource and curve_resource.is_valid():
-		xp_curve = curve_resource
-	else:
-		Logger.warn("Failed to load valid XP curve, using fallback", "progression")
-		_create_fallback_curve()
-	
-	# Load unlocks
-	var unlocks_resource = load("res://data/content/unlocks.tres")
-	if unlocks_resource:
-		unlocks = unlocks_resource
-	else:
-		Logger.warn("Failed to load unlocks resource, creating empty one", "progression")
-		unlocks = PlayerUnlocksScript.new()
-
-func _create_fallback_curve() -> void:
-	xp_curve = PlayerXPCurveScript.new()
-	# Generate fallback curve with configurable parameters
-	var fallback_thresholds := xp_curve.generate_fallback_curve(10)
-	xp_curve.normal_thresholds = fallback_thresholds
 
 ## Gain experience points and handle level-ups
 func gain_exp(amount: float) -> void:
 	if not _is_initialized:
 		Logger.warn("PlayerProgression not initialized, ignoring gain_exp call", "progression")
 		return
-	
-	if _max_level_reached:
-		return
-	
+
+	if level >= _max_level:
+		return  # Max level reached
+
 	var old_total: float = experience
 	experience += amount
-	
+
 	Logger.debug("Gained %.1f XP (%.1f -> %.1f), Level: %d" % [amount, old_total, experience, level], "progression")
-	
+
 	# Emit XP gained signal
 	EventBus.xp_gained.emit(amount, experience)
-	
+
 	# Check for level-ups (handle multi-level-ups)
 	var level_ups: int = 0
-	while not _max_level_reached:
-		var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)
-		 
+	while level < _max_level:
+		var next_level_total_xp: float = _calculate_xp_for_level(level + 1)
+
 		# Check if we can level up
-		if next_level_total_xp == -1 or experience < float(next_level_total_xp):
+		if experience < next_level_total_xp:
 			break
-		
+
 		_level_up()
 		level_ups += 1
-		
+
 		# Safety check to prevent infinite loop
 		if level_ups > 15:
 			Logger.warn("Too many level-ups in single gain_exp call, breaking", "progression")
 			break
-	
+
 	# Always emit progression changed after XP gain
 	_emit_progression_changed()
 
 ## Handle single level-up
 func _level_up() -> void:
 	var prev_level: int = level
-	
+
 	# Move to next level
 	level += 1
-	
+
 	Logger.info("Level up! %d -> %d (current XP: %.1f)" % [prev_level, level, experience], "progression")
-	
+
 	# Update XP requirement for next level
 	_update_xp_to_next()
-	
+
 	# Emit level-up signal
 	EventBus.leveled_up.emit(level, prev_level)
 
 ## Update XP required for next level
 func _update_xp_to_next() -> void:
-	if not xp_curve:
-		xp_to_next = 100.0  # Emergency fallback if no curve at all
-		return
-	
-	var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)
-	
-	if next_level_total_xp == -1:
-		# Max level reached
+	if level >= _max_level:
 		xp_to_next = 0.0
-		_max_level_reached = true
-	else:
-		# Calculate XP still needed for next level
-		xp_to_next = float(next_level_total_xp) - experience
-		_max_level_reached = false
-		
-		# Ensure xp_to_next is never negative
-		if xp_to_next < 0.0:
-			xp_to_next = 0.0
-
-## Load progression state from save profile
-func load_from_profile(profile: Dictionary) -> void:
-	if not _is_initialized:
-		Logger.warn("PlayerProgression not initialized, deferring profile load", "progression")
-		call_deferred("load_from_profile", profile)
 		return
-	
-	var old_level: int = level
-	var old_exp: float = experience
-	
-	level = profile.get("level", 1)
-	experience = profile.get("exp", 0.0)
-	
-	# Validate loaded data
-	if level < 1:
-		level = 1
-	if experience < 0.0:
-		Logger.warn("PlayerProgression: Clamping negative experience %.1f to 0.0" % experience, "progression")
-		experience = 0.0
-	
-	# Update dependent state
+
+	var next_level_total_xp: float = _calculate_xp_for_level(level + 1)
+	xp_to_next = next_level_total_xp - experience
+
+	# Ensure xp_to_next is never negative
+	if xp_to_next < 0.0:
+		xp_to_next = 0.0
+
+## Simple XP formula: 100 + (level * 50)
+## TODO: Move to BalanceDB in Task 04 Phase 2
+func _calculate_xp_for_level(target_level: int) -> float:
+	if target_level <= 1:
+		return 0.0
+
+	# Calculate cumulative XP for target level
+	var total_xp: float = 0.0
+	for lvl in range(2, target_level + 1):
+		total_xp += 100.0 + ((lvl - 1) * 50.0)
+
+	return total_xp
+
+## Reset progression (called at run start)
+func reset() -> void:
+	level = 1
+	experience = 0.0
 	_update_xp_to_next()
-	
-	Logger.info("Loaded progression from profile - Level: %d, XP: %.1f" % [level, experience], "progression")
-	
-	# Emit progression changed
+	Logger.info("PlayerProgression reset for new run", "progression")
 	_emit_progression_changed()
 
-## Check if player has a specific unlock
-func has_unlock(unlock_id: StringName) -> bool:
-	if not unlocks:
-		return true  # Default to unlocked if no unlock data
-	
-	return unlocks.has_unlock(unlock_id, level)
+## Deprecated API shims for Task 04a compatibility
+## TODO: Remove these shims in Task 04 Phase 2 when callers are updated
+
+func load_from_profile(profile_data: Dictionary) -> void:
+	"""DEPRECATED: Load progression from character profile (Task 04a - no longer used)"""
+	Logger.warn("PlayerProgression.load_from_profile() is deprecated - progression is now session-only", "progression")
+	# For compatibility: restore level and XP if provided
+	if profile_data.has("level"):
+		level = profile_data.get("level", 1)
+	if profile_data.has("total_xp"):
+		experience = profile_data.get("total_xp", 0.0)
+	_update_xp_to_next()
+	_emit_progression_changed()
+
+func export_state() -> Dictionary:
+	"""DEPRECATED: Export progression state (Task 04a - no longer needed)"""
+	Logger.warn("PlayerProgression.export_state() is deprecated - progression is now session-only", "progression")
+	return get_progression_state()
+
+func has_unlock(unlock_id: String) -> bool:
+	"""DEPRECATED: Check for ability unlocks (Task 04a - moved to MetaProgression in Task 04)"""
+	Logger.warn("PlayerProgression.has_unlock() is deprecated - unlocks moved to MetaProgression (Task 04)", "progression")
+	return false  # Always return false - no persistent unlocks in session-only system
 
 ## Get current progression state as dictionary
 func get_progression_state() -> Dictionary:
 	# Calculate current level progress for proper XP bar display
 	var current_level_xp: float = 0.0
-	var xp_required_for_current_level: float = 100.0  # Default fallback
-	
-	if xp_curve:
-		if level == 1:
-			# Level 1 - show progress toward level 2
-			current_level_xp = experience
-			var level_2_total_xp: int = xp_curve.get_xp_for_level(2)
-			if level_2_total_xp != -1:
-				xp_required_for_current_level = float(level_2_total_xp)
-			
-			# Debug logging for Level 1
-			Logger.debug("XP Calc - Level 1, Total XP: %.1f, Need for Level 2: %d" % [experience, level_2_total_xp], "progression")
-			Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
-		else:
-			# Level 2+ - show progress within current level
-			var next_level_total_xp: int = xp_curve.get_xp_for_level(level + 1)  # XP needed for NEXT level
-			var current_level_total_xp: int = xp_curve.get_xp_for_level(level)   # XP needed for CURRENT level
-			
-			if next_level_total_xp != -1:
-				# We're not at max level - show progress toward next level
-				current_level_xp = experience - float(current_level_total_xp)
-				xp_required_for_current_level = float(next_level_total_xp - current_level_total_xp)
-				
-				# Debug logging
-				Logger.debug("XP Calc - Level: %d, Total XP: %.1f, Current Level Total: %d, Next Level Total: %d" % [level, experience, current_level_total_xp, next_level_total_xp], "progression")
-				Logger.debug("XP Calc - Current Level XP: %.1f, Required: %.1f" % [current_level_xp, xp_required_for_current_level], "progression")
-				
-				# Ensure values are non-negative
-				if current_level_xp < 0.0:
-					current_level_xp = 0.0
-			else:
-				# Max level reached
-				current_level_xp = 0.0
-				xp_required_for_current_level = 1.0  # Prevent division by zero
-	
-	return {
-		"level": level,
-		"exp": int(current_level_xp),  # Current progress within level (0 to level requirement)
-		"xp_to_next": int(xp_required_for_current_level),  # Total XP required for current level
-		"total_for_level": int(xp_required_for_current_level),  # For UI compatibility
-		"max_level_reached": _max_level_reached
-	}
+	var xp_required_for_current_level: float = 100.0  # Default for level 1
 
-## Export progression state for character saving (total accumulated experience)
-func export_state() -> Dictionary:
+	if level == 1:
+		# Level 1 - show progress toward level 2
+		current_level_xp = experience
+		xp_required_for_current_level = 100.0  # Base XP
+	else:
+		# Level 2+ - show progress within current level
+		var current_level_total_xp: float = _calculate_xp_for_level(level)
+		var next_level_total_xp: float = _calculate_xp_for_level(level + 1)
+
+		current_level_xp = experience - current_level_total_xp
+		xp_required_for_current_level = next_level_total_xp - current_level_total_xp
+
+		# Ensure values are non-negative
+		if current_level_xp < 0.0:
+			current_level_xp = 0.0
+
 	return {
 		"level": level,
-		"exp": experience,  # Total accumulated experience, not current level progress
-		"version": 1
+		"exp": int(current_level_xp),  # Current progress within level
+		"xp_to_next": int(xp_required_for_current_level),  # Total XP required for current level
+		"total_for_level": int(xp_required_for_current_level),
+		"max_level_reached": level >= _max_level
 	}
 
 ## Emit progression changed signal with current state
 func _emit_progression_changed() -> void:
-	# Create comprehensive progression data for both UI and character saving
-	var ui_data = get_progression_state()  # Current level progress for UI
-	var save_data = export_state()        # Total accumulated XP for saving
-	
+	var ui_data = get_progression_state()
+
 	var comprehensive_state = {
-		# UI display data (current level progress)
 		"level": ui_data.level,
-		"exp": ui_data.exp,                    # Current progress within level (0 to level requirement)
-		"xp_to_next": ui_data.xp_to_next,      # XP required for current level
+		"exp": ui_data.exp,
+		"xp_to_next": ui_data.xp_to_next,
 		"total_for_level": ui_data.total_for_level,
-		"max_level_reached": ui_data.max_level_reached,
-		
-		# Character saving data (total accumulated experience)
-		"save_level": save_data.level,
-		"save_exp": save_data.exp,             # Total accumulated experience across all levels
-		"save_version": save_data.version
+		"max_level_reached": ui_data.max_level_reached
 	}
-	
+
 	EventBus.progression_changed.emit(comprehensive_state)

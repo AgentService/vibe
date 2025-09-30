@@ -7,7 +7,7 @@ extends Node
 enum State {
 	BOOT,
 	MENU,
-	CHARACTER_SELECT,
+	# CHARACTER_SELECT removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
 	HIDEOUT,
 	ARENA,
 	RESULTS,
@@ -33,9 +33,10 @@ func go_to_menu(context: Dictionary = {}) -> void:
 	"""Transition to main menu."""
 	_transition_to_state(State.MENU, context)
 
-func go_to_character_select(context: Dictionary = {}) -> void:
-	"""Transition to character selection."""
-	_transition_to_state(State.CHARACTER_SELECT, context)
+# Character select removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
+# func go_to_character_select(context: Dictionary = {}) -> void:
+# 	"""Transition to character selection."""
+# 	_transition_to_state(State.CHARACTER_SELECT, context)
 
 func go_to_hideout(context: Dictionary = {}) -> void:
 	"""Transition to hideout hub."""
@@ -164,11 +165,10 @@ func _is_valid_transition(from: State, to: State) -> bool:
 	# Define valid transition rules
 	match from:
 		State.MENU:
-			return to in [State.CHARACTER_SELECT, State.EXIT, State.HIDEOUT]  # Allow direct to hideout for debug
-		State.CHARACTER_SELECT:
-			return to in [State.MENU, State.HIDEOUT, State.EXIT]
+			return to in [State.EXIT, State.HIDEOUT]  # Allow direct to hideout for debug
+		# CHARACTER_SELECT removed - Task 04a cleanup
 		State.HIDEOUT:
-			return to in [State.MENU, State.ARENA, State.CHARACTER_SELECT, State.EXIT]
+			return to in [State.MENU, State.ARENA, State.EXIT]
 		State.ARENA:
 			return to in [State.RESULTS, State.HIDEOUT, State.MENU, State.EXIT]  # Allow emergency exits
 		State.RESULTS:
@@ -181,7 +181,7 @@ func _state_to_string(state: State) -> String:
 	match state:
 		State.BOOT: return "BOOT"
 		State.MENU: return "MENU"
-		State.CHARACTER_SELECT: return "CHARACTER_SELECT"
+		# CHARACTER_SELECT removed - Task 04a cleanup
 		State.HIDEOUT: return "HIDEOUT"
 		State.ARENA: return "ARENA"
 		State.RESULTS: return "RESULTS"

@@ -456,11 +456,10 @@ func reset_progression() -> void:
 		return
 	
 	Logger.warn("Debug: Resetting progression to level 1", "progression_debug")
-	
+
 	if PlayerProgression:
-		# Reset to starting values
-		var reset_profile: Dictionary = {"level": 1, "exp": 0.0}
-		PlayerProgression.load_from_profile(reset_profile)
+		# Task 04a: Use new session-only reset() method
+		PlayerProgression.reset()
 	else:
 		Logger.error("PlayerProgression not available", "progression_debug")
 

@@ -151,39 +151,36 @@ func _test_max_level_cap() -> void:
 		_add_result("FAIL: XP gain not ignored at max level")
 
 func _test_save_load_functionality() -> void:
-	print("\n--- Test 4: Save/Load Functionality ---")
-	
-	# Export current state
-	var saved_state = PlayerProgression.export_state()
-	
-	# Load a different state
-	var test_profile = {"level": 5, "exp": 150.0}
-	PlayerProgression.load_from_profile(test_profile)
-	
-	var loaded_state = PlayerProgression.get_progression_state()
-	
-	if loaded_state.level == 5 and loaded_state.exp == 150.0:
-		_add_result("PASS: Profile loading works correctly")
+	print("\n--- Test 4: Session State Functionality (Task 04a - Save/Load Removed) ---")
+
+	# Task 04a: Progression is now session-only, test state retrieval instead
+	var current_state = PlayerProgression.get_progression_state()
+
+	if current_state.has("level") and current_state.has("exp") and current_state.has("version"):
+		_add_result("PASS: Session state format correct")
 	else:
-		_add_result("FAIL: Profile loading incorrect - Level: %d, XP: %.1f" % [loaded_state.level, loaded_state.exp])
-	
-	# Test export format
-	var exported = PlayerProgression.export_state()
-	if exported.has("level") and exported.has("exp") and exported.has("version"):
-		_add_result("PASS: Export state format correct")
+		_add_result("FAIL: Session state missing required fields")
+
+	# Test reset functionality (replaces save/load)
+	PlayerProgression.reset()
+	var reset_state = PlayerProgression.get_progression_state()
+
+	if reset_state.level == 1 and reset_state.exp == 0.0:
+		_add_result("PASS: Reset functionality works correctly")
 	else:
-		_add_result("FAIL: Export state missing required fields")
+		_add_result("FAIL: Reset functionality incorrect - Level: %d, XP: %.1f" % [reset_state.level, reset_state.exp])
 
 func _test_unlock_system() -> void:
-	print("\n--- Test 5: Unlock System ---")
-	
-	# Test unlock checking (should work with empty unlock data)
+	print("\n--- Test 5: Unlock System (Task 04a - Moved to MetaProgression) ---")
+
+	# Task 04a: Unlocks moved to MetaProgression (Task 04)
+	# For now, has_unlock() returns false (deprecated shim)
 	var has_basic_unlock = PlayerProgression.has_unlock("basic_ability")
-	
-	if has_basic_unlock == true:  # Should default to true for unknown unlocks
-		_add_result("PASS: Unlock system defaults to available")
+
+	if has_basic_unlock == false:  # Should return false (no persistent unlocks in session-only)
+		_add_result("PASS: has_unlock() correctly returns false (deprecated shim)")
 	else:
-		_add_result("FAIL: Unlock system incorrect default behavior")
+		_add_result("FAIL: has_unlock() should return false in session-only mode")
 
 func _add_result(result: String) -> void:
 	test_results.append(result)

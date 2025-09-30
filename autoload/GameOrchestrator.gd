@@ -279,14 +279,9 @@ func _load_scene_for_state(state: StateManager.State, context: Dictionary) -> vo
 				"source": "state_manager",
 				"context": context
 			})
-		
-		StateManager.State.CHARACTER_SELECT:
-			EventBus.request_enter_map.emit({
-				"map_id": "character_select",
-				"source": "state_manager",
-				"context": context
-			})
-		
+
+		# CHARACTER_SELECT removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
+
 		StateManager.State.HIDEOUT:
 			EventBus.request_return_hideout.emit({
 				"spawn_point": context.get("spawn_point", "PlayerSpawnPoint"),
@@ -319,7 +314,7 @@ func _state_to_mode_name(state: StateManager.State) -> StringName:
 			return StringName("hideout")
 		StateManager.State.ARENA:
 			return StringName("arena")
-		StateManager.State.MENU, StateManager.State.CHARACTER_SELECT:
+		StateManager.State.MENU:  # CHARACTER_SELECT removed - Task 04a cleanup
 			return StringName("menu")
 		StateManager.State.RESULTS:
 			return StringName("results")

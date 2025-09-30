@@ -80,25 +80,17 @@ func test_valid_transitions() -> bool:
 	# BOOT -> MENU should work
 	StateManager.go_to_menu()
 	await process_frame
-	
+
 	if StateManager.get_current_state() != StateManager.State.MENU:
 		print("  Failed: BOOT -> MENU transition")
 		return false
-	
-	# MENU -> CHARACTER_SELECT should work
-	StateManager.go_to_character_select()
-	await process_frame
-	
-	if StateManager.get_current_state() != StateManager.State.CHARACTER_SELECT:
-		print("  Failed: MENU -> CHARACTER_SELECT transition")
-		return false
-	
-	# CHARACTER_SELECT -> HIDEOUT should work
+
+	# MENU -> HIDEOUT should work (CHARACTER_SELECT removed in Task 04a)
 	StateManager.go_to_hideout()
 	await process_frame
-	
+
 	if StateManager.get_current_state() != StateManager.State.HIDEOUT:
-		print("  Failed: CHARACTER_SELECT -> HIDEOUT transition")
+		print("  Failed: MENU -> HIDEOUT transition")
 		return false
 	
 	# HIDEOUT -> ARENA should work via start_run
@@ -121,32 +113,24 @@ func test_valid_transitions() -> bool:
 
 func test_invalid_transitions() -> bool:
 	"""Test that invalid transitions are blocked."""
-	
+
 	# Set state to RESULTS
 	StateManager.end_run({"result_type": "test"})
 	await process_frame
-	
+
 	var initial_state = StateManager.get_current_state()
-	
-	# Try an invalid transition (results can't go to character select directly)
-	StateManager.go_to_character_select()
-	await process_frame
-	
-	# State should remain unchanged for invalid transitions
-	var final_state = StateManager.get_current_state()
-	
-	# Note: StateManager allows some transitions that might be questionable
-	# The key is that it logs warnings for invalid transitions
+
+	# CHARACTER_SELECT removed in Task 04a - skipping invalid transition test
+	# The key is that StateManager logs warnings for invalid transitions
 	return true  # We mainly test that the system doesn't crash
 
 func test_pause_permissions() -> bool:
 	"""Test pause permission logic."""
 	
-	# Test different states
+	# Test different states (CHARACTER_SELECT removed in Task 04a)
 	var test_cases = [
 		{"state": StateManager.State.BOOT, "should_allow": false},
 		{"state": StateManager.State.MENU, "should_allow": false},
-		{"state": StateManager.State.CHARACTER_SELECT, "should_allow": false},
 		{"state": StateManager.State.HIDEOUT, "should_allow": true},
 		{"state": StateManager.State.ARENA, "should_allow": true},
 		{"state": StateManager.State.RESULTS, "should_allow": true},

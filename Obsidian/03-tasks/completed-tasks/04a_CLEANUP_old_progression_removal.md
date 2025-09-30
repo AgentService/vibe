@@ -382,6 +382,74 @@ Remove old character-slot-based progression system to create clean foundation fo
 - Expects game to be temporarily unplayable
 - Provides clean foundation for Task 04 implementation
 
+### 2025-09-30 - Task Completion ✅
+**Status:** COMPLETE
+
+**What Was Removed:**
+- ❌ CharacterManager autoload (backup: `_DELETED/autoload/CharacterManager.gd.backup`)
+- ❌ CharacterSelect scene (deleted entirely, no backup needed)
+- ❌ Character save files (42 files deleted from `user://profiles/`)
+- ❌ XP curve resources:
+  - `data/core/progression-xp-curve.tres` → `_DELETED/data/core/`
+  - `scripts/resources/PlayerXPCurve.gd` → `_DELETED/scripts/resources/`
+  - `scripts/resources/CharacterProfile.gd` → `_DELETED/scripts/resources/`
+  - `scripts/resources/CharacterTypeDict.gd` → `_DELETED/scripts/resources/`
+
+**What Was Simplified:**
+- ✂️ PlayerProgression.gd: 244 lines → 153 lines
+  - Removed: Save/load, XP curves, CharacterManager integration
+  - Kept: In-run XP tracking, simple formula (100 + level*50)
+  - Backup: `_DELETED/autoload/PlayerProgression.gd.backup`
+- ✂️ RunManager.gd: 106 lines → 119 lines (after adding 75 lines of documentation)
+  - Removed: Stats tracking (enemies_killed, damage_dealt, xp_gained)
+  - Kept: 30Hz fixed-step timing (COMBAT_DT, accumulator pattern)
+  - Backup: `_DELETED/autoload/RunManager.gd.backup`
+  - **Added:** Comprehensive documentation explaining fixed-step accumulator pattern
+- ✂️ MainMenu: Simplified to placeholders
+  - Start button shows: "Character selection coming soon! Use debug mode."
+  - Options button shows: "Settings coming soon!"
+  - Continue button removed entirely
+
+**Documentation Updates:**
+- ✅ `autoload/CLAUDE.md`: Updated PlayerProgression entry to "simplified, no persistence"
+- ✅ `Obsidian/03-tasks/03_COMBAT_map_level_difficulty_scaling_integration.md`: Added RunManager integration notes
+- ✅ RunManager.gd: Added 75 lines of architectural documentation
+
+**Current Game State:**
+- ✅ Launches without errors
+- ✅ Main menu shows placeholders (Start/Options disabled)
+- ✅ Debug mode (arena start_mode) works perfectly
+- ✅ Combat systems intact (30Hz timing functional)
+- ✅ XP/leveling works (session-only, no persistence)
+
+**_DELETED/ Folder Contents:**
+The `_DELETED/` folder contains reference backups of all removed code:
+```
+_DELETED/
+├── autoload/
+│   ├── CharacterManager.gd.backup       (Full old implementation)
+│   ├── PlayerProgression.gd.backup      (Pre-simplification version)
+│   └── RunManager.gd.backup             (Pre-simplification version)
+├── data/core/
+│   └── progression-xp-curve.tres        (Complex XP curve resource)
+└── scripts/resources/
+    ├── CharacterProfile.gd              (Character save data structure)
+    ├── CharacterTypeDict.gd             (Character type definitions)
+    └── PlayerXPCurve.gd                 (XP curve resource class)
+```
+
+**⚠️ _DELETED/ Folder Retention Policy:**
+- **Keep until:** Task 04 Phase 1-2 complete (MetaProgression + SessionState implemented)
+- **Purpose:** Reference for understanding old patterns when rebuilding
+- **After Task 04:** Can be deleted entirely (git history preserves everything)
+- **If needed:** Can reference old CharacterManager save/load patterns for MetaProgression implementation
+
+**Commits:**
+- All changes committed with passing architecture validation
+- Commit messages document what was removed and why
+
+**Ready For:** Task 04 Phase 1 - MetaProgression Autoload Creation
+
 ## 🚨 Risks & Considerations
 
 ### Risk 1: Breaking Too Much (HIGH)

@@ -54,20 +54,9 @@ func get_arena_scene_name() -> String:
 	return arena_selection
 
 func get_debug_character_id() -> StringName:
-	"""Get the character ID to use for debug mode, supporting auto-selection."""
-	if character_selection == "auto":
-		# Use last played character if available
-		if CharacterManager:
-			var characters = CharacterManager.list_characters()
-			if not characters.is_empty():
-				var last_played = characters[0]  # Already sorted by last_played
-				Logger.info("Debug: Auto-selecting last played character: %s (%s)" % [last_played.name, last_played.id], "debug")
-				return last_played.id
-
-		# Fallback to creating a default character
-		Logger.info("Debug: No characters found, will create default character", "debug")
-		return &""  # Empty means create default
-	elif character_selection == "knight":
+	"""Get the character ID to use for debug mode."""
+	# TODO: New progression - Simplified without CharacterManager (Task 04)
+	if character_selection == "auto" or character_selection == "knight":
 		Logger.info("Debug: Selecting Knight character", "debug")
 		return &"knight"
 	elif character_selection == "ranger":
@@ -79,23 +68,9 @@ func get_debug_character_id() -> StringName:
 			Logger.info("Debug: Using custom character ID: %s" % character_id, "debug")
 			return character_id
 		else:
-			Logger.warn("Debug: custom_id selected but no character_id specified, falling back to auto", "debug")
-			# Manually execute auto mode logic to avoid infinite recursion
-			if CharacterManager:
-				var characters = CharacterManager.list_characters()
-				if not characters.is_empty():
-					var last_played = characters[0]
-					return last_played.id
-			return &""
-	elif character_selection == "create_new":
-		# Always create a new debug character
-		Logger.info("Debug: Will create new debug character", "debug")
-		return &""  # Empty means create new
+			Logger.warn("Debug: custom_id selected but no character_id specified, defaulting to knight", "debug")
+			return &"knight"
 	else:
-		# Fallback to auto mode without recursion
-		Logger.warn("Debug: Unknown character_selection '%s', using auto" % character_selection, "debug")
-		if CharacterManager:
-			var characters = CharacterManager.list_characters()
-			if not characters.is_empty():
-				return characters[0].id
-		return &""
+		# Fallback to knight
+		Logger.warn("Debug: Unknown character_selection '%s', using knight" % character_selection, "debug")
+		return &"knight"
