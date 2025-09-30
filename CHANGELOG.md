@@ -19,6 +19,12 @@
   - Changed locked display from "??? (Locked)" to "??? 🔒"
   - Increased grid from 2 to 3 columns for better item visibility
   - Added `_show_empty_details()` function for placeholder text when no items selected
+- **Icon-Based Shop Cards**: Refactored shop entries to icon-only display (80x80px squares)
+  - UNLOCKED: Full color icon with rarity tint, shows complete details
+  - UNDISCOVERED + LOCKED: Black silhouette (❓), shows only quest requirement with progress
+  - DISCOVERED + LOCKED: Color icon with cost overlay, shows stats + completed quest + unlock cost
+  - All states are clickable to view contextual details in details panel
+  - Fixed grid width expansion issues by constraining item sizes (not using expand flags)
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection

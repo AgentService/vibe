@@ -22,6 +22,7 @@ glow_effect = true
 hover_highlight = true
 
 [node name="MainMenuContainer" type="Control" parent="BackgroundPanel"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -216,7 +217,6 @@ layout_mode = 2
 text = "BACK"
 
 [node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -272,13 +272,16 @@ text = "SKILLS"
 custom_minimum_size = Vector2(600, 400)
 layout_mode = 2
 size_flags_vertical = 3
+horizontal_scroll_mode = 0
 
 [node name="ItemList" type="GridContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll"]
+custom_minimum_size = Vector2(600, 0)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 0
+size_flags_vertical = 0
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
-columns = 3
+columns = 4
 
 [node name="ItemDetailsPanel" type="PanelContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
 custom_minimum_size = Vector2(600, 120)

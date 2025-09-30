@@ -451,61 +451,64 @@ func _update_shop_ui() -> void:
 		_show_item_details(category_items[0])
 
 func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
-	"""Create a shop item entry UI with proper state visualization."""
+	"""Create icon-based shop item card with state visualization."""
 	# Determine item state
 	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
 	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
 	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
+	# Main container - fixed square size
 	var entry_container = PanelContainer.new()
-	entry_container.custom_minimum_size = Vector2(280, 60)
+	entry_container.custom_minimum_size = Vector2(80, 80)
+	entry_container.size_flags_horizontal = 0
+	entry_container.size_flags_vertical = 0
 
-	var hbox = HBoxContainer.new()
-	hbox.add_theme_constant_override("separation", 15)
-	entry_container.add_child(hbox)
+	# Center the icon content
+	var center_container = CenterContainer.new()
+	entry_container.add_child(center_container)
 
-	# Item info - just name with rarity color
-	var name_label = Label.new()
-	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	name_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	if is_discovered or is_unlocked:
-		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-		name_label.text = item_metadata.display_name
-		name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
-	else:
-		name_label.text = "??? 🔒"
-		name_label.modulate = Color(0.6, 0.6, 0.6)
-	hbox.add_child(name_label)
+	# Icon (placeholder for now - will be TextureRect later)
+	var icon_label = Label.new()
+	icon_label.custom_minimum_size = Vector2(64, 64)
+	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 
-	# Make entry clickable (only if discovered or unlocked)
-	if is_discovered or is_unlocked:
-		entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
-		entry_container.gui_input.connect(func(event: InputEvent):
-			if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-				_show_item_details(item_metadata)
-		)
+	# State-based icon appearance
+	if is_unlocked or (is_discovered and is_unlocked):
+		# UNLOCKED: Full color icon
+		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
+		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+	elif not is_discovered and not is_unlocked:
+		# UNDISCOVERED + LOCKED: Black silhouette only
+		icon_label.text = "❓"  # Placeholder - will be black silhouette texture
+		icon_label.modulate = Color(0.2, 0.2, 0.2)
+	elif is_discovered and not is_unlocked:
+		# DISCOVERED + LOCKED: Full color icon with cost overlay
+		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
+		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 
-	# Right side: Unlock button or lock status
-	if is_unlocked:
-		# No button/status needed - normal appearance indicates unlocked
-		pass
-	elif is_discovered:
-		# Show unlock button with cost
-		var unlock_button = Button.new()
-		unlock_button.text = "UNLOCK\n%d 💎" % item_metadata.unlock_cost
-		unlock_button.custom_minimum_size = Vector2(100, 0)
-		unlock_button.pressed.connect(_on_unlock_item_pressed.bind(item_metadata))
-		unlock_button.disabled = not can_afford
-		hbox.add_child(unlock_button)
-	else:
-		# Show locked icon/cost
-		var lock_label = Label.new()
-		lock_label.text = "🔒\n%d 💎" % item_metadata.unlock_cost
-		lock_label.custom_minimum_size = Vector2(100, 0)
-		lock_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		lock_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		lock_label.modulate = Color(0.5, 0.5, 0.5)
-		hbox.add_child(lock_label)
+		# Cost overlay centered on icon
+		var cost_overlay = Label.new()
+		cost_overlay.text = "%d\n💎" % item_metadata.unlock_cost
+		cost_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cost_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cost_overlay.add_theme_font_size_override("font_size", 14)
+		cost_overlay.modulate = Color(1.0, 1.0, 1.0, 0.95)
+		# Add shadow/outline for readability
+		cost_overlay.add_theme_color_override("font_outline_color", Color.BLACK)
+		cost_overlay.add_theme_constant_override("outline_size", 2)
+		center_container.add_child(cost_overlay)
+		# Position cost overlay on top of icon
+		cost_overlay.position = Vector2(0, 0)
+
+	center_container.add_child(icon_label)
+
+	# Make entry clickable for ALL states (including undiscovered)
+	entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
+	entry_container.gui_input.connect(func(event: InputEvent):
+		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			_show_item_details(item_metadata)
+	)
 
 	shop_item_list.add_child(entry_container)
 
@@ -538,37 +541,70 @@ func _on_item_unlocked(_category: String, _item_id: String) -> void:
 		_update_shop_ui()
 
 func _show_item_details(item_metadata: ItemMetadata) -> void:
-	"""Display item details in the details panel."""
-	var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-	shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
-	shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
-
-	shop_item_description.text = item_metadata.description
-	shop_item_description.modulate = Color.WHITE
-
-	# Show discovery requirement if not yet discovered
+	"""Display item details based on discovery/unlock state."""
 	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
 	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
-	if not is_discovered and not is_unlocked and not item_metadata.discovery_requirement.is_empty():
-		shop_item_stats.text = "🔒 How to Discover: " + item_metadata.discovery_requirement
+	# UNDISCOVERED + LOCKED: Show only name and quest with progress tracking
+	if not is_discovered and not is_unlocked:
+		shop_item_name.text = "???"
+		shop_item_name.modulate = Color(0.6, 0.6, 0.6)
+
+		shop_item_description.text = "[Hidden until discovered]"
+		shop_item_description.modulate = Color(0.5, 0.5, 0.5)
+
+		# Show quest requirement with progress tracking
+		shop_item_stats.text = "🔒 Discovery Quest:\n" + item_metadata.discovery_requirement
 		shop_item_stats.modulate = Color(1.0, 0.8, 0.3)
 		shop_item_stats.visible = true
+
+		shop_item_flavor.text = ""
+		shop_item_flavor.visible = false
+
+	# DISCOVERED + LOCKED: Show full details with unlock button
+	elif is_discovered and not is_unlocked:
+		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
+		shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
+		shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+
+		shop_item_description.text = item_metadata.description
+		shop_item_description.modulate = Color.WHITE
+
+		# Show completed quest at bottom + unlock button in place of progress
+		shop_item_stats.text = item_metadata.stat_summary + "\n\n✅ Quest Completed: " + item_metadata.discovery_requirement
+		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
+		shop_item_stats.visible = true
+
+		# TODO: Add unlock button here in stats area
+		# For now, show unlock prompt
+		shop_item_flavor.text = "💎 Cost to Unlock: %d Rift Fragments" % item_metadata.unlock_cost
+		shop_item_flavor.modulate = Color(1.0, 0.9, 0.3) if can_afford else Color(0.7, 0.3, 0.3)
+		shop_item_flavor.visible = true
+
+	# UNLOCKED: Show full details
 	else:
+		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
+		shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
+		shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+
+		shop_item_description.text = item_metadata.description
+		shop_item_description.modulate = Color.WHITE
+
 		shop_item_stats.text = item_metadata.stat_summary
 		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
 		shop_item_stats.visible = true
 
-	if item_metadata.flavor_text.is_empty():
-		shop_item_flavor.text = ""
-		shop_item_flavor.visible = false
-	else:
-		shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
-		shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
-		shop_item_flavor.visible = true
+		if item_metadata.flavor_text.is_empty():
+			shop_item_flavor.text = ""
+			shop_item_flavor.visible = false
+		else:
+			shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
+			shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
+			shop_item_flavor.visible = true
 
 	shop_item_details_panel.visible = true
-	Logger.debug("Showing details for: %s" % item_metadata.display_name, "ui")
+	Logger.debug("Showing details for: %s (discovered: %s, unlocked: %s)" % [item_metadata.display_name, is_discovered, is_unlocked], "ui")
 
 func _show_empty_details() -> void:
 	"""Show placeholder text in details panel when no item selected."""
