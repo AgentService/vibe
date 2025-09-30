@@ -626,4 +626,36 @@ Return to Main Menu (session wiped)
 
 ---
 
-**Related:** [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md) | [Difficulty Scaling Task](03_COMBAT_map_level_difficulty_scaling_integration.md)
+## 📦 Task 04a Cleanup - _DELETED/ Folder Reference
+
+**Context:** Task 04a removed the old character-slot-based progression system. All deleted code was backed up to `_DELETED/` folder for reference during Task 04 rebuild.
+
+**_DELETED/ Folder Contents:**
+```
+_DELETED/
+├── autoload/
+│   ├── CharacterManager.gd.backup       (Full old implementation - save/load patterns)
+│   ├── PlayerProgression.gd.backup      (Pre-simplification version - XP curve logic)
+│   └── RunManager.gd.backup             (Pre-simplification version - stats tracking)
+├── data/core/
+│   └── progression-xp-curve.tres        (Complex XP curve resource)
+└── scripts/resources/
+    ├── CharacterProfile.gd              (Character save data structure)
+    ├── CharacterTypeDict.gd             (Character type definitions)
+    └── PlayerXPCurve.gd                 (XP curve resource class)
+```
+
+**⚠️ Retention Policy:**
+- **Keep until:** Phase 1-2 complete (MetaProgression + SessionState implemented)
+- **Purpose:** Reference old CharacterManager save/load patterns when building MetaProgression
+- **After Task 04:** Delete entire `_DELETED/` folder (git history preserves everything)
+- **Key Reference:** `CharacterManager.gd.backup` shows how old save/load system worked
+
+**Useful References from _DELETED/:**
+- **MetaProgression save/load:** See `CharacterManager.gd.backup` lines 45-120 (save/load methods)
+- **XP curve logic:** See `PlayerProgression.gd.backup` lines 78-156 (if needed for balancing)
+- **Character data structure:** See `CharacterProfile.gd` (fields to migrate to new system)
+
+---
+
+**Related:** [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md) | [Difficulty Scaling Task](03_COMBAT_map_level_difficulty_scaling_integration.md) | [Task 04a Cleanup](completed-tasks/04a_CLEANUP_old_progression_removal.md)

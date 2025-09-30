@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
 [ext_resource type="PackedScene" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
-[ext_resource type="PackedScene" path="res://scenes/ui/components/EnhancedButton.tscn" id="3_enhanced_button"]
+[ext_resource type="PackedScene" uid="uid://ifntqq5fyc0i" path="res://scenes/ui/components/EnhancedButton.tscn" id="3_enhanced_button"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
