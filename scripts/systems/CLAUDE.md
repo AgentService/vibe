@@ -3,19 +3,95 @@
 
 **Parent Documentation:** [Main CLAUDE.md](../../CLAUDE.md) | **Layer:** Rules & Logic
 
+## 🏗️ **Domain Organization (Updated 2025-09-30)**
+
+The systems layer is organized into **11 logical domain subfolders** for improved maintainability:
+
+| Domain Subfolder | Purpose | Key Systems | Files Count |
+|------------------|---------|-------------|-------------|
+| **arena/** | Arena coordination & management | ArenaSystem, ArenaUIManager, SceneTransitionManager | 5 |
+| **combat/** | Combat mechanics & damage | DamageSystem, MeleeSystem, XpSystem, PlayerAttackHandler | 4 |
+| **player/** | Player-specific systems | CardSystem | 1 |
+| **spawn/** | Enemy & entity spawning | SpawnDirector, BossSpawnManager, EventSpawnManager | 6 |
+| **radar/** | Position scanning & detection | RadarSystem, RadarUpdateManager | 2 |
+| **boss/** | Boss management & AI | BaseBoss, BossUpdateManager, BossHitFeedback | 3 |
+| **events/** | Breach events & mastery | BreachEventHandler, BreachEnemyTracker | 2 |
+| **rendering/** | Visual effects & performance | VisualEffectsManager, EnemyRenderTier, PerformanceMonitor | 4 |
+| **arena_generation/** | Procedural map generation | PathAwareArenaGenerator, TreeBoundaryGenerator | 5 |
+| **debug/** | Development & debugging tools | DebugOverlay, EntitySelector, DebugSystemControls | 5 |
+| **damage_v2/** | Next-gen damage system | DamageRegistry (autoload) | 3 |
+
+**Total: ~35+ system files organized across 11 domain subfolders**
+
 ## Quick Reference
 
-| System | Purpose | Key Signals | EventBus Integration |
-|--------|---------|-------------|-------------------|
-| **DamageSystem.gd** | Collision detection & damage application | N/A (uses DamageService) | `combat_step` consumer |
-| **MeleeSystem.gd** | Cone-based AOE melee attacks | `melee_attack_started`, `enemies_hit` | `combat_step` consumer |
-| **SpawnDirector.gd** | AREA_TRIGGERS zone-based enemy spawning | `enemies_spawned` | Entity registration |
-| **spawn/EventSpawnManager.gd** | Event-based spawning with mastery modifiers | `event_started`, `event_completed` | Zone cooldowns & threat escalation |
-| **SimpleTileSpawnValidator.gd** | Tileset-based spawn validation & positioning | N/A (utility autoload) | Spatial partitioning |
-| **ArenaSystem.gd** | Arena bounds & spatial management | `arena_loaded` | Bounds configuration |
-| **CardSystem.gd** | Upgrade card selection & application | `card_selected`, `card_applied` | Player progression |
-| **BossSpawnManager.gd** | Zone-based boss spawning | Boss creation events | Zone validation |
-| **RadarSystem.gd** | Enemy position scanning for UI | `radar_data_updated` | State-gated updates |
+| Domain | System | Purpose | Key Signals | EventBus Integration |
+|--------|--------|---------|-------------|-------------------|
+| **combat/** | **DamageSystem.gd** | Collision detection & damage application | N/A (uses DamageService) | `combat_step` consumer |
+| **combat/** | **MeleeSystem.gd** | Cone-based AOE melee attacks | `melee_attack_started`, `enemies_hit` | `combat_step` consumer |
+| **combat/** | **XpSystem.gd** | Experience point management | `xp_gained`, `level_up` | Player progression |
+| **spawn/** | **SpawnDirector.gd** | AREA_TRIGGERS zone-based enemy spawning | `enemies_spawned` | Entity registration |
+| **spawn/** | **EventSpawnManager.gd** | Event-based spawning with mastery modifiers | `event_started`, `event_completed` | Zone cooldowns & threat escalation |
+| **spawn/** | **BossSpawnManager.gd** | Zone-based boss spawning | Boss creation events | Zone validation |
+| **arena/** | **ArenaSystem.gd** | Arena bounds & spatial management | `arena_loaded` | Bounds configuration |
+| **arena/** | **ArenaUIManager.gd** | Arena UI coordination | UI state updates | HUD management |
+| **player/** | **CardSystem.gd** | Upgrade card selection & application | `card_selected`, `card_applied` | Player progression |
+| **radar/** | **RadarSystem.gd** | Enemy position scanning for UI | `radar_data_updated` | State-gated updates |
+| **rendering/** | **VisualEffectsManager.gd** | Visual feedback coordination | Effect triggers | Impact feedback |
+| **boss/** | **BossUpdateManager.gd** | Boss AI batch processing | Boss behavior updates | Performance optimization |
+
+### 🎯 **Domain Organization Benefits**
+
+**Before (Flat Structure):**
+```
+scripts/systems/
+├── ArenaSystem.gd
+├── CardSystem.gd
+├── DamageSystem.gd
+├── MeleeSystem.gd
+├── SpawnDirector.gd
+├── ... (30+ files in one folder)
+```
+
+**After (Domain-Driven Structure):**
+```
+scripts/systems/
+├── arena/ArenaSystem.gd
+├── player/CardSystem.gd
+├── combat/DamageSystem.gd
+├── combat/MeleeSystem.gd
+├── spawn/SpawnDirector.gd
+├── ... (organized by functional domain)
+```
+
+**Navigation Improvements:**
+- ✅ **Logical grouping** - related systems co-located
+- ✅ **Clear separation of concerns** - domain boundaries enforced
+- ✅ **Easier code discovery** - find systems by functional area
+- ✅ **Reduced cognitive load** - smaller, focused subfolders
+- ✅ **Scalable architecture** - new systems added to appropriate domains
+
+### 📁 **Import Path Migration**
+
+**Updated import patterns for domain organization:**
+```gdscript
+# ❌ Old flat structure imports:
+const ArenaSystem = preload("res://scripts/systems/ArenaSystem.gd")
+const CardSystem = preload("res://scripts/systems/CardSystem.gd")
+
+# ✅ New domain-based imports:
+const ArenaSystem = preload("res://scripts/systems/arena/ArenaSystem.gd")
+const CardSystem_Type = preload("res://scripts/systems/player/CardSystem.gd")
+const MeleeSystem_Type = preload("res://scripts/systems/combat/MeleeSystem.gd")
+const SpawnDirector_Type = preload("res://scripts/systems/spawn/SpawnDirector.gd")
+```
+
+**Migration completed in:**
+- ✅ **GameOrchestrator.gd** - All system imports updated
+- ✅ **SystemInjectionManager.gd** - Arena/combat system paths updated
+- ✅ **Arena.gd** - Domain subfolder imports updated
+- ✅ **SpawnDirector.gd** - ArenaSystem import updated
+- ✅ **Main.gd** - SceneTransitionManager import updated
 
 ## System Architecture Patterns
 
@@ -54,20 +130,25 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 
 ### 🔧 **Dependency Injection Pattern**
 
-**GameOrchestrator → Systems:**
+**GameOrchestrator → Systems (Updated Import Paths):**
 ```gdscript
 # GameOrchestrator creates and injects dependencies
+# Import from domain subfolders
+const CardSystem_Type = preload("res://scripts/systems/player/CardSystem.gd")
+const MeleeSystem_Type = preload("res://scripts/systems/combat/MeleeSystem.gd")
+const ArenaSystem = preload("res://scripts/systems/arena/ArenaSystem.gd")
+const SpawnDirector_Type = preload("res://scripts/systems/spawn/SpawnDirector.gd")
+
 func initialize_systems() -> void:
-    spawn_director = SpawnDirector.new()
-    damage_system = DamageSystem.new()
+    spawn_director = SpawnDirector_Type.new()
+    melee_system = MeleeSystem_Type.new()
 
     # Inject dependencies
-    damage_system.spawn_director = spawn_director
-    melee_system.spawn_director = spawn_director
+    melee_system.set_spawn_director_reference(spawn_director)
 
 # Systems never create their own dependencies
 # ✗ Wrong: var spawn_director = SpawnDirector.new()
-# ✓ Correct: Receive via injection
+# ✓ Correct: Receive via injection from GameOrchestrator
 ```
 
 **Arena Integration:**
@@ -514,6 +595,9 @@ func apply_card_effects(card_data: Dictionary) -> void:
 3. **Balance values wrong:** Check BalanceDB connection and hot-reload
 4. **Performance drops:** Profile `_on_combat_step()` methods
 5. **Events not firing:** Verify EventBus signal usage with typed payloads
+6. **Import errors after domain organization:** Update import paths to new subfolder structure
+7. **"Could not resolve class" errors:** Check if class extends from moved files
+8. **Orphaned .uid files:** Clean up after major file reorganizations
 
 ### 🔧 **Debug Patterns**
 
@@ -540,13 +624,56 @@ Systems layer rules:
 
 ## Migration Notes
 
-When creating new systems:
-1. **Follow standard template** with `_ready()`, `_load_balance_values()`, `_on_combat_step()`
-2. **Use dependency injection** via GameOrchestrator
-3. **Connect to combat_step** for 30Hz deterministic updates
-4. **Emit typed EventBus signals** for cross-system communication
-5. **Add logging** with appropriate categories
-6. **Update this documentation** with new patterns
+### 🆕 **Creating New Systems (Updated 2025-09-30)**
+
+When adding new systems to the domain-organized structure:
+
+1. **Choose appropriate domain subfolder:**
+   - **combat/** - Damage, melee, XP, player attacks
+   - **spawn/** - Enemy spawning, boss creation, entity management
+   - **arena/** - Arena coordination, UI management, scene transitions
+   - **player/** - Player-specific mechanics, cards, abilities
+   - **radar/** - Position scanning, detection systems
+   - **rendering/** - Visual effects, performance optimization
+   - **boss/** - Boss AI, update management, behaviors
+   - **events/** - Breach events, mastery systems
+   - **debug/** - Development tools, debugging utilities
+
+2. **Follow standard system template** with domain-aware imports:
+   ```gdscript
+   extends Node
+   class_name NewSystemName
+
+   # Import from appropriate domain subfolders
+   const RelatedSystem = preload("res://scripts/systems/domain/RelatedSystem.gd")
+   ```
+
+3. **Update import references** in consuming files:
+   - **GameOrchestrator.gd** - Add system import and initialization
+   - **SystemInjectionManager.gd** - Add injection method if needed
+   - **Arena.gd** - Update imports if arena integration required
+
+4. **Standard patterns** (unchanged):
+   - Use dependency injection via GameOrchestrator
+   - Connect to `combat_step` for 30Hz deterministic updates
+   - Emit typed EventBus signals for cross-system communication
+   - Add logging with appropriate categories
+
+5. **Update documentation:**
+   - Add system to Quick Reference table with domain
+   - Document new patterns in appropriate sections
+   - Update this migration guide if new domain needed
+
+### 🔄 **Domain Organization Completed (2025-09-30)**
+
+The systems layer has been successfully reorganized into 11 domain subfolders:
+- ✅ **File moves completed** - All systems moved to appropriate domains
+- ✅ **Import paths updated** - GameOrchestrator, Arena.gd, and key integration points
+- ✅ **Parser errors resolved** - All compilation issues fixed
+- ✅ **Orphaned .uid files cleaned** - 32 orphaned UID files removed
+- ✅ **Documentation updated** - This CLAUDE.md reflects new structure
+
+**No further migration needed** - the domain organization is complete and stable.
 
 ---
 **See Also:** [Autoload Patterns](../../autoload/CLAUDE.md) | [Domain Models](../domain/CLAUDE.md) | [Scene Integration](../../scenes/CLAUDE.md)
