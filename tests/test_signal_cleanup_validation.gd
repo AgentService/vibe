@@ -16,7 +16,7 @@ func _setup_test_systems() -> void:
 	systems_to_test = [
 		{
 			"name": "XpSystem",
-			"script": preload("res://scripts/systems/XpSystem.gd"),
+			"script": preload("res://scripts/systems/combat/XpSystem.gd"),
 			"signals": ["EventBus.combat_step", "EventBus.enemy_killed", "BalanceDB.balance_reloaded"]
 		},
 		{
@@ -32,7 +32,7 @@ func _setup_test_systems() -> void:
 		# },
 		{
 			"name": "MeleeSystem",
-			"script": preload("res://scripts/systems/MeleeSystem.gd"),
+			"script": preload("res://scripts/systems/combat/MeleeSystem.gd"),
 			"signals": ["EventBus.combat_step", "BalanceDB.balance_reloaded"]
 		}
 	]
