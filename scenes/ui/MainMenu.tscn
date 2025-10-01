@@ -300,9 +300,10 @@ layout_mode = 2
 theme_override_constants/separation = 15
 
 [node name="LeftPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(385, 0)
+custom_minimum_size = Vector2(385, 110)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 0
 theme_override_constants/separation = 8
 
 [node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
@@ -332,9 +333,10 @@ clip_text = true
 text_overrun_behavior = 3
 
 [node name="RightPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(155, 0)
+custom_minimum_size = Vector2(155, 110)
 layout_mode = 2
 size_flags_horizontal = 0
+size_flags_vertical = 0
 theme_override_constants/separation = 8
 
 [node name="QuestProgress" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
