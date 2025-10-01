@@ -10,9 +10,10 @@
   - Removed Camera2D interference with Control coordinate system
   - Implemented FULL_RECT overlapping container pattern for menu + leaderboard
   - F5 (project run) and F6 (scene run) now display identical layouts
-- **Dynamic Item Loading**: Shop system now scans `res://data/content/items/*.tres` automatically
-  - No hardcoded item lists - add items by creating .tres files
+- **Dynamic Item Loading**: Shop system now scans `res://data/content/{category}/*.tres` automatically
+  - No hardcoded lists - add items/tomes/skills by creating .tres files
   - Maintains rarity sorting and three-state progression (locked/discovered/unlocked)
+  - Placeholder content added: 5 items, 1 tome (Fireball), 1 skill (Dash)
 - **Shop UI Improvements**: Enhanced shop visual clarity and layout
   - Details panel now always visible (pre-allocates space instead of auto-showing)
   - Removed dimming from locked items for better readability
