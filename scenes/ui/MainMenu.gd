@@ -512,7 +512,6 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 			icon_label.custom_minimum_size = Vector2(64, 64)
 			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			icon_texture.modulate = Color(0.0, 0.0, 0.0)
 			center_container.add_child(icon_label)
 
 	elif is_discovered and not is_unlocked:

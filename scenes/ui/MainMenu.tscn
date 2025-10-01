@@ -84,7 +84,6 @@ theme_override_font_sizes/font_size = 24
 text = "0"
 
 [node name="MainMenuContainer" type="Control" parent="BackgroundPanel"]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -288,6 +287,7 @@ layout_mode = 2
 text = "BACK"
 
 [node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
