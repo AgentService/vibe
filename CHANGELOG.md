@@ -32,6 +32,13 @@
   - DISCOVERED + LOCKED: Shows unlock button with diamond cost in right panel
   - UNLOCKED: Right panel hidden, full info in left panel
   - Removed verbose "Quest Completed" and "Cost to Unlock" strings for cleaner UI
+  - Fixed dimensions: 600x140px with text clipping to prevent overflow
+  - Labels use `clip_text` and `text_overrun_behavior` for clean display
+- **Enhanced D+L Modal Overlay**: Improved visual feedback for discovered locked items
+  - Full-rect ColorRect overlay (was centered PanelContainer)
+  - Increased dimming from 0.6 to 0.75 alpha for better contrast
+  - Cost text now pure white (Color.WHITE) with black outline
+  - Overlay uses PRESET_FULL_RECT anchors for precise coverage
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection

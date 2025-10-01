@@ -281,11 +281,12 @@ size_flags_horizontal = 0
 size_flags_vertical = 0
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
-columns = 4
+columns = 8
 
 [node name="ItemDetailsPanel" type="PanelContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
-custom_minimum_size = Vector2(600, 120)
+custom_minimum_size = Vector2(600, 140)
 layout_mode = 2
+size_flags_vertical = 0
 
 [node name="MarginContainer" type="MarginContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel"]
 layout_mode = 2
@@ -310,18 +311,26 @@ layout_mode = 2
 text = "Item Name"
 
 [node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 text = "Item description goes here"
 autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 text = "Stats"
+clip_text = true
 
 [node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 text = "Flavor text"
 autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="RightPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(150, 0)
@@ -331,9 +340,12 @@ size_flags_stretch_ratio = 0.3
 theme_override_constants/separation = 8
 
 [node name="QuestProgress" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 text = "Quest Progress"
 autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
 
 [node name="UnlockButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
 visible = false

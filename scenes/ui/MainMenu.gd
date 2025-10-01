@@ -489,27 +489,39 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 		center_container.add_child(icon_label)
 
 	elif is_discovered and not is_unlocked:
-		# DISCOVERED + LOCKED: Full color icon with semi-transparent overlay modal
+		# DISCOVERED + LOCKED: Full color icon with full-rect overlay modal
 		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
 		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 		center_container.add_child(icon_label)
 
-		# Semi-transparent dimming overlay (mini modal)
-		var overlay_panel = PanelContainer.new()
-		overlay_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay_panel.modulate = Color(0, 0, 0, 0.6)  # Dark semi-transparent
-		center_container.add_child(overlay_panel)
+		# Full-rect semi-transparent dimming overlay (mini modal)
+		var overlay_container = Control.new()
+		overlay_container.set_anchors_preset(Control.PRESET_FULL_RECT)
+		overlay_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		entry_container.add_child(overlay_container)
 
-		# Cost display on overlay (diamond icon only)
+		# Dark background panel (full rect)
+		var overlay_bg = ColorRect.new()
+		overlay_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
+		overlay_bg.color = Color(0, 0, 0, 0.75)  # More dimming (0.75 alpha)
+		overlay_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay_container.add_child(overlay_bg)
+
+		# Cost display centered on overlay (white text)
+		var cost_center = CenterContainer.new()
+		cost_center.set_anchors_preset(Control.PRESET_FULL_RECT)
+		cost_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay_container.add_child(cost_center)
+
 		var cost_label = Label.new()
 		cost_label.text = "%d 💎" % item_metadata.unlock_cost
 		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		cost_label.add_theme_font_size_override("font_size", 16)
-		cost_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		cost_label.add_theme_color_override("font_color", Color.WHITE)
 		cost_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		cost_label.add_theme_constant_override("outline_size", 3)
-		overlay_panel.add_child(cost_label)
+		cost_label.add_theme_constant_override("outline_size", 4)
+		cost_center.add_child(cost_label)
 
 	# Make entry clickable for ALL states (including undiscovered)
 	entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
