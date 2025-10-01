@@ -1,11 +1,25 @@
 extends Control
-## Leaderboard UI - Shows top runs by kills across all maps/tiers
+## NEW Main Menu - Styled replacement for MainMenu.tscn (work in progress)
+## Features: Leaderboard, Play flow, Unlocks shop (building in parallel with old menu)
 
+# Leaderboard UI
 @onready var tab_bar: TabBar = %TabBar
 @onready var global_container: VBoxContainer = %VBoxContainer_Global
 @onready var friends_container: VBoxContainer = %VBoxContainer_Friends
 
+# Menu buttons
+@onready var play_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play
+@onready var unlocks_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play2
+@onready var options_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play3
+@onready var quit_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play4
+
 func _ready() -> void:
+	# Connect menu buttons
+	play_button.pressed.connect(_on_play_pressed)
+	unlocks_button.pressed.connect(_on_unlocks_pressed)
+	options_button.pressed.connect(_on_options_pressed)
+	quit_button.pressed.connect(_on_quit_pressed)
+
 	# Connect tab switching signal
 	tab_bar.tab_changed.connect(_on_tab_changed)
 
@@ -116,3 +130,29 @@ func _format_number(value: int) -> String:
 		return "%.1fK" % (value / 1_000.0)
 	else:
 		return str(value)
+
+# ============================================================================
+# MENU BUTTON HANDLERS
+# ============================================================================
+
+func _on_play_pressed() -> void:
+	"""Start game flow - loads existing CharacterSelect (temp until new one built)"""
+	# TODO: Replace with new styled CharacterSelect_New.tscn when ready
+	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+	Logger.info("Play pressed - loading character select", "ui")
+
+func _on_unlocks_pressed() -> void:
+	"""Open unlocks shop - loads existing shop (temp until new one built)"""
+	# TODO: Replace with new styled Shop_New.tscn when ready
+	# For now, could open old MainMenu's shop screen or placeholder
+	Logger.info("Unlocks pressed - shop not yet implemented in new UI", "ui")
+
+func _on_options_pressed() -> void:
+	"""Open options/settings"""
+	# TODO: Implement options menu
+	Logger.info("Options pressed - not yet implemented", "ui")
+
+func _on_quit_pressed() -> void:
+	"""Quit game"""
+	Logger.info("Quit pressed", "ui")
+	get_tree().quit()
