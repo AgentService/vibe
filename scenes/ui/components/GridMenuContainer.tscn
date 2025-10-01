@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://d4n0h27bix484"]
-
-[ext_resource type="Script" uid="uid://b7do6chgma1h0" path="res://scenes/ui/components/GridMenuContainer.gd" id="1_om1eh"]
-
-[node name="GridMenuContainer" type="PanelContainer"]
-custom_minimum_size = Vector2(650, 650)
-script = ExtResource("1_om1eh")

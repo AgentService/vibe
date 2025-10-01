@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://bq67h8ip4u8ly"]
+[gd_scene load_steps=2 format=3 uid="uid://c22qh017ac8tx"]
 
-[ext_resource type="Script" uid="uid://bf7ole3dvwygl" path="res://scenes/ui/components/TabbedGridContainer.gd" id="1_6xiuc"]
+[ext_resource type="Script" path="res://scenes/ui/components/TabbedGridContainer.gd" id="1_6xiuc"]
 
 [node name="TabbedGridContainer" type="PanelContainer"]
 custom_minimum_size = Vector2(650, 650)

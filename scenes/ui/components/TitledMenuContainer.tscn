@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3 uid="uid://dbvnexyolng01"]
-
-[ext_resource type="Script" uid="uid://hh0x10w2cyq0" path="res://scenes/ui/components/TitledMenuContainer.gd" id="1_eyyy6"]
-
-[node name="TitledMenuContainer" type="PanelContainer"]
-custom_minimum_size = Vector2(650, 650)
-script = ExtResource("1_eyyy6")

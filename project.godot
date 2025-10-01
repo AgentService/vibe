@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="Vibe"
-run/main_scene="res://scenes/main/Main.tscn"
+run/main_scene="res://scenes/ui_v2/scenes/menus/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
 config/icon="res://icon.svg"
 
@@ -47,6 +47,10 @@ ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
 MetaProgression="*res://autoload/MetaProgression.gd"
 SessionState="*res://autoload/SessionState.gd"
 LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
+AppConfig="*res://addons/maaacks_menus_template/base/scenes/autoloads/app_config.tscn"
+SceneLoader="*res://addons/maaacks_menus_template/base/scenes/autoloads/scene_loader.tscn"
+ProjectMusicController="*res://addons/maaacks_menus_template/base/scenes/autoloads/project_music_controller.tscn"
+ProjectUISoundController="*res://addons/maaacks_menus_template/base/scenes/autoloads/project_ui_sound_controller.tscn"
 
 [display]
 
@@ -60,11 +64,15 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg", "res://addons/path_aware_generator/plugin.cfg")
+enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res://addons/limbo_console/plugin.cfg", "res://addons/maaacks_menus_template/plugin.cfg", "res://addons/path_aware_generator/plugin.cfg")
 
 [filesystem]
 
 import/fbx2gltf/enabled=false
+
+[gui]
+
+theme/custom="res://scenes/ui_v2/resources/themes/expedition.tres"
 
 [input]
 
@@ -134,12 +142,23 @@ cast_melee={
 ]
 }
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://addons/maaacks_menus_template/base/translations/menus_translations.en.translation", "res://addons/maaacks_menus_template/base/translations/menus_translations.fr.translation")
+
 [layer_names]
 
 2d_physics/layer_1="Terrain"
 2d_physics/layer_2="Bosses"
 2d_physics/layer_3="Player"
 2d_physics/layer_4="Projectiles"
+
+[maaacks_menus_template]
+
+disable_install_audio_busses=true
+disable_update_check=false
+disable_install_wizard=true
+copy_path="res://scenes/ui_v2/"
 
 [plugins]
 

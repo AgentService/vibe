@@ -311,8 +311,9 @@ func _on_start_run_pressed() -> void:
 		"character_data": {}  # Empty for now, player will spawn fresh
 	}
 
-	# Transition to PathAware arena (same as hideout flow)
+	# Transition to PathAware arena using SceneLoader for smooth loading screen
 	if StateManager:
+		# StateManager will handle the actual scene loading
 		StateManager.start_run(&"pathgen_arena", context)
 
 # ============================================================================
@@ -512,7 +513,6 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 			icon_label.custom_minimum_size = Vector2(64, 64)
 			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 			icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			icon_texture.modulate = Color(0.0, 0.0, 0.0)
 			center_container.add_child(icon_label)
 
 	elif is_discovered and not is_unlocked:
