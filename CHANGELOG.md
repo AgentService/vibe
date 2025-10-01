@@ -5,6 +5,22 @@
 ## [Current Week - In Progress]
 
 ### UI/UX Improvements
+- **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
+  - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding
+  - **TitledMenuContainer**: Extends base with styled title section (customizable text, font size, alignment)
+  - **GridMenuContainer**: Extends titled with scrollable grid (configurable columns, spacing, size)
+  - **GridWithDetailsContainer**: Extends grid with toggleable 70/30 split details panel below
+  - **TabbedGridContainer**: Extends details with tab navigation (separate grids per tab, shared details)
+  - All templates share consistent default styling (dark blue bg, 8px corners, 20px padding)
+  - Full @export property control for customization per instance
+  - Comprehensive usage guide in `scenes/ui/components/MENU_CONTAINERS_GUIDE.md`
+  - **Next Step**: Refactor plan in `Obsidian/03-tasks/UI_CONTAINER_SCENES_REFACTOR.md` for migrating all UI
+- **MainMenu Background & Persistent Currency**: Added mystical portal background and always-visible Rift Fragments
+  - Background image (main_menu_backgroundgpt.png) set as TextureRect with Keep Aspect Covered stretch
+  - Persistent Rift Fragments display in top-right (24px icon + number) visible across all menu states
+  - All containers (CharacterSelect, MapSelect, UnlocksShop) now have semi-transparent dark backgrounds (90% opacity)
+  - UnlocksShop container has proper padding (20px margins) via MarginContainer for clean spacing
+  - Removed duplicate Rift Fragments displays from main menu center and shop
 - **MainMenu Layout Fix**: Resolved Control node anchoring issues when loaded under Main.tscn
   - Changed Main.tscn from Node2D to Control for proper anchor support
   - Removed Camera2D interference with Control coordinate system
@@ -41,6 +57,14 @@
   - Increased dimming from 0.6 to 0.75 alpha for better contrast
   - Cost text now pure white (Color.WHITE) with black outline
   - Overlay uses PRESET_FULL_RECT anchors for precise coverage
+- **Item Icon Integration**: Replaced placeholder emojis with actual PNG textures in UnlockShop
+  - Updated all 5 ItemMetadata .tres files with `icon_path` references to assets/items/*.png
+  - Shop now uses TextureRect for icon display with proper sizing (64x64) and centering
+  - State-based rendering: unlocked (full color), undiscovered (dark silhouette), discovered (full color with overlay)
+  - Maintains emoji fallbacks for missing textures (🎯 for items, ❓ for undiscovered)
+  - Discovered+locked items now render with complete greyscale desaturation (Color(0.33, 0.33, 0.33)) + 90% dark overlay
+  - Files updated: lucky_coin.tres, rabbits_foot.tres, feather.tres, cheese.tres, clover.tres (→ four-leaf.png)
+  - Fixed UnlocksShop @onready node paths by removing incorrect `/MarginContainer` layer (prevented null reference errors)
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection

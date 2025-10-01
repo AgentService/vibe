@@ -656,7 +656,7 @@ Return to Main Menu (session wiped)
 
 ---
 
-### Phase 9: Item Discovery & Unlock System ⏳ IN PROGRESS (3-4 sessions)
+### Phase 9: Item Discovery & Unlock System ✅ COMPLETED (3-4 sessions)
 **Goal:** MEGABONK-style item discovery and purchase flow
 **Test:** Items discovered in run can be purchased in shop
 
@@ -664,27 +664,58 @@ Return to Main Menu (session wiped)
 - [x] Add item metadata resource:
   - [x] Create `ItemMetadata.gd` Resource class (scripts/resources/)
   - [x] Define: item_id, display_name, description, unlock_cost, rarity, stat_summary
-  - [x] Create `/data/content/items/*.tres` files (cheese, clover, feather)
+  - [x] Create `/data/content/items/*.tres` files (cheese, clover, feather, lucky_coin, rabbits_foot)
+  - [x] Create `/data/content/tomes/*.tres` files (damage_tome, agility_tome)
+  - [x] Create `/data/content/skills/*.tres` files (dash)
 - [x] Create Unlocks Shop UI integrated into MainMenu:
   - [x] Added 4th screen to MainMenu.tscn (UnlocksShopContainer)
-  - [x] Add VBoxContainer for layout with title
-  - [x] Add HBoxContainer for category tabs: [Items] [Tomes] [Skills]
-  - [x] Add ScrollContainer with VBoxContainer for discovered items list
-  - [x] Add item entry template (name, description, stats, cost, [UNLOCK] button)
-  - [x] Attach script to populate discovered_items from MetaProgression
+  - [x] Changed to 3-state item progression (UNDISCOVERED → DISCOVERED → UNLOCKED)
+  - [x] Icon-based shop cards (80x80px) with state visualization:
+    - [x] UNLOCKED: Full color icon with rarity tint
+    - [x] UNDISCOVERED: Black silhouette with ❓ fallback
+    - [x] DISCOVERED: Greyscale with 90% dim overlay + cost display
+  - [x] Grid layout (8 columns) for compact item display
+  - [x] Details panel (70/30 split) shows:
+    - [x] Left: Name, description, stats, flavor text
+    - [x] Right: Quest progress (undiscovered) OR unlock button (discovered)
+  - [x] Category tabs: [ITEMS] [TOMES] [SKILLS]
+  - [x] Dynamic item loading from `/data/content/{category}/*.tres`
+  - [x] Rarity system (Common, Uncommon, Rare, Epic, Legendary) with color coding
 - [x] Implement unlock purchase:
   - [x] Check MetaProgression.can_afford(cost)
   - [x] On purchase: MetaProgression.spend_rift_fragments() + unlock_item()
   - [x] Move from discovered_items to unlocked_items
   - [x] Deduct Rift Fragments
   - [x] Shop refreshes immediately after purchase
+  - [x] Signal-based updates (EventBus.item_unlocked, rift_fragments_changed)
+- [x] Add persistent UI improvements:
+  - [x] Persistent Rift Fragments display (top-right, always visible)
+  - [x] Mystical portal background image
+  - [x] Semi-transparent dark backgrounds on all containers (CharSelect, MapSelect, Shop)
+  - [x] Proper padding/margins via MarginContainer
+  - [x] MainMenu leaderboard panel showing personal bests per character
 - [x] Add debug commands for testing:
   - [x] `discover_item <category> <item_id>` - Simulate finding item
   - [x] `give_fragments <amount>` - Award Rift Fragments
   - [x] `progression_info` - Show current state
 - [x] Create testing guide: Obsidian/systems/Item-Discovery-Testing-Guide.md
 
-**⏳ Next Tasks:**
+**🎨 UI Architecture Enhancement:**
+- [x] Created 5 reusable menu container templates:
+  - [x] `BaseMenuContainer` - Border + background foundation
+  - [x] `TitledMenuContainer` - Adds title section
+  - [x] `GridMenuContainer` - Adds scrollable grid
+  - [x] `GridWithDetailsContainer` - Adds toggleable details panel
+  - [x] `TabbedGridContainer` - Adds tab navigation
+- [x] All templates have consistent styling (dark blue bg, 8px corners, 20px padding)
+- [x] Full @export property control for customization
+- [x] Comprehensive usage guide: `scenes/ui/components/MENU_CONTAINERS_GUIDE.md`
+- [x] Refactor plan created: `Obsidian/03-tasks/UI_CONTAINER_SCENES_REFACTOR.md`
+  - [x] Details 8 container scenes to build (CharacterSelect, MapSelect, etc.)
+  - [x] Complete integration strategy for MainMenu
+  - [x] Migration from manual Panel/VBoxContainer to template instances
+
+**⏭️ Deferred to Future Phases:**
 - [ ] Create item discovery flow:
   - [ ] When item drops in run, check if already unlocked
   - [ ] If new: MetaProgression.discover_item(item_id)
@@ -757,6 +788,32 @@ Return to Main Menu (session wiped)
 - [ ] `autoload/CLAUDE.md` - document new architecture
 
 ## 📝 Progress Notes
+
+### 2025-10-01 - Phase 9 Completion + UI Template System
+**Shop Foundation & Leaderboard Integration:**
+- ✅ Completed MEGABONK-style 3-state item progression system
+- ✅ Icon-based shop with state visualization (black silhouette → greyscale → full color)
+- ✅ 70/30 split details panel with quest/unlock context switching
+- ✅ Dynamic item loading from `/data/content/{category}/*.tres` files
+- ✅ Rarity system implementation with color coding
+- ✅ Persistent Rift Fragments display (top-right, always visible across all menu states)
+- ✅ Mystical portal background with semi-transparent container backgrounds
+- ✅ MainMenu leaderboard panel showing personal bests per character
+- ✅ Full signal-based updates (EventBus integration)
+
+**UI Architecture Enhancement:**
+- ✅ Created 5 reusable menu container templates (Base → Titled → Grid → GridWithDetails → Tabbed)
+- ✅ Established consistent styling system (dark blue bg, 8px corners, 20px padding)
+- ✅ Comprehensive template usage guide created (`MENU_CONTAINERS_GUIDE.md`)
+- ✅ Complete refactor plan documented (`UI_CONTAINER_SCENES_REFACTOR.md`)
+  - 8 container scenes to build (CharacterSelect, MapSelect, UnlocksShop, etc.)
+  - Integration strategy for migrating MainMenu to template instances
+  - End-to-end container replacement workflow
+
+**Next Session Priority:**
+- Option 1: Migrate existing MainMenu containers to use new template system
+- Option 2: Continue with in-run item discovery flow (notifications, end-of-run display)
+- Option 3: Implement Toggler system (requires 40 unlocks first)
 
 ### 2025-09-30 - Design Discussion & Planning
 - Conducted Q&A session to clarify architecture decisions

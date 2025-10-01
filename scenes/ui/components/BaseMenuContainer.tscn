@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://taiuuwf62h84"]
+
+[ext_resource type="Script" uid="uid://dabyixo8c8uu4" path="res://scenes/ui/components/BaseMenuContainer.gd" id="1_l5lnh"]
+
+[node name="BaseMenuContainer" type="PanelContainer"]
+custom_minimum_size = Vector2(650, 650)
+script = ExtResource("1_l5lnh")

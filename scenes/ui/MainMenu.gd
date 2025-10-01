@@ -19,39 +19,39 @@ extends Control
 @onready var shop_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/ShopButton
 @onready var quit_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/QuitButton
 
-# Character Select elements
-@onready var char_title: Label = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharTitle
-@onready var knight_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharacterButtons/KnightButton
-@onready var ranger_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharacterButtons/RangerButton
-@onready var char_info_label: Label = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharInfoLabel
-@onready var char_confirm_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharConfirmButton
-@onready var char_back_button: Button = $BackgroundPanel/CharacterSelectContainer/VBoxContainer/CharBackButton
+# Character Select elements (has BackgroundPanel wrapper for semi-transparent background)
+@onready var char_title: Label = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharTitle
+@onready var knight_button: Button = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons/KnightButton
+@onready var ranger_button: Button = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons/RangerButton
+@onready var char_info_label: Label = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharInfoLabel
+@onready var char_confirm_button: Button = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharConfirmButton
+@onready var char_back_button: Button = $BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharBackButton
 
-# Map Select elements
-@onready var map_title: Label = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapTitle
-@onready var tier1_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier1Button
-@onready var tier2_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier2Button
-@onready var tier3_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierButtons/Tier3Button
-@onready var tier_info_label: Label = $BackgroundPanel/MapSelectContainer/VBoxContainer/TierInfoLabel
-@onready var map_start_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapStartButton
-@onready var map_back_button: Button = $BackgroundPanel/MapSelectContainer/VBoxContainer/MapBackButton
+# Map Select elements (has BackgroundPanel wrapper for semi-transparent background)
+@onready var map_title: Label = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/MapTitle
+@onready var tier1_button: Button = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons/Tier1Button
+@onready var tier2_button: Button = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons/Tier2Button
+@onready var tier3_button: Button = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons/Tier3Button
+@onready var tier_info_label: Label = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierInfoLabel
+@onready var map_start_button: Button = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/MapStartButton
+@onready var map_back_button: Button = $BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/MapBackButton
 
 # Leaderboard elements
 @onready var leaderboard_list: VBoxContainer = $BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer/LeaderboardList
 
 # Unlocks Shop elements
-@onready var items_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/ItemsTab
-@onready var tomes_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/TomesTab
-@onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
-@onready var shop_item_list: GridContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll/ItemList
-@onready var shop_item_details_panel: PanelContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel
-@onready var shop_item_name: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemName
-@onready var shop_item_description: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemDescription
-@onready var shop_item_stats: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemStats
-@onready var shop_item_flavor: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemFlavorText
-@onready var shop_quest_progress: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/QuestProgress
-@onready var shop_unlock_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/UnlockButton
-@onready var shop_back_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ShopBackButton
+@onready var items_tab: Button = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs/ItemsTab
+@onready var tomes_tab: Button = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs/TomesTab
+@onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs/SkillsTab
+@onready var shop_item_list: GridContainer = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemListScroll/ItemList
+@onready var shop_item_details_panel: PanelContainer = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel
+@onready var shop_item_name: Label = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemName
+@onready var shop_item_description: Label = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemDescription
+@onready var shop_item_stats: Label = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemStats
+@onready var shop_item_flavor: Label = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemFlavorText
+@onready var shop_quest_progress: Label = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/QuestProgress
+@onready var shop_unlock_button: Button = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/UnlockButton
+@onready var shop_back_button: Button = $BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ShopBackButton
 
 # Selection state
 var selected_character: String = ""
@@ -469,30 +469,70 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 	var center_container = CenterContainer.new()
 	entry_container.add_child(center_container)
 
-	# Icon (placeholder for now - will be TextureRect later)
-	var icon_label = Label.new()
-	icon_label.custom_minimum_size = Vector2(64, 64)
-	icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	# Load icon texture if available
+	var texture: Texture2D = null
+	if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
+		texture = load(item_metadata.icon_path)
 
 	# State-based icon appearance
 	if is_unlocked or (is_discovered and is_unlocked):
 		# UNLOCKED: Full color icon
-		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
-		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
-		center_container.add_child(icon_label)
+		if texture:
+			var icon_texture = TextureRect.new()
+			icon_texture.custom_minimum_size = Vector2(64, 64)
+			icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_texture.texture = texture
+			icon_texture.modulate = Color.WHITE
+			center_container.add_child(icon_texture)
+		else:
+			# Fallback if no texture
+			var icon_label = Label.new()
+			icon_label.text = "🎯"
+			icon_label.custom_minimum_size = Vector2(64, 64)
+			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+			center_container.add_child(icon_label)
 
 	elif not is_discovered and not is_unlocked:
-		# UNDISCOVERED + LOCKED: Black silhouette only
-		icon_label.text = "❓"  # Placeholder - will be black silhouette texture
-		icon_label.modulate = Color(0.2, 0.2, 0.2)
-		center_container.add_child(icon_label)
+		# UNDISCOVERED + LOCKED: Black silhouette
+		if texture:
+			var icon_texture = TextureRect.new()
+			icon_texture.custom_minimum_size = Vector2(64, 64)
+			icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_texture.texture = texture
+			icon_texture.modulate = Color(0.0, 0.0, 0.0)
+			center_container.add_child(icon_texture)
+		else:
+			# Fallback if no texture
+			var icon_label = Label.new()
+			icon_label.text = "❓"
+			icon_label.custom_minimum_size = Vector2(64, 64)
+			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			icon_texture.modulate = Color(0.0, 0.0, 0.0)
+			center_container.add_child(icon_label)
 
 	elif is_discovered and not is_unlocked:
-		# DISCOVERED + LOCKED: Full color icon with full-rect overlay modal
-		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
-		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
-		center_container.add_child(icon_label)
+		# DISCOVERED + LOCKED: Greyscale icon with dimming overlay
+		if texture:
+			var icon_texture = TextureRect.new()
+			icon_texture.custom_minimum_size = Vector2(64, 64)
+			icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+			icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+			icon_texture.texture = texture
+			center_container.add_child(icon_texture)
+		else:
+			# Fallback if no texture
+			var icon_label = Label.new()
+			icon_label.text = "🎯"
+			icon_label.custom_minimum_size = Vector2(64, 64)
+			icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+			center_container.add_child(icon_label)
 
 		# Full-rect semi-transparent dimming overlay (mini modal)
 		var overlay_container = Control.new()
@@ -503,7 +543,7 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 		# Dark background panel (full rect)
 		var overlay_bg = ColorRect.new()
 		overlay_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-		overlay_bg.color = Color(0, 0, 0, 0.75)  # More dimming (0.75 alpha)
+		overlay_bg.color = Color(0, 0, 0, 0.90)  # More dimming (0.90 alpha)
 		overlay_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		overlay_container.add_child(overlay_bg)
 
