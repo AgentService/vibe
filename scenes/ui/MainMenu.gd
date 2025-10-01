@@ -10,9 +10,11 @@ extends Control
 @onready var map_select_container: Control = $BackgroundPanel/MapSelectContainer
 @onready var unlocks_shop_container: Control = $BackgroundPanel/UnlocksShopContainer
 
+# Persistent UI elements (always visible)
+@onready var persistent_rift_fragments_value: Label = $BackgroundPanel/PersistentRiftFragments/HBoxContainer/RiftFragmentsValue
+
 # Main Menu elements
 @onready var title_label: Label = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/TitleLabel
-@onready var rift_fragments_value: Label = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/RiftFragmentsContainer/RiftFragmentsValue
 @onready var play_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/PlayButton
 @onready var shop_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/ShopButton
 @onready var quit_button: Button = $BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer/QuitButton
@@ -38,7 +40,6 @@ extends Control
 @onready var leaderboard_list: VBoxContainer = $BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer/LeaderboardList
 
 # Unlocks Shop elements
-@onready var shop_rift_fragments_value: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/RiftFragmentsDisplay/RiftFragmentsValue
 @onready var items_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/ItemsTab
 @onready var tomes_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/TomesTab
 @onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
@@ -322,14 +323,14 @@ func _update_rift_fragments_display() -> void:
 	"""Update the Rift Fragments display."""
 	if MetaProgression:
 		var balance = MetaProgression.get_rift_fragments()
-		rift_fragments_value.text = str(balance)
+		persistent_rift_fragments_value.text = str(balance)
 		Logger.debug("Updated Rift Fragments: %d" % balance, "ui")
 	else:
-		rift_fragments_value.text = "0"
+		persistent_rift_fragments_value.text = "0"
 
 func _on_rift_fragments_changed(new_balance: int) -> void:
 	"""Handle Rift Fragments balance changes."""
-	rift_fragments_value.text = str(new_balance)
+	persistent_rift_fragments_value.text = str(new_balance)
 	Logger.debug("Rift Fragments updated to: %d" % new_balance, "ui")
 
 # ============================================================================
@@ -416,11 +417,6 @@ func _update_shop_ui() -> void:
 	# Clear existing items
 	for child in shop_item_list.get_children():
 		child.queue_free()
-
-	# Update Rift Fragments display
-	if MetaProgression:
-		var balance = MetaProgression.get_rift_fragments()
-		shop_rift_fragments_value.text = str(balance)
 
 	if not MetaProgression:
 		Logger.warn("MetaProgression not available", "ui")
@@ -580,10 +576,10 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 		shop_item_description.modulate = Color(0.5, 0.5, 0.5)
 
 		shop_item_stats.text = ""
-		shop_item_stats.visible = false
+		shop_item_stats.visible = true
 
 		shop_item_flavor.text = ""
-		shop_item_flavor.visible = false
+		shop_item_flavor.visible = true
 
 		# Right panel - Quest progress
 		shop_quest_progress.text = item_metadata.discovery_requirement
@@ -609,7 +605,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 		if item_metadata.flavor_text.is_empty():
 			shop_item_flavor.text = ""
-			shop_item_flavor.visible = false
+			shop_item_flavor.visible = true  # Keep visible for consistent spacing
 		else:
 			shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
 			shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
@@ -643,7 +639,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 		if item_metadata.flavor_text.is_empty():
 			shop_item_flavor.text = ""
-			shop_item_flavor.visible = false
+			shop_item_flavor.visible = true  # Keep visible for consistent spacing
 		else:
 			shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
 			shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
