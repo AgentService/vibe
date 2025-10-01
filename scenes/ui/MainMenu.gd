@@ -91,32 +91,36 @@ func _load_character_types() -> void:
 		Logger.error("Failed to load character-types.tres", "ui")
 
 func _load_item_metadata() -> void:
-	"""Load item metadata from /data/content/items/*.tres"""
-	var items_dir = "res://data/content/items/"
-	var dir = DirAccess.open(items_dir)
+	"""Load item metadata from /data/content/{items,tomes,skills}/*.tres"""
+	var categories = ["items", "tomes", "skills"]
 
-	if not dir:
-		Logger.error("Failed to open items directory: %s" % items_dir, "ui")
-		return
+	for category in categories:
+		var category_dir = "res://data/content/%s/" % category
+		var dir = DirAccess.open(category_dir)
 
-	dir.list_dir_begin()
-	var file_name = dir.get_next()
+		if not dir:
+			Logger.warn("Failed to open %s directory: %s" % [category, category_dir], "ui")
+			continue
 
-	while file_name != "":
-		# Only load .tres files
-		if file_name.ends_with(".tres"):
-			var path = items_dir + file_name
-			var item_metadata = load(path) as ItemMetadata
-			if item_metadata:
-				item_metadata_cache[item_metadata.item_id] = item_metadata
-				Logger.debug("Loaded item metadata: %s" % item_metadata.item_id, "ui")
-			else:
-				Logger.warn("Failed to load item metadata from: %s" % path, "ui")
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
 
-		file_name = dir.get_next()
+		while file_name != "":
+			# Only load .tres files (skip README.md, etc.)
+			if file_name.ends_with(".tres"):
+				var path = category_dir + file_name
+				var item_metadata = load(path) as ItemMetadata
+				if item_metadata:
+					item_metadata_cache[item_metadata.item_id] = item_metadata
+					Logger.debug("Loaded %s metadata: %s" % [category, item_metadata.item_id], "ui")
+				else:
+					Logger.warn("Failed to load metadata from: %s" % path, "ui")
 
-	dir.list_dir_end()
-	Logger.info("Loaded %d item metadata entries" % item_metadata_cache.size(), "ui")
+			file_name = dir.get_next()
+
+		dir.list_dir_end()
+
+	Logger.info("Loaded %d total metadata entries across all categories" % item_metadata_cache.size(), "ui")
 
 func _connect_signals() -> void:
 	"""Connect all button signals."""

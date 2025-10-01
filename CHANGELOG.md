@@ -13,7 +13,8 @@
 - **Dynamic Item Loading**: Shop system now scans `res://data/content/{category}/*.tres` automatically
   - No hardcoded lists - add items/tomes/skills by creating .tres files
   - Maintains rarity sorting and three-state progression (locked/discovered/unlocked)
-  - Placeholder content added: 5 items, 1 tome (Fireball), 1 skill (Dash)
+  - Placeholder content added: 5 items, 2 tomes (Damage, Agility), 1 skill (Dash)
+  - Tomes are stat-boosting books (+Damage, +Movement Speed, etc.)
 - **Shop UI Improvements**: Enhanced shop visual clarity and layout
   - Details panel now always visible (pre-allocates space instead of auto-showing)
   - Removed dimming from locked items for better readability
