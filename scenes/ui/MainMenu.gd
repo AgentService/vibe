@@ -44,10 +44,12 @@ extends Control
 @onready var skills_tab: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/CategoryTabs/SkillsTab
 @onready var shop_item_list: GridContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemListScroll/ItemList
 @onready var shop_item_details_panel: PanelContainer = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel
-@onready var shop_item_name: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemName
-@onready var shop_item_description: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemDescription
-@onready var shop_item_stats: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemStats
-@onready var shop_item_flavor: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer/ItemFlavorText
+@onready var shop_item_name: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemName
+@onready var shop_item_description: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemDescription
+@onready var shop_item_stats: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemStats
+@onready var shop_item_flavor: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemFlavorText
+@onready var shop_quest_progress: Label = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/QuestProgress
+@onready var shop_unlock_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/UnlockButton
 @onready var shop_back_button: Button = $BackgroundPanel/UnlocksShopContainer/VBoxContainer/ShopBackButton
 
 # Selection state
@@ -478,30 +480,36 @@ func _create_shop_item_entry(item_metadata: ItemMetadata) -> void:
 		# UNLOCKED: Full color icon
 		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
 		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+		center_container.add_child(icon_label)
+
 	elif not is_discovered and not is_unlocked:
 		# UNDISCOVERED + LOCKED: Black silhouette only
 		icon_label.text = "❓"  # Placeholder - will be black silhouette texture
 		icon_label.modulate = Color(0.2, 0.2, 0.2)
+		center_container.add_child(icon_label)
+
 	elif is_discovered and not is_unlocked:
-		# DISCOVERED + LOCKED: Full color icon with cost overlay
+		# DISCOVERED + LOCKED: Full color icon with semi-transparent overlay modal
 		icon_label.text = "🎯"  # Placeholder - will be actual icon texture
 		icon_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+		center_container.add_child(icon_label)
 
-		# Cost overlay centered on icon
-		var cost_overlay = Label.new()
-		cost_overlay.text = "%d\n💎" % item_metadata.unlock_cost
-		cost_overlay.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cost_overlay.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cost_overlay.add_theme_font_size_override("font_size", 14)
-		cost_overlay.modulate = Color(1.0, 1.0, 1.0, 0.95)
-		# Add shadow/outline for readability
-		cost_overlay.add_theme_color_override("font_outline_color", Color.BLACK)
-		cost_overlay.add_theme_constant_override("outline_size", 2)
-		center_container.add_child(cost_overlay)
-		# Position cost overlay on top of icon
-		cost_overlay.position = Vector2(0, 0)
+		# Semi-transparent dimming overlay (mini modal)
+		var overlay_panel = PanelContainer.new()
+		overlay_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		overlay_panel.modulate = Color(0, 0, 0, 0.6)  # Dark semi-transparent
+		center_container.add_child(overlay_panel)
 
-	center_container.add_child(icon_label)
+		# Cost display on overlay (diamond icon only)
+		var cost_label = Label.new()
+		cost_label.text = "%d 💎" % item_metadata.unlock_cost
+		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		cost_label.add_theme_font_size_override("font_size", 16)
+		cost_label.modulate = Color(1.0, 1.0, 1.0, 1.0)
+		cost_label.add_theme_color_override("font_outline_color", Color.BLACK)
+		cost_label.add_theme_constant_override("outline_size", 3)
+		overlay_panel.add_child(cost_label)
 
 	# Make entry clickable for ALL states (including undiscovered)
 	entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
@@ -548,43 +556,31 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	# UNDISCOVERED + LOCKED: Show only name and quest with progress tracking
 	if not is_discovered and not is_unlocked:
+		# Left panel
 		shop_item_name.text = "???"
 		shop_item_name.modulate = Color(0.6, 0.6, 0.6)
 
 		shop_item_description.text = "[Hidden until discovered]"
 		shop_item_description.modulate = Color(0.5, 0.5, 0.5)
 
-		# Show quest requirement with progress tracking
-		shop_item_stats.text = "🔒 Discovery Quest:\n" + item_metadata.discovery_requirement
-		shop_item_stats.modulate = Color(1.0, 0.8, 0.3)
-		shop_item_stats.visible = true
+		shop_item_stats.text = ""
+		shop_item_stats.visible = false
 
 		shop_item_flavor.text = ""
 		shop_item_flavor.visible = false
 
-	# DISCOVERED + LOCKED: Show full details with unlock button
+		# Right panel - Quest progress
+		shop_quest_progress.text = item_metadata.discovery_requirement
+		shop_quest_progress.modulate = Color(1.0, 0.8, 0.3)
+		shop_quest_progress.visible = true
+
+		shop_unlock_button.visible = false
+
+	# DISCOVERED + LOCKED: Show full details with unlock button in right panel
 	elif is_discovered and not is_unlocked:
 		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-		shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
-		shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 
-		shop_item_description.text = item_metadata.description
-		shop_item_description.modulate = Color.WHITE
-
-		# Show completed quest at bottom + unlock button in place of progress
-		shop_item_stats.text = item_metadata.stat_summary + "\n\n✅ Quest Completed: " + item_metadata.discovery_requirement
-		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
-		shop_item_stats.visible = true
-
-		# TODO: Add unlock button here in stats area
-		# For now, show unlock prompt
-		shop_item_flavor.text = "💎 Cost to Unlock: %d Rift Fragments" % item_metadata.unlock_cost
-		shop_item_flavor.modulate = Color(1.0, 0.9, 0.3) if can_afford else Color(0.7, 0.3, 0.3)
-		shop_item_flavor.visible = true
-
-	# UNLOCKED: Show full details
-	else:
-		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
+		# Left panel
 		shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
 		shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 
@@ -603,11 +599,50 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 			shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
 			shop_item_flavor.visible = true
 
+		# Right panel - Replace quest with cost + buy button
+		shop_quest_progress.visible = false
+
+		shop_unlock_button.text = "%d 💎\nUNLOCK" % item_metadata.unlock_cost
+		shop_unlock_button.disabled = not can_afford
+		shop_unlock_button.visible = true
+
+		# Reconnect button signal
+		if shop_unlock_button.pressed.get_connections().is_empty():
+			shop_unlock_button.pressed.connect(_on_unlock_item_pressed.bind(item_metadata))
+
+	# UNLOCKED: Show full details
+	else:
+		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
+
+		# Left panel
+		shop_item_name.text = item_metadata.display_name + " (" + rarity_name + ")"
+		shop_item_name.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+
+		shop_item_description.text = item_metadata.description
+		shop_item_description.modulate = Color.WHITE
+
+		shop_item_stats.text = item_metadata.stat_summary
+		shop_item_stats.modulate = Color(0.6, 1.0, 0.6)
+		shop_item_stats.visible = true
+
+		if item_metadata.flavor_text.is_empty():
+			shop_item_flavor.text = ""
+			shop_item_flavor.visible = false
+		else:
+			shop_item_flavor.text = "\"" + item_metadata.flavor_text + "\""
+			shop_item_flavor.modulate = Color(0.7, 0.7, 0.8)
+			shop_item_flavor.visible = true
+
+		# Right panel - Hide quest and button
+		shop_quest_progress.visible = false
+		shop_unlock_button.visible = false
+
 	shop_item_details_panel.visible = true
 	Logger.debug("Showing details for: %s (discovered: %s, unlocked: %s)" % [item_metadata.display_name, is_discovered, is_unlocked], "ui")
 
 func _show_empty_details() -> void:
 	"""Show placeholder text in details panel when no item selected."""
+	# Left panel
 	shop_item_name.text = "Select an item"
 	shop_item_name.modulate = Color(0.7, 0.7, 0.7)
 
@@ -619,3 +654,9 @@ func _show_empty_details() -> void:
 
 	shop_item_flavor.text = ""
 	shop_item_flavor.visible = false
+
+	# Right panel
+	shop_quest_progress.text = ""
+	shop_quest_progress.visible = false
+
+	shop_unlock_button.visible = false

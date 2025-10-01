@@ -294,27 +294,51 @@ theme_override_constants/margin_top = 15
 theme_override_constants/margin_right = 15
 theme_override_constants/margin_bottom = 15
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer"]
 layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LeftPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(390, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.7
 theme_override_constants/separation = 8
 
-[node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
+[node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
 text = "Item Name"
 
-[node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
+[node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
 text = "Item description goes here"
 autowrap_mode = 3
 
-[node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
+[node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
 text = "Stats"
 
-[node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/VBoxContainer"]
+[node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
 layout_mode = 2
 text = "Flavor text"
 autowrap_mode = 3
+
+[node name="RightPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_stretch_ratio = 0.3
+theme_override_constants/separation = 8
+
+[node name="QuestProgress" type="Label" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
+layout_mode = 2
+text = "Quest Progress"
+autowrap_mode = 3
+
+[node name="UnlockButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
+visible = false
+layout_mode = 2
+text = "UNLOCK"
 
 [node name="ShopBackButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/VBoxContainer"]
 custom_minimum_size = Vector2(200, 0)

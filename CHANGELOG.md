@@ -22,9 +22,16 @@
 - **Icon-Based Shop Cards**: Refactored shop entries to icon-only display (80x80px squares)
   - UNLOCKED: Full color icon with rarity tint, shows complete details
   - UNDISCOVERED + LOCKED: Black silhouette (❓), shows only quest requirement with progress
-  - DISCOVERED + LOCKED: Color icon with cost overlay, shows stats + completed quest + unlock cost
+  - DISCOVERED + LOCKED: Color icon with semi-transparent overlay showing cost (💎)
   - All states are clickable to view contextual details in details panel
   - Fixed grid width expansion issues by constraining item sizes (not using expand flags)
+- **Details Panel 70/30 Split**: Restructured details panel for better organization
+  - Left panel (70%): Name, description, stats, flavor text
+  - Right panel (30%): Quest progress OR unlock button with cost
+  - UNDISCOVERED: Shows quest requirement in right panel
+  - DISCOVERED + LOCKED: Shows unlock button with diamond cost in right panel
+  - UNLOCKED: Right panel hidden, full info in left panel
+  - Removed verbose "Quest Completed" and "Cost to Unlock" strings for cleaner UI
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
