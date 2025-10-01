@@ -1,4 +1,4 @@
-extends Node2D
+extends Control
 
 ## Main scene that manages dynamic scene loading and transitions.
 ## Supports both debug config initial loading and runtime scene transitions via SceneTransitionManager.

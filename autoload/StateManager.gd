@@ -165,7 +165,7 @@ func _is_valid_transition(from: State, to: State) -> bool:
 	# Define valid transition rules
 	match from:
 		State.MENU:
-			return to in [State.EXIT, State.HIDEOUT]  # Allow direct to hideout for debug
+			return to in [State.EXIT, State.HIDEOUT, State.ARENA]  # Task 04: Allow direct MENU → ARENA
 		# CHARACTER_SELECT removed - Task 04a cleanup
 		State.HIDEOUT:
 			return to in [State.MENU, State.ARENA, State.EXIT]

@@ -1,0 +1,162 @@
+[gd_scene load_steps=3 format=3 uid="uid://bqh3y7w8xfj2r"]
+
+[ext_resource type="Script" path="res://scenes/ui/RunSetupScreen.gd" id="1_runsetup"]
+[ext_resource type="PackedScene" path="res://scenes/ui/components/EnhancedButton.tscn" id="2_enhanced_button"]
+
+[node name="RunSetupScreen" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_runsetup")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.7)
+
+[node name="PopupPanel" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -400.0
+offset_top = -300.0
+offset_right = 400.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="PopupPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = 20.0
+offset_right = -20.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 15
+
+[node name="TitleLabel" type="Label" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+text = "START NEW RUN"
+horizontal_alignment = 1
+
+[node name="HSeparator" type="HSeparator" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="CharacterSection" type="VBoxContainer" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="CharacterLabel" type="Label" parent="PopupPanel/VBoxContainer/CharacterSection"]
+layout_mode = 2
+text = "SELECT CHARACTER:"
+
+[node name="CharacterButtons" type="HBoxContainer" parent="PopupPanel/VBoxContainer/CharacterSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="KnightButton" parent="PopupPanel/VBoxContainer/CharacterSection/CharacterButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "⚔️ Knight"
+button_variant = "secondary"
+
+[node name="RangerButton" parent="PopupPanel/VBoxContainer/CharacterSection/CharacterButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "🏹 Ranger"
+button_variant = "secondary"
+
+[node name="CharacterInfoLabel" type="Label" parent="PopupPanel/VBoxContainer/CharacterSection"]
+layout_mode = 2
+text = "Select a character to see stats"
+horizontal_alignment = 1
+
+[node name="HSeparator2" type="HSeparator" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="MapSection" type="VBoxContainer" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="MapLabel" type="Label" parent="PopupPanel/VBoxContainer/MapSection"]
+layout_mode = 2
+text = "SELECT MAP:"
+
+[node name="MapButtons" type="HBoxContainer" parent="PopupPanel/VBoxContainer/MapSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="ArenaButton" parent="PopupPanel/VBoxContainer/MapSection/MapButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "🌲 Forest Arena"
+button_variant = "secondary"
+
+[node name="HSeparator3" type="HSeparator" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+
+[node name="TierSection" type="VBoxContainer" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="TierLabel" type="Label" parent="PopupPanel/VBoxContainer/TierSection"]
+layout_mode = 2
+text = "SELECT DIFFICULTY TIER:"
+
+[node name="TierButtons" type="HBoxContainer" parent="PopupPanel/VBoxContainer/TierSection"]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="Tier1Button" parent="PopupPanel/VBoxContainer/TierSection/TierButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "Tier 1 (Normal)"
+button_variant = "secondary"
+
+[node name="Tier2Button" parent="PopupPanel/VBoxContainer/TierSection/TierButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "Tier 2 (+10% Fragments)"
+button_variant = "secondary"
+
+[node name="Tier3Button" parent="PopupPanel/VBoxContainer/TierSection/TierButtons" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "Tier 3 (+20% Fragments)"
+button_variant = "secondary"
+
+[node name="TierInfoLabel" type="Label" parent="PopupPanel/VBoxContainer/TierSection"]
+layout_mode = 2
+text = "Higher tiers award more Rift Fragments"
+horizontal_alignment = 1
+
+[node name="BottomSpacer" type="Control" parent="PopupPanel/VBoxContainer"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+
+[node name="ButtonContainer" type="HBoxContainer" parent="PopupPanel/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+alignment = 1
+
+[node name="CancelButton" parent="PopupPanel/VBoxContainer/ButtonContainer" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "Cancel"
+button_variant = "error"
+
+[node name="StartButton" parent="PopupPanel/VBoxContainer/ButtonContainer" instance=ExtResource("2_enhanced_button")]
+layout_mode = 2
+text = "START RUN"
+button_variant = "primary"

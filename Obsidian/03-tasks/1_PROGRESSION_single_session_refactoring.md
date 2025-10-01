@@ -229,10 +229,15 @@ Return to Main Menu (session wiped)
 **Approach:** Bottom-up refactoring - create new systems, migrate data, remove old systems.
 
 **UI Strategy:** Each UI phase offers two options:
-- **Option A (Recommended):** Minimal debug UI to test functionality (simple labels, buttons, lists)
+- **Option A (Recommended):** Minimal scene-based UI to test functionality (simple labels, buttons, lists)
 - **Option B (Future):** Polished UI matching mockups (defer to separate UI refactor task)
 
-**Rationale:** Backend architecture (MetaProgression, SessionState, LocalLeaderboard) is the priority. Simple functional UI proves the system works. Full visual design can be tackled in a dedicated UI consistency task across the entire game.
+**UI Implementation Approach:**
+- **Use Godot MCP Tools:** Create UI scenes using MCP tools (create_scene, add_node, update_property, etc.)
+- **Scene-Based Over Programmatic:** Build UI structure in .tscn files, not programmatically in GDScript
+- **Rationale:** MCP tools enable rapid scene creation and visual node setup without manual .tscn editing
+
+**Backend Priority:** Architecture (MetaProgression, SessionState, LocalLeaderboard) is the priority. Simple functional UI proves the system works. Full visual design can be tackled in a dedicated UI consistency task across the entire game.
 
 ### Phase 1: Create New Meta-Progression System (2-3 sessions)
 **Goal:** Replace CharacterManager with MetaProgression autoload
@@ -433,14 +438,16 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Can implement as simple debug panel first, polish UI in separate task later
 **⚠️ Core functionality:** Calculate rewards, save progression, return to menu (UI is secondary)
 
-- [ ] **Option A: Minimal Debug Panel (Recommended for MVP)**
-  - [ ] Create simple `scenes/ui/EndOfRunDebug.tscn` scene (single panel)
-  - [ ] Display core stats as text labels:
-    - [ ] Character, Kills, Time, Level, Stage Reached
-    - [ ] Boss killed: true/false, Boss kill time
-    - [ ] Final Swarm survival time (if applicable)
-    - [ ] Rift Fragments earned (with breakdown)
-  - [ ] [CONTINUE] button → return to main menu
+- [ ] **Option A: Minimal Scene-Based Panel (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/EndOfRunDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/EndOfRunDebug.tscn", "Control", "EndOfRunDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label nodes for stats (Character, Kills, Time, Level, Stage Reached)
+    - [ ] Add Label for Boss killed status and time
+    - [ ] Add Label for Final Swarm survival time (if applicable)
+    - [ ] Add Label for Rift Fragments earned (with breakdown)
+    - [ ] Add Button node for [CONTINUE] → return to main menu
+  - [ ] Attach `EndOfRun.gd` script to root node
   - [ ] **Skip detailed UI** (damage breakdown, inventory grid, visual polish)
   - [ ] Focus on backend: reward calculation, save progression, data flow
 
@@ -509,13 +516,18 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Minimal functional UI first, visual polish in separate UI task
 **⚠️ Core functionality:** Query unlocked characters, handle selection, navigate to map select
 
-- [ ] **Option A: Debug List (Recommended for MVP)**
-  - [ ] Create simple `scenes/ui/CharacterSelectDebug.tscn`
-  - [ ] VBoxContainer with character buttons (just names, no portraits)
-  - [ ] Query MetaProgression for unlocked_characters
-  - [ ] Locked characters show as disabled buttons with text label
-  - [ ] Click button → SessionState.current_character = id → Go to map select
-  - [ ] [BACK] button → Return to main menu
+- [ ] **Option A: Simple Scene-Based List (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/CharacterSelectDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/CharacterSelectDebug.tscn", "Control", "CharacterSelectDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label for title ("Select Character")
+    - [ ] Add ScrollContainer with VBoxContainer for character buttons list
+    - [ ] Add Button for [BACK] → Return to main menu
+  - [ ] Attach script to populate buttons dynamically:
+    - [ ] Query MetaProgression for unlocked_characters
+    - [ ] Create Button nodes for each character (just names, no portraits)
+    - [ ] Locked characters show as disabled buttons with text label
+    - [ ] Click button → SessionState.current_character = id → Go to map select
 
 - [ ] **Option B: Grid Layout with Portraits (Defer to Separate UI Task)**
   - [ ] 4x5 character grid matching mockup
@@ -537,13 +549,21 @@ Return to Main Menu (session wiped)
 **⚠️ UI SCOPE NOTE:** Can implement as simple dropdown/buttons first, polish layout in separate UI task
 **⚠️ Core functionality:** Select map, select tier, display multipliers, start run
 
-- [ ] **Option A: Simple Dropdown UI (Recommended for MVP)**
-  - [ ] Create `scenes/ui/MapSelectionDebug.tscn`
-  - [ ] Map dropdown (OptionButton) - query MetaProgression.unlocked_maps
-  - [ ] Tier buttons (1, 2, 3) - display multiplier text next to each
-  - [ ] Personal best label: "Best: [kills] kills" (query LocalLeaderboard)
-  - [ ] [START RUN] button → SessionState.start_run(char, map, tier) → go_to_arena()
-  - [ ] [BACK] button → Return to character select
+- [ ] **Option A: Simple Scene-Based Dropdown UI (Recommended for MVP)**
+  - [ ] Use MCP Godot tools to create `scenes/ui/MapSelectionDebug.tscn`:
+    - [ ] `create_scene("res://scenes/ui/MapSelectionDebug.tscn", "Control", "MapSelectionDebug")`
+    - [ ] Add VBoxContainer for layout
+    - [ ] Add Label for title ("Select Map & Tier")
+    - [ ] Add HBoxContainer with Label + OptionButton for map selection
+    - [ ] Add HBoxContainer with Label + three Button nodes for tier selection (1, 2, 3)
+    - [ ] Add Label for personal best: "Best: [kills] kills"
+    - [ ] Add HBoxContainer with [START RUN] and [BACK] buttons
+  - [ ] Attach script to handle:
+    - [ ] Query MetaProgression.unlocked_maps → populate OptionButton
+    - [ ] Display tier multipliers next to tier buttons
+    - [ ] Query LocalLeaderboard for personal bests
+    - [ ] [START RUN] → SessionState.start_run(char, map, tier) → go_to_arena()
+    - [ ] [BACK] → Return to character select
   - [ ] **Skip visual polish** (map thumbnails, character icons, detailed stats)
 
 - [ ] **Option B: Two-Panel Layout Matching Mockup (Defer to Separate UI Task)**
@@ -558,27 +578,24 @@ Return to Main Menu (session wiped)
 ---
 
 ### Phase 7: Migrate Existing Systems (2-3 sessions)
-**Goal:** Update Arena, DamageSystem, etc. to use SessionState
+**Goal:** Update Arena, DamageSystem, etc. to use SessionState for progression tracking
 **Test:** Full run works end-to-end (char select → arena → death → end screen)
 
 **⏸️ CHECKPOINT:** Review system migration plan and verify all SessionState integrations before cleanup
 
+**NOTE:** Tier difficulty scaling and arena progression mechanics (boss spawning, Final Swarm) are handled by Task 2 (COMBAT_map_level_difficulty_scaling_integration.md). This phase focuses on SESSION/META progression integration only.
+
 - [ ] Update Arena.gd:
   - [ ] Remove references to old RunManager stats
-  - [ ] Connect to SessionState for stat tracking
+  - [ ] Connect to SessionState for stat tracking (kills, damage, time)
   - [ ] Remove character save/load logic
-  - [ ] Apply tier difficulty modifiers to enemies:
-    - [ ] Read SessionState.current_tier
-    - [ ] Tier 1: No modifiers (baseline)
-    - [ ] Tier 2: +30% enemy HP, +20% damage, +10% spawn rate
-    - [ ] Tier 3: +60% enemy HP, +40% damage, +20% spawn rate
-  - [ ] **Arena Progression Mechanics (see STAGE_PROGRESSION_VISION.md for full spec):**
-    - [ ] Boss spawn timing: Spawn boss at 8:00 mark (configurable)
-    - [ ] Boss kill detection: SessionState.boss_killed = true, SessionState.boss_kill_time = current_time
-    - [ ] Final Swarm trigger: At 10:00 timer, trigger overwhelming spawn event
-    - [ ] Final Swarm tracking: SessionState.final_swarm_entered = true, track survival time
-    - [ ] Difficulty shrine integration: Connect shrine activation → SessionState.difficulty_shrines_activated++
-    - [ ] Portal unlock: Boss death → enable rift/portal for stage progression
+  - [ ] **SessionState Integration Only:**
+    - [ ] Read SessionState.current_tier for UI display (actual scaling in Task 2)
+    - [ ] Track SessionState.boss_killed when boss dies (progression mechanics in Task 2)
+    - [ ] Track SessionState.boss_kill_time timestamp
+    - [ ] Track SessionState.final_swarm_entered when triggered (mechanics in Task 2)
+    - [ ] Track SessionState.final_swarm_survival_time
+    - [ ] Track SessionState.difficulty_shrines_activated (shrine system in Task 2)
 - [ ] Update DamageSystem.gd:
   - [ ] Emit damage to SessionState.add_damage()
   - [ ] Track kills via SessionState.add_kill()
@@ -609,65 +626,110 @@ Return to Main Menu (session wiped)
 
 **⏸️ CHECKPOINT:** Verify game runs successfully with new systems before deleting old code
 
-- [ ] Remove CharacterManager autoload:
-  - [ ] Delete `autoload/CharacterManager.gd`
-  - [ ] Remove from project.godot autoload section
-  - [ ] Remove references in other scripts
-- [ ] Simplify RunManager:
-  - [ ] Remove save/load logic
-  - [ ] Remove per-character state tracking
-  - [ ] Keep only 30Hz combat step (or move to SessionState)
-  - [ ] Consider renaming to `CombatClock` if only timing remains
-- [ ] Delete old save files:
-  - [ ] Remove `user://profiles/` directory handling
-  - [ ] Keep only `user://meta_progression.tres`
-  - [ ] Keep only `user://local_leaderboard.tres`
-- [ ] Update CharacterProfile resource:
-  - [ ] Remove if no longer needed
-  - [ ] Or simplify to just character definition (not save data)
-- [ ] Update autoload/CLAUDE.md:
-  - [ ] Document new SessionState autoload
-  - [ ] Document new MetaProgression autoload
-  - [ ] Document new LocalLeaderboard autoload
-  - [ ] Remove CharacterManager patterns
+- [x] Remove CharacterManager autoload:
+  - [x] Delete `autoload/CharacterManager.gd` (removed in Phase 1)
+  - [x] Remove from project.godot autoload section (removed in Phase 1)
+  - [x] Remove references in other scripts (cleaned up in Phases 1-6)
+- [x] Add leaderboard display to MainMenu:
+  - [x] Add LeaderboardPanel MarginContainer on right side (300x600 panel)
+  - [x] Display personal bests for each character (highest kill count across all maps/tiers)
+  - [x] Update display when new runs complete (EventBus.leaderboard_updated signal)
+- [x] Simplify RunManager:
+  - [x] Remove save/load logic (already done in Phase 2)
+  - [x] Remove per-character state tracking (already done in Phase 2)
+  - [x] Keep only 30Hz combat step + RNG seeding (verified complete)
+  - [x] Consider renaming to `CombatClock` (decided to keep RunManager name - still manages run timing + seeding)
+- [x] Delete old save files:
+  - [x] Remove `user://profiles/` directory handling (no active code references found)
+  - [x] Keep only `user://meta_progression.tres` (MetaProgression autoload)
+  - [x] Keep only `user://local_leaderboard.tres` (LocalLeaderboard autoload)
+- [x] Update CharacterProfile resource:
+  - [x] Remove if no longer needed (moved to _DELETED, removed leftover .uid file)
+  - [x] Or simplify to just character definition (not save data) (no longer used)
+- [x] Update autoload/CLAUDE.md:
+  - [x] Document new SessionState autoload (added with full API examples)
+  - [x] Document new MetaProgression autoload (added with currency management patterns)
+  - [x] Document new LocalLeaderboard autoload (added with personal best tracking)
+  - [x] Remove CharacterManager patterns (documented removal, added architecture notes)
 
-**Deliverable:** Codebase cleaned of old progression system
+**Deliverable:** Codebase cleaned of old progression system ✅
 
 ---
 
-### Phase 9: Item Discovery & Unlock System (3-4 sessions)
+### Phase 9: Item Discovery & Unlock System ✅ COMPLETED (3-4 sessions)
 **Goal:** MEGABONK-style item discovery and purchase flow
 **Test:** Items discovered in run can be purchased in shop
 
+**✅ Completed:**
+- [x] Add item metadata resource:
+  - [x] Create `ItemMetadata.gd` Resource class (scripts/resources/)
+  - [x] Define: item_id, display_name, description, unlock_cost, rarity, stat_summary
+  - [x] Create `/data/content/items/*.tres` files (cheese, clover, feather, lucky_coin, rabbits_foot)
+  - [x] Create `/data/content/tomes/*.tres` files (damage_tome, agility_tome)
+  - [x] Create `/data/content/skills/*.tres` files (dash)
+- [x] Create Unlocks Shop UI integrated into MainMenu:
+  - [x] Added 4th screen to MainMenu.tscn (UnlocksShopContainer)
+  - [x] Changed to 3-state item progression (UNDISCOVERED → DISCOVERED → UNLOCKED)
+  - [x] Icon-based shop cards (80x80px) with state visualization:
+    - [x] UNLOCKED: Full color icon with rarity tint
+    - [x] UNDISCOVERED: Black silhouette with ❓ fallback
+    - [x] DISCOVERED: Greyscale with 90% dim overlay + cost display
+  - [x] Grid layout (8 columns) for compact item display
+  - [x] Details panel (70/30 split) shows:
+    - [x] Left: Name, description, stats, flavor text
+    - [x] Right: Quest progress (undiscovered) OR unlock button (discovered)
+  - [x] Category tabs: [ITEMS] [TOMES] [SKILLS]
+  - [x] Dynamic item loading from `/data/content/{category}/*.tres`
+  - [x] Rarity system (Common, Uncommon, Rare, Epic, Legendary) with color coding
+- [x] Implement unlock purchase:
+  - [x] Check MetaProgression.can_afford(cost)
+  - [x] On purchase: MetaProgression.spend_rift_fragments() + unlock_item()
+  - [x] Move from discovered_items to unlocked_items
+  - [x] Deduct Rift Fragments
+  - [x] Shop refreshes immediately after purchase
+  - [x] Signal-based updates (EventBus.item_unlocked, rift_fragments_changed)
+- [x] Add persistent UI improvements:
+  - [x] Persistent Rift Fragments display (top-right, always visible)
+  - [x] Mystical portal background image
+  - [x] Semi-transparent dark backgrounds on all containers (CharSelect, MapSelect, Shop)
+  - [x] Proper padding/margins via MarginContainer
+  - [x] MainMenu leaderboard panel showing personal bests per character
+- [x] Add debug commands for testing:
+  - [x] `discover_item <category> <item_id>` - Simulate finding item
+  - [x] `give_fragments <amount>` - Award Rift Fragments
+  - [x] `progression_info` - Show current state
+- [x] Create testing guide: Obsidian/systems/Item-Discovery-Testing-Guide.md
+
+**🎨 UI Architecture Enhancement:**
+- [x] Created 5 reusable menu container templates:
+  - [x] `BaseMenuContainer` - Border + background foundation
+  - [x] `TitledMenuContainer` - Adds title section
+  - [x] `GridMenuContainer` - Adds scrollable grid
+  - [x] `GridWithDetailsContainer` - Adds toggleable details panel
+  - [x] `TabbedGridContainer` - Adds tab navigation
+- [x] All templates have consistent styling (dark blue bg, 8px corners, 20px padding)
+- [x] Full @export property control for customization
+- [x] Comprehensive usage guide: `scenes/ui/components/MENU_CONTAINERS_GUIDE.md`
+- [x] Refactor plan created: `Obsidian/03-tasks/UI_CONTAINER_SCENES_REFACTOR.md`
+  - [x] Details 8 container scenes to build (CharacterSelect, MapSelect, etc.)
+  - [x] Complete integration strategy for MainMenu
+  - [x] Migration from manual Panel/VBoxContainer to template instances
+
+**⏭️ Deferred to Future Phases:**
 - [ ] Create item discovery flow:
   - [ ] When item drops in run, check if already unlocked
   - [ ] If new: MetaProgression.discover_item(item_id)
   - [ ] Show "New Item Discovered!" notification in-game
-  - [ ] Item appears in end-of-run summary
-- [ ] Create Unlocks Shop scene (`scenes/ui/UnlocksShop.tscn`):
-  - [ ] Display discovered_items (not yet purchased)
-  - [ ] Show item icon, name, description, cost
-  - [ ] [UNLOCK] button (costs silver)
-  - [ ] Filter tabs: [Items] [Tomes] [Weapons]
-- [ ] Implement unlock purchase:
-  - [ ] Check MetaProgression.can_afford(cost)
-  - [ ] On purchase: MetaProgression.unlock_item(item_id)
-  - [ ] Move from discovered_items to unlocked_items
-  - [ ] Deduct silver
-  - [ ] Show "Item Unlocked!" notification
+  - [ ] Item appears in end-of-run summary (ResultsScreen)
 - [ ] Update item spawning in runs:
   - [ ] Only spawn items from MetaProgression.unlocked_items pool
   - [ ] Unlocked items appear in RNG drop tables
-- [ ] Create Toggler system:
-  - [ ] Add "Toggler" unlock in shop (150 Silver, requires 40 unlocks)
+- [ ] Create Toggler system (requires 40 unlocks):
+  - [ ] Add "Toggler" unlock in shop (cost TBD)
   - [ ] When toggler_enabled = true, show [DISABLE] buttons in shop
-  - [ ] Disabled items added to toggler_disabled_items
+  - [ ] Disabled items added to toggler_disabled_{category}
   - [ ] Disabled items excluded from drop tables
-  - [ ] Categories: Items, Tomes, Weapons (separate toggle lists)
-- [ ] Add item metadata resource:
-  - [ ] Create `/data/content/items/*.tres` files
-  - [ ] Define: id, name, description, cost, category, rarity
-  - [ ] Load in MetaProgression for shop display
+  - [ ] Categories: Items, Tomes, Skills (separate toggle lists)
 
 **Deliverable:** Full item discovery → purchase → unlock flow working
 
@@ -726,6 +788,32 @@ Return to Main Menu (session wiped)
 - [ ] `autoload/CLAUDE.md` - document new architecture
 
 ## 📝 Progress Notes
+
+### 2025-10-01 - Phase 9 Completion + UI Template System
+**Shop Foundation & Leaderboard Integration:**
+- ✅ Completed MEGABONK-style 3-state item progression system
+- ✅ Icon-based shop with state visualization (black silhouette → greyscale → full color)
+- ✅ 70/30 split details panel with quest/unlock context switching
+- ✅ Dynamic item loading from `/data/content/{category}/*.tres` files
+- ✅ Rarity system implementation with color coding
+- ✅ Persistent Rift Fragments display (top-right, always visible across all menu states)
+- ✅ Mystical portal background with semi-transparent container backgrounds
+- ✅ MainMenu leaderboard panel showing personal bests per character
+- ✅ Full signal-based updates (EventBus integration)
+
+**UI Architecture Enhancement:**
+- ✅ Created 5 reusable menu container templates (Base → Titled → Grid → GridWithDetails → Tabbed)
+- ✅ Established consistent styling system (dark blue bg, 8px corners, 20px padding)
+- ✅ Comprehensive template usage guide created (`MENU_CONTAINERS_GUIDE.md`)
+- ✅ Complete refactor plan documented (`UI_CONTAINER_SCENES_REFACTOR.md`)
+  - 8 container scenes to build (CharacterSelect, MapSelect, UnlocksShop, etc.)
+  - Integration strategy for migrating MainMenu to template instances
+  - End-to-end container replacement workflow
+
+**Next Session Priority:**
+- Option 1: Migrate existing MainMenu containers to use new template system
+- Option 2: Continue with in-run item discovery flow (notifications, end-of-run display)
+- Option 3: Implement Toggler system (requires 40 unlocks first)
 
 ### 2025-09-30 - Design Discussion & Planning
 - Conducted Q&A session to clarify architecture decisions

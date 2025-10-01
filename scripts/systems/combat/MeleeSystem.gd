@@ -234,29 +234,29 @@ func _find_bosses_in_cone_via_damage_service(player_pos: Vector2, attack_dir: Ve
 
 func _calculate_damage() -> float:
 	var base_damage = damage
-	var bonus_damage = RunManager.stats.get("melee_damage_add", 0.0)
-	var damage_mult = RunManager.stats.get("melee_damage_mult", 1.0)
+	var bonus_damage = SessionState.player_modifiers.get("melee_damage_add", 0.0)
+	var damage_mult = SessionState.player_modifiers.get("melee_damage_mult", 1.0)
 	return (base_damage + bonus_damage) * damage_mult
 
 func _get_effective_attack_speed() -> float:
 	var base_speed = attack_speed
-	var bonus_speed = RunManager.stats.get("melee_attack_speed_add", 0.0)
+	var bonus_speed = SessionState.player_modifiers.get("melee_attack_speed_add", 0.0)
 	return base_speed + bonus_speed
 
 func _get_effective_range() -> float:
 	var base_range = attack_range
-	var bonus_range = RunManager.stats.get("melee_range_add", 0.0)
+	var bonus_range = SessionState.player_modifiers.get("melee_range_add", 0.0)
 	return base_range + bonus_range
 
 func _get_effective_cone_angle() -> float:
 	var base_angle = cone_angle
-	var bonus_angle = RunManager.stats.get("melee_cone_angle_add", 0.0)
+	var bonus_angle = SessionState.player_modifiers.get("melee_cone_angle_add", 0.0)
 	return base_angle + bonus_angle
 
 func _get_effective_knockback_distance() -> float:
 	var base_knockback = knockback_distance
-	var bonus_knockback = RunManager.stats.get("melee_knockback_add", 0.0)
-	var knockback_mult = RunManager.stats.get("melee_knockback_mult", 1.0)
+	var bonus_knockback = SessionState.player_modifiers.get("melee_knockback_add", 0.0)
+	var knockback_mult = SessionState.player_modifiers.get("melee_knockback_mult", 1.0)
 	return (base_knockback + bonus_knockback) * knockback_mult
 
 

@@ -4,6 +4,132 @@
 
 ## [Current Week - In Progress]
 
+### UI/UX Improvements
+- **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
+  - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding
+  - **TitledMenuContainer**: Extends base with styled title section (customizable text, font size, alignment)
+  - **GridMenuContainer**: Extends titled with scrollable grid (configurable columns, spacing, size)
+  - **GridWithDetailsContainer**: Extends grid with toggleable 70/30 split details panel below
+  - **TabbedGridContainer**: Extends details with tab navigation (separate grids per tab, shared details)
+  - All templates share consistent default styling (dark blue bg, 8px corners, 20px padding)
+  - Full @export property control for customization per instance
+  - Comprehensive usage guide in `scenes/ui/components/MENU_CONTAINERS_GUIDE.md`
+  - **Next Step**: Refactor plan in `Obsidian/03-tasks/UI_CONTAINER_SCENES_REFACTOR.md` for migrating all UI
+- **MainMenu Background & Persistent Currency**: Added mystical portal background and always-visible Rift Fragments
+  - Background image (main_menu_backgroundgpt.png) set as TextureRect with Keep Aspect Covered stretch
+  - Persistent Rift Fragments display in top-right (24px icon + number) visible across all menu states
+  - All containers (CharacterSelect, MapSelect, UnlocksShop) now have semi-transparent dark backgrounds (90% opacity)
+  - UnlocksShop container has proper padding (20px margins) via MarginContainer for clean spacing
+  - Removed duplicate Rift Fragments displays from main menu center and shop
+- **MainMenu Layout Fix**: Resolved Control node anchoring issues when loaded under Main.tscn
+  - Changed Main.tscn from Node2D to Control for proper anchor support
+  - Removed Camera2D interference with Control coordinate system
+  - Implemented FULL_RECT overlapping container pattern for menu + leaderboard
+  - F5 (project run) and F6 (scene run) now display identical layouts
+- **Dynamic Item Loading**: Shop system now scans `res://data/content/{category}/*.tres` automatically
+  - No hardcoded lists - add items/tomes/skills by creating .tres files
+  - Maintains rarity sorting and three-state progression (locked/discovered/unlocked)
+  - Placeholder content added: 5 items, 2 tomes (Damage, Agility), 1 skill (Dash)
+  - Tomes are stat-boosting books (+Damage, +Movement Speed, etc.)
+- **Shop UI Improvements**: Enhanced shop visual clarity and layout
+  - Details panel now always visible (pre-allocates space instead of auto-showing)
+  - Removed dimming from locked items for better readability
+  - Changed locked display from "??? (Locked)" to "??? 🔒"
+  - Increased grid from 2 to 3 columns for better item visibility
+  - Added `_show_empty_details()` function for placeholder text when no items selected
+- **Icon-Based Shop Cards**: Refactored shop entries to icon-only display (80x80px squares)
+  - UNLOCKED: Full color icon with rarity tint, shows complete details
+  - UNDISCOVERED + LOCKED: Black silhouette (❓), shows only quest requirement with progress
+  - DISCOVERED + LOCKED: Color icon with semi-transparent overlay showing cost (💎)
+  - All states are clickable to view contextual details in details panel
+  - Fixed grid width expansion issues by constraining item sizes (not using expand flags)
+- **Details Panel 70/30 Split**: Restructured details panel for better organization
+  - Left panel (70%): Name, description, stats, flavor text
+  - Right panel (30%): Quest progress OR unlock button with cost
+  - UNDISCOVERED: Shows quest requirement in right panel
+  - DISCOVERED + LOCKED: Shows unlock button with diamond cost in right panel
+  - UNLOCKED: Right panel hidden, full info in left panel
+  - Removed verbose "Quest Completed" and "Cost to Unlock" strings for cleaner UI
+  - Fixed dimensions: 600x140px with text clipping to prevent overflow
+  - Labels use `clip_text` and `text_overrun_behavior` for clean display
+- **Enhanced D+L Modal Overlay**: Improved visual feedback for discovered locked items
+  - Full-rect ColorRect overlay (was centered PanelContainer)
+  - Increased dimming from 0.6 to 0.75 alpha for better contrast
+  - Cost text now pure white (Color.WHITE) with black outline
+  - Overlay uses PRESET_FULL_RECT anchors for precise coverage
+- **Item Icon Integration**: Replaced placeholder emojis with actual PNG textures in UnlockShop
+  - Updated all 5 ItemMetadata .tres files with `icon_path` references to assets/items/*.png
+  - Shop now uses TextureRect for icon display with proper sizing (64x64) and centering
+  - State-based rendering: unlocked (full color), undiscovered (dark silhouette), discovered (full color with overlay)
+  - Maintains emoji fallbacks for missing textures (🎯 for items, ❓ for undiscovered)
+  - Discovered+locked items now render with complete greyscale desaturation (Color(0.33, 0.33, 0.33)) + 90% dark overlay
+  - Files updated: lucky_coin.tres, rabbits_foot.tres, feather.tres, cheese.tres, clover.tres (→ four-leaf.png)
+  - Fixed UnlocksShop @onready node paths by removing incorrect `/MarginContainer` layer (prevented null reference errors)
+
+### Task 04: Single-Session Progression Refactoring
+- **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
+  - **MainMenu Integration**: Created 3-screen flow directly in MainMenu.tscn (main → character select → map/tier select)
+  - **Character Selection**: Knight/Ranger selection with info display and confirm button
+  - **Map/Tier System**: Tier 1/2/3 selection with difficulty descriptions and reward multipliers
+  - **SessionState Integration**: Character/map/tier stored in SessionState.current_character/map/tier
+  - **PlayerSpawner Fix**: Corrected SessionState API usage (is_run_active(), current_character access)
+  - **StateManager Update**: Allowed MENU → ARENA direct transition for new flow
+  - **Arena Entry**: Uses pathgen_arena matching hideout's MapDevice flow
+  - **Boss Death Handling**: Added _is_dying flag and player_died signal handler to prevent physics errors
+  - **ResultsScreen Simplification**: Removed hideout/restart options, menu-only navigation
+  - **LocalLeaderboard**: Integrated run tracking with tier-specific leaderboards
+
+- **Phase 7: Migrate Existing Systems**: ✅ **VERIFIED COMPLETE** - SessionState integration already functional
+  - **SessionState Tracking**: Already connected in SessionState._ready() (enemy_killed, damage_dealt, xp_gained signals)
+  - **Death Handling**: Player.gd:809 calls SessionState.end_run() with Rift Fragment calculation
+  - **LocalLeaderboard**: Player.gd:820-825 adds runs to leaderboard with tier/map tracking
+  - **Results Flow**: Player.gd:829 shows ResultsScreen modal with comprehensive stats
+  - **MeleeSystem Integration**: scripts/systems/combat/MeleeSystem.gd uses SessionState.player_modifiers
+  - **No RunManager.stats**: Zero references to old RunManager stats system found
+  - **Verification**: Bottom-up approach paid off - Phases 1-6 completed integration during implementation
+
+- **Phase 8: Remove Old Systems**: ✅ **COMPLETED** - Cleanup and documentation complete
+  - **CharacterManager Removal**: Already completed in Phase 1 (autoload removed, references cleaned)
+  - **Leaderboard Panel**: Added 300x600 MarginContainer on MainMenu right side with "PERSONAL BESTS" title
+  - **Personal Best Tracking**: Displays highest kill count for each character across all maps/tiers
+  - **Dynamic Updates**: Connects to EventBus.leaderboard_updated signal to refresh after new runs
+  - **Implementation**: MainMenu.gd:252-303 with _update_leaderboard_display() and _get_character_best_kills()
+  - **RunManager Verification**: Already simplified in Phase 2 - no save/load logic, only 30Hz combat timing + RNG seeding
+  - **Old Save Files**: Zero references to user://profiles/ in active code (only in _DELETED and documentation)
+  - **CharacterProfile Cleanup**: Removed leftover CharacterProfile.gd.uid file from scripts/resources/
+  - **Documentation Updates**: Updated autoload/CLAUDE.md with SessionState, MetaProgression, LocalLeaderboard patterns
+  - **Architecture Notes**: Added progression autoload section documenting MEGABONK/ROR2-style architecture
+
+- **Phase 9: Item Discovery & Unlock System**: ✅ **SHOP UI COMPLETE** - In-game discovery pending
+  - **ItemMetadata Resource**: Created ItemMetadata.gd with unlock cost, rarity enum, stat summary, discovery requirements
+  - **Rarity System**: Enum-based rarity (COMMON/UNCOMMON/RARE/EPIC/LEGENDARY) with color coding:
+    - Common: Grey (0.6, 0.6, 0.6) | Uncommon: Green (0.3, 0.9, 0.3) | Rare: Blue (0.3, 0.5, 1.0)
+    - Epic: Purple (0.7, 0.3, 1.0) | Legendary: Gold (1.0, 0.8, 0.2)
+  - **Discovery Requirements**: Achievement-based unlock requirements (e.g., "Deal 1000 critical hits")
+  - **MEGABONK Items**: Created 5 items with varied rarities:
+    - Cheese (Common, 50💎): +10% Max HP - "Survive for 5 minutes"
+    - Feather (Common, 60💎): +15% Move Speed - "Reach stage 3"
+    - Four-Leaf Clover (Uncommon, 75💎): +10% Luck - "Defeat 100 enemies"
+    - Lucky Coin (Rare, 100💎): +15% Item Drop Rate - "Complete run with 3+ item types"
+    - Rabbit's Foot (Epic, 150💎): +5% Crit Chance - "Deal 1000 critical hits"
+  - **UnlocksShop Integration**: 4th screen in MainMenu.tscn with category tabs (Items/Tomes/Skills)
+  - **Grid Layout**: Items display in 2-column grid with auto-wrap (GridContainer)
+  - **Shop UI Architecture**: ALL items visible by default, showing LOCKED/DISCOVERED/UNLOCKED states
+  - **Three-State System**:
+    - LOCKED (grey, "???", 🔒 + cost) - Not discovered, shows requirement in details
+    - DISCOVERED (colored, UNLOCK button) - Found in run, can purchase
+    - UNLOCKED (colored, no button) - Purchased and available
+  - **Details Panel**: Auto-selects first item on shop open, shows:
+    - Name with rarity color | Description | Stats OR discovery requirement | Flavor text
+  - **Purchase Flow**: Check affordability → spend_rift_fragments() → unlock_item() → refresh UI
+  - **Shop Button**: Added "Unlocks Shop" button to main menu
+  - **Category Switching**: Toggle buttons for Items/Tomes/Skills with reactive UI updates
+  - **Debug Commands**: Console commands for testing (discover_item, give_fragments, progression_info)
+  - **LeaderboardDataResource**: Moved from inner class to external file for proper Godot serialization
+  - **Persistence Fix**: Uses `get_data()` method for clean Resource save/load cycle
+  - **MainMenu Fix**: Deferred leaderboard display to ensure data loads before UI refresh
+  - **TODO**: In-game discovery notifications, achievement tracking, drop table integration
+
 ### Systems Architecture Fixes
 - **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
   - **Runtime Error Resolution**: Fixed "Invalid access to property or key 'enemy_type' on SpawnConfig" during event enemy spawning

@@ -485,12 +485,17 @@ func _register_console_commands() -> void:
 	LimboConsole.register_command(cmd_display_mode, "display_mode", "Set display mode for high refresh rate gaming (60hz, 144hz, 240hz, uncapped)")
 	LimboConsole.register_command(cmd_fps_info, "fps_info", "Show current FPS and display settings")
 	LimboConsole.register_command(cmd_toggle_always_on_top, "always_on_top", "Toggle window always on top")
-	
+
+	# Register progression debug commands
+	LimboConsole.register_command(cmd_discover_item, "discover_item", "Discover an item for unlocking (category item_id)")
+	LimboConsole.register_command(cmd_give_fragments, "give_fragments", "Give Rift Fragments for testing (amount)")
+	LimboConsole.register_command(cmd_progression_info, "progression_info", "Show current progression state")
+
 	# TODO: Add session management commands after SessionManager is stable
 	# Register session management commands
 	#if SessionManager and SessionManager.has_method("cmd_reset_session"):
 	#	LimboConsole.register_command(SessionManager.cmd_reset_session, "reset_session", "Reset game session (debug, death, transition, hideout)")
-	
+
 	Logger.info("Debug console commands registered", "debug")
 
 ## Set default 144Hz display mode at startup
@@ -605,3 +610,58 @@ func toggle_radar(disabled: bool = true) -> void:
 func is_radar_disabled() -> bool:
 	"""Check if radar is disabled for performance optimization"""
 	return radar_disabled
+
+## Console command: Discover item for testing shop flow
+func cmd_discover_item(category: String = "", item_id: String = "") -> void:
+	if category == "" or item_id == "":
+		LimboConsole.error("Usage: discover_item <category> <item_id>")
+		LimboConsole.info("Categories: items, tomes, skills")
+		LimboConsole.info("Example: discover_item items cheese")
+		return
+
+	if not MetaProgression:
+		LimboConsole.error("MetaProgression not available")
+		return
+
+	# Discover the item
+	MetaProgression.discover_item(category, item_id)
+	LimboConsole.info("Discovered %s: %s" % [category, item_id])
+	Logger.info("Console discovered item: %s/%s" % [category, item_id], "progression_debug")
+
+## Console command: Give Rift Fragments for testing purchases
+func cmd_give_fragments(amount: int = 100) -> void:
+	if not MetaProgression:
+		LimboConsole.error("MetaProgression not available")
+		return
+
+	MetaProgression.earn_rift_fragments(amount)
+	var new_balance = MetaProgression.get_rift_fragments()
+	LimboConsole.info("Gave %d Rift Fragments. New balance: %d" % [amount, new_balance])
+	Logger.info("Console gave %d Rift Fragments" % amount, "progression_debug")
+
+## Console command: Show progression information
+func cmd_progression_info() -> void:
+	if not MetaProgression:
+		LimboConsole.error("MetaProgression not available")
+		return
+
+	var balance = MetaProgression.get_rift_fragments()
+	var discovered_items = MetaProgression.get_discovered_items("items")
+	var unlocked_items = MetaProgression.get_unlocked_items("items")
+	var discovered_tomes = MetaProgression.get_discovered_items("tomes")
+	var unlocked_tomes = MetaProgression.get_unlocked_items("tomes")
+	var discovered_skills = MetaProgression.get_discovered_items("skills")
+	var unlocked_skills = MetaProgression.get_unlocked_items("skills")
+
+	var output = "=== Meta Progression State ===\n"
+	output += "Rift Fragments: %d\n" % balance
+	output += "Items: %d discovered, %d unlocked\n" % [discovered_items.size(), unlocked_items.size()]
+	output += "Tomes: %d discovered, %d unlocked\n" % [discovered_tomes.size(), unlocked_tomes.size()]
+	output += "Skills: %d discovered, %d unlocked\n" % [discovered_skills.size(), unlocked_skills.size()]
+
+	if not discovered_items.is_empty():
+		output += "Discovered items: %s\n" % ", ".join(discovered_items)
+	if not unlocked_items.is_empty():
+		output += "Unlocked items: %s" % ", ".join(unlocked_items)
+
+	LimboConsole.info(output)

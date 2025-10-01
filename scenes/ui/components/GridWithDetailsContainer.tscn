@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3 uid="uid://dfehljtwuocja"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/GridWithDetailsContainer.gd" id="1_jd6b3"]
+
+[node name="GridWithDetailsContainer" type="PanelContainer"]
+custom_minimum_size = Vector2(650, 650)
+script = ExtResource("1_jd6b3")

@@ -14,17 +14,25 @@ const DEFAULT_PLAYER_SCENE: String = "res://scenes/arena/Player.tscn"
 
 var player_instance: Node2D
 
-## Get the correct player scene path based on debug config
-## TODO: New progression - Will use MetaProgression for character selection (Task 04)
+## Get the correct player scene path based on SessionState or debug config
 func _get_player_scene_path() -> String:
-	# Use debug config for character type selection
+	# Priority 1: Check SessionState for character selection (Task 04)
+	if SessionState and SessionState.is_run_active():
+		var character_id = SessionState.current_character
+		if not character_id.is_empty():
+			var capitalized = character_id.capitalize()  # "knight" → "Knight"
+			var scene_path: String = PLAYER_SCENES.get(capitalized, DEFAULT_PLAYER_SCENE)
+			Logger.info("Using SessionState character: %s → %s" % [character_id, scene_path], "spawner")
+			return scene_path
+
+	# Priority 2: Use debug config for character type selection (editor testing)
 	var debug_character_type = _get_debug_character_type()
 	if debug_character_type != "":
 		var scene_path: String = PLAYER_SCENES.get(debug_character_type, DEFAULT_PLAYER_SCENE)
 		Logger.info("Using debug config character: %s → %s" % [debug_character_type, scene_path], "spawner")
 		return scene_path
 
-	# Fallback to default if no debug config
+	# Fallback to default if no character specified
 	Logger.info("No character specified, using default player scene: %s" % DEFAULT_PLAYER_SCENE, "spawner")
 	return DEFAULT_PLAYER_SCENE
 

@@ -72,9 +72,9 @@ func _on_xp_collected(amount: int) -> void:
 	# Delegate XP processing to PlayerProgression autoload
 	if PlayerProgression:
 		PlayerProgression.gain_exp(float(amount))
-		
-		# Update RunManager level for card system compatibility
-		RunManager.stats["level"] = PlayerProgression.level
+
+		# Update SessionState level for card system compatibility
+		SessionState.current_level = PlayerProgression.level
 	else:
 		Logger.error("XpSystem: PlayerProgression not available, XP collection ignored!", "progression")
 		pass

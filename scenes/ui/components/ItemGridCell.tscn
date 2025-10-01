@@ -1,0 +1,30 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8a2trrvwtw2b"]
+
+[ext_resource type="Script" uid="uid://cs6r2cippad5t" path="res://scenes/ui/components/ItemGridCell.gd" id="1_o835u"]
+
+[node name="ItemGridCell" type="PanelContainer"]
+script = ExtResource("1_o835u")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+layout_mode = 2
+
+[node name="VBox" type="VBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer/VBox"]
+custom_minimum_size = Vector2(64, 64)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LockIcon" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="NameLabel" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="CostLabel" type="Label" parent="MarginContainer/VBox"]
+layout_mode = 2
+horizontal_alignment = 1

@@ -113,6 +113,43 @@ signal leveled_up(new_level: int, prev_level: int)
 @warning_ignore("unused_signal")
 signal progression_changed(state: Dictionary)
 
+# META-PROGRESSION SIGNALS (Task 04 - Single-Session Runs)
+## Meta-progression data loaded from disk - emitted on game start
+@warning_ignore("unused_signal")
+signal meta_progression_loaded()
+
+## Rift Fragments balance changed - emitted when currency is earned/spent
+@warning_ignore("unused_signal")
+signal rift_fragments_changed(new_balance: int)
+
+## Item unlocked (purchased) - emitted when item moves from discovered to unlocked
+@warning_ignore("unused_signal")
+signal item_unlocked(category: String, item_id: String)
+
+## Character unlocked - emitted when new character is unlocked
+@warning_ignore("unused_signal")
+signal character_unlocked(character_id: String)
+
+## Toggler system unlocked - emitted when toggler feature is unlocked for a category
+@warning_ignore("unused_signal")
+signal toggler_unlocked(category: String)
+
+## Run started - emitted by SessionState when run begins
+@warning_ignore("unused_signal")
+signal run_started(character_id: String)
+
+## Run ended - emitted by SessionState when player dies, includes final stats
+@warning_ignore("unused_signal")
+signal run_ended(stats: Dictionary)
+
+## Player leveled up during run - emitted by SessionState (session-only XP)
+@warning_ignore("unused_signal")
+signal session_level_up(new_level: int)
+
+## Local leaderboard updated - emitted when new run is added to leaderboard
+@warning_ignore("unused_signal")
+signal leaderboard_updated(map_id: String, tier: int, rank: int)
+
 # HUD COMPONENT SIGNALS
 ## Health changed - emitted when player health changes
 @warning_ignore("unused_signal")

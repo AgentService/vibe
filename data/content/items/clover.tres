@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "clover"
+display_name = "Four-Leaf Clover"
+description = "Increases luck and item quality"
+flavor_text = "A rare clover that brings good fortune"
+category = "items"
+icon_path = "res://assets/items/four-leaf.png"
+unlock_cost = 75
+rarity = 1
+discovery_requirement = "Defeat 100 enemies in a single run"
+stat_summary = "+10% Luck"

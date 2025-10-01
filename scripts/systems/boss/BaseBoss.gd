@@ -25,6 +25,7 @@ var target_position: Vector2
 var attack_range: float = 80.0
 var chase_range: float = 5500.0
 var ai_paused: bool = false
+var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
 const PERSONAL_SPACE_STRENGTH: float = 175.0  # Balanced spacing force that works with chase behavior
@@ -61,6 +62,8 @@ func _ready() -> void:
 		EventBus.damage_entity_sync.connect(_on_damage_entity_sync)
 		# DEBUG: Listen for cheat toggles (AI pause)
 		EventBus.cheat_toggled.connect(_on_cheat_toggled)
+		# LIFECYCLE: Stop AI when player dies to prevent physics errors
+		EventBus.player_died.connect(_on_player_died)
 	
 	# DAMAGE V3: Register with both DamageService and EntityTracker
 	var entity_id = "boss_" + str(get_instance_id())
@@ -159,10 +162,14 @@ func _update_ai_batch(dt: float) -> void:
 
 ## Base AI logic - child classes can override or extend
 func _update_ai(_dt: float) -> void:
-	# Skip AI updates if paused by debug system
-	if ai_paused:
+	# Skip AI updates if dying, paused, or being removed
+	if _is_dying or ai_paused:
 		return
-	
+
+	# Skip if boss is being removed or not in tree
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
@@ -184,6 +191,10 @@ func _update_ai(_dt: float) -> void:
 
 			# Apply personal space forces - these work with collision layers
 			velocity += spacing_force
+
+			# Safety: Check if still valid before physics update
+			if not is_inside_tree() or is_queued_for_deletion():
+				return
 
 			move_and_slide()
 			
@@ -319,6 +330,7 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 			tracker_data["hp"] = new_hp
 
 func _die() -> void:
+	_is_dying = true  # Prevent any further AI updates
 	died.emit()
 	queue_free()
 
@@ -350,6 +362,11 @@ func _on_cheat_toggled(payload: CheatTogglePayload) -> void:
 	# Handle AI pause/unpause cheat toggle
 	if payload.cheat_name == "ai_paused":
 		ai_paused = payload.enabled
+
+func _on_player_died() -> void:
+	# Immediately stop AI when player dies to prevent physics errors during cleanup
+	_is_dying = true
+	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
 ## Setup PersonalSpaceArea for signal-based boss spacing control
 func _setup_personal_space_area() -> void:
