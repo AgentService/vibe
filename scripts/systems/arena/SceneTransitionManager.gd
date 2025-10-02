@@ -138,7 +138,7 @@ func _resolve_map_path(map_id: String) -> String:
 		"hideout":
 			return "res://scenes/core/Hideout.tscn"
 		"main_menu":
-			return "res://scenes/ui/MainMenu.tscn"
+			return "res://scenes/ui/MeasureAtlas.tscn"
 		# "character_select" removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
 		# "results" removed - now handled by UIManager modal system
 # "forest_arena" removed - legacy ForestArena system no longer supported
