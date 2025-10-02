@@ -1,17 +1,24 @@
 extends Control
-## UnlockShopScene wrapper - handles navigation and data provider setup
+## UnlockShopScene wrapper - handles navigation and metadata loading
 ##
 ## Flow: MainMenu → **UnlockShopScene** ← (Back button)
 ##
 ## Features:
-## - Provides data to UnlockShop component via Callable providers
+## - Loads ItemMetadata from /data/content/{items,tomes,skills}/*.tres
+## - Provides metadata to UnlockShop component via Callable providers
 ## - Handles back navigation to MainMenu
-## - Sets up mock unlock data (TODO: integrate with MetaProgression)
+## - Integrates with MetaProgression for discovery/unlock state
 
 @onready var unlock_shop: UnlockShop = $UnlockShop
 @onready var back_button: Button = $BackButton
 
+# Item metadata cache (loaded from /data/content/*/*.tres)
+var item_metadata_cache: Dictionary = {}  # {item_id: ItemMetadata}
+
 func _ready() -> void:
+	# Load item metadata first
+	_load_item_metadata()
+
 	# Setup back button
 	if back_button:
 		back_button.pressed.connect(_on_back_pressed)
@@ -25,82 +32,101 @@ func _ready() -> void:
 			_fetch_tomes_data,
 			_fetch_skills_data
 		)
-		Logger.info("UnlockShopScene initialized with data providers", "ui")
+		Logger.info("UnlockShopScene initialized with %d items loaded" % item_metadata_cache.size(), "ui")
 	else:
 		Logger.error("UnlockShopScene: UnlockShop component not found", "ui")
 
-func _fetch_items_data() -> Array[Dictionary]:
+func _load_item_metadata() -> void:
+	"""Load item metadata from /data/content/{items,tomes,skills}/*.tres"""
+	var categories = ["items", "tomes", "skills"]
+
+	for category in categories:
+		var category_dir = "res://data/content/%s/" % category
+		var dir = DirAccess.open(category_dir)
+
+		if not dir:
+			Logger.warn("UnlockShopScene: Category directory not found: %s" % category_dir, "ui")
+			continue
+
+		dir.list_dir_begin()
+		var file_name = dir.get_next()
+
+		while file_name != "":
+			if file_name.ends_with(".tres"):
+				var file_path = category_dir + file_name
+				var resource = load(file_path)
+
+				if resource is ItemMetadata:
+					item_metadata_cache[resource.item_id] = resource
+					Logger.debug("UnlockShopScene: Loaded item metadata: %s" % resource.item_id, "ui")
+				else:
+					Logger.warn("UnlockShopScene: Invalid ItemMetadata resource: %s" % file_path, "ui")
+
+			file_name = dir.get_next()
+
+		dir.list_dir_end()
+
+	Logger.info("UnlockShopScene: Loaded %d items from data files" % item_metadata_cache.size(), "ui")
+
+func _fetch_items_data() -> Array[ItemMetadata]:
 	"""Callback for UnlockShop component - provides items unlock data.
 
 	Returns:
-		Array[Dictionary]: Item unlock data with keys: id, name, description, cost, is_locked, etc.
+		Array[ItemMetadata]: Item metadata resources for "items" category
 	"""
-	# TODO(UI-phase2): Fetch from MetaProgression unlock system
-	var mock_items: Array[Dictionary] = [
-		{
-			"id": "sword_t1",
-			"name": "Iron Sword",
-			"description": "A basic iron sword",
-			"cost": 100,
-			"is_locked": true,
-			"stats": "+10 Attack",
-			"flavor_text": "Every hero needs a starting weapon.",
-			"quest_progress": {"current": 5, "required": 10}
-		},
-		{
-			"id": "armor_t1",
-			"name": "Leather Armor",
-			"description": "Simple leather protection",
-			"cost": 150,
-			"is_locked": false,
-			"stats": "+5 Defense",
-			"flavor_text": "Better than nothing."
-		}
-	]
+	var category_items: Array[ItemMetadata] = []
 
-	return mock_items
+	for item_id in item_metadata_cache.keys():
+		var metadata = item_metadata_cache[item_id]
+		if metadata.category == "items":
+			category_items.append(metadata)
 
-func _fetch_tomes_data() -> Array[Dictionary]:
+	# Sort by rarity (Common → Legendary)
+	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
+		return a.rarity < b.rarity
+	)
+
+	return category_items
+
+func _fetch_tomes_data() -> Array[ItemMetadata]:
 	"""Callback for UnlockShop component - provides tomes unlock data.
 
 	Returns:
-		Array[Dictionary]: Tome unlock data
+		Array[ItemMetadata]: Item metadata resources for "tomes" category
 	"""
-	# TODO(UI-phase2): Fetch from MetaProgression unlock system
-	var mock_tomes: Array[Dictionary] = [
-		{
-			"id": "fireball_tome",
-			"name": "Fireball Tome",
-			"description": "Learn Fireball ability",
-			"cost": 200,
-			"is_locked": true,
-			"stats": "Damage: 50 Fire",
-			"flavor_text": "The classic mage's choice."
-		}
-	]
+	var category_items: Array[ItemMetadata] = []
 
-	return mock_tomes
+	for item_id in item_metadata_cache.keys():
+		var metadata = item_metadata_cache[item_id]
+		if metadata.category == "tomes":
+			category_items.append(metadata)
 
-func _fetch_skills_data() -> Array[Dictionary]:
+	# Sort by rarity (Common → Legendary)
+	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
+		return a.rarity < b.rarity
+	)
+
+	return category_items
+
+func _fetch_skills_data() -> Array[ItemMetadata]:
 	"""Callback for UnlockShop component - provides skills unlock data.
 
 	Returns:
-		Array[Dictionary]: Skill unlock data
+		Array[ItemMetadata]: Item metadata resources for "skills" category
 	"""
-	# TODO(UI-phase2): Fetch from MetaProgression unlock system
-	var mock_skills: Array[Dictionary] = [
-		{
-			"id": "critical_strike",
-			"name": "Critical Strike",
-			"description": "Increase crit chance",
-			"cost": 250,
-			"is_locked": true,
-			"stats": "+10% Crit Chance",
-			"flavor_text": "Strike where it hurts most."
-		}
-	]
+	var category_items: Array[ItemMetadata] = []
 
-	return mock_skills
+	for item_id in item_metadata_cache.keys():
+		var metadata = item_metadata_cache[item_id]
+		if metadata.category == "skills":
+			category_items.append(metadata)
+
+	# Sort by rarity (Common → Legendary)
+	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
+		return a.rarity < b.rarity
+	)
+
+	return category_items
 
 func _on_back_pressed() -> void:
 	"""Return to MainMenu via SceneTransitionManager"""
