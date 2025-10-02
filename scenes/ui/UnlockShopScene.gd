@@ -11,6 +11,7 @@ extends Control
 
 @onready var unlock_shop: UnlockShop = $UnlockShop
 @onready var back_button: Button = $BackButton
+@onready var admin_panel: ShopAdminPanel = $ShopAdminPanel
 
 # Item metadata cache (loaded from /data/content/*/*.tres)
 var item_metadata_cache: Dictionary = {}  # {item_id: ItemMetadata}
@@ -36,6 +37,20 @@ func _ready() -> void:
 		Logger.info("UnlockShopScene initialized with %d items loaded" % item_metadata_cache.size(), "ui")
 	else:
 		Logger.error("UnlockShopScene: UnlockShop component not found", "ui")
+
+	# Setup admin panel with same data providers
+	if admin_panel:
+		admin_panel.setup_data_providers(
+			_fetch_items_data,
+			_fetch_tomes_data,
+			_fetch_skills_data,
+			_fetch_characters_data
+		)
+		# Connect signal to refresh shop when admin changes state
+		admin_panel.admin_state_changed.connect(_on_admin_state_changed)
+		Logger.info("UnlockShopScene: Admin panel initialized", "ui")
+	else:
+		Logger.warn("UnlockShopScene: Admin panel not found", "ui")
 
 func _load_item_metadata() -> void:
 	"""Load item metadata from /data/content/{items,tomes,skills,characters}/*.tres"""
@@ -148,6 +163,14 @@ func _fetch_characters_data() -> Array[ItemMetadata]:
 	)
 
 	return category_items
+
+func _on_admin_state_changed(item_id: String, category: String, new_state: String) -> void:
+	"""Handle admin panel state changes - refresh the shop display."""
+	Logger.info("UnlockShopScene: Admin changed %s to %s" % [item_id, new_state], "ui")
+
+	# Refresh the shop to show updated state
+	if unlock_shop:
+		unlock_shop.refresh_current_tab()
 
 func _on_back_pressed() -> void:
 	"""Return to MainMenu via SceneTransitionManager"""
