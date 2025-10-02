@@ -7,8 +7,8 @@ class_name ShopItemCard
 signal item_clicked(item_id: String, category: String)
 signal item_hovered(item_id: String, category: String)
 
-@onready var button: Button = $Button
-@onready var icon_texture: TextureRect = $Button/MarginContainer/CenterContainer/IconTexture
+@onready var button: Button = $Frame/MarginContainer/Button
+@onready var icon_texture: TextureRect = $Frame/MarginContainer/Button/CenterContainer/IconTexture
 @onready var overlay_container: Control = $OverlayContainer
 @onready var dim_overlay: ColorRect = $OverlayContainer/DimOverlay
 @onready var cost_label: Label = $OverlayContainer/CostLabel
