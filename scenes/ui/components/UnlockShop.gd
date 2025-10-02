@@ -294,9 +294,10 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 		item_flavor_label.text = "\"" + item_metadata.flavor_text + "\"" if not item_metadata.flavor_text.is_empty() else ""
 		item_flavor_label.modulate = Color(0.7, 0.7, 0.8)
 
-		quest_progress_label.visible = false
+		quest_progress_label.text = "Cost: %d 💎" % item_metadata.unlock_cost
+		quest_progress_label.visible = true
 
-		unlock_button.text = "%d 💎\nUNLOCK" % item_metadata.unlock_cost
+		unlock_button.text = "BUY"
 		unlock_button.disabled = not can_afford
 		unlock_button.visible = true
 
