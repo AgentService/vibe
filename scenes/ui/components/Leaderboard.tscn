@@ -42,7 +42,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="TabBar" type="TabBar" parent="VBoxContainer/HBoxContainer"]
-z_index = 2
+z_index = 1
 layout_mode = 2
 theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_47fyd")
 theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_47fyd")
@@ -79,6 +79,7 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_bottom = -4.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 10
@@ -98,6 +99,7 @@ uppercase = true
 [node name="ResetContainer" type="VBoxContainer" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
+alignment = 1
 
 [node name="ResetHeader" type="Label" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer/ResetContainer"]
 layout_mode = 2
@@ -124,7 +126,6 @@ patch_margin_top = 3
 patch_margin_right = 4
 patch_margin_bottom = 3
 axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer3/Stats"]
 layout_mode = 1

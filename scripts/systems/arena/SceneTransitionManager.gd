@@ -132,7 +132,7 @@ func _resolve_map_path(map_id: String) -> String:
 					var arena_path = "res://scenes/arena/" + arena_name + ".tscn"
 					Logger.info("SceneTransitionManager: Using debug arena selection: %s" % arena_path, "transition")
 					return arena_path
-			
+
 			# Fallback to default arena
 			return "res://scenes/arena/Arena.tscn"
 		"hideout":
@@ -143,6 +143,8 @@ func _resolve_map_path(map_id: String) -> String:
 			return "res://scenes/ui/CharacterSelect.tscn"
 		"map_select":
 			return "res://scenes/ui/MapSelect.tscn"
+		"unlock_shop":
+			return "res://scenes/ui/UnlockShopScene.tscn"
 		# "character_select" removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
 		# "results" removed - now handled by UIManager modal system
 # "forest_arena" removed - legacy ForestArena system no longer supported

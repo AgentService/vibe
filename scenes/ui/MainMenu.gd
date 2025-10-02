@@ -1,6 +1,18 @@
 extends Control
-## MainMenu - Primary styled menu (formerly MeasureAtlas)
-## Features: Leaderboard, Play flow, Unlocks shop integration
+## Primary styled menu providing navigation to all game modes
+##
+## Features:
+## - Global and Friends leaderboards with daily reset timer
+## - Character selection flow via Play button
+## - Unlocks shop integration (TODO: UI-phase2)
+## - Options menu (TODO: UI-phase2)
+##
+## Architecture:
+## - Uses Callable data provider pattern for leaderboard flexibility
+## - Integrates with LocalLeaderboard autoload for player stats
+## - Listens to EventBus.leaderboard_updated for real-time updates
+## - Leaderboard component handles tab switching and data population
+##
 ## Reference: MainMenu_reference.tscn contains old menu for comparison
 
 # Asset paths
@@ -29,11 +41,22 @@ func _ready() -> void:
 	)
 
 	# Listen for leaderboard updates
-	EventBus.leaderboard_updated.connect(_on_leaderboard_updated)
+	if EventBus:
+		EventBus.leaderboard_updated.connect(_on_leaderboard_updated)
+	else:
+		Logger.warn("EventBus not available - leaderboard updates disabled", "ui")
 
 
 func _fetch_global_leaderboard() -> Array[Dictionary]:
-	"""Callback for Leaderboard component - provides mock global leaderboard data"""
+	"""Callback for Leaderboard component - provides mock global leaderboard data.
+
+	In production, this would be an HTTP request to leaderboard API.
+	Returns formatted data ready for LeaderboardEntry components.
+
+	Returns:
+		Array[Dictionary]: Leaderboard data with keys: rank (int), name (String),
+						   score (String), character_icon (Texture2D)
+	"""
 	# In production, this would be an HTTP request:
 	# var response = await http_request.request_completed
 	# return _parse_api_response(response)
@@ -100,7 +123,16 @@ func _on_leaderboard_updated(_map_id: String, _tier: int, _rank: int) -> void:
 	leaderboard.refresh_current_tab()
 
 func _get_character_icon(character_id: String) -> Texture2D:
-	"""Load character portrait icon using filename convention"""
+	"""Load character portrait icon using filename convention.
+
+	Tries .png then .svg extensions. Logs warning if asset missing.
+
+	Args:
+		character_id: Character identifier (e.g., "knight", "mage", "ranger")
+
+	Returns:
+		Texture2D: Character portrait, or null if not found
+	"""
 	var filename = "%s_portrait" % character_id
 	var extensions = [".png", ".svg"]
 
@@ -136,10 +168,16 @@ func _on_play_pressed() -> void:
 	})
 
 func _on_unlocks_pressed() -> void:
-	"""Open unlocks shop - loads existing shop (temp until new one built)"""
-	# TODO: Replace with new styled Shop_New.tscn when ready
-	# For now, could open old MainMenu's shop screen or placeholder
-	Logger.info("Unlocks pressed - shop not yet implemented in new UI", "ui")
+	"""Open unlocks shop - loads UnlockShop scene via SceneTransitionManager"""
+	Logger.info("Unlocks pressed - loading unlock shop", "ui")
+
+	if EventBus:
+		EventBus.request_enter_map.emit({
+			"map_id": "unlock_shop",
+			"source": "main_menu"
+		})
+	else:
+		Logger.error("EventBus not available - cannot transition to unlock shop", "ui")
 
 func _on_options_pressed() -> void:
 	"""Open options/settings"""

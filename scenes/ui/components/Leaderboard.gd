@@ -29,7 +29,10 @@ func _ready() -> void:
 		# Don't load data yet - wait for setup_data_providers()
 
 	# Initialize reset timer display
-	_update_reset_timer()
+	if reset_label:
+		_update_reset_timer()
+	else:
+		Logger.warn("Leaderboard: Reset label not found - timer display disabled", "ui")
 
 func _process(delta: float) -> void:
 	"""Update reset timer every second."""

@@ -42,6 +42,26 @@ var selected_character: String = ""
 # Character data (loaded from data/core/character-types.tres)
 var character_types: Dictionary = {}
 
+# Texture cache to avoid redundant loading
+var _texture_cache: Dictionary = {}  # key: full_path, value: Texture2D
+
+func apply_transition_data(data: Dictionary) -> void:
+	"""Receive transition data from SceneTransitionManager.
+
+	Called when returning from MapSelect to restore previous character selection.
+
+	Args:
+		data: Transition context, may contain "character" key with previously selected character
+	"""
+	if data.has("character"):
+		var char_id = data.character
+		if character_types.has(char_id):
+			selected_character = char_id
+			_update_character_ui()
+			Logger.info("CharacterSelect: Restored character selection: %s" % char_id, "ui")
+		else:
+			Logger.warn("CharacterSelect: Invalid character in transition data: %s" % char_id, "ui")
+
 func _ready() -> void:
 	_load_character_types()
 	_populate_character_grid()  # Dynamically create character buttons
@@ -152,8 +172,8 @@ func _show_character_info(char_type: CharacterType) -> void:
 	# Character info
 	_set_character_info(
 		char_type.display_name,
-		"Rank 1",  # TODO: Load from MetaProgression
-		"0 Runs",  # TODO: Load from MetaProgression
+		"Rank 1",  # TODO(UI-phase2): Load character rank from MetaProgression autoload
+		"0 Runs",  # TODO(UI-phase2): Load run count from LocalLeaderboard for this character
 		char_type.description
 	)
 	_update_character_icon(selected_character)
@@ -208,6 +228,7 @@ func _clear_passive_info() -> void:
 func _load_texture_from_filename(filename: String, base_path: String, fallback: String) -> Texture2D:
 	"""
 	Load texture from filename using convention-based paths.
+	Caches loaded textures to avoid redundant loading.
 
 	Args:
 		filename: Just the filename (e.g., "sword", "knight_portrait")
@@ -218,16 +239,25 @@ func _load_texture_from_filename(filename: String, base_path: String, fallback: 
 		Loaded texture or fallback texture
 	"""
 	if filename.is_empty():
+		# Don't cache fallback loads
 		return load(fallback) as Texture2D
 
 	# Try .png first, then .svg
 	var extensions = [".png", ".svg"]
 	for ext in extensions:
 		var full_path = base_path + filename + ext
-		if ResourceLoader.exists(full_path):
-			return load(full_path) as Texture2D
 
-	# If not found, log warning and use fallback
+		# Check cache first
+		if _texture_cache.has(full_path):
+			return _texture_cache[full_path]
+
+		# Load and cache
+		if ResourceLoader.exists(full_path):
+			var texture = load(full_path) as Texture2D
+			_texture_cache[full_path] = texture
+			return texture
+
+	# If not found, log warning and use fallback (don't cache)
 	Logger.warn("Asset not found: %s (tried %s)" % [filename, base_path], "ui")
 	return load(fallback) as Texture2D
 
@@ -253,11 +283,14 @@ func _on_confirm_pressed() -> void:
 	Logger.info("Character confirmed: %s - proceeding to map selection" % selected_character, "ui")
 
 	# Navigate to map select via SceneTransitionManager
-	EventBus.request_enter_map.emit({
-		"map_id": "map_select",
-		"source": "character_select",
-		"character": selected_character  # Pass selection forward
-	})
+	if EventBus:
+		EventBus.request_enter_map.emit({
+			"map_id": "map_select",
+			"source": "character_select",
+			"character": selected_character  # Pass selection forward
+		})
+	else:
+		Logger.error("EventBus not available - cannot transition to map select", "ui")
 
 func _on_back_pressed() -> void:
 	"""Return to main menu."""
@@ -266,7 +299,10 @@ func _on_back_pressed() -> void:
 	# Clear selection when going back
 	selected_character = ""
 
-	EventBus.request_enter_map.emit({
-		"map_id": "main_menu",
-		"source": "character_select"
-	})
+	if EventBus:
+		EventBus.request_enter_map.emit({
+			"map_id": "main_menu",
+			"source": "character_select"
+		})
+	else:
+		Logger.error("EventBus not available - cannot return to main menu", "ui")

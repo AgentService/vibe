@@ -42,7 +42,17 @@ func setup(rank: int, player_name: String, score: String, char_icon: Texture2D =
 		_pending_icon = char_icon
 
 func _apply_data(rank: int, player_name: String, score: String, char_icon: Texture2D) -> void:
-	"""Apply leaderboard data to UI elements."""
+	"""Apply leaderboard data to UI label elements.
+
+	Internal helper called by setup() or deferred from _ready().
+	Assumes all UI nodes are ready.
+
+	Args:
+		rank: Player's ranking position (1-based)
+		player_name: Display name for player
+		score: Pre-formatted score string (e.g., "1.2M")
+		char_icon: Optional character portrait texture
+	"""
 	rank_label.text = "#%d" % rank
 	name_label.text = player_name
 	score_label.text = score

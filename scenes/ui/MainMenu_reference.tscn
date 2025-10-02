@@ -290,7 +290,6 @@ layout_mode = 2
 text = "BACK"
 
 [node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -303,17 +302,20 @@ custom_minimum_size = Vector2(650, 650)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_UnlocksShop")
 
+[node name="ShopTitle" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel"]
+layout_mode = 2
+offset_top = -25.5
+offset_right = 650.0
+offset_bottom = -9.5
+text = "UNLOCKS SHOP"
+horizontal_alignment = 1
+
 [node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel"]
 layout_mode = 2
 offset_top = -25.5
 offset_right = 650.0
 offset_bottom = 675.5
 theme_override_constants/separation = 20
-
-[node name="ShopTitle" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "UNLOCKS SHOP"
-horizontal_alignment = 1
 
 [node name="CategoryTabs" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
 layout_mode = 2
