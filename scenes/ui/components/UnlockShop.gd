@@ -36,7 +36,7 @@ var _selected_item: ItemMetadata = null
 
 func _ready() -> void:
 	# Load notification icon
-	_notification_icon = load("res://assets/ui/map_markers attention.png")
+	_notification_icon = load("res://assets/ui/map_markers/attention.png")
 
 	# Connect tab switching
 	if tab_bar:
