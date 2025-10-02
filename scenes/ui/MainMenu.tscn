@@ -1,42 +1,9 @@
-[gd_scene load_steps=10 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=4 format=3 uid="uid://d128c4kosb2vl"]
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
 [ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_xpiny"]
-[ext_resource type="Texture2D" uid="uid://barxodnk8kyws" path="res://assets/ui/Large Separated Files/sprite-1-6.png" id="2_5n82f"]
-[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="3_pl2nd"]
 [ext_resource type="PackedScene" uid="uid://cgqmq41cjt2f1" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mcen4"]
-texture = ExtResource("3_pl2nd")
-texture_margin_left = 2.0
-texture_margin_top = 15.0
-texture_margin_right = 2.0
-texture_margin_bottom = 14.0
-region_rect = Rect2(240, 31, 48, 17)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wvwa0"]
-texture = ExtResource("3_pl2nd")
-texture_margin_left = 2.0
-texture_margin_top = 14.0
-texture_margin_right = 2.0
-texture_margin_bottom = 14.0
-region_rect = Rect2(240, 32, 48, 16)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_pdo7m"]
-texture = ExtResource("3_pl2nd")
-texture_margin_left = 2.0
-texture_margin_top = 14.0
-texture_margin_right = 2.0
-texture_margin_bottom = 14.0
-region_rect = Rect2(240, 16, 48, 16)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_vky4k"]
-texture = ExtResource("2_5n82f")
-texture_margin_left = 14.0
-texture_margin_top = 13.0
-texture_margin_right = 13.0
-texture_margin_bottom = 13.0
-region_rect = Rect2(0, 0, 194, 66)
+[ext_resource type="PackedScene" uid="uid://b7kw8j4n5xr3v" path="res://scenes/ui/components/MainButton.tscn" id="6_mainbutton"]
 
 [node name="MainMenu_v2" type="Control"]
 layout_mode = 3
@@ -70,37 +37,21 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="Play" type="Button" parent="MainButtonMenu/MarginContainer/VBoxContainer2"]
+[node name="Play" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
-theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
-text = "Play"
+button_text = "Play"
 
-[node name="Play2" type="Button" parent="MainButtonMenu/MarginContainer/VBoxContainer2"]
+[node name="Play2" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
-theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
-theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
-text = "Unlocks"
+button_text = "Unlocks"
 
-[node name="Play3" type="Button" parent="MainButtonMenu/MarginContainer/VBoxContainer2"]
+[node name="Play3" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
-theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
-theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
-text = "Options"
+button_text = "Options"
 
-[node name="Play4" type="Button" parent="MainButtonMenu/MarginContainer/VBoxContainer2"]
+[node name="Play4" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
-theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
-theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
-text = "Quit
-"
+button_text = "Quit"
 
 [node name="Leaderboard" parent="." instance=ExtResource("5_xpiny")]
 layout_mode = 0
