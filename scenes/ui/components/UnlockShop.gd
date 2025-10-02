@@ -38,6 +38,43 @@ func _ready() -> void:
 
 	Logger.debug("UnlockShop initialized", "ui")
 
+func _update_tab_notification_badges() -> void:
+	"""Update tab titles with '!' badges if category has discovered but unlocked items."""
+	if not tab_bar or not MetaProgression:
+		return
+
+	var categories = [
+		{"index": 0, "name": "Items", "category": "items"},
+		{"index": 1, "name": "Tomes", "category": "tomes"},
+		{"index": 2, "name": "Skills", "category": "skills"},
+		{"index": 3, "name": "Characters", "category": "characters"}
+	]
+
+	for cat in categories:
+		var has_discovered = _category_has_discovered_items(cat.category)
+		var title = cat.name
+		if has_discovered:
+			title += " !"
+		tab_bar.set_tab_title(cat.index, title)
+
+func _category_has_discovered_items(category: String) -> bool:
+	"""Check if category has any discovered but not unlocked items."""
+	if not MetaProgression:
+		return false
+
+	var discovered_array: Array
+	match category:
+		"items":
+			discovered_array = MetaProgression._data.discovered_items
+		"tomes":
+			discovered_array = MetaProgression._data.discovered_tomes
+		"skills":
+			discovered_array = MetaProgression._data.discovered_skills
+		"characters":
+			discovered_array = MetaProgression._data.discovered_characters if "discovered_characters" in MetaProgression._data else []
+
+	return not discovered_array.is_empty()
+
 func setup_data_providers(items_provider: Callable, tomes_provider: Callable, skills_provider: Callable, characters_provider: Callable) -> void:
 	"""Configure data loading callbacks and initialize with Items tab.
 
@@ -56,6 +93,9 @@ func setup_data_providers(items_provider: Callable, tomes_provider: Callable, sk
 	if tab_bar:
 		tab_bar.current_tab = 0
 	_on_tab_changed(0)
+
+	# Update notification badges
+	_update_tab_notification_badges()
 
 func _on_tab_changed(tab_index: int) -> void:
 	"""Switch between Items, Tomes, Skills, and Characters tabs."""
@@ -332,6 +372,7 @@ func _on_unlock_item_pressed(item_metadata: ItemMetadata) -> void:
 
 		# Refresh display (currency updated by PersistentRiftFragments via EventBus)
 		refresh_current_tab()
+		_update_tab_notification_badges()  # Update badges when item unlocked
 
 func _clear_item_details() -> void:
 	"""Clear the item details panel."""

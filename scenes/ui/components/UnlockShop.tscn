@@ -42,9 +42,10 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="TabBar" type="TabBar" parent="TabContainer/HBoxContainer"]
-custom_minimum_size = Vector2(400, 0)
 z_index = 1
+custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
+theme_override_constants/h_separation = 40
 theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_tab_unselected")
 theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_tab_unselected")
 theme_override_styles/tab_selected = SubResource("StyleBoxTexture_tab_selected")
