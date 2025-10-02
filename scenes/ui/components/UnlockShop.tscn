@@ -197,11 +197,12 @@ text_overrun_behavior = 3
 custom_minimum_size = Vector2(155, 110)
 layout_mode = 2
 size_flags_horizontal = 8
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="QuestProgress" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 0
 text = "Quest Progress"
 autowrap_mode = 3
 clip_text = true
@@ -209,4 +210,5 @@ text_overrun_behavior = 3
 
 [node name="UnlockButton" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel" instance=ExtResource("4_mainbutton")]
 visible = false
+layout_mode = 2
 button_text = "BUY"
