@@ -49,9 +49,45 @@ func _on_tab_changed(tab_index: int) -> void:
 			_load_local_leaderboard()
 
 func _load_global_leaderboard() -> void:
-	"""Placeholder for future global/online leaderboard"""
-	# TODO: Implement online leaderboard when networking is added
-	pass
+	"""Mock global leaderboard (simulates API fetch like MEGABONK)"""
+	# In production, this would be an HTTP request:
+	# HTTPRequest.request("https://api.game.com/leaderboard/global")
+	# For now, simulate with mock data
+
+	var mock_global_data = _fetch_mock_global_leaderboard()
+	_populate_leaderboard(global_container, mock_global_data)
+
+func _fetch_mock_global_leaderboard() -> Array[Dictionary]:
+	"""Simulates API response for global leaderboard (MEGABONK-style)"""
+	# In production, this would be async HTTP request handling
+	# Example: await http_request.request_completed
+
+	var mock_players = [
+		{"username": "xXDragonSlayerXx", "kills": 2547893, "character_id": "knight", "country": "US"},
+		{"username": "MageSupreme", "kills": 1923456, "character_id": "mage", "country": "JP"},
+		{"username": "RangerPro_TTV", "kills": 1654321, "character_id": "ranger", "country": "DE"},
+		{"username": "KnightOfDoom", "kills": 1432109, "character_id": "knight", "country": "UK"},
+		{"username": "SpeedRunner2025", "kills": 1298765, "character_id": "ranger", "country": "CA"},
+		{"username": "TheMageKing", "kills": 1087654, "character_id": "mage", "country": "FR"},
+		{"username": "CasualGamer42", "kills": 987654, "character_id": "knight", "country": "AU"},
+		{"username": "eSportsLegend", "kills": 876543, "character_id": "ranger", "country": "KR"},
+		{"username": "NoobMaster69", "kills": 765432, "character_id": "mage", "country": "BR"},
+		{"username": "ProPlayer_2025", "kills": 654321, "character_id": "knight", "country": "SE"}
+	]
+
+	# Convert to UI format
+	var ui_data: Array[Dictionary] = []
+	for i in range(mock_players.size()):
+		var player = mock_players[i]
+		ui_data.append({
+			"rank": i + 1,
+			"name": player.username,
+			"kills": player.kills,
+			"character_icon": _get_character_icon(player.character_id)
+		})
+
+	Logger.info("Mock global leaderboard loaded with %d entries" % ui_data.size(), "ui")
+	return ui_data
 
 func _load_local_leaderboard() -> void:
 	"""Load top 10 runs by kills across ALL maps and tiers"""

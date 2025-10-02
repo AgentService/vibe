@@ -4,6 +4,30 @@
 
 ## [Current Week - In Progress]
 
+### UI Component System & Asset Organization
+- **Reusable Scene Components**: Replaced manual UI construction with template-based components
+  - **CharacterSelectButton.tscn/gd**: Reusable character selection card (replaces 80+ lines of code)
+  - **LeaderboardEntry.tscn/gd**: Reusable leaderboard row component with rank/name/score/icon
+  - Implemented pending data pattern for safe early setup() calls before _ready()
+  - Components support visual editing - change .tscn, all instances update automatically
+- **Filename-Based Asset Loading**: Convention over configuration for UI assets
+  - Asset folders: `assets/ui/characters/portraits/`, `abilities/icons/`, `passives/icons/`
+  - Data files store filenames only ("sword" → `sword.png` resolved at runtime)
+  - Auto-tries `.png` and `.svg` extensions, falls back gracefully with logging
+  - Comprehensive documentation in `assets/ui/README.md` and `scenes/ui/components/README.md`
+- **CharacterSelect Refactoring**: Code reduction from 206 → 188 lines via components
+  - Added auto-select first character on screen load
+  - Updated label references from generic (Label, Label2) to semantic (name, rank, runcount)
+  - Added MainAbility/MainPassive display with icon support
+  - Removed base stats display (HP/DMG/SPD), added rank/runs placeholders
+- **MainMenu Refactoring**: Simplified leaderboard population using components
+  - Replaced brittle `get_node("NinePatchRect/MarginContainer/...")` with `entry.setup(...)`
+  - Converted `_get_character_icon()` from hardcoded paths to texture loading
+  - Both Friends and Global tabs now use LeaderboardEntry component
+- **Data Model Extensions**: CharacterType.gd now includes UI display fields
+  - `main_ability_name/description/icon`, `main_passive_name/description/icon`, `portrait_icon`
+  - Updated character-types.tres with Knight/Ranger/Mage ability data
+
 ### Scene Architecture
 - **MainMenu Promotion**: MeasureAtlas promoted to primary MainMenu, old menu archived as reference
   - **Renamed:** MeasureAtlas.tscn → MainMenu.tscn (now the PRIMARY F5 menu)
