@@ -4,7 +4,6 @@
 [ext_resource type="Script" uid="uid://ckuuufkla1x8i" path="res://scenes/ui/components/LeaderboardEntry.gd" id="2_script"]
 
 [node name="LeaderboardEntry" type="MarginContainer"]
-custom_minimum_size = Vector2(350, 0)
 offset_right = 6.0
 offset_bottom = 40.0
 script = ExtResource("2_script")

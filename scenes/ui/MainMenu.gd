@@ -79,10 +79,11 @@ func _fetch_mock_global_leaderboard() -> Array[Dictionary]:
 	var ui_data: Array[Dictionary] = []
 	for i in range(mock_players.size()):
 		var player = mock_players[i]
+		var score_text = "%s kills" % _format_number(player.kills)
 		ui_data.append({
 			"rank": i + 1,
 			"name": player.username,
-			"kills": player.kills,
+			"kills": player.kills,  # Keep raw for future sorting
 			"character_icon": _get_character_icon(player.character_id)
 		})
 
@@ -151,8 +152,8 @@ func _populate_leaderboard(container: VBoxContainer, data: Array) -> void:
 		# Get character icon (already loaded as Texture2D)
 		var char_icon: Texture2D = entry_data.get("character_icon", null)
 
-		# Setup entry with formatted data
-		var score_text = "%s kills" % _format_number(entry_data.kills)
+		# Setup entry with formatted data (just number, no "kills" suffix)
+		var score_text = _format_number(entry_data.kills)
 		entry.setup(
 			entry_data.rank,
 			entry_data.name,
