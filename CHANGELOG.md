@@ -121,6 +121,17 @@
   - Standardized content_margin to 12px/6px across all tab states (was 24px/12px for selected/focus)
   - Added custom_minimum_size Vector2(0, 50) to match UnlockShop tab height
   - Both components now share identical tab padding, height, and visual appearance
+- **ShopItemCard Component**: Created reusable shop item card following CharacterSelectButton pattern
+  - Button root with automatic hover/press theme states from MainMenu.tres
+  - setup() method accepts ItemMetadata + state (discovered/unlocked/can_afford)
+  - Emits item_clicked(item_id, category) and item_hovered(item_id, category) signals
+  - State-based visuals: unlocked (full color), undiscovered (black silhouette), discovered+locked (dim overlay with cost)
+  - Rarity-based subtle tint on button background (0.3 alpha)
+  - 80x80px fixed card size with 64x64px centered icon texture
+  - set_selected() method for visual selection feedback
+  - Refactored UnlockShop.gd: Reduced from 422 → 362 lines (-60 lines)
+  - Removed _add_icon_visual() helper (now internal to ShopItemCard component)
+  - Cards now have hover highlighting and support future selection state tracking
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
