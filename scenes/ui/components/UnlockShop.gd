@@ -35,8 +35,13 @@ var _characters_data_provider: Callable
 var _selected_item: ItemMetadata = null
 
 func _ready() -> void:
-	# Load notification icon
-	_notification_icon = load("res://assets/ui/map_markers/attention.png")
+	# Load notification icon (scaled to half size)
+	var original_icon = load("res://assets/ui/map_markers/attention.png")
+	if original_icon:
+		var img = original_icon.get_image()
+		var new_size = Vector2i(img.get_width() / 2, img.get_height() / 2)
+		img.resize(new_size.x, new_size.y, Image.INTERPOLATE_LANCZOS)
+		_notification_icon = ImageTexture.create_from_image(img)
 
 	# Connect tab switching
 	if tab_bar:
@@ -45,8 +50,8 @@ func _ready() -> void:
 	Logger.debug("UnlockShop initialized", "ui")
 
 func _update_tab_notification_badges() -> void:
-	"""Update tab icons with notification badge if category has discovered but unlocked items."""
-	if not tab_bar or not MetaProgression or not _notification_icon:
+	"""Update tab with notification icon if category has discovered but unlocked items."""
+	if not tab_bar or not MetaProgression:
 		return
 
 	var categories = [
@@ -59,13 +64,12 @@ func _update_tab_notification_badges() -> void:
 	for cat in categories:
 		var has_discovered = _category_has_discovered_items(cat.category)
 
-		# Reset title to base name
-		tab_bar.set_tab_title(cat.index, cat.name)
-
-		# Set icon if has discovered items, otherwise clear icon
+		# TabBar always places icons BEFORE text, so use Unicode attention symbol after text
 		if has_discovered:
-			tab_bar.set_tab_icon(cat.index, _notification_icon)
+			tab_bar.set_tab_title(cat.index, cat.name + " ⚠")  # Warning emoji after text
+			tab_bar.set_tab_icon(cat.index, null)
 		else:
+			tab_bar.set_tab_title(cat.index, cat.name)
 			tab_bar.set_tab_icon(cat.index, null)
 
 func _category_has_discovered_items(category: String) -> bool:
