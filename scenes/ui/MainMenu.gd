@@ -3,6 +3,12 @@ extends Control
 ## Features: Leaderboard, Play flow, Unlocks shop integration
 ## Reference: MainMenu_reference.tscn contains old menu for comparison
 
+# Leaderboard component
+const LeaderboardEntryScene = preload("res://scenes/ui/components/LeaderboardEntry.tscn")
+
+# Asset paths
+const PORTRAIT_PATH = "res://assets/ui/characters/portraits/"
+
 # Leaderboard UI
 @onready var tab_bar: TabBar = %TabBar
 @onready var global_container: VBoxContainer = %VBoxContainer_Global
@@ -73,7 +79,7 @@ func _load_local_leaderboard() -> void:
 			"rank": i + 1,
 			"name": entry.character_id,  # Character ID as name
 			"kills": entry.kills,
-			"icon_path": _get_character_icon(entry.character_id)
+			"character_icon": _get_character_icon(entry.character_id)
 		})
 
 	_populate_leaderboard(friends_container, ui_data)
@@ -82,44 +88,43 @@ func _on_leaderboard_updated(_map_id: String, _tier: int, _rank: int) -> void:
 	"""Refresh leaderboard when new entry is added"""
 	_load_local_leaderboard()  # Refresh entire top 10
 
-func _get_character_icon(character_id: String) -> String:
-	"""Get icon path for character - customize based on your character system"""
-	# TODO: Connect to your character icon mapping
-	# For now, use placeholder icons
-	match character_id:
-		"warrior":
-			return "res://assets/ui/tile048.png"
-		"mage":
-			return "res://assets/ui/tile038.png"
-		_:
-			return "res://assets/ui/tile048.png"  # Default icon
+func _get_character_icon(character_id: String) -> Texture2D:
+	"""Load character portrait icon using filename convention"""
+	var filename = "%s_portrait" % character_id
+	var extensions = [".png", ".svg"]
+
+	for ext in extensions:
+		var full_path = PORTRAIT_PATH + filename + ext
+		if ResourceLoader.exists(full_path):
+			return load(full_path) as Texture2D
+
+	Logger.warn("Character icon not found: %s (tried %s)" % [character_id, PORTRAIT_PATH], "ui")
+	return null
 
 func _populate_leaderboard(container: VBoxContainer, data: Array) -> void:
-	"""Populate leaderboard with local data - updates existing entries"""
+	"""Populate leaderboard with LeaderboardEntry components"""
 
-	# Get existing entry nodes
-	var entries = container.get_children()
+	# Clear existing entries
+	for child in container.get_children():
+		child.queue_free()
 
-	# Update existing entries or hide if no data
-	for i in range(max(entries.size(), data.size())):
-		if i < entries.size() and i < data.size():
-			# Update existing entry with new data
-			var entry = entries[i]
-			var entry_data = data[i]
+	# Create new entries using component template
+	for entry_data in data:
+		var entry: LeaderboardEntry = LeaderboardEntryScene.instantiate()
 
-			entry.visible = true
-			entry.get_node("NinePatchRect/MarginContainer/HboxEntry/playerRank").text = "#%d" % entry_data.rank
-			entry.get_node("NinePatchRect/MarginContainer/HboxEntry/playerName").text = entry_data.name
-			entry.get_node("NinePatchRect/MarginContainer/HboxEntry/Kills/playerKillcount").text = _format_number(entry_data.kills)
+		# Get character icon (already loaded as Texture2D)
+		var char_icon: Texture2D = entry_data.get("character_icon", null)
 
-			# Load icon if path provided
-			if entry_data.has("icon_path"):
-				var icon_node = entry.get_node("NinePatchRect/MarginContainer/HboxEntry/Kills/playerChar")
-				icon_node.texture = load(entry_data.icon_path)
+		# Setup entry with formatted data
+		var score_text = "%s kills" % _format_number(entry_data.kills)
+		entry.setup(
+			entry_data.rank,
+			entry_data.name,
+			score_text,
+			char_icon
+		)
 
-		elif i < entries.size():
-			# Hide unused entries
-			entries[i].visible = false
+		container.add_child(entry)
 
 func _format_number(value: int) -> String:
 	"""Format large numbers with K/M/B suffixes"""

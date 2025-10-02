@@ -6,7 +6,7 @@
 [ext_resource type="Texture2D" uid="uid://evbdsavt54ug" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Ruin_shadow2_4.png" id="3_ruw6l"]
 [ext_resource type="Texture2D" uid="uid://bidgiopi3n18v" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Tree_shadow1_2.png" id="4_ttmag"]
 [ext_resource type="Texture2D" uid="uid://br4a71lyl4vpq" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Crystal_shadow1_2.png" id="6_ttmag"]
-[ext_resource type="Texture2D" uid="uid://cvmrt4s8rrv1u" path="res://assets/ui/S6.png" id="11_sg73a"]
+[ext_resource type="Texture2D" uid="uid://jpmqo1pif0c6" path="res://assets/ui/S6.png" id="11_sg73a"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_geevw"]
 texture = ExtResource("2_7bytg")

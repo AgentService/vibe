@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://7mn2sd473jky"
-path="res://.godot/imported/S95.png-0dbc6fefa75fbbb21bdf8475b97ad33c.ctex"
+uid="uid://0gbd1ax7mi2r"
+path="res://.godot/imported/mage_portrait.png-668c1982a4a7e94231e6062cce8d0bfe.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/ui/S95.png"
-dest_files=["res://.godot/imported/S95.png-0dbc6fefa75fbbb21bdf8475b97ad33c.ctex"]
+source_file="res://assets/ui/characters/portraits/mage_portrait.png"
+dest_files=["res://.godot/imported/mage_portrait.png-668c1982a4a7e94231e6062cce8d0bfe.ctex"]
 
 [params]
 

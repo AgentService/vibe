@@ -12,6 +12,13 @@ base_hp = 100.0
 base_damage = 25.0
 base_speed = 1.0
 starting_abilities = Array[StringName]([])
+main_ability_name = "Sword"
+main_ability_description = "A powerful melee strike that deals damage in a cone in front of the Knight"
+main_ability_icon = "sword"
+main_passive_name = "Shield"
+main_passive_description = "Gain 1% armor per level"
+main_passive_icon = "shield"
+portrait_icon = "knight_portrait"
 
 [sub_resource type="Resource" id="ranger_char_type"]
 script = ExtResource("2")
@@ -22,10 +29,36 @@ base_hp = 75.0
 base_damage = 30.0
 base_speed = 1.2
 starting_abilities = Array[StringName]([])
+main_ability_name = "Bow"
+main_ability_description = "Fires devastating arrows at nearby Enemies"
+main_ability_icon = "bow"
+main_passive_name = "Evasion"
+main_passive_description = "Gain 1% more Evasion per Level"
+main_passive_icon = "evasion"
+portrait_icon = "ranger_portrait"
+
+[sub_resource type="Resource" id="mage_char_type"]
+script = ExtResource("2")
+id = &"mage"
+display_name = "Mage"
+description = "Smart Mage with lots of magic powers"
+base_hp = 75.0
+base_damage = 30.0
+base_speed = 1.2
+starting_abilities = Array[StringName]([])
+main_ability_name = "Fireball"
+main_ability_description = "Fires fireballs at nearby enemies"
+main_ability_icon = "fireball"
+main_passive_name = "Experience"
+main_passive_description = "Gain 1% more experience per level"
+main_passive_icon = "experience"
+portrait_icon = "mage_portrait"
+
 
 [resource]
 script = ExtResource("1")
 character_types = {
 "knight": SubResource("knight_char_type"),
-"ranger": SubResource("ranger_char_type")
+"ranger": SubResource("ranger_char_type"),
+"mage": SubResource("mage_char_type")
 }

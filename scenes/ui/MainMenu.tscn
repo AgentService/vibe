@@ -161,7 +161,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_pl2nd")
 theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_d0aii")
 theme_override_styles/tab_selected = SubResource("StyleBoxTexture_d0aii")
-current_tab = 0
+current_tab = 1
 tab_alignment = 1
 clip_tabs = false
 scroll_to_selected = false
@@ -356,6 +356,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="MarginContainerEntry2" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
+visible = false
 layout_mode = 2
 
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2"]
