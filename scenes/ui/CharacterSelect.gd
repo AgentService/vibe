@@ -1,6 +1,6 @@
 extends Control
-## NEW Character Select - Styled replacement for character selection flow
-## Work in progress - building styled UI with real character data
+## CharacterSelect - Character selection screen
+## Separate scene with own script (cleaner than all-in-one MainMenu approach)
 
 @onready var confirm_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/confirm
 @onready var back_button: Button = $BackButton
@@ -10,14 +10,14 @@ func _ready() -> void:
 	confirm_button.pressed.connect(_on_confirm_pressed)
 	back_button.pressed.connect(_on_back_pressed)
 
-	Logger.info("CharacterSelect_New loaded", "ui")
+	Logger.info("CharacterSelect loaded", "ui")
 
 func _on_confirm_pressed() -> void:
 	"""Proceed to map selection after character is chosen via SceneTransitionManager"""
 	Logger.info("Confirm pressed - loading map selection", "ui")
 	EventBus.request_enter_map.emit({
-		"map_id": "map_select_new",
-		"source": "character_select_new"
+		"map_id": "map_select",
+		"source": "character_select"
 	})
 
 func _on_back_pressed() -> void:
@@ -25,5 +25,5 @@ func _on_back_pressed() -> void:
 	Logger.info("Back pressed - returning to MainMenu", "ui")
 	EventBus.request_enter_map.emit({
 		"map_id": "main_menu",
-		"source": "character_select_new"
+		"source": "character_select"
 	})

@@ -137,11 +137,11 @@ func _format_number(value: int) -> String:
 # ============================================================================
 
 func _on_play_pressed() -> void:
-	"""Start game flow - loads new CharacterSelect via SceneTransitionManager"""
+	"""Start game flow - loads CharacterSelect via SceneTransitionManager"""
 	Logger.info("Play pressed - loading character select", "ui")
 	EventBus.request_enter_map.emit({
-		"map_id": "character_select_new",
-		"source": "measure_atlas"
+		"map_id": "character_select",
+		"source": "main_menu"
 	})
 
 func _on_unlocks_pressed() -> void:

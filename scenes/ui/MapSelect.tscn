@@ -1,6 +1,6 @@
-[gd_scene load_steps=11 format=3 uid="uid://gvtp22inkm5v"]
+[gd_scene load_steps=11 format=3 uid="uid://bc1nuy33qxqb2"]
 
-[ext_resource type="Script" uid="uid://nxtqt127nnhb" path="res://scenes/ui/MapSelect_New.gd" id="1_64gr2"]
+[ext_resource type="Script" uid="uid://nxtqt127nnhb" path="res://scenes/ui/MapSelect.gd" id="1_64gr2"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_7bytg"]
 [ext_resource type="Texture2D" uid="uid://lcs8iqc4qb8y" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Tree_shadow3_3.png" id="3_eec6u"]
 [ext_resource type="Texture2D" uid="uid://evbdsavt54ug" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Ruin_shadow2_4.png" id="3_ruw6l"]

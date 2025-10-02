@@ -1,6 +1,6 @@
 extends Control
-## NEW Map Selection - Styled replacement for map/tier selection flow
-## Work in progress - building styled UI with real map data
+## MapSelect - Map and tier selection screen
+## Separate scene with own script (cleaner than all-in-one MainMenu approach)
 
 @onready var back_button: Button = $BackButton
 @onready var start_run_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/startRun
@@ -15,14 +15,14 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	start_run_button.pressed.connect(_on_start_run_pressed)
 
-	Logger.info("MapSelect_New loaded", "ui")
+	Logger.info("MapSelect loaded", "ui")
 
 func _on_back_pressed() -> void:
-	"""Return to CharacterSelect_New via SceneTransitionManager"""
-	Logger.info("Back pressed - returning to CharacterSelect_New", "ui")
+	"""Return to CharacterSelect via SceneTransitionManager"""
+	Logger.info("Back pressed - returning to CharacterSelect", "ui")
 	EventBus.request_enter_map.emit({
-		"map_id": "character_select_new",
-		"source": "map_select_new"
+		"map_id": "character_select",
+		"source": "map_select"
 	})
 
 func _on_start_run_pressed() -> void:
