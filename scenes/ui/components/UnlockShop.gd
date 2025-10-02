@@ -297,7 +297,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 		quest_progress_label.text = "Cost: %d 💎" % item_metadata.unlock_cost
 		quest_progress_label.visible = true
 
-		unlock_button.text = "BUY"
+		# Button text is set in scene ("BUY"), no need to override
 		unlock_button.disabled = not can_afford
 		unlock_button.visible = true
 
