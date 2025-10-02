@@ -30,15 +30,16 @@ func _ready() -> void:
 		unlock_shop.setup_data_providers(
 			_fetch_items_data,
 			_fetch_tomes_data,
-			_fetch_skills_data
+			_fetch_skills_data,
+			_fetch_characters_data
 		)
 		Logger.info("UnlockShopScene initialized with %d items loaded" % item_metadata_cache.size(), "ui")
 	else:
 		Logger.error("UnlockShopScene: UnlockShop component not found", "ui")
 
 func _load_item_metadata() -> void:
-	"""Load item metadata from /data/content/{items,tomes,skills}/*.tres"""
-	var categories = ["items", "tomes", "skills"]
+	"""Load item metadata from /data/content/{items,tomes,skills,characters}/*.tres"""
+	var categories = ["items", "tomes", "skills", "characters"]
 
 	for category in categories:
 		var category_dir = "res://data/content/%s/" % category
@@ -119,6 +120,26 @@ func _fetch_skills_data() -> Array[ItemMetadata]:
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
 		if metadata.category == "skills":
+			category_items.append(metadata)
+
+	# Sort by rarity (Common → Legendary)
+	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
+		return a.rarity < b.rarity
+	)
+
+	return category_items
+
+func _fetch_characters_data() -> Array[ItemMetadata]:
+	"""Callback for UnlockShop component - provides characters unlock data.
+
+	Returns:
+		Array[ItemMetadata]: Item metadata resources for "characters" category
+	"""
+	var category_items: Array[ItemMetadata] = []
+
+	for item_id in item_metadata_cache.keys():
+		var metadata = item_metadata_cache[item_id]
+		if metadata.category == "characters":
 			category_items.append(metadata)
 
 	# Sort by rarity (Common → Legendary)

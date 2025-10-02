@@ -1,7 +1,7 @@
 extends VBoxContainer
 class_name UnlockShop
 
-## Reusable Unlock Shop component with Items/Tomes/Skills tabs
+## Reusable Unlock Shop component with Items/Tomes/Skills/Characters tabs
 ## Manages tab switching, currency display, and item grid population with icon-based cards
 ## Integrates with MetaProgression for discovery/unlock states
 
@@ -12,6 +12,7 @@ class_name UnlockShop
 @onready var item_grid_items: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Items
 @onready var item_grid_tomes: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Tomes
 @onready var item_grid_skills: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Skills
+@onready var item_grid_characters: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Characters
 
 # Item details panel labels
 @onready var item_name_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemName
@@ -25,6 +26,7 @@ class_name UnlockShop
 var _items_data_provider: Callable
 var _tomes_data_provider: Callable
 var _skills_data_provider: Callable
+var _characters_data_provider: Callable
 
 # Currently selected item
 var _selected_item: ItemMetadata = null
@@ -39,17 +41,19 @@ func _ready() -> void:
 
 	Logger.debug("UnlockShop initialized", "ui")
 
-func setup_data_providers(items_provider: Callable, tomes_provider: Callable, skills_provider: Callable) -> void:
+func setup_data_providers(items_provider: Callable, tomes_provider: Callable, skills_provider: Callable, characters_provider: Callable) -> void:
 	"""Configure data loading callbacks and initialize with Items tab.
 
 	Args:
 		items_provider: Callable that returns Array[ItemMetadata] for items category
 		tomes_provider: Callable that returns Array[ItemMetadata] for tomes category
 		skills_provider: Callable that returns Array[ItemMetadata] for skills category
+		characters_provider: Callable that returns Array[ItemMetadata] for characters category
 	"""
 	_items_data_provider = items_provider
 	_tomes_data_provider = tomes_provider
 	_skills_data_provider = skills_provider
+	_characters_data_provider = characters_provider
 
 	# Load initial data for Items tab (index 0)
 	if tab_bar:
@@ -57,14 +61,15 @@ func setup_data_providers(items_provider: Callable, tomes_provider: Callable, sk
 	_on_tab_changed(0)
 
 func _on_tab_changed(tab_index: int) -> void:
-	"""Switch between Items, Tomes, and Skills tabs."""
-	if not item_grid_items or not item_grid_tomes or not item_grid_skills:
+	"""Switch between Items, Tomes, Skills, and Characters tabs."""
+	if not item_grid_items or not item_grid_tomes or not item_grid_skills or not item_grid_characters:
 		return
 
 	# Hide all grids
 	item_grid_items.visible = false
 	item_grid_tomes.visible = false
 	item_grid_skills.visible = false
+	item_grid_characters.visible = false
 
 	# Show selected grid and load data
 	match tab_index:
@@ -77,6 +82,9 @@ func _on_tab_changed(tab_index: int) -> void:
 		2: # Skills tab
 			item_grid_skills.visible = true
 			_load_and_populate_grid(item_grid_skills, _skills_data_provider)
+		3: # Characters tab
+			item_grid_characters.visible = true
+			_load_and_populate_grid(item_grid_characters, _characters_data_provider)
 
 func _load_and_populate_grid(container: GridContainer, data_provider: Callable) -> void:
 	"""Load data from provider and populate grid with icon-based item cards.
@@ -164,7 +172,7 @@ func _create_shop_item_entry(container: GridContainer, item_metadata: ItemMetada
 		# Dark background
 		var overlay_bg = ColorRect.new()
 		overlay_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-		overlay_bg.color = Color(0, 0, 0, 0.90)
+		overlay_bg.color = Color(0, 0, 0, 0.50)
 		overlay_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		overlay_container.add_child(overlay_bg)
 

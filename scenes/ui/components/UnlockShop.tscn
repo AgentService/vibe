@@ -52,10 +52,11 @@ current_tab = 0
 tab_alignment = 1
 clip_tabs = false
 scroll_to_selected = false
-tab_count = 3
+tab_count = 4
 tab_0/title = "Items"
 tab_1/title = "Tomes"
 tab_2/title = "Skills"
+tab_3/title = "Characters"
 
 [node name="ContentContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
@@ -174,6 +175,14 @@ size_flags_horizontal = 3
 theme_override_constants/h_separation = 10
 theme_override_constants/v_separation = 10
 columns = 8
+
+[node name="ItemGrid_Characters" type="GridContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 6
 
 [node name="ItemDetailsPanel" type="NinePatchRect" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer"]
 custom_minimum_size = Vector2(0, 140)
