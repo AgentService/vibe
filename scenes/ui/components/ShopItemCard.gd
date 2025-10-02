@@ -72,7 +72,8 @@ func _apply_data(metadata: ItemMetadata, is_discovered: bool, is_unlocked: bool,
 		texture = load(metadata.icon_path)
 
 	# Apply rarity tint to button background
-	_apply_rarity_tint(metadata.rarity)
+	var rarity_name = ItemMetadata.get_rarity_name(metadata.rarity)
+	_apply_rarity_tint(rarity_name)
 
 	# State-based visual appearance
 	if is_unlocked:
