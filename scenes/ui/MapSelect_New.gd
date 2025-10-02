@@ -18,9 +18,12 @@ func _ready() -> void:
 	Logger.info("MapSelect_New loaded", "ui")
 
 func _on_back_pressed() -> void:
-	"""Return to CharacterSelect_New"""
+	"""Return to CharacterSelect_New via SceneTransitionManager"""
 	Logger.info("Back pressed - returning to CharacterSelect_New", "ui")
-	get_tree().change_scene_to_file("res://scenes/ui/CharacterSelect_New.tscn")
+	EventBus.request_enter_map.emit({
+		"map_id": "character_select_new",
+		"source": "map_select_new"
+	})
 
 func _on_start_run_pressed() -> void:
 	"""Start the run with selected character, map, and tier (matching MainMenu flow)"""
