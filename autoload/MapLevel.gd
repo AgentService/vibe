@@ -101,4 +101,3 @@ func get_level_time_remaining() -> float:
 	if not _is_active:
 		return 0.0
 	return seconds_per_level - _level_timer
-
