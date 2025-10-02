@@ -4,6 +4,86 @@ This directory contains reusable UI component scenes that can be instantiated dy
 
 ## Available Components
 
+### Leaderboard
+
+**File:** `Leaderboard.tscn`
+**Purpose:** Complete leaderboard system with Global/Friends tabs and automatic entry management
+
+**Usage:**
+```gdscript
+const LeaderboardScene = preload("res://scenes/ui/components/Leaderboard.tscn")
+
+# Add to scene
+var leaderboard: Leaderboard = LeaderboardScene.instantiate()
+add_child(leaderboard)
+
+# Setup data providers (callbacks that return leaderboard data)
+leaderboard.setup_data_providers(
+	_fetch_global_leaderboard,  # Callable for global data
+	_fetch_friends_leaderboard  # Callable for friends data
+)
+
+# Data provider examples
+func _fetch_global_leaderboard() -> Array[Dictionary]:
+	return [
+		{
+			"rank": 1,
+			"name": "xXDragonSlayerXx",
+			"score": "2.5M",  # Pre-formatted string
+			"character_icon": load("res://assets/ui/characters/portraits/knight_portrait.png")
+		},
+		# ... more entries
+	]
+
+func _fetch_friends_leaderboard() -> Array[Dictionary]:
+	var data = []
+	for i in range(local_scores.size()):
+		data.append({
+			"rank": i + 1,
+			"name": local_scores[i].player_name,
+			"score": _format_number(local_scores[i].kills),
+			"character_icon": _get_character_icon(local_scores[i].character_id),
+			"is_current_player": local_scores[i].is_current  # Optional highlight
+		})
+	return data
+
+# Manual data loading (without callbacks)
+leaderboard.load_global_data(custom_global_data)
+leaderboard.load_friends_data(custom_friends_data)
+
+# Programmatic tab switching
+leaderboard.switch_to_global()
+leaderboard.switch_to_friends()
+
+# Refresh current tab
+leaderboard.refresh_current_tab()
+```
+
+**Methods:**
+- `setup_data_providers(global_provider: Callable, friends_provider: Callable)` - Set data loading callbacks
+- `load_global_data(data: Array[Dictionary])` - Load global leaderboard (uses provider if data empty)
+- `load_friends_data(data: Array[Dictionary])` - Load friends leaderboard (uses provider if data empty)
+- `switch_to_global()` - Switch to Global tab programmatically
+- `switch_to_friends()` - Switch to Friends tab programmatically
+- `refresh_current_tab()` - Reload data for currently visible tab
+
+**Data Format:**
+Each entry requires:
+- `rank` (int) - Player position (1, 2, 3, etc.)
+- `name` (String) - Player display name
+- `score` (String) - Pre-formatted score ("2.5M", "1.2K kills", etc.)
+- `character_icon` (Texture2D) - Optional character portrait
+- `is_current_player` (bool) - Optional, highlights entry if true
+
+**Benefits:**
+- Encapsulates entire leaderboard UI and logic
+- Reusable across MainMenu, post-game results, profile screens
+- Clean callback-based data loading
+- Automatic tab switching and entry management
+- Supports manual data injection for testing
+
+---
+
 ### CharacterSelectButton
 
 **File:** `CharacterSelectButton.tscn`

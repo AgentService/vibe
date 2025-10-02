@@ -21,7 +21,7 @@ patch_margin_bottom = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
-offset_right = 354.0
+offset_right = 380.0
 offset_bottom = 40.0
 theme_override_constants/margin_left = 5
 theme_override_constants/margin_top = 5

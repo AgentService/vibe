@@ -1,0 +1,38 @@
+[gd_scene load_steps=2 format=3 uid="uid://cp8yqo7xb3mha"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/Leaderboard.gd" id="1_script"]
+
+[node name="Leaderboard" type="VBoxContainer"]
+offset_right = 400.0
+offset_bottom = 500.0
+script = ExtResource("1_script")
+
+[node name="TabBar" type="TabBar" parent="."]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+current_tab = 0
+tab_alignment = 1
+tab_count = 2
+tab_0/title = "Global"
+tab_1/title = "Friends"
+
+[node name="TabContent" type="Control" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="VBoxContainer_Global" type="VBoxContainer" parent="TabContent"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer_Friends" type="VBoxContainer" parent="TabContent"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
