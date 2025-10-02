@@ -32,6 +32,9 @@ func _update_visibility(state: StateManager.State) -> void:
 	match state:
 		StateManager.State.MENU:
 			visible = true
+			# Force background to refresh when becoming visible
+			if _background_instance and _background_instance.has_method("reset_background"):
+				_background_instance.reset_background()
 		StateManager.State.ARENA, \
 		StateManager.State.HIDEOUT, \
 		StateManager.State.RESULTS:
