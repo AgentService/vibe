@@ -117,6 +117,10 @@
   - Tab spacing: h_separation (50px between tabs), icon_separation (8px icon-to-text gap)
   - Four-tab system: Items/Tomes/Skills/Characters with consistent visual treatment
   - PersistentRiftFragments autoload: CanvasLayer currency display auto-shows/hides across menu scenes
+- **Leaderboard Tab Standardization**: Synchronized TabBar styling with UnlockShop for UI consistency
+  - Standardized content_margin to 12px/6px across all tab states (was 24px/12px for selected/focus)
+  - Added custom_minimum_size Vector2(0, 50) to match UnlockShop tab height
+  - Both components now share identical tab padding, height, and visual appearance
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
