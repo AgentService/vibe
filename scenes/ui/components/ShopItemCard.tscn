@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://cnqh8j4b5xr3v"]
+[gd_scene load_steps=5 format=3 uid="uid://cnqh8j4b5xr3v"]
 
 [ext_resource type="Script" uid="uid://duvlpqu05xfwp" path="res://scenes/ui/components/ShopItemCard.gd" id="1_script"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_frame"]
@@ -18,7 +18,8 @@ region_rect = Rect2(288, 80, 16, 16)
 
 [node name="ShopItemCard" type="Control"]
 custom_minimum_size = Vector2(80, 80)
-layout_mode = 2
+layout_mode = 3
+anchors_preset = 0
 size_flags_horizontal = 0
 size_flags_vertical = 0
 theme = ExtResource("3_theme")
@@ -45,14 +46,13 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 4
-theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 4
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
 [node name="Button" type="Button" parent="Frame/MarginContainer"]
 layout_mode = 2
-focus_mode = 2
 theme_override_styles/focus = SubResource("hover_style")
 theme_override_styles/hover = SubResource("hover_style")
 theme_override_styles/pressed = SubResource("hover_style")
