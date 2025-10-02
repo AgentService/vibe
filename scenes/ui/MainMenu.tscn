@@ -217,7 +217,6 @@ layout_mode = 2
 text = "BACK"
 
 [node name="MapSelectContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -287,6 +286,7 @@ layout_mode = 2
 text = "BACK"
 
 [node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
+visible = false
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
