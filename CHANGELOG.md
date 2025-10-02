@@ -121,6 +121,12 @@
   - Standardized content_margin to 12px/6px across all tab states (was 24px/12px for selected/focus)
   - Added custom_minimum_size Vector2(0, 50) to match UnlockShop tab height
   - Both components now share identical tab padding, height, and visual appearance
+- **MainTheme TabBar Integration**: Added TabBar theming system to MainTheme for project-wide consistency
+  - Added 6 @export properties: tab_min_height (50), content_margin (12px/6px), separation (50/8), icon_max_width (22)
+  - Added apply_tabbar_theme() method supporting both StyleBoxFlat (programmatic) and StyleBoxTexture (9-slice) approaches
+  - Added StyleBox generation for 3 tab states (unselected, selected, focus) using theme colors
+  - Created TABBAR_THEMING_GUIDE.md with usage patterns, migration guide, and best practices
+  - Note: MainTheme is a custom Resource, access via ThemeManager.main_theme (not assignable to Control.theme)
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
