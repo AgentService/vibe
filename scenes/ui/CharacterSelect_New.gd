@@ -22,7 +22,7 @@ func _on_confirm_pressed() -> void:
 
 func _on_back_pressed() -> void:
 	"""Return to main menu via SceneTransitionManager"""
-	Logger.info("Back pressed - returning to MeasureAtlas", "ui")
+	Logger.info("Back pressed - returning to MainMenu", "ui")
 	EventBus.request_enter_map.emit({
 		"map_id": "main_menu",
 		"source": "character_select_new"

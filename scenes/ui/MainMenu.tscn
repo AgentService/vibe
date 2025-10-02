@@ -1,427 +1,424 @@
-[gd_scene load_steps=7 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=14 format=3 uid="uid://dvrdid0uj4vf2"]
 
-[ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
-[ext_resource type="PackedScene" uid="uid://daiogox3vei4r" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
-[ext_resource type="Texture2D" uid="uid://tnao3a1qwkrf" path="res://Obsidian/03-tasks/open-tasks/UI/main_menu_backgroundgpt.png" id="3_background"]
+[ext_resource type="Script" uid="uid://drig0mu3haff1" path="res://scenes/ui/MeasureAtlas.gd" id="1_ba6bw"]
+[ext_resource type="Texture2D" uid="uid://barxodnk8kyws" path="res://assets/ui/Large Separated Files/sprite-1-6.png" id="2_5n82f"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="3_pl2nd"]
+[ext_resource type="Texture2D" uid="uid://c8k24vxbqnhrh" path="res://assets/ui/tile048.png" id="4_ba6bw"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CharSelect"]
-bg_color = Color(0, 0.152941, 0.239216, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ba6bw"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MapSelect"]
-bg_color = Color(0, 0.152941, 0.239216, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="Theme" id="Theme_esm66"]
+Button/font_sizes/font_size = 26
+Button/fonts/font = null
+Button/styles/normal = SubResource("StyleBoxTexture_ba6bw")
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_UnlocksShop"]
-bg_color = Color(0, 0.152, 0.24, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mcen4"]
+texture = ExtResource("3_pl2nd")
+texture_margin_left = 2.0
+texture_margin_top = 15.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 31, 48, 17)
 
-[node name="MainMenu" type="Control"]
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_wvwa0"]
+texture = ExtResource("3_pl2nd")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 32, 48, 16)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_pdo7m"]
+texture = ExtResource("3_pl2nd")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 16, 48, 16)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_vky4k"]
+texture = ExtResource("2_5n82f")
+texture_margin_left = 14.0
+texture_margin_top = 13.0
+texture_margin_right = 13.0
+texture_margin_bottom = 13.0
+region_rect = Rect2(0, 0, 194, 66)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_pl2nd"]
+texture = ExtResource("3_pl2nd")
+texture_margin_left = 2.0
+texture_margin_top = 1.0
+texture_margin_right = 2.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(192, 32, 16, 15)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_d0aii"]
+texture = ExtResource("3_pl2nd")
+texture_margin_left = 2.0
+texture_margin_top = 2.0
+texture_margin_right = 2.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(160, 32, 16, 15)
+
+[sub_resource type="Theme" id="Theme_5n82f"]
+
+[node name="MainMenu_v2" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-script = ExtResource("1_vjtqc")
+theme = SubResource("Theme_esm66")
+script = ExtResource("1_ba6bw")
 
-[node name="BackgroundPanel" parent="." instance=ExtResource("2_themed_panel")]
+[node name="MarginContainer_Starter2" type="MarginContainer" parent="."]
 layout_mode = 1
-auto_theme = false
-show_border = false
-rounded_corners = false
-drop_shadow = true
-glow_effect = true
-hover_highlight = true
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -100.0
+offset_top = -150.0
+offset_right = 80.0
+offset_bottom = 100.0
+grow_horizontal = 2
+grow_vertical = 2
 
-[node name="BackgroundImage" type="TextureRect" parent="BackgroundPanel"]
-visible = false
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter2"]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer_Starter2/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Play" type="Button" parent="MarginContainer_Starter2/MarginContainer/VBoxContainer2"]
+layout_mode = 2
+theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
+theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
+text = "Play"
+
+[node name="Play2" type="Button" parent="MarginContainer_Starter2/MarginContainer/VBoxContainer2"]
+layout_mode = 2
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
+theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
+theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
+text = "Unlocks"
+
+[node name="Play3" type="Button" parent="MarginContainer_Starter2/MarginContainer/VBoxContainer2"]
+layout_mode = 2
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
+theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
+theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
+text = "Options"
+
+[node name="Play4" type="Button" parent="MarginContainer_Starter2/MarginContainer/VBoxContainer2"]
+layout_mode = 2
+theme_override_styles/hover_pressed = SubResource("StyleBoxTexture_vky4k")
+theme_override_styles/hover = SubResource("StyleBoxTexture_mcen4")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_wvwa0")
+theme_override_styles/normal = SubResource("StyleBoxTexture_pdo7m")
+text = "Quit
+"
+
+[node name="MarginContainer_Starter" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -440.0
+offset_top = -250.0
+offset_right = -40.0
+offset_bottom = 250.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer_Starter"]
+show_behind_parent = true
+layout_mode = 2
+theme_override_constants/separation = -2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="TabBar" type="TabBar" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer/HBoxContainer"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/outline_size = 5
+theme_override_font_sizes/font_size = 18
+theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_pl2nd")
+theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_d0aii")
+theme_override_styles/tab_selected = SubResource("StyleBoxTexture_d0aii")
+current_tab = 0
+tab_alignment = 1
+clip_tabs = false
+scroll_to_selected = false
+tab_count = 2
+tab_0/title = "Global"
+tab_1/title = "Friends"
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.618826, 0.589485, 1, 1)
+z_index = 1
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+texture = ExtResource("3_pl2nd")
+region_rect = Rect2(288, 32, 48, 16)
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("3_background")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="PersistentRiftFragments" type="MarginContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 50.0
-grow_horizontal = 0
 theme_override_constants/margin_left = 10
 theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel/PersistentRiftFragments"]
-layout_mode = 2
-alignment = 2
-
-[node name="RiftFragmentsIcon" type="Label" parent="BackgroundPanel/PersistentRiftFragments/HBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "💎"
-
-[node name="RiftFragmentsValue" type="Label" parent="BackgroundPanel/PersistentRiftFragments/HBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "0"
-
-[node name="MainMenuContainer" type="Control" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel/MainMenuContainer"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.954
-anchor_top = 0.5
-anchor_right = 0.954
-anchor_bottom = 0.5
-offset_left = -153.0
-offset_top = -16.5
-offset_right = -20.0
-offset_bottom = 16.5
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="LeaderboardTitle" type="Label" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
-layout_mode = 2
-text = "PERSONAL BESTS"
-horizontal_alignment = 1
-
-[node name="LeaderboardList" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="CenterContainer" type="CenterContainer" parent="BackgroundPanel/MainMenuContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/CenterContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="TitleLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-layout_mode = 2
-text = "VIBE ROGUELIKE"
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 30)
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer"]
 layout_mode = 2
 
-[node name="PlayButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+[node name="Label" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = "PLAY"
+text = "Leaderboards"
+vertical_alignment = 1
+uppercase = true
 
-[node name="ShopButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
 layout_mode = 2
-text = "Unlocks Shop"
+size_flags_horizontal = 3
 
-[node name="QuitButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+[node name="Label2" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-text = "Quit"
-
-[node name="CharacterSelectContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/CharacterSelectContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_CharSelect")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 20
-
-[node name="CharTitle" type="Label" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "SELECT CHARACTER"
-horizontal_alignment = 1
+size_flags_horizontal = 3
+text = "Reset"
+horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="CharacterButtons" type="HBoxContainer" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
+[node name="Label3" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
-alignment = 1
-
-[node name="KnightButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons"]
-custom_minimum_size = Vector2(150, 60)
-layout_mode = 2
-text = "KNIGHT"
-
-[node name="RangerButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons"]
-custom_minimum_size = Vector2(150, 60)
-layout_mode = 2
-text = "RANGER"
-
-[node name="CharInfoLabel" type="Label" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(400, 100)
-layout_mode = 2
-text = "Select a character"
-horizontal_alignment = 1
+size_flags_horizontal = 3
+text = "11:30:32"
+horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="CharConfirmButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-disabled = true
-text = "CONFIRM"
-
-[node name="CharBackButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "BACK"
-
-[node name="MapSelectContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/MapSelectContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_MapSelect")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 20
-
-[node name="MapTitle" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "SELECT DIFFICULTY"
-horizontal_alignment = 1
-
-[node name="MapInfoLabel" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "Map: Forest Arena"
-horizontal_alignment = 1
-
-[node name="TierButtons" type="HBoxContainer" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Tier1Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 1"
-
-[node name="Tier2Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 2"
-
-[node name="Tier3Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 3"
-
-[node name="TierInfoLabel" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(400, 80)
-layout_mode = 2
-text = "Tier 1: Normal difficulty
-Base Rift Fragments"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="MapStartButton" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "START RUN"
-
-[node name="MapBackButton" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "BACK"
-
-[node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/UnlocksShopContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_UnlocksShop")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel"]
-layout_mode = 2
-offset_top = -25.5
-offset_right = 650.0
-offset_bottom = 675.5
-theme_override_constants/separation = 20
-
-[node name="ShopTitle" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "UNLOCKS SHOP"
-horizontal_alignment = 1
-
-[node name="CategoryTabs" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-
-[node name="ItemsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-button_pressed = true
-text = "ITEMS"
-
-[node name="TomesTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-text = "TOMES"
-
-[node name="SkillsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-text = "SKILLS"
-
-[node name="ItemListScroll" type="ScrollContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(600, 400)
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.309727, 0.535967, 1, 1)
 layout_mode = 2
 size_flags_vertical = 3
-horizontal_scroll_mode = 0
+texture = ExtResource("3_pl2nd")
+region_rect = Rect2(288, 16, 47, 16)
+patch_margin_left = 4
+patch_margin_top = 3
+patch_margin_right = 4
+patch_margin_bottom = 3
 
-[node name="ItemList" type="GridContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemListScroll"]
-custom_minimum_size = Vector2(600, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
-columns = 8
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
 
-[node name="ItemDetailsPanel" type="PanelContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(600, 140)
-layout_mode = 2
-size_flags_vertical = 4
-
-[node name="MarginContainer" type="MarginContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel"]
-layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 15
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 15
-
-[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="LeftPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(385, 110)
+[node name="GridContainer" type="GridContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/separation = 8
+columns = 4
 
-[node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="RankTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
-text = "Item Name"
+size_flags_horizontal = 3
+text = "Rank"
+vertical_alignment = 1
 
-[node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 30)
+[node name="NameTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
-text = "Item description goes here"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
+size_flags_horizontal = 3
+text = "Name"
+vertical_alignment = 1
 
-[node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 20)
+[node name="KillsTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
-text = "Stats"
-clip_text = true
+size_flags_horizontal = 3
+text = "Kills"
+horizontal_alignment = 2
+vertical_alignment = 1
 
-[node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-text = "Flavor text"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
-
-[node name="RightPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(155, 110)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/separation = 8
-
-[node name="QuestProgress" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
-custom_minimum_size = Vector2(0, 80)
-layout_mode = 2
-text = "Quest Progress"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
-
-[node name="UnlockButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
+[node name="VBoxContainer_Global" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 visible = false
 layout_mode = 2
-text = "UNLOCK"
 
-[node name="ShopBackButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+[node name="VBoxContainer_Friends" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-text = "BACK"
+
+[node name="MarginContainerEntry" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
+layout_mode = 2
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_pl2nd")
+region_rect = Rect2(0, 64, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_5n82f")
+
+[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "#1"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+text = "Signatured"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+alignment = 2
+
+[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "113.3M"
+horizontal_alignment = 2
+text_overrun_behavior = 3
+
+[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_horizontal = 8
+texture = ExtResource("4_ba6bw")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MarginContainerEntry2" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
+layout_mode = 2
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_pl2nd")
+region_rect = Rect2(0, 64, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme = SubResource("Theme_5n82f")
+
+[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(66, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+text = "#2"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(150, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 1
+text = "Aza"
+vertical_alignment = 1
+text_overrun_behavior = 3
+
+[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+alignment = 2
+
+[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "13.3M"
+horizontal_alignment = 2
+text_overrun_behavior = 3
+
+[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+size_flags_horizontal = 8
+texture = ExtResource("4_ba6bw")
+expand_mode = 1
+stretch_mode = 5

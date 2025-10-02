@@ -138,7 +138,7 @@ func _resolve_map_path(map_id: String) -> String:
 		"hideout":
 			return "res://scenes/core/Hideout.tscn"
 		"main_menu":
-			return "res://scenes/ui/MeasureAtlas.tscn"
+			return "res://scenes/ui/MainMenu.tscn"
 		"character_select_new":
 			return "res://scenes/ui/CharacterSelect_New.tscn"
 		"map_select_new":
