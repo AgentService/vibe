@@ -122,25 +122,10 @@ func _apply_rarity_tint(rarity: String) -> void:
 	if not button:
 		return
 
-	var tint_color: Color
-	match rarity.to_lower():
-		"common":
-			tint_color = Color(0.8, 0.8, 0.8)
-		"uncommon":
-			tint_color = Color(0.5, 1.0, 0.5)
-		"rare":
-			tint_color = Color(0.5, 0.5, 1.0)
-		"epic":
-			tint_color = Color(0.8, 0.5, 1.0)
-		"legendary":
-			tint_color = Color(1.0, 0.7, 0.3)
-		"mythic":
-			tint_color = Color(1.0, 0.3, 0.5)
-		_:
-			tint_color = Color(0.8, 0.8, 0.8)
-
-	# Apply subtle tint (low alpha)
-	button.modulate = Color(tint_color.r, tint_color.g, tint_color.b, 0.3)
+	# Note: Rarity tinting disabled for now as it was making icons look faded
+	# The button.modulate with alpha < 1.0 affects all children (including icon)
+	# TODO: Implement rarity border or background color using button theme overrides
+	pass
 
 func set_selected(selected: bool) -> void:
 	"""Update visual state when card is selected/deselected.
