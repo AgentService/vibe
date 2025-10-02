@@ -6,6 +6,14 @@
 
 ### UI Component System & Asset Organization
 - **Reusable Scene Components**: Replaced manual UI construction with template-based components
+  - **MainButton.tscn/gd**: Single source of truth for all UI buttons (Play, Confirm, Unlock, etc.)
+    - Embedded StyleBoxTexture resources (hover, pressed, normal states)
+    - @export var button_text for easy customization
+    - Change template → all buttons update across entire game
+  - **ShopItemCard.tscn/gd**: Reusable shop item card with hover/selection states
+    - Frame-based pattern (NinePatchRect + Button) for visual consistency
+    - Signal-based communication (item_clicked, item_hovered)
+    - UnlockShop code reduced from 422 → 362 lines (-60 lines)
   - **CharacterSelectButton.tscn/gd**: Reusable character selection card (replaces 80+ lines of code)
   - **LeaderboardEntry.tscn/gd**: Reusable leaderboard row component with rank/name/score/icon
   - **Leaderboard.tscn/gd**: Complete leaderboard system with Global/Friends tabs and entry management
