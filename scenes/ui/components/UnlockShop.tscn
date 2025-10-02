@@ -1,4 +1,4 @@
-[gd_scene load_steps=4 format=3 uid="uid://d1ptjvfkmnyst"]
+[gd_scene load_steps=5 format=3 uid="uid://d1ptjvfkmnyst"]
 
 [ext_resource type="Script" uid="uid://b3hfvkmqsma8t" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
@@ -209,5 +209,4 @@ text_overrun_behavior = 3
 
 [node name="UnlockButton" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel" instance=ExtResource("4_mainbutton")]
 visible = false
-layout_mode = 2
-button_text = "UNLOCK"
+button_text = "BUY"
