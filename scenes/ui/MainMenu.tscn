@@ -1,16 +1,10 @@
-[gd_scene load_steps=11 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=10 format=3 uid="uid://d128c4kosb2vl"]
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_xpiny"]
 [ext_resource type="Texture2D" uid="uid://barxodnk8kyws" path="res://assets/ui/Large Separated Files/sprite-1-6.png" id="2_5n82f"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="3_pl2nd"]
 [ext_resource type="PackedScene" uid="uid://cgqmq41cjt2f1" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ba6bw"]
-
-[sub_resource type="Theme" id="Theme_esm66"]
-Button/font_sizes/font_size = 26
-Button/fonts/font = null
-Button/styles/normal = SubResource("StyleBoxTexture_ba6bw")
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mcen4"]
 texture = ExtResource("3_pl2nd")
@@ -51,7 +45,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_esm66")
+theme = ExtResource("1_xpiny")
 script = ExtResource("1_vjtqc")
 
 [node name="MainButtonMenu" type="MarginContainer" parent="."]
@@ -110,7 +104,7 @@ text = "Quit
 
 [node name="Leaderboard" parent="." instance=ExtResource("5_xpiny")]
 layout_mode = 0
-offset_left = 1463.0
-offset_top = 462.0
-offset_right = 1863.0
-offset_bottom = 1042.0
+offset_left = 1431.0
+offset_top = 400.0
+offset_right = 1831.0
+offset_bottom = 1000.0

@@ -130,19 +130,6 @@ class_name MainTheme
 @export var section_spacing: int = 20
 
 # ============================================================================
-# TABBAR STYLING
-# ============================================================================
-
-@export_group("TabBar Styling")
-# TabBar sizing (standardized across all UI)
-@export var tab_min_height: int = 50              # Minimum tab height
-@export var tab_content_margin_horizontal: int = 12  # Left/right padding
-@export var tab_content_margin_vertical: int = 6    # Top/bottom padding
-@export var tab_separation: int = 50               # Space between tabs
-@export var tab_icon_separation: int = 8           # Space between icon and text
-@export var tab_icon_max_width: int = 22           # Maximum icon width
-
-# ============================================================================
 # VISUAL PROPERTIES
 # ============================================================================
 
@@ -206,8 +193,6 @@ func apply_to_control(control: Control, style_variant: String = "") -> void:
 			apply_line_edit_theme(control, style_variant)
 		"TextEdit":
 			apply_text_edit_theme(control, style_variant)
-		"TabBar":
-			apply_tabbar_theme(control, style_variant)
 		_:
 			# Apply basic theming for unrecognized controls
 			apply_basic_theme(control)
@@ -299,40 +284,6 @@ func apply_text_edit_theme(text_edit: TextEdit, variant: String = "") -> void:
 	"""Apply text edit theming"""
 	text_edit.add_theme_color_override("font_color", text_primary)
 	text_edit.add_theme_font_size_override("font_size", font_size_body)
-
-func apply_tabbar_theme(tab_bar: TabBar, texture_path: String = "") -> void:
-	"""Apply TabBar theming with optional texture-based styling
-
-	Args:
-		tab_bar: The TabBar node to theme
-		texture_path: Optional path to texture for 9-slice tabs (e.g., 'res://assets/ui/raven_starter.png')
-
-	Note: If texture_path is provided, you must manually configure StyleBoxTexture
-	SubResources in the scene. This method only applies sizing/spacing constants.
-	"""
-	# Apply sizing constants
-	tab_bar.custom_minimum_size = Vector2(0, tab_min_height)
-
-	# Apply theme overrides for spacing
-	tab_bar.add_theme_constant_override("h_separation", tab_separation)
-	tab_bar.add_theme_constant_override("icon_separation", tab_icon_separation)
-	tab_bar.add_theme_constant_override("icon_max_width", tab_icon_max_width)
-
-	# Apply text color
-	tab_bar.add_theme_color_override("font_color", text_primary)
-	tab_bar.add_theme_color_override("font_selected_color", text_primary)
-	tab_bar.add_theme_color_override("font_hovered_color", text_primary)
-
-	# If using StyleBoxFlat (no texture), create programmatic styles
-	if texture_path.is_empty():
-		var style_unselected = get_themed_style_box("tab_unselected")
-		var style_selected = get_themed_style_box("tab_selected")
-		var style_focus = get_themed_style_box("tab_focus")
-
-		tab_bar.add_theme_stylebox_override("tab_unselected", style_unselected)
-		tab_bar.add_theme_stylebox_override("tab_hovered", style_unselected)
-		tab_bar.add_theme_stylebox_override("tab_selected", style_selected)
-		tab_bar.add_theme_stylebox_override("tab_focus", style_focus)
 
 func apply_basic_theme(control: Control) -> void:
 	"""Apply basic theming to unrecognized controls"""
@@ -430,37 +381,7 @@ func get_themed_style_box(type: String = "panel") -> StyleBox:
 			style_box.content_margin_right = space_sm
 			style_box.content_margin_top = space_xs
 			style_box.content_margin_bottom = space_xs
-
-		"tab_unselected":
-			style_box.bg_color = background_medium
-			style_box.border_color = border_color
-			style_box.set_border_width_all(border_width_thin)
-			style_box.set_corner_radius_all(corner_radius_small)
-			style_box.content_margin_left = tab_content_margin_horizontal
-			style_box.content_margin_right = tab_content_margin_horizontal
-			style_box.content_margin_top = tab_content_margin_vertical
-			style_box.content_margin_bottom = tab_content_margin_vertical
-
-		"tab_selected":
-			style_box.bg_color = selected_color
-			style_box.border_color = primary_color
-			style_box.set_border_width_all(border_width_medium)
-			style_box.set_corner_radius_all(corner_radius_small)
-			style_box.content_margin_left = tab_content_margin_horizontal
-			style_box.content_margin_right = tab_content_margin_horizontal
-			style_box.content_margin_top = tab_content_margin_vertical
-			style_box.content_margin_bottom = tab_content_margin_vertical
-
-		"tab_focus":
-			style_box.bg_color = selected_color
-			style_box.border_color = primary_light
-			style_box.set_border_width_all(border_width_medium)
-			style_box.set_corner_radius_all(corner_radius_small)
-			style_box.content_margin_left = tab_content_margin_horizontal
-			style_box.content_margin_right = tab_content_margin_horizontal
-			style_box.content_margin_top = tab_content_margin_vertical
-			style_box.content_margin_bottom = tab_content_margin_vertical
-
+			
 		_:
 			# Default style
 			style_box.bg_color = background_medium

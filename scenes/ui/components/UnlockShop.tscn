@@ -1,49 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://d1ptjvfkmnyst"]
+[gd_scene load_steps=4 format=3 uid="uid://d1ptjvfkmnyst"]
 
 [ext_resource type="Script" uid="uid://b3hfvkmqsma8t" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tab_unselected"]
-texture = ExtResource("1_frame")
-texture_margin_left = 3.0
-texture_margin_top = 2.0
-texture_margin_right = 3.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(192, 32, 16, 15)
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tab_selected"]
-texture = ExtResource("1_frame")
-texture_margin_left = 3.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(159, 32, 17, 15)
-modulate_color = Color(0.619608, 0.588235, 1, 1)
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_tab_focus"]
-texture = ExtResource("1_frame")
-texture_margin_left = 2.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(160, 32, 16, 15)
-modulate_color = Color(0.619608, 0.588235, 1, 1)
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_vy11w"]
 
 [node name="UnlockShop" type="VBoxContainer"]
 offset_right = 650.0
 offset_bottom = 650.0
+theme = ExtResource("1_vy11w")
 theme_override_constants/separation = -2
 script = ExtResource("1_d3dqv")
 
@@ -57,11 +21,6 @@ layout_mode = 2
 z_index = 1
 custom_minimum_size = Vector2(0, 50)
 layout_mode = 2
-theme_override_constants/icon_max_width = 22
-theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_tab_unselected")
-theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_tab_unselected")
-theme_override_styles/tab_selected = SubResource("StyleBoxTexture_tab_selected")
-theme_override_styles/tab_focus = SubResource("StyleBoxTexture_tab_focus")
 current_tab = 0
 clip_tabs = false
 scroll_to_selected = false

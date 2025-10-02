@@ -175,7 +175,7 @@ func _load_and_populate_grid(container: GridContainer, data_provider: Callable) 
 		_show_item_details(item_array[0])
 
 func _create_shop_item_entry(container: GridContainer, item_metadata: ItemMetadata) -> void:
-	"""Create icon-based shop item card with state visualization.
+	"""Create shop item card using ShopItemCard component.
 
 	Args:
 		container: GridContainer to add entry to
@@ -190,97 +190,61 @@ func _create_shop_item_entry(container: GridContainer, item_metadata: ItemMetada
 	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
 	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
-	# Main container - fixed square size
-	var entry_container = PanelContainer.new()
-	entry_container.custom_minimum_size = Vector2(80, 80)
-	entry_container.size_flags_horizontal = 0
-	entry_container.size_flags_vertical = 0
+	# Instantiate card component
+	var card_scene = preload("res://scenes/ui/components/ShopItemCard.tscn")
+	var card: ShopItemCard = card_scene.instantiate()
 
-	# Center the icon content
-	var center_container = CenterContainer.new()
-	entry_container.add_child(center_container)
+	# Setup card with data and state
+	card.setup(item_metadata, is_discovered, is_unlocked, can_afford)
 
-	# Load icon texture if available
-	var texture: Texture2D = null
-	if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
-		texture = load(item_metadata.icon_path)
+	# Connect signals
+	card.item_clicked.connect(_on_item_card_clicked)
+	card.item_hovered.connect(_on_item_card_hovered)
 
-	# State-based icon appearance
-	if is_unlocked:
-		# UNLOCKED: Full color icon
-		_add_icon_visual(center_container, texture, Color.WHITE, item_metadata.rarity)
-	elif not is_discovered:
-		# UNDISCOVERED: Black silhouette
-		_add_icon_visual(center_container, texture, Color(0.0, 0.0, 0.0), item_metadata.rarity, "❓")
-	else:
-		# DISCOVERED + LOCKED: Greyscale with cost overlay
-		_add_icon_visual(center_container, texture, Color.WHITE, item_metadata.rarity)
+	# Add to container
+	container.add_child(card)
 
-		# Add dimming overlay with cost
-		var overlay_container = Control.new()
-		overlay_container.set_anchors_preset(Control.PRESET_FULL_RECT)
-		overlay_container.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		entry_container.add_child(overlay_container)
-
-		# Dark background
-		var overlay_bg = ColorRect.new()
-		overlay_bg.set_anchors_preset(Control.PRESET_FULL_RECT)
-		overlay_bg.color = Color(0, 0, 0, 0.50)
-		overlay_bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay_container.add_child(overlay_bg)
-
-		# Cost label
-		var cost_center = CenterContainer.new()
-		cost_center.set_anchors_preset(Control.PRESET_FULL_RECT)
-		cost_center.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		overlay_container.add_child(cost_center)
-
-		var cost_label = Label.new()
-		cost_label.text = "%d 💎" % item_metadata.unlock_cost
-		cost_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		cost_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		cost_label.add_theme_font_size_override("font_size", 16)
-		cost_label.add_theme_color_override("font_color", Color.WHITE)
-		cost_label.add_theme_color_override("font_outline_color", Color.BLACK)
-		cost_label.add_theme_constant_override("outline_size", 4)
-		cost_center.add_child(cost_label)
-
-	# Make entry clickable
-	entry_container.mouse_filter = Control.MOUSE_FILTER_STOP
-	entry_container.gui_input.connect(func(event: InputEvent):
-		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-			_show_item_details(item_metadata)
-	)
-
-	container.add_child(entry_container)
-
-func _add_icon_visual(parent: CenterContainer, texture: Texture2D, modulate_color: Color, rarity: ItemMetadata.Rarity, fallback_emoji: String = "🎯") -> void:
-	"""Add icon visual (texture or emoji fallback) to parent container.
+func _on_item_card_clicked(clicked_item_id: String, clicked_category: String) -> void:
+	"""Handle item card click - show details for clicked item.
 
 	Args:
-		parent: CenterContainer to add visual to
-		texture: Texture2D to display (null for fallback)
-		modulate_color: Color to modulate texture
-		rarity: Item rarity for fallback color
-		fallback_emoji: Emoji to show if no texture
+		clicked_item_id: ID of the item that was clicked
+		clicked_category: Category of the item (items/tomes/skills/characters)
 	"""
-	if texture:
-		var icon_texture = TextureRect.new()
-		icon_texture.custom_minimum_size = Vector2(64, 64)
-		icon_texture.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon_texture.texture = texture
-		icon_texture.modulate = modulate_color
-		parent.add_child(icon_texture)
-	else:
-		# Fallback emoji
-		var icon_label = Label.new()
-		icon_label.text = fallback_emoji
-		icon_label.custom_minimum_size = Vector2(64, 64)
-		icon_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		icon_label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		icon_label.modulate = ItemMetadata.get_rarity_color(rarity) if modulate_color == Color.WHITE else modulate_color
-		parent.add_child(icon_label)
+	# Find the metadata for this item
+	var data_provider: Callable
+	match clicked_category:
+		"items":
+			data_provider = _items_data_provider
+		"tomes":
+			data_provider = _tomes_data_provider
+		"skills":
+			data_provider = _skills_data_provider
+		"characters":
+			data_provider = _characters_data_provider
+		_:
+			Logger.warn("UnlockShop: Unknown category: %s" % clicked_category, "ui")
+			return
+
+	if not data_provider.is_valid():
+		return
+
+	# Find matching metadata
+	var item_array: Array = data_provider.call()
+	for item_metadata in item_array:
+		if item_metadata is ItemMetadata and item_metadata.item_id == clicked_item_id:
+			_show_item_details(item_metadata)
+			break
+
+func _on_item_card_hovered(hovered_item_id: String, hovered_category: String) -> void:
+	"""Handle item card hover - could be used for tooltip preview later.
+
+	Args:
+		hovered_item_id: ID of the item being hovered
+		hovered_category: Category of the item (items/tomes/skills/characters)
+	"""
+	# Currently unused - placeholder for future hover preview feature
+	pass
 
 func _show_item_details(item_metadata: ItemMetadata) -> void:
 	"""Display item details based on discovery/unlock state.
