@@ -1,21 +1,33 @@
 extends Control
 ## MapSelect - Map and tier selection screen
-## Separate scene with own script (cleaner than all-in-one MainMenu approach)
+## Receives character selection from CharacterSelect and handles map/tier selection
 
 @onready var back_button: Button = $BackButton
 @onready var start_run_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/startRun
 
-# Placeholder selections (TODO: wire to actual UI selections)
-var selected_character: String = "knight"  # Default character
-var selected_map: String = "forest_arena"  # Forest map
-var selected_tier: int = 1  # Tier 1
+# Selection state (character passed from CharacterSelect)
+var selected_character: String = "knight"  # Default fallback
+var selected_map: String = "forest_arena"  # Forest map (TODO: make selectable)
+var selected_tier: int = 1  # Tier 1 (TODO: make selectable)
 
 func _ready() -> void:
 	# Connect navigation buttons
 	back_button.pressed.connect(_on_back_pressed)
 	start_run_button.pressed.connect(_on_start_run_pressed)
 
-	Logger.info("MapSelect loaded", "ui")
+	# Try to receive character from scene transition context
+	# Note: This requires SceneTransitionManager to pass context data
+	# For now, falls back to default "knight" if not provided
+	_check_for_character_context()
+
+	Logger.info("MapSelect loaded (character: %s)" % selected_character, "ui")
+
+func _check_for_character_context() -> void:
+	"""Check if character was passed from CharacterSelect via scene context."""
+	# TODO: Implement context passing in SceneTransitionManager
+	# For now, this is a placeholder for future enhancement
+	# The character will be stored in a temporary autoload or passed via signal
+	pass
 
 func _on_back_pressed() -> void:
 	"""Return to CharacterSelect via SceneTransitionManager"""
