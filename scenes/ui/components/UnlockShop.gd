@@ -8,6 +8,9 @@ class_name UnlockShop
 
 @onready var tab_bar: TabBar = $TabContainer/HBoxContainer/TabBar
 
+# Notification icon
+var _notification_icon: Texture2D = null
+
 # Item grid containers (one per tab)
 @onready var item_grid_items: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Items
 @onready var item_grid_tomes: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Tomes
@@ -32,6 +35,9 @@ var _characters_data_provider: Callable
 var _selected_item: ItemMetadata = null
 
 func _ready() -> void:
+	# Load notification icon
+	_notification_icon = load("res://assets/ui/map_markers attention.png")
+
 	# Connect tab switching
 	if tab_bar:
 		tab_bar.tab_changed.connect(_on_tab_changed)
@@ -39,8 +45,8 @@ func _ready() -> void:
 	Logger.debug("UnlockShop initialized", "ui")
 
 func _update_tab_notification_badges() -> void:
-	"""Update tab titles with '!' badges if category has discovered but unlocked items."""
-	if not tab_bar or not MetaProgression:
+	"""Update tab icons with notification badge if category has discovered but unlocked items."""
+	if not tab_bar or not MetaProgression or not _notification_icon:
 		return
 
 	var categories = [
@@ -52,10 +58,15 @@ func _update_tab_notification_badges() -> void:
 
 	for cat in categories:
 		var has_discovered = _category_has_discovered_items(cat.category)
-		var title = cat.name
+
+		# Reset title to base name
+		tab_bar.set_tab_title(cat.index, cat.name)
+
+		# Set icon if has discovered items, otherwise clear icon
 		if has_discovered:
-			title += " !"
-		tab_bar.set_tab_title(cat.index, title)
+			tab_bar.set_tab_icon(cat.index, _notification_icon)
+		else:
+			tab_bar.set_tab_icon(cat.index, null)
 
 func _category_has_discovered_items(category: String) -> bool:
 	"""Check if category has any discovered but not unlocked items."""
