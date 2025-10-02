@@ -15,19 +15,16 @@ func _ready() -> void:
 	back_button.pressed.connect(_on_back_pressed)
 	start_run_button.pressed.connect(_on_start_run_pressed)
 
-	# Try to receive character from scene transition context
-	# Note: This requires SceneTransitionManager to pass context data
-	# For now, falls back to default "knight" if not provided
-	_check_for_character_context()
-
 	Logger.info("MapSelect loaded (character: %s)" % selected_character, "ui")
 
-func _check_for_character_context() -> void:
-	"""Check if character was passed from CharacterSelect via scene context."""
-	# TODO: Implement context passing in SceneTransitionManager
-	# For now, this is a placeholder for future enhancement
-	# The character will be stored in a temporary autoload or passed via signal
-	pass
+func apply_transition_data(data: Dictionary) -> void:
+	"""Receive transition data from SceneTransitionManager."""
+	if data.has("character"):
+		selected_character = data.character
+		Logger.info("MapSelect: Character selection received: %s" % selected_character, "ui")
+
+	# TODO: Handle other context data (tier, map preferences, etc.)
+	# For now, just character selection is passed
 
 func _on_back_pressed() -> void:
 	"""Return to CharacterSelect via SceneTransitionManager"""

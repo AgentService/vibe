@@ -156,7 +156,122 @@ layout_mode = 2
 theme_override_constants/h_separation = 10
 columns = 3
 
+[node name="Knight" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+texture = ExtResource("2_g3cng")
+region_rect = Rect2(0, 48, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Button" type="Button" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer"]
+layout_mode = 2
+theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -55.5
+offset_top = -45.0
+offset_right = 55.5
+offset_bottom = 45.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("5_h3xvp")
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Knight"
+horizontal_alignment = 1
+vertical_alignment = 2
+
+[node name="Ranger" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger"]
+custom_minimum_size = Vector2(100, 100)
+layout_mode = 2
+texture = ExtResource("2_g3cng")
+region_rect = Rect2(0, 48, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Button" type="Button" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer"]
+layout_mode = 2
+theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -55.5
+offset_top = -45.0
+offset_right = 55.5
+offset_bottom = 45.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_smsyb")
+stretch_mode = 5
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Ranger"
+horizontal_alignment = 1
+vertical_alignment = 2
+
 [node name="VboxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -218,6 +333,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="VboxContainer2" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -259,64 +375,8 @@ text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="VboxContainer3" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3"]
-custom_minimum_size = Vector2(100, 100)
-layout_mode = 2
-texture = ExtResource("2_g3cng")
-region_rect = Rect2(0, 48, 16, 16)
-patch_margin_left = 3
-patch_margin_top = 3
-patch_margin_right = 3
-patch_margin_bottom = 3
-
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
-
-[node name="Button" type="Button" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer"]
-layout_mode = 2
-theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -55.5
-offset_top = -45.0
-offset_right = 55.5
-offset_bottom = 45.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button/VBoxContainer"]
-layout_mode = 2
-size_flags_vertical = 3
-texture = ExtResource("5_h3xvp")
-stretch_mode = 5
-
-[node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button/VBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 12
-text = "Fox"
-horizontal_alignment = 1
-vertical_alignment = 2
-
 [node name="VboxContainer4" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -377,6 +437,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="VboxContainer5" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -437,6 +498,7 @@ horizontal_alignment = 1
 vertical_alignment = 1
 
 [node name="VboxContainer6" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
@@ -577,7 +639,7 @@ theme_override_constants/separation = 10
 [node name="Label" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 20
-text = "Fox Shade"
+text = "Ranger"
 
 [node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
