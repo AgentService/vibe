@@ -136,9 +136,8 @@ func _format_number(value: int) -> String:
 # ============================================================================
 
 func _on_play_pressed() -> void:
-	"""Start game flow - loads existing CharacterSelect (temp until new one built)"""
-	# TODO: Replace with new styled CharacterSelect_New.tscn when ready
-	get_tree().change_scene_to_file("res://scenes/ui/MainMenu.tscn")
+	"""Start game flow - loads new CharacterSelect"""
+	get_tree().change_scene_to_file("res://scenes/ui/CharacterSelect_New.tscn")
 	Logger.info("Play pressed - loading character select", "ui")
 
 func _on_unlocks_pressed() -> void:
