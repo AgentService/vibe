@@ -110,6 +110,13 @@
   - Discovered+locked items now render with complete greyscale desaturation (Color(0.33, 0.33, 0.33)) + 90% dark overlay
   - Files updated: lucky_coin.tres, rabbits_foot.tres, feather.tres, cheese.tres, clover.tres (→ four-leaf.png)
   - Fixed UnlocksShop @onready node paths by removing incorrect `/MarginContainer` layer (prevented null reference errors)
+- **UnlockShop Tab Polish**: Added content margins and icon-based notifications for improved tab UX
+  - Added content_margin properties to all tab styles (12px horizontal, 6px vertical) for breathing room
+  - Tab notification system: Shows attention icon when category has discoverable items
+  - Notification icon scaled to 50% size using runtime Image.resize() with LANCZOS interpolation
+  - Tab spacing: h_separation (50px between tabs), icon_separation (8px icon-to-text gap)
+  - Four-tab system: Items/Tomes/Skills/Characters with consistent visual treatment
+  - PersistentRiftFragments autoload: CanvasLayer currency display auto-shows/hides across menu scenes
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
