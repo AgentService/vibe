@@ -59,18 +59,20 @@ tab_1/title = "Friends"
 [node name="VBoxContainer3" type="VBoxContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 0
 
 [node name="Header" type="NinePatchRect" parent="VBoxContainer3"]
 self_modulate = Color(0.619608, 0.588235, 1, 1)
-z_index = 1
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 texture = ExtResource("2_frame")
-region_rect = Rect2(288, 32, 48, 16)
+region_rect = Rect2(155, 107, 26, 26)
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
-patch_margin_bottom = 2
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer3/Header"]
 layout_mode = 1
@@ -121,6 +123,8 @@ patch_margin_left = 4
 patch_margin_top = 3
 patch_margin_right = 4
 patch_margin_bottom = 3
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="VBoxContainer3/Stats"]
 layout_mode = 1

@@ -13,27 +13,27 @@ const FALLBACK_ICON = "res://icon.svg"
 const CharacterButtonScene = preload("res://scenes/ui/components/CharacterSelectButton.tscn")
 
 # Character selection grid (dynamically populated)
-@onready var character_grid: GridContainer = $MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer
+@onready var character_grid: GridContainer = $CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer
 
 # Character info display (right panel)
-@onready var character_name_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/name
-@onready var character_rank_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/rank
-@onready var character_runs_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/runcount
-@onready var character_description_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/VBoxContainer/Description
-@onready var character_icon: TextureRect = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+@onready var character_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/name
+@onready var character_rank_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/rank
+@onready var character_runs_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/runcount
+@onready var character_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer2/VBoxContainer/Description
+@onready var character_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
 
 # Main ability display
-@onready var ability_name_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label
-@onready var ability_description_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label3
-@onready var ability_icon: TextureRect = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+@onready var ability_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label
+@onready var ability_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label3
+@onready var ability_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
 
 # Main passive display
-@onready var passive_name_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label
-@onready var passive_description_label: Label = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label3
-@onready var passive_icon: TextureRect = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+@onready var passive_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label
+@onready var passive_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label3
+@onready var passive_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
 
 # Navigation buttons
-@onready var confirm_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/confirm
+@onready var confirm_button: Button = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/confirm
 @onready var back_button: Button = $BackButton
 
 # Selection state
@@ -124,66 +124,86 @@ func _update_character_button_states() -> void:
 
 func _update_character_ui() -> void:
 	"""Update UI to reflect current selection state."""
-	# Update button states (disable selected button for visual feedback)
 	_update_character_button_states()
 
-	# Update character info panel
 	if selected_character.is_empty():
-		# No selection - show placeholder
-		character_name_label.text = "Select a Character"
-		character_rank_label.text = ""
-		character_runs_label.text = ""
-		character_description_label.text = "Choose your hero"
-		ability_name_label.text = ""
-		ability_description_label.text = ""
-		passive_name_label.text = ""
-		passive_description_label.text = ""
-		confirm_button.disabled = true
+		_show_placeholder_ui()
+	elif character_types.has(selected_character):
+		_show_character_info(character_types[selected_character])
 	else:
-		# Character selected - show data
-		if character_types.has(selected_character):
-			var char_type = character_types[selected_character]
-			character_name_label.text = char_type.display_name
+		_show_error_ui()
 
-			# Rank and runs placeholders (TODO: Replace with actual progression data)
-			character_rank_label.text = "Rank 1"  # Placeholder - load from progression system
-			character_runs_label.text = "0 Runs"  # Placeholder - load from progression system
+func _show_placeholder_ui() -> void:
+	"""Display placeholder when no character is selected."""
+	_set_character_info("Select a Character", "", "", "Choose your hero")
+	_clear_ability_info()
+	_clear_passive_info()
+	confirm_button.disabled = true
 
-			# Description from character data
-			character_description_label.text = char_type.description
+func _show_error_ui() -> void:
+	"""Display error state when character data is missing."""
+	_set_character_info("Error", "", "", "Character data not found")
+	_clear_ability_info()
+	_clear_passive_info()
+	confirm_button.disabled = true
 
-			# Main ability display
-			ability_name_label.text = char_type.main_ability_name
-			ability_description_label.text = char_type.main_ability_description
-			ability_icon.texture = _load_texture_from_filename(
-				char_type.main_ability_icon,
-				ABILITY_ICON_PATH,
-				FALLBACK_ICON
-			)
+func _show_character_info(char_type: CharacterType) -> void:
+	"""Display full character information for selected character."""
+	# Character info
+	_set_character_info(
+		char_type.display_name,
+		"Rank 1",  # TODO: Load from MetaProgression
+		"0 Runs",  # TODO: Load from MetaProgression
+		char_type.description
+	)
+	_update_character_icon(selected_character)
 
-			# Main passive display
-			passive_name_label.text = char_type.main_passive_name
-			passive_description_label.text = char_type.main_passive_description
-			passive_icon.texture = _load_texture_from_filename(
-				char_type.main_passive_icon,
-				PASSIVE_ICON_PATH,
-				FALLBACK_ICON
-			)
+	# Ability info
+	_set_ability_info(
+		char_type.main_ability_name,
+		char_type.main_ability_description,
+		_load_texture_from_filename(char_type.main_ability_icon, ABILITY_ICON_PATH, FALLBACK_ICON)
+	)
 
-			confirm_button.disabled = false
+	# Passive info
+	_set_passive_info(
+		char_type.main_passive_name,
+		char_type.main_passive_description,
+		_load_texture_from_filename(char_type.main_passive_icon, PASSIVE_ICON_PATH, FALLBACK_ICON)
+	)
 
-			# Update character icon based on selection
-			_update_character_icon(selected_character)
-		else:
-			character_name_label.text = "Error"
-			character_rank_label.text = ""
-			character_runs_label.text = ""
-			character_description_label.text = "Character data not found"
-			ability_name_label.text = ""
-			ability_description_label.text = ""
-			passive_name_label.text = ""
-			passive_description_label.text = ""
-			confirm_button.disabled = true
+	confirm_button.disabled = false
+
+# ============================================================================
+# UI HELPER METHODS
+# ============================================================================
+
+func _set_character_info(name: String, rank: String, runs: String, description: String) -> void:
+	"""Set character info panel text fields."""
+	character_name_label.text = name
+	character_rank_label.text = rank
+	character_runs_label.text = runs
+	character_description_label.text = description
+
+func _set_ability_info(name: String, description: String, icon: Texture2D) -> void:
+	"""Set ability display fields."""
+	ability_name_label.text = name
+	ability_description_label.text = description
+	ability_icon.texture = icon
+
+func _set_passive_info(name: String, description: String, icon: Texture2D) -> void:
+	"""Set passive display fields."""
+	passive_name_label.text = name
+	passive_description_label.text = description
+	passive_icon.texture = icon
+
+func _clear_ability_info() -> void:
+	"""Clear ability display."""
+	_set_ability_info("", "", null)
+
+func _clear_passive_info() -> void:
+	"""Clear passive display."""
+	_set_passive_info("", "", null)
 
 func _load_texture_from_filename(filename: String, base_path: String, fallback: String) -> Texture2D:
 	"""
