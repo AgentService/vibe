@@ -54,4 +54,10 @@ func _on_button_pressed() -> void:
 func set_selected(selected: bool) -> void:
 	"""Update button state when selected/deselected."""
 	if button:
-		button.disabled = selected
+		if selected:
+			# Apply focus style to show selection
+			button.grab_focus()
+		else:
+			# Release focus when deselected
+			if button.has_focus():
+				button.release_focus()

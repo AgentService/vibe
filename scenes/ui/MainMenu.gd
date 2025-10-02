@@ -10,10 +10,10 @@ const PORTRAIT_PATH = "res://assets/ui/characters/portraits/"
 @onready var leaderboard: Leaderboard = $Leaderboard
 
 # Menu buttons
-@onready var play_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play
-@onready var unlocks_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play2
-@onready var options_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play3
-@onready var quit_button: Button = $MarginContainer_Starter2/MarginContainer/VBoxContainer2/Play4
+@onready var play_button: Button = $MainButtonMenu/MarginContainer/VBoxContainer2/Play
+@onready var unlocks_button: Button = $MainButtonMenu/MarginContainer/VBoxContainer2/Play2
+@onready var options_button: Button = $MainButtonMenu/MarginContainer/VBoxContainer2/Play3
+@onready var quit_button: Button = $MainButtonMenu/MarginContainer/VBoxContainer2/Play4
 
 func _ready() -> void:
 	# Connect menu buttons

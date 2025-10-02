@@ -18,6 +18,7 @@ texture_margin_top = 2.0
 texture_margin_right = 2.0
 texture_margin_bottom = 1.0
 region_rect = Rect2(159, 32, 17, 15)
+modulate_color = Color(0.619608, 0.588235, 1, 1)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2i50d"]
 texture = ExtResource("2_frame")
@@ -26,6 +27,7 @@ texture_margin_top = 2.0
 texture_margin_right = 2.0
 texture_margin_bottom = 1.0
 region_rect = Rect2(160, 32, 16, 15)
+modulate_color = Color(0.619608, 0.588235, 1, 1)
 
 [node name="Leaderboard" type="VBoxContainer"]
 offset_right = 400.0
@@ -57,9 +59,9 @@ tab_1/title = "Friends"
 [node name="VBoxContainer3" type="VBoxContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = 0
 
 [node name="Header" type="NinePatchRect" parent="VBoxContainer3"]
+self_modulate = Color(0.619608, 0.588235, 1, 1)
 z_index = 1
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
