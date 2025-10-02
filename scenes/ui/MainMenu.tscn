@@ -1,9 +1,11 @@
-[gd_scene load_steps=14 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=16 format=3 uid="uid://d128c4kosb2vl"]
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
 [ext_resource type="Texture2D" uid="uid://barxodnk8kyws" path="res://assets/ui/Large Separated Files/sprite-1-6.png" id="2_5n82f"]
+[ext_resource type="Texture2D" uid="uid://tnao3a1qwkrf" path="res://Obsidian/03-tasks/open-tasks/UI/main_menu_backgroundgpt.png" id="2_bhu4a"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="3_pl2nd"]
 [ext_resource type="Texture2D" uid="uid://c8k24vxbqnhrh" path="res://assets/ui/tile048.png" id="4_ba6bw"]
+[ext_resource type="PackedScene" uid="uid://cgqmq41cjt2f1" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ba6bw"]
 
@@ -72,6 +74,18 @@ grow_vertical = 2
 theme = SubResource("Theme_esm66")
 script = ExtResource("1_vjtqc")
 
+[node name="BackgroundImage" type="TextureRect" parent="."]
+self_modulate = Color(0.344076, 0.344076, 0.344076, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bhu4a")
+expand_mode = 1
+stretch_mode = 6
+
 [node name="MarginContainer_Starter2" type="MarginContainer" parent="."]
 layout_mode = 1
 anchors_preset = 8
@@ -127,6 +141,7 @@ text = "Quit
 "
 
 [node name="MarginContainer_Starter" type="MarginContainer" parent="."]
+visible = false
 layout_mode = 1
 anchors_preset = 6
 anchor_left = 1.0
@@ -136,7 +151,7 @@ anchor_bottom = 0.5
 offset_left = -440.0
 offset_top = -250.0
 offset_right = -40.0
-offset_bottom = 250.0
+offset_bottom = 330.0
 grow_horizontal = 0
 grow_vertical = 2
 
@@ -161,7 +176,7 @@ theme_override_font_sizes/font_size = 18
 theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_pl2nd")
 theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_d0aii")
 theme_override_styles/tab_selected = SubResource("StyleBoxTexture_d0aii")
-current_tab = 1
+current_tab = 0
 tab_alignment = 1
 clip_tabs = false
 scroll_to_selected = false
@@ -174,7 +189,7 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 0
 
-[node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+[node name="Header" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
 self_modulate = Color(0.618826, 0.589485, 1, 1)
 z_index = 1
 custom_minimum_size = Vector2(0, 60)
@@ -186,7 +201,7 @@ patch_margin_top = 4
 patch_margin_right = 4
 patch_margin_bottom = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -198,34 +213,34 @@ theme_override_constants/margin_top = 10
 theme_override_constants/margin_right = 10
 theme_override_constants/margin_bottom = 10
 
-[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer"]
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header/MarginContainer"]
 layout_mode = 2
 
-[node name="Label" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
+[node name="Label" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header/MarginContainer/HBoxContainer"]
 layout_mode = 2
 text = "Leaderboards"
 vertical_alignment = 1
 uppercase = true
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header/MarginContainer/HBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="Label2" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer/VBoxContainer"]
+[node name="Label2" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Reset"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="Label3" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer/VBoxContainer"]
+[node name="Label3" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Header/MarginContainer/HBoxContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "11:30:32"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+[node name="Stats" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
 self_modulate = Color(0.309727, 0.535967, 1, 1)
 layout_mode = 2
 size_flags_vertical = 3
@@ -236,7 +251,7 @@ patch_margin_top = 3
 patch_margin_right = 4
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -248,29 +263,29 @@ theme_override_constants/margin_top = 16
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer"]
 layout_mode = 2
 theme_override_constants/separation = 15
 
-[node name="GridContainer" type="GridContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+[node name="GridContainer" type="GridContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
 layout_mode = 2
 columns = 4
 
-[node name="RankTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+[node name="RankTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
 custom_minimum_size = Vector2(80, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Rank"
 vertical_alignment = 1
 
-[node name="NameTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+[node name="NameTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
 custom_minimum_size = Vector2(170, 0)
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Name"
 vertical_alignment = 1
 
-[node name="KillsTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
+[node name="KillsTitle" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
 custom_minimum_size = Vector2(90, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -278,19 +293,19 @@ text = "Kills"
 horizontal_alignment = 2
 vertical_alignment = 1
 
-[node name="VBoxContainer_Global" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+[node name="VBoxContainer_Global" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 visible = false
 layout_mode = 2
 
-[node name="VBoxContainer_Friends" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+[node name="VBoxContainer_Friends" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
 unique_name_in_owner = true
 layout_mode = 2
 
-[node name="MarginContainerEntry" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
+[node name="MarginContainerEntry" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
 layout_mode = 2
 
-[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry"]
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_vertical = 3
@@ -301,7 +316,7 @@ patch_margin_top = 3
 patch_margin_right = 3
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -313,12 +328,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer"]
+[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme = SubResource("Theme_5n82f")
 
-[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -326,7 +341,7 @@ text = "#1"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -335,19 +350,19 @@ text = "Signatured"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 alignment = 2
 
-[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "113.3M"
 horizontal_alignment = 2
 text_overrun_behavior = 3
 
-[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry/NinePatchRect/MarginContainer/HboxEntry/Kills"]
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_horizontal = 8
@@ -355,11 +370,11 @@ texture = ExtResource("4_ba6bw")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="MarginContainerEntry2" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
+[node name="MarginContainerEntry2" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends"]
 visible = false
 layout_mode = 2
 
-[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2"]
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2"]
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
 size_flags_vertical = 3
@@ -370,7 +385,7 @@ patch_margin_top = 3
 patch_margin_right = 3
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -382,12 +397,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer"]
+[node name="HboxEntry" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 theme = SubResource("Theme_5n82f")
 
-[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="playerRank" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(66, 0)
 layout_mode = 2
 size_flags_horizontal = 0
@@ -395,7 +410,7 @@ text = "#2"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="playerName" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 size_flags_horizontal = 3
@@ -404,22 +419,29 @@ text = "Aza"
 vertical_alignment = 1
 text_overrun_behavior = 3
 
-[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
+[node name="Kills" type="HBoxContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry"]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
 alignment = 2
 
-[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+[node name="playerKillcount" type="Label" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "13.3M"
 horizontal_alignment = 2
 text_overrun_behavior = 3
 
-[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
+[node name="playerChar" type="TextureRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends/MarginContainerEntry2/NinePatchRect/MarginContainer/HboxEntry/Kills"]
 custom_minimum_size = Vector2(30, 30)
 layout_mode = 2
 size_flags_horizontal = 8
 texture = ExtResource("4_ba6bw")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="Leaderboard" parent="." instance=ExtResource("5_xpiny")]
+layout_mode = 0
+offset_left = 1463.0
+offset_top = 462.0
+offset_right = 1863.0
+offset_bottom = 1042.0

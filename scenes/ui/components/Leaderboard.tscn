@@ -1,38 +1,170 @@
-[gd_scene load_steps=2 format=3 uid="uid://cp8yqo7xb3mha"]
+[gd_scene load_steps=6 format=3 uid="uid://cgqmq41cjt2f1"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/Leaderboard.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://cgu41p6rscj4e" path="res://scenes/ui/components/Leaderboard.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_frame"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_47fyd"]
+texture = ExtResource("2_frame")
+texture_margin_left = 3.0
+texture_margin_top = 2.0
+texture_margin_right = 3.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(192, 32, 16, 15)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_vmfcm"]
+texture = ExtResource("2_frame")
+texture_margin_left = 3.0
+texture_margin_top = 2.0
+texture_margin_right = 2.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(159, 32, 17, 15)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2i50d"]
+texture = ExtResource("2_frame")
+texture_margin_left = 2.0
+texture_margin_top = 2.0
+texture_margin_right = 2.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(160, 32, 16, 15)
 
 [node name="Leaderboard" type="VBoxContainer"]
 offset_right = 400.0
-offset_bottom = 500.0
+offset_bottom = 580.0
+theme_override_constants/separation = -2
 script = ExtResource("1_script")
 
-[node name="TabBar" type="TabBar" parent="."]
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
 layout_mode = 2
-theme_override_font_sizes/font_size = 18
+
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer"]
+layout_mode = 2
+
+[node name="TabBar" type="TabBar" parent="VBoxContainer/HBoxContainer"]
+z_index = 2
+layout_mode = 2
+theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_47fyd")
+theme_override_styles/tab_hovered = SubResource("StyleBoxTexture_47fyd")
+theme_override_styles/tab_selected = SubResource("StyleBoxTexture_vmfcm")
+theme_override_styles/tab_focus = SubResource("StyleBoxTexture_2i50d")
 current_tab = 0
 tab_alignment = 1
+clip_tabs = false
+scroll_to_selected = false
 tab_count = 2
 tab_0/title = "Global"
 tab_1/title = "Friends"
 
-[node name="TabContent" type="Control" parent="."]
+[node name="VBoxContainer3" type="VBoxContainer" parent="."]
 layout_mode = 2
 size_flags_vertical = 3
+theme_override_constants/separation = 0
 
-[node name="VBoxContainer_Global" type="VBoxContainer" parent="TabContent"]
+[node name="Header" type="NinePatchRect" parent="VBoxContainer3"]
+z_index = 1
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+texture = ExtResource("2_frame")
+region_rect = Rect2(288, 32, 48, 16)
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer3/Header"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
-[node name="VBoxContainer_Friends" type="VBoxContainer" parent="TabContent"]
+[node name="HBoxContainer" type="HBoxContainer" parent="VBoxContainer3/Header/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Leaderboards"
+vertical_alignment = 1
+uppercase = true
+
+[node name="ResetContainer" type="VBoxContainer" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="ResetHeader" type="Label" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer/ResetContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Reset"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="ResetLabel" type="Label" parent="VBoxContainer3/Header/MarginContainer/HBoxContainer/ResetContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "11:30:32"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="Stats" type="NinePatchRect" parent="VBoxContainer3"]
+self_modulate = Color(0.309727, 0.535967, 1, 1)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("2_frame")
+region_rect = Rect2(288, 16, 47, 16)
+patch_margin_left = 4
+patch_margin_top = 3
+patch_margin_right = 4
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="VBoxContainer3/Stats"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="VBoxContainer3/Stats/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="GridContainer" type="GridContainer" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
+layout_mode = 2
+columns = 4
+
+[node name="RankTitle" type="Label" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Rank"
+vertical_alignment = 1
+
+[node name="NameTitle" type="Label" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(170, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Name"
+vertical_alignment = 1
+
+[node name="KillsTitle" type="Label" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer/GridContainer"]
+custom_minimum_size = Vector2(90, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Kills"
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="VBoxContainer_Global" type="VBoxContainer" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+layout_mode = 2
+
+[node name="VBoxContainer_Friends" type="VBoxContainer" parent="VBoxContainer3/Stats/MarginContainer/VBoxContainer"]
+layout_mode = 2
