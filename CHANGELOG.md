@@ -4,6 +4,15 @@
 
 ## [Current Week - In Progress]
 
+### Scene Architecture
+- **MeasureAtlas F5 Launch Flow**: Connected new styled UI as default menu via SceneTransitionManager
+  - Fixed critical arena loading issue caused by bypassing Main.tscn infrastructure
+  - SceneTransitionManager now maps "main_menu" to MeasureAtlas.tscn instead of MainMenu.tscn
+  - Preserves complete signal chain: StateManager → GameOrchestrator → EventBus → SceneTransitionManager
+  - F5 flow: Main.tscn → MeasureAtlas → CharacterSelect_New → MapSelect_New → Arena
+  - MainMenu.tscn containers set to visible=false for reference during migration
+  - Architecture validated: changing project.godot run/main_scene breaks scene transitions
+
 ### UI/UX Improvements
 - **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
   - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding
