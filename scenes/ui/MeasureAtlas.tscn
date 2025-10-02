@@ -1,14 +1,16 @@
-[gd_scene load_steps=13 format=3 uid="uid://dvrdid0uj4vf2"]
+[gd_scene load_steps=14 format=3 uid="uid://dvrdid0uj4vf2"]
 
 [ext_resource type="Script" uid="uid://drig0mu3haff1" path="res://scenes/ui/MeasureAtlas.gd" id="1_ba6bw"]
 [ext_resource type="Texture2D" uid="uid://barxodnk8kyws" path="res://assets/ui/Large Separated Files/sprite-1-6.png" id="2_5n82f"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="3_pl2nd"]
 [ext_resource type="Texture2D" uid="uid://c8k24vxbqnhrh" path="res://assets/ui/tile048.png" id="4_ba6bw"]
 
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ba6bw"]
+
 [sub_resource type="Theme" id="Theme_esm66"]
 Button/font_sizes/font_size = 26
 Button/fonts/font = null
-Button/styles/normal = null
+Button/styles/normal = SubResource("StyleBoxTexture_ba6bw")
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mcen4"]
 texture = ExtResource("3_pl2nd")
@@ -170,14 +172,15 @@ tab_1/title = "Friends"
 [node name="VBoxContainer3" type="VBoxContainer" parent="MarginContainer_Starter/VBoxContainer2"]
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_constants/separation = -5
+theme_override_constants/separation = 0
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.618826, 0.589485, 1, 1)
 z_index = 1
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 texture = ExtResource("3_pl2nd")
-region_rect = Rect2(252, 108, 24, 24)
+region_rect = Rect2(288, 32, 48, 16)
 patch_margin_left = 4
 patch_margin_top = 4
 patch_margin_right = 4
@@ -223,14 +226,15 @@ horizontal_alignment = 2
 vertical_alignment = 1
 
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.309727, 0.535967, 1, 1)
 layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("3_pl2nd")
-region_rect = Rect2(112, 0, 48, 48)
+region_rect = Rect2(288, 16, 47, 16)
 patch_margin_left = 4
-patch_margin_top = 4
+patch_margin_top = 3
 patch_margin_right = 4
-patch_margin_bottom = 4
+patch_margin_bottom = 3
 
 [node name="MarginContainer" type="MarginContainer" parent="MarginContainer_Starter/VBoxContainer2/VBoxContainer3/NinePatchRect"]
 layout_mode = 1

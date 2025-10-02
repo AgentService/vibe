@@ -1,30 +1,19 @@
-[gd_scene load_steps=18 format=3 uid="uid://c17ahb75ly1r5"]
+[gd_scene load_steps=16 format=3 uid="uid://gvtp22inkm5v"]
 
-[ext_resource type="Script" uid="uid://o2jhkq1i43da" path="res://scenes/ui/CharacterSelect_New.gd" id="1_6un01"]
-[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_g3cng"]
-[ext_resource type="Texture2D" uid="uid://c1bwq02n83h1i" path="res://assets/ui/tile096.png" id="3_smsyb"]
-[ext_resource type="Texture2D" uid="uid://b3maknwxan7y5" path="res://assets/ui/tile038.png" id="4_88s6p"]
-[ext_resource type="Texture2D" uid="uid://cddiek2pybkyg" path="res://assets/ui/tile008.png" id="5_h3xvp"]
-[ext_resource type="Texture2D" uid="uid://jxtfqseey4on" path="res://assets/ui/tile025.png" id="6_o45hp"]
-[ext_resource type="Texture2D" uid="uid://cgu2g7768hha5" path="res://assets/ui/tile026.png" id="7_aists"]
-[ext_resource type="Texture2D" uid="uid://g6u8djy10ips" path="res://assets/ui/tile027.png" id="8_gic7f"]
-[ext_resource type="Texture2D" uid="uid://sa4j464tj7r3" path="res://assets/ui/S95.png" id="9_smsyb"]
-[ext_resource type="Texture2D" uid="uid://bl0kd02pvqxkj" path="res://assets/ui/S24.png" id="10_pu26d"]
-[ext_resource type="Texture2D" uid="uid://cvmrt4s8rrv1u" path="res://assets/ui/S6.png" id="11_01kyv"]
+[ext_resource type="Script" uid="uid://nxtqt127nnhb" path="res://scenes/ui/MapSelect_New.gd" id="1_64gr2"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_7bytg"]
+[ext_resource type="Texture2D" uid="uid://c1bwq02n83h1i" path="res://assets/ui/tile096.png" id="3_8tx58"]
+[ext_resource type="Texture2D" uid="uid://b3maknwxan7y5" path="res://assets/ui/tile038.png" id="4_7mjc2"]
+[ext_resource type="Texture2D" uid="uid://cddiek2pybkyg" path="res://assets/ui/tile008.png" id="5_pj5xq"]
+[ext_resource type="Texture2D" uid="uid://jxtfqseey4on" path="res://assets/ui/tile025.png" id="6_x8ghj"]
+[ext_resource type="Texture2D" uid="uid://cgu2g7768hha5" path="res://assets/ui/tile026.png" id="7_ct1nh"]
+[ext_resource type="Texture2D" uid="uid://g6u8djy10ips" path="res://assets/ui/tile027.png" id="8_ss66w"]
+[ext_resource type="Texture2D" uid="uid://sa4j464tj7r3" path="res://assets/ui/S95.png" id="9_baiis"]
+[ext_resource type="Texture2D" uid="uid://bl0kd02pvqxkj" path="res://assets/ui/S24.png" id="10_606jo"]
+[ext_resource type="Texture2D" uid="uid://cvmrt4s8rrv1u" path="res://assets/ui/S6.png" id="11_sg73a"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_aists"]
-texture = ExtResource("2_g3cng")
-texture_margin_left = 3.0
-texture_margin_top = 3.0
-texture_margin_right = 3.0
-texture_margin_bottom = 3.0
-region_rect = Rect2(112, 0, 48, 48)
-
-[sub_resource type="Theme" id="Theme_76u6u"]
-Panel/styles/panel = SubResource("StyleBoxTexture_aists")
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_smsyb"]
-texture = ExtResource("2_g3cng")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_7mugq"]
+texture = ExtResource("2_7bytg")
 texture_margin_left = 1.0
 texture_margin_top = 1.0
 texture_margin_right = 1.0
@@ -35,39 +24,38 @@ expand_margin_right = 12.0
 expand_margin_bottom = 12.0
 region_rect = Rect2(288, 80, 16, 16)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_88s6p"]
-texture = ExtResource("2_g3cng")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_geevw"]
+texture = ExtResource("2_7bytg")
 texture_margin_left = 2.0
 texture_margin_top = 15.0
 texture_margin_right = 2.0
 texture_margin_bottom = 14.0
 region_rect = Rect2(240, 31, 48, 17)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_h3xvp"]
-texture = ExtResource("2_g3cng")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mnnu7"]
+texture = ExtResource("2_7bytg")
 texture_margin_left = 2.0
 texture_margin_top = 14.0
 texture_margin_right = 2.0
 texture_margin_bottom = 14.0
 region_rect = Rect2(240, 32, 48, 16)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_o45hp"]
-texture = ExtResource("2_g3cng")
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_qm13f"]
+texture = ExtResource("2_7bytg")
 texture_margin_left = 2.0
 texture_margin_top = 14.0
 texture_margin_right = 2.0
 texture_margin_bottom = 14.0
 region_rect = Rect2(240, 16, 48, 16)
 
-[node name="CharacterSelect" type="Control"]
+[node name="MapSelect_New" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = SubResource("Theme_76u6u")
-script = ExtResource("1_6un01")
+script = ExtResource("1_64gr2")
 
 [node name="MarginContainer_CharacterSelect" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -96,7 +84,7 @@ z_index = 1
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_vertical = 0
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(288, 32, 47, 16)
 patch_margin_left = 4
 patch_margin_top = 4
@@ -121,7 +109,7 @@ layout_mode = 2
 [node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 18
-text = "Character Selection"
+text = "Map Selection"
 vertical_alignment = 1
 uppercase = true
 
@@ -129,7 +117,7 @@ uppercase = true
 self_modulate = Color(0.309804, 0.537255, 1, 1)
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(288, 16, 47, 16)
 patch_margin_left = 4
 patch_margin_top = 2
@@ -167,7 +155,7 @@ theme_override_constants/separation = 0
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(155, 107, 26, 26)
 patch_margin_left = 4
 patch_margin_top = 4
@@ -188,14 +176,14 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("3_smsyb")
+texture = ExtResource("3_8tx58")
 expand_mode = 1
 stretch_mode = 5
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -224,7 +212,7 @@ size_flags_horizontal = 3
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(0, 64, 16, 16)
 patch_margin_left = 3
 patch_margin_top = 3
@@ -249,7 +237,7 @@ layout_mode = 2
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("4_88s6p")
+texture = ExtResource("4_7mjc2")
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
@@ -266,7 +254,7 @@ size_flags_horizontal = 3
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(0, 48, 16, 16)
 patch_margin_left = 3
 patch_margin_top = 3
@@ -287,7 +275,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="Button" type="Button" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer"]
 layout_mode = 2
-theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
+theme_override_styles/hover = SubResource("StyleBoxTexture_7mugq")
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button"]
 layout_mode = 1
@@ -306,7 +294,7 @@ grow_vertical = 2
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("5_h3xvp")
+texture = ExtResource("5_pj5xq")
 stretch_mode = 5
 
 [node name="Label" type="Label" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer3/NinePatchRect/MarginContainer/Button/VBoxContainer"]
@@ -327,7 +315,7 @@ theme_override_constants/separation = 0
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(203, 107, 26, 26)
 patch_margin_left = 4
 patch_margin_top = 4
@@ -348,13 +336,13 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("6_o45hp")
+texture = ExtResource("6_x8ghj")
 stretch_mode = 5
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -387,7 +375,7 @@ theme_override_constants/separation = 0
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(160, 16, 16, 16)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -408,13 +396,13 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("7_aists")
+texture = ExtResource("7_ct1nh")
 stretch_mode = 5
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(176, 0, 16, 16)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -447,7 +435,7 @@ theme_override_constants/separation = 0
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(0, 0, 17, 16)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -468,13 +456,13 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("8_gic7f")
+texture = ExtResource("8_ss66w")
 stretch_mode = 5
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_CharacterSelect/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(0, 0, 17, 16)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -513,7 +501,7 @@ grow_vertical = 2
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2"]
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(112, 0, 48, 48)
 patch_margin_left = 4
 patch_margin_top = 4
@@ -545,7 +533,7 @@ theme_override_constants/separation = 10
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -566,7 +554,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("3_smsyb")
+texture = ExtResource("3_8tx58")
 stretch_mode = 5
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer"]
@@ -622,7 +610,7 @@ theme_override_constants/separation = 10
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -643,7 +631,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/HBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("9_smsyb")
+texture = ExtResource("9_baiis")
 stretch_mode = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/HBoxContainer"]
@@ -680,7 +668,7 @@ theme_override_constants/separation = 10
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -701,7 +689,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4/HBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("10_pu26d")
+texture = ExtResource("10_606jo")
 stretch_mode = 3
 
 [node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4/HBoxContainer"]
@@ -748,7 +736,7 @@ theme_override_constants/separation = 10
 [node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer5/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_g3cng")
+texture = ExtResource("2_7bytg")
 region_rect = Rect2(113, 1, 46, 46)
 patch_margin_left = 1
 patch_margin_top = 1
@@ -769,7 +757,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer5/VBoxContainer/HBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
-texture = ExtResource("11_01kyv")
+texture = ExtResource("11_sg73a")
 stretch_mode = 3
 
 [node name="Panel" type="Panel" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer5/VBoxContainer/HBoxContainer"]
@@ -802,14 +790,14 @@ layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="confirm" type="Button" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer"]
+[node name="Play" type="Button" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer"]
 custom_minimum_size = Vector2(100, 75)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_styles/hover = SubResource("StyleBoxTexture_88s6p")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_h3xvp")
-theme_override_styles/normal = SubResource("StyleBoxTexture_o45hp")
+theme_override_styles/hover = SubResource("StyleBoxTexture_geevw")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_mnnu7")
+theme_override_styles/normal = SubResource("StyleBoxTexture_qm13f")
 text = "Confirm"
 
 [node name="BackButton" type="Button" parent="."]
