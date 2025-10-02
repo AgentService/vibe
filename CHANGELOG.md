@@ -8,8 +8,15 @@
 - **Reusable Scene Components**: Replaced manual UI construction with template-based components
   - **CharacterSelectButton.tscn/gd**: Reusable character selection card (replaces 80+ lines of code)
   - **LeaderboardEntry.tscn/gd**: Reusable leaderboard row component with rank/name/score/icon
+  - **Leaderboard.tscn/gd**: Complete leaderboard system with Global/Friends tabs and entry management
   - Implemented pending data pattern for safe early setup() calls before _ready()
   - Components support visual editing - change .tscn, all instances update automatically
+- **Leaderboard Component Features**:
+  - Callback-based data providers for flexible loading (setup_data_providers)
+  - Automatic tab switching and visibility management
+  - Manual data injection for testing (load_global_data, load_friends_data)
+  - Programmatic navigation (switch_to_global, switch_to_friends, refresh_current_tab)
+  - Current player highlighting support via is_current_player flag
 - **Filename-Based Asset Loading**: Convention over configuration for UI assets
   - Asset folders: `assets/ui/characters/portraits/`, `abilities/icons/`, `passives/icons/`
   - Data files store filenames only ("sword" → `sword.png` resolved at runtime)
