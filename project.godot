@@ -47,10 +47,6 @@ ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
 MetaProgression="*res://autoload/MetaProgression.gd"
 SessionState="*res://autoload/SessionState.gd"
 LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
-AppConfig="*res://addons/maaacks_menus_template/base/scenes/autoloads/app_config.tscn"
-SceneLoader="*res://addons/maaacks_menus_template/base/scenes/autoloads/scene_loader.tscn"
-ProjectMusicController="*res://addons/maaacks_menus_template/base/scenes/autoloads/project_music_controller.tscn"
-ProjectUISoundController="*res://addons/maaacks_menus_template/base/scenes/autoloads/project_ui_sound_controller.tscn"
 
 [display]
 
@@ -72,7 +68,6 @@ import/fbx2gltf/enabled=false
 
 [gui]
 
-theme/custom="res://scenes/ui_v2/resources/themes/expedition.tres"
 theme/custom_font="uid://dmr3eewbx1o5i"
 
 [input]
@@ -143,23 +138,12 @@ cast_melee={
 ]
 }
 
-[internationalization]
-
-locale/translations=PackedStringArray("res://addons/maaacks_menus_template/base/translations/menus_translations.en.translation", "res://addons/maaacks_menus_template/base/translations/menus_translations.fr.translation")
-
 [layer_names]
 
 2d_physics/layer_1="Terrain"
 2d_physics/layer_2="Bosses"
 2d_physics/layer_3="Player"
 2d_physics/layer_4="Projectiles"
-
-[maaacks_menus_template]
-
-disable_install_audio_busses=true
-disable_update_check=false
-disable_install_wizard=true
-copy_path="res://scenes/ui_v2/"
 
 [plugins]
 
