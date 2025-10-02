@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3 uid="uid://b7kw8j4n5xr3v"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/MainButton.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_texture"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="3_theme"]
+
+[sub_resource type="StyleBoxTexture" id="hover"]
+texture = ExtResource("2_texture")
+texture_margin_left = 2.0
+texture_margin_top = 15.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 31, 48, 17)
+
+[sub_resource type="StyleBoxTexture" id="pressed"]
+texture = ExtResource("2_texture")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 32, 48, 16)
+
+[sub_resource type="StyleBoxTexture" id="normal"]
+texture = ExtResource("2_texture")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 16, 48, 16)
+
+[node name="MainButton" type="Button"]
+layout_mode = 2
+theme = ExtResource("3_theme")
+theme_override_styles/hover = SubResource("hover")
+theme_override_styles/pressed = SubResource("pressed")
+theme_override_styles/normal = SubResource("normal")
+text = "Button"
+script = ExtResource("1_script")
