@@ -5,13 +5,12 @@
 ## [Current Week - In Progress]
 
 ### Scene Architecture
-- **MeasureAtlas F5 Launch Flow**: Connected new styled UI as default menu via SceneTransitionManager
-  - Fixed critical arena loading issue caused by bypassing Main.tscn infrastructure
-  - SceneTransitionManager now maps "main_menu" to MeasureAtlas.tscn instead of MainMenu.tscn
-  - Preserves complete signal chain: StateManager → GameOrchestrator → EventBus → SceneTransitionManager
-  - F5 flow: Main.tscn → MeasureAtlas → CharacterSelect_New → MapSelect_New → Arena
-  - MainMenu.tscn containers set to visible=false for reference during migration
-  - Architecture validated: changing project.godot run/main_scene breaks scene transitions
+- **MainMenu Promotion**: MeasureAtlas promoted to primary MainMenu, old menu archived as reference
+  - **Renamed:** MeasureAtlas.tscn → MainMenu.tscn (now the PRIMARY F5 menu)
+  - **Archived:** MainMenu.tscn → MainMenu_reference.tscn (preserved for feature comparison)
+  - SceneTransitionManager "main_menu" mapping updated to new MainMenu.tscn
+  - F5 flow: Main.tscn → MainMenu.tscn → CharacterSelect_New → MapSelect_New → Arena
+  - Old menu remains accessible as MainMenu_reference for migration reference
 - **EventBus Navigation Pattern**: Replaced `get_tree().change_scene_to_file()` with EventBus signals
   - **Critical fix:** Direct scene changes destroyed Main.tscn and SceneTransitionManager infrastructure
   - All new UI scenes now use `EventBus.request_enter_map.emit()` for navigation
