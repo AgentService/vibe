@@ -12,6 +12,12 @@
   - F5 flow: Main.tscn → MeasureAtlas → CharacterSelect_New → MapSelect_New → Arena
   - MainMenu.tscn containers set to visible=false for reference during migration
   - Architecture validated: changing project.godot run/main_scene breaks scene transitions
+- **EventBus Navigation Pattern**: Replaced `get_tree().change_scene_to_file()` with EventBus signals
+  - **Critical fix:** Direct scene changes destroyed Main.tscn and SceneTransitionManager infrastructure
+  - All new UI scenes now use `EventBus.request_enter_map.emit()` for navigation
+  - SceneTransitionManager mappings added for "character_select_new" and "map_select_new"
+  - Start Run button from MapSelect_New now successfully loads arena
+  - Architectural lesson: EventBus transitions preserve root scene infrastructure
 
 ### UI/UX Improvements
 - **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
