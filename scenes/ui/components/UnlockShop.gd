@@ -2,11 +2,11 @@ extends VBoxContainer
 class_name UnlockShop
 
 ## Reusable Unlock Shop component with Items/Tomes/Skills/Characters tabs
-## Manages tab switching, currency display, and item grid population with icon-based cards
+## Manages tab switching and item grid population with icon-based cards
 ## Integrates with MetaProgression for discovery/unlock states
+## Currency display handled by PersistentRiftFragments autoload
 
 @onready var tab_bar: TabBar = $TabContainer/HBoxContainer/TabBar
-@onready var currency_value_label: Label = $ContentContainer/Header/MarginContainer/HBoxContainer/CurrencyContainer/CurrencyValue
 
 # Item grid containers (one per tab)
 @onready var item_grid_items: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Items
@@ -35,9 +35,6 @@ func _ready() -> void:
 	# Connect tab switching
 	if tab_bar:
 		tab_bar.tab_changed.connect(_on_tab_changed)
-
-	# Update currency display
-	_update_currency_display()
 
 	Logger.debug("UnlockShop initialized", "ui")
 
@@ -333,21 +330,8 @@ func _on_unlock_item_pressed(item_metadata: ItemMetadata) -> void:
 			item_metadata.display_name, item_metadata.unlock_cost
 		], "ui")
 
-		# Refresh displays
-		_update_currency_display()
+		# Refresh display (currency updated by PersistentRiftFragments via EventBus)
 		refresh_current_tab()
-
-func _update_currency_display() -> void:
-	"""Update Rift Fragments currency display from MetaProgression."""
-	if not currency_value_label:
-		return
-
-	if MetaProgression:
-		var fragments = MetaProgression.get_rift_fragments()
-		currency_value_label.text = str(fragments)
-	else:
-		currency_value_label.text = "0"
-		Logger.warn("UnlockShop: MetaProgression not available", "ui")
 
 func _clear_item_details() -> void:
 	"""Clear the item details panel."""

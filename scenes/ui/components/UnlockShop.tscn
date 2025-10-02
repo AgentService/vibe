@@ -42,6 +42,7 @@ layout_mode = 2
 layout_mode = 2
 
 [node name="TabBar" type="TabBar" parent="TabContainer/HBoxContainer"]
+custom_minimum_size = Vector2(400, 0)
 z_index = 1
 layout_mode = 2
 theme_override_styles/tab_unselected = SubResource("StyleBoxTexture_tab_unselected")
@@ -97,25 +98,6 @@ layout_mode = 2
 text = "Unlocks Shop"
 vertical_alignment = 1
 uppercase = true
-
-[node name="CurrencyContainer" type="VBoxContainer" parent="ContentContainer/Header/MarginContainer/HBoxContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-alignment = 1
-
-[node name="CurrencyLabel" type="Label" parent="ContentContainer/Header/MarginContainer/HBoxContainer/CurrencyContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "Rift Fragments"
-horizontal_alignment = 2
-vertical_alignment = 1
-
-[node name="CurrencyValue" type="Label" parent="ContentContainer/Header/MarginContainer/HBoxContainer/CurrencyContainer"]
-layout_mode = 2
-size_flags_horizontal = 3
-text = "0"
-horizontal_alignment = 2
-vertical_alignment = 1
 
 [node name="ShopContent" type="NinePatchRect" parent="ContentContainer"]
 self_modulate = Color(0.309727, 0.535967, 1, 1)
