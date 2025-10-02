@@ -10,6 +10,8 @@
     - Embedded StyleBoxTexture resources (hover, pressed, normal states)
     - @export var button_text for easy customization
     - Change template → all buttons update across entire game
+    - Deployed in MainMenu (4 buttons), UnlockShop (1 button)
+    - MainMenu: Removed 6 duplicate StyleBoxTexture SubResources, reduced load_steps 10→4
   - **ShopItemCard.tscn/gd**: Reusable shop item card with hover/selection states
     - Frame-based pattern (NinePatchRect + Button) for visual consistency
     - Signal-based communication (item_clicked, item_hovered)
