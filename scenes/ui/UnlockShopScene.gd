@@ -171,6 +171,7 @@ func _on_admin_state_changed(item_id: String, category: String, new_state: Strin
 	# Refresh the shop to show updated state
 	if unlock_shop:
 		unlock_shop.refresh_current_tab()
+		unlock_shop._update_tab_notification_badges()
 
 func _on_back_pressed() -> void:
 	"""Return to MainMenu via SceneTransitionManager"""
