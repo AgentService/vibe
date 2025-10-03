@@ -103,45 +103,69 @@ func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetad
 
 	# Create row container
 	var row := HBoxContainer.new()
-	row.add_theme_constant_override("separation", 10)
+	row.add_theme_constant_override("separation", 8)
 
-	# Item name label
+	# Item icon
+	var icon_texture := TextureRect.new()
+	icon_texture.custom_minimum_size = Vector2(24, 24)
+	icon_texture.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	# Load icon from item metadata
+	var icon_path = "res://assets/ui/items/icons/%s.png" % item_metadata.icon_filename
+	if ResourceLoader.exists(icon_path):
+		icon_texture.texture = load(icon_path)
+	else:
+		Logger.debug("ShopAdminPanel: Icon not found: %s" % icon_path, "ui")
+
+	row.add_child(icon_texture)
+
+	# Item name label (smaller, compact)
 	var name_label := Label.new()
 	name_label.text = item_metadata.display_name
-	name_label.custom_minimum_size = Vector2(150, 0)
+	name_label.custom_minimum_size = Vector2(120, 0)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	row.add_child(name_label)
 
-	# Current state label
-	var state_label := Label.new()
-	state_label.custom_minimum_size = Vector2(120, 0)
-	_update_state_label(state_label, item_metadata)
-	row.add_child(state_label)
+	# State icon (visual only)
+	var state_icon := TextureRect.new()
+	state_icon.custom_minimum_size = Vector2(20, 20)
+	state_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	state_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_update_state_icon(state_icon, item_metadata)
+	row.add_child(state_icon)
 
-	# Cycle state button
+	# Cycle button (icon only, no text)
 	var cycle_button := Button.new()
-	cycle_button.text = "Cycle State"
-	cycle_button.custom_minimum_size = Vector2(100, 0)
-	cycle_button.pressed.connect(_on_cycle_state_pressed.bind(item_metadata, state_label))
+	cycle_button.text = "🔄"
+	cycle_button.custom_minimum_size = Vector2(32, 32)
+	cycle_button.tooltip_text = "Cycle state"
+	cycle_button.pressed.connect(_on_cycle_state_pressed.bind(item_metadata, state_icon))
 	row.add_child(cycle_button)
 
 	container.add_child(row)
 
-func _update_state_label(label: Label, item_metadata: ItemMetadata) -> void:
-	"""Update the state label to reflect current item state."""
+func _update_state_icon(icon: TextureRect, item_metadata: ItemMetadata) -> void:
+	"""Update the state icon to reflect current item state."""
 	var is_discovered := MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
 	var is_unlocked := MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
 
+	# Use colored squares to indicate state
+	# Create a simple colored texture
+	var color: Color
 	if not is_discovered and not is_unlocked:
-		label.text = "❌ Undiscovered"
-		label.modulate = Color(0.7, 0.7, 0.7)
+		color = Color(0.5, 0.5, 0.5)  # Gray - Undiscovered
+		icon.tooltip_text = "Undiscovered"
 	elif is_discovered and not is_unlocked:
-		label.text = "🔒 Discovered"
-		label.modulate = Color(1.0, 0.8, 0.4)
+		color = Color(1.0, 0.8, 0.3)  # Yellow - Discovered/Locked
+		icon.tooltip_text = "Discovered (Locked)"
 	else:  # unlocked
-		label.text = "✅ Unlocked"
-		label.modulate = Color(0.4, 1.0, 0.4)
+		color = Color(0.3, 1.0, 0.3)  # Green - Unlocked
+		icon.tooltip_text = "Unlocked"
 
-func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_label: Label) -> void:
+	icon.modulate = color
+
+func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_icon: TextureRect) -> void:
 	"""Cycle item through states: Undiscovered → Discovered → Unlocked → Undiscovered."""
 	if not MetaProgression:
 		return
@@ -174,8 +198,8 @@ func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_label: Label) ->
 	# Save changes
 	MetaProgression.save()
 
-	# Update label
-	_update_state_label(state_label, item_metadata)
+	# Update icon
+	_update_state_icon(state_icon, item_metadata)
 
 	# Emit signal for shop to refresh
 	admin_state_changed.emit(item_metadata.item_id, item_metadata.category, new_state)
