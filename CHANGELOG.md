@@ -4,6 +4,84 @@
 
 ## [Current Week - In Progress]
 
+### Ability System - Architecture & Planning (2025-10-03 → 2025-10-04 REVISED)
+
+**REVISION 2 (2025-10-04):** External review identified critical issues (Score: 13/35). All fixes applied.
+
+**Critical Fixes Applied:**
+1. ✅ Fixed BaseAbility.level_up() loop bug (`for i in levels` → `for i in range(levels)`)
+2. ✅ Refactored tome system to use **modifier descriptors** (idempotent, reversible stacking)
+3. ✅ Created **AbilitySystem autoload** for deterministic 30Hz cooldown tracking (not Player._process)
+4. ✅ Fixed file path contradictions (`scripts/resources/` for Resources, `autoload/` for managers)
+5. ✅ Changed tag type to `Array[StringName]` for performance + type safety
+6. ✅ Refactored ProjectileAbility to use **EventBus signals** (no direct singleton access)
+7. ✅ Extracted **AbilityComponent** from Player.gd (separation of concerns)
+
+**New Architecture Components:**
+- **TomeModifier.gd** (Resource): Descriptor pattern for idempotent stat modifications
+- **AbilitySystem.gd** (Autoload): Owns cooldown state, triggers auto-cast on 30Hz combat_step
+- **AbilityComponent.gd** (Node): Manages ability/tome slots, attached to Player scene
+- **Baseline vs Computed Stats**: `base_damage` never mutated, `final_damage` recomputed from modifiers
+
+**Original Architecture (2025-10-03):**
+- **Architecture Document**: Created comprehensive technical blueprint for auto-cast ability system
+  - BaseAbility class with polymorphic hierarchy (ProjectileAbility, BuffAbility, AoEAbility, etc.)
+  - BaseTome class with ability/player stat modifiers (damage, speed, quantity, HP, luck, XP)
+  - Tag-based applicability system (~15 tags: projectile, damage, fire, cooldown, etc.)
+  - Level-up progression (damage scales via re-picking abilities)
+  - 4 ability slots + 4 tome slots per player
+  - Integration points: DamageService, MetaProgression, Quest system
+- **Phase 1 Implementation Plan**: 4-phase breakdown with detailed tasks (13-18 hours → **REVISED to 22-26 hours**)
+  - Phase 1.1: Foundation (Tag system, BaseAbility, ProjectileAbility, BaseTome, EventBus signals)
+  - Phase 1.2: Integration (AbilityManager, Player slots, auto-cast, 30Hz combat step)
+  - Phase 1.3: Vertical Slice (Ranger Arrow end-to-end: definition → projectile → damage → death)
+  - Phase 1.4: Tome Validation (TomeManager, Tome of Power, Tome of Swiftness, DPS/TTK tests)
+- **Realistic Tome Examples**: Updated architecture with gameplay-focused modifiers
+  - Tome of Power: +15% damage (global, all abilities)
+  - Tome of Swiftness: +8% movement speed (player stat)
+  - Tome of Quantity: +1 projectile per stack (projectile abilities only)
+  - Tome of Vitality: +15 max HP per stack (player stat)
+  - Tome of Fortune: +5 luck per stack (chest rarity modifier)
+  - Tome of Knowledge: +10% XP gain per stack (player stat)
+- **Task Breakdown System**: Created hierarchical task documents in `/Obsidian/03-tasks/`
+  - Parent task: `9_ABILITIES_system_implementation.md` (epic-level overview)
+  - Subtask 1a: `9a_ABILITIES_phase1_foundation.md` (5 tasks, 4-6 hours) ← **NEEDS UPDATE**
+  - Subtask 1b: `9b_ABILITIES_phase2_integration.md` (4 tasks, 3-4 hours) ← **NEEDS UPDATE**
+  - Subtask 1c: `9c_ABILITIES_phase3_vertical_slice.md` (6 tasks, 4-5 hours) ← **NEEDS UPDATE**
+  - Subtask 1d: `9d_ABILITIES_phase4_tome_validation.md` (4 tasks, 2-3 hours) ← **NEEDS UPDATE**
+  - Each task has: requirements, success criteria, testing approach, time estimate
+  - Includes headless test scripts for validation (Foundation, Integration, DPS/TTK measurements)
+
+**Files Created:**
+- `ability-system-architecture-REVISED.md` (corrected version, ~900 lines)
+- `REVISION_SUMMARY_ability_system.md` (fix summary + validation checklist)
+- `REVIEW_PROMPT_ability_system.md` (AI review prompt for external validation)
+
+**Status:** Architecture revised, awaiting task document updates
+**Next:** Update task docs to reflect new architecture (TomeModifier, AbilitySystem, AbilityComponent)
+
+<<<<<<< Updated upstream
+=======
+### Tier Progression System
+- **3-Stage Tier System**: Implemented stage-based progression with unlock flow (Tier 1-3 + Unlimited)
+  - **Tier 1-3**: Each tier requires 3 stages to complete for unlock
+  - **Tier 4 (Unlimited)**: Endless mode unlocked after completing Tier 3
+  - Death restarts from Stage 1 of current tier (no checkpoints - roguelike)
+  - **MetaProgression Extensions**: Added tier unlock tracking, deepest stage per tier, run counter per map+tier
+  - **EventBus Signals**: Added `tier_unlocked(tier)` and `deepest_stage_updated(tier, stage)` signals
+- **MapSelect UI Overhaul**: Replaced time-based metrics with stage progression display
+  - Replaced "Speedrun" label with "Deepest Stage" showing X/3 format for Tier 1-3
+  - Unlimited mode shows "Stage N" instead of X/3 (infinite depth tracking)
+  - Added 4th tier checkbox for Unlimited mode with 1.5x difficulty multiplier
+  - Tier labels show stage count: "Tier 1 (3)", "Tier 2 (3)", "Tier 3 (3)", "Unlimited"
+  - Dynamic tier unlock/disable based on MetaProgression data
+  - Run counter now tracks per map+tier combination
+- **Architecture**: Tier unlocks stored globally in MetaProgressionData.tres (persistent)
+  - `unlocked_tiers: int` - highest unlocked tier (1-4)
+  - `tier_deepest_stage: Dictionary` - best stage reached per tier {1: 2, 2: 0, 3: 0, 4: 15}
+  - `map_tier_runs: Dictionary` - run count per map+tier {"forest_arena": {1: 10, 2: 5}}
+  - LocalLeaderboard continues tracking kills/time per map+tier for personal bests
+
 ### UI Component System & Asset Organization
 - **Reusable Scene Components**: Replaced manual UI construction with template-based components
   - **MainButton.tscn/gd**: Single source of truth for all UI buttons (Play, Confirm, Unlock, etc.)
@@ -59,6 +137,7 @@
   - Start Run button from MapSelect_New now successfully loads arena
   - Architectural lesson: EventBus transitions preserve root scene infrastructure
 
+>>>>>>> Stashed changes
 ### UI/UX Improvements
 - **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
   - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding

@@ -17,7 +17,7 @@ extends Control
 ## TODO: Phase 2 - Add map thumbnails and tier buttons (1-5)
 
 @onready var back_button: Button = $BackButton
-@onready var start_run_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/startRun
+@onready var start_run_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/MarginContainer7/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/startRun
 
 # Selection state (character passed from CharacterSelect)
 var selected_character: String = "knight"  # Default fallback
