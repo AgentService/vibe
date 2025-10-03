@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dnrcyicqtm7e2"
-path="res://.godot/imported/four-leaf.png-d135fe23e720ae0adb36071647fa9660.ctex"
+uid="uid://dye4nxtm1hp7k"
+path="res://.godot/imported/lucky-coin.png-713c157dde5639a138b95e050428cb27.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/four-leaf.png"
-dest_files=["res://.godot/imported/four-leaf.png-d135fe23e720ae0adb36071647fa9660.ctex"]
+source_file="res://assets/ui/items/icons/lucky-coin.png"
+dest_files=["res://.godot/imported/lucky-coin.png-713c157dde5639a138b95e050428cb27.ctex"]
 
 [params]
 

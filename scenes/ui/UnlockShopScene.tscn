@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://nwow3axnd36n" path="res://scenes/ui/UnlockShopScene.gd" id="1_6x8l0"]
 [ext_resource type="PackedScene" uid="uid://d1ptjvfkmnyst" path="res://scenes/ui/components/UnlockShop.tscn" id="1_t5vr2"]
-[ext_resource type="PackedScene" uid="uid://cewx5w0ue38ll" path="res://scenes/ui/components/ShopAdminPanel.tscn" id="3_admin"]
+[ext_resource type="PackedScene" uid="uid://cj4yacsdqebq1" path="res://scenes/ui/components/ShopAdminPanel.tscn" id="3_admin"]
 
 [node name="UnlockShopScene" type="Control"]
 layout_mode = 3

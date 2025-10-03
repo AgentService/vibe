@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dye4nxtm1hp7k"
-path="res://.godot/imported/lucky-coin.png-6cb6565ab96e705e4d0fdc8c9b2e40a5.ctex"
+uid="uid://drhe48lx62l5o"
+path="res://.godot/imported/cheese.png-295c0a7b3cd437d661232f6652723a49.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/lucky-coin.png"
-dest_files=["res://.godot/imported/lucky-coin.png-6cb6565ab96e705e4d0fdc8c9b2e40a5.ctex"]
+source_file="res://assets/ui/items/icons/cheese.png"
+dest_files=["res://.godot/imported/cheese.png-295c0a7b3cd437d661232f6652723a49.ctex"]
 
 [params]
 

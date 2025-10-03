@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c0dapgdl33lo7"
-path="res://.godot/imported/feather.png-9bc3e979b1f50ab9695cbca51398a496.ctex"
+uid="uid://dnrcyicqtm7e2"
+path="res://.godot/imported/four-leaf.png-057229f46a6f597d852b2cf53689dc2e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/items/feather.png"
-dest_files=["res://.godot/imported/feather.png-9bc3e979b1f50ab9695cbca51398a496.ctex"]
+source_file="res://assets/ui/items/icons/four-leaf.png"
+dest_files=["res://.godot/imported/four-leaf.png-057229f46a6f597d852b2cf53689dc2e.ctex"]
 
 [params]
 
