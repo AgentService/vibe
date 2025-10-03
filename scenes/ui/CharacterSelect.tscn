@@ -1,6 +1,6 @@
 [gd_scene load_steps=20 format=3 uid="uid://b5t4y1vrofp2t"]
 
-[ext_resource type="Script" uid="uid://boqtakth7sw3y" path="res://scenes/ui/CharacterSelect.gd" id="1_6un01"]
+[ext_resource type="Script" path="res://scenes/ui/CharacterSelect.gd" id="1_6un01"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_g3cng"]
 [ext_resource type="Texture2D" uid="uid://c24tuof03bhv3" path="res://assets/ui/characters/portraits/knight_portrait.png" id="3_74ejh"]
 [ext_resource type="Texture2D" uid="uid://c1bwq02n83h1i" path="res://assets/ui/tile096.png" id="3_smsyb"]
