@@ -172,7 +172,7 @@ func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_label: Label) ->
 		Logger.info("ShopAdminPanel: Set %s to UNDISCOVERED" % item_metadata.item_id, "ui")
 
 	# Save changes
-	MetaProgression.save_data()
+	MetaProgression.save()
 
 	# Update label
 	_update_state_label(state_label, item_metadata)
