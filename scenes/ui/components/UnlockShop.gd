@@ -79,17 +79,28 @@ func _category_has_discovered_items(category: String) -> bool:
 		return false
 
 	var discovered_array: Array
+	var unlocked_array: Array
+
 	match category:
 		"items":
 			discovered_array = MetaProgression._data.discovered_items
+			unlocked_array = MetaProgression._data.unlocked_items
 		"tomes":
 			discovered_array = MetaProgression._data.discovered_tomes
+			unlocked_array = MetaProgression._data.unlocked_tomes
 		"skills":
 			discovered_array = MetaProgression._data.discovered_skills
+			unlocked_array = MetaProgression._data.unlocked_skills
 		"characters":
 			discovered_array = MetaProgression._data.discovered_characters if "discovered_characters" in MetaProgression._data else []
+			unlocked_array = MetaProgression._data.unlocked_characters if "unlocked_characters" in MetaProgression._data else []
 
-	return not discovered_array.is_empty()
+	# Check if there are any discovered items that are NOT unlocked
+	for item_id in discovered_array:
+		if not unlocked_array.has(item_id):
+			return true
+
+	return false
 
 func setup_data_providers(items_provider: Callable, tomes_provider: Callable, skills_provider: Callable, characters_provider: Callable) -> void:
 	"""Configure data loading callbacks and initialize with Items tab.
