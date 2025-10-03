@@ -1,6 +1,6 @@
 [gd_scene load_steps=3 format=3 uid="uid://cj4yacsdqebq1"]
 
-[ext_resource type="Script" uid="uid://dd4mab87yae7i" path="res://scenes/ui/components/ShopAdminPanel.gd" id="1_admin"]
+[ext_resource type="Script" path="res://scenes/ui/components/ShopAdminPanel.gd" id="1_admin"]
 [ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="2_theme"]
 
 [node name="ShopAdminPanel" type="VBoxContainer"]

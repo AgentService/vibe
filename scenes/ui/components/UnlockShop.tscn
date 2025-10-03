@@ -1,6 +1,6 @@
 [gd_scene load_steps=5 format=3 uid="uid://d1ptjvfkmnyst"]
 
-[ext_resource type="Script" uid="uid://b3hfvkmqsma8t" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
+[ext_resource type="Script" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
 [ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_vy11w"]
 [ext_resource type="PackedScene" uid="uid://b7kw8j4n5xr3v" path="res://scenes/ui/components/MainButton.tscn" id="4_mainbutton"]
