@@ -150,6 +150,14 @@ signal session_level_up(new_level: int)
 @warning_ignore("unused_signal")
 signal leaderboard_updated(map_id: String, tier: int, rank: int)
 
+## Tier unlocked - emitted when player unlocks a new tier
+@warning_ignore("unused_signal")
+signal tier_unlocked(tier: int)
+
+## Deepest stage updated - emitted when player reaches new deepest stage in a tier
+@warning_ignore("unused_signal")
+signal deepest_stage_updated(tier: int, stage: int)
+
 # HUD COMPONENT SIGNALS
 ## Health changed - emitted when player health changes
 @warning_ignore("unused_signal")

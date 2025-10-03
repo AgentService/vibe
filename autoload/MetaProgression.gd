@@ -463,6 +463,87 @@ func get_unlocked_skins(character_id: String) -> Array:
 
 
 # ═══════════════════════════════════════════════════════════════════
+# TIER PROGRESSION SYSTEM (3 stages per tier, unlimited tier 4)
+# ═══════════════════════════════════════════════════════════════════
+
+const STAGES_PER_TIER: int = 3  # Tier 1-3 each have 3 stages
+const UNLIMITED_TIER: int = 4   # Tier 4 = Unlimited mode
+
+## Unlocks a tier (called when player completes all stages of previous tier)
+func unlock_tier(tier: int) -> void:
+	if tier <= _data.unlocked_tiers:
+		Logger.debug("Tier %d already unlocked" % tier, "progression")
+		return
+
+	if tier > _data.unlocked_tiers + 1:
+		Logger.warn("Cannot unlock Tier %d - must unlock tiers sequentially (current: %d)" % [tier, _data.unlocked_tiers], "progression")
+		return
+
+	_data.unlocked_tiers = tier
+	Logger.info("Tier %d unlocked!" % tier, "progression")
+	EventBus.tier_unlocked.emit(tier)
+	save()
+
+
+## Checks if a tier is unlocked
+func is_tier_unlocked(tier: int) -> bool:
+	return tier <= _data.unlocked_tiers
+
+
+## Gets the highest unlocked tier
+func get_unlocked_tiers() -> int:
+	return _data.unlocked_tiers
+
+
+## Updates deepest stage reached for a tier (called during/after run)
+func update_deepest_stage(tier: int, stage: int) -> void:
+	var current_best: int = _data.tier_deepest_stage.get(tier, 0)
+
+	if stage > current_best:
+		_data.tier_deepest_stage[tier] = stage
+		Logger.info("New record: Tier %d - Deepest Stage %d" % [tier, stage], "progression")
+		EventBus.deepest_stage_updated.emit(tier, stage)
+		save()
+
+
+## Gets deepest stage reached for a tier
+func get_deepest_stage(tier: int) -> int:
+	return _data.tier_deepest_stage.get(tier, 0)
+
+
+## Increments run counter for a map+tier combination
+func increment_run_count(map_id: String, tier: int) -> void:
+	# Ensure map exists in dictionary
+	if not _data.map_tier_runs.has(map_id):
+		_data.map_tier_runs[map_id] = {}
+
+	# Increment tier run count
+	var current_count: int = _data.map_tier_runs[map_id].get(tier, 0)
+	_data.map_tier_runs[map_id][tier] = current_count + 1
+
+	Logger.debug("Run count for %s Tier %d: %d" % [map_id, tier, current_count + 1], "progression")
+	save()
+
+
+## Gets run count for a specific map+tier
+func get_run_count(map_id: String, tier: int) -> int:
+	if not _data.map_tier_runs.has(map_id):
+		return 0
+	return _data.map_tier_runs[map_id].get(tier, 0)
+
+
+## Gets total run count across all tiers for a map
+func get_total_run_count(map_id: String) -> int:
+	if not _data.map_tier_runs.has(map_id):
+		return 0
+
+	var total := 0
+	for tier in _data.map_tier_runs[map_id].keys():
+		total += _data.map_tier_runs[map_id][tier]
+	return total
+
+
+# ═══════════════════════════════════════════════════════════════════
 # DEBUG & UTILITY
 # ═══════════════════════════════════════════════════════════════════
 
