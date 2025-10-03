@@ -518,6 +518,9 @@ size_flags_horizontal = 3
 layout_mode = 2
 text = "Reward"
 
+[node name="HSeparator" type="HSeparator" parent="MarginContainer_CharacterSelect2/NinePatchRect/MarginContainer7/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer"]
+layout_mode = 2
+
 [node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/MarginContainer7/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
