@@ -295,6 +295,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 		item_flavor_label.modulate = Color(0.7, 0.7, 0.8)
 
 		quest_progress_label.text = "Cost: %d 💎" % item_metadata.unlock_cost
+		quest_progress_label.modulate = Color.WHITE
 		quest_progress_label.visible = true
 
 		# Button text is set in scene ("BUY"), no need to override
