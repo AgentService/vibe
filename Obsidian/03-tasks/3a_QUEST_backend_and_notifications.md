@@ -1,10 +1,15 @@
-# Quest System Backend Implementation
+# 3a: Quest System Backend & Notifications
 
 **Created:** 2025-10-03
-**Status:** 🟡 Planning - Architecture Decision Required
+**Updated:** 2025-10-03 (Renamed from `3_PROGRESSION_quest_system_implementation.md`)
+**Status:** 🟡 Planning
 **Priority:** High
-**Estimated Effort:** 2-3 weeks
-**Category:** 🎮 Progression System
+**Estimated Effort:** 3-4 weeks
+**Category:** 🎮 Quest System - Backend
+**Consolidated From:** Task 3 (Quest Backend) + Task 6 (In-Game Notifications)
+**UI Companion Task:** [Task 3b - Quest UI Archive](3b_QUEST_ui_achievement_archive.md) ← **MUST STAY IN SYNC**
+
+> ⚠️ **Cross-Reference:** This task handles the quest **backend and in-run notifications**. For the main menu quest log UI (MEGABONK-style achievement browser), see **Task 3b**. These tasks must stay synchronized - QuestManager API changes here require UI updates in Task 3b.
 
 ## 📋 Task Description
 
@@ -461,23 +466,88 @@ Items:
 
 ---
 
-### Phase 8: Integration with End-of-Run Screen (DEFERRED - UI Phase)
-**Goal:** Display completed quests on end-of-run screen
-**Note:** Deferred to UI task, but backend support implemented
+### Phase 8: In-Game Quest Completion Notifications (2 sessions)
+**Goal:** Show popup when quest completes mid-run
+**Source:** Consolidated from Task 6
 
-- [ ] Add quest summary to SessionState:
-  - [ ] `completed_quests_this_run: Array[String]` - Quest IDs completed
-  - [ ] Populated by QuestManager on quest_completed signal
-  - [ ] Included in SessionState.get_final_stats()
-- [ ] Add quest reward summary:
-  - [ ] Calculate total Rift Fragments from quests this run
-  - [ ] List all items unlocked from quests this run
-- [ ] Backend ready for UI integration:
-  - [ ] End-of-run screen can call `SessionState.completed_quests_this_run`
-  - [ ] For each quest: Display icon, name, rewards
-  - [ ] Total fragments from quests shown separately
+**Notification Design:**
+```
+┌─────────────────────────────────┐
+│ ⭐ QUEST COMPLETED! ⭐           │
+├─────────────────────────────────┤
+│ "First Blood"                   │
+│ Kill your first enemy           │
+│                                 │
+│ REWARDS:                        │
+│ + 10 Rift Fragments             │
+│ + Unlocked: Cheese (Item)       │
+└─────────────────────────────────┘
+```
 
-**Deliverable:** Backend provides quest data for end-of-run UI (UI implementation deferred)
+**Implementation:**
+- [ ] Create notification scene: `scenes/ui/hud/QuestCompletionNotification.tscn`
+  - [ ] Panel background (semi-transparent dark)
+  - [ ] Title label: "QUEST COMPLETED!"
+  - [ ] Quest name + description labels
+  - [ ] Rewards section (Rift Fragments + unlocked items)
+  - [ ] Auto-dismiss after 5 seconds OR click to dismiss
+  - [ ] Fade-in animation (Tween)
+- [ ] Attach script: `QuestCompletionNotification.gd`
+  - [ ] `show_quest_completion(quest: QuestConfig, rewards: Dictionary)`
+  - [ ] Populate from QuestConfig data
+  - [ ] Auto-dismiss timer
+- [ ] Wire to QuestManager:
+  - [ ] HUD/Arena listens for `EventBus.quest_completed`
+  - [ ] Instantiate notification on signal
+  - [ ] Queue system for multiple simultaneous completions
+  - [ ] Position: top-center or right-side panel (CanvasLayer)
+- [ ] Test: Complete 2 quests quickly → notifications queue correctly
+
+**Deliverable:** In-game quest completion notifications working
+
+---
+
+### Phase 9: End-of-Run Quest Summary Integration (1-2 sessions)
+**Goal:** Display completed quests on end-of-run screen (right column)
+**Source:** Consolidated from Task 6
+
+**End-of-Run Right Column Layout:**
+```
+┌──────────────────────────────┐
+│ COMPLETED QUESTS             │
+├──────────────────────────────┤
+│ ⭐ First Blood               │
+│    + 10 Fragments            │
+│    + Unlocked: Cheese        │
+│                              │
+│ ⭐ Damage Dealer             │
+│    + 20 Fragments            │
+│    + Unlocked: Feather       │
+│                              │
+│ Total Quest Rewards:         │
+│ + 30 Rift Fragments          │
+│ + 2 Items Unlocked           │
+└──────────────────────────────┘
+```
+
+**Implementation:**
+- [ ] Update SessionState to track completed quests:
+  - [ ] `completed_quests_this_run: Array[String]` - Quest IDs
+  - [ ] `add_completed_quest(quest_id: String)` - Called by QuestManager
+  - [ ] Included in `get_final_stats()`
+  - [ ] Cleared in `reset()`
+- [ ] Update `EndOfRun.gd` to display completed quests:
+  - [ ] Query `SessionState.completed_quests_this_run`
+  - [ ] Load QuestConfig for each quest ID
+  - [ ] Display quest name + rewards
+  - [ ] Show totals (fragments + unlocks)
+  - [ ] Simple VBoxContainer list (defer polish to Task 8)
+- [ ] Add visual elements:
+  - [ ] Quest icons (if available)
+  - [ ] Reward icons (fragments, items)
+- [ ] Test: Complete run with 2 quests → end screen shows both
+
+**Deliverable:** End-of-run screen displays completed quests with rewards
 
 ---
 
@@ -527,7 +597,7 @@ Items:
 
 ## ✅ Definition of Done
 
-**Core System (Phases 1-4):**
+**Core Backend (Phases 1-4):**
 - [ ] QuestConfig resource class implemented with all fields
 - [ ] QuestManager autoload tracks progress correctly
 - [ ] Quest completion awards Rift Fragments and unlocks items
@@ -537,19 +607,32 @@ Items:
 - [ ] Integration with SessionState and MetaProgression verified
 - [ ] CheatSystem debug commands working (complete_quest, reset_quest, etc.)
 
-**Advanced Features (Phases 5-7):**
+**Advanced Backend Features (Phases 5-7):**
 - [ ] Multi-objective quests working (AND conditions)
 - [ ] Custom condition scripts supported (complex logic)
 - [ ] Quest categories organized (combat, survival, exploration, etc.)
 - [ ] Quest analytics tracking completion rates
 - [ ] Balancing tools export statistics for analysis
 
+**In-Game Notifications (Phases 8-9):**
+- [ ] Quest completion notification popup appears mid-run
+- [ ] Notification shows quest name, rewards (fragments + unlocks)
+- [ ] Notification queue system handles multiple completions
+- [ ] SessionState tracks completed_quests_this_run
+- [ ] End-of-run screen displays completed quests with rewards
+- [ ] End-of-run shows total quest rewards (fragments + unlocks)
+
+**Cross-Task Integration:**
+- [ ] **Task 9 Synchronization:** QuestManager API documented for UI integration
+- [ ] **Task 9 Synchronization:** Quest categories match UI tabs (Characters, Weapons, Tomes, Items, General, Challenges)
+- [ ] **Task 9 Synchronization:** QuestConfig includes all fields needed for UI display (icon, category, rewards preview)
+
 **Documentation & Testing:**
 - [ ] autoload/CLAUDE.md updated with QuestManager patterns
 - [ ] Quest definition schema documented in data/content/README.md
 - [ ] Quest system documentation created in Obsidian/systems/
 - [ ] CHANGELOG.md updated with quest system summary
-- [ ] Commit ready: `feat(progression): implement quest system backend with reward integration`
+- [ ] Commit ready: `feat(progression): implement quest system with in-game notifications and reward integration`
 
 ---
 
@@ -587,4 +670,32 @@ Items:
 
 ---
 
-**Related:** [Task 1 - Progression Refactoring](1_PROGRESSION_single_session_refactoring.md) | [MetaProgression System](../systems/Meta-Progression-System.md) | [SessionState Architecture](../../autoload/CLAUDE.md#progression-autoloads-task-04---megabonkror2-architecture)
+**Related:** [Task 1 - Progression Refactoring](completed-tasks/1_PROGRESSION_single_session_refactoring_COMPLETED.md) | [Task 9 - Quest UI (MUST SYNC)](9_PROGRESSION_quest_ui_achievement_archive.md) | [MetaProgression System](../systems/Meta-Progression-System.md) | [SessionState Architecture](../../autoload/CLAUDE.md#progression-autoloads-task-04---megabonkror2-architecture)
+
+---
+
+## 🔄 Task 9 Synchronization Requirements
+
+**IMPORTANT:** This task (backend + notifications) must stay synchronized with **Task 9 (Quest UI / Achievement Archive)**. Any changes to the following require UI updates:
+
+### QuestConfig Structure Changes:
+- Adding/removing fields → Update UI display logic
+- Category enum changes → Update UI tabs
+- Reward structure changes → Update reward preview columns
+
+### QuestManager API Changes:
+- New query methods → Update UI data fetching
+- Signal payload changes → Update UI signal handlers
+- Progress tracking changes → Update progress bars
+
+### Quest Category Definitions:
+Must match MEGABONK tabs exactly:
+1. **Characters** - Character unlock quests
+2. **Weapons** - Weapon unlock quests
+3. **Tomes** - Tome unlock quests
+4. **Items** - Item unlock quests
+5. **General** - Generic progression quests
+6. **Challenges** - Special achievement quests
+7. **Skins** - Cosmetic unlock quests (future)
+
+**Before implementing:** Check Task 9 to ensure UI design is compatible with backend changes.

@@ -3,12 +3,12 @@
 **Created:** 2025-10-03
 **Status:** 🟡 Ready to Start
 **Priority:** Medium
-**Estimated Effort:** 30 minutes - 1 hour
+**Estimated Effort:** 45 minutes - 1.5 hours (including admin panel)
 **Category:** 🎮 Progression System - UI Integration
 
 ## 📋 Task Description
 
-Wire up the existing tier selection UI in MapSelect to the MetaProgression backend. This is the minimal viable implementation to make tier unlocking functional without requiring complex stage progression systems.
+Wire up the existing tier selection UI in MapSelect to the MetaProgression backend, **plus add a ProgressionAdminPanel** for easy testing (similar to ShopAdminPanel). This is the minimal viable implementation to make tier unlocking functional and testable without requiring complex stage progression systems.
 
 **Current State Analysis:**
 - ✅ Tier UI exists in MapSelect.tscn with 4 tier checkboxes
@@ -24,6 +24,11 @@ Wire up the existing tier selection UI in MapSelect to the MetaProgression backe
 - Update detail panel labels with `get_deepest_stage()` and `get_run_count()`
 - Pass selected tier to `SessionState.start_run()`
 - Handle checkbox toggle events to track selected tier
+- **Add ProgressionAdminPanel with buttons to:**
+  - Unlock tiers (2, 3, 4, All)
+  - Set deepest stage (1/3, 2/3, 3/3)
+  - Simulate runs (add kills, increment run count)
+  - Reset progression (current tier or all data)
 
 ## 🎯 Acceptance Criteria
 
@@ -169,33 +174,183 @@ func _on_start_run_pressed() -> void:
 		StateManager.start_run(&"pathgen_arena", context)
 ```
 
+### Phase 5: Add Progression Admin Panel (15-20 mins)
+
+**Purpose:** Quick testing panel for tier/stage progression (similar to ShopAdminPanel)
+
+**Create `scenes/ui/components/ProgressionAdminPanel.tscn` + `.gd`:**
+
+```gdscript
+# ProgressionAdminPanel.gd
+extends VBoxContainer
+class_name ProgressionAdminPanel
+## Admin panel for testing tier/stage progression flow
+
+@onready var unlock_tier2_button: Button = $TierUnlocks/UnlockTier2
+@onready var unlock_tier3_button: Button = $TierUnlocks/UnlockTier3
+@onready var unlock_tier4_button: Button = $TierUnlocks/UnlockTier4
+@onready var unlock_all_tiers_button: Button = $TierUnlocks/UnlockAllTiers
+
+@onready var set_stage1_button: Button = $StageProgress/SetStage1
+@onready var set_stage2_button: Button = $StageProgress/SetStage2
+@onready var set_stage3_button: Button = $StageProgress/SetStage3
+
+@onready var add_kills_button: Button = $SimulateRun/AddKills
+@onready var add_run_count_button: Button = $SimulateRun/AddRunCount
+
+@onready var reset_all_button: Button = $ResetTools/ResetAll
+@onready var reset_tier_button: Button = $ResetTools/ResetCurrentTier
+
+var current_tier: int = 1  # Track which tier to apply actions to
+
+func _ready() -> void:
+	# Tier unlocking
+	unlock_tier2_button.pressed.connect(_unlock_tier.bind(2))
+	unlock_tier3_button.pressed.connect(_unlock_tier.bind(3))
+	unlock_tier4_button.pressed.connect(_unlock_tier.bind(4))
+	unlock_all_tiers_button.pressed.connect(_unlock_all_tiers)
+
+	# Stage progression
+	set_stage1_button.pressed.connect(_set_deepest_stage.bind(1))
+	set_stage2_button.pressed.connect(_set_deepest_stage.bind(2))
+	set_stage3_button.pressed.connect(_set_deepest_stage.bind(3))
+
+	# Simulate run stats
+	add_kills_button.pressed.connect(_simulate_kills)
+	add_run_count_button.pressed.connect(_increment_run_count)
+
+	# Reset tools
+	reset_all_button.pressed.connect(_reset_all_progression)
+	reset_tier_button.pressed.connect(_reset_current_tier)
+
+	Logger.debug("ProgressionAdminPanel initialized", "ui")
+
+func set_current_tier(tier: int) -> void:
+	"""Set which tier admin actions apply to."""
+	current_tier = tier
+
+func _unlock_tier(tier: int) -> void:
+	"""Unlock a specific tier."""
+	MetaProgression.unlock_tier(tier)
+	Logger.info("Admin: Unlocked Tier %d" % tier, "ui")
+
+func _unlock_all_tiers() -> void:
+	"""Unlock all tiers 2-4."""
+	for tier in [2, 3, 4]:
+		MetaProgression.unlock_tier(tier)
+	Logger.info("Admin: Unlocked all tiers", "ui")
+
+func _set_deepest_stage(stage: int) -> void:
+	"""Set deepest stage reached for current tier."""
+	MetaProgression.update_deepest_stage(current_tier, stage)
+	Logger.info("Admin: Set Tier %d deepest stage to %d/3" % [current_tier, stage], "ui")
+
+func _simulate_kills() -> void:
+	"""Simulate a run with 100 kills (for leaderboard testing)."""
+	var run_data = {
+		"character_id": "knight",
+		"stage_reached": MetaProgression.get_deepest_stage(current_tier),
+		"kills": 100,
+		"damage_dealt": 5000,
+		"time_survived": 300.0,
+		"final_swarm_entered": false,
+		"rift_fragments_earned": 10 * current_tier
+	}
+
+	var rank = LocalLeaderboard.add_run("forest_arena", current_tier, run_data)
+	if rank > 0:
+		Logger.info("Admin: Simulated run - Rank #%d on Tier %d" % [rank, current_tier], "ui")
+	else:
+		Logger.info("Admin: Simulated run did not qualify for leaderboard", "ui")
+
+func _increment_run_count() -> void:
+	"""Increment run counter for current tier."""
+	MetaProgression.increment_run_count("forest_arena", current_tier)
+	var count = MetaProgression.get_run_count("forest_arena", current_tier)
+	Logger.info("Admin: Incremented run count to %d for Tier %d" % [count, current_tier], "ui")
+
+func _reset_all_progression() -> void:
+	"""Reset all progression data (fresh player simulation)."""
+	# Reset MetaProgression
+	MetaProgression._data.unlocked_tiers = 1
+	MetaProgression._data.tier_deepest_stage.clear()
+	MetaProgression._data.map_tier_runs.clear()
+	MetaProgression.save()
+
+	# Clear LocalLeaderboard
+	LocalLeaderboard.clear_all()
+
+	Logger.warn("Admin: RESET all progression data to fresh player state", "ui")
+
+func _reset_current_tier() -> void:
+	"""Reset data for current tier only."""
+	# Reset deepest stage
+	if MetaProgression._data.tier_deepest_stage.has(current_tier):
+		MetaProgression._data.tier_deepest_stage.erase(current_tier)
+
+	# Reset run count
+	if MetaProgression._data.map_tier_runs.has("forest_arena"):
+		if MetaProgression._data.map_tier_runs["forest_arena"].has(current_tier):
+			MetaProgression._data.map_tier_runs["forest_arena"].erase(current_tier)
+
+	MetaProgression.save()
+
+	# Clear leaderboard for this tier
+	LocalLeaderboard.clear_tier("forest_arena", current_tier)
+
+	Logger.info("Admin: Reset Tier %d data" % current_tier, "ui")
+```
+
+**MapSelect.tscn Integration:**
+
+Add a collapsible admin panel in MapSelect (similar to UnlockShop):
+- Position in bottom-right corner or as a tab
+- Only visible in debug builds or with F12 toggle
+- Automatically syncs `current_tier` when player selects tier checkbox
+
 ## 📊 Testing Checklist
 
-### Manual Testing
+### Manual Testing (Core Functionality)
 - [ ] Open MapSelect - Tier 1 enabled, Tier 2-4 disabled (fresh save)
 - [ ] Select Tier 1 - detail panel shows "0 Runs", "-" deepest stage
 - [ ] Start run, die immediately - return to MapSelect shows "1 Runs"
-- [ ] Use CheatSystem to unlock Tier 2: `MetaProgression.unlock_tier(2)`
-- [ ] Verify Tier 2 checkbox becomes enabled
+- [ ] Use ProgressionAdminPanel to unlock Tier 2
+- [ ] Verify Tier 2 checkbox becomes enabled automatically
 - [ ] Select Tier 2 - detail panel updates to show Tier 2 stats
 - [ ] Click Tier 1 again - Tier 2 unchecks (radio button behavior)
 - [ ] Start run on Tier 2 - verify SessionState receives tier=2
+
+### Admin Panel Testing
+- [ ] Open ProgressionAdminPanel (F12 toggle or always visible in debug)
+- [ ] Click "Unlock Tier 2" → Tier 2 checkbox enables in UI
+- [ ] Click "Set Stage 2/3" → Detail panel shows "2/3" for current tier
+- [ ] Click "Add Run Count" → Run counter increments
+- [ ] Click "Simulate Kills" → Leaderboard entry added (check Friends tab)
+- [ ] Click "Reset Current Tier" → Tier data clears (deepest stage, runs)
+- [ ] Click "Reset All" → Fresh player state (only Tier 1 unlocked)
+- [ ] Admin panel syncs `current_tier` when tier checkbox clicked
 
 ### Edge Cases
 - [ ] Switching tiers rapidly doesn't break UI state
 - [ ] Detail panel handles missing data gracefully (shows "-")
 - [ ] Tier 4 "unlimited" displays correctly ("Stage N" format)
 - [ ] Run counter increments correctly per map+tier combination
+- [ ] Admin panel actions immediately refresh MapSelect UI
 
 ## 🔗 Related Files
 
 ### Will Modify:
-- [x] `scenes/ui/MapSelect.gd` - Add tier selection logic (~40 lines)
+- [ ] `scenes/ui/MapSelect.gd` - Add tier selection logic (~60 lines with admin panel integration)
+
+### Will Create:
+- [ ] `scenes/ui/components/ProgressionAdminPanel.tscn` - Admin panel UI layout
+- [ ] `scenes/ui/components/ProgressionAdminPanel.gd` - Admin panel logic (~100 lines)
 
 ### Will NOT Modify (Already Implemented):
 - [x] `scripts/resources/MetaProgressionData.gd` - Has tier tracking fields
 - [x] `autoload/MetaProgression.gd` - Has tier management functions
 - [x] `autoload/EventBus.gd` - Has `tier_unlocked` signal
+- [x] `autoload/LocalLeaderboard.gd` - Has leaderboard tracking
 - [x] `scenes/ui/MapSelect.tscn` - UI already has checkboxes and labels
 
 ## 📝 Progress Notes
@@ -231,13 +386,30 @@ func _on_start_run_pressed() -> void:
 - [ ] Radio button behavior works (only one tier selected)
 - [ ] EventBus.tier_unlocked signal updates UI
 - [ ] Code follows project patterns (EventBus signals, Logger, typed GDScript)
-- [ ] Tested manually with CheatSystem tier unlocks
-- [ ] Commit ready: `feat(ui): wire tier selection to MetaProgression backend`
+
+**Admin Panel Complete:**
+- [ ] ProgressionAdminPanel.tscn created with all buttons
+- [ ] Unlock tier buttons (2, 3, 4, All) work correctly
+- [ ] Set stage buttons (1/3, 2/3, 3/3) update deepest stage
+- [ ] Simulate kills button adds leaderboard entry
+- [ ] Add run count button increments per-tier counter
+- [ ] Reset All button clears all progression (fresh player)
+- [ ] Reset Current Tier button clears single tier data
+- [ ] Admin panel syncs with tier selection UI
+- [ ] All admin actions immediately refresh MapSelect detail panel
+
+**Testing Complete:**
+- [ ] Manual testing checklist passed (core + admin panel)
+- [ ] Edge cases verified
+- [ ] Fresh player flow tested (reset → unlock → progress)
+
+**Commit Ready:**
+- [ ] `feat(ui): add tier selection with progression admin panel`
 
 **Ready for Task 5:**
 - [ ] Tier UI foundation complete
-- [ ] Can unlock tiers manually for testing
-- [ ] Stage progression can build on this foundation
+- [ ] Can simulate entire progression flow via admin panel
+- [ ] Easy to test stage progression when implemented
 
 ---
 

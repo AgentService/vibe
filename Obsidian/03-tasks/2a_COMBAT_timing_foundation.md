@@ -1,16 +1,32 @@
-# Map Level Difficulty Scaling Integration
+# 2a: Combat Timing Foundation
 
 **Created:** 2025-09-29
-**Status:** 🟡 Planning
+**Updated:** 2025-10-03 (Renamed from `2_COMBAT_map_level_difficulty_scaling_integration.md`)
+**Status:** 🟡 Planning - Ready to Start
 **Priority:** High
-**Estimated Effort:** 2-3 weeks
-**Category:** ⚔️ Combat System Enhancement
+**Estimated Effort:** 1-2 weeks (Phases 1-3 only)
+**Category:** ⚔️ Combat System Enhancement - Technical Foundation
+**Dependent Tasks:** [Task 2b - Stage Progression Flow](2b_COMBAT_stage_progression_flow.md) ← **DO THIS NEXT**
+
+> ⚠️ **Scope:** This task implements the **timing and difficulty scaling foundation** only (Phases 1-3). For the full progression flow (portal, stage transitions, rewards), see **Task 5**.
 
 ## 📋 Task Description
 
-Integrate MapLevel's time-based progression system with difficulty scaling for bosses and spawning enemies. Create an MVP scaling system that increases enemy stats (health, damage, speed) and spawn rates as map level increases over time, inspired by MEGABONK's risk-engagement philosophy but adapted for our needs.
+Implement the **timing and difficulty scaling foundation** for MEGABONK-style arena progression. This task provides the technical infrastructure (stage timer, boss spawn timing, Final Swarm trigger, enemy stat scaling) that Task 5 (Stage Progression) will build upon for the full gameplay loop.
 
-**UPDATED:** This task implements the MEGABONK-inspired arena progression system detailed in `Obsidian/02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md`. **Key Philosophy:** Reward players for taking risks and staying longer, with voluntary difficulty control and mathematical scaling limits.
+**Scope:** This task is **Phases 1-3 only** - the timing engine. It does NOT implement:
+- ❌ Portal system (Task 5)
+- ❌ Stage transitions (Task 5)
+- ❌ Tier unlocking (Task 5)
+- ❌ Meta-currency rewards (Task 5)
+- ❌ Progression UI (Task 5)
+
+**Configuration (7-Minute Stages):**
+- **Stage Duration:** 7:00 (420 seconds)
+- **Boss Spawn:** 2:00 elapsed (5:00 remaining on countdown)
+- **Final Swarm:** 7:00 elapsed (0:00 = timer expiration)
+
+**Key Philosophy:** Reward players for taking risks and staying longer, with voluntary difficulty control and mathematical scaling limits (from MEGABONK).
 
 **Current State Analysis:**
 - ✅ MapLevel autoload system exists (10s per level for testing)
@@ -95,67 +111,121 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 **SCOPE LIMITATION:** Phases 4-8 require player progression systems (abilities, stats, upgrades, economy) that don't exist yet. This task will implement the core timing and scaling infrastructure that other systems can build upon.
 
-### Phase 1: Stage Timer + Boss Deadline Foundation (1-2 sessions) 🎯 START HERE
-**Goal:** Working stage timer with boss deadline mechanics
+### Phase 1: Stage Timer + Difficulty Coefficient Foundation (1-2 sessions) 🎯 START HERE
+**Goal:** Working 7-minute stage timer with coefficient tracking
 **Test Scene:** `tests/StageTimer_Isolated.tscn`
+
+**Configuration (7-Minute Stages):**
+- **Stage Duration:** 420 seconds (7:00 total)
+- **Boss Spawn Time:** 120 seconds elapsed (5:00 remaining)
+- **Final Swarm Trigger:** 420 seconds (0:00 remaining = timer expiration)
 
 **RunManager Integration Note:** Timer progression must sync with RunManager's 30Hz fixed-step timing. See `autoload/RunManager.gd` for the accumulator pattern - MapLevel should increment its timer during `EventBus.combat_step` processing to ensure deterministic progression regardless of frame rate.
 
 - [ ] Create `StageTimer_Isolated.tscn` test scene with basic UI
+- [ ] Add MapLevel timer infrastructure:
+  - [ ] `const STAGE_DURATION: float = 420.0` - 7-minute stages
+  - [ ] `var elapsed_time: float = 0.0` - Tracks seconds since stage start
+  - [ ] `var in_final_swarm: bool = false` - Final Swarm state flag
 - [ ] Add `get_difficulty_coefficient()` method to MapLevel autoload (returns current coefficient value)
-- [ ] Implement 10-minute countdown timer in MapLevel (10:00 → 0:00)
-  - [ ] Timer updates in `_on_combat_step()` handler using COMBAT_DT (33.33ms per step)
+- [ ] Add `get_elapsed_time() -> float` method (for boss spawn timing)
+- [ ] Add `get_remaining_time() -> float` method (for countdown display)
+- [ ] Add `is_timer_expired() -> bool` method (checks if >= STAGE_DURATION)
+- [ ] Add `reset_level()` method (resets timer for new stage)
+- [ ] Implement timer progression in `_on_combat_step()`:
+  - [ ] `elapsed_time += RunManager.COMBAT_DT` (33.33ms per step)
   - [ ] Ensures deterministic progression at exactly 30 Hz
-  - [ ] Accumulates fixed timesteps for precise timer countdown
+  - [ ] Accumulates fixed timesteps for precise timer
 - [ ] Display timer + difficulty coefficient in test scene (Label updates)
 - [ ] Add time acceleration debug key (T = 100x speed for rapid testing)
-- [ ] Add visual markers at key times (8:00 boss spawn, 10:00 Final Swarm) - print() statements
-- [ ] Add EventBus.timer_expired signal when countdown reaches 0:00
-- [ ] Add EventBus.boss_spawned signal at 8:00 mark
-- [ ] Test coefficient increases correctly over 10 minutes (1.0 → ~5.5)
+- [ ] Add visual markers at key times:
+  - [ ] 2:00 elapsed (5:00 remaining) - Boss spawn marker
+  - [ ] 7:00 elapsed (0:00 remaining) - Final Swarm marker
+- [ ] Add EventBus.timer_expired signal when `elapsed_time >= STAGE_DURATION`
+- [ ] Test coefficient increases correctly over 7 minutes
 
 **Deliverable:** Can watch timer count down with boss spawn and Final Swarm triggers
 
 ---
 
-### Phase 2: Boss Spawn + Final Swarm System (2-3 sessions)
-**Goal:** Boss deadline and Final Swarm mechanics working
+### Phase 2: Boss Spawn Timing + Final Swarm Trigger (2-3 sessions)
+**Goal:** Time-based boss spawn and Final Swarm activation
 **Test Scene:** Extend `StageTimer_Isolated.tscn` with boss and swarm spawning
 
-- [ ] Add SpawnDirector to test scene for enemy spawning
-- [ ] Implement boss spawn system:
-  - [ ] Boss spawns at 8:00 with difficulty scaled to current coefficient (~4.5)
-  - [ ] Boss tracked via EventBus.boss_spawned signal
-  - [ ] Boss kill tracked via EventBus.boss_killed signal
-  - [ ] Visual feedback for boss spawn ("Boss has arrived!")
-- [ ] Implement Final Swarm system:
-  - [ ] Final Swarm triggers at 10:00 (EventBus.final_swarm_started signal)
-  - [ ] Exponential spawn rate increase (3x → 5x → 10x normal)
-  - [ ] Enemy stat scaling during Final Swarm (+50% → +100% → +200%)
-  - [ ] Mathematical ceiling around 13:00 (spawn rate becomes impossible)
-- [ ] Add on-screen event log (shows "8:00 - Boss Spawned!", "10:00 - Final Swarm!")
-- [ ] Test boss-kill deadline (boss must die before 10:00)
+**Boss Spawn Configuration:**
+- **Spawn Time:** 120 seconds elapsed (2:00 into stage, 5:00 remaining)
+- **Boss Difficulty:** Scaled to current coefficient at spawn time
+- **Spawn Method:** EventBus.boss_spawn_requested signal (BossSpawnManager handles actual spawning)
 
-**Deliverable:** Boss spawn at 8:00, Final Swarm escalation system working
+**Final Swarm Configuration:**
+- **Trigger Time:** 420 seconds elapsed (7:00 = timer expiration, 0:00 remaining)
+- **Escalation:** Exponential spawn rate increase over time
+- **Ceiling:** Mathematical impossibility after ~3 minutes in Final Swarm
+
+**Implementation:**
+- [ ] Add BossSpawnManager to test scene
+- [ ] Implement time-based boss spawn check in MapLevel:
+  - [ ] Check if `elapsed_time >= 120.0` (boss spawn time)
+  - [ ] Emit `EventBus.boss_spawn_requested` signal once
+  - [ ] BossSpawnManager handles boss selection and spawning
+  - [ ] Visual feedback: "Boss has arrived!" message
+- [ ] Implement Final Swarm trigger in MapLevel:
+  - [ ] Check if `elapsed_time >= STAGE_DURATION` (420 seconds)
+  - [ ] Set `in_final_swarm = true` flag
+  - [ ] Emit `EventBus.final_swarm_started` signal once
+  - [ ] Visual feedback: "FINAL SWARM!" message
+- [ ] Add spawn rate scaling during Final Swarm:
+  - [ ] Base rate: 3x normal spawns (immediate)
+  - [ ] Escalation: +2x every 30 seconds (3x → 5x → 7x → 9x)
+  - [ ] Mathematical ceiling: ~10x at 3 minutes into Final Swarm
+- [ ] Add enemy stat scaling during Final Swarm:
+  - [ ] Initial: +50% HP, +30% damage
+  - [ ] Escalation: Additional +25% HP/damage every 30 seconds
+  - [ ] Cap: +200% HP, +150% damage (mathematical ceiling)
+- [ ] Add on-screen event log showing:
+  - [ ] "2:00 - Boss Spawned!" (at 2:00 elapsed)
+  - [ ] "7:00 - FINAL SWARM!" (at timer expiration)
+  - [ ] "Swarm Intensity: 5.2x" (real-time multiplier display)
+
+**Deliverable:** Boss spawn at 2:00 elapsed (5:00 remaining), Final Swarm escalation system working
 
 ---
 
-### Phase 3: Difficulty Coefficient Scaling (2-3 sessions)
-**Goal:** Enemies get visibly stronger over time
+### Phase 3: Difficulty Coefficient Enemy Stat Scaling (2-3 sessions)
+**Goal:** Enemies get visibly stronger over time based on coefficient
 **Test Scene:** Continue with `StageTimer_Isolated.tscn`
 
-- [ ] Add `get_enemy_stat_scaling(coefficient)` method to MapLevel
-  - [ ] Returns multipliers: HP = 1.0 + (coeff * 0.3), DMG = 1.0 + (coeff * 0.2)
+**Coefficient Formula:**
+- **Coefficient Progression:** Increases over time during stage
+- **Scaling Formula:** HP = 1.0 + (coeff * 0.3), DMG = 1.0 + (coeff * 0.2)
+- **Caps:** Max 10x multiplier to prevent extreme values
+
+**Implementation:**
+- [ ] Add `get_enemy_stat_scaling(coefficient: float) -> Dictionary` method to MapLevel:
+  - [ ] Returns: `{"hp": float, "damage": float, "speed": float}`
+  - [ ] HP multiplier: `1.0 + (coefficient * 0.3)` (30% per coefficient point)
+  - [ ] Damage multiplier: `1.0 + (coefficient * 0.2)` (20% per coefficient point)
+  - [ ] Speed multiplier: `1.0 + (coefficient * 0.1)` (10% per coefficient point)
+  - [ ] Cap all multipliers at 10.0 max
 - [ ] Modify EnemyFactory to apply MapLevel stat multipliers:
-  - [ ] Get current coefficient from MapLevel on enemy spawn
-  - [ ] Apply scaling after template variation but before final config
-  - [ ] Add debug logging for scaled stats (Logger.debug with "bosses" category)
-- [ ] Implement stat scaling caps (max 10x multiplier) to prevent extreme values
+  - [ ] Get current coefficient: `var coeff = MapLevel.get_difficulty_coefficient()`
+  - [ ] Get scaling multipliers: `var scaling = MapLevel.get_enemy_stat_scaling(coeff)`
+  - [ ] Apply scaling after template variation but before final config:
+    - [ ] `final_hp = base_hp * scaling.hp`
+    - [ ] `final_damage = base_damage * scaling.damage`
+    - [ ] `final_speed = base_speed * scaling.speed`
+  - [ ] Add debug logging: `Logger.debug("Enemy spawned with %.1fx HP scaling (coeff: %.2f)" % [scaling.hp, coeff], "spawning")`
 - [ ] Add visual feedback in test scene:
-  - [ ] Display enemy stats on spawn (HP, damage)
-  - [ ] Color-code enemies by difficulty tier (green→yellow→red)
+  - [ ] Display enemy stats on spawn (HP, damage) in labels
+  - [ ] Color-code enemies by difficulty tier:
+    - [ ] Green: coeff < 2.0 (easy)
+    - [ ] Yellow: coeff 2.0-4.0 (medium)
+    - [ ] Red: coeff > 4.0 (hard)
   - [ ] Show damage numbers when enemies take hits
-- [ ] Test progression: enemies at 3:00 weaker than enemies at 9:00
+- [ ] Test progression:
+  - [ ] Enemies at 1:00 elapsed should be baseline stats
+  - [ ] Enemies at 3:00 should be noticeably stronger
+  - [ ] Enemies at 6:00 should be significantly harder
 - [ ] Create stat scaling validation (enemies should scale ~30%/20% per coefficient point)
 
 **Deliverable:** Enemies spawn with scaled stats based on game time
@@ -433,28 +503,61 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 - **Emergency Rollback**: Need ability to disable scaling if balance breaks
 - **Mitigation**: Scaling state validation, emergency disable toggle, comprehensive rollback testing
 
-## ✅ Definition of Done (Phases 1-3 Only)
+## ✅ Definition of Done (Phases 1-3: Timing Foundation Only)
 
-**MVP Foundation Implementation:**
-- [ ] Phase 1: Stage timer and boss deadline foundation working
-- [ ] Phase 2: Boss spawn and Final Swarm system implemented
-- [ ] Phase 3: Difficulty coefficient scaling enemies over time
-- [ ] Code follows vibe project patterns (30Hz fixed-step, EventBus signals, layer boundaries)
-- [ ] MapLevel scaling methods properly integrated with existing systems
-- [ ] EnemyFactory stat scaling respects template ranges while adding level progression
-- [ ] SpawnDirector regular spawning scales with MapLevel without breaking pack spawning
-- [ ] EventBus signals properly typed with payload classes for performance
-- [ ] Logger used with appropriate categories (no print() statements)
-- [ ] Test scene `StageTimer_Isolated.tscn` demonstrates all implemented features
-- [ ] Performance validated: <2ms scaling calculations, 30Hz combat compatibility maintained
-- [ ] Documentation updated for implemented systems and integration patterns
-- [ ] CHANGELOG.md updated with foundation system summary
+**Core Timing Infrastructure:**
+- [ ] Phase 1: 7-minute stage timer working (420 seconds)
+- [ ] MapLevel.get_elapsed_time() returns seconds since stage start
+- [ ] MapLevel.get_remaining_time() returns countdown (7:00 → 0:00)
+- [ ] MapLevel.is_timer_expired() checks if timer reached 7:00
+- [ ] MapLevel.reset_level() resets timer for new stage
+- [ ] MapLevel.get_difficulty_coefficient() returns current difficulty value
+- [ ] Timer syncs with RunManager 30Hz fixed-step (deterministic)
+- [ ] EventBus.timer_expired emitted when stage time limit reached
 
-**Future Phases (4-8) Documentation:**
-- [ ] Clear dependency requirements documented for each blocked phase
-- [ ] Integration points identified for future player progression systems
-- [ ] Scaling infrastructure ready for economy and reward systems
-- [ ] Commit ready with conventional format: `feat(combat): implement difficulty scaling foundation (phases 1-3) - MEGABONK progression framework`
+**Boss Spawn Timing:**
+- [ ] Phase 2: Boss spawn triggered at 2:00 elapsed (5:00 remaining)
+- [ ] EventBus.boss_spawn_requested signal emitted once at spawn time
+- [ ] BossSpawnManager handles actual boss selection/spawning
+- [ ] Boss difficulty scaled to current coefficient at spawn time
+- [ ] Visual feedback: "Boss has arrived!" message
+
+**Final Swarm System:**
+- [ ] Phase 2: Final Swarm triggered at 7:00 elapsed (0:00 = timer expiration)
+- [ ] MapLevel.in_final_swarm flag set when Final Swarm starts
+- [ ] EventBus.final_swarm_started signal emitted once
+- [ ] Spawn rate escalates over time (3x → 5x → 7x → 9x)
+- [ ] Enemy stat scaling during Final Swarm (+50% HP initially, escalating)
+- [ ] Mathematical ceiling reached after ~3 minutes (~10x spawn rate)
+- [ ] Visual feedback: "FINAL SWARM!" message + intensity display
+
+**Enemy Stat Scaling:**
+- [ ] Phase 3: MapLevel.get_enemy_stat_scaling(coeff) returns HP/damage/speed multipliers
+- [ ] EnemyFactory applies scaling on spawn (after template variation)
+- [ ] Scaling formula: HP +30% per coeff point, Damage +20% per coeff point
+- [ ] Scaling caps at 10x multiplier maximum
+- [ ] Debug logging shows scaled stats (Logger.debug with "spawning" category)
+- [ ] Visual feedback: color-coded enemies (green → yellow → red)
+
+**Testing & Integration:**
+- [ ] Test scene `StageTimer_Isolated.tscn` demonstrates all features
+- [ ] Time acceleration debug key (T = 100x) for rapid testing
+- [ ] Event log shows key milestones (Boss spawn, Final Swarm)
+- [ ] Performance validated: <2ms scaling calculations per combat step
+- [ ] 30Hz combat compatibility maintained (no frame rate dependence)
+- [ ] Code follows project patterns (EventBus, Logger, 30Hz fixed-step, layer boundaries)
+
+**Documentation:**
+- [ ] autoload/CLAUDE.md updated with MapLevel timer API
+- [ ] EventBus signals documented (timer_expired, boss_spawn_requested, final_swarm_started)
+- [ ] CHANGELOG.md updated with timing foundation summary
+- [ ] Clear note: "Task 2b builds progression flow on this timing foundation"
+
+**Cross-Task Coordination:**
+- [ ] **Task 2b Integration Point:** Timer API ready for HUD display
+- [ ] **Task 2b Integration Point:** Boss spawn timing configurable
+- [ ] **Task 2b Integration Point:** Final Swarm trigger works with portal system
+- [ ] Commit ready: `feat(combat): implement 7-minute stage timer and difficulty scaling foundation for MEGABONK progression`
 
 ## 🎯 Success Metrics
 
@@ -478,4 +581,36 @@ Integrate MapLevel's time-based progression system with difficulty scaling for b
 
 ---
 
-**Related:** [MapLevel System](../systems/MapLevel-System.md) | [Spawn Director](../systems/Spawn-Director-System.md) | [Combat Architecture](../../ARCHITECTURE.md#fixed-step-combat-loop-decision-5a) | [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md)
+**Related:** [Task 2b - Stage Progression Flow (DO NEXT)](2b_COMBAT_stage_progression_flow.md) | [MapLevel System](../systems/MapLevel-System.md) | [Spawn Director](../systems/Spawn-Director-System.md) | [Combat Architecture](../../ARCHITECTURE.md#fixed-step-combat-loop-decision-5a) | [Stage Progression Vision](../02-brainstorm/ARENA_PROGRESSION/STAGE_PROGRESSION_VISION.md)
+
+---
+
+## 🔗 Task 2b Integration Points (For Future Reference)
+
+**When Task 2b starts, it will use these APIs from Task 2a:**
+
+### MapLevel Timer API:
+```gdscript
+# Task 2b reads these methods (no timer implementation needed)
+MapLevel.get_elapsed_time() -> float      # Seconds since stage start
+MapLevel.get_remaining_time() -> float    # Countdown (7:00 → 0:00)
+MapLevel.is_timer_expired() -> bool       # Check if timer reached 7:00
+MapLevel.reset_level() -> void            # Reset for new stage
+MapLevel.get_difficulty_coefficient() -> float  # Current difficulty
+```
+
+### EventBus Signals:
+```gdscript
+# Task 2b listens to these signals (Task 2a emits them)
+EventBus.timer_expired                    # 7:00 elapsed, Final Swarm starts
+EventBus.boss_spawn_requested             # 2:00 elapsed, spawn boss
+EventBus.final_swarm_started              # Final Swarm phase begins
+```
+
+### Configuration:
+```gdscript
+# Shared constants (both tasks must use same values)
+STAGE_DURATION = 420.0       # 7:00 total stage time
+BOSS_SPAWN_TIME = 120.0      # 2:00 elapsed (5:00 remaining)
+FINAL_SWARM_TRIGGER = 420.0  # 7:00 elapsed (0:00 = timer expiration)
+```
