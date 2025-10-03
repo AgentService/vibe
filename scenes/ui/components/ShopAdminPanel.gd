@@ -16,6 +16,7 @@ var _current_category: String = "items"
 
 # Node references
 @onready var tab_bar: TabBar = $TabBar
+@onready var add_fragments_button: Button = $CurrencyTools/AddFragmentsButton
 @onready var items_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Items
 @onready var tomes_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Tomes
 @onready var skills_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Skills
@@ -24,6 +25,9 @@ var _current_category: String = "items"
 func _ready() -> void:
 	if tab_bar:
 		tab_bar.tab_changed.connect(_on_tab_changed)
+
+	if add_fragments_button:
+		add_fragments_button.pressed.connect(_on_add_fragments_pressed)
 
 	Logger.debug("ShopAdminPanel initialized", "ui")
 
@@ -206,3 +210,12 @@ func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_icon: TextureRec
 func refresh_current_tab() -> void:
 	"""Refresh the currently visible tab."""
 	_load_category_items(_current_category)
+
+func _on_add_fragments_pressed() -> void:
+	"""Grant 10 Rift Fragments for testing."""
+	if not MetaProgression:
+		Logger.warn("ShopAdminPanel: MetaProgression not available", "ui")
+		return
+
+	MetaProgression.earn_rift_fragments(10)
+	Logger.info("ShopAdminPanel: Granted 10 Rift Fragments", "ui")
