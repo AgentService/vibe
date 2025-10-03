@@ -112,11 +112,10 @@ func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetad
 	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
 	# Load icon from item metadata
-	var icon_path = "res://assets/ui/items/icons/%s.png" % item_metadata.icon_filename
-	if ResourceLoader.exists(icon_path):
-		icon_texture.texture = load(icon_path)
+	if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
+		icon_texture.texture = load(item_metadata.icon_path)
 	else:
-		Logger.debug("ShopAdminPanel: Icon not found: %s" % icon_path, "ui")
+		Logger.debug("ShopAdminPanel: Icon not found or empty: %s" % item_metadata.icon_path, "ui")
 
 	row.add_child(icon_texture)
 
