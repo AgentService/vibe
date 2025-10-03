@@ -1,424 +1,61 @@
-[gd_scene load_steps=7 format=3 uid="uid://d128c4kosb2vl"]
+[gd_scene load_steps=5 format=3 uid="uid://d128c4kosb2vl"]
 
 [ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
-[ext_resource type="PackedScene" uid="uid://daiogox3vei4r" path="res://scenes/ui/components/ThemedPanel.tscn" id="2_themed_panel"]
-[ext_resource type="Texture2D" uid="uid://tnao3a1qwkrf" path="res://Obsidian/03-tasks/open-tasks/UI/main_menu_backgroundgpt.png" id="3_background"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_xpiny"]
+[ext_resource type="PackedScene" uid="uid://cgqmq41cjt2f1" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
+[ext_resource type="PackedScene" uid="uid://b7kw8j4n5xr3v" path="res://scenes/ui/components/MainButton.tscn" id="6_mainbutton"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_CharSelect"]
-bg_color = Color(0, 0.152941, 0.239216, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_MapSelect"]
-bg_color = Color(0, 0.152941, 0.239216, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_UnlocksShop"]
-bg_color = Color(0, 0.152, 0.24, 1)
-corner_radius_top_left = 8
-corner_radius_top_right = 8
-corner_radius_bottom_right = 8
-corner_radius_bottom_left = 8
-
-[node name="MainMenu" type="Control"]
+[node name="MainMenu_v2" type="Control"]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_xpiny")
 script = ExtResource("1_vjtqc")
 
-[node name="BackgroundPanel" parent="." instance=ExtResource("2_themed_panel")]
+[node name="MainButtonMenu" type="MarginContainer" parent="."]
 layout_mode = 1
-auto_theme = false
-show_border = false
-rounded_corners = false
-drop_shadow = true
-glow_effect = true
-hover_highlight = true
-
-[node name="BackgroundImage" type="TextureRect" parent="BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-texture = ExtResource("3_background")
-expand_mode = 1
-stretch_mode = 6
-
-[node name="PersistentRiftFragments" type="MarginContainer" parent="BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -120.0
-offset_top = 10.0
-offset_right = -10.0
-offset_bottom = 50.0
-grow_horizontal = 0
-theme_override_constants/margin_left = 10
-theme_override_constants/margin_top = 10
-theme_override_constants/margin_right = 10
-theme_override_constants/margin_bottom = 10
-
-[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel/PersistentRiftFragments"]
-layout_mode = 2
-alignment = 2
-
-[node name="RiftFragmentsIcon" type="Label" parent="BackgroundPanel/PersistentRiftFragments/HBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "💎"
-
-[node name="RiftFragmentsValue" type="Label" parent="BackgroundPanel/PersistentRiftFragments/HBoxContainer"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 24
-text = "0"
-
-[node name="MainMenuContainer" type="Control" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="LeaderboardPanel" type="MarginContainer" parent="BackgroundPanel/MainMenuContainer"]
-layout_mode = 1
-anchors_preset = -1
-anchor_left = 0.954
+anchors_preset = 8
+anchor_left = 0.5
 anchor_top = 0.5
-anchor_right = 0.954
+anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -153.0
-offset_top = -16.5
-offset_right = -20.0
-offset_bottom = 16.5
-grow_horizontal = 0
-grow_vertical = 2
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel"]
-layout_mode = 2
-theme_override_constants/separation = 10
-
-[node name="LeaderboardTitle" type="Label" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
-layout_mode = 2
-text = "PERSONAL BESTS"
-horizontal_alignment = 1
-
-[node name="LeaderboardList" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/LeaderboardPanel/VBoxContainer"]
-layout_mode = 2
-theme_override_constants/separation = 5
-
-[node name="CenterContainer" type="CenterContainer" parent="BackgroundPanel/MainMenuContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
+offset_left = -100.0
+offset_top = -150.0
+offset_right = 80.0
+offset_bottom = 100.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MainMenuContainer/CenterContainer"]
-layout_mode = 2
-theme_override_constants/separation = 20
-alignment = 1
-
-[node name="TitleLabel" type="Label" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-layout_mode = 2
-text = "VIBE ROGUELIKE"
-horizontal_alignment = 1
-
-[node name="Spacer" type="Control" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(0, 30)
+[node name="MarginContainer" type="MarginContainer" parent="MainButtonMenu"]
 layout_mode = 2
 
-[node name="PlayButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainButtonMenu/MarginContainer"]
 layout_mode = 2
-text = "PLAY"
-
-[node name="ShopButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "Unlocks Shop"
-
-[node name="QuitButton" type="Button" parent="BackgroundPanel/MainMenuContainer/CenterContainer/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "Quit"
-
-[node name="CharacterSelectContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/CharacterSelectContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_CharSelect")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 20
-
-[node name="CharTitle" type="Label" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "SELECT CHARACTER"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CharacterButtons" type="HBoxContainer" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="KnightButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons"]
-custom_minimum_size = Vector2(150, 60)
-layout_mode = 2
-text = "KNIGHT"
-
-[node name="RangerButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer/CharacterButtons"]
-custom_minimum_size = Vector2(150, 60)
-layout_mode = 2
-text = "RANGER"
-
-[node name="CharInfoLabel" type="Label" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(400, 100)
-layout_mode = 2
-text = "Select a character"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="CharConfirmButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-disabled = true
-text = "CONFIRM"
-
-[node name="CharBackButton" type="Button" parent="BackgroundPanel/CharacterSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "BACK"
-
-[node name="MapSelectContainer" type="CenterContainer" parent="BackgroundPanel"]
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/MapSelectContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_MapSelect")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/separation = 20
-
-[node name="MapTitle" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "SELECT DIFFICULTY"
-horizontal_alignment = 1
-
-[node name="MapInfoLabel" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "Map: Forest Arena"
-horizontal_alignment = 1
-
-[node name="TierButtons" type="HBoxContainer" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-alignment = 1
-
-[node name="Tier1Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 1"
-
-[node name="Tier2Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 2"
-
-[node name="Tier3Button" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer/TierButtons"]
-custom_minimum_size = Vector2(100, 60)
-layout_mode = 2
-text = "TIER 3"
-
-[node name="TierInfoLabel" type="Label" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(400, 80)
-layout_mode = 2
-text = "Tier 1: Normal difficulty
-Base Rift Fragments"
-horizontal_alignment = 1
-vertical_alignment = 1
-
-[node name="MapStartButton" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "START RUN"
-
-[node name="MapBackButton" type="Button" parent="BackgroundPanel/MapSelectContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "BACK"
-
-[node name="UnlocksShopContainer" type="CenterContainer" parent="BackgroundPanel"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="BackgroundPanel" type="Panel" parent="BackgroundPanel/UnlocksShopContainer"]
-custom_minimum_size = Vector2(650, 650)
-layout_mode = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_UnlocksShop")
-
-[node name="VBoxContainer" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel"]
-layout_mode = 2
-offset_top = -25.5
-offset_right = 650.0
-offset_bottom = 675.5
-theme_override_constants/separation = 20
-
-[node name="ShopTitle" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-text = "UNLOCKS SHOP"
-horizontal_alignment = 1
-
-[node name="CategoryTabs" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-layout_mode = 2
-
-[node name="ItemsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-button_pressed = true
-text = "ITEMS"
-
-[node name="TomesTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-text = "TOMES"
-
-[node name="SkillsTab" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/CategoryTabs"]
-custom_minimum_size = Vector2(120, 40)
-layout_mode = 2
-toggle_mode = true
-text = "SKILLS"
-
-[node name="ItemListScroll" type="ScrollContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(600, 400)
-layout_mode = 2
-size_flags_vertical = 3
-horizontal_scroll_mode = 0
-
-[node name="ItemList" type="GridContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemListScroll"]
-custom_minimum_size = Vector2(600, 0)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/h_separation = 10
-theme_override_constants/v_separation = 10
-columns = 8
-
-[node name="ItemDetailsPanel" type="PanelContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(600, 140)
-layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel"]
+[node name="Play" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_constants/margin_left = 15
-theme_override_constants/margin_top = 15
-theme_override_constants/margin_right = 15
-theme_override_constants/margin_bottom = 15
+button_text = "Play"
 
-[node name="HBoxContainer" type="HBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer"]
+[node name="Play2" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-theme_override_constants/separation = 15
+button_text = "Unlocks"
 
-[node name="LeftPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(385, 110)
+[node name="Play3" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/separation = 8
+button_text = "Options"
 
-[node name="ItemName" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+[node name="Play4" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 layout_mode = 2
-text = "Item Name"
+button_text = "Quit"
 
-[node name="ItemDescription" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 30)
-layout_mode = 2
-text = "Item description goes here"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
-
-[node name="ItemStats" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-text = "Stats"
-clip_text = true
-
-[node name="ItemFlavorText" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
-custom_minimum_size = Vector2(0, 20)
-layout_mode = 2
-text = "Flavor text"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
-
-[node name="RightPanel" type="VBoxContainer" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(155, 110)
-layout_mode = 2
-size_flags_horizontal = 0
-size_flags_vertical = 0
-theme_override_constants/separation = 8
-
-[node name="QuestProgress" type="Label" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
-custom_minimum_size = Vector2(0, 80)
-layout_mode = 2
-text = "Quest Progress"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
-
-[node name="UnlockButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
-visible = false
-layout_mode = 2
-text = "UNLOCK"
-
-[node name="ShopBackButton" type="Button" parent="BackgroundPanel/UnlocksShopContainer/BackgroundPanel/VBoxContainer"]
-custom_minimum_size = Vector2(200, 0)
-layout_mode = 2
-text = "BACK"
+[node name="Leaderboard" parent="." instance=ExtResource("5_xpiny")]
+layout_mode = 0
+offset_left = 1431.0
+offset_top = 400.0
+offset_right = 1831.0
+offset_bottom = 1000.0

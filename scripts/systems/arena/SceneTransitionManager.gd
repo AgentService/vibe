@@ -132,13 +132,19 @@ func _resolve_map_path(map_id: String) -> String:
 					var arena_path = "res://scenes/arena/" + arena_name + ".tscn"
 					Logger.info("SceneTransitionManager: Using debug arena selection: %s" % arena_path, "transition")
 					return arena_path
-			
+
 			# Fallback to default arena
 			return "res://scenes/arena/Arena.tscn"
 		"hideout":
 			return "res://scenes/core/Hideout.tscn"
 		"main_menu":
 			return "res://scenes/ui/MainMenu.tscn"
+		"character_select":
+			return "res://scenes/ui/CharacterSelect.tscn"
+		"map_select":
+			return "res://scenes/ui/MapSelect.tscn"
+		"unlock_shop":
+			return "res://scenes/ui/UnlockShopScene.tscn"
 		# "character_select" removed - Task 04a cleanup (will rebuild in Task 04 Phase 6)
 		# "results" removed - now handled by UIManager modal system
 # "forest_arena" removed - legacy ForestArena system no longer supported
@@ -159,21 +165,25 @@ func _apply_transition_data() -> void:
 	"""
 	if transition_data.is_empty():
 		return
-	
+
 	Logger.debug("Applying transition data: " + str(transition_data), "transition")
-	
+
+	# Apply general transition data if scene supports it (UI scenes like CharacterSelect, MapSelect)
+	if current_scene_node.has_method("apply_transition_data"):
+		current_scene_node.apply_transition_data(transition_data)
+
 	# Apply spawn point if specified
 	var spawn_point = transition_data.get("spawn_point", "")
 	if spawn_point != "" and current_scene_node.has_method("set_spawn_override"):
 		current_scene_node.set_spawn_override(spawn_point)
-	
+
 	# Apply character data if specified
 	var character_data = transition_data.get("character_data", {})
 	if not character_data.is_empty() and current_scene_node.has_method("apply_character_data"):
 		current_scene_node.apply_character_data(character_data)
-	
+
 	# Note: ResultsScreen special handling removed - now handled by UIManager modal system
-	
+
 	# Clear transition data
 	transition_data.clear()
 

@@ -1,5 +1,12 @@
-[gd_scene format=3 uid="uid://dxa80dlxp1tym"]
+[gd_scene load_steps=3 format=3 uid="uid://d0nsxbqv5bnwk"]
+
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_74xkn"]
+[ext_resource type="PackedScene" uid="uid://d1ptjvfkmnyst" path="res://scenes/ui/components/UnlockShop.tscn" id="1_t5vr2"]
 
 [node name="UnlocksShop" type="Control"]
 layout_mode = 3
 anchors_preset = 0
+theme = ExtResource("1_74xkn")
+
+[node name="UnlockShop" parent="." instance=ExtResource("1_t5vr2")]
+layout_mode = 0

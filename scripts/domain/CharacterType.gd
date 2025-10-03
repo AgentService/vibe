@@ -12,6 +12,18 @@ class_name CharacterType
 @export var base_speed: float
 @export var starting_abilities: Array[StringName] = []
 
+# UI display fields (main ability/passive info)
+@export var main_ability_name: String = ""
+@export var main_ability_description: String = ""
+@export var main_ability_icon: String = ""  # Filename only (e.g., "sword")
+
+@export var main_passive_name: String = ""
+@export var main_passive_description: String = ""
+@export var main_passive_icon: String = ""  # Filename only (e.g., "shield")
+
+# Character portrait for selection screen
+@export var portrait_icon: String = ""  # Filename only (e.g., "knight_portrait")
+
 func _init(
 	p_id: StringName = &"",
 	p_display_name: String = "",

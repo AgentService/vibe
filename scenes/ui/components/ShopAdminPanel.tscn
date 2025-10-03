@@ -1,0 +1,97 @@
+[gd_scene load_steps=3 format=3 uid="uid://cj4yacsdqebq1"]
+
+[ext_resource type="Script" uid="uid://dd4mab87yae7i" path="res://scenes/ui/components/ShopAdminPanel.gd" id="1_admin"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="2_theme"]
+
+[node name="ShopAdminPanel" type="VBoxContainer"]
+custom_minimum_size = Vector2(400, 300)
+offset_right = 400.0
+offset_bottom = 300.0
+theme = ExtResource("2_theme")
+theme_override_constants/separation = 5
+script = ExtResource("1_admin")
+
+[node name="Header" type="PanelContainer" parent="."]
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Header"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 5
+
+[node name="Label" type="Label" parent="Header/MarginContainer"]
+layout_mode = 2
+text = "🔧 ADMIN TOOLS"
+horizontal_alignment = 1
+
+[node name="CurrencyTools" type="HBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+alignment = 1
+
+[node name="AddFragmentsButton" type="Button" parent="CurrencyTools"]
+layout_mode = 2
+text = "💎 +10 Rift Fragments"
+
+[node name="TabBar" type="TabBar" parent="."]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+current_tab = 0
+clip_tabs = false
+scroll_to_selected = false
+tab_count = 4
+tab_0/title = "Items"
+tab_1/title = "Tomes"
+tab_2/title = "Skills"
+tab_3/title = "Characters"
+
+[node name="ScrollContainer" type="ScrollContainer" parent="."]
+custom_minimum_size = Vector2(0, 250)
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="ItemLists" type="Control" parent="ScrollContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+
+[node name="ItemsList_Items" type="VBoxContainer" parent="ScrollContainer/ItemLists"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3
+
+[node name="ItemsList_Tomes" type="VBoxContainer" parent="ScrollContainer/ItemLists"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3
+
+[node name="ItemsList_Skills" type="VBoxContainer" parent="ScrollContainer/ItemLists"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3
+
+[node name="ItemsList_Characters" type="VBoxContainer" parent="ScrollContainer/ItemLists"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 3

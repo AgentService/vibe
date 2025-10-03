@@ -4,6 +4,61 @@
 
 ## [Current Week - In Progress]
 
+### UI Component System & Asset Organization
+- **Reusable Scene Components**: Replaced manual UI construction with template-based components
+  - **MainButton.tscn/gd**: Single source of truth for all UI buttons (Play, Confirm, Unlock, etc.)
+    - Embedded StyleBoxTexture resources (hover, pressed, normal states)
+    - @export var button_text for easy customization
+    - Change template → all buttons update across entire game
+    - Deployed in MainMenu (4 buttons), UnlockShop (1 button)
+    - MainMenu: Removed 6 duplicate StyleBoxTexture SubResources, reduced load_steps 10→4
+  - **ShopItemCard.tscn/gd**: Reusable shop item card with hover/selection states
+    - Frame-based pattern (NinePatchRect + Button) for visual consistency
+    - Signal-based communication (item_clicked, item_hovered)
+    - UnlockShop code reduced from 422 → 362 lines (-60 lines)
+  - **CharacterSelectButton.tscn/gd**: Reusable character selection card (replaces 80+ lines of code)
+  - **LeaderboardEntry.tscn/gd**: Reusable leaderboard row component with rank/name/score/icon
+  - **Leaderboard.tscn/gd**: Complete leaderboard system with Global/Friends tabs and entry management
+  - Implemented pending data pattern for safe early setup() calls before _ready()
+  - Components support visual editing - change .tscn, all instances update automatically
+- **Leaderboard Component Features**:
+  - Callback-based data providers for flexible loading (setup_data_providers)
+  - Automatic tab switching and visibility management
+  - Manual data injection for testing (load_global_data, load_friends_data)
+  - Programmatic navigation (switch_to_global, switch_to_friends, refresh_current_tab)
+  - Current player highlighting support via is_current_player flag
+- **Filename-Based Asset Loading**: Convention over configuration for UI assets
+  - Asset folders: `assets/ui/characters/portraits/`, `abilities/icons/`, `passives/icons/`
+  - Data files store filenames only ("sword" → `sword.png` resolved at runtime)
+  - Auto-tries `.png` and `.svg` extensions, falls back gracefully with logging
+  - Comprehensive documentation in `assets/ui/README.md` and `scenes/ui/components/README.md`
+- **CharacterSelect Refactoring**: Code reduction from 206 → 188 lines via components
+  - Added auto-select first character on screen load
+  - Updated label references from generic (Label, Label2) to semantic (name, rank, runcount)
+  - Added MainAbility/MainPassive display with icon support
+  - Removed base stats display (HP/DMG/SPD), added rank/runs placeholders
+- **MainMenu Refactoring**: Simplified leaderboard population using components
+  - Replaced brittle `get_node("NinePatchRect/MarginContainer/...")` with `entry.setup(...)`
+  - Converted `_get_character_icon()` from hardcoded paths to texture loading
+  - Both Friends and Global tabs now use LeaderboardEntry component
+- **Data Model Extensions**: CharacterType.gd now includes UI display fields
+  - `main_ability_name/description/icon`, `main_passive_name/description/icon`, `portrait_icon`
+  - Updated character-types.tres with Knight/Ranger/Mage ability data
+
+### Scene Architecture
+- **MainMenu Promotion**: MeasureAtlas promoted to primary MainMenu, old menu archived as reference
+  - **Renamed:** MeasureAtlas.tscn → MainMenu.tscn (now the PRIMARY F5 menu)
+  - **Archived:** MainMenu.tscn → MainMenu_reference.tscn (preserved for feature comparison)
+  - SceneTransitionManager "main_menu" mapping updated to new MainMenu.tscn
+  - F5 flow: Main.tscn → MainMenu.tscn → CharacterSelect_New → MapSelect_New → Arena
+  - Old menu remains accessible as MainMenu_reference for migration reference
+- **EventBus Navigation Pattern**: Replaced `get_tree().change_scene_to_file()` with EventBus signals
+  - **Critical fix:** Direct scene changes destroyed Main.tscn and SceneTransitionManager infrastructure
+  - All new UI scenes now use `EventBus.request_enter_map.emit()` for navigation
+  - SceneTransitionManager mappings added for "character_select_new" and "map_select_new"
+  - Start Run button from MapSelect_New now successfully loads arena
+  - Architectural lesson: EventBus transitions preserve root scene infrastructure
+
 ### UI/UX Improvements
 - **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
   - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding
@@ -65,6 +120,28 @@
   - Discovered+locked items now render with complete greyscale desaturation (Color(0.33, 0.33, 0.33)) + 90% dark overlay
   - Files updated: lucky_coin.tres, rabbits_foot.tres, feather.tres, cheese.tres, clover.tres (→ four-leaf.png)
   - Fixed UnlocksShop @onready node paths by removing incorrect `/MarginContainer` layer (prevented null reference errors)
+- **UnlockShop Tab Polish**: Added content margins and icon-based notifications for improved tab UX
+  - Added content_margin properties to all tab styles (12px horizontal, 6px vertical) for breathing room
+  - Tab notification system: Shows attention icon when category has discoverable items
+  - Notification icon scaled to 50% size using runtime Image.resize() with LANCZOS interpolation
+  - Tab spacing: h_separation (50px between tabs), icon_separation (8px icon-to-text gap)
+  - Four-tab system: Items/Tomes/Skills/Characters with consistent visual treatment
+  - PersistentRiftFragments autoload: CanvasLayer currency display auto-shows/hides across menu scenes
+- **Leaderboard Tab Standardization**: Synchronized TabBar styling with UnlockShop for UI consistency
+  - Standardized content_margin to 12px/6px across all tab states (was 24px/12px for selected/focus)
+  - Added custom_minimum_size Vector2(0, 50) to match UnlockShop tab height
+  - Both components now share identical tab padding, height, and visual appearance
+- **ShopItemCard Component**: Created reusable shop item card following CharacterSelectButton pattern
+  - Button root with automatic hover/press theme states from MainMenu.tres
+  - setup() method accepts ItemMetadata + state (discovered/unlocked/can_afford)
+  - Emits item_clicked(item_id, category) and item_hovered(item_id, category) signals
+  - State-based visuals: unlocked (full color), undiscovered (black silhouette), discovered+locked (dim overlay with cost)
+  - Rarity-based subtle tint on button background (0.3 alpha)
+  - 80x80px fixed card size with 64x64px centered icon texture
+  - set_selected() method for visual selection feedback
+  - Refactored UnlockShop.gd: Reduced from 422 → 362 lines (-60 lines)
+  - Removed _add_icon_visual() helper (now internal to ShopItemCard component)
+  - Cards now have hover highlighting and support future selection state tracking
 
 ### Task 04: Single-Session Progression Refactoring
 - **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection

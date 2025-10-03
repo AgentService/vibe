@@ -223,6 +223,30 @@ func unlock_item(category: String, item_id: String) -> void:
 		save()
 
 
+## Removes item from discovered array (admin/debug only)
+func _remove_item_from_discovered(category: String, item_id: String) -> void:
+	var discovered_array := _get_discovered_array(category)
+	if discovered_array == null:
+		return
+
+	var idx := discovered_array.find(item_id)
+	if idx >= 0:
+		discovered_array.remove_at(idx)
+		Logger.debug("Removed %s from discovered_%s" % [item_id, category], "progression")
+
+
+## Removes item from unlocked array (admin/debug only)
+func _remove_item_from_unlocked(category: String, item_id: String) -> void:
+	var unlocked_array := _get_unlocked_array(category)
+	if unlocked_array == null:
+		return
+
+	var idx := unlocked_array.find(item_id)
+	if idx >= 0:
+		unlocked_array.remove_at(idx)
+		Logger.debug("Removed %s from unlocked_%s" % [item_id, category], "progression")
+
+
 ## Checks if an item is unlocked
 func is_item_unlocked(category: String, item_id: String) -> bool:
 	var unlocked_array := _get_unlocked_array(category)

@@ -47,11 +47,13 @@ ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
 MetaProgression="*res://autoload/MetaProgression.gd"
 SessionState="*res://autoload/SessionState.gd"
 LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
+MenuBackgroundManager="*res://autoload/MenuBackgroundManager.gd"
+PersistentRiftFragments="*res://scenes/ui/components/PersistentRiftFragments.tscn"
 
 [display]
 
-window/size/viewport_width=1440
-window/size/viewport_height=960
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/size/initial_position_type=0
 window/size/initial_position=Vector2i(455, 555)
 window/size/initial_screen=2
@@ -65,6 +67,10 @@ enabled=PackedStringArray("res://addons/gdai-mcp-plugin-godot/plugin.cfg", "res:
 [filesystem]
 
 import/fbx2gltf/enabled=false
+
+[gui]
+
+theme/custom_font="uid://dmr3eewbx1o5i"
 
 [input]
 

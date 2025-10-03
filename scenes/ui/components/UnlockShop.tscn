@@ -1,0 +1,214 @@
+[gd_scene load_steps=5 format=3 uid="uid://d1ptjvfkmnyst"]
+
+[ext_resource type="Script" uid="uid://b3hfvkmqsma8t" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_vy11w"]
+[ext_resource type="PackedScene" uid="uid://b7kw8j4n5xr3v" path="res://scenes/ui/components/MainButton.tscn" id="4_mainbutton"]
+
+[node name="UnlockShop" type="VBoxContainer"]
+offset_right = 650.0
+offset_bottom = 650.0
+theme = ExtResource("1_vy11w")
+theme_override_constants/separation = -2
+script = ExtResource("1_d3dqv")
+
+[node name="TabContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="TabContainer"]
+layout_mode = 2
+
+[node name="TabBar" type="TabBar" parent="TabContainer/HBoxContainer"]
+z_index = 1
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+current_tab = 0
+clip_tabs = false
+scroll_to_selected = false
+tab_count = 4
+tab_0/title = "Items"
+tab_1/title = "Tomes"
+tab_2/title = "Skills"
+tab_3/title = "Characters"
+
+[node name="ContentContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 0
+
+[node name="Header" type="NinePatchRect" parent="ContentContainer"]
+self_modulate = Color(0.619608, 0.588235, 1, 1)
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+texture = ExtResource("1_frame")
+region_rect = Rect2(155, 107, 26, 26)
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="ContentContainer/Header"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_bottom = -4.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ContentContainer/Header/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ContentContainer/Header/MarginContainer/HBoxContainer"]
+layout_mode = 2
+text = "Unlocks Shop"
+vertical_alignment = 1
+uppercase = true
+
+[node name="ShopContent" type="NinePatchRect" parent="ContentContainer"]
+self_modulate = Color(0.309727, 0.535967, 1, 1)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("1_frame")
+region_rect = Rect2(288, 16, 47, 16)
+patch_margin_left = 4
+patch_margin_top = 3
+patch_margin_right = 4
+patch_margin_bottom = 3
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="ContentContainer/ShopContent"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ContentContainer/ShopContent/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="ItemGridScroll" type="ScrollContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 350)
+layout_mode = 2
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+
+[node name="ItemGrid_Items" type="GridContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 8
+
+[node name="ItemGrid_Tomes" type="GridContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 8
+
+[node name="ItemGrid_Skills" type="GridContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 8
+
+[node name="ItemGrid_Characters" type="GridContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll"]
+visible = false
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/h_separation = 10
+theme_override_constants/v_separation = 10
+columns = 6
+
+[node name="ItemDetailsPanel" type="NinePatchRect" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 140)
+layout_mode = 2
+texture = ExtResource("1_frame")
+region_rect = Rect2(0, 64, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 15
+theme_override_constants/margin_top = 15
+theme_override_constants/margin_right = 15
+theme_override_constants/margin_bottom = 15
+
+[node name="HBoxContainer" type="HBoxContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 15
+
+[node name="LeftPanel" type="VBoxContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(385, 110)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 8
+
+[node name="ItemName" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+layout_mode = 2
+text = "Select an item"
+
+[node name="ItemDescription" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 30)
+layout_mode = 2
+text = "Item description will appear here"
+autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="ItemStats" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+clip_text = true
+
+[node name="ItemFlavorText" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="RightPanel" type="VBoxContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(155, 110)
+layout_mode = 2
+size_flags_horizontal = 8
+theme_override_constants/separation = 4
+
+[node name="QuestProgress" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
+custom_minimum_size = Vector2(0, 20)
+layout_mode = 2
+size_flags_vertical = 0
+text = "Quest Progress"
+autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="UnlockButton" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel" instance=ExtResource("4_mainbutton")]
+visible = false
+layout_mode = 2
+button_text = "BUY"

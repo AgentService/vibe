@@ -1,0 +1,37 @@
+[gd_scene load_steps=2 format=3 uid="uid://bsf7x8lam4n3p"]
+
+[ext_resource type="Script" path="res://scenes/ui/components/PersistentRiftFragments.gd" id="1_script"]
+
+[node name="PersistentRiftFragments" type="CanvasLayer"]
+layer = 100
+script = ExtResource("1_script")
+
+[node name="MarginContainer" type="MarginContainer" parent="."]
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -150.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 60.0
+grow_horizontal = 0
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer"]
+layout_mode = 2
+alignment = 2
+
+[node name="RiftFragmentsIcon" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "💎"
+vertical_alignment = 1
+
+[node name="RiftFragmentsValue" type="Label" parent="MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "0"
+vertical_alignment = 1

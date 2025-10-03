@@ -1,0 +1,639 @@
+[gd_scene load_steps=11 format=3 uid="uid://bc1nuy33qxqb2"]
+
+[ext_resource type="Script" uid="uid://didr57xlsk176" path="res://scenes/ui/MapSelect.gd" id="1_64gr2"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_7bytg"]
+[ext_resource type="Texture2D" uid="uid://lcs8iqc4qb8y" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Tree_shadow3_3.png" id="3_eec6u"]
+[ext_resource type="Texture2D" uid="uid://evbdsavt54ug" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Ruin_shadow2_4.png" id="3_ruw6l"]
+[ext_resource type="Texture2D" uid="uid://bidgiopi3n18v" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Tree_shadow1_2.png" id="4_ttmag"]
+[ext_resource type="Texture2D" uid="uid://br4a71lyl4vpq" path="res://assets/sprites/craftpix-net-695666-free-undead-tileset-top-down-pixel-art/PNG/Objects_separately/Crystal_shadow1_2.png" id="6_ttmag"]
+[ext_resource type="Texture2D" uid="uid://jpmqo1pif0c6" path="res://assets/ui/S6.png" id="11_sg73a"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_geevw"]
+texture = ExtResource("2_7bytg")
+texture_margin_left = 2.0
+texture_margin_top = 15.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 31, 48, 17)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_mnnu7"]
+texture = ExtResource("2_7bytg")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 32, 48, 16)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_qm13f"]
+texture = ExtResource("2_7bytg")
+texture_margin_left = 2.0
+texture_margin_top = 14.0
+texture_margin_right = 2.0
+texture_margin_bottom = 14.0
+region_rect = Rect2(240, 16, 48, 16)
+
+[node name="MapSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_64gr2")
+
+[node name="MarginContainer_MapSelection" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 150.0
+offset_top = -275.0
+offset_right = 850.0
+offset_bottom = 275.0
+grow_vertical = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer_MapSelection"]
+show_behind_parent = true
+layout_mode = 2
+theme_override_constants/separation = -2
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = -5
+
+[node name="NinePatchRect2" type="NinePatchRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.619608, 0.588235, 1, 1)
+z_index = 1
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_vertical = 0
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(288, 32, 47, 16)
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect2"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect2/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Map Selection"
+vertical_alignment = 1
+uppercase = true
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3"]
+self_modulate = Color(0.309804, 0.537255, 1, 1)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(288, 16, 47, 16)
+patch_margin_left = 4
+patch_margin_top = 2
+patch_margin_right = 3
+patch_margin_bottom = 4
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer"]
+layout_mode = 2
+
+[node name="Button" type="Button" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(150, 120)
+layout_mode = 2
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(0, 48, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_eec6u")
+stretch_mode = 5
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Label" type="Label" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+text = "Forest"
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Label" type="Label" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "A green place full of trees, bird and great vibes. Also everything will try to kill you."
+autowrap_mode = 3
+
+[node name="Button2" type="Button" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 150)
+layout_mode = 2
+disabled = true
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2"]
+show_behind_parent = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(150, 120)
+layout_mode = 2
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(0, 48, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("4_ttmag")
+stretch_mode = 5
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="Label" type="Label" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+text = "Underworld"
+horizontal_alignment = 1
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
+
+[node name="Label" type="Label" parent="MarginContainer_MapSelection/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/Button2/MarginContainer/HBoxContainer/MarginContainer"]
+layout_mode = 2
+size_flags_vertical = 1
+text = "Not a green place full of trees, bird and great vibes. Also everything will try to kill you."
+autowrap_mode = 3
+
+[node name="MarginContainer_CharacterSelect2" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 6
+anchor_left = 1.0
+anchor_top = 0.5
+anchor_right = 1.0
+anchor_bottom = 0.5
+offset_left = -650.0
+offset_top = -300.0
+offset_right = -150.0
+offset_bottom = 300.0
+grow_horizontal = 0
+grow_vertical = 2
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2"]
+self_modulate = Color(0.309804, 0.537255, 1, 1)
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(16, 0, 48, 48)
+patch_margin_left = 4
+patch_margin_top = 4
+patch_margin_right = 4
+patch_margin_bottom = 4
+
+[node name="VBoxContainer3" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+size_flags_vertical = 3
+theme_override_constants/separation = -5
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+custom_minimum_size = Vector2(30, 50)
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(150, 120)
+layout_mode = 2
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(0, 48, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+texture = ExtResource("3_ruw6l")
+stretch_mode = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Forest"
+
+[node name="TierLabel" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "Tier 1"
+
+[node name="RunsLabel" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+text = "10 Runs"
+
+[node name="MarginContainer2" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+custom_minimum_size = Vector2(30, 50)
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2"]
+layout_mode = 2
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(0, 64, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer"]
+layout_mode = 2
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer2"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+text = "Speedrun"
+autowrap_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer2"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("11_sg73a")
+expand_mode = 1
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "09:33"
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 4
+alignment = 1
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer"]
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 0
+size_flags_vertical = 3
+text = "Highscore"
+autowrap_mode = 3
+
+[node name="HSeparator" type="HSeparator" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer"]
+layout_mode = 2
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("11_sg73a")
+expand_mode = 1
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer2/MarginContainer/HBoxContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "201"
+
+[node name="MarginContainer3" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+custom_minimum_size = Vector2(30, 50)
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="NinePatchRect" type="NinePatchRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3"]
+layout_mode = 2
+texture = ExtResource("2_7bytg")
+region_rect = Rect2(0, 64, 16, 16)
+patch_margin_left = 3
+patch_margin_top = 3
+patch_margin_right = 3
+patch_margin_bottom = 3
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckBox" type="CheckBox" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+button_pressed = true
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer"]
+layout_mode = 2
+text = "Tier 1"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer2"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("6_ttmag")
+expand_mode = 1
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer/HBoxContainer2"]
+layout_mode = 2
+text = "1x"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckBox" type="CheckBox" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+disabled = true
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer"]
+layout_mode = 2
+text = "Tier 2"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer2"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("6_ttmag")
+expand_mode = 1
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer2/HBoxContainer2"]
+layout_mode = 2
+text = "1.1x"
+
+[node name="HBoxContainer3" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="CheckBox" type="CheckBox" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+layout_mode = 2
+disabled = true
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3/HBoxContainer"]
+layout_mode = 2
+text = "Tier 3"
+
+[node name="HBoxContainer2" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="TextureRect" type="TextureRect" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+custom_minimum_size = Vector2(30, 30)
+layout_mode = 2
+texture = ExtResource("6_ttmag")
+expand_mode = 1
+
+[node name="Label2" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer3/MarginContainer/VBoxContainer/HBoxContainer3/HBoxContainer2"]
+layout_mode = 2
+text = "1.2x"
+
+[node name="MarginContainer5" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="MarginContainer4" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+custom_minimum_size = Vector2(30, 50)
+layout_mode = 2
+theme_override_constants/margin_left = 20
+theme_override_constants/margin_top = 20
+theme_override_constants/margin_right = 20
+theme_override_constants/margin_bottom = 20
+
+[node name="MarginContainer" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4/MarginContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer4/MarginContainer/VBoxContainer"]
+layout_mode = 2
+text = "1x Shard Gain"
+
+[node name="MarginContainer6" type="MarginContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3"]
+layout_mode = 2
+theme_override_constants/margin_left = 5
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 5
+theme_override_constants/margin_bottom = 5
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="startRun" type="Button" parent="MarginContainer_CharacterSelect2/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer"]
+custom_minimum_size = Vector2(100, 75)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/hover = SubResource("StyleBoxTexture_geevw")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_mnnu7")
+theme_override_styles/normal = SubResource("StyleBoxTexture_qm13f")
+text = "Start Run"
+
+[node name="BackButton" type="Button" parent="."]
+custom_minimum_size = Vector2(150, 50)
+layout_mode = 0
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 200.0
+offset_bottom = 100.0
+text = "< Back"

@@ -29,6 +29,7 @@ func _ready() -> void:
 	if StateManager:
 		StateManager.run_started.connect(_on_run_started)
 		StateManager.run_ended.connect(_on_run_ended)
+		StateManager.state_changed.connect(_on_state_changed)
 		Logger.info("MapLevel connected to StateManager signals", "arena")
 
 func _on_run_started(_run_id: StringName, _context: Dictionary) -> void:
@@ -38,6 +39,12 @@ func _on_run_started(_run_id: StringName, _context: Dictionary) -> void:
 func _on_run_ended(_result: Dictionary) -> void:
 	"""Stop map level progression when a run ends"""
 	stop_progression()
+
+func _on_state_changed(prev_state: StateManager.State, new_state: StateManager.State, _context: Dictionary) -> void:
+	"""Additional safety: Stop progression when leaving ARENA state"""
+	if new_state != StateManager.State.ARENA and _is_active:
+		Logger.info("Map level progression stopped due to state change to %s" % StateManager.State.keys()[new_state], "arena")
+		stop_progression()
 
 func start_progression() -> void:
 	"""Start the map level progression system"""
@@ -65,6 +72,10 @@ func _process(delta: float) -> void:
 	if not _is_active:
 		return
 
+	# Additional safety check: Only process during ARENA state
+	if StateManager and StateManager.get_current_state() != StateManager.State.ARENA:
+		return
+
 	_level_timer += delta
 
 	# Check if we should level up
@@ -90,4 +101,3 @@ func get_level_time_remaining() -> float:
 	if not _is_active:
 		return 0.0
 	return seconds_per_level - _level_timer
-

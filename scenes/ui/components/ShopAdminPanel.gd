@@ -1,0 +1,221 @@
+extends VBoxContainer
+class_name ShopAdminPanel
+## Admin/debug panel for testing UnlockShop item states
+## Allows toggling items between Undiscovered/Discovered/Unlocked states
+
+signal admin_state_changed(item_id: String, category: String, new_state: String)
+
+# Data provider callables (same as UnlockShop)
+var _items_data_provider: Callable
+var _tomes_data_provider: Callable
+var _skills_data_provider: Callable
+var _characters_data_provider: Callable
+
+# Current tab
+var _current_category: String = "items"
+
+# Node references
+@onready var tab_bar: TabBar = $TabBar
+@onready var add_fragments_button: Button = $CurrencyTools/AddFragmentsButton
+@onready var items_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Items
+@onready var tomes_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Tomes
+@onready var skills_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Skills
+@onready var characters_list: VBoxContainer = $ScrollContainer/ItemLists/ItemsList_Characters
+
+func _ready() -> void:
+	if tab_bar:
+		tab_bar.tab_changed.connect(_on_tab_changed)
+
+	if add_fragments_button:
+		add_fragments_button.pressed.connect(_on_add_fragments_pressed)
+
+	Logger.debug("ShopAdminPanel initialized", "ui")
+
+func setup_data_providers(items: Callable, tomes: Callable, skills: Callable, characters: Callable) -> void:
+	"""Setup data provider callables for each category."""
+	_items_data_provider = items
+	_tomes_data_provider = tomes
+	_skills_data_provider = skills
+	_characters_data_provider = characters
+
+	# Load initial tab
+	_load_category_items("items")
+
+func _on_tab_changed(tab: int) -> void:
+	"""Handle tab switching."""
+	match tab:
+		0: _load_category_items("items")
+		1: _load_category_items("tomes")
+		2: _load_category_items("skills")
+		3: _load_category_items("characters")
+
+func _load_category_items(category: String) -> void:
+	"""Load items for the given category and populate the list."""
+	_current_category = category
+
+	# Hide all lists
+	items_list.visible = false
+	tomes_list.visible = false
+	skills_list.visible = false
+	characters_list.visible = false
+
+	# Get data provider and target list
+	var data_provider: Callable
+	var target_list: VBoxContainer
+
+	match category:
+		"items":
+			data_provider = _items_data_provider
+			target_list = items_list
+		"tomes":
+			data_provider = _tomes_data_provider
+			target_list = tomes_list
+		"skills":
+			data_provider = _skills_data_provider
+			target_list = skills_list
+		"characters":
+			data_provider = _characters_data_provider
+			target_list = characters_list
+		_:
+			Logger.warn("ShopAdminPanel: Unknown category: %s" % category, "ui")
+			return
+
+	if not data_provider.is_valid():
+		Logger.warn("ShopAdminPanel: No data provider for category: %s" % category, "ui")
+		return
+
+	# Clear existing items
+	for child in target_list.get_children():
+		child.queue_free()
+
+	# Get items from data provider
+	var items_array: Array = data_provider.call()
+
+	# Create entry for each item
+	for item_metadata in items_array:
+		if item_metadata is ItemMetadata:
+			_create_admin_item_entry(target_list, item_metadata)
+
+	# Show the target list
+	target_list.visible = true
+
+func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetadata) -> void:
+	"""Create an admin entry for a single item with state cycling button."""
+	if not MetaProgression:
+		Logger.warn("ShopAdminPanel: MetaProgression not available", "ui")
+		return
+
+	# Create row container
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 8)
+
+	# Item icon
+	var icon_texture := TextureRect.new()
+	icon_texture.custom_minimum_size = Vector2(24, 24)
+	icon_texture.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+
+	# Load icon from item metadata
+	if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
+		icon_texture.texture = load(item_metadata.icon_path)
+	else:
+		Logger.debug("ShopAdminPanel: Icon not found or empty: %s" % item_metadata.icon_path, "ui")
+
+	row.add_child(icon_texture)
+
+	# Item name label (smaller, compact)
+	var name_label := Label.new()
+	name_label.text = item_metadata.display_name
+	name_label.custom_minimum_size = Vector2(120, 0)
+	name_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	row.add_child(name_label)
+
+	# State icon (visual only)
+	var state_icon := TextureRect.new()
+	state_icon.custom_minimum_size = Vector2(20, 20)
+	state_icon.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
+	state_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_update_state_icon(state_icon, item_metadata)
+	row.add_child(state_icon)
+
+	# Cycle button (icon only, no text)
+	var cycle_button := Button.new()
+	cycle_button.text = "🔄"
+	cycle_button.custom_minimum_size = Vector2(32, 32)
+	cycle_button.tooltip_text = "Cycle state"
+	cycle_button.pressed.connect(_on_cycle_state_pressed.bind(item_metadata, state_icon))
+	row.add_child(cycle_button)
+
+	container.add_child(row)
+
+func _update_state_icon(icon: TextureRect, item_metadata: ItemMetadata) -> void:
+	"""Update the state icon to reflect current item state."""
+	var is_discovered := MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
+	var is_unlocked := MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+
+	# Use colored squares to indicate state
+	# Create a simple colored texture
+	var color: Color
+	if not is_discovered and not is_unlocked:
+		color = Color(0.5, 0.5, 0.5)  # Gray - Undiscovered
+		icon.tooltip_text = "Undiscovered"
+	elif is_discovered and not is_unlocked:
+		color = Color(1.0, 0.8, 0.3)  # Yellow - Discovered/Locked
+		icon.tooltip_text = "Discovered (Locked)"
+	else:  # unlocked
+		color = Color(0.3, 1.0, 0.3)  # Green - Unlocked
+		icon.tooltip_text = "Unlocked"
+
+	icon.modulate = color
+
+func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_icon: TextureRect) -> void:
+	"""Cycle item through states: Undiscovered → Discovered → Unlocked → Undiscovered."""
+	if not MetaProgression:
+		return
+
+	var is_discovered := MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
+	var is_unlocked := MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+
+	var new_state: String = ""
+
+	# State machine: Undiscovered → Discovered → Unlocked → Undiscovered
+	if not is_discovered and not is_unlocked:
+		# Undiscovered → Discovered
+		MetaProgression.discover_item(item_metadata.category, item_metadata.item_id)
+		new_state = "discovered"
+		Logger.info("ShopAdminPanel: Set %s to DISCOVERED" % item_metadata.item_id, "ui")
+
+	elif is_discovered and not is_unlocked:
+		# Discovered → Unlocked
+		MetaProgression.unlock_item(item_metadata.category, item_metadata.item_id)
+		new_state = "unlocked"
+		Logger.info("ShopAdminPanel: Set %s to UNLOCKED" % item_metadata.item_id, "ui")
+
+	else:  # unlocked
+		# Unlocked → Undiscovered (remove from both arrays)
+		MetaProgression._remove_item_from_discovered(item_metadata.category, item_metadata.item_id)
+		MetaProgression._remove_item_from_unlocked(item_metadata.category, item_metadata.item_id)
+		new_state = "undiscovered"
+		Logger.info("ShopAdminPanel: Set %s to UNDISCOVERED" % item_metadata.item_id, "ui")
+
+	# Save changes
+	MetaProgression.save()
+
+	# Update icon
+	_update_state_icon(state_icon, item_metadata)
+
+	# Emit signal for shop to refresh
+	admin_state_changed.emit(item_metadata.item_id, item_metadata.category, new_state)
+
+func refresh_current_tab() -> void:
+	"""Refresh the currently visible tab."""
+	_load_category_items(_current_category)
+
+func _on_add_fragments_pressed() -> void:
+	"""Grant 10 Rift Fragments for testing."""
+	if not MetaProgression:
+		Logger.warn("ShopAdminPanel: MetaProgression not available", "ui")
+		return
+
+	MetaProgression.earn_rift_fragments(10)
+	Logger.info("ShopAdminPanel: Granted 10 Rift Fragments", "ui")
