@@ -420,6 +420,38 @@ Enemies Remaining: 0
 - If DamageService is missing, create minimal version (can refactor later)
 - Stationary enemies are fine for this test (no AI needed)
 - Debug label is critical for visual feedback
+
+---
+
+## 🔄 Next Steps After Phase 3
+
+> **⚠️ DECISION POINT:** After completing this phase (Ranger Arrow working), you have a working ability system foundation.
+
+**Recommended Path:**
+
+1. **Complete Phase 4 (Tome Validation)** - Verify modifiers work with projectiles (~2-3 hours)
+2. **Create Clean Melee Ability** - Build using DamageRegistry spatial queries (~2 hours)
+   - Your current `MeleeSystem.gd` has **redundant code** duplicating DamageRegistry
+   - Create clean `MeleeAbilityHandler` using `DamageRegistry.get_entities_in_cone()`
+   - Preserve visual effects, remove ~200 lines of duplicate entity management
+   - See parent task **Phase 5** for detailed implementation steps
+
+**Why Clean Refactor Instead of Code Preservation:**
+- ✅ DamageRegistry already provides optimized cone queries (lines 526-548)
+- ✅ MeleeSystem reimplements this math unnecessarily (lines 196-208)
+- ✅ Architectural consistency - all abilities use same spatial query service
+- ✅ 74% code reduction (312 lines → 80 lines)
+- ✅ Unified boss + enemy handling via type filtering
+
+**Migration Overview (~2 hours total):**
+```
+Step 1: Create MeleeAbility subclass (~1 hour)
+Step 2: Create clean MeleeAbilityHandler using DamageRegistry (~30 min)
+Step 3: Integration & testing (~30 min)
+Result: Clean architecture with melee + projectile abilities using shared infrastructure
+```
+
+**See:** `/Obsidian/03-tasks/ability-system-melee-migration-guide.md` for complete clean refactor guide
 - Commit after each task: `feat: create ranger_arrow ability`
 
 ---

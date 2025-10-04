@@ -1,7 +1,8 @@
-[gd_scene load_steps=20 format=3 uid="uid://b5t4y1vrofp2t"]
+[gd_scene load_steps=21 format=3 uid="uid://b5t4y1vrofp2t"]
 
-[ext_resource type="Script" path="res://scenes/ui/CharacterSelect.gd" id="1_6un01"]
+[ext_resource type="Script" uid="uid://boqtakth7sw3y" path="res://scenes/ui/CharacterSelect.gd" id="1_6un01"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_g3cng"]
+[ext_resource type="Texture2D" uid="uid://bmfwqf300ucvf" path="res://assets/ui/kenny/panel-010.png" id="3_5awgd"]
 [ext_resource type="Texture2D" uid="uid://c24tuof03bhv3" path="res://assets/ui/characters/portraits/knight_portrait.png" id="3_74ejh"]
 [ext_resource type="Texture2D" uid="uid://c1bwq02n83h1i" path="res://assets/ui/tile096.png" id="3_smsyb"]
 [ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="4_3y4k6"]
@@ -97,6 +98,7 @@ size_flags_vertical = 3
 theme_override_constants/separation = -5
 
 [node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3"]
+visible = false
 self_modulate = Color(0.619608, 0.588235, 1, 1)
 z_index = 1
 custom_minimum_size = Vector2(0, 60)
@@ -134,26 +136,23 @@ vertical_alignment = 1
 uppercase = true
 
 [node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3"]
-self_modulate = Color(0.309804, 0.537255, 1, 1)
+self_modulate = Color(0.184314, 0.196078, 0.203922, 0.905882)
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("2_g3cng")
-region_rect = Rect2(288, 16, 48, 16)
-patch_margin_left = 4
-patch_margin_top = 2
-patch_margin_right = 3
-patch_margin_bottom = 4
+texture = ExtResource("3_5awgd")
+region_rect = Rect2(0, 0, 95, 95)
+patch_margin_left = 24
+patch_margin_top = 24
+patch_margin_right = 23
+patch_margin_bottom = 23
 axis_stretch_horizontal = 1
 axis_stretch_vertical = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect"]
 layout_mode = 1
-anchors_preset = 14
-anchor_top = 0.5
+anchors_preset = 15
 anchor_right = 1.0
-anchor_bottom = 0.5
-offset_top = -80.0
-offset_bottom = 80.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/margin_left = 20
@@ -161,16 +160,40 @@ theme_override_constants/margin_top = 20
 theme_override_constants/margin_right = 20
 theme_override_constants/margin_bottom = 20
 
-[node name="GridContainer" type="GridContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer"]
 layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/MarginContainer"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/MarginContainer/HBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 18
+text = "Character Selection"
+horizontal_alignment = 1
+vertical_alignment = 1
+uppercase = true
+
+[node name="GridContainer" type="GridContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
 theme_override_constants/h_separation = 10
 columns = 3
 
-[node name="Knight" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="Knight" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -180,7 +203,7 @@ patch_margin_top = 3
 patch_margin_right = 3
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -192,11 +215,11 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="Button" type="Button" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer"]
+[node name="Button" type="Button" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight/NinePatchRect/MarginContainer"]
 layout_mode = 2
 theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -210,24 +233,24 @@ offset_bottom = 45.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="portrait" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+[node name="portrait" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("3_74ejh")
 stretch_mode = 5
 
-[node name="name" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+[node name="name" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Knight/NinePatchRect/MarginContainer/Button/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Knight"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="Ranger" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="Ranger" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -237,7 +260,7 @@ patch_margin_top = 3
 patch_margin_right = 3
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -249,12 +272,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="Button" type="Button" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer"]
+[node name="Button" type="Button" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger/NinePatchRect/MarginContainer"]
 layout_mode = 2
 theme_override_styles/hover = SubResource("StyleBoxTexture_smsyb")
 theme_override_styles/pressed = SubResource("StyleBoxTexture_smsyb")
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button"]
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -268,29 +291,29 @@ offset_bottom = 45.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("4_3y4k6")
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/Ranger/NinePatchRect/MarginContainer/Button/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Ranger"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="VboxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="VboxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -300,7 +323,7 @@ patch_margin_top = 4
 patch_margin_right = 4
 patch_margin_bottom = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -312,13 +335,13 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect/MarginContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
 texture = ExtResource("3_smsyb")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer"]
+[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -328,7 +351,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect2"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -336,19 +359,19 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect2/MarginContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer/VBoxContainer/NinePatchRect2/MarginContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VboxContainer2" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="VboxContainer2" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer2"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -358,7 +381,7 @@ patch_margin_top = 3
 patch_margin_right = 3
 patch_margin_bottom = 3
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer2/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -370,32 +393,32 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer"]
 layout_mode = 2
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
 layout_mode = 2
 size_flags_vertical = 3
 texture = ExtResource("4_88s6p")
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer2/NinePatchRect/MarginContainer/VBoxContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 2
 
-[node name="VboxContainer4" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="VboxContainer4" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -405,7 +428,7 @@ patch_margin_top = 4
 patch_margin_right = 4
 patch_margin_bottom = 4
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -417,12 +440,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect/MarginContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
 texture = ExtResource("6_o45hp")
 stretch_mode = 5
 
-[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer"]
+[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -432,7 +455,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect2"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -440,23 +463,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect2/MarginContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer4/VBoxContainer/NinePatchRect2/MarginContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VboxContainer5" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="VboxContainer5" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -466,7 +489,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -478,12 +501,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect/MarginContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
 texture = ExtResource("7_aists")
 stretch_mode = 5
 
-[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer"]
+[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -493,7 +516,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect2"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -501,23 +524,23 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect2/MarginContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer5/VBoxContainer/NinePatchRect2/MarginContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="VboxContainer6" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer"]
+[node name="VboxContainer6" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer"]
 visible = false
 layout_mode = 2
 size_flags_horizontal = 3
 
-[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6"]
+[node name="VBoxContainer" type="VBoxContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6"]
 layout_mode = 2
 theme_override_constants/separation = 0
 
-[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer"]
+[node name="NinePatchRect" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer"]
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -527,7 +550,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -539,12 +562,12 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 5
 theme_override_constants/margin_bottom = 5
 
-[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect/MarginContainer"]
+[node name="TextureRect" type="TextureRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect/MarginContainer"]
 layout_mode = 2
 texture = ExtResource("8_gic7f")
 stretch_mode = 5
 
-[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer"]
+[node name="NinePatchRect2" type="NinePatchRect" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer"]
 custom_minimum_size = Vector2(20, 20)
 layout_mode = 2
 texture = ExtResource("2_g3cng")
@@ -554,7 +577,7 @@ patch_margin_top = 1
 patch_margin_right = 1
 patch_margin_bottom = 1
 
-[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect2"]
+[node name="MarginContainer" type="MarginContainer" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect2"]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -562,14 +585,14 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect2/MarginContainer"]
+[node name="Label" type="Label" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer/VboxContainer6/VBoxContainer/NinePatchRect2/MarginContainer"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
 text = "Fox"
 horizontal_alignment = 1
 vertical_alignment = 1
 
-[node name="CharacterSelectButton" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer" instance=ExtResource("10_3y4k6")]
+[node name="CharacterSelectButton" parent="CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer" instance=ExtResource("10_3y4k6")]
 layout_mode = 2
 
 [node name="CharacterInfoPanel" type="MarginContainer" parent="."]
@@ -587,17 +610,15 @@ grow_horizontal = 0
 grow_vertical = 2
 
 [node name="NinePatchRect" type="NinePatchRect" parent="CharacterInfoPanel"]
-self_modulate = Color(0.309804, 0.537255, 1, 1)
+self_modulate = Color(0.183322, 0.197091, 0.203976, 0.905882)
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("2_g3cng")
-region_rect = Rect2(16, 0, 48, 48)
-patch_margin_left = 4
-patch_margin_top = 4
-patch_margin_right = 4
-patch_margin_bottom = 4
-axis_stretch_horizontal = 1
-axis_stretch_vertical = 1
+texture = ExtResource("3_5awgd")
+region_rect = Rect2(0, 0, 96, 96)
+patch_margin_left = 24
+patch_margin_top = 24
+patch_margin_right = 25
+patch_margin_bottom = 24
 
 [node name="VBoxContainer3" type="VBoxContainer" parent="CharacterInfoPanel/NinePatchRect"]
 layout_mode = 1

@@ -131,26 +131,102 @@ Implement complete auto-cast ability system with:
 
 ## ⏭️ Future Phases (Not in Phase 1 Scope)
 
-### Phase 5: Expand Ability Library
-- Add 3-5 more abilities (Fireball, Lightning, Sword Slash, Buff Aura)
-- Validate different ability archetypes (AoE, Buff, Orbit)
+### Phase 5: Create Clean Melee Ability (~2 hours)
+
+> **🏗️ Architecture:** Create clean MeleeAbilityHandler using DamageRegistry spatial queries, removing ~200 lines of redundant code from existing MeleeSystem.gd.
+
+**Prerequisites:** Complete Phase 3 (Ranger Arrow working)
+
+**Architectural Rationale:**
+The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entities_in_cone()` functionality. Rather than preserve legacy patterns, create a **clean ~80-line handler** using existing optimized infrastructure.
+
+**Migration Steps:**
+1. **Create MeleeAbility subclass** (~1 hour)
+   - Extend BaseAbility with attack pattern properties (circle_360, cone_auto_target, etc.)
+   - Emit `EventBus.ability_melee_requested` signal
+   - Create `data/content/abilities/melee/melee_slash.tres`
+
+2. **Create clean MeleeAbilityHandler** (~30 min)
+   - Delete old MeleeSystem.gd (contains ~200 lines of redundant entity management)
+   - Create new MeleeAbilityHandler.gd (~80 lines)
+   - Use `DamageRegistry.get_entities_in_area()` or `get_entities_in_cone()` based on pattern
+   - Use `DamageRegistry.apply_damage()` for unified damage handling
+   - Add placeholder visual effects (~5 min - simple white flash)
+
+3. **Integration** (~30 min)
+   - Add melee ability to Player ability slots
+   - Remove old PlayerAttackHandler direct calls
+   - Test auto-cast melee alongside projectiles
+   - Verify spatial queries, damage, knockback work correctly
+
+**Visual Effects Approach:**
+- **Phase 5**: Simple placeholder visuals (white flash, ~5 min)
+- **Phase 6**: Base effects + customization (color, scale - hybrid system, ~2 hours)
+- **Phase 8+**: Unique visual scenes per ability (optional polish, ~1 hour each)
+
+**Code Reduction:**
+- ❌ **Old**: 312 lines (custom cone math, manual entity registration, separate boss/enemy paths)
+- ✅ **New**: ~80 lines (delegates to DamageRegistry services)
+- 📉 **Result**: 74% code reduction, architectural consistency
+
+**Result:** Unified ability system with clean architecture - both melee + projectile abilities use DamageRegistry for spatial queries.
+
+---
+
+### 🔬 Phase 2e: Visual Effects POC (3-4 hours) - DECISION POINT
+
+**Subtasks → See:** `2e_ABILITIES_visual_effects_poc.md`
+
+**Branch:** `visual-effects-poc` (separate from main development)
+
+**Purpose:** Test 3 visual effect methods before expanding ability library to determine best approach for scalable visual effects.
+
+**Prerequisites:** Complete Phase 4 (Tome Validation)
+
+**Testing Focus:**
+- Sprite2D + Shader (glow effects with runtime customization)
+- GPUParticles2D (high-performance particle systems with emission shape scaling)
+- Line2D (procedural geometry for lightning/arcs)
+
+**Success Criteria:**
+- All methods tested with 3 AOE sizes (150px, 300px, 500px)
+- Performance validated (100 simultaneous effects stress test)
+- Scalability confirmed (effects scale with item modifiers at runtime)
+- Method selection documented in POC_FINDINGS.md
+
+**Deliverable:** Documented findings feed into Phase 6 implementation strategy
+
+---
+
+### Phase 6: Expand Ability Library + Visual Foundation
+**Abilities:**
+- Add 3-5 more abilities (Whirlwind, Spear Thrust, Fireball, Lightning)
+- Validate different ability archetypes (circle_360, cone_auto_target, projectile)
 - Create 5-10 more tomes (elemental, AoE, pierce, projectile count)
 
-### Phase 6: Level-Up Integration
+**Visual System (~2 hours):**
+- Create base visual effects (CircleSlashEffect.tscn, ConeSlashEffect.tscn)
+- Add visual customization to MeleeAbility.gd (`effect_color`, `effect_scale`)
+- Implement effect pooling (reuse EntityPool pattern)
+- Add `_apply_customization()` to MeleeAbilityHandler
+- Result: Hybrid visual system (Option 3) - base effects + per-ability customization
+
+### Phase 7: Level-Up Integration
 - Wire into existing level-up modal
 - Generate upgrade options (abilities + tomes)
 - Implement ability re-picking (level up existing)
 - Test upgrade pool generation
 
-### Phase 7: Meta-Progression Integration
+### Phase 8: Meta-Progression Integration
 - Add quest → discover → unlock flow
 - Wire into shop system
 - Persist unlocked abilities/tomes
 - Test progression across runs
 
-### Phase 8: Visual Polish
-- Replace placeholder sprites
-- Add impact effects
+### Phase 9: Visual Polish (Optional)
+- Replace placeholder projectile sprites with unique designs
+- Add unique visual scenes for hero abilities (whirlwind tornado, etc.)
+- Add impact effects and particles
 - Add sound effects
 - Polish animations
 

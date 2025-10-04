@@ -178,8 +178,6 @@ custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
 text = "Item description will appear here"
 autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
 
 [node name="ItemStats" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel"]
 custom_minimum_size = Vector2(0, 20)
@@ -196,7 +194,7 @@ text_overrun_behavior = 3
 [node name="RightPanel" type="VBoxContainer" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(155, 110)
 layout_mode = 2
-size_flags_horizontal = 8
+size_flags_horizontal = 3
 theme_override_constants/separation = 4
 
 [node name="QuestProgress" type="Label" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel"]
@@ -204,9 +202,7 @@ custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
 size_flags_vertical = 0
 text = "Quest Progress"
-autowrap_mode = 3
-clip_text = true
-text_overrun_behavior = 3
+autowrap_mode = 2
 
 [node name="UnlockButton" parent="ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel" instance=ExtResource("4_mainbutton")]
 visible = false
