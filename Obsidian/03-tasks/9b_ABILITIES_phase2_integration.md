@@ -31,8 +31,9 @@ Integrate with Arena's 30Hz combat step for auto-cast system.
   var _ability_categories: Dictionary = {}  # {ability_id: "projectile"}
   ```
 - [ ] Implement `_load_all_abilities()` in `_ready()`:
-  - Scan `res://data/content/abilities/` subdirectories
+  - Scan `res://data/content/abilities/` subdirectories (projectile/, aoe/, melee/, etc.)
   - Load all `.tres` files as BaseAbility resources
+  - Call `validate()` on each loaded ability and log warnings
   - Populate registries
 - [ ] Implement `get_definition(ability_id: String) -> BaseAbility`
 - [ ] Implement `create_ability_instance(ability_id: String) -> BaseAbility`:

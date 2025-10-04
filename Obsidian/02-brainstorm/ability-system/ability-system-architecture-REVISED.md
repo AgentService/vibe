@@ -33,7 +33,53 @@ The ability system implements auto-cast, data-driven abilities with:
 - **Deterministic 30Hz combat step** (AbilitySystem autoload, not Player._process)
 - **Tag-based applicability** using StringName constants
 - **Baseline stat preservation** (tomes never mutate base_damage, only final_damage)
-- **EventBus signal contracts** for projectile spawning (no direct singleton access)
+- **Hybrid spawning pattern** (Resources use EventBus, Systems use direct calls)
+- **Unified damage pattern** (All sources use DamageService.apply_damage())
+
+---
+
+## 🔄 Spawning & Damage Patterns (Hybrid Architecture)
+
+### **Spawning Pattern:**
+- **Resources (BaseAbility subclasses)** → `EventBus.ability_*_requested` signals (decoupled, testable)
+- **Systems (BossBehavior, CardEffects)** → Direct `ProjectilePool.spawn_projectile()` calls (fast, clear ownership)
+
+### **Damage Pattern:**
+- **ALL sources** → `DamageService.apply_damage()` direct calls (single entry point, performance)
+- **NEVER** use `EventBus.damage_requested` (removed signal - see EventBus.gd:39)
+
+### **Rationale:**
+1. **Resources stay pure** - No autoload access, fully testable without game context
+2. **Performance where it matters** - Boss barrages (50 projectiles) avoid signal overhead (~0.1ms saved)
+3. **Damage consistency** - Matches existing DamageService pattern (see SpawnDirector:821)
+4. **Clear semantics** - "Request spawn" (signal) vs "Execute spawn" (direct) vs "Apply damage" (always direct)
+
+### **Example Flows:**
+
+```gdscript
+// ========== ABILITY ACTIVATION (Resource → Signal) ==========
+// ProjectileAbility.activate() - No singleton access
+EventBus.ability_projectile_requested.emit(projectile_data)
+// → ProjectilePool listens and spawns entity
+
+// ========== BOSS ATTACK (System → Direct) ==========
+// BaseBoss._fire_barrage() - Has singleton access
+for i in 50:
+    ProjectilePool.spawn_projectile(barrage_data)  // ✅ Fast, no signal overhead
+
+// ========== DAMAGE APPLICATION (Entity → Direct) ==========
+// AbilityProjectile._on_enemy_hit() - Always direct
+DamageService.apply_damage(source_id, target_id, damage, tags)  // ✅ Single entry point
+
+// ========== AOE ABILITY (Resource → Signal → System → Direct) ==========
+// AoEAbility.activate()
+EventBus.ability_aoe_requested.emit(aoe_data)
+// → AoEHandler.gd listens
+func _on_aoe_requested(data):
+    var enemies = _find_enemies_in_radius(data.origin, data.radius)
+    for enemy_id in enemies:
+        DamageService.apply_damage(player_id, enemy_id, data.damage, data.tags)
+```
 
 ---
 
@@ -61,6 +107,11 @@ TomeManager (Autoload) → autoload/
 
 AbilityComponent (Node) → scripts/components/
 └── Attached to Player, owns 4 ability slots + 4 tome slots
+└── First of many Player components (future: HealthComponent, MovementComponent, etc.)
+
+EntityPool (Autoload) → autoload/
+└── Unified pooling for high-frequency, short-lived entities
+└── Pools: Projectiles, XP orbs, VFX (NOT chests/bosses)
 ```
 
 ---
@@ -401,7 +452,8 @@ func _init() -> void:
 
 
 ## Activate projectile ability
-## FIXED: Emits EventBus signal instead of calling ProjectilePool.acquire()
+## PATTERN: Resources emit EventBus signals (no singleton access)
+## Systems/Entities call DamageService directly (performance + clear ownership)
 func activate(player: Node2D, context: Dictionary) -> void:
 	var target_pos: Vector2 = context.get("nearest_enemy", Vector2.ZERO)
 	var facing_dir: Vector2 = context.get("facing_direction", Vector2.RIGHT)
@@ -583,6 +635,7 @@ var _cooldowns: Dictionary = {}
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE  # Respect game pause
 	EventBus.combat_step.connect(_on_combat_step)
 	Logger.info("AbilitySystem initialized (30Hz combat step)", "abilities")
 
@@ -930,6 +983,106 @@ func get_abilities_in_category(category: String) -> Array[String]:
 		if _ability_categories[ability_id] == category:
 			result.append(ability_id)
 	return result
+```
+
+---
+
+### EntityPool.gd (NEW - Unified Entity Pooling)
+
+**Location:** `autoload/EntityPool.gd`
+
+```gdscript
+extends Node
+
+## Unified pooling for high-frequency, short-lived visual entities.
+## Pools projectiles, XP orbs, VFX - NOT persistent entities like chests/bosses.
+## Uses ObjectPool utility for zero-allocation pattern.
+
+const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")
+
+# Pool per entity type
+var _pools: Dictionary = {}  # {"arrow": ObjectPool, "xp_orb": ObjectPool}
+
+# Entity scene registry
+const POOLED_ENTITY_SCENES = {
+	"arrow": preload("res://assets/abilities/arrow/arrow_visual.tscn"),
+	"fireball": preload("res://assets/abilities/projectile/fireball_visual.tscn"),
+	"meteor": preload("res://assets/abilities/projectile/meteor_visual.tscn"),
+	"orbital": preload("res://assets/abilities/radial/orbital_sword_visual.tscn"),
+	"xp_orb": preload("res://scenes/arena/XPOrb.tscn"),
+}
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+
+	# Pre-warm pools for high-frequency entities
+	_create_pool("arrow", 100)      # Very high frequency
+	_create_pool("fireball", 50)    # High frequency
+	_create_pool("meteor", 30)      # Medium frequency
+	_create_pool("orbital", 20)     # Low-medium frequency
+	_create_pool("xp_orb", 200)     # Very high frequency (mass kills)
+
+	# Connect spawn signals
+	EventBus.ability_projectile_requested.connect(_on_projectile_requested)
+	EventBus.xp_orb_requested.connect(_on_xp_orb_requested)
+
+	Logger.info("EntityPool initialized with %d pools" % _pools.size(), "pooling")
+
+
+func _create_pool(entity_key: String, initial_size: int) -> void:
+	var pool = ObjectPool.new()
+	pool.setup(
+		initial_size,
+		func(): return _create_entity(entity_key),
+		func(entity): _reset_entity(entity)
+	)
+	_pools[entity_key] = pool
+
+
+func _create_entity(entity_key: String) -> Node:
+	var scene = POOLED_ENTITY_SCENES[entity_key]
+	var entity = scene.instantiate()
+	entity.add_to_group("pooled_entities")
+	entity.add_to_group("pooled_" + entity_key)
+	return entity
+
+
+func _reset_entity(entity: Node) -> void:
+	# Reset for reuse
+	entity.visible = false
+	entity.global_position = Vector2.ZERO
+	if entity.get_parent():
+		entity.get_parent().remove_child(entity)
+
+
+func _on_projectile_requested(data: Dictionary) -> void:
+	var entity_key = data.get("visual_scene_key", "arrow")
+
+	if not _pools.has(entity_key):
+		Logger.warn("No pool for entity: %s" % entity_key, "pooling")
+		return
+
+	var projectile = _pools[entity_key].acquire()
+	projectile.setup_from_data(data)
+	projectile.visible = true
+	get_tree().root.add_child(projectile)
+
+
+func _on_xp_orb_requested(data: Dictionary) -> void:
+	var orb = _pools["xp_orb"].acquire()
+	orb.setup(data.position, data.xp_value)
+	orb.visible = true
+	get_tree().root.add_child(orb)
+
+
+## Called by entities when lifetime expires
+func release(entity: Node, entity_key: String) -> void:
+	if _pools.has(entity_key):
+		_pools[entity_key].release(entity)
+	else:
+		Logger.warn("Releasing entity with unknown key: %s" % entity_key, "pooling")
+		entity.queue_free()  # Fallback
 ```
 
 ---

@@ -15,62 +15,84 @@ Validate entire ability pipeline: definition → manager → player → auto-cas
 
 ---
 
+## 🔄 Architecture Pattern: Hybrid Spawning & Damage
+
+**This phase implements the hybrid pattern:**
+
+### **Spawning:**
+- **ProjectileAbility.activate()** (Resource) → `EventBus.ability_projectile_requested.emit()` ✅
+- **ProjectilePool** (Autoload) → Listens to signal and spawns AbilityProjectile entities
+
+### **Damage:**
+- **AbilityProjectile._on_enemy_collision()** (Entity) → `DamageService.apply_damage()` direct call ✅
+- **NEVER** `EventBus.damage_requested` (removed signal)
+
+**Rationale:** Resources stay decoupled (no singleton access), entities get performance (direct calls), damage has single entry point (DamageService).
+
+---
+
 ## ✅ Tasks
 
-### Task 1.3.1: Extend Projectile Pool for Abilities (~1 hour)
+### Task 1.3.1: Create EntityPool for High-Frequency Entities (~1.5 hours)
 
-**File:** Verify existing projectile pool location (likely `scripts/systems/ProjectilePool.gd`)
+**File:** `autoload/EntityPool.gd` (NEW - unified pooling for projectiles, XP orbs, VFX)
 
 **Requirements:**
-- [ ] Use Glob or Grep to locate existing projectile pool implementation
-  - Search for: `class_name ProjectilePool` or `ProjectilePool.gd`
-  - Check `scripts/systems/` directory
-- [ ] **IF POOL EXISTS:** Extend to support ability-spawned projectiles
-  - Add `spawn_ability_projectile(projectile_data: Dictionary)` method
-  - Accept projectile_data from `EventBus.ability_projectile_requested`
-  - Pool should handle different projectile types (arrow vs fireball)
-- [ ] **IF POOL DOESN'T EXIST:** Create simple ProjectilePool singleton
-  - Create `autoload/ProjectilePool.gd`
-  - Implement basic object pooling (acquire/release pattern)
-  - Pre-allocate 100 projectile instances per type
+- [ ] Create `autoload/EntityPool.gd`
+- [ ] Use `ObjectPool` utility (res://scripts/utils/ObjectPool.gd)
+- [ ] Implement per-type pooling:
+  ```gdscript
+  const POOLED_ENTITY_SCENES = {
+      "arrow": preload("res://assets/abilities/arrow/arrow_visual.tscn"),
+      "fireball": preload("res://assets/abilities/projectile/fireball_visual.tscn"),
+      "xp_orb": preload("res://scenes/arena/XPOrb.tscn"),
+  }
+  ```
+- [ ] Pre-warm pools in `_ready()`:
+  - Arrows: 100 instances
+  - Fireballs: 50 instances
+  - XP Orbs: 200 instances (for mass enemy kills)
+- [ ] Implement factory/reset callables for each entity type
+- [ ] **Pattern:** High-frequency, short-lived entities only (NOT chests/bosses)
 - [ ] Connect to `EventBus.ability_projectile_requested` signal
 - [ ] Spawn projectile entities from pool when signal received
 
 **Success Criteria:**
-- [ ] Projectile pool can spawn ability projectiles
-- [ ] Pool reuses projectiles correctly (no memory leaks)
-- [ ] Different projectile types coexist in pool
-- [ ] Can handle 60+ projectiles without lag
+- [ ] EntityPool registered as autoload in Project Settings
+- [ ] Can spawn arrows, fireballs, and XP orbs via pool
+- [ ] Pool reuses entities correctly (acquire/release cycle)
+- [ ] Different entity types have separate pools
+- [ ] Can handle 100+ simultaneous projectiles without GC stutter
+- [ ] XP orb pooling works (test with mass enemy kill)
 
 **Testing:**
 ```gdscript
 extends Node
 
 func _ready():
-	print("=== Projectile Pool Test ===")
+	print("=== EntityPool Test ===")
 
-	# Emit spawn request
+	# Test 1: Spawn projectile via signal
 	var projectile_data = {
-		"ability_id": "test_arrow",
+		"visual_scene_key": "arrow",
 		"origin": Vector2(100, 100),
 		"direction": Vector2.RIGHT,
 		"speed": 400.0,
 		"damage": 15.0,
-		"pierce_count": 0,
-		"lifetime": 3.0,
 	}
-
 	EventBus.ability_projectile_requested.emit(projectile_data)
 
 	await get_tree().create_timer(0.1).timeout
 
-	# Check if projectile spawned
-	var projectiles = get_tree().get_nodes_in_group("ability_projectiles")
+	var projectiles = get_tree().get_nodes_in_group("pooled_projectiles")
 	print("Projectiles spawned: ", projectiles.size())
 
+	# Test 2: Check pool stats
+	print("Arrow pool available: ", EntityPool._pools["arrow"].available_count())
+	print("XP orb pool available: ", EntityPool._pools["xp_orb"].available_count())
+
 	if projectiles.size() > 0:
-		print("✓ Projectile pool spawning works")
-		print("Projectile position: ", projectiles[0].global_position)
+		print("✓ EntityPool spawning works")
 	else:
 		print("✗ No projectile spawned")
 
@@ -181,11 +203,11 @@ Instantiate scene manually, verify:
 
 ### Task 1.3.4: Create ranger_arrow.tres (~15 min)
 
-**File:** `data/content/abilities/ranger_arrow.tres`
+**File:** `data/content/abilities/projectile/ranger_arrow.tres`
 
 **Requirements:**
-- [ ] Create directory: `data/content/abilities/` (if doesn't exist)
-- [ ] Create file: `data/content/abilities/ranger_arrow.tres`
+- [ ] Create directory: `data/content/abilities/projectile/` (if doesn't exist)
+- [ ] Create file: `data/content/abilities/projectile/ranger_arrow.tres`
 - [ ] Resource type: `ProjectileAbility`
 - [ ] Set properties:
   ```tres
@@ -232,30 +254,34 @@ Instantiate scene manually, verify:
 
 ### Task 1.3.5: Wire Damage Dealing (~1 hour)
 
-**File:** `scripts/systems/DamageSystem.gd` (or `DamageService.gd` - verify name)
+**File:** `scripts/entities/AbilityProjectile.gd` (projectile handles collision detection)
 
 **Requirements:**
-- [ ] Locate existing DamageService/DamageSystem file
-- [ ] Connect to `EventBus.projectile_hit` signal
-- [ ] Extract damage from projectile data
-- [ ] Call damage dealing method with payload:
+- [ ] Locate existing DamageService autoload (check `autoload/` folder)
+- [ ] In `AbilityProjectile._on_enemy_collision(enemy_id)`:
+  - [ ] Call `DamageService.apply_damage()` directly (no EventBus signal)
+  - [ ] Use method signature: `DamageService.apply_damage(source_id, target_id, damage, tags)`
   ```gdscript
-  DamageService.deal_damage({
-    "target_id": enemy_id,
-    "amount": projectile.damage,
-    "source": projectile.ability_id,
-    "damage_type": projectile.damage_type,
-    "element": projectile.element,
-  })
+  # AbilityProjectile.gd - ENTITY (has autoload access)
+  func _on_enemy_collision(enemy_id: String) -> void:
+      # PATTERN: Entities always call DamageService directly (not EventBus)
+      DamageService.apply_damage(
+          _source_player_id,   # Who shot this projectile
+          enemy_id,            # Which enemy was hit
+          _damage,             # How much damage
+          _damage_tags         # Tags (physical, fire, etc.)
+      )
+      _on_hit()  # Trigger visual effects, lifetime reduction, etc.
   ```
 - [ ] Verify enemy health decreases
 - [ ] Verify enemy dies at 0 HP (emits `EventBus.enemy_killed`)
-- [ ] **IF DamageService DOESN'T EXIST:** Create minimal damage system
-  - Create `scripts/systems/DamageService.gd`
-  - Implement `deal_damage(target_id, amount, source, damage_type)`
-  - Emit `EventBus.damage_dealt` signal
-  - Reduce enemy HP
-  - Despawn enemy at 0 HP
+- [ ] **IF DamageService DOESN'T EXIST:** Create minimal damage autoload
+  - Create `autoload/DamageService.gd`
+  - Implement `apply_damage(source_id: String, target_id: String, damage: float, tags: Array[StringName])`
+  - Look up entity in EntityTracker or WaveDirector
+  - Reduce entity HP
+  - Emit `EventBus.damage_applied` signal (for UI/stats)
+  - Emit `EventBus.entity_killed` if HP reaches 0
 
 **Success Criteria:**
 - [ ] Arrow hitting enemy deals damage

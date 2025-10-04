@@ -198,13 +198,17 @@ scripts/domain/AbilityTags.gd
 scripts/resources/BaseAbility.gd
 scripts/resources/ProjectileAbility.gd
 scripts/resources/BaseTome.gd
+scripts/resources/TomeModifier.gd
 scripts/entities/AbilityProjectile.gd
 scripts/ui/debug/DebugAbilityDisplay.gd
+scripts/components/AbilityComponent.gd
 
 autoload/AbilityManager.gd
+autoload/AbilitySystem.gd
 autoload/TomeManager.gd
+autoload/EntityPool.gd
 
-data/content/abilities/ranger_arrow.tres
+data/content/abilities/projectile/ranger_arrow.tres
 data/content/tomes/tome_power.tres
 data/content/tomes/tome_swiftness.tres
 

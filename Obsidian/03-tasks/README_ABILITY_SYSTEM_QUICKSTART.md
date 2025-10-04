@@ -58,6 +58,46 @@
 
 ---
 
+## 🔄 Key Architecture Patterns
+
+### Hybrid Spawning & Damage Pattern
+The ability system uses a **hybrid approach** for performance and decoupling:
+
+**Spawning:**
+- **Resources (BaseAbility subclasses)** → Emit `EventBus.ability_*_requested` signals (can't access singletons)
+- **Systems (ProjectilePool, EntityPool)** → Listen to signals and spawn entities
+
+**Damage:**
+- **ALL sources** → Call `DamageService.apply_damage()` directly (single entry point)
+- **NEVER** use `EventBus.damage_requested` (removed signal)
+
+**Example:**
+```gdscript
+// ProjectileAbility.activate() - Resource
+EventBus.ability_projectile_requested.emit(projectile_data)
+
+// AbilityProjectile._on_enemy_hit() - Entity
+DamageService.apply_damage(source_id, target_id, damage, tags)
+```
+
+**Rationale:** Resources stay decoupled (EventBus), entities get performance (direct calls), damage has single entry point.
+
+### Unified Entity Pooling
+**EntityPool** (autoload) manages all high-frequency, short-lived entities:
+- **Projectiles** (arrows, fireballs, meteors) - 50-100 instances each
+- **XP Orbs** - 200 instances (mass enemy kills)
+- **VFX particles** - future expansion
+
+**Pattern:** Pre-warmed pools using `ObjectPool` utility, zero-allocation spawning. Persistent entities (chests, bosses) are NOT pooled.
+
+### Component Pattern
+**AbilityComponent** is the **first of many** player components:
+- Future: `HealthComponent`, `MovementComponent`, `BuffComponent`
+- Each component manages isolated responsibility
+- Communicates via EventBus signals
+
+---
+
 ## 🚀 How to Start
 
 ### Step 1: Read the Architecture
@@ -65,6 +105,8 @@
 
 **Focus on:**
 - Class Hierarchy section (BaseAbility → ProjectileAbility)
+- Hybrid Spawning & Damage Pattern (EventBus vs Singleton)
+- EntityPool section (unified pooling for projectiles + XP orbs)
 - BaseTome.gd section (realistic tome examples)
 - Tag system (AbilityTags.gd)
 
@@ -216,12 +258,11 @@ scripts/domain/
 scripts/resources/
 ├── BaseAbility.gd                    ← Phase 1.1
 ├── ProjectileAbility.gd              ← Phase 1.1
-└── BaseTome.gd                       ← Phase 1.1
+├── BaseTome.gd                       ← Phase 1.1
+└── TomeModifier.gd                   ← Phase 1.1
 
-autoload/
-├── EventBus.gd (modified)            ← Phase 1.1
-├── AbilityManager.gd                 ← Phase 1.2
-└── TomeManager.gd                    ← Phase 1.4
+scripts/components/
+└── AbilityComponent.gd               ← Phase 1.2
 
 scripts/entities/
 └── AbilityProjectile.gd              ← Phase 1.3
@@ -229,12 +270,19 @@ scripts/entities/
 scripts/ui/debug/
 └── DebugAbilityDisplay.gd            ← Phase 1.2
 
-data/content/abilities/
+autoload/
+├── EventBus.gd (modified)            ← Phase 1.1
+├── AbilityManager.gd                 ← Phase 1.2
+├── AbilitySystem.gd                  ← Phase 1.2
+├── TomeManager.gd                    ← Phase 1.4
+└── EntityPool.gd                     ← Phase 1.3
+
+data/content/abilities/projectile/
 └── ranger_arrow.tres                 ← Phase 1.3
 
 data/content/tomes/
-├── tome_damage.tres                  ← Phase 1.4
-└── tome_speed.tres                   ← Phase 1.4
+├── tome_power.tres                   ← Phase 1.4
+└── tome_swiftness.tres               ← Phase 1.4
 
 assets/abilities/arrow/
 ├── arrow_visual.tscn                 ← Phase 1.3
@@ -264,8 +312,8 @@ tests/ability_system/
 **Q: Where do I ask questions?**
 **A:** Document blockers in the subtask file (add notes section).
 
-**Q: What if projectile pool doesn't exist?**
-**A:** Task 1.3.1 has fallback: create simple spawning without pooling.
+**Q: What if ObjectPool utility doesn't exist?**
+**A:** Task 1.3.1 has fallback: create EntityPool with simple array-based pooling.
 
 **Q: What if DamageService doesn't exist?**
 **A:** Task 1.3.5 has fallback: create minimal damage system.

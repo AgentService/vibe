@@ -81,6 +81,7 @@ func _ready():
 - [ ] Implement tag helpers: `has_tag()`, `has_all_tags()`, `has_any_tag()`
 - [ ] Implement `activate(player: Node2D, context: Dictionary)` stub (push_warning)
 - [ ] Implement `to_dict() -> Dictionary` for debugging
+- [ ] Implement `validate() -> Array[String]` for tag validation (returns error strings)
 - [ ] Add comprehensive class documentation
 
 **Success Criteria:**

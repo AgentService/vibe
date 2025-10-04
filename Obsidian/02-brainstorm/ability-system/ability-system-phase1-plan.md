@@ -321,7 +321,7 @@ assets/abilities/arrow/arrow_placeholder.png (or reuse existing sprite)
 ---
 
 **1.3.4 - Create Ranger Arrow .tres** (~15 min)
-- [ ] Create `/data/content/abilities/ranger_arrow.tres`
+- [ ] Create `/data/content/abilities/projectile/ranger_arrow.tres`
 - [ ] Set properties:
   - `ability_id = "ranger_arrow"`
   - `ability_name = "Ranger Arrow"`
@@ -340,7 +340,7 @@ assets/abilities/arrow/arrow_placeholder.png (or reuse existing sprite)
 
 **Files Created:**
 ```
-data/content/abilities/ranger_arrow.tres
+data/content/abilities/projectile/ranger_arrow.tres
 ```
 
 ---
