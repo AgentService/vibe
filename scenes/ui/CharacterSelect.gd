@@ -13,7 +13,7 @@ const FALLBACK_ICON = "res://icon.svg"
 const CharacterButtonScene = preload("res://scenes/ui/components/CharacterSelectButton.tscn")
 
 # Character selection grid (dynamically populated)
-@onready var character_grid: GridContainer = $CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/GridContainer
+@onready var character_grid: GridContainer = $CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer
 
 # Character info display (right panel)
 @onready var character_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/name

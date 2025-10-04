@@ -357,6 +357,12 @@ GPUParticles2D:
   One Shot: false
   Preprocess: 0.5
   Local Coords: true
+  Texture: particle_circle.png (single particle)
+
+  # OPTION: For sprite sheet animation (e.g., Kenny's particle pack)
+  # Texture: particle_sheet.png (10×10 grid = 100 frames)
+  # HFrames: 10
+  # VFrames: 10
 
 ParticleProcessMaterial:
   Emission Shape: Sphere
@@ -373,6 +379,10 @@ ParticleProcessMaterial:
 
   Color: White
   Color Ramp: [White → Transparent]
+
+  # OPTION: For sprite sheet animation
+  # Anim Speed: 1.0 (cycles through frames during particle lifetime)
+  # Anim Offset: 0.0-1.0 (randomize start frame)
 ```
 
 **Success Criteria:**
@@ -382,6 +392,7 @@ ParticleProcessMaterial:
 - [ ] Color changes work
 - [ ] Aura version loops continuously
 - [ ] Projectile version despawns after lifetime
+- [ ] **OPTIONAL:** Test sprite sheet animation with Kenny's particle pack (10×10 grid)
 
 ---
 

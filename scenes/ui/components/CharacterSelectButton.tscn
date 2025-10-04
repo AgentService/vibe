@@ -1,34 +1,24 @@
-[gd_scene load_steps=5 format=3 uid="uid://jnyrd17k5mnv"]
+[gd_scene load_steps=4 format=3 uid="uid://jnyrd17k5mnv"]
 
-[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
 [ext_resource type="Script" path="res://scenes/ui/components/CharacterSelectButton.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://cvvtjtytso8yq" path="res://assets/ui/kenny/panel-border-000.png" id="2_uannh"]
 [ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="3_uannh"]
-
-[sub_resource type="StyleBoxTexture" id="hover_style"]
-texture = ExtResource("1_frame")
-texture_margin_left = 1.0
-texture_margin_top = 1.0
-texture_margin_right = 1.0
-texture_margin_bottom = 1.0
-expand_margin_left = 10.0
-expand_margin_top = 10.0
-expand_margin_right = 10.0
-expand_margin_bottom = 10.0
-region_rect = Rect2(288, 80, 16, 16)
 
 [node name="CharacterSelectButton" type="VBoxContainer"]
 size_flags_horizontal = 3
 script = ExtResource("2_script")
 
 [node name="Frame" type="NinePatchRect" parent="."]
+self_modulate = Color(0.184314, 0.196078, 0.203922, 0.905882)
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("1_frame")
-region_rect = Rect2(0, 64, 16, 16)
-patch_margin_left = 3
-patch_margin_top = 3
-patch_margin_right = 3
-patch_margin_bottom = 3
+texture = ExtResource("2_uannh")
+region_rect = Rect2(0, 0, 96, 96)
+patch_margin_left = 30
+patch_margin_top = 30
+patch_margin_right = 30
+patch_margin_bottom = 30
+axis_stretch_horizontal = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -37,16 +27,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/margin_left = 5
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
 
 [node name="Button" type="Button" parent="Frame/MarginContainer"]
+self_modulate = Color(0.184314, 0.196078, 0.203922, 0.905882)
 layout_mode = 2
-theme_override_styles/focus = SubResource("hover_style")
-theme_override_styles/hover = SubResource("hover_style")
-theme_override_styles/pressed = SubResource("hover_style")
 
 [node name="Layout" type="VBoxContainer" parent="Frame/MarginContainer/Button"]
 layout_mode = 1
@@ -55,10 +39,10 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -55.5
-offset_top = -45.0
-offset_right = 55.5
-offset_bottom = 45.0
+offset_left = -32.0
+offset_top = -42.0
+offset_right = 32.0
+offset_bottom = 42.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -69,8 +53,12 @@ texture = ExtResource("3_uannh")
 stretch_mode = 5
 
 [node name="Name" type="Label" parent="Frame/MarginContainer/Button/Layout"]
+visible = false
 layout_mode = 2
-theme_override_font_sizes/font_size = 12
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 1
 text = "Mage"
 horizontal_alignment = 1
-vertical_alignment = 2
+vertical_alignment = 1
