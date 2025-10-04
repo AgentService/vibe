@@ -1,24 +1,46 @@
-[gd_scene load_steps=4 format=3 uid="uid://jnyrd17k5mnv"]
+[gd_scene load_steps=7 format=3 uid="uid://jnyrd17k5mnv"]
 
 [ext_resource type="Script" path="res://scenes/ui/components/CharacterSelectButton.gd" id="2_script"]
-[ext_resource type="Texture2D" uid="uid://cvvtjtytso8yq" path="res://assets/ui/kenny/panel-border-000.png" id="2_uannh"]
+[ext_resource type="Texture2D" uid="uid://dwytq0pc31siy" path="res://assets/ui/kenny/panel-border-011.png" id="2_uannh"]
 [ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="3_uannh"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_n0kx4"]
+texture = ExtResource("2_uannh")
+texture_margin_left = 20.0
+texture_margin_top = 20.0
+texture_margin_right = 20.0
+texture_margin_bottom = 20.0
+modulate_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_whe2u"]
+texture = ExtResource("2_uannh")
+texture_margin_left = 20.0
+texture_margin_top = 20.0
+texture_margin_right = 20.0
+texture_margin_bottom = 20.0
+modulate_color = Color(0.47788, 0.47788, 0.47788, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_uannh"]
+texture = ExtResource("2_uannh")
+texture_margin_left = 20.0
+texture_margin_top = 20.0
+texture_margin_right = 20.0
+texture_margin_bottom = 20.0
+modulate_color = Color(0.364706, 0.364706, 0.364706, 1)
 
 [node name="CharacterSelectButton" type="VBoxContainer"]
 size_flags_horizontal = 3
 script = ExtResource("2_script")
 
 [node name="Frame" type="NinePatchRect" parent="."]
-self_modulate = Color(0.184314, 0.196078, 0.203922, 0.905882)
+self_modulate = Color(0.362829, 0.362829, 0.362829, 1)
 custom_minimum_size = Vector2(100, 100)
 layout_mode = 2
-texture = ExtResource("2_uannh")
 region_rect = Rect2(0, 0, 96, 96)
 patch_margin_left = 30
 patch_margin_top = 30
 patch_margin_right = 30
 patch_margin_bottom = 30
-axis_stretch_horizontal = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -29,8 +51,11 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Button" type="Button" parent="Frame/MarginContainer"]
-self_modulate = Color(0.184314, 0.196078, 0.203922, 0.905882)
 layout_mode = 2
+theme_override_styles/focus = SubResource("StyleBoxTexture_n0kx4")
+theme_override_styles/hover = SubResource("StyleBoxTexture_whe2u")
+theme_override_styles/pressed = SubResource("StyleBoxTexture_uannh")
+theme_override_styles/normal = SubResource("StyleBoxTexture_uannh")
 
 [node name="Layout" type="VBoxContainer" parent="Frame/MarginContainer/Button"]
 layout_mode = 1
@@ -53,12 +78,10 @@ texture = ExtResource("3_uannh")
 stretch_mode = 5
 
 [node name="Name" type="Label" parent="Frame/MarginContainer/Button/Layout"]
-visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0, 0, 0, 1)
 theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 1
+theme_override_constants/outline_size = 10
 text = "Mage"
 horizontal_alignment = 1
 vertical_alignment = 1
