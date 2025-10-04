@@ -131,11 +131,14 @@ Implement complete auto-cast ability system with:
 
 ## ⏭️ Future Phases (Not in Phase 1 Scope)
 
-### Phase 5: Migrate Existing Melee System (~2 hours)
+### Phase 5: Create Clean Melee Ability (~2 hours)
 
-> **📝 Note:** The current melee cone attack (`MeleeSystem.gd`) is production-quality code that should be **refactored into the ability system**, not removed.
+> **🏗️ Architecture:** Create clean MeleeAbilityHandler using DamageRegistry spatial queries, removing ~200 lines of redundant code from existing MeleeSystem.gd.
 
 **Prerequisites:** Complete Phase 3 (Ranger Arrow working)
+
+**Architectural Rationale:**
+The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entities_in_cone()` functionality. Rather than preserve legacy patterns, create a **clean ~80-line handler** using existing optimized infrastructure.
 
 **Migration Steps:**
 1. **Create MeleeAbility subclass** (~1 hour)
@@ -143,11 +146,12 @@ Implement complete auto-cast ability system with:
    - Emit `EventBus.ability_melee_requested` signal
    - Create `data/content/abilities/melee/melee_slash.tres`
 
-2. **Refactor MeleeSystem → MeleeAbilityHandler** (~30 min)
-   - Rename MeleeSystem.gd → MeleeAbilityHandler.gd
-   - Keep cone detection logic (it's production-ready)
-   - Change from `perform_attack()` calls to EventBus listener
-   - Listen to `EventBus.ability_melee_requested` signal
+2. **Create clean MeleeAbilityHandler** (~30 min)
+   - Delete old MeleeSystem.gd (contains ~200 lines of redundant entity management)
+   - Create new MeleeAbilityHandler.gd (~80 lines)
+   - Use `DamageRegistry.get_entities_in_cone()` for spatial queries
+   - Use `DamageRegistry.apply_damage()` for unified damage handling
+   - Preserve visual effects spawning
 
 3. **Integration** (~30 min)
    - Add melee ability to Player ability slots
@@ -155,12 +159,12 @@ Implement complete auto-cast ability system with:
    - Test auto-cast melee alongside projectiles
    - Verify cone detection, damage, knockback still work
 
-**Files to Preserve:**
-- ✅ `scripts/systems/combat/MeleeSystem.gd` → Becomes MeleeAbilityHandler (reuse cone logic)
-- ✅ `data/balance/melee.tres` → Migrate values to ability resource
-- ✅ `data/content/melee_visual_config.tres` → Keep for visual effects
+**Code Reduction:**
+- ❌ **Old**: 312 lines (custom cone math, manual entity registration, separate boss/enemy paths)
+- ✅ **New**: ~80 lines (delegates to DamageRegistry services)
+- 📉 **Result**: 74% code reduction, architectural consistency
 
-**Result:** Unified ability system with melee + projectile abilities using same infrastructure.
+**Result:** Unified ability system with clean architecture - both melee + projectile abilities use DamageRegistry for spatial queries.
 
 ---
 

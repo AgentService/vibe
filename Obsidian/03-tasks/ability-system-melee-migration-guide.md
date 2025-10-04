@@ -9,20 +9,39 @@
 
 ## 🎯 Migration Overview
 
-**Goal:** Refactor the existing melee cone attack into the unified ability system without losing functionality.
+**Goal:** Create a clean MeleeAbilityHandler using DamageRegistry spatial queries, removing redundant entity management code.
 
-**What stays the same:**
-- ✅ Cone detection logic (production-ready)
-- ✅ Visual effects system
-- ✅ DamageService integration
+**Architectural Decision:**
+The existing `MeleeSystem.gd` (312 lines) contains ~200 lines of redundant code that duplicates `DamageRegistry.get_entities_in_cone()`. Rather than preserve legacy patterns, we'll create a **clean ~40-line handler** using the existing optimized spatial query infrastructure.
+
+**What gets removed:**
+- ❌ Custom cone detection (_is_enemy_in_cone) - **duplicates DamageRegistry**
+- ❌ Manual enemy querying (_get_alive_enemies) - **duplicates DamageRegistry**
+- ❌ Entity ID generation (_get_enemy_entity_id) - **handled by DamageRegistry**
+- ❌ Manual entity registration (_register_enemy_entity, _register_boss_entity) - **DamageRegistry handles this**
+- ❌ Separate boss/enemy logic paths - **unified via DamageRegistry type filtering**
+
+**What gets preserved:**
+- ✅ Visual effects spawning
+- ✅ Attack animation timing
+- ✅ DamageService.apply_damage() integration
 - ✅ 30Hz combat step timing
-- ✅ Balance hot-reload
 
-**What changes:**
-- 🔄 MeleeSystem.gd → MeleeAbilityHandler.gd (renamed)
-- 🔄 `perform_attack()` direct calls → EventBus signals
-- 🔄 Player input flow → Ability auto-cast system
-- 🔄 Balance config → Ability resource (.tres)
+**Architecture Pattern:**
+```gdscript
+// BEFORE (MeleeSystem.gd - 312 lines, redundant code):
+func _is_enemy_in_cone(...)  // Duplicates DamageRegistry
+func _get_alive_enemies()    // Manual SpawnDirector querying
+func _register_enemy_entity() // Manual DamageService registration
+// + separate boss detection logic
+
+// AFTER (MeleeAbilityHandler.gd - ~40 lines, clean architecture):
+var hit_ids = DamageRegistry.get_entities_in_cone(
+    player_pos, attack_dir, cone_angle, attack_range, ["enemy", "boss"]
+)
+for id in hit_ids:
+    DamageRegistry.apply_damage(id, damage, ...)
+```
 
 ---
 
@@ -169,91 +188,44 @@ swing_duration = 0.3
 
 ---
 
-## 📋 Step 2: Refactor MeleeSystem → MeleeAbilityHandler (~30 min)
+## 📋 Step 2: Create Clean MeleeAbilityHandler (~30 min)
 
-### 2.1: Rename File
+### 2.1: Delete Old MeleeSystem
 
 ```bash
-# In scripts/systems/combat/
-mv MeleeSystem.gd MeleeAbilityHandler.gd
+# Delete the old implementation (contains redundant code)
+rm scripts/systems/combat/MeleeSystem.gd
 ```
 
-### 2.2: Update Class Declaration
+**Rationale:** The existing MeleeSystem duplicates DamageRegistry functionality. Starting fresh ensures clean architecture.
+
+### 2.2: Create New MeleeAbilityHandler
 
 **File:** `scripts/systems/combat/MeleeAbilityHandler.gd`
 
-**Change header:**
+**Complete implementation (~40 lines):**
 ```gdscript
 extends Node
+class_name MeleeAbilityHandler
 
-## Melee ability handler managing cone-shaped AOE attacks
-## Listens to EventBus.ability_melee_requested and handles collision detection
+## Clean melee ability handler using DamageRegistry spatial queries
+## Listens to EventBus.ability_melee_requested and applies damage via DamageRegistry
 
-class_name MeleeAbilityHandler  # Changed from MeleeSystem
+# Visual effects
+signal melee_attack_started(player_pos: Vector2, target_pos: Vector2)
+signal enemies_hit(hit_count: int)
 
-# ❌ REMOVE old auto-attack fields (now handled by AbilityComponent)
-# var attack_cooldown: float = 0.0
-# var auto_attack_enabled: bool = true
-# var auto_attack_target: Vector2 = Vector2.ZERO
-
-# ❌ REMOVE balance values (now in ability .tres)
-# var damage: float
-# var attack_range: float
-# var cone_angle: float
-# var attack_speed: float
-# var knockback_distance: float
-
-# ✅ KEEP visual effects tracking
 var attack_effects: Array[Dictionary] = []
 var max_attack_effects: int = 10
 
-# ✅ KEEP signals for visual effects
-signal melee_attack_started(player_pos: Vector2, target_pos: Vector2)
-signal enemies_hit(hit_enemies: Array[Dictionary])
-```
-
-### 2.3: Refactor _ready()
-
-**Old code:**
-```gdscript
 func _ready() -> void:
-	_load_balance_values()  # ❌ Remove
-	EventBus.combat_step.connect(_on_combat_step)
-	_initialize_attack_effects_pool()
-	if BalanceDB:
-		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)  # ❌ Remove
-```
-
-**New code:**
-```gdscript
-func _ready() -> void:
-	# Listen for melee ability requests from ability system
 	EventBus.ability_melee_requested.connect(_on_melee_ability_requested)
-
-	# Still use combat step for visual effect updates
 	EventBus.combat_step.connect(_on_combat_step)
-
-	# Initialize visual effects pool
 	_initialize_attack_effects_pool()
-
 	Logger.info("MeleeAbilityHandler initialized", "abilities")
-```
 
-### 2.4: Replace perform_attack() with Signal Handler
-
-**❌ Remove old method:**
-```gdscript
-# DELETE THIS ENTIRE METHOD:
-func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[EnemyEntity]) -> Array[EnemyEntity]:
-	# ... 110 lines of code ...
-```
-
-**✅ Add new signal handler:**
-```gdscript
 func _on_melee_ability_requested(payload: Dictionary) -> void:
-	## Called when ability system requests melee attack
-	## Payload contains all attack parameters from MeleeAbility
-
+	## Handle melee ability activation using DamageRegistry spatial query
 	var player_pos: Vector2 = payload.get("player_pos", Vector2.ZERO)
 	var target_pos: Vector2 = payload.get("target_pos", Vector2.ZERO)
 	var cone_angle: float = payload.get("cone_angle", 90.0)
@@ -261,157 +233,77 @@ func _on_melee_ability_requested(payload: Dictionary) -> void:
 	var damage: float = payload.get("damage", 25.0)
 	var knockback: float = payload.get("knockback", 20.0)
 
-	# ✅ KEEP: Calculate attack direction (core logic stays)
 	var attack_dir = (target_pos - player_pos).normalized()
 
-	# ✅ KEEP: Find pooled enemies in cone (production-ready code)
-	var hit_enemies: Array[EnemyEntity] = []
-	var alive_enemies = _get_alive_enemies()  # Helper method (add below)
+	# ✅ CLEAN: Single spatial query for all entity types
+	var hit_entity_ids = DamageRegistry.get_entities_in_cone(
+		player_pos, attack_dir, cone_angle, attack_range, ["enemy", "boss"]
+	)
 
-	for enemy in alive_enemies:
-		if not enemy.alive:
-			continue
-
-		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, cone_angle, attack_range):
-			hit_enemies.append(enemy)
-
-	# ✅ KEEP: Find scene bosses via DamageService
-	var hit_scene_bosses = _find_bosses_in_cone_via_damage_service(player_pos, attack_dir, cone_angle, attack_range)
-
-	# ✅ KEEP: Create visual effect
+	# Spawn visual effects
 	_spawn_attack_effect(player_pos, target_pos)
-
-	# ✅ KEEP: Emit signals for visual effects
 	melee_attack_started.emit(player_pos, target_pos)
-	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0:
-		enemies_hit.emit(hit_enemies)
 
-	# ✅ KEEP: Apply damage via DamageService (all existing logic)
-	var _total_hit_count = 0
+	if hit_entity_ids.size() > 0:
+		enemies_hit.emit(hit_entity_ids.size())
 
-	for enemy in hit_enemies:
-		var enemy_pool_index = enemy.index
-		if enemy_pool_index == -1:
-			Logger.warn("Enemy has invalid index for melee damage", "combat")
-			continue
+	# ✅ CLEAN: Single damage loop for all entities
+	for entity_id in hit_entity_ids:
+		DamageRegistry.apply_damage(entity_id, damage, "melee", ["melee", "physical"], knockback, player_pos)
 
-		var entity_id = _get_enemy_entity_id(enemy_pool_index)
-
-		# Auto-register if needed
-		if not DamageService.get_entity(entity_id).has("id"):
-			_register_enemy_entity(entity_id, enemy)
-
-		var killed = DamageService.apply_damage(entity_id, damage, "melee", ["melee"], knockback, player_pos)
-		if killed:
-			_total_hit_count += 1
-
-	# Apply damage to scene bosses (keep existing logic)
-	for boss in hit_scene_bosses:
-		var boss_id = "boss_" + str(boss.get_instance_id())
-		if not DamageService.get_entity(boss_id).has("id"):
-			_register_boss_entity(boss_id, boss)
-
-		var killed = DamageService.apply_damage(boss_id, damage, "melee", ["melee"], knockback, player_pos)
-		if killed:
-			_total_hit_count += 1
-
-	Logger.debug("Melee attack hit %d pooled enemies + %d scene bosses" % [hit_enemies.size(), hit_scene_bosses.size()], "abilities")
+	Logger.debug("Melee attack hit %d entities" % hit_entity_ids.size(), "abilities")
 ```
 
-### 2.5: Add Helper Methods
+### 2.3: Add Visual Effects Methods
 
-**Add these methods (extracted from perform_attack logic):**
+**Visual effects implementation (reuse from MeleeSystem if needed):**
 
 ```gdscript
-func _get_alive_enemies() -> Array[EnemyEntity]:
-	## Get alive enemies from SpawnDirector
-	var game_orchestrator = get_node_or_null("/root/GameOrchestrator")
-	if game_orchestrator:
-		var sd = game_orchestrator.get_spawn_director()
-		if sd and sd.has_method("get_alive_enemies"):
-			return sd.get_alive_enemies()
-	return []
+func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:
+	## Create visual cone effect for melee attack
+	var attack_dir = (target_pos - player_pos).normalized()
+	var effect_index = _find_free_attack_effect()
 
-func _get_enemy_entity_id(enemy_pool_index: int) -> String:
-	## Get entity ID for enemy (use SpawnDirector if available)
-	var game_orchestrator = get_node_or_null("/root/GameOrchestrator")
-	if game_orchestrator:
-		var sd = game_orchestrator.get_spawn_director()
-		if sd and sd.has_method("get_enemy_entity_id"):
-			return sd.get_enemy_entity_id(enemy_pool_index)
-	return "enemy_" + str(enemy_pool_index)
+	if effect_index >= 0:
+		attack_effects[effect_index] = {
+			"active": true,
+			"elapsed": 0.0,
+			"player_pos": player_pos,
+			"direction": attack_dir,
+			"duration": 0.3  # From payload.swing_duration
+		}
 
-func _register_enemy_entity(entity_id: String, enemy: EnemyEntity) -> void:
-	## Auto-register enemy with DamageService
-	var entity_data = {
-		"id": entity_id,
-		"type": "enemy",
-		"hp": enemy.hp,
-		"max_hp": enemy.hp,
-		"alive": true,
-		"pos": enemy.pos
-	}
-	DamageService.register_entity(entity_id, entity_data)
+func _find_free_attack_effect() -> int:
+	## Find first inactive effect slot
+	for i in attack_effects.size():
+		if not attack_effects[i].get("active", false):
+			return i
+	return -1 if attack_effects.size() >= max_attack_effects else attack_effects.size()
 
-func _register_boss_entity(boss_id: String, boss: Node) -> void:
-	## Auto-register boss with DamageService
-	var entity_data = {
-		"id": boss_id,
-		"type": "boss",
-		"hp": boss.get_current_health() if boss.has_method("get_current_health") else 200.0,
-		"max_hp": boss.get_max_health() if boss.has_method("get_max_health") else 200.0,
-		"alive": boss.is_alive() if boss.has_method("is_alive") else true,
-		"pos": boss.global_position
-	}
-	DamageService.register_entity(boss_id, entity_data)
-```
-
-### 2.6: Update _on_combat_step()
-
-**Old code:**
-```gdscript
-func _on_combat_step(payload) -> void:
-	_update_cooldown(payload.dt)  # ❌ Remove (now handled by AbilityComponent)
+func _on_combat_step(payload: Dictionary) -> void:
+	## Update visual effect lifetimes
 	_update_attack_effects(payload.dt)
-	_handle_auto_attack()  # ❌ Remove (now handled by AbilityComponent)
+
+func _update_attack_effects(dt: float) -> void:
+	## Age out visual effects
+	for effect in attack_effects:
+		if effect.get("active", false):
+			effect.elapsed += dt
+			if effect.elapsed >= effect.duration:
+				effect.active = false
+
+func _initialize_attack_effects_pool() -> void:
+	## Pre-allocate visual effect slots
+	attack_effects.resize(max_attack_effects)
+	for i in max_attack_effects:
+		attack_effects[i] = {"active": false}
+
+func get_active_attack_effects() -> Array[Dictionary]:
+	## Query for visual rendering (used by HUD/debug)
+	return attack_effects.filter(func(e): return e.get("active", false))
 ```
 
-**New code:**
-```gdscript
-func _on_combat_step(payload) -> void:
-	# Only update visual effects now (cooldowns handled by ability system)
-	_update_attack_effects(payload.dt)
-```
-
-### 2.7: Remove Unused Methods
-
-**❌ DELETE these methods (no longer needed):**
-```gdscript
-# func _update_cooldown(dt: float)  # Cooldowns handled by AbilityComponent
-# func can_attack() -> bool  # Cooldowns handled by AbilityComponent
-# func _calculate_damage() -> float  # Damage in ability .tres
-# func _get_effective_attack_speed() -> float  # In ability .tres
-# func _get_effective_range() -> float  # In ability .tres
-# func _get_effective_cone_angle() -> float  # In ability .tres
-# func _get_effective_knockback_distance() -> float  # In ability .tres
-# func _handle_auto_attack() -> void  # Handled by AbilityComponent
-# func set_auto_attack_enabled(enabled: bool)  # Not needed
-# func set_auto_attack_target(target_pos: Vector2)  # Not needed
-# func get_attack_stats() -> Dictionary  # Not needed
-# func _load_balance_values()  # Values in ability .tres
-# func _on_balance_reloaded()  # Not needed
-```
-
-**✅ KEEP these methods (core logic):**
-```gdscript
-# _is_enemy_in_cone()  # Cone detection math
-# _find_bosses_in_cone_via_damage_service()  # Boss detection
-# _spawn_attack_effect()  # Visual effects
-# _find_free_attack_effect()  # Visual effects
-# _update_attack_effects()  # Visual effects
-# get_active_attack_effects()  # Visual effects
-# _initialize_attack_effects_pool()  # Visual effects
-```
+**Note:** If MeleeSystem has custom sprite/particle effects, copy those methods here. The core is just tracking effect lifetimes.
 
 ---
 
@@ -633,23 +525,29 @@ Auto-Cast Flow:
 AbilityComponent → AbilityManager → MeleeAbility.activate()
                                     → EventBus.ability_melee_requested
                                     → MeleeAbilityHandler._on_melee_ability_requested()
-                                    → Cone detection (reused logic)
-                                    → DamageService.apply_damage()
+                                    → DamageRegistry.get_entities_in_cone()
+                                    → DamageRegistry.apply_damage()
 ```
 
+**Code Size Comparison:**
+- ❌ **Old MeleeSystem.gd**: 312 lines (redundant entity management)
+- ✅ **New MeleeAbilityHandler.gd**: ~80 lines (clean delegation to services)
+- 📉 **Reduction**: 232 lines removed (74% smaller)
+
 **What You Preserved:**
-- ✅ Production-quality cone detection math
 - ✅ Visual effects system
-- ✅ DamageService integration
-- ✅ Boss + pooled enemy support
+- ✅ Attack animation timing
 - ✅ 30Hz deterministic timing
+- ✅ Knockback functionality
 
 **What You Gained:**
 - ✅ Unified ability management
+- ✅ Architectural consistency (uses DamageRegistry like all other abilities)
+- ✅ Simplified codebase (no duplicate spatial query logic)
+- ✅ Type filtering (unified boss + enemy handling)
 - ✅ Tome modifier support
 - ✅ Level-up progression
 - ✅ Hot-reload via .tres resources
-- ✅ Consistent auto-cast behavior
 
 ---
 

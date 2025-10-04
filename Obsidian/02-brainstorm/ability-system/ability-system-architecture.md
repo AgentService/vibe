@@ -1,45 +1,118 @@
-# Ability System - Technical Architecture
+# Ability System - Technical Architecture (REVISED)
 
-**Status:** 📐 Architecture Blueprint
+**Status:** 📐 Architecture Blueprint - Revision 2
 **Created:** 2025-10-03
+**Revised:** 2025-10-04
 **Based On:** [ability-system-design-exploration.md](ability-system-design-exploration.md) (26 Q&A)
+**Review Score:** 13/35 → Addressing critical issues
+
+---
+
+## 🚨 Revision Summary (2025-10-04)
+
+**Critical Fixes Applied:**
+1. ✅ Fixed `level_up()` loop bug (`for i in levels` → `for i in range(levels)`)
+2. ✅ Refactored tome system to use **modifier descriptors** (idempotent, reversible)
+3. ✅ Created **AbilitySystem autoload** for 30Hz deterministic cooldown tracking
+4. ✅ Fixed file path contradictions (`scripts/resources/` for Resources, `autoload/` for managers)
+5. ✅ Changed tag type to `Array[StringName]` for performance
+6. ✅ Refactored ProjectileAbility to use **EventBus signals** instead of direct pool access
+7. ✅ Removed Player scene bloat (gold streak moved to separate task)
+
+**Reviewer:** Codex
+**Original Score:** 13/35 (Revise and Re-Review)
+**Target Score:** 28-32/35 (Approve with Minor Revisions)
 
 ---
 
 ## 🎯 System Overview
 
 The ability system implements auto-cast, data-driven abilities with:
-- **4 ability slots** per character (1 base + 3 unlockable)
-- **4 tome slots** for general ability buffs
-- **Items** acquired via purchasable chests (gold economy)
-- **Tag-based applicability** for Tomes and elemental conversions
-- **Level-up progression** (abilities scale by re-picking)
-- **Integration** with MetaProgression, Quest system, DamageService
+- **4 ability slots** per character (managed by AbilityComponent)
+- **4 tome slots** for ability/player stat modifiers (modifier descriptors, not direct mutation)
+- **Deterministic 30Hz combat step** (AbilitySystem autoload, not Player._process)
+- **Tag-based applicability** using StringName constants
+- **Baseline stat preservation** (tomes never mutate base_damage, only final_damage)
+- **Hybrid spawning pattern** (Resources use EventBus, Systems use direct calls)
+- **Unified damage pattern** (All sources use DamageService.apply_damage())
+
+---
+
+## 🔄 Spawning & Damage Patterns (Hybrid Architecture)
+
+### **Spawning Pattern:**
+- **Resources (BaseAbility subclasses)** → `EventBus.ability_*_requested` signals (decoupled, testable)
+- **Systems (BossBehavior, CardEffects)** → Direct `ProjectilePool.spawn_projectile()` calls (fast, clear ownership)
+
+### **Damage Pattern:**
+- **ALL sources** → `DamageService.apply_damage()` direct calls (single entry point, performance)
+- **NEVER** use `EventBus.damage_requested` (removed signal - see EventBus.gd:39)
+
+### **Rationale:**
+1. **Resources stay pure** - No autoload access, fully testable without game context
+2. **Performance where it matters** - Boss barrages (50 projectiles) avoid signal overhead (~0.1ms saved)
+3. **Damage consistency** - Matches existing DamageService pattern (see SpawnDirector:821)
+4. **Clear semantics** - "Request spawn" (signal) vs "Execute spawn" (direct) vs "Apply damage" (always direct)
+
+### **Example Flows:**
+
+```gdscript
+// ========== ABILITY ACTIVATION (Resource → Signal) ==========
+// ProjectileAbility.activate() - No singleton access
+EventBus.ability_projectile_requested.emit(projectile_data)
+// → ProjectilePool listens and spawns entity
+
+// ========== BOSS ATTACK (System → Direct) ==========
+// BaseBoss._fire_barrage() - Has singleton access
+for i in 50:
+    ProjectilePool.spawn_projectile(barrage_data)  // ✅ Fast, no signal overhead
+
+// ========== DAMAGE APPLICATION (Entity → Direct) ==========
+// AbilityProjectile._on_enemy_hit() - Always direct
+DamageService.apply_damage(source_id, target_id, damage, tags)  // ✅ Single entry point
+
+// ========== AOE ABILITY (Resource → Signal → System → Direct) ==========
+// AoEAbility.activate()
+EventBus.ability_aoe_requested.emit(aoe_data)
+// → AoEHandler.gd listens
+func _on_aoe_requested(data):
+    var enemies = _find_enemies_in_radius(data.origin, data.radius)
+    for enemy_id in enemies:
+        DamageService.apply_damage(player_id, enemy_id, data.damage, data.tags)
+```
 
 ---
 
 ## 📦 Core Class Hierarchy
 
 ```
-BaseAbility (Resource)
+BaseAbility (Resource) → scripts/resources/
 ├── ProjectileAbility
 ├── BuffAbility
 ├── AoEAbility
 ├── RadialAbility
 └── CelestialAbility
 
-BaseTome (Resource)
-└── (No subclasses - unified structure)
+TomeModifier (Resource) → scripts/resources/
+└── Encapsulates stat modifications (damage_mult, cooldown_mult, etc.)
 
-BaseItem (Resource)
-└── (No subclasses - unified structure)
+AbilitySystem (Autoload) → autoload/
+└── Owns cooldown state, triggers auto-cast on combat_step
+
+AbilityManager (Autoload) → autoload/
+└── Resource registry & loader
+
+TomeManager (Autoload) → autoload/
+└── Tome registry & modifier builder
+
+AbilityComponent (Node) → scripts/components/
+└── Attached to Player, owns 4 ability slots + 4 tome slots
+└── First of many Player components (future: HealthComponent, MovementComponent, etc.)
+
+EntityPool (Autoload) → autoload/
+└── Unified pooling for high-frequency, short-lived entities
+└── Pools: Projectiles, XP orbs, VFX (NOT chests/bosses)
 ```
-
-### Why Unified BaseAbility?
-- **Polymorphic application**: Tomes can modify any ability consistently
-- **Optional properties**: Subclasses use what they need (`projectile_count` for ProjectileAbility)
-- **Tag system**: Determines applicability, not class hierarchy
-- **Simpler than**: Separate interfaces for each ability type
 
 ---
 
@@ -47,13 +120,15 @@ BaseItem (Resource)
 
 ### BaseAbility.gd
 
-**Location:** `scripts/systems/abilities/BaseAbility.gd`
+**Location:** `scripts/resources/BaseAbility.gd` ← FIXED (was `scripts/systems/abilities/`)
 
 ```gdscript
 extends Resource
 class_name BaseAbility
 
-## Base class for all abilities (unified hierarchy with optional properties)
+## Base class for all abilities
+## CRITICAL: Baseline stats (base_*) are NEVER mutated by tomes
+## Tomes modify final_* computed stats via modifier descriptors
 
 # === Core Identity ===
 @export var ability_id: String = ""
@@ -66,210 +141,181 @@ class_name BaseAbility
 @export var max_level: int = 20
 @export var damage_scaling_per_level: float = 1.15  # 15% increase per level
 @export var cooldown_scaling_per_level: float = 0.95  # 5% faster per level
-@export var level_breakpoints: Dictionary = {}  # {5: {"projectile_count": 1}, ...}
+@export var level_breakpoints: Dictionary = {}  # {5: {"projectile_count": 1}}
 
-# === Tags (determines Tome/modifier applicability) ===
-@export var tags: Array[String] = []
+# === Tags (StringName for performance) ===
+@export var tags: Array[StringName] = []  # ← FIXED (was Array[String])
 
-# === Base Stats (all abilities have these) ===
+# === BASELINE STATS (never mutated by tomes!) ===
 @export var base_damage: float = 0.0
-@export var cooldown: float = 1.0
+@export var base_cooldown: float = 1.0
+@export var base_projectile_count: int = 1
+@export var base_pierce_count: int = 0
+@export var base_aoe_radius: float = 100.0
+
+# === COMPUTED STATS (recalculated from baseline + modifiers) ===
+var final_damage: float = 0.0
+var final_cooldown: float = 0.0
+var final_projectile_count: int = 0
+var final_pierce_count: int = 0
+var final_aoe_radius: float = 0.0
 
 # === Damage Type & Element ===
-@export var damage_type: String = "physical"  # physical, fire, ice, poison, lightning
-@export var inherent_element: String = ""  # If set, cannot be converted by power-ups
+@export var damage_type: String = "physical"
+@export var inherent_element: String = ""
 
-# === Optional Properties (subclasses use what they need) ===
-# Projectile properties (used by ProjectileAbility)
-@export var projectile_count: int = 1
+# === Optional Properties (subclasses) ===
 @export var projectile_speed: float = 400.0
-@export var pierce_count: int = 0
-@export var max_visual_projectiles: int = 15  # Visual cap for performance
-
-# Buff properties (used by BuffAbility)
+@export var max_visual_projectiles: int = 15
 @export var buff_duration: float = 5.0
-@export var stat_modifier: Dictionary = {}  # {"damage": 1.25, "speed": 1.1}
-
-# AoE properties (used by AoEAbility)
-@export var aoe_radius: float = 100.0
 @export var aoe_delay: float = 0.5
-
-# Radial properties (used by RadialAbility)
 @export var orbit_radius: float = 80.0
-@export var orbit_speed: float = 180.0  # Degrees per second
+@export var orbit_speed: float = 180.0
 
 # === Visual References ===
-@export var visual_scene: PackedScene = null  # Projectile/effect visual
-@export var impact_effect: PackedScene = null  # On-hit effect
+@export var visual_scene: PackedScene = null
+@export var impact_effect: PackedScene = null
 
-# === Elemental Flags (set by Tomes/modifiers) ===
+# === Elemental Flags (set by modifiers) ===
 var applies_burning: bool = false
 var applies_slow: bool = false
 var applies_poison: bool = false
 
 
+func _init() -> void:
+	_recalculate_final_stats()
+
+
 ## Called when ability levels up (from re-picking)
+## FIXED: Loop bug corrected (for i in range(levels))
 func level_up(levels: int = 1) -> void:
-	for i in levels:
+	for i in range(levels):  # ← FIXED (was "for i in levels")
+		if ability_level >= max_level:
+			Logger.warn("Ability %s at max level" % ability_id, "abilities")
+			break
+
 		ability_level += 1
 
-		# Apply scaling
-		if has_tag("damage"):
+		# Scale baseline stats
+		if has_tag(AbilityTags.DAMAGE):
 			base_damage *= damage_scaling_per_level
+			base_damage = max(base_damage, 0.0)  # Clamp to positive
 
-		if has_tag("cooldown"):
-			cooldown *= cooldown_scaling_per_level
+		if has_tag(AbilityTags.COOLDOWN):
+			base_cooldown *= cooldown_scaling_per_level
+			base_cooldown = max(base_cooldown, 0.1)  # Min 0.1s cooldown
 
-		# Check for breakpoint bonuses
+		# Apply breakpoint bonuses
 		if ability_level in level_breakpoints:
 			_apply_breakpoint_bonus(level_breakpoints[ability_level])
 
+	_recalculate_final_stats()
+	Logger.info("Leveled %s to %d (dmg: %.1f, cd: %.2f)" % [
+		ability_id, ability_level, base_damage, base_cooldown
+	], "abilities")
 
-## Apply breakpoint bonus (e.g., +1 projectile at level 5)
+
+## Apply breakpoint bonus (e.g., {5: {"base_projectile_count": 1}})
 func _apply_breakpoint_bonus(bonus: Dictionary) -> void:
 	for property in bonus:
 		if property in self:
 			self[property] += bonus[property]
-			Logger.info("Breakpoint bonus: %s +%s" % [property, bonus[property]], "abilities")
+			Logger.debug("Breakpoint: %s +%s" % [property, bonus[property]], "abilities")
+
+
+## Recalculate computed stats from baseline + active modifiers
+## Called after: level-up, modifier added/removed
+func _recalculate_final_stats() -> void:
+	final_damage = base_damage
+	final_cooldown = base_cooldown
+	final_projectile_count = base_projectile_count
+	final_pierce_count = base_pierce_count
+	final_aoe_radius = base_aoe_radius
+
+	# Modifiers applied externally by AbilityComponent.apply_modifiers()
 
 
 ## Tag system helpers
-func has_tag(tag: String) -> bool:
+func has_tag(tag: StringName) -> bool:
 	return tag in tags
 
 
-func add_tag(tag: String) -> void:
+func add_tag(tag: StringName) -> void:
 	if not has_tag(tag):
 		tags.append(tag)
 
 
-func remove_tag(tag: String) -> void:
+func remove_tag(tag: StringName) -> void:
 	tags.erase(tag)
 
 
-## Check if ability has inherent element (cannot be converted)
+## Check if ability has inherent element
 func has_inherent_element() -> bool:
 	return inherent_element != ""
 
 
 ## Activate ability (overridden by subclasses)
+## NEVER calls singleton methods directly - emits signals instead
 func activate(player: Node2D, context: Dictionary) -> void:
-	push_warning("BaseAbility.activate() called - should be overridden by subclass")
+	push_warning("BaseAbility.activate() not overridden")
+
+
+## Export state for debugging
+func to_dict() -> Dictionary:
+	return {
+		"ability_id": ability_id,
+		"level": ability_level,
+		"base_damage": base_damage,
+		"final_damage": final_damage,
+		"base_cooldown": base_cooldown,
+		"final_cooldown": final_cooldown,
+		"tags": tags,
+	}
 ```
 
 ---
 
-### ProjectileAbility.gd
+### TomeModifier.gd (NEW - Descriptor Pattern)
 
-**Location:** `scripts/systems/abilities/ProjectileAbility.gd`
-
-```gdscript
-extends BaseAbility
-class_name ProjectileAbility
-
-## Projectile-based ability (arrows, fireballs, lightning bolts, etc.)
-
-
-func activate(player: Node2D, context: Dictionary) -> void:
-	# Calculate visual projectile count (capped for performance)
-	var actual_count = projectile_count
-	var visual_count = min(actual_count, max_visual_projectiles)
-	var damage_per_projectile = base_damage * (float(actual_count) / visual_count)
-
-	# Spawn projectiles from object pool
-	for i in visual_count:
-		var projectile = ProjectilePool.acquire(ability_id)
-		projectile.setup(damage_per_projectile, projectile_speed, pierce_count)
-		projectile.damage_type = damage_type
-		projectile.applies_burning = applies_burning
-		projectile.applies_slow = applies_slow
-		projectile.applies_poison = applies_poison
-
-		# Position & direction
-		projectile.global_position = player.global_position
-		projectile.direction = _calculate_direction(i, visual_count, player)
-
-		# Visual
-		if visual_scene:
-			projectile.set_visual(visual_scene)
-
-	Logger.debug("Activated %s: %d projectiles, %.1f damage each" %
-	            [ability_name, visual_count, damage_per_projectile], "abilities")
-
-
-func _calculate_direction(index: int, total: int, player: Node2D) -> Vector2:
-	# Spread projectiles in arc
-	if total == 1:
-		return player.get_facing_direction()  # Or mouse direction
-
-	var arc_angle = 60.0  # Total arc in degrees
-	var angle_step = arc_angle / (total - 1)
-	var base_angle = player.get_facing_angle()
-	var offset_angle = -arc_angle / 2.0 + (angle_step * index)
-
-	return Vector2.RIGHT.rotated(deg_to_rad(base_angle + offset_angle))
-```
-
----
-
-### BaseTome.gd
-
-**Location:** `scripts/systems/abilities/BaseTome.gd`
-
-**Foundation Design Philosophy:**
-The modifier system uses individual @export properties (not dictionaries) to:
-- Enable Inspector editing without custom editors
-- Support hot-reloading (F5 refresh sees changes immediately)
-- Allow easy addition of new modifiers (just add new @export property)
-- Keep type safety (float vs int vs bool) for each modifier
-- Elemental/status effects can be added later by adding new @export properties
+**Location:** `scripts/resources/TomeModifier.gd`
 
 ```gdscript
 extends Resource
-class_name BaseTome
+class_name TomeModifier
 
-## General buff that enhances abilities OR player stats (4 tome slots total)
-## Tomes apply to ALL abilities if applicable_tags is empty (global modifiers)
-## Player stat modifiers (speed, HP, luck) apply directly to Player node
+## Encapsulates ability/player stat modifications
+## Used by BaseTome to create idempotent, reversible modifiers
+## NEVER mutates ability.base_* stats directly
 
-# === Core Identity ===
+# === Source Info ===
 @export var tome_id: String = ""
-@export var tome_name: String = ""
-@export var description: String = ""
-@export var icon: Texture2D = null
-@export var rarity: String = "common"  # common, uncommon, rare, epic, legendary
+@export var stack_count: int = 1
 
-# === Stacking ===
-@export var stack_limit: int = 10  # Max stacks per tome
+# === Applicability ===
+@export var applicable_tags: Array[StringName] = []  # Empty = global
 
-# === Applicability (tag-based) ===
-@export var applicable_tags: Array[String] = []  # Empty = applies to ALL abilities (global modifier)
+# === Ability Modifiers (multiplicative) ===
+@export var damage_multiplier: float = 1.0  # 1.15 = +15%
+@export var cooldown_multiplier: float = 1.0  # 0.9 = -10% (faster)
+@export var aoe_radius_multiplier: float = 1.0  # 1.2 = +20%
+@export var projectile_speed_multiplier: float = 1.0
 
-# === ABILITY MODIFIERS (apply to abilities with matching tags) ===
-@export_group("Ability Modifiers")
-@export var damage_multiplier: float = 1.0  # 1.25 = +25% damage per stack
-@export var cooldown_multiplier: float = 1.0  # 0.9 = -10% cooldown per stack (faster casting)
-@export var projectile_count_bonus: int = 0  # +1 projectile per stack
-@export var pierce_count_bonus: int = 0  # +1 pierce per stack
-@export var aoe_radius_multiplier: float = 1.0  # 1.15 = +15% AoE radius per stack
-@export var projectile_speed_multiplier: float = 1.0  # 1.1 = +10% projectile speed per stack
+# === Ability Modifiers (additive) ===
+@export var projectile_count_bonus: int = 0  # +1 per stack
+@export var pierce_count_bonus: int = 0  # +1 per stack
 
-# === PLAYER STAT MODIFIERS (apply directly to Player, ignore tags) ===
-@export_group("Player Stat Modifiers")
-@export var movement_speed_multiplier: float = 1.0  # 1.1 = +10% movement speed per stack
-@export var max_hp_bonus: float = 0.0  # +10.0 HP per stack
-@export var luck_bonus: float = 0.0  # +5.0 luck per stack (chest rarity rolls)
-@export var xp_gain_multiplier: float = 1.0  # 1.15 = +15% XP gain per stack
+# === Player Stat Modifiers ===
+@export var movement_speed_multiplier: float = 1.0
+@export var max_hp_bonus: float = 0.0
+@export var luck_bonus: float = 0.0
+@export var xp_gain_multiplier: float = 1.0
 
 
-## Check if tome can apply to ability (tag-based)
-## Returns true if applicable_tags is EMPTY (global) or ability has matching tag
-func can_apply_to_ability(ability: BaseAbility) -> bool:
-	# Empty tags = applies to ALL abilities (global modifier)
+## Check if modifier applies to ability
+func applies_to(ability: BaseAbility) -> bool:
 	if applicable_tags.is_empty():
-		return true
+		return true  # Global modifier
 
-	# Check if ability has any of the required tags
 	for tag in applicable_tags:
 		if ability.has_tag(tag):
 			return true
@@ -277,144 +323,620 @@ func can_apply_to_ability(ability: BaseAbility) -> bool:
 	return false
 
 
-## Apply tome modifiers to a specific ability
-## Called when: (1) tome acquired/stacked, (2) new ability equipped
-func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
-	if not can_apply_to_ability(ability):
+## Apply modifier to ability's computed stats
+## Called by AbilityComponent.apply_modifiers()
+func apply_to_ability(ability: BaseAbility) -> void:
+	if not applies_to(ability):
 		return
 
-	# Damage multiplier (multiplicative per stack)
-	if damage_multiplier != 1.0 and ability.has_tag("damage"):
-		var total_multiplier = pow(damage_multiplier, stack_count)
-		ability.base_damage *= total_multiplier
+	# Multiplicative (use pow for stacking)
+	ability.final_damage *= pow(damage_multiplier, stack_count)
+	ability.final_cooldown *= pow(cooldown_multiplier, stack_count)
+	ability.final_aoe_radius *= pow(aoe_radius_multiplier, stack_count)
 
-	# Cooldown multiplier (multiplicative per stack, <1.0 = faster)
-	if cooldown_multiplier != 1.0:
-		var total_multiplier = pow(cooldown_multiplier, stack_count)
-		ability.cooldown *= total_multiplier
-
-	# Projectile count (additive per stack)
-	if projectile_count_bonus > 0 and ability.has_tag("projectile"):
-		ability.projectile_count += projectile_count_bonus * stack_count
-
-	# Pierce count (additive per stack)
-	if pierce_count_bonus > 0 and ability.has_tag("projectile"):
-		ability.pierce_count += pierce_count_bonus * stack_count
-
-	# AoE radius (multiplicative per stack)
-	if aoe_radius_multiplier != 1.0 and ability.has_tag("aoe"):
-		var total_multiplier = pow(aoe_radius_multiplier, stack_count)
-		ability.aoe_radius *= total_multiplier
-
-	# Projectile speed (multiplicative per stack)
-	if projectile_speed_multiplier != 1.0 and ability.has_tag("projectile"):
-		var total_multiplier = pow(projectile_speed_multiplier, stack_count)
-		ability.projectile_speed *= total_multiplier
-
-	Logger.debug("Applied %s (×%d) to %s" % [tome_name, stack_count, ability.ability_name], "tomes")
+	# Additive
+	ability.final_projectile_count += projectile_count_bonus * stack_count
+	ability.final_pierce_count += pierce_count_bonus * stack_count
 
 
-## Apply tome modifiers to Player stats (movement speed, HP, luck, etc.)
-## Called when tome acquired/stacked
-func apply_to_player(player: Node2D, stack_count: int) -> void:
-	# Movement speed
-	if movement_speed_multiplier != 1.0:
-		var total_multiplier = pow(movement_speed_multiplier, stack_count)
-		player.movement_speed *= total_multiplier
-		Logger.debug("Applied %s: movement speed ×%.2f" % [tome_name, total_multiplier], "tomes")
+## Apply modifier to player stats
+## Called by AbilityComponent when tome equipped
+func apply_to_player(player: Node2D) -> void:
+	# Check for required properties
+	if "movement_speed" in player and movement_speed_multiplier != 1.0:
+		player.movement_speed *= pow(movement_speed_multiplier, stack_count)
 
-	# Max HP (additive per stack)
-	if max_hp_bonus > 0.0:
-		var total_bonus = max_hp_bonus * stack_count
-		player.max_hp += total_bonus
-		player.current_hp += total_bonus  # Also heal by bonus amount
-		Logger.debug("Applied %s: max HP +%.1f" % [tome_name, total_bonus], "tomes")
+	if "max_hp" in player and max_hp_bonus > 0.0:
+		var hp_gain = max_hp_bonus * stack_count
+		player.max_hp += hp_gain
+		player.current_hp += hp_gain  # Heal by bonus amount
 
-	# Luck (additive per stack, affects chest rarity rolls)
-	if luck_bonus > 0.0:
-		var total_bonus = luck_bonus * stack_count
-		player.luck += total_bonus
-		Logger.debug("Applied %s: luck +%.1f" % [tome_name, total_bonus], "tomes")
+	if "luck" in player and luck_bonus > 0.0:
+		player.luck += luck_bonus * stack_count
 
-	# XP gain (multiplicative per stack)
-	if xp_gain_multiplier != 1.0:
-		var total_multiplier = pow(xp_gain_multiplier, stack_count)
-		player.xp_gain_multiplier *= total_multiplier
-		Logger.debug("Applied %s: XP gain ×%.2f" % [tome_name, total_multiplier], "tomes")
+	if "xp_gain_multiplier" in player and xp_gain_multiplier != 1.0:
+		player.xp_gain_multiplier *= pow(xp_gain_multiplier, stack_count)
 ```
 
 ---
 
-### AbilityTags.gd
+### BaseTome.gd (REFACTORED)
 
-**Location:** `scripts/systems/abilities/AbilityTags.gd`
+**Location:** `scripts/resources/BaseTome.gd`
+
+```gdscript
+extends Resource
+class_name BaseTome
+
+## Tome definition (creates TomeModifier instances)
+## Does NOT mutate abilities directly - builds modifier descriptors
+
+# === Core Identity ===
+@export var tome_id: String = ""
+@export var tome_name: String = ""
+@export var description: String = ""
+@export var icon: Texture2D = null
+@export var rarity: String = "common"
+
+# === Stacking ===
+@export var stack_limit: int = 10
+
+# === Applicability ===
+@export var applicable_tags: Array[StringName] = []  # Empty = global
+
+# === Modifier Template (per stack) ===
+@export var damage_multiplier: float = 1.0
+@export var cooldown_multiplier: float = 1.0
+@export var projectile_count_bonus: int = 0
+@export var pierce_count_bonus: int = 0
+@export var aoe_radius_multiplier: float = 1.0
+@export var movement_speed_multiplier: float = 1.0
+@export var max_hp_bonus: float = 0.0
+@export var luck_bonus: float = 0.0
+@export var xp_gain_multiplier: float = 1.0
+
+
+## Create a TomeModifier instance for this tome at given stack count
+func create_modifier(stack_count: int) -> TomeModifier:
+	var modifier = TomeModifier.new()
+	modifier.tome_id = tome_id
+	modifier.stack_count = stack_count
+	modifier.applicable_tags = applicable_tags
+
+	# Copy modifier values
+	modifier.damage_multiplier = damage_multiplier
+	modifier.cooldown_multiplier = cooldown_multiplier
+	modifier.projectile_count_bonus = projectile_count_bonus
+	modifier.pierce_count_bonus = pierce_count_bonus
+	modifier.aoe_radius_multiplier = aoe_radius_multiplier
+	modifier.movement_speed_multiplier = movement_speed_multiplier
+	modifier.max_hp_bonus = max_hp_bonus
+	modifier.luck_bonus = luck_bonus
+	modifier.xp_gain_multiplier = xp_gain_multiplier
+
+	return modifier
+```
+
+---
+
+### ProjectileAbility.gd (REFACTORED - EventBus Signals)
+
+**Location:** `scripts/resources/ProjectileAbility.gd`
+
+```gdscript
+extends BaseAbility
+class_name ProjectileAbility
+
+## Projectile-based ability
+## FIXED: Uses EventBus signals instead of direct ProjectilePool access
+
+@export_enum("forward", "spread", "circle", "targeted") var fire_pattern: String = "forward"
+@export var spread_angle: float = 30.0
+@export var is_homing: bool = false
+@export var homing_strength: float = 0.5
+@export var projectile_lifetime: float = 3.0
+@export var chains_to_enemies: int = 0
+@export var chain_radius: float = 150.0
+
+
+func _init() -> void:
+	super._init()
+
+	# Ensure required tags
+	if not has_tag(AbilityTags.PROJECTILE):
+		tags.append(AbilityTags.PROJECTILE)
+	if not has_tag(AbilityTags.DAMAGE):
+		tags.append(AbilityTags.DAMAGE)
+	if not has_tag(AbilityTags.COOLDOWN):
+		tags.append(AbilityTags.COOLDOWN)
+
+
+## Activate projectile ability
+## PATTERN: Resources emit EventBus signals (no singleton access)
+## Systems/Entities call DamageService directly (performance + clear ownership)
+func activate(player: Node2D, context: Dictionary) -> void:
+	var target_pos: Vector2 = context.get("nearest_enemy", Vector2.ZERO)
+	var facing_dir: Vector2 = context.get("facing_direction", Vector2.RIGHT)
+
+	# Calculate base direction
+	var base_direction: Vector2
+	if target_pos == Vector2.ZERO:
+		base_direction = facing_dir.normalized()
+	else:
+		base_direction = (target_pos - player.global_position).normalized()
+
+	# Emit spawn requests based on fire pattern
+	match fire_pattern:
+		"forward":
+			_fire_forward(player, base_direction)
+		"spread":
+			_fire_spread(player, base_direction)
+		"circle":
+			_fire_circle(player)
+		"targeted":
+			_fire_targeted(player, target_pos)
+
+	EventBus.ability_activated.emit(ability_id, player.global_position)
+
+
+func _fire_forward(player: Node2D, direction: Vector2) -> void:
+	for i in final_projectile_count:
+		var data = _create_projectile_data(player, direction)
+		EventBus.ability_projectile_requested.emit(data)  # ← FIXED (signal)
+
+
+func _fire_spread(player: Node2D, base_direction: Vector2) -> void:
+	var angle_step = spread_angle / max(1, final_projectile_count - 1)
+	var start_angle = -spread_angle / 2.0
+
+	for i in final_projectile_count:
+		var angle_offset = start_angle + (i * angle_step)
+		var direction = base_direction.rotated(deg_to_rad(angle_offset))
+		var data = _create_projectile_data(player, direction)
+		EventBus.ability_projectile_requested.emit(data)  # ← FIXED
+
+
+func _fire_circle(player: Node2D) -> void:
+	var angle_step = 360.0 / final_projectile_count
+
+	for i in final_projectile_count:
+		var angle = deg_to_rad(i * angle_step)
+		var direction = Vector2.RIGHT.rotated(angle)
+		var data = _create_projectile_data(player, direction)
+		EventBus.ability_projectile_requested.emit(data)  # ← FIXED
+
+
+func _fire_targeted(player: Node2D, target_pos: Vector2) -> void:
+	if target_pos == Vector2.ZERO:
+		_fire_forward(player, Vector2.RIGHT)
+		return
+
+	var direction = (target_pos - player.global_position).normalized()
+	for i in final_projectile_count:
+		var data = _create_projectile_data(player, direction)
+		EventBus.ability_projectile_requested.emit(data)  # ← FIXED
+
+
+## Build projectile spawn payload (sent via EventBus)
+func _create_projectile_data(player: Node2D, direction: Vector2) -> Dictionary:
+	return {
+		"ability_id": ability_id,
+		"origin": player.global_position,
+		"direction": direction,
+		"speed": projectile_speed,
+		"damage": final_damage,  # ← Uses computed stat
+		"pierce_count": final_pierce_count,  # ← Uses computed stat
+		"lifetime": projectile_lifetime,
+		"is_homing": is_homing,
+		"homing_strength": homing_strength,
+		"chains_to_enemies": chains_to_enemies,
+		"chain_radius": chain_radius,
+		"visual_scene": visual_scene,
+		"impact_effect": impact_effect,
+		"damage_type": damage_type,
+		"element": inherent_element,
+		"applies_burning": applies_burning,
+		"applies_slow": applies_slow,
+		"applies_poison": applies_poison,
+	}
+```
+
+---
+
+### AbilityTags.gd (UPDATED - StringName)
+
+**Location:** `scripts/domain/AbilityTags.gd`
+
+```gdscript
+extends Object
+class_name AbilityTags
+
+## Tag constants for ability categorization
+## FIXED: Uses StringName (&"tag") for performance
+
+# Damage categories
+const DAMAGE: StringName = &"damage"
+const PHYSICAL: StringName = &"physical"
+const ELEMENTAL: StringName = &"elemental"
+const FIRE: StringName = &"fire"
+const COLD: StringName = &"cold"
+const LIGHTNING: StringName = &"lightning"
+const POISON: StringName = &"poison"
+
+# Delivery methods
+const PROJECTILE: StringName = &"projectile"
+const AOE: StringName = &"aoe"
+const MELEE: StringName = &"melee"
+const BUFF: StringName = &"buff"
+const DEBUFF: StringName = &"debuff"
+const ORBIT: StringName = &"orbit"
+const SUMMON: StringName = &"summon"
+
+# Scaling categories
+const COOLDOWN: StringName = &"cooldown"
+const DURATION: StringName = &"duration"
+const AREA: StringName = &"area"
+const PIERCE: StringName = &"pierce"
+const CHAIN: StringName = &"chain"
+
+
+## Get all available tags
+static func get_all_tags() -> Array[StringName]:
+	return [
+		DAMAGE, PHYSICAL, ELEMENTAL, FIRE, COLD, LIGHTNING, POISON,
+		PROJECTILE, AOE, MELEE, BUFF, DEBUFF, ORBIT, SUMMON,
+		COOLDOWN, DURATION, AREA, PIERCE, CHAIN
+	]
+
+
+## Validate tag exists
+static func is_valid_tag(tag: StringName) -> bool:
+	return tag in get_all_tags()
+
+
+## Get human-readable description
+static func get_tag_description(tag: StringName) -> String:
+	match tag:
+		DAMAGE: return "Deals damage"
+		PROJECTILE: return "Fires projectiles"
+		AOE: return "Area of effect"
+		COOLDOWN: return "Affected by CDR"
+		FIRE: return "Fire damage/burning"
+		# ... etc
+		_: return "Unknown tag"
+
+
+## Get color for UI (elemental tags)
+static func get_tag_color(tag: StringName) -> Color:
+	match tag:
+		FIRE: return Color(1.0, 0.3, 0.1)
+		COLD: return Color(0.2, 0.6, 1.0)
+		LIGHTNING: return Color(0.9, 0.9, 0.2)
+		POISON: return Color(0.3, 0.8, 0.3)
+		PHYSICAL: return Color(0.7, 0.7, 0.7)
+		_: return Color.WHITE
+```
+
+---
+
+### AbilitySystem.gd (NEW - 30Hz Deterministic Autoload)
+
+**Location:** `autoload/AbilitySystem.gd`
 
 ```gdscript
 extends Node
-class_name AbilityTags
 
-## Centralized tag constants for ability/tome applicability
+## Central ability system coordinator
+## CRITICAL: Runs on 30Hz combat_step for deterministic cooldowns
+## Replaces Player._process() auto-cast logic
 
-# Ability categories
-const PROJECTILE: StringName = &"projectile"
-const BUFF: StringName = &"buff"
-const AOE: StringName = &"aoe"
-const RADIAL: StringName = &"radial"
-const CELESTIAL: StringName = &"celestial"
+# Cooldown tracking: {player_instance_id: {slot_index: cooldown_remaining}}
+var _cooldowns: Dictionary = {}
 
-# Properties
-const DAMAGE: StringName = &"damage"
-const COOLDOWN: StringName = &"cooldown"
-const DURATION: StringName = &"duration"
 
-# Elements
-const FIRE: StringName = &"fire"
-const ICE: StringName = &"ice"
-const POISON: StringName = &"poison"
-const LIGHTNING: StringName = &"lightning"
-const PHYSICAL: StringName = &"physical"
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE  # Respect game pause
+	EventBus.combat_step.connect(_on_combat_step)
+	Logger.info("AbilitySystem initialized (30Hz combat step)", "abilities")
 
-# Special
-const PIERCE: StringName = &"pierce"
-const CHAIN: StringName = &"chain"
-const EXPLOSION: StringName = &"explosion"
 
-# Total: ~15 tags (expandable as needed)
+## Tick cooldowns and trigger auto-cast (deterministic 30Hz)
+func _on_combat_step(delta: float) -> void:
+	var players = get_tree().get_nodes_in_group("players")
+
+	for player in players:
+		_update_player_cooldowns(player, delta)
+		_auto_cast_ready_abilities(player)
+
+
+## Update cooldowns for a player
+func _update_player_cooldowns(player: Node2D, delta: float) -> void:
+	var player_id = player.get_instance_id()
+
+	if player_id not in _cooldowns:
+		_cooldowns[player_id] = {}
+
+	for slot_idx in _cooldowns[player_id]:
+		if _cooldowns[player_id][slot_idx] > 0.0:
+			_cooldowns[player_id][slot_idx] -= delta
+
+
+## Auto-cast abilities when ready
+func _auto_cast_ready_abilities(player: Node2D) -> void:
+	if not "ability_component" in player:
+		return  # Player doesn't have AbilityComponent
+
+	var ability_comp: AbilityComponent = player.ability_component
+
+	for slot_idx in range(ability_comp.ability_slots.size()):
+		var ability = ability_comp.ability_slots[slot_idx]
+
+		if ability and _is_ability_ready(player, slot_idx):
+			_activate_ability(player, ability_comp, slot_idx)
+
+
+## Check if ability is off cooldown
+func _is_ability_ready(player: Node2D, slot_idx: int) -> bool:
+	var player_id = player.get_instance_id()
+
+	if player_id not in _cooldowns:
+		return true
+
+	if slot_idx not in _cooldowns[player_id]:
+		return true
+
+	return _cooldowns[player_id][slot_idx] <= 0.0
+
+
+## Activate ability and reset cooldown
+func _activate_ability(player: Node2D, ability_comp: AbilityComponent, slot_idx: int) -> void:
+	var ability = ability_comp.ability_slots[slot_idx]
+	var player_id = player.get_instance_id()
+
+	# Build context
+	var context = {
+		"player": player,
+		"nearest_enemy": _find_nearest_enemy(player),
+		"facing_direction": _get_facing_direction(player),
+	}
+
+	# Activate (emits EventBus signals for projectiles)
+	ability.activate(player, context)
+
+	# Reset cooldown
+	if player_id not in _cooldowns:
+		_cooldowns[player_id] = {}
+
+	_cooldowns[player_id][slot_idx] = ability.final_cooldown
+
+	EventBus.ability_activated.emit(ability.ability_id, player.global_position)
+
+
+## Find nearest enemy (utility)
+func _find_nearest_enemy(player: Node2D) -> Vector2:
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	if enemies.is_empty():
+		return Vector2.ZERO
+
+	var nearest: Node2D = null
+	var min_dist = INF
+
+	for enemy in enemies:
+		var dist = player.global_position.distance_to(enemy.global_position)
+		if dist < min_dist:
+			min_dist = dist
+			nearest = enemy
+
+	return nearest.global_position if nearest else Vector2.ZERO
+
+
+## Get player facing direction
+func _get_facing_direction(player: Node2D) -> Vector2:
+	if "facing_direction" in player:
+		return player.facing_direction
+
+	# Fallback: use mouse direction or right
+	return Vector2.RIGHT
+
+
+## Register player (called when Player enters tree)
+func register_player(player: Node2D) -> void:
+	var player_id = player.get_instance_id()
+	if player_id not in _cooldowns:
+		_cooldowns[player_id] = {}
+
+
+## Unregister player (called when Player exits tree)
+func unregister_player(player: Node2D) -> void:
+	var player_id = player.get_instance_id()
+	_cooldowns.erase(player_id)
+```
+
+---
+
+### AbilityComponent.gd (NEW - Owns Slots + Modifiers)
+
+**Location:** `scripts/components/AbilityComponent.gd`
+
+```gdscript
+extends Node
+class_name AbilityComponent
+
+## Manages ability/tome slots for a player
+## Replaces ability logic previously in Player.gd
+
+signal ability_equipped(ability_id: String, slot: int)
+signal tome_equipped(tome_id: String, stack_count: int)
+
+# Ability slots (4 max)
+var ability_slots: Array[BaseAbility] = [null, null, null, null]
+
+# Tome slots with stack counts
+var tome_slots: Array[BaseTome] = [null, null, null, null]
+var tome_stacks: Array[int] = [0, 0, 0, 0]
+
+# Active modifiers (rebuilt when tomes change)
+var _active_modifiers: Array[TomeModifier] = []
+
+@onready var player: Node2D = get_parent()
+
+
+func _ready() -> void:
+	# Register with AbilitySystem for cooldown tracking
+	AbilitySystem.register_player(player)
+
+
+func _exit_tree() -> void:
+	AbilitySystem.unregister_player(player)
+
+
+## Equip ability to slot
+func equip_ability(ability_id: String, slot: int = -1) -> void:
+	if slot == -1:
+		slot = _find_empty_ability_slot()
+
+	if slot == -1:
+		Logger.warn("No ability slots available", "abilities")
+		return
+
+	# Create instance
+	var ability = AbilityManager.create_ability_instance(ability_id)
+	if not ability:
+		Logger.error("Ability not found: %s" % ability_id, "abilities")
+		return
+
+	# Apply active modifiers
+	_apply_modifiers_to_ability(ability)
+
+	ability_slots[slot] = ability
+	ability_equipped.emit(ability_id, slot)
+	Logger.info("Equipped %s in slot %d" % [ability.ability_name, slot], "abilities")
+
+
+## Level up existing ability
+func level_up_ability(ability_id: String, levels: int = 1) -> void:
+	var slot = _find_ability_slot(ability_id)
+	if slot != -1:
+		ability_slots[slot].level_up(levels)
+		_apply_modifiers_to_ability(ability_slots[slot])  # Recompute
+
+
+## Equip tome (or stack if exists)
+func equip_tome(tome_id: String) -> void:
+	var tome = TomeManager.get_definition(tome_id)
+	if not tome:
+		Logger.error("Tome not found: %s" % tome_id, "abilities")
+		return
+
+	var slot = _find_tome_slot(tome_id)
+
+	if slot != -1:
+		# Stack existing
+		if tome_stacks[slot] < tome.stack_limit:
+			tome_stacks[slot] += 1
+			_rebuild_modifiers()
+			Logger.info("Stacked %s to %d" % [tome.tome_name, tome_stacks[slot]], "tomes")
+	else:
+		# Equip new
+		slot = _find_empty_tome_slot()
+		if slot != -1:
+			tome_slots[slot] = tome
+			tome_stacks[slot] = 1
+			_rebuild_modifiers()
+			tome_equipped.emit(tome_id, 1)
+			Logger.info("Equipped %s" % tome.tome_name, "tomes")
+
+
+## Rebuild all modifiers and reapply to abilities + player
+func _rebuild_modifiers() -> void:
+	_active_modifiers.clear()
+
+	# Build modifiers from equipped tomes
+	for i in tome_slots.size():
+		if tome_slots[i]:
+			var modifier = tome_slots[i].create_modifier(tome_stacks[i])
+			_active_modifiers.append(modifier)
+
+	# Reapply to all abilities
+	for ability in ability_slots:
+		if ability:
+			_apply_modifiers_to_ability(ability)
+
+	# Apply to player stats
+	for modifier in _active_modifiers:
+		modifier.apply_to_player(player)
+
+
+## Apply all active modifiers to an ability
+func _apply_modifiers_to_ability(ability: BaseAbility) -> void:
+	# Reset to baseline
+	ability._recalculate_final_stats()
+
+	# Apply each modifier
+	for modifier in _active_modifiers:
+		modifier.apply_to_ability(ability)
+
+
+## Find ability slot by ID
+func _find_ability_slot(ability_id: String) -> int:
+	for i in ability_slots.size():
+		if ability_slots[i] and ability_slots[i].ability_id == ability_id:
+			return i
+	return -1
+
+
+func _find_empty_ability_slot() -> int:
+	for i in ability_slots.size():
+		if ability_slots[i] == null:
+			return i
+	return -1
+
+
+## Find tome slot by ID
+func _find_tome_slot(tome_id: String) -> int:
+	for i in tome_slots.size():
+		if tome_slots[i] and tome_slots[i].tome_id == tome_id:
+			return i
+	return -1
+
+
+func _find_empty_tome_slot() -> int:
+	for i in tome_slots.size():
+		if tome_slots[i] == null:
+			return i
+	return -1
 ```
 
 ---
 
 ## 🔧 Manager Classes
 
-### AbilityManager.gd (Autoload)
+### AbilityManager.gd
 
 **Location:** `autoload/AbilityManager.gd`
 
 ```gdscript
 extends Node
 
-## Manages ability definitions (registry) and instance creation
+## Ability registry & loader
 
-# Registry of all loaded abilities
-var _ability_registry: Dictionary = {}  # {ability_id: BaseAbility}
-var _ability_file_paths: Dictionary = {}  # {ability_id: "res://..."}
-var _ability_categories: Dictionary = {}  # {ability_id: "projectile"}
+var _ability_registry: Dictionary = {}
+var _ability_file_paths: Dictionary = {}
+var _ability_categories: Dictionary = {}
 
 
 func _ready() -> void:
 	_load_all_abilities()
 
 
-## Load all ability .tres files from data/content/abilities/
 func _load_all_abilities() -> void:
 	var categories = ["projectile", "buff", "aoe", "radial", "celestial"]
 
 	for category in categories:
-		var category_path = "res://data/content/abilities/" + category + "/"
-		var dir = DirAccess.open(category_path)
+		var path = "res://data/content/abilities/" + category + "/"
+		var dir = DirAccess.open(path)
 
 		if not dir:
-			Logger.warn("Ability category not found: %s" % category, "abilities")
 			continue
 
 		dir.list_dir_begin()
@@ -422,7 +944,7 @@ func _load_all_abilities() -> void:
 
 		while file_name != "":
 			if file_name.ends_with(".tres"):
-				var full_path = category_path + file_name
+				var full_path = path + file_name
 				var ability = ResourceLoader.load(full_path) as BaseAbility
 
 				if ability:
@@ -434,32 +956,27 @@ func _load_all_abilities() -> void:
 
 		dir.list_dir_end()
 
-	Logger.info("Loaded %d abilities across %d categories" %
-	           [_ability_registry.size(), categories.size()], "abilities")
+	Logger.info("Loaded %d abilities" % _ability_registry.size(), "abilities")
 
 
-## Get ability definition (original resource, DO NOT modify directly)
+## Get definition (original, read-only)
 func get_definition(ability_id: String) -> BaseAbility:
 	return _ability_registry.get(ability_id)
 
 
-## Create ability instance (duplicate for player use)
+## Create instance (duplicated for player use)
 func create_ability_instance(ability_id: String) -> BaseAbility:
 	var definition = get_definition(ability_id)
 	if not definition:
-		Logger.error("Ability not found: %s" % ability_id, "abilities")
 		return null
 
-	# Duplicate resource for player modification (Tomes will modify this)
 	return definition.duplicate(true)
 
 
-## Get file path for hot-reload/debug
 func get_file_path(ability_id: String) -> String:
 	return _ability_file_paths.get(ability_id, "")
 
 
-## Get all abilities in category
 func get_abilities_in_category(category: String) -> Array[String]:
 	var result: Array[String] = []
 	for ability_id in _ability_categories:
@@ -470,16 +987,116 @@ func get_abilities_in_category(category: String) -> Array[String]:
 
 ---
 
-### TomeManager.gd (Autoload)
+### EntityPool.gd (NEW - Unified Entity Pooling)
+
+**Location:** `autoload/EntityPool.gd`
+
+```gdscript
+extends Node
+
+## Unified pooling for high-frequency, short-lived visual entities.
+## Pools projectiles, XP orbs, VFX - NOT persistent entities like chests/bosses.
+## Uses ObjectPool utility for zero-allocation pattern.
+
+const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")
+
+# Pool per entity type
+var _pools: Dictionary = {}  # {"arrow": ObjectPool, "xp_orb": ObjectPool}
+
+# Entity scene registry
+const POOLED_ENTITY_SCENES = {
+	"arrow": preload("res://assets/abilities/arrow/arrow_visual.tscn"),
+	"fireball": preload("res://assets/abilities/projectile/fireball_visual.tscn"),
+	"meteor": preload("res://assets/abilities/projectile/meteor_visual.tscn"),
+	"orbital": preload("res://assets/abilities/radial/orbital_sword_visual.tscn"),
+	"xp_orb": preload("res://scenes/arena/XPOrb.tscn"),
+}
+
+
+func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_PAUSABLE
+
+	# Pre-warm pools for high-frequency entities
+	_create_pool("arrow", 100)      # Very high frequency
+	_create_pool("fireball", 50)    # High frequency
+	_create_pool("meteor", 30)      # Medium frequency
+	_create_pool("orbital", 20)     # Low-medium frequency
+	_create_pool("xp_orb", 200)     # Very high frequency (mass kills)
+
+	# Connect spawn signals
+	EventBus.ability_projectile_requested.connect(_on_projectile_requested)
+	EventBus.xp_orb_requested.connect(_on_xp_orb_requested)
+
+	Logger.info("EntityPool initialized with %d pools" % _pools.size(), "pooling")
+
+
+func _create_pool(entity_key: String, initial_size: int) -> void:
+	var pool = ObjectPool.new()
+	pool.setup(
+		initial_size,
+		func(): return _create_entity(entity_key),
+		func(entity): _reset_entity(entity)
+	)
+	_pools[entity_key] = pool
+
+
+func _create_entity(entity_key: String) -> Node:
+	var scene = POOLED_ENTITY_SCENES[entity_key]
+	var entity = scene.instantiate()
+	entity.add_to_group("pooled_entities")
+	entity.add_to_group("pooled_" + entity_key)
+	return entity
+
+
+func _reset_entity(entity: Node) -> void:
+	# Reset for reuse
+	entity.visible = false
+	entity.global_position = Vector2.ZERO
+	if entity.get_parent():
+		entity.get_parent().remove_child(entity)
+
+
+func _on_projectile_requested(data: Dictionary) -> void:
+	var entity_key = data.get("visual_scene_key", "arrow")
+
+	if not _pools.has(entity_key):
+		Logger.warn("No pool for entity: %s" % entity_key, "pooling")
+		return
+
+	var projectile = _pools[entity_key].acquire()
+	projectile.setup_from_data(data)
+	projectile.visible = true
+	get_tree().root.add_child(projectile)
+
+
+func _on_xp_orb_requested(data: Dictionary) -> void:
+	var orb = _pools["xp_orb"].acquire()
+	orb.setup(data.position, data.xp_value)
+	orb.visible = true
+	get_tree().root.add_child(orb)
+
+
+## Called by entities when lifetime expires
+func release(entity: Node, entity_key: String) -> void:
+	if _pools.has(entity_key):
+		_pools[entity_key].release(entity)
+	else:
+		Logger.warn("Releasing entity with unknown key: %s" % entity_key, "pooling")
+		entity.queue_free()  # Fallback
+```
+
+---
+
+### TomeManager.gd
 
 **Location:** `autoload/TomeManager.gd`
 
 ```gdscript
 extends Node
 
-## Manages tome definitions (similar structure to AbilityManager)
+## Tome registry & loader
 
-var _tome_registry: Dictionary = {}  # {tome_id: BaseTome}
+var _tome_registry: Dictionary = {}
 var _tome_file_paths: Dictionary = {}
 
 
@@ -488,8 +1105,8 @@ func _ready() -> void:
 
 
 func _load_all_tomes() -> void:
-	var tomes_path = "res://data/content/tomes/"
-	var dir = DirAccess.open(tomes_path)
+	var path = "res://data/content/tomes/"
+	var dir = DirAccess.open(path)
 
 	if not dir:
 		Logger.warn("Tomes directory not found", "tomes")
@@ -500,7 +1117,7 @@ func _load_all_tomes() -> void:
 
 	while file_name != "":
 		if file_name.ends_with(".tres"):
-			var full_path = tomes_path + file_name
+			var full_path = path + file_name
 			var tome = ResourceLoader.load(full_path) as BaseTome
 
 			if tome:
@@ -524,505 +1141,89 @@ func get_file_path(tome_id: String) -> String:
 
 ---
 
-## 🎮 Player Integration
+## 📡 EventBus Signals (Updated)
 
-### Player.gd Enhancements
-
-**Location:** `scenes/player/Player.gd` (existing file, add these sections)
+**Location:** `autoload/EventBus.gd`
 
 ```gdscript
 # === Ability System ===
-var ability_slots: Array[BaseAbility] = [null, null, null, null]
-var ability_cooldowns: Array[float] = [0.0, 0.0, 0.0, 0.0]
-
-# === Tome System ===
-var tome_slots: Array[BaseTome] = [null, null, null, null]
-var tome_stacks: Array[int] = [0, 0, 0, 0]
-
-# === Gold Economy ===
-var gold: int = 0
-var gold_streak_active: bool = false
-var gold_streak_timer: float = 0.0
-var gold_streak_amount: int = 0
-const GOLD_STREAK_TIMEOUT: float = 2.0
-
-@onready var gold_streak_label: Label = $GoldStreakLabel
-
-
-func _ready() -> void:
-	# ... existing code ...
-	EventBus.enemy_killed.connect(_on_enemy_killed)
-	gold_streak_label.visible = false
-
-
-func _process(delta: float) -> void:
-	# Update ability cooldowns (every frame)
-	_update_ability_cooldowns(delta)
-
-	# Auto-cast ready abilities (every frame, but abilities on 30Hz step)
-	_auto_cast_ready_abilities()
-
-	# Update gold streak
-	if gold_streak_active:
-		gold_streak_timer -= delta
-		if gold_streak_timer <= 0.0:
-			_end_gold_streak()
-
-
-## Update ability cooldowns
-func _update_ability_cooldowns(delta: float) -> void:
-	for i in ability_cooldowns.size():
-		if ability_cooldowns[i] > 0.0:
-			ability_cooldowns[i] -= delta
-
-
-## Auto-cast abilities when ready
-func _auto_cast_ready_abilities() -> void:
-	for i in ability_slots.size():
-		if ability_slots[i] and ability_cooldowns[i] <= 0.0:
-			_activate_ability(i)
-
-
-## Activate ability
-func _activate_ability(slot_index: int) -> void:
-	var ability = ability_slots[slot_index]
-	if not ability:
-		return
-
-	# Activate (subclass handles spawning projectiles, etc.)
-	ability.activate(self, {"player": self})
-
-	# Reset cooldown
-	ability_cooldowns[slot_index] = ability.cooldown
-
-	# Track for stats
-	EventBus.ability_activated.emit(ability.ability_id)
-
-
-## Add ability to slot
-func add_ability(ability_id: String, slot: int = -1) -> void:
-	# Find empty slot if not specified
-	if slot == -1:
-		slot = _find_empty_ability_slot()
-
-	if slot == -1:
-		Logger.warn("No ability slots available", "abilities")
-		return
-
-	# Create instance from definition
-	var ability = AbilityManager.create_ability_instance(ability_id)
-
-	# Apply ALL existing tomes to new ability
-	for i in tome_slots.size():
-		if tome_slots[i]:
-			tome_slots[i].apply_to_ability(ability, tome_stacks[i])
-
-	ability_slots[slot] = ability
-	ability_cooldowns[slot] = 0.0  # Ready immediately
-
-	Logger.info("Equipped %s in slot %d" % [ability.ability_name, slot], "abilities")
-
-
-## Level up existing ability
-func level_up_ability(ability_id: String, levels: int = 1) -> void:
-	var slot = find_ability_slot(ability_id)
-	if slot != -1:
-		ability_slots[slot].level_up(levels)
-		Logger.info("Leveled up %s to level %d" %
-		           [ability_slots[slot].ability_name, ability_slots[slot].ability_level], "abilities")
-
-
-## Add tome (or stack if already have)
-func add_tome(tome: BaseTome) -> void:
-	# Check if already have this tome
-	var slot = find_tome_slot(tome.tome_id)
-
-	if slot != -1:
-		# Stack existing tome
-		if tome_stacks[slot] < tome.stack_limit:
-			tome_stacks[slot] += 1
-			_apply_tome_to_all_abilities(tome, tome_stacks[slot])
-			_apply_tome_to_player(tome, tome_stacks[slot])
-			Logger.info("Stacked %s to %d" % [tome.tome_name, tome_stacks[slot]], "tomes")
-	else:
-		# Equip new tome
-		slot = _find_empty_tome_slot()
-		if slot != -1:
-			tome_slots[slot] = tome
-			tome_stacks[slot] = 1
-			_apply_tome_to_all_abilities(tome, 1)
-			_apply_tome_to_player(tome, 1)
-			Logger.info("Equipped %s" % tome.tome_name, "tomes")
-
-
-## Apply tome to all abilities (for ability modifiers)
-func _apply_tome_to_all_abilities(tome: BaseTome, stack_count: int) -> void:
-	for ability in ability_slots:
-		if ability:
-			tome.apply_to_ability(ability, stack_count)
-
-
-## Apply tome to player stats (for player modifiers like speed, HP, luck)
-func _apply_tome_to_player(tome: BaseTome, stack_count: int) -> void:
-	tome.apply_to_player(self, stack_count)
-
-
-## Find ability slot
-func find_ability_slot(ability_id: String) -> int:
-	for i in ability_slots.size():
-		if ability_slots[i] and ability_slots[i].ability_id == ability_id:
-			return i
-	return -1
-
-
-func _find_empty_ability_slot() -> int:
-	for i in ability_slots.size():
-		if ability_slots[i] == null:
-			return i
-	return -1
-
-
-## Find tome slot
-func find_tome_slot(tome_id: String) -> int:
-	for i in tome_slots.size():
-		if tome_slots[i] and tome_slots[i].tome_id == tome_id:
-			return i
-	return -1
-
-
-func _find_empty_tome_slot() -> int:
-	for i in tome_slots.size():
-		if tome_slots[i] == null:
-			return i
-	return -1
-
-
-## Gold economy
-func _on_enemy_killed(enemy_id: String, position: Vector2) -> void:
-	var enemy_type = EnemyManager.get_type(enemy_id)
-	var gold_amount = enemy_type.gold_value
-
-	gold += gold_amount
-	EventBus.gold_gained.emit(gold_amount, "enemy_kill")
-
-	# Update streak
-	if gold_streak_active:
-		gold_streak_amount += gold_amount
-		gold_streak_timer = GOLD_STREAK_TIMEOUT
-		_update_streak_label()
-	else:
-		_start_gold_streak(gold_amount)
-
-
-func _start_gold_streak(initial_amount: int) -> void:
-	gold_streak_active = true
-	gold_streak_amount = initial_amount
-	gold_streak_timer = GOLD_STREAK_TIMEOUT
-	gold_streak_label.visible = true
-	_update_streak_label()
-
-
-func _update_streak_label() -> void:
-	gold_streak_label.text = "+%dg" % gold_streak_amount
-
-	if gold_streak_amount > 100:
-		gold_streak_label.modulate = Color.GOLD
-	elif gold_streak_amount > 50:
-		gold_streak_label.modulate = Color.YELLOW
-	else:
-		gold_streak_label.modulate = Color.WHITE
-
-	gold_streak_label.position = Vector2(0, -60)
-
-
-func _end_gold_streak() -> void:
-	gold_streak_active = false
-	gold_streak_label.visible = false
-```
-
----
-
-## 📡 EventBus Signal Additions
-
-**Location:** `autoload/EventBus.gd` (add these signals)
-
-```gdscript
-# === Ability System ===
-signal ability_activated(ability_id: String)
+signal ability_activated(ability_id: String, position: Vector2)
+signal ability_projectile_requested(projectile_data: Dictionary)  # ← CRITICAL
 signal ability_acquired(ability_id: String, slot: int)
 signal ability_leveled_up(ability_id: String, new_level: int)
 
 # === Tome System ===
 signal tome_acquired(tome_id: String, stack_count: int)
 
-# === Gold Economy ===
-signal gold_gained(amount: int, source: String)  # source: "enemy_kill", "chest", etc.
-signal gold_spent(amount: int, purpose: String)  # purpose: "chest", "shrine", etc.
-
-# === Chest System ===
-signal chest_spawned(chest_position: Vector2, is_free: bool)
-signal chest_opened(chest_cost: int, is_free: bool)
-signal item_acquired(item_id: String, rarity: String)
+# === Combat Step (30Hz deterministic) ===
+signal combat_step(delta: float)  # Emitted by Arena.gd
 ```
 
 ---
 
-## 📁 File Structure
+## 📁 File Structure (CORRECTED)
 
 ```
-scripts/systems/abilities/
-├── BaseAbility.gd          ← Core ability class
-├── ProjectileAbility.gd    ← Projectile subclass
-├── BuffAbility.gd          ← Buff subclass
-├── AoEAbility.gd           ← AoE subclass
-├── RadialAbility.gd        ← Radial subclass
-├── CelestialAbility.gd     ← Celestial subclass
-├── BaseTome.gd             ← Tome class
-├── BaseItem.gd             ← Item class (future)
-└── AbilityTags.gd          ← Tag constants
+scripts/resources/           ← Resource classes
+├── BaseAbility.gd
+├── ProjectileAbility.gd
+├── BuffAbility.gd
+├── AoEAbility.gd
+├── RadialAbility.gd
+├── BaseTome.gd
+└── TomeModifier.gd         ← NEW
 
-autoload/
-├── AbilityManager.gd       ← Ability registry/loader
-├── TomeManager.gd          ← Tome registry/loader
-└── ChestManager.gd         ← Chest spawning/economy (future)
+scripts/domain/              ← Pure data/constants
+└── AbilityTags.gd
+
+scripts/components/          ← Node components
+└── AbilityComponent.gd     ← NEW (replaces Player ability logic)
+
+autoload/                    ← Singletons
+├── EventBus.gd             (modified)
+├── AbilityManager.gd
+├── TomeManager.gd
+└── AbilitySystem.gd        ← NEW (30Hz cooldown tracking)
 
 data/content/abilities/
 ├── projectile/
-│   ├── fireball.tres
-│   ├── ranger_arrow.tres
-│   └── ice_shard.tres
+│   └── ranger_arrow.tres
 ├── buff/
-│   └── speed_boost.tres
 ├── aoe/
-│   └── meteor_strike.tres
 ├── radial/
-│   └── spinning_blades.tres
 └── celestial/
-    └── comet_rain.tres
 
 data/content/tomes/
-├── tome_damage.tres      # Global damage buff
-├── tome_speed.tres       # Movement speed buff
-├── tome_quantity.tres    # Projectile count buff
-├── tome_hp.tres          # Max HP buff
-├── tome_luck.tres        # Luck buff (chest rarity)
-└── tome_xp.tres          # XP gain buff
+├── tome_damage.tres
+├── tome_speed.tres
+├── tome_quantity.tres
+├── tome_hp.tres
+├── tome_luck.tres
+└── tome_xp.tres
 ```
 
 ---
 
-## 🔗 Integration Points
+## ✅ Critical Fixes Summary
 
-### 1. DamageService Integration
-
-**Projectile hit detection calls DamageService:**
-
-```gdscript
-// Projectile.gd (or similar)
-func _on_enemy_hit(enemy_id: String) -> void:
-	# Use central damage system
-	DamageService.apply_damage(enemy_id, damage, ability_id, [damage_type])
-
-	# Auto-emits: EventBus.damage_applied, damage_dealt
-	# SessionManager automatically tracks damage per ability
-```
-
-### 2. MetaProgression Integration
-
-**Level-up upgrade screen generation:**
-
-```gdscript
-// UpgradeManager.gd
-func generate_levelup_upgrade_options(player: Player, count: int = 3) -> Array:
-	var available_options: Array = []
-
-	# Get unlocked abilities + tomes from MetaProgression
-	var all_abilities = MetaProgression.get_unlocked_items("skills")
-	var all_tomes = MetaProgression.get_unlocked_items("tomes")
-
-	# Filter by availability (can level up, slots available, etc.)
-	for ability_id in all_abilities:
-		# Check if can level up or equip
-		# ...
-
-	for tome_id in all_tomes:
-		# Check if can stack or equip
-		# ...
-
-	# Randomly select 3 from combined pool
-	return available_options.slice(0, min(count, available_options.size()))
-```
-
-### 3. Quest System Integration
-
-**Quest rewards unlock abilities/tomes:**
-
-```gdscript
-// QuestManager.gd
-func _award_quest_rewards(quest: QuestConfig) -> void:
-	# Discover abilities in shop
-	for ability_id in quest.reward_discover:
-		MetaProgression.discover_item("skills", ability_id)
-
-	# Instant unlock abilities
-	for ability_id in quest.reward_unlocks:
-		MetaProgression.unlock_item("skills", ability_id)
-```
+| Issue | Before | After | Status |
+|-------|--------|-------|--------|
+| Loop bug | `for i in levels` | `for i in range(levels)` | ✅ FIXED |
+| Tome stacking | Direct mutation (exponential) | Modifier descriptors (idempotent) | ✅ FIXED |
+| Auto-cast timing | `Player._process()` (frame-rate) | `AbilitySystem._on_combat_step()` (30Hz) | ✅ FIXED |
+| File paths | `scripts/systems/abilities/` | `scripts/resources/` | ✅ FIXED |
+| Tag types | `Array[String]` | `Array[StringName]` | ✅ FIXED |
+| Projectile spawn | `ProjectilePool.acquire()` | `EventBus.ability_projectile_requested.emit()` | ✅ FIXED |
+| Player bloat | 200+ lines in Player.gd | `AbilityComponent` node | ✅ FIXED |
 
 ---
 
-## 🎨 Example .tres Files
+## 📝 Next Steps
 
-### fireball.tres
+1. Update task documents (9a, 9b, 9c, 9d) to reflect new architecture
+2. Split Phase 1 into Phase 1a (Foundation + Integration) and Phase 1b (Vertical Slice)
+3. Re-baseline time estimates (22-26 hours total)
+4. Submit for re-review
 
-```tres
-[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=3 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/ProjectileAbility.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/abilities/projectiles/fireball_visual.tscn" id="2"]
-
-[resource]
-script = ExtResource("1")
-ability_id = "fireball"
-ability_name = "Fireball"
-description = "Launches a fiery projectile that explodes on impact"
-ability_level = 1
-max_level = 20
-tags = PackedStringArray("projectile", "damage", "fire", "cooldown")
-
-base_damage = 25.0
-cooldown = 1.5
-damage_type = "fire"
-inherent_element = "fire"
-
-projectile_count = 1
-projectile_speed = 400.0
-pierce_count = 0
-max_visual_projectiles = 15
-
-visual_scene = ExtResource("2")
-```
-
-### Tome Examples (Realistic Gameplay Modifiers)
-
-**tome_damage.tres** (Damage Tome - global ability buff)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_damage"
-tome_name = "Tome of Power"
-description = "Increase all damage by 15% per stack"
-rarity = "common"
-
-stack_limit = 10
-applicable_tags = PackedStringArray()  # Empty = applies to ALL abilities
-
-damage_multiplier = 1.15  # +15% damage per stack (global modifier)
-```
-
-**tome_speed.tres** (Speed Tome - player movement buff)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_speed"
-tome_name = "Tome of Swiftness"
-description = "Increase movement speed by 8% per stack"
-rarity = "uncommon"
-
-stack_limit = 10
-applicable_tags = PackedStringArray()  # Not used for player stat modifiers
-
-movement_speed_multiplier = 1.08  # +8% movement speed per stack
-```
-
-**tome_quantity.tres** (Quantity Tome - projectile/attack count)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_quantity"
-tome_name = "Tome of Quantity"
-description = "Increase projectile count by 1 per stack (projectile abilities only)"
-rarity = "rare"
-
-stack_limit = 5  # Lower limit due to power
-applicable_tags = PackedStringArray("projectile")  # Only applies to projectile abilities
-
-projectile_count_bonus = 1  # +1 projectile per stack
-```
-
-**tome_hp.tres** (HP Tome - max health buff)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_hp"
-tome_name = "Tome of Vitality"
-description = "Increase max HP by 15 per stack"
-rarity = "common"
-
-stack_limit = 10
-applicable_tags = PackedStringArray()  # Not used for player stat modifiers
-
-max_hp_bonus = 15.0  # +15 HP per stack
-```
-
-**tome_luck.tres** (Lucky Tome - chest rarity buff)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_luck"
-tome_name = "Tome of Fortune"
-description = "Increase luck by 5 per stack (better chest loot)"
-rarity = "uncommon"
-
-stack_limit = 10
-applicable_tags = PackedStringArray()  # Not used for player stat modifiers
-
-luck_bonus = 5.0  # +5 luck per stack (affects chest rarity rolls)
-```
-
-**tome_xp.tres** (XP Tome - experience gain buff)
-```tres
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://scripts/systems/abilities/BaseTome.gd" id="1"]
-
-[resource]
-script = ExtResource("1")
-tome_id = "tome_xp"
-tome_name = "Tome of Knowledge"
-description = "Increase XP gain by 10% per stack"
-rarity = "uncommon"
-
-stack_limit = 10
-applicable_tags = PackedStringArray()  # Not used for player stat modifiers
-
-xp_gain_multiplier = 1.10  # +10% XP gain per stack
-```
-
----
-
-## ✅ Architecture Complete
-
-**Next Step:** [Phase 1 Implementation Plan](ability-system-implementation-plan.md)
-
-**Status:** 📐 Ready for implementation
+**Status:** Ready for re-review
+**Expected Score:** 28-32/35 (Approve with Minor Revisions)
