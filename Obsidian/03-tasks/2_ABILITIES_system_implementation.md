@@ -142,22 +142,27 @@ The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entitie
 
 **Migration Steps:**
 1. **Create MeleeAbility subclass** (~1 hour)
-   - Extend BaseAbility with cone attack properties (cone_angle, attack_range, knockback)
+   - Extend BaseAbility with attack pattern properties (circle_360, cone_auto_target, etc.)
    - Emit `EventBus.ability_melee_requested` signal
    - Create `data/content/abilities/melee/melee_slash.tres`
 
 2. **Create clean MeleeAbilityHandler** (~30 min)
    - Delete old MeleeSystem.gd (contains ~200 lines of redundant entity management)
    - Create new MeleeAbilityHandler.gd (~80 lines)
-   - Use `DamageRegistry.get_entities_in_cone()` for spatial queries
+   - Use `DamageRegistry.get_entities_in_area()` or `get_entities_in_cone()` based on pattern
    - Use `DamageRegistry.apply_damage()` for unified damage handling
-   - Preserve visual effects spawning
+   - Add placeholder visual effects (~5 min - simple white flash)
 
 3. **Integration** (~30 min)
    - Add melee ability to Player ability slots
    - Remove old PlayerAttackHandler direct calls
    - Test auto-cast melee alongside projectiles
-   - Verify cone detection, damage, knockback still work
+   - Verify spatial queries, damage, knockback work correctly
+
+**Visual Effects Approach:**
+- **Phase 5**: Simple placeholder visuals (white flash, ~5 min)
+- **Phase 6**: Base effects + customization (color, scale - hybrid system, ~2 hours)
+- **Phase 8+**: Unique visual scenes per ability (optional polish, ~1 hour each)
 
 **Code Reduction:**
 - ❌ **Old**: 312 lines (custom cone math, manual entity registration, separate boss/enemy paths)
@@ -168,10 +173,18 @@ The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entitie
 
 ---
 
-### Phase 6: Expand Ability Library
-- Add 3-5 more abilities (Fireball, Lightning, Sword Slash, Buff Aura)
-- Validate different ability archetypes (AoE, Buff, Orbit)
+### Phase 6: Expand Ability Library + Visual Foundation
+**Abilities:**
+- Add 3-5 more abilities (Whirlwind, Spear Thrust, Fireball, Lightning)
+- Validate different ability archetypes (circle_360, cone_auto_target, projectile)
 - Create 5-10 more tomes (elemental, AoE, pierce, projectile count)
+
+**Visual System (~2 hours):**
+- Create base visual effects (CircleSlashEffect.tscn, ConeSlashEffect.tscn)
+- Add visual customization to MeleeAbility.gd (`effect_color`, `effect_scale`)
+- Implement effect pooling (reuse EntityPool pattern)
+- Add `_apply_customization()` to MeleeAbilityHandler
+- Result: Hybrid visual system (Option 3) - base effects + per-ability customization
 
 ### Phase 7: Level-Up Integration
 - Wire into existing level-up modal
@@ -185,9 +198,10 @@ The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entitie
 - Persist unlocked abilities/tomes
 - Test progression across runs
 
-### Phase 8: Visual Polish
-- Replace placeholder sprites
-- Add impact effects
+### Phase 9: Visual Polish (Optional)
+- Replace placeholder projectile sprites with unique designs
+- Add unique visual scenes for hero abilities (whirlwind tornado, etc.)
+- Add impact effects and particles
 - Add sound effects
 - Polish animations
 

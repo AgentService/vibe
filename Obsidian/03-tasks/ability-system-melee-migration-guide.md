@@ -254,56 +254,45 @@ func _on_melee_ability_requested(payload: Dictionary) -> void:
 	Logger.debug("Melee attack hit %d entities" % hit_entity_ids.size(), "abilities")
 ```
 
-### 2.3: Add Visual Effects Methods
+### 2.3: Add Placeholder Visual Effects (~5 min)
 
-**Visual effects implementation (reuse from MeleeSystem if needed):**
+**Approach:** Start with simple placeholder - add proper visual system in Phase 6 when expanding ability library.
 
 ```gdscript
 func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:
-	## Create visual cone effect for melee attack
-	var attack_dir = (target_pos - player_pos).normalized()
-	var effect_index = _find_free_attack_effect()
+	## Placeholder visual - white flash (Phase 5)
+	## TODO Phase 6: Replace with base effects + customization (Option 3 hybrid)
+	var flash = Sprite2D.new()
+	flash.texture = preload("res://assets/placeholder/white_circle.png")
+	flash.global_position = player_pos
+	flash.modulate = Color(1, 1, 1, 0.3)
+	add_child(flash)
 
-	if effect_index >= 0:
-		attack_effects[effect_index] = {
-			"active": true,
-			"elapsed": 0.0,
-			"player_pos": player_pos,
-			"direction": attack_dir,
-			"duration": 0.3  # From payload.swing_duration
-		}
-
-func _find_free_attack_effect() -> int:
-	## Find first inactive effect slot
-	for i in attack_effects.size():
-		if not attack_effects[i].get("active", false):
-			return i
-	return -1 if attack_effects.size() >= max_attack_effects else attack_effects.size()
+	# Simple fade out
+	var tween = create_tween()
+	tween.tween_property(flash, "modulate:a", 0.0, 0.2)
+	tween.tween_callback(flash.queue_free)
 
 func _on_combat_step(payload: Dictionary) -> void:
-	## Update visual effect lifetimes
-	_update_attack_effects(payload.dt)
-
-func _update_attack_effects(dt: float) -> void:
-	## Age out visual effects
-	for effect in attack_effects:
-		if effect.get("active", false):
-			effect.elapsed += dt
-			if effect.elapsed >= effect.duration:
-				effect.active = false
+	# Visual effects updated via tweens in Phase 5
+	# Phase 6: Add effect pooling and lifetime tracking
+	pass
 
 func _initialize_attack_effects_pool() -> void:
-	## Pre-allocate visual effect slots
-	attack_effects.resize(max_attack_effects)
-	for i in max_attack_effects:
-		attack_effects[i] = {"active": false}
-
-func get_active_attack_effects() -> Array[Dictionary]:
-	## Query for visual rendering (used by HUD/debug)
-	return attack_effects.filter(func(e): return e.get("active", false))
+	# Placeholder - no pooling in Phase 5
+	# Phase 6: Add ObjectPool for base circle/cone effects
+	pass
 ```
 
-**Note:** If MeleeSystem has custom sprite/particle effects, copy those methods here. The core is just tracking effect lifetimes.
+**Visual Timeline:**
+- ✅ **Phase 5** (This migration): White flash placeholder (~5 min)
+- 📋 **Phase 6** (Ability Library): Base effects + color/scale customization (~2 hours)
+- 📋 **Phase 8** (Polish): Unique visual scenes per ability (~1 hour each, optional)
+
+**Architecture Foundation:**
+- ✅ MeleeAbilityHandler receives visual data via payload
+- ✅ Can add `effect_color`, `effect_scale` fields to MeleeAbility.gd in Phase 6
+- ✅ Hybrid system (Option 3) = base effects + per-ability customization
 
 ---
 
