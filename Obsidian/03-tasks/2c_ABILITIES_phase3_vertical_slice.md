@@ -420,6 +420,37 @@ Enemies Remaining: 0
 - If DamageService is missing, create minimal version (can refactor later)
 - Stationary enemies are fine for this test (no AI needed)
 - Debug label is critical for visual feedback
+
+---
+
+## 🔄 Next Steps After Phase 3
+
+> **⚠️ DECISION POINT:** After completing this phase (Ranger Arrow working), you have a working ability system foundation.
+
+**Recommended Path:**
+
+1. **Complete Phase 4 (Tome Validation)** - Verify modifiers work with projectiles (~2-3 hours)
+2. **Migrate Existing Melee System** - Refactor into ability system (~2 hours)
+   - Your current `MeleeSystem.gd` is **production-quality code**
+   - Don't remove it - **refactor into MeleeAbility**
+   - Reuse cone detection logic (it's well-designed)
+   - See parent task **Phase 5** for detailed migration steps
+
+**Why Migrate After This Phase:**
+- ✅ Ability infrastructure proven with Ranger Arrow
+- ✅ Can test melee + projectile auto-casting together
+- ✅ Validates ability system works for different attack types
+- ✅ Preserves your existing melee combat functionality
+
+**Migration Overview (~2 hours total):**
+```
+Step 1: Create MeleeAbility subclass (~1 hour)
+Step 2: Refactor MeleeSystem → MeleeAbilityHandler (~30 min)
+Step 3: Integration & testing (~30 min)
+Result: Unified system with melee + projectile abilities
+```
+
+**See:** `/Obsidian/03-tasks/2_ABILITIES_system_implementation.md` Phase 5 for detailed migration guide
 - Commit after each task: `feat: create ranger_arrow ability`
 
 ---

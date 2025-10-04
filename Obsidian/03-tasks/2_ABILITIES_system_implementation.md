@@ -131,18 +131,51 @@ Implement complete auto-cast ability system with:
 
 ## ⏭️ Future Phases (Not in Phase 1 Scope)
 
-### Phase 5: Expand Ability Library
+### Phase 5: Migrate Existing Melee System (~2 hours)
+
+> **📝 Note:** The current melee cone attack (`MeleeSystem.gd`) is production-quality code that should be **refactored into the ability system**, not removed.
+
+**Prerequisites:** Complete Phase 3 (Ranger Arrow working)
+
+**Migration Steps:**
+1. **Create MeleeAbility subclass** (~1 hour)
+   - Extend BaseAbility with cone attack properties (cone_angle, attack_range, knockback)
+   - Emit `EventBus.ability_melee_requested` signal
+   - Create `data/content/abilities/melee/melee_slash.tres`
+
+2. **Refactor MeleeSystem → MeleeAbilityHandler** (~30 min)
+   - Rename MeleeSystem.gd → MeleeAbilityHandler.gd
+   - Keep cone detection logic (it's production-ready)
+   - Change from `perform_attack()` calls to EventBus listener
+   - Listen to `EventBus.ability_melee_requested` signal
+
+3. **Integration** (~30 min)
+   - Add melee ability to Player ability slots
+   - Remove old PlayerAttackHandler direct calls
+   - Test auto-cast melee alongside projectiles
+   - Verify cone detection, damage, knockback still work
+
+**Files to Preserve:**
+- ✅ `scripts/systems/combat/MeleeSystem.gd` → Becomes MeleeAbilityHandler (reuse cone logic)
+- ✅ `data/balance/melee.tres` → Migrate values to ability resource
+- ✅ `data/content/melee_visual_config.tres` → Keep for visual effects
+
+**Result:** Unified ability system with melee + projectile abilities using same infrastructure.
+
+---
+
+### Phase 6: Expand Ability Library
 - Add 3-5 more abilities (Fireball, Lightning, Sword Slash, Buff Aura)
 - Validate different ability archetypes (AoE, Buff, Orbit)
 - Create 5-10 more tomes (elemental, AoE, pierce, projectile count)
 
-### Phase 6: Level-Up Integration
+### Phase 7: Level-Up Integration
 - Wire into existing level-up modal
 - Generate upgrade options (abilities + tomes)
 - Implement ability re-picking (level up existing)
 - Test upgrade pool generation
 
-### Phase 7: Meta-Progression Integration
+### Phase 8: Meta-Progression Integration
 - Add quest → discover → unlock flow
 - Wire into shop system
 - Persist unlocked abilities/tomes
