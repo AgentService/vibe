@@ -1,14 +1,15 @@
 # Tier Selection UI Integration (MVP)
 
 **Created:** 2025-10-03
-**Status:** 🟡 Ready to Start
-**Priority:** Medium
+**Status:** 🔴 Blocked - Requires Task 4 (Stage Progression)
+**Priority:** Medium (After Stage Progression)
 **Estimated Effort:** 45 minutes - 1.5 hours (including admin panel)
 **Category:** 🎮 Progression System - UI Integration
+**Prerequisites:** [Task 4 - Stage Progression](4_COMBAT_stage_progression_flow.md) ← Provides tier unlocking gameplay
 
 ## 📋 Task Description
 
-Wire up the existing tier selection UI in MapSelect to the MetaProgression backend, **plus add a ProgressionAdminPanel** for easy testing (similar to ShopAdminPanel). This is the minimal viable implementation to make tier unlocking functional and testable without requiring complex stage progression systems.
+Wire up the existing tier selection UI in MapSelect to the MetaProgression backend, **plus add a ProgressionAdminPanel** for easy testing (similar to ShopAdminPanel). This makes tier unlocking UI functional after Task 4 provides the gameplay mechanics to actually unlock tiers via stage completion.
 
 **Current State Analysis:**
 - ✅ Tier UI exists in MapSelect.tscn with 4 tier checkboxes
