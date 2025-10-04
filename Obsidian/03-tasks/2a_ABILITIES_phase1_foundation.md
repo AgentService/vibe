@@ -1,6 +1,6 @@
 # [SUBTASK] Ability System - Phase 1: Foundation & Infrastructure
 
-**Parent Task:** `9_ABILITIES_system_implementation.md`
+**Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 1 of 4
 **Status:** 📋 Not Started
 **Estimated Time:** 4-6 hours
@@ -349,7 +349,7 @@ Run: `../Godot_v4.4.1-stable_win64_console.exe --headless tests/ability_system/P
 
 ## ⏭️ Next Phase
 
-**After Phase 1.1 complete → `9b_ABILITIES_phase2_integration.md`**
+**After Phase 1.1 complete → `2b_ABILITIES_phase2_integration.md`**
 
 ---
 

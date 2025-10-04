@@ -1,6 +1,6 @@
 # [SUBTASK] Ability System - Phase 3: First Vertical Slice (Ranger Arrow)
 
-**Parent Task:** `9_ABILITIES_system_implementation.md`
+**Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 3 of 4
 **Status:** 📋 Not Started
 **Estimated Time:** 4-5 hours
@@ -426,7 +426,7 @@ Enemies Remaining: 0
 
 ## ⏭️ Next Phase
 
-**After Phase 1.3 complete → `9d_ABILITIES_phase4_tome_validation.md`**
+**After Phase 1.3 complete → `2d_ABILITIES_phase4_tome_validation.md`**
 
 ---
 

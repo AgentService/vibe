@@ -1,6 +1,6 @@
 # [SUBTASK] Ability System - Phase 4: Tome System Validation
 
-**Parent Task:** `9_ABILITIES_system_implementation.md`
+**Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 4 of 4 (Final Phase 1 task)
 **Status:** 📋 Not Started
 **Estimated Time:** 2-3 hours

@@ -6,7 +6,7 @@
 **Priority:** High
 **Estimated Effort:** 1-2 weeks (Phases 1-3 only)
 **Category:** ⚔️ Combat System Enhancement - Technical Foundation
-**Dependent Tasks:** [Task 2b - Stage Progression Flow](2b_COMBAT_stage_progression_flow.md) ← **DO THIS NEXT**
+**Dependent Tasks:** [Task 4 - Stage Progression Flow](4_COMBAT_stage_progression_flow.md) ← **DO THIS NEXT**
 
 > ⚠️ **Scope:** This task implements the **timing and difficulty scaling foundation** only (Phases 1-3). For the full progression flow (portal, stage transitions, rewards), see **Task 5**.
 
@@ -15,11 +15,11 @@
 Implement the **timing and difficulty scaling foundation** for MEGABONK-style arena progression. This task provides the technical infrastructure (stage timer, boss spawn timing, Final Swarm trigger, enemy stat scaling) that Task 5 (Stage Progression) will build upon for the full gameplay loop.
 
 **Scope:** This task is **Phases 1-3 only** - the timing engine. It does NOT implement:
-- ❌ Portal system (Task 5)
-- ❌ Stage transitions (Task 5)
-- ❌ Tier unlocking (Task 5)
-- ❌ Meta-currency rewards (Task 5)
-- ❌ Progression UI (Task 5)
+- ❌ Portal system (Task 4)
+- ❌ Stage transitions (Task 4)
+- ❌ Tier unlocking (Task 4)
+- ❌ Meta-currency rewards (Task 4)
+- ❌ Progression UI (Task 4)
 
 **Configuration (7-Minute Stages):**
 - **Stage Duration:** 7:00 (420 seconds)

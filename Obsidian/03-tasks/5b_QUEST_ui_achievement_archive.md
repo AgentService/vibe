@@ -6,10 +6,10 @@
 **Priority:** Medium
 **Estimated Effort:** 3-4 sessions
 **Category:** 🎮 Quest System - UI
-**Dependencies:** [Task 3a - Quest Backend](3a_QUEST_backend_and_notifications.md) (Phases 1-4 must be complete) ← **DO THIS FIRST**
-**Backend Companion Task:** [Task 3a - Quest Backend](3a_QUEST_backend_and_notifications.md) ← **MUST STAY IN SYNC**
+**Dependencies:** [Task 5a - Quest Backend](5a_QUEST_backend_and_notifications.md) (Phases 1-4 must be complete) ← **DO THIS FIRST**
+**Backend Companion Task:** [Task 5a - Quest Backend](5a_QUEST_backend_and_notifications.md) ← **MUST STAY IN SYNC**
 
-> ⚠️ **Cross-Reference:** This task handles the main menu quest log **UI only**. For the quest backend (QuestManager, tracking, rewards), see **Task 3a**. These tasks must stay synchronized - backend API changes in Task 3a require UI updates here.
+> ⚠️ **Cross-Reference:** This task handles the main menu quest log **UI only**. For the quest backend (QuestManager, tracking, rewards), see **Task 5a**. These tasks must stay synchronized - backend API changes in Task 5a require UI updates here.
 
 ## 📋 Task Description
 

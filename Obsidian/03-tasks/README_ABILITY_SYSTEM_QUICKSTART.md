@@ -23,14 +23,14 @@
    - Risk mitigation strategies
 
 ### Task Documents (Step-by-Step Implementation)
-1. **`/Obsidian/03-tasks/9_ABILITIES_system_implementation.md`** (PARENT)
+1. **`/Obsidian/03-tasks/2_ABILITIES_system_implementation.md`** (PARENT)
    - Epic-level overview
    - Phase breakdown (4 phases)
    - Success criteria
    - File structure
    - Dependencies
 
-2. **`/Obsidian/03-tasks/9a_ABILITIES_phase1_foundation.md`** (SUBTASK - START HERE!)
+2. **`/Obsidian/03-tasks/2a_ABILITIES_phase1_foundation.md`** (SUBTASK - START HERE!)
    - 5 detailed tasks with checkboxes
    - Task 1.1.1: Create Tag System (~30 min)
    - Task 1.1.2: Create BaseAbility Class (~2 hours)
@@ -44,15 +44,15 @@
      - Testing code snippets
      - Validation steps
 
-3. **`/Obsidian/03-tasks/9b_ABILITIES_phase2_integration.md`** (SUBTASK - AFTER 9a)
+3. **`/Obsidian/03-tasks/2b_ABILITIES_phase2_integration.md`** (SUBTASK - AFTER 2a)
    - 4 tasks: AbilityManager, Player slots, Debug UI, Arena integration
    - 3-4 hours estimated
 
-4. **`/Obsidian/03-tasks/9c_ABILITIES_phase3_vertical_slice.md`** (SUBTASK - AFTER 9b)
+4. **`/Obsidian/03-tasks/2c_ABILITIES_phase3_vertical_slice.md`** (SUBTASK - AFTER 2b)
    - 6 tasks: Projectile pool, Arrow logic, Arrow visual, ranger_arrow.tres, damage wiring, isolated test
    - 4-5 hours estimated
 
-5. **`/Obsidian/03-tasks/9d_ABILITIES_phase4_tome_validation.md`** (SUBTASK - AFTER 9c)
+5. **`/Obsidian/03-tasks/2d_ABILITIES_phase4_tome_validation.md`** (SUBTASK - AFTER 2c)
    - 4 tasks: TomeManager, Tome of Power, Tome of Swiftness, DPS validation
    - 2-3 hours estimated
 
@@ -115,7 +115,7 @@ DamageService.apply_damage(source_id, target_id, damage, tags)
 ---
 
 ### Step 2: Open First Subtask
-**Open:** `/Obsidian/03-tasks/9a_ABILITIES_phase1_foundation.md`
+**Open:** `/Obsidian/03-tasks/2a_ABILITIES_phase1_foundation.md`
 
 This document has **5 tasks**, each with:
 - ✅ Checkbox to mark complete
@@ -167,9 +167,9 @@ After 5 levels: cooldown=1.55 (expected: 1.55)
 ---
 
 ### Step 5: Complete Phase 1.1, Then Move to Phase 1.2
-**After completing all 5 tasks in `9a_ABILITIES_phase1_foundation.md`:**
+**After completing all 5 tasks in `2a_ABILITIES_phase1_foundation.md`:**
 
-**Open:** `/Obsidian/03-tasks/9b_ABILITIES_phase2_integration.md`
+**Open:** `/Obsidian/03-tasks/2b_ABILITIES_phase2_integration.md`
 
 **Repeat:** Work through tasks → Test → Mark complete → Move to next phase.
 
@@ -361,4 +361,4 @@ tests/ability_system/
 ---
 
 **Status:** Ready to begin!
-**First task:** `/Obsidian/03-tasks/9a_ABILITIES_phase1_foundation.md` → Task 1.1.1
+**First task:** `/Obsidian/03-tasks/2a_ABILITIES_phase1_foundation.md` → Task 1.1.1

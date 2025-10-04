@@ -2,13 +2,13 @@
 
 **Created:** 2025-10-03
 **Updated:** 2025-10-03 (Renamed from `5_PROGRESSION_stage_progression_megabonk_integration.md`)
-**Status:** 🔴 Blocked - Requires Task 2a + Task 4 + Ability System
+**Status:** 🔴 Blocked - Requires Task 3 + Task 1 + Ability System (Task 2)
 **Priority:** High (After Prerequisites)
 **Estimated Effort:** 1-2 weeks
 **Category:** 🎮 Combat Progression - Full Integration
-**Prerequisites:** [Task 2a - Timing Foundation](2a_COMBAT_timing_foundation.md) ← **COMPLETE THIS FIRST** + [Task 4 - Tier Selection](4_PROGRESSION_tier_selection_ui_integration_mvp.md) + Ability System
+**Prerequisites:** [Task 3 - Timing Foundation](3_COMBAT_timing_foundation.md) ← **COMPLETE THIS FIRST** + [Task 1 - Tier Selection](1_PROGRESSION_tier_selection_ui_integration_mvp.md) + Ability System (Task 2)
 
-> ⚠️ **Dependency:** This task builds on **Task 2a's timing infrastructure** (stage timer, boss spawn, Final Swarm trigger). Task 2a Phases 1-3 **must be complete** before starting this task.
+> ⚠️ **Dependency:** This task builds on **Task 3's timing infrastructure** (stage timer, boss spawn, Final Swarm trigger). Task 3 Phases 1-3 **must be complete** before starting this task.
 
 **⚠️ DESIGN DECISION PENDING:**
 The Final Swarm mechanic needs playtesting with the ability system before finalizing. Two possible paths:
@@ -19,20 +19,20 @@ The Final Swarm mechanic needs playtesting with the ability system before finali
 
 ## 📋 Task Description
 
-Implement the full MEGABONK-style stage progression system with boss-kill deadlines, portal unlocking, and optional swarm continuation. Integrates the tier system (Task 4) with time-based difficulty progression, allowing players to choose when to leave after killing the boss while enemies continue spawning.
+Implement the full MEGABONK-style stage progression system with boss-kill deadlines, portal unlocking, and optional swarm continuation. Integrates the tier system (Task 1) with time-based difficulty progression, allowing players to choose when to leave after killing the boss while enemies continue spawning.
 
-**Goal (Builds on Task 2a Timing Foundation):**
-- **Timer**: 7:00 countdown (Task 2a provides MapLevel.get_remaining_time())
-- **Boss Spawn**: 2:00 elapsed / 5:00 remaining (Task 2a triggers EventBus.boss_spawn_requested)
+**Goal (Builds on Task 3 Timing Foundation):**
+- **Timer**: 7:00 countdown (Task 3 provides MapLevel.get_remaining_time())
+- **Boss Spawn**: 2:00 elapsed / 5:00 remaining (Task 3 triggers EventBus.boss_spawn_requested)
 - **Boss Kill Requirement**: Boss MUST be killed before timer expires (medium difficulty)
-- **Portal Unlock**: Boss death → Portal unlocks (enemies keep spawning - Task 2a continues spawns)
-- **Final Swarm Phase**: 7:00 elapsed / 0:00 timer expiration (Task 2a triggers EventBus.final_swarm_started)
+- **Portal Unlock**: Boss death → Portal unlocks (enemies keep spawning - Task 3 continues spawns)
+- **Final Swarm Phase**: 7:00 elapsed / 0:00 timer expiration (Task 3 triggers EventBus.final_swarm_started)
 - **Risk/Reward Mechanic**: Stay after portal unlocks → more XP + meta-currency + leaderboard kills
 - **Meta-Currency Multiplier**: Bar appears during Final Swarm - longer survival = higher multiplier
-- **Special Enemy Swarms**: Final Swarm spawns elites (Task 2a handles spawn rate escalation)
+- **Special Enemy Swarms**: Final Swarm spawns elites (Task 3 handles spawn rate escalation)
 - **Player Choice**: Enter portal anytime after boss kill, or stay for Final Swarm farming
 
-**What Task 2a Provides (Prerequisites):**
+**What Task 3 Provides (Prerequisites):**
 - ✅ Stage timer (7:00 countdown)
 - ✅ Boss spawn timing trigger (2:00 elapsed)
 - ✅ Final Swarm trigger (0:00 = timer expiration)

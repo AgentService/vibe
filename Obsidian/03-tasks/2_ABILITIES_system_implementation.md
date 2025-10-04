@@ -55,7 +55,7 @@ Implement complete auto-cast ability system with:
 
 ### 🔨 Phase 1: Foundation & Infrastructure (4-6 hours)
 
-**Subtasks → See:** `9a_ABILITIES_phase1_foundation.md`
+**Subtasks → See:** `2a_ABILITIES_phase1_foundation.md`
 
 - Create Tag System (AbilityTags.gd)
 - Create BaseAbility Class
@@ -74,7 +74,7 @@ Implement complete auto-cast ability system with:
 
 ### 🔧 Phase 2: Ability Manager & Player Integration (3-4 hours)
 
-**Subtasks → See:** `9b_ABILITIES_phase2_integration.md`
+**Subtasks → See:** `2b_ABILITIES_phase2_integration.md`
 
 - Create AbilityManager Singleton
 - Add Ability Slots to Player.gd
@@ -92,7 +92,7 @@ Implement complete auto-cast ability system with:
 
 ### 🎮 Phase 3: First Vertical Slice (Ranger Arrow) (4-5 hours)
 
-**Subtasks → See:** `9c_ABILITIES_phase3_vertical_slice.md`
+**Subtasks → See:** `2c_ABILITIES_phase3_vertical_slice.md`
 
 - Extend Projectile Pool for abilities
 - Create Arrow Projectile Logic
@@ -113,7 +113,7 @@ Implement complete auto-cast ability system with:
 
 ### 📖 Phase 4: Tome System Validation (2-3 hours)
 
-**Subtasks → See:** `9d_ABILITIES_phase4_tome_validation.md`
+**Subtasks → See:** `2d_ABILITIES_phase4_tome_validation.md`
 
 - Create TomeManager Singleton
 - Create Tome of Power (damage +25%)

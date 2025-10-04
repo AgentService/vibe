@@ -1,6 +1,6 @@
 # [SUBTASK] Ability System - Phase 2: Ability Manager & Player Integration
 
-**Parent Task:** `9_ABILITIES_system_implementation.md`
+**Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 2 of 4
 **Status:** 📋 Not Started
 **Estimated Time:** 3-4 hours
@@ -336,7 +336,7 @@ func _ready():
 
 ## ⏭️ Next Phase
 
-**After Phase 1.2 complete → `9c_ABILITIES_phase3_vertical_slice.md`**
+**After Phase 1.2 complete → `2c_ABILITIES_phase3_vertical_slice.md`**
 
 ---
 

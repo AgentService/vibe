@@ -7,9 +7,9 @@
 **Estimated Effort:** 3-4 weeks
 **Category:** 🎮 Quest System - Backend
 **Consolidated From:** Task 3 (Quest Backend) + Task 6 (In-Game Notifications)
-**UI Companion Task:** [Task 3b - Quest UI Archive](3b_QUEST_ui_achievement_archive.md) ← **MUST STAY IN SYNC**
+**UI Companion Task:** [Task 5b - Quest UI Archive](5b_QUEST_ui_achievement_archive.md) ← **MUST STAY IN SYNC**
 
-> ⚠️ **Cross-Reference:** This task handles the quest **backend and in-run notifications**. For the main menu quest log UI (MEGABONK-style achievement browser), see **Task 3b**. These tasks must stay synchronized - QuestManager API changes here require UI updates in Task 3b.
+> ⚠️ **Cross-Reference:** This task handles the quest **backend and in-run notifications**. For the main menu quest log UI (MEGABONK-style achievement browser), see **Task 5b**. These tasks must stay synchronized - QuestManager API changes here require UI updates in Task 5b.
 
 ## 📋 Task Description
 
