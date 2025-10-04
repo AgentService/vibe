@@ -173,6 +173,31 @@ The existing `MeleeSystem.gd` (312 lines) duplicates `DamageRegistry.get_entitie
 
 ---
 
+### 🔬 Phase 2e: Visual Effects POC (3-4 hours) - DECISION POINT
+
+**Subtasks → See:** `2e_ABILITIES_visual_effects_poc.md`
+
+**Branch:** `visual-effects-poc` (separate from main development)
+
+**Purpose:** Test 3 visual effect methods before expanding ability library to determine best approach for scalable visual effects.
+
+**Prerequisites:** Complete Phase 4 (Tome Validation)
+
+**Testing Focus:**
+- Sprite2D + Shader (glow effects with runtime customization)
+- GPUParticles2D (high-performance particle systems with emission shape scaling)
+- Line2D (procedural geometry for lightning/arcs)
+
+**Success Criteria:**
+- All methods tested with 3 AOE sizes (150px, 300px, 500px)
+- Performance validated (100 simultaneous effects stress test)
+- Scalability confirmed (effects scale with item modifiers at runtime)
+- Method selection documented in POC_FINDINGS.md
+
+**Deliverable:** Documented findings feed into Phase 6 implementation strategy
+
+---
+
 ### Phase 6: Expand Ability Library + Visual Foundation
 **Abilities:**
 - Add 3-5 more abilities (Whirlwind, Spear Thrust, Fireball, Lightning)

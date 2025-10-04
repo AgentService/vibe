@@ -261,6 +261,7 @@ func _on_melee_ability_requested(payload: Dictionary) -> void:
 ```gdscript
 func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 	## Placeholder visual - white flash (Phase 5)
+	## TODO Phase 2e: Test visual methods (see 2e_ABILITIES_visual_effects_poc.md)
 	## TODO Phase 6: Replace with base effects + customization (Option 3 hybrid)
 	var flash = Sprite2D.new()
 	flash.texture = preload("res://assets/placeholder/white_circle.png")
@@ -275,17 +276,20 @@ func _spawn_attack_effect(player_pos: Vector2, target_pos: Vector2) -> void:
 
 func _on_combat_step(payload: Dictionary) -> void:
 	# Visual effects updated via tweens in Phase 5
+	# Phase 2e: POC tests 3 methods (Sprite+Shader, GPUParticles, Line2D)
 	# Phase 6: Add effect pooling and lifetime tracking
 	pass
 
 func _initialize_attack_effects_pool() -> void:
 	# Placeholder - no pooling in Phase 5
+	# Phase 2e: POC validates pooling patterns
 	# Phase 6: Add ObjectPool for base circle/cone effects
 	pass
 ```
 
 **Visual Timeline:**
 - ✅ **Phase 5** (This migration): White flash placeholder (~5 min)
+- 📋 **Phase 2e** (POC - Decision Point): Test 3 visual methods, document findings (~3-4 hours)
 - 📋 **Phase 6** (Ability Library): Base effects + color/scale customization (~2 hours)
 - 📋 **Phase 8** (Polish): Unique visual scenes per ability (~1 hour each, optional)
 

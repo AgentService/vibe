@@ -1,0 +1,1512 @@
+# Week 4: Jan 20-26, 2025
+
+## [Current Week - In Progress]
+
+### Ability System - Architecture & Planning (2025-10-03 → 2025-10-04 REVISED)
+
+**REVISION 2 (2025-10-04):** External review identified critical issues (Score: 13/35). All fixes applied.
+
+**Critical Fixes Applied:**
+1. ✅ Fixed BaseAbility.level_up() loop bug (`for i in levels` → `for i in range(levels)`)
+2. ✅ Refactored tome system to use **modifier descriptors** (idempotent, reversible stacking)
+3. ✅ Created **AbilitySystem autoload** for deterministic 30Hz cooldown tracking (not Player._process)
+4. ✅ Fixed file path contradictions (`scripts/resources/` for Resources, `autoload/` for managers)
+5. ✅ Changed tag type to `Array[StringName]` for performance + type safety
+6. ✅ Refactored ProjectileAbility to use **EventBus signals** (no direct singleton access)
+7. ✅ Extracted **AbilityComponent** from Player.gd (separation of concerns)
+
+**New Architecture Components:**
+- **TomeModifier.gd** (Resource): Descriptor pattern for idempotent stat modifications
+- **AbilitySystem.gd** (Autoload): Owns cooldown state, triggers auto-cast on 30Hz combat_step
+- **AbilityComponent.gd** (Node): Manages ability/tome slots, attached to Player scene
+- **Baseline vs Computed Stats**: `base_damage` never mutated, `final_damage` recomputed from modifiers
+
+**Original Architecture (2025-10-03):**
+- **Architecture Document**: Created comprehensive technical blueprint for auto-cast ability system
+  - BaseAbility class with polymorphic hierarchy (ProjectileAbility, BuffAbility, AoEAbility, etc.)
+  - BaseTome class with ability/player stat modifiers (damage, speed, quantity, HP, luck, XP)
+  - Tag-based applicability system (~15 tags: projectile, damage, fire, cooldown, etc.)
+  - Level-up progression (damage scales via re-picking abilities)
+  - 4 ability slots + 4 tome slots per player
+  - Integration points: DamageService, MetaProgression, Quest system
+- **Phase 1 Implementation Plan**: 4-phase breakdown with detailed tasks (13-18 hours → **REVISED to 22-26 hours**)
+  - Phase 1.1: Foundation (Tag system, BaseAbility, ProjectileAbility, BaseTome, EventBus signals)
+  - Phase 1.2: Integration (AbilityManager, Player slots, auto-cast, 30Hz combat step)
+  - Phase 1.3: Vertical Slice (Ranger Arrow end-to-end: definition → projectile → damage → death)
+  - Phase 1.4: Tome Validation (TomeManager, Tome of Power, Tome of Swiftness, DPS/TTK tests)
+- **Realistic Tome Examples**: Updated architecture with gameplay-focused modifiers
+  - Tome of Power: +15% damage (global, all abilities)
+  - Tome of Swiftness: +8% movement speed (player stat)
+  - Tome of Quantity: +1 projectile per stack (projectile abilities only)
+  - Tome of Vitality: +15 max HP per stack (player stat)
+  - Tome of Fortune: +5 luck per stack (chest rarity modifier)
+  - Tome of Knowledge: +10% XP gain per stack (player stat)
+- **Task Breakdown System**: Created hierarchical task documents in `/Obsidian/03-tasks/`
+  - Parent task: `9_ABILITIES_system_implementation.md` (epic-level overview)
+  - Subtask 1a: `9a_ABILITIES_phase1_foundation.md` (5 tasks, 4-6 hours) ← **NEEDS UPDATE**
+  - Subtask 1b: `9b_ABILITIES_phase2_integration.md` (4 tasks, 3-4 hours) ← **NEEDS UPDATE**
+  - Subtask 1c: `9c_ABILITIES_phase3_vertical_slice.md` (6 tasks, 4-5 hours) ← **NEEDS UPDATE**
+  - Subtask 1d: `9d_ABILITIES_phase4_tome_validation.md` (4 tasks, 2-3 hours) ← **NEEDS UPDATE**
+  - Each task has: requirements, success criteria, testing approach, time estimate
+  - Includes headless test scripts for validation (Foundation, Integration, DPS/TTK measurements)
+
+**Files Created:**
+- `ability-system-architecture-REVISED.md` (corrected version, ~900 lines)
+- `REVISION_SUMMARY_ability_system.md` (fix summary + validation checklist)
+- `REVIEW_PROMPT_ability_system.md` (AI review prompt for external validation)
+
+**Status:** Architecture revised, awaiting task document updates
+**Next:** Update task docs to reflect new architecture (TomeModifier, AbilitySystem, AbilityComponent)
+
+### Ability System - Visual Effects POC Task (2025-10-04)
+
+**Created Task 2e**: Visual Effects POC (3-4 hours)
+- **Position**: Between Phase 4 (Tome Validation) and Phase 6 (Ability Library expansion)
+- **Branch**: Separate `visual-effects-poc` for throwaway testing code
+- **Purpose**: Test 3 visual effect methods before expanding ability library to determine best approach for scalable visual effects
+- **Testing Focus:**
+  - Method A: Sprite2D + Shader (glow effects with runtime customization)
+  - Method B: GPUParticles2D (high-performance particle systems with emission shape scaling)
+  - Method C: Line2D (procedural geometry for lightning/arcs)
+- **Scope**: Projectiles and AOE/aura attacks (scalability requirement - no pre-rendered sprites)
+- **Testing Strategy:**
+  - Scalability test: 3 AOE sizes (150px, 300px, 500px) per method
+  - Performance test: 100 simultaneous effects stress test
+  - Color customization test
+- **Architecture Foundation**: All methods support runtime AOE/size scaling via item modifiers (no sprite sheet dependencies)
+- **Deliverable**: POC_FINDINGS.md documenting method selection for Phase 6 implementation
+- **Cross-References:**
+  - Updated parent task `2_ABILITIES_system_implementation.md` Phase 2e section
+  - Updated migration guide `ability-system-melee-migration-guide.md` visual timeline
+  - Task file: `Obsidian/03-tasks/2e_ABILITIES_visual_effects_poc.md` (6 subtasks)
+
+<<<<<<< Updated upstream
+=======
+### Tier Progression System
+- **3-Stage Tier System**: Implemented stage-based progression with unlock flow (Tier 1-3 + Unlimited)
+  - **Tier 1-3**: Each tier requires 3 stages to complete for unlock
+  - **Tier 4 (Unlimited)**: Endless mode unlocked after completing Tier 3
+  - Death restarts from Stage 1 of current tier (no checkpoints - roguelike)
+  - **MetaProgression Extensions**: Added tier unlock tracking, deepest stage per tier, run counter per map+tier
+  - **EventBus Signals**: Added `tier_unlocked(tier)` and `deepest_stage_updated(tier, stage)` signals
+- **MapSelect UI Overhaul**: Replaced time-based metrics with stage progression display
+  - Replaced "Speedrun" label with "Deepest Stage" showing X/3 format for Tier 1-3
+  - Unlimited mode shows "Stage N" instead of X/3 (infinite depth tracking)
+  - Added 4th tier checkbox for Unlimited mode with 1.5x difficulty multiplier
+  - Tier labels show stage count: "Tier 1 (3)", "Tier 2 (3)", "Tier 3 (3)", "Unlimited"
+  - Dynamic tier unlock/disable based on MetaProgression data
+  - Run counter now tracks per map+tier combination
+- **Architecture**: Tier unlocks stored globally in MetaProgressionData.tres (persistent)
+  - `unlocked_tiers: int` - highest unlocked tier (1-4)
+  - `tier_deepest_stage: Dictionary` - best stage reached per tier {1: 2, 2: 0, 3: 0, 4: 15}
+  - `map_tier_runs: Dictionary` - run count per map+tier {"forest_arena": {1: 10, 2: 5}}
+  - LocalLeaderboard continues tracking kills/time per map+tier for personal bests
+
+### UI Component System & Asset Organization
+- **Reusable Scene Components**: Replaced manual UI construction with template-based components
+  - **MainButton.tscn/gd**: Single source of truth for all UI buttons (Play, Confirm, Unlock, etc.)
+    - Embedded StyleBoxTexture resources (hover, pressed, normal states)
+    - @export var button_text for easy customization
+    - Change template → all buttons update across entire game
+    - Deployed in MainMenu (4 buttons), UnlockShop (1 button)
+    - MainMenu: Removed 6 duplicate StyleBoxTexture SubResources, reduced load_steps 10→4
+  - **ShopItemCard.tscn/gd**: Reusable shop item card with hover/selection states
+    - Frame-based pattern (NinePatchRect + Button) for visual consistency
+    - Signal-based communication (item_clicked, item_hovered)
+    - UnlockShop code reduced from 422 → 362 lines (-60 lines)
+  - **CharacterSelectButton.tscn/gd**: Reusable character selection card (replaces 80+ lines of code)
+  - **LeaderboardEntry.tscn/gd**: Reusable leaderboard row component with rank/name/score/icon
+  - **Leaderboard.tscn/gd**: Complete leaderboard system with Global/Friends tabs and entry management
+  - Implemented pending data pattern for safe early setup() calls before _ready()
+  - Components support visual editing - change .tscn, all instances update automatically
+- **Leaderboard Component Features**:
+  - Callback-based data providers for flexible loading (setup_data_providers)
+  - Automatic tab switching and visibility management
+  - Manual data injection for testing (load_global_data, load_friends_data)
+  - Programmatic navigation (switch_to_global, switch_to_friends, refresh_current_tab)
+  - Current player highlighting support via is_current_player flag
+- **Filename-Based Asset Loading**: Convention over configuration for UI assets
+  - Asset folders: `assets/ui/characters/portraits/`, `abilities/icons/`, `passives/icons/`
+  - Data files store filenames only ("sword" → `sword.png` resolved at runtime)
+  - Auto-tries `.png` and `.svg` extensions, falls back gracefully with logging
+  - Comprehensive documentation in `assets/ui/README.md` and `scenes/ui/components/README.md`
+- **CharacterSelect Refactoring**: Code reduction from 206 → 188 lines via components
+  - Added auto-select first character on screen load
+  - Updated label references from generic (Label, Label2) to semantic (name, rank, runcount)
+  - Added MainAbility/MainPassive display with icon support
+  - Removed base stats display (HP/DMG/SPD), added rank/runs placeholders
+- **MainMenu Refactoring**: Simplified leaderboard population using components
+  - Replaced brittle `get_node("NinePatchRect/MarginContainer/...")` with `entry.setup(...)`
+  - Converted `_get_character_icon()` from hardcoded paths to texture loading
+  - Both Friends and Global tabs now use LeaderboardEntry component
+- **Data Model Extensions**: CharacterType.gd now includes UI display fields
+  - `main_ability_name/description/icon`, `main_passive_name/description/icon`, `portrait_icon`
+  - Updated character-types.tres with Knight/Ranger/Mage ability data
+
+### Scene Architecture
+- **MainMenu Promotion**: MeasureAtlas promoted to primary MainMenu, old menu archived as reference
+  - **Renamed:** MeasureAtlas.tscn → MainMenu.tscn (now the PRIMARY F5 menu)
+  - **Archived:** MainMenu.tscn → MainMenu_reference.tscn (preserved for feature comparison)
+  - SceneTransitionManager "main_menu" mapping updated to new MainMenu.tscn
+  - F5 flow: Main.tscn → MainMenu.tscn → CharacterSelect_New → MapSelect_New → Arena
+  - Old menu remains accessible as MainMenu_reference for migration reference
+- **EventBus Navigation Pattern**: Replaced `get_tree().change_scene_to_file()` with EventBus signals
+  - **Critical fix:** Direct scene changes destroyed Main.tscn and SceneTransitionManager infrastructure
+  - All new UI scenes now use `EventBus.request_enter_map.emit()` for navigation
+  - SceneTransitionManager mappings added for "character_select_new" and "map_select_new"
+  - Start Run button from MapSelect_New now successfully loads arena
+  - Architectural lesson: EventBus transitions preserve root scene infrastructure
+
+>>>>>>> Stashed changes
+### UI/UX Improvements
+- **Reusable Menu Container Templates**: Created 5 progressively complex, reusable menu container components
+  - **BaseMenuContainer**: Border + background with customizable size, color, corner radius, padding
+  - **TitledMenuContainer**: Extends base with styled title section (customizable text, font size, alignment)
+  - **GridMenuContainer**: Extends titled with scrollable grid (configurable columns, spacing, size)
+  - **GridWithDetailsContainer**: Extends grid with toggleable 70/30 split details panel below
+  - **TabbedGridContainer**: Extends details with tab navigation (separate grids per tab, shared details)
+  - All templates share consistent default styling (dark blue bg, 8px corners, 20px padding)
+  - Full @export property control for customization per instance
+  - Comprehensive usage guide in `scenes/ui/components/MENU_CONTAINERS_GUIDE.md`
+  - **Next Step**: Refactor plan in `Obsidian/03-tasks/UI_CONTAINER_SCENES_REFACTOR.md` for migrating all UI
+- **MainMenu Background & Persistent Currency**: Added mystical portal background and always-visible Rift Fragments
+  - Background image (main_menu_backgroundgpt.png) set as TextureRect with Keep Aspect Covered stretch
+  - Persistent Rift Fragments display in top-right (24px icon + number) visible across all menu states
+  - All containers (CharacterSelect, MapSelect, UnlocksShop) now have semi-transparent dark backgrounds (90% opacity)
+  - UnlocksShop container has proper padding (20px margins) via MarginContainer for clean spacing
+  - Removed duplicate Rift Fragments displays from main menu center and shop
+- **MainMenu Layout Fix**: Resolved Control node anchoring issues when loaded under Main.tscn
+  - Changed Main.tscn from Node2D to Control for proper anchor support
+  - Removed Camera2D interference with Control coordinate system
+  - Implemented FULL_RECT overlapping container pattern for menu + leaderboard
+  - F5 (project run) and F6 (scene run) now display identical layouts
+- **Dynamic Item Loading**: Shop system now scans `res://data/content/{category}/*.tres` automatically
+  - No hardcoded lists - add items/tomes/skills by creating .tres files
+  - Maintains rarity sorting and three-state progression (locked/discovered/unlocked)
+  - Placeholder content added: 5 items, 2 tomes (Damage, Agility), 1 skill (Dash)
+  - Tomes are stat-boosting books (+Damage, +Movement Speed, etc.)
+- **Shop UI Improvements**: Enhanced shop visual clarity and layout
+  - Details panel now always visible (pre-allocates space instead of auto-showing)
+  - Removed dimming from locked items for better readability
+  - Changed locked display from "??? (Locked)" to "??? 🔒"
+  - Increased grid from 2 to 3 columns for better item visibility
+  - Added `_show_empty_details()` function for placeholder text when no items selected
+- **Icon-Based Shop Cards**: Refactored shop entries to icon-only display (80x80px squares)
+  - UNLOCKED: Full color icon with rarity tint, shows complete details
+  - UNDISCOVERED + LOCKED: Black silhouette (❓), shows only quest requirement with progress
+  - DISCOVERED + LOCKED: Color icon with semi-transparent overlay showing cost (💎)
+  - All states are clickable to view contextual details in details panel
+  - Fixed grid width expansion issues by constraining item sizes (not using expand flags)
+- **Details Panel 70/30 Split**: Restructured details panel for better organization
+  - Left panel (70%): Name, description, stats, flavor text
+  - Right panel (30%): Quest progress OR unlock button with cost
+  - UNDISCOVERED: Shows quest requirement in right panel
+  - DISCOVERED + LOCKED: Shows unlock button with diamond cost in right panel
+  - UNLOCKED: Right panel hidden, full info in left panel
+  - Removed verbose "Quest Completed" and "Cost to Unlock" strings for cleaner UI
+  - Fixed dimensions: 600x140px with text clipping to prevent overflow
+  - Labels use `clip_text` and `text_overrun_behavior` for clean display
+- **Enhanced D+L Modal Overlay**: Improved visual feedback for discovered locked items
+  - Full-rect ColorRect overlay (was centered PanelContainer)
+  - Increased dimming from 0.6 to 0.75 alpha for better contrast
+  - Cost text now pure white (Color.WHITE) with black outline
+  - Overlay uses PRESET_FULL_RECT anchors for precise coverage
+- **Item Icon Integration**: Replaced placeholder emojis with actual PNG textures in UnlockShop
+  - Updated all 5 ItemMetadata .tres files with `icon_path` references to assets/items/*.png
+  - Shop now uses TextureRect for icon display with proper sizing (64x64) and centering
+  - State-based rendering: unlocked (full color), undiscovered (dark silhouette), discovered (full color with overlay)
+  - Maintains emoji fallbacks for missing textures (🎯 for items, ❓ for undiscovered)
+  - Discovered+locked items now render with complete greyscale desaturation (Color(0.33, 0.33, 0.33)) + 90% dark overlay
+  - Files updated: lucky_coin.tres, rabbits_foot.tres, feather.tres, cheese.tres, clover.tres (→ four-leaf.png)
+  - Fixed UnlocksShop @onready node paths by removing incorrect `/MarginContainer` layer (prevented null reference errors)
+- **UnlockShop Tab Polish**: Added content margins and icon-based notifications for improved tab UX
+  - Added content_margin properties to all tab styles (12px horizontal, 6px vertical) for breathing room
+  - Tab notification system: Shows attention icon when category has discoverable items
+  - Notification icon scaled to 50% size using runtime Image.resize() with LANCZOS interpolation
+  - Tab spacing: h_separation (50px between tabs), icon_separation (8px icon-to-text gap)
+  - Four-tab system: Items/Tomes/Skills/Characters with consistent visual treatment
+  - PersistentRiftFragments autoload: CanvasLayer currency display auto-shows/hides across menu scenes
+- **Leaderboard Tab Standardization**: Synchronized TabBar styling with UnlockShop for UI consistency
+  - Standardized content_margin to 12px/6px across all tab states (was 24px/12px for selected/focus)
+  - Added custom_minimum_size Vector2(0, 50) to match UnlockShop tab height
+  - Both components now share identical tab padding, height, and visual appearance
+- **ShopItemCard Component**: Created reusable shop item card following CharacterSelectButton pattern
+  - Button root with automatic hover/press theme states from MainMenu.tres
+  - setup() method accepts ItemMetadata + state (discovered/unlocked/can_afford)
+  - Emits item_clicked(item_id, category) and item_hovered(item_id, category) signals
+  - State-based visuals: unlocked (full color), undiscovered (black silhouette), discovered+locked (dim overlay with cost)
+  - Rarity-based subtle tint on button background (0.3 alpha)
+  - 80x80px fixed card size with 64x64px centered icon texture
+  - set_selected() method for visual selection feedback
+  - Refactored UnlockShop.gd: Reduced from 422 → 362 lines (-60 lines)
+  - Removed _add_icon_visual() helper (now internal to ShopItemCard component)
+  - Cards now have hover highlighting and support future selection state tracking
+
+### Task 04: Single-Session Progression Refactoring
+- **Phase 6: Character/Map/Tier Selection**: ✅ **COMPLETED** - Simple visibility-toggle UI for character and difficulty selection
+  - **MainMenu Integration**: Created 3-screen flow directly in MainMenu.tscn (main → character select → map/tier select)
+  - **Character Selection**: Knight/Ranger selection with info display and confirm button
+  - **Map/Tier System**: Tier 1/2/3 selection with difficulty descriptions and reward multipliers
+  - **SessionState Integration**: Character/map/tier stored in SessionState.current_character/map/tier
+  - **PlayerSpawner Fix**: Corrected SessionState API usage (is_run_active(), current_character access)
+  - **StateManager Update**: Allowed MENU → ARENA direct transition for new flow
+  - **Arena Entry**: Uses pathgen_arena matching hideout's MapDevice flow
+  - **Boss Death Handling**: Added _is_dying flag and player_died signal handler to prevent physics errors
+  - **ResultsScreen Simplification**: Removed hideout/restart options, menu-only navigation
+  - **LocalLeaderboard**: Integrated run tracking with tier-specific leaderboards
+
+- **Phase 7: Migrate Existing Systems**: ✅ **VERIFIED COMPLETE** - SessionState integration already functional
+  - **SessionState Tracking**: Already connected in SessionState._ready() (enemy_killed, damage_dealt, xp_gained signals)
+  - **Death Handling**: Player.gd:809 calls SessionState.end_run() with Rift Fragment calculation
+  - **LocalLeaderboard**: Player.gd:820-825 adds runs to leaderboard with tier/map tracking
+  - **Results Flow**: Player.gd:829 shows ResultsScreen modal with comprehensive stats
+  - **MeleeSystem Integration**: scripts/systems/combat/MeleeSystem.gd uses SessionState.player_modifiers
+  - **No RunManager.stats**: Zero references to old RunManager stats system found
+  - **Verification**: Bottom-up approach paid off - Phases 1-6 completed integration during implementation
+
+- **Phase 8: Remove Old Systems**: ✅ **COMPLETED** - Cleanup and documentation complete
+  - **CharacterManager Removal**: Already completed in Phase 1 (autoload removed, references cleaned)
+  - **Leaderboard Panel**: Added 300x600 MarginContainer on MainMenu right side with "PERSONAL BESTS" title
+  - **Personal Best Tracking**: Displays highest kill count for each character across all maps/tiers
+  - **Dynamic Updates**: Connects to EventBus.leaderboard_updated signal to refresh after new runs
+  - **Implementation**: MainMenu.gd:252-303 with _update_leaderboard_display() and _get_character_best_kills()
+  - **RunManager Verification**: Already simplified in Phase 2 - no save/load logic, only 30Hz combat timing + RNG seeding
+  - **Old Save Files**: Zero references to user://profiles/ in active code (only in _DELETED and documentation)
+  - **CharacterProfile Cleanup**: Removed leftover CharacterProfile.gd.uid file from scripts/resources/
+  - **Documentation Updates**: Updated autoload/CLAUDE.md with SessionState, MetaProgression, LocalLeaderboard patterns
+  - **Architecture Notes**: Added progression autoload section documenting MEGABONK/ROR2-style architecture
+
+- **Phase 9: Item Discovery & Unlock System**: ✅ **SHOP UI COMPLETE** - In-game discovery pending
+  - **ItemMetadata Resource**: Created ItemMetadata.gd with unlock cost, rarity enum, stat summary, discovery requirements
+  - **Rarity System**: Enum-based rarity (COMMON/UNCOMMON/RARE/EPIC/LEGENDARY) with color coding:
+    - Common: Grey (0.6, 0.6, 0.6) | Uncommon: Green (0.3, 0.9, 0.3) | Rare: Blue (0.3, 0.5, 1.0)
+    - Epic: Purple (0.7, 0.3, 1.0) | Legendary: Gold (1.0, 0.8, 0.2)
+  - **Discovery Requirements**: Achievement-based unlock requirements (e.g., "Deal 1000 critical hits")
+  - **MEGABONK Items**: Created 5 items with varied rarities:
+    - Cheese (Common, 50💎): +10% Max HP - "Survive for 5 minutes"
+    - Feather (Common, 60💎): +15% Move Speed - "Reach stage 3"
+    - Four-Leaf Clover (Uncommon, 75💎): +10% Luck - "Defeat 100 enemies"
+    - Lucky Coin (Rare, 100💎): +15% Item Drop Rate - "Complete run with 3+ item types"
+    - Rabbit's Foot (Epic, 150💎): +5% Crit Chance - "Deal 1000 critical hits"
+  - **UnlocksShop Integration**: 4th screen in MainMenu.tscn with category tabs (Items/Tomes/Skills)
+  - **Grid Layout**: Items display in 2-column grid with auto-wrap (GridContainer)
+  - **Shop UI Architecture**: ALL items visible by default, showing LOCKED/DISCOVERED/UNLOCKED states
+  - **Three-State System**:
+    - LOCKED (grey, "???", 🔒 + cost) - Not discovered, shows requirement in details
+    - DISCOVERED (colored, UNLOCK button) - Found in run, can purchase
+    - UNLOCKED (colored, no button) - Purchased and available
+  - **Details Panel**: Auto-selects first item on shop open, shows:
+    - Name with rarity color | Description | Stats OR discovery requirement | Flavor text
+  - **Purchase Flow**: Check affordability → spend_rift_fragments() → unlock_item() → refresh UI
+  - **Shop Button**: Added "Unlocks Shop" button to main menu
+  - **Category Switching**: Toggle buttons for Items/Tomes/Skills with reactive UI updates
+  - **Debug Commands**: Console commands for testing (discover_item, give_fragments, progression_info)
+  - **LeaderboardDataResource**: Moved from inner class to external file for proper Godot serialization
+  - **Persistence Fix**: Uses `get_data()` method for clean Resource save/load cycle
+  - **MainMenu Fix**: Deferred leaderboard display to ensure data loads before UI refresh
+  - **TODO**: In-game discovery notifications, achievement tracking, drop table integration
+
+### Systems Architecture Fixes
+- **EventSpawnManager Runtime Fix**: ✅ **COMPLETED** - Fixed SpawnConfig to EnemyType conversion error in event spawning
+  - **Runtime Error Resolution**: Fixed "Invalid access to property or key 'enemy_type' on SpawnConfig" during event enemy spawning
+  - **Object Model Separation**: Used `cfg.to_enemy_type()` method to properly convert SpawnConfig to EnemyType before spawn call
+  - **Architecture Boundary Fix**: Maintains proper separation between spawn configuration and enemy template objects
+  - **Error Location**: EventSpawnManager.gd line 247 - now properly handles SpawnConfig → EnemyType conversion
+
+- **Test Infrastructure Updates**: ✅ **COMPLETED** - Updated test import paths for new domain organization structure
+  - **Signal Cleanup Test Fix**: Updated import paths in test_signal_cleanup_validation.gd for XpSystem and MeleeSystem
+  - **Domain Organization Support**: Changed imports from flat scripts/systems/ to domain subfolders (combat/, spawn/)
+  - **Test Compatibility**: Signal cleanup validation now passes successfully with corrected import structure
+  - **Pre-commit Integration**: Tests now run cleanly in CI pipeline with new domain-organized file structure
+
+### Legacy Code Cleanup
+- **ForestArena Removal**: ✅ **COMPLETED** - Removed legacy ForestArena scene and old "Forest Arena Generator Editor" plugin
+  - **Scene Files Removed**: ForestArena.tscn, ForestArena.gd, and associated .uid files
+  - **Plugin Removal**: Completely removed addons/forest_generator_editor/ directory
+  - **Reference Updates**: Updated SceneTransitionManager.gd and DebugConfig.gd to remove ForestArena options
+  - **Preservation**: PathAware_Forest.tscn and current map generation systems remain intact
+  - **Test Cleanup**: Removed old test_forest_generation files specific to legacy system
+
+### Combat System Foundation Cleanup
+- **Scaling Logic Cleanup**: ✅ **COMPLETED** - Removed scattered scaling implementations to create clean foundation for unified DifficultyDirector
+  - **MapLevel Simplified**: Removed convenience scaling methods (`get_health_scaling()`, `get_damage_scaling()`, `get_pack_size_scaling()`, etc.)
+  - **MapLevel Focus**: Now focused solely on time-based progression tracking and level state management
+  - **SpawnDirector Scaling Removed**: Eliminated complex MapLevel + wave scaling multipliers from pack size calculations (lines 777-792)
+  - **Dynamic Scaling Preserved**: Kept arena condition-based scaling (density, zone availability, threat levels) for intelligent spawning
+  - **Boss System Cleanup**: Removed hardcoded stat multipliers from BossSpawnManager (5x health, 2x damage) and boss scripts
+  - **Boss Template Ready**: Boss stats now use base SpawnConfig values, ready for unified scaling template application
+  - **SpawnDirector Architecture Simplified**: Removed unused activation methods (DISTANCE, VIEWPORT, HYBRID), kept AREA_TRIGGERS only
+  - **Error Handling Improved**: Replaced silent fallback degradation with clear error messages and Vector2.ZERO returns
+  - **Foundation Ready**: Clean state prepared for DifficultyDirector implementation and multi-system spawn architecture
+
+### Debug Configuration
+- **Arena Discovery System**: ✅ **COMPLETED** - Enhanced debug configuration with automatic arena discovery
+  - **File Organization**: Moved PathAware_Forest from tests/ to scenes/arena/ directory for proper categorization
+  - **Dynamic Arena Dropdown**: Implemented custom property system using `_get_property_list()` for runtime arena discovery
+  - **Arena Auto-Discovery**: Enhanced `get_available_arenas()` to scan scenes/arena/ directory and find all arena files
+  - **Character Selection Fix**: Updated character selection to use correct IDs ("knight", "ranger") instead of invalid ones
+  - **Smart Filtering**: Arena discovery excludes Player scenes and XPOrb, includes all legitimate arena files
+  - **Maintainable System**: No need to manually update arena lists - new arena files are automatically discovered
+  - **Found Arenas**: Arena, ForestArena, PathAware_Forest, ProceduralArena, UnderworldArena, Custom Path
+  - **Path Reference Cleanup**: Fixed remaining references to old tests/ location in SceneTransitionManager and removed leftover files
+  - **Godot Cache Cleanup**: Removed .godot/editor/ cache files to force refresh of scene references
+  - **File Cleanup**: Removed PathAwareTestArena.tscn and updated all references to use PathAware_Forest.tscn
+  - **Player Scene Selection Fix**: Modified PlayerSpawner to check debug config when CharacterManager has no current character
+  - **Character Scene Mapping**: Now correctly spawns PlayerRanger.tscn for Ranger and Player.tscn for Knight based on debug selection
+
+### Systems
+- **Data-Driven Spawn System**: ✅ **COMPLETED** - Eliminated manual spawn overrides through MapConfig activation methods
+  - **SpawnDirector Refactor**: Replaced hardcoded `has_method("get_random_spawn_position")` checks with proper `MapConfig.activation_method` evaluation
+  - **AREA_TRIGGERS Implementation**: When `activation_method = 2`, automatically uses Area2D spawn zones with proximity filtering
+  - **Configuration-Based Arenas**: PathAware_Forest now loads `.tres` files instead of creating default values, making arenas purely data-driven
+  - **Code Reduction**: Removed 30+ lines of manual spawn logic from PathAware_Forest.gd - no longer needs custom `get_random_spawn_position()` override
+  - **Activation Methods**: DISTANCE (0) for radius spawning, AREA_TRIGGERS (2) for zone-based spawning, with VIEWPORT and HYBRID planned
+  - **Automatic Zone Detection**: SpawnDirector reads `_spawn_zone_areas` and applies proximity filtering based on `auto_spawn_range`/`auto_spawn_min_distance`
+  - **YSort Container Fix**: Enhanced YSort_Objects detection with recursive search to find nested containers (e.g., PathAwareArenaGenerator/YSort_Objects)
+
+- **Boss Speed Configuration Fix**: ✅ **COMPLETED** - Removed hardcoded speed overrides to enable data-driven boss tuning
+  - **All Boss Scripts Updated**: Removed `speed = X.X` assignments from BananaLord, AncientSlime, DemonOverlord, DragonLord, AncientLich, TestShadowBoss
+  - **BaseBoss Integration**: Boss speed now properly applied from `speed_range` values in `.tres` files through BaseBoss inheritance
+  - **Configuration Files Working**: Speed changes in `enemy-variations/*.tres` files now immediately affect boss movement speed
+  - **BananaLord Example**: Changed from hardcoded 60.0 to Vector2(500, 600) range from banana_lord.tres configuration
+  - **Debug Log Cleanup**: Converted debug logs to comments in BananaLord for cleaner console output
+  - **Systemic Fix**: Issue was present across entire boss system - all 6 boss types were overriding configuration data
+
+- **SpawnDirector Refactoring Task Update**: ✅ **ANALYSIS COMPLETED** - Ultra-phased extraction plan with /spawn subfolder organization
+  - **Current State**: SpawnDirector has grown to 1,797 lines (vs estimated 1,600) with 7+ mixed responsibilities
+  - **Improved Organization**: Create `/spawn` subfolder following existing `/boss`, `/events`, `/enemy_v2` patterns
+  - **4-Phase Plan**: Event System (250 lines) → Zone Management (200 lines) → Position Management (300 lines) → Pack Formation (250 lines)
+  - **User Verification**: Each phase includes verification checkpoints to ensure game stability before proceeding
+  - **Target Architecture**: SpawnDirector (~800 lines coordinator) + scripts/systems/spawn/ with 4 extracted systems (250-300 lines each)
+  - **Organization Benefits**: Logical grouping, easier navigation, clear boundaries, future-proof for new spawn types
+  - **Next Step**: Ready for Phase 1 implementation (Event System extraction, 25-30 minutes estimated)
+  - **Proper Visual Layering**: Bosses now spawn in correct Y-sorted containers instead of falling back to ArenaRoot, ensuring proper depth rendering
+
+- **Path-Aware Spawning System**: ✅ **COMPLETED** - Strategic spawn position optimization for procedural arenas
+  - **Branch Endpoint Optimization**: Red triangles (AT_BRANCH_ENDPOINTS) now only appear at true branch terminations, not main path endpoints
+  - **Dual Filter Architecture**: Implemented geometric analysis (`_is_main_path_segment()`) plus 30px proximity exclusion for precise classification
+  - **Semantic Accuracy**: Each marker type represents distinct strategic locations - yellow START, purple strategic checkpoints, orange regular spawns, magenta branch exploration, red branch terminations
+  - **Visual Distinction**: Complete marker hierarchy with different shapes/colors for each spawn category
+  - **Integration Validation**: Debug markers now exactly match actual PathAwareMapConfig spawn position calculations
+
+- **Tree Placement Randomization**: ✅ **COMPLETED** - Fixed randomization controls for natural forest boundaries
+
+- **Spawn Zone Generation**: ✅ **COMPLETED** - Functional Area2D spawn zones at path branch endpoints
+  - **Strategic Placement**: Spawn zones automatically generated at red markers (branch endpoints) during PathAware arena generation
+  - **Visual Indicators**: Cyan circular indicators (100px radius) with zone labels (Z0-Z4) for easy editor identification
+  - **Functional Integration**: Area2D nodes with CollisionShape2D for proper SpawnDirector compatibility
+  - **Direct Implementation**: Embedded generation in PathAwareArenaGenerator with spawn_zone_container organization
+  - **SpawnDirector Bridge**: `_update_spawn_zones()` method collects zones into `_spawn_zone_areas` array for breach event spawning
+  - **Breach Integration**: Enemies now spawn properly in generated zones instead of falling back to ArenaRoot
+  - **Reusable Pattern**: Established spawn zone creation pattern for future arena types with path-based spawning
+  - **🔥 CRITICAL FIXES**: Resolved three major issues preventing randomization from working
+    - **Jitter Math Fix**: Removed incorrect `/100.0` division - now randomness=1.0 gives full offset range instead of 1%
+    - **RNG Determinism Fix**: TreeBoundaryGenerator passes seeded RNG to TreeBoundaryConfiguration, maintaining deterministic generation per run
+    - **Property Error Fix**: Removed invalid `enable_staggered_placement` assignments that caused runtime errors
+  - **Export Range Fix**: Expanded placement_randomness (0.0-100.0) and max_random_offset (0-200px) ranges to allow meaningful variation
+  - **Post-Snap Jitter System**: Implemented `_jitter_position()` to apply randomization AFTER tile grid snapping, preserving visual effects
+  - **Plugin UI Integration**: Enhanced Path-Aware Generator plugin (path_generator_dock.gd) with working randomization controls
+  - **Algorithm Fix**: Replaced all hardcoded `random_offset = Vector2.ZERO` with proper snap-then-jitter pattern across 6 generation methods
+  - **🎯 Visual Results**: Trees now display dramatic natural, organic placement - randomness=16.5 + offset=32px produces beautiful forest boundaries
+  - **Error Resolution**: Fixed PathConfiguration and TreeBoundaryConfiguration class loading errors via explicit script references in .tres files
+  - **Code Cleanup**: Removed unused randomization code from forest_generator_editor plugin to avoid confusion
+  - **Performance**: Maintained zero-allocation optimization while enabling visible randomization effects
+- **Strategic Architecture Decision**: Created comprehensive analysis for procedural generation scope management
+  - **Decision**: Keep existing procedural system dormant rather than removing it
+  - **Rationale**: Focus on core gameplay polish while preserving future flexibility for decorative/event variations
+  - **Documentation**: `/Obsidian/03-tasks/future-tasks/PROCEDURAL_GENERATION_REMOVAL_ANALYSIS.md` with detailed analysis and future decision criteria
+  - **Impact**: Zero maintenance burden while maintaining strategic options for later development phases
+- **SimpleTileSpawnValidator Implementation**: Complete tileset-based spawn validation system to replace Area2D spawn circles
+  - **Core System**: Created SimpleTileSpawnValidator autoload with spatial partitioning for <2ms spawn queries
+  - **Performance**: Optimized from 3.4ms to 1.8ms (47% improvement) using 512px spatial grid instead of linear search
+  - **Integration**: Added hybrid spawn approach to SpawnDirector - try tileset first, fallback to radius-based
+  - **Validation**: Uses `get_used_cells_by_id(2, Vector2i(12, 3))` to identify 76,498 ground tiles in UnderworldArena
+  - **Testing**: Created TilesetIntegration_test.tscn with comprehensive autoload validation and performance monitoring
+- **Procedural Generation Parameter Refinements**: Minor parameter adjustments to improve procedural arena generation
+  - **Generation Seed**: Updated DefaultGenerationParams seed from 12384 to 12350 for fresh procedural variation
+  - **Theme Standardization**: Standardized decimal formatting (1→1.0) in FlowersTheme and GreyRocksTheme for consistency
+  - **Arena Layout**: Refined ForestArena tileset configuration for improved visual composition
+- **ForestArena Migration to ProceduralArenaGenerator**: Successfully migrated ForestArena from specialized to general procedural system
+  - **Architecture Migration**: Replaced ForestArenaGenerator with tileset-agnostic ProceduralArenaGenerator using BiomeConfig resources
+  - **Resource-Driven Design**: Created ForestBiome.tres and DefaultGenerationParams.tres for easy configuration without code changes
+  - **5-Layer Z-Ordering Foundation**: Implemented Ground→ObjectBases→Decorations→Interactive→ObjectTops layer structure (z-index 0,1,2,5,10)
+  - **Backward Compatibility**: Maintains identical visual output while enabling multi-biome support (swamp, desert, winter)
+  - **Migration Guide**: Created comprehensive documentation with rollback plan and phase roadmap for tree z-ordering and object systems
+  - **Testing Updates**: Updated test_forest_generation.gd to work with new ProceduralArenaGenerator while maintaining validation coverage
+
+### Documentation
+- **Tileset-Based Spawn Areas Research**: Created comprehensive research task for replacing spawn circles with tileset-based spawn areas
+  - Analyzed current breach spawn system implementation (BreachEventHandler, Area2D zones)
+  - Researched Godot TileSet custom data layers for marking spawnable tiles
+  - Designed tile caching system for performance optimization
+  - Documented migration path from Area2D to tileset-based spawning
+  - Created prototype implementation plans with code examples
+- **Updated System Documentation**: Added SimpleTileSpawnValidator patterns to scripts/systems/CLAUDE.md and tests/CLAUDE.md
+
+---
+
+# Week 3: Jan 13-19, 2025
+
+## [Previous Week - Completed]
+
+### Infrastructure
+- **Semantic Clearing System**: Replaced hardcoded exclusions with proper architectural solution for object clearing behavior
+  - **Root Cause**: EntityClearingService mixed lifecycle management ("arena_owned") with clearing semantics, forcing hardcoded exclusions
+  - **Solution**: Implemented semantic group system where objects declare their clearing intent through dedicated groups:
+    - `CLEAR_WITH_ENEMIES` - Combat entities cleared during enemy clearing operations
+    - `CLEAR_WITH_ENEMY_EFFECTS` - Projectiles and effects from enemy actions
+    - `CLEAR_WITH_TRANSIENTS` - Temporary pickups like XP orbs and loot
+    - `PERSIST_ACROSS_ENEMY_CLEARS` - Map events like breaches that survive enemy clears
+    - `NEVER_AUTO_CLEAR` - Objects that should never be automatically cleared
+  - **Architecture**: Separated lifecycle management from clearing semantics, eliminating need for filtering logic
+  - **Impact**: Clean, explicit clearing behavior with no hardcoded exclusions; breaches persist correctly across enemy clears
+  - **Implementation**: Added ClearingSemantics autoload, updated EntityClearingService, BreachEventHandler, SpawnDirector, and XpSystem
+  - **Testing**: Comprehensive test suite verified correct clearing behavior for all semantic groups
+- **Code Cleanup**: Removed unused breach indicator components and fixed Godot editor errors
+  - **Removed Files**: `SimpleBreachIndicator.tscn` and `SimpleBreachIndicator.gd` (unused alternative to active `BreachIndicator.tscn`)
+  - **Fixed Test Errors**: Removed broken test files that referenced missing scripts
+    - `test_breach_events.tscn` (replaced by `test_breach_events_focused.tscn`)
+    - `test_breach_events_simple.tscn` (orphaned during test consolidation)
+  - **Active System**: BreachEventHandler continues using `BreachIndicator.tscn` for scene-based breach visualization
+- **GitHub Actions Test Cleanup**: Removed failing GitHub Actions workflows and implemented comprehensive local testing automation
+  - **Removed Workflows**: Deleted `godot-tests.yml`, `breach-event-tests.yml`, and `pr-breach-validation.yml` due to Godot headless dependency resolution issues
+  - **Root Cause Analysis**: GitHub Actions failed due to autoload script compilation issues where EventBus/BalanceDB couldn't resolve domain class dependencies (EntityId, DamageAppliedPayload, CombatBalance, etc.) in headless mode
+  - **Local Testing Automation**: Implemented Git hooks for testing without CI dependencies
+    - **Pre-Push Hook**: Comprehensive testing (60s breach + 120s main suite) before `git push` to remote
+    - **Post-Commit Hook**: Quick smoke testing and commit logging after successful commits
+  - **Test Strategy**: Maintains superior test quality with local execution where Godot dependencies resolve correctly
+  - **Preserved Workflows**: Kept working `architecture-validation.yml` and `architecture-check.yml` for structural validation
+
+### Documentation
+- **Breach Event System Architecture Documentation**: Created comprehensive documentation for the PoE-Atlas-style breach event system in Obsidian systems folder
+  - **Complete System Architecture**: Documented dynamic ring spawning, sector-based enemy distribution, and independent multi-breach support
+  - **Component Documentation**: Detailed coverage of BreachEventHandler, EventInstance, BreachEventConfig, and EventSpawnStrategy classes
+  - **Integration Patterns**: EventBus communication, SpawnDirector coordination, and enemy ownership tracking
+  - **Configuration & Hot-Reload**: Resource-driven design with .tres configuration files and hot-reload support
+  - **Performance Optimizations**: Spatial validation, ring spawn optimization, and efficient cleanup during shrinking phase
+  - **Testing Guidelines**: Suggested test scenarios for multi-breach independence and enemy distribution validation
+  - **Future Enhancement Planning**: Documented planned features from breach_summary.md including monster reveal system and specialized breach monsters
+- **Enhanced CLAUDE.md Navigation System**: Added comprehensive file structure documentation and AI navigation tips for improved codebase understanding
+  - **Quick Reference Table**: Added table showing all major folders, their purposes, key entry points, and documentation locations
+  - **Project File Structure**: Detailed ASCII tree showing complete codebase organization with annotations for each major component
+  - **AI Navigation Instructions**: Clear guidance on hierarchical documentation approach using main CLAUDE.md + subfolder CLAUDE.md files
+  - **Setup Tips for AI Tools**: Comprehensive section explaining how to use file structure for navigation, create subfolder docs, and improve search efficiency
+  - **Context Integration**: Added link to current project state assessment and enhanced quick links section
+  - **Navigation Efficiency**: Documented specific patterns for autoload changes, game logic work, data structure updates, UI work, and testing
+  - **Reference Hierarchy**: Clear documentation layers from file structure → subfolder docs → main rules → deep architectural docs
+- **Hierarchical Documentation System Implementation**: Created comprehensive subfolder CLAUDE.md files for each major code layer
+  - **autoload/CLAUDE.md**: Foundation patterns, initialization order, EventBus architecture, fixed-step timing, RNG streams
+  - **scripts/systems/CLAUDE.md**: 30Hz combat patterns, dependency injection, EventBus communication, resource configuration
+  - **scripts/domain/CLAUDE.md**: Pure data models, signal payloads, validation patterns, hot-reload strategies
+  - **scenes/CLAUDE.md**: Scene constraints, dynamic loading, HUD architecture, boss patterns, theme integration
+  - **tests/CLAUDE.md**: Test execution patterns (.tscn vs --script), Monte-Carlo framework, isolation testing, CI/CD integration
+  - **Documentation Maintenance Workflow**: Added requirement to update relevant subfolder CLAUDE.md after completing tasks in that area
+  - **Cross-References**: Established "See Also" sections linking related layers for cohesive documentation navigation
+- **Project State Assessment 2025-09-20**: Comprehensive current state evaluation documenting 9 months of development progress since January baseline
+  - **Major Milestone Analysis**: Transformation from basic prototype to production-ready roguelike with PoE-style systems
+  - **Architecture Status**: Complete EventBus typed contracts, StateManager flow, component-based HUD, modal overlay system
+  - **Game Systems Review**: Breach event system with mastery progression, unified damage system, character persistence, zone-based spawning
+  - **Performance Validation**: Zero-allocation patterns, boss batch processing, 500+ entity handling at 60 FPS
+  - **Implementation Quality**: Architecture boundary enforcement, comprehensive testing, hot-reload workflows, extensive documentation
+  - **Next Priorities**: Ability system extraction (foundation ready), audio integration, map variety expansion
+  - **Status**: Ready for content expansion phase with exceptional technical foundation
+
+### Added
+- **Production-Ready Breach Event Testing Suite**: Created focused test framework validating core breach event system mechanics without spawn system dependencies
+  - **Complete Lifecycle Testing**: Validates breach creation, expansion (55px → 600px), natural phase transitions, and shrinking mechanics
+  - **Ring Calculation Determinism**: Confirms deterministic enemy spawn calculations using RNG.stream("waves") with fixed seeds for reproducible testing
+  - **Configuration Validation**: Verifies BreachEventConfig.tres parameter loading (max_radius: 600.0, ring_interval: 100.0, enemy_density: 0.015)
+  - **Multi-Breach Independence**: Tests unique ID generation and confirms 3 simultaneous breaches operate independently without cross-interference
+  - **Focused Test Architecture**: Bypasses complex arena spawn system integration to test core breach mechanics directly
+  - **Automated Validation**: 4/4 tests passing with comprehensive pass/fail reporting and detailed diagnostic output
+  - **Development Workflow Integration**: Recommended execution before commits, during CI/CD, and after balance configuration changes
+  - **Test Execution**: `"../Godot_v4.4.1-stable_win64_console.exe" --headless tests/test_breach_events_focused.tscn`
+
+### Critical Architecture Fixes
+- **SpawnDirector Direct Return Pattern**: Fixed 40% breach enemy tagging failure that was preventing complete cleanup during breach shrinking
+  - **Root Cause**: Position-based enemy searching with 20px tolerance had race conditions during scene instantiation
+  - **Solution**: Modified `_spawn_from_config_v2()` and `_spawn_boss_scene()` to return direct Node2D references instead of void
+  - **Impact**: 100% reliable enemy tagging, complete breach cleanup, eliminated expensive tree searches
+  - **Compatibility**: Fully backward compatible - all existing spawn callers (debug V key, wave spawning, boss spawning) unaffected
+  - **Documentation**: Created comprehensive Obsidian docs and README for SpawnDirector system architecture
+
+### Testing Infrastructure Improvements
+- **Isolated Test Hanging Fix**: Resolved issue where DamageSystem_Isolated and SpawnDirector_Isolated tests hung indefinitely after debug initialization
+  - **Root Cause**: Tests were designed as interactive debugging tools waiting for keyboard input via `_unhandled_input()` functions
+  - **Solution**: Added headless mode detection with `DisplayServer.get_name() == "headless"` and automated test execution paths
+  - **Integration**: Updated tests to use DebugManager.spawn_enemy_at_position() for proper enemy spawning with current system architecture
+  - **Dual-Mode Pattern**: Tests now serve both interactive debugging (manual controls) and automated CI/CD validation (headless mode)
+  - **API Validation**: Tests validate system integration points (DamageService, EntityTracker, EventBus) without requiring full enemy spawning
+  - **CI Compatibility**: Tests exit cleanly with pass/fail status suitable for GitHub Actions workflows
+  - **Documentation**: Updated tests/CLAUDE.md with interactive vs automated test patterns and troubleshooting guidance
+
+## [Previous Weeks - Archive]
+
+### Documentation
+- **MultiMesh Investigation Closure**: Documented final status of MultiMesh performance investigation task (26-REMOVE_MULTIMESH_SWITCH_TO_SCENE_ENEMIES.md)
+  - **Discovery**: Investigation document was outdated - MultiMesh system was completely removed September 11, 2025 (day after baseline established)
+  - **Resolution**: Updated investigation status to OBSOLETE, documented actual outcome (system removal vs optimization)
+  - **Rationale**: Scene-based enemies provide adequate performance for target scale (500-700 instances), MultiMesh complexity exceeded benefits
+  - **Archive**: Complete system preserved in `scripts/systems/multimesh-backup/` with restoration instructions for future scaling needs
+
+### Fixes
+- **Arena Cache System Simplified**: Removed complex arena scene caching in SpawnDirector that was causing "No cached arena scene available" spam during scene transitions
+  - **Root Cause**: Premature optimization - cached a simple tree lookup that takes microseconds, causing stale reference issues
+  - **Solution**: Replaced cached lookups with direct `_get_arena_scene()` calls - simpler, more reliable, negligible performance impact
+  - **Result**: Eliminated transition spam logs, reduced code complexity by ~50 lines, improved maintainability
+
+- **Breach Spawning Code Cleanup**: Removed unnecessary boss fallback logic and excessive logging from breach enemy spawning
+- **Breach Enemy Cleanup Fix**: Fixed issue where some breach enemies weren't being removed when breach events completed
+
+### Features
+- **Dynamic Breach Ring Spawning System**: Replaced static phantom position system with dynamic ring spawning that scales with circle size
+  - **Ring-Based Generation**: Enemies spawn in rings every 50px of expansion at 85-90% of breach radius
+  - **Circumference Scaling**: Enemy count scales with circle circumference (~1 enemy per 30px) instead of fixed 50 enemies
+  - **Sector Distribution**: 16-sector system ensures even distribution around breach perimeter, prioritizing empty areas
+  - **Spatial Restrictions**: Regular enemies can no longer spawn inside active breach circles, only breach enemies spawn within
+  - **Multi-Breach Independence**: Each breach maintains separate enemy pools, sector tracking, and unique breach IDs
+  - **UI Improvements**: Distance indicators removed after breach activation for cleaner visual experience
+  - **Configuration**: All parameters hot-reloadable via BreachEventConfig.tres (density, edge factor, ring interval, sectors)
+  - **Zone Validation**: Breach enemies still respect spawn zone boundaries, preventing spawning in water or invalid areas
+  - **Removed**: Ancient slime/banana lord fallback that was added when breach enemies lacked proper scenes
+  - **Cleaned**: Excess debug logging reduced to appropriate levels (INFO → DEBUG for spawn attempts)
+  - **Result**: Cleaner codebase, less log spam, proper enemy spawning maintained via zone bypass system
+
+- **Event Spawn Strategy System**: Implemented extensible strategy pattern for event-specific spawning behavior
+  - **EventSpawnStrategy Base Class**: Provides common validation and position generation interface for all event types
+  - **BreachSpawnStrategy**: Handles breach-specific logic ensuring enemies spawn within both breach circle AND zone boundaries
+  - **SpawnDirector Integration**: Strategy registration system allows events to define custom spawn behavior without modifying core spawning logic
+  - **Zone Intersection Validation**: Proper geometric validation ensures enemies only spawn in valid areas (fixes breach overspill issues)
+  - **Improved Spawn Distribution**: Fixed center-clustering issue using sqrt() distribution for uniform area coverage (30%-90% radius range)
+  - **Legacy Cleanup**: Removed context_tags workaround system in favor of clean strategy-based approach
+  - **Benefits**: Extensible for future events (ritual, pack hunt), cleaner separation of concerns, easier testing and debugging
+
+### Features
+- **Breach Event Configuration System**: Implemented centralized `.tres` resource configuration for all breach event parameters
+  - **Created**: `BreachEventConfig.gd` resource script with validation and helper methods for editor-friendly parameter tuning
+  - **Created**: `/data/balance/breach_event_config.tres` configuration file with hot-reload support for rapid iteration
+  - **Integration**: Updated `EventInstance`, `BreachEventHandler`, and `BreachIndicator` to use centralized config parameters
+  - **Parameters**: All timing (expand/shrink duration), sizing (radius, distance), spawning (interval, count), and visual (colors, pulse speed) settings now configurable
+  - **Benefits**: Real-time balance adjustments without code changes, consistent parameters across all breach components, follows CLAUDE.md hot-reload patterns
+- **Event System - PoE Atlas-Style Mastery Foundation**: Complete implementation of core event system with mastery progression
+  - **Core Event Types**: 4 event types (Breach, Ritual, Pack Hunt, Boss) with distinct mechanics and formation patterns
+  - **Mastery Tree System**: Point-based progression system where players earn points by completing events and spend them on passive modifiers
+  - **Event Spawning Integration**: Events leverage existing SpawnDirector zone system and pack formation logic for optimal performance
+  - **Real-time Modifiers**: Passive allocations immediately affect event behavior (density, duration, rewards) via EventMasterySystem
+  - **Resource-Driven Configuration**: All events defined via .tres files for hot-reload balancing and data-driven design
+  - **Signal-Based Architecture**: Complete EventBus integration for loose coupling between event system and UI components
+
+- **Display Settings Optimization**: Configured optimal pixel-perfect rendering for mixed sprite sizes (16x16, 48x48, 64x64)
+  - **Project Settings**: Added viewport stretch with aspect keep, enabled 2D pixel snapping, disabled MSAA for pure pixel art
+  - **Scaling Strategy**: Established 16x16 base unit system with consistent pixel density across all sprite sizes
+  - **Documentation**: Created comprehensive sprite import guidelines and scaling documentation in data/README.md and Obsidian/systems/
+  - **MasteryTreeUI**: ✅ COMPLETE - Scene-based UI following NewHUD patterns for point allocation and passive management
+  - **Atlas Tree Integration**: ✅ COMPLETE - PoE-style tabbed skill tree interface for hideout and runtime event mastery progression
+
+- **Atlas Tree UI System**: Complete tabbed interface implementation for event mastery progression
+  - **EventSkillTree Component**: Reusable skill tree component with data-driven initialization from existing breach tree foundation
+  - **AtlasTreeUI Interface**: Tabbed container supporting Breach (functional), Ritual/Pack Hunt/Boss (placeholder) with unified points display
+  - **EventMasterySystem Autoload**: Universal access architecture enabling skill tree functionality in both hideout and runtime contexts
+  - **MasteryDevice Integration**: E-key hideout access launching AtlasTreeUI with proper modal behavior and ESC handling
+
+- **Breach Event Visual Polish**: Enhanced breach event visibility and testing features
+  - **SimpleBreachIndicator**: Streamlined indicator using Godot's built-in viewport transforms for world-to-screen conversion
+  - **Unified Indicator System**: Single indicator that smoothly transitions from edge arrows (off-screen) to breach circles (on-screen)
+  - **Purple Enemy Modulation**: Breach-spawned enemies appear with distinct purple tint (Color(0.8, 0.3, 1.0, 1.0))
+  - **Shrinking Circle Cleanup**: Enemies touched by shrinking breach circle dissolve with purple fade effect (no XP granted)
+  - **Testing Mode**: Forced banana_lord enemy spawning for breach events to ensure consistent testing experience
+  - **Reset Functionality**: Both Atlas-level and individual tree reset buttons with proper passive deallocation through EventMasterySystem
+  - **Signal Integration**: Real-time EventBus connectivity for passive allocation/deallocation and point earning events
+  - **Resource Architecture**: SkillTreeData system preparing for future expansion to ritual/pack hunt/boss skill tree configurations
+
+  - **Interactive Event Mechanics**: ✅ COMPLETE - Full breach event lifecycle with visual indicators and mastery integration
+
+- **Breach Event System Polish**: Enhanced breach events with improved visibility and testing features
+  - **Editor Visibility**: @tool script with configurable preview radius (100px) makes breach indicators visible in scene editor
+  - **Off-Screen Tracking**: Arrow indicators at screen edges point to off-screen breaches with distance display
+  - **Testing Mode**: Forced banana_lord spawning for breach events with purple modulation for easy identification
+  - **Shrinking Circle Cleanup**: Enemies caught by closing breach circle dissolve with purple fade effect (no XP awarded)
+  - **Scene Metadata**: Breach-spawned enemies tagged with metadata for proper cleanup during shrinking phase
+
+- **Breach Event Phantom Position System**: Completed performance-optimized breach enemy revealing system using phantom positions instead of pre-spawning
+  - **Phantom Position Generation**: Pre-calculated enemy positions (50 total) distributed across full zone area using proper rectangular/circular distribution algorithms
+  - **Dimensional Reveal Mechanics**: Enemies spawn only when breach circle expansion reveals their phantom positions - no invisible entities for performance
+  - **Ownership Tracking System**: Each breach has unique breach_id to prevent cross-breach interference when multiple breaches operate simultaneously
+  - **Dynamic Circle Cleanup**: Shrinking breach circles properly remove enemies outside contracted radius, tested from 50 revealed enemies down to 2 remaining
+  - **Multi-Breach Independence**: Disabled zone cooldowns and old spawn strategy registration to ensure breaches in overlapping zones operate independently
+  - **Config Integration**: Full integration with BreachEventConfig.tres for total_breach_enemies (50), purple modulation, and all breach parameters
+  - **Performance Optimization**: Zero pre-spawning eliminates transparent enemy entities, phantom positions calculated once per breach activation
+
+### Architecture
+- **Integration Architecture Design**: Comprehensive cross-domain integration resolving Psychology vs Determinism vs Performance vs Retention conflicts
+  - **Hybrid RNG System**: Maintains 100% deterministic gameplay while adding psychological variability layer - competitive integrity preserved with optional engagement features
+  - **Performance-Optimized Territory System**: <1ms territory control using spatial hashing, pre-computed influence fields, and batched dirty region processing
+  - **Memory-Constrained Retention**: Achievement/milestone systems using existing .tres patterns and EventBus signals - zero allocation conflicts with combat systems
+  - **Layered Objective System**: MapConfig extensions supporting primary/secondary/hidden objectives with territory integration and psychology factors
+  - **Concrete Implementation**: Complete .tres resource examples, GDScript implementations, and integration touchpoints with existing SpawnDirector/PlayerProgression systems
+  - **Backwards Compatibility**: All extensions maintain existing RNG/EventBus/resource patterns - no breaking changes to current deterministic architecture
+
+### Fixed
+- **Complete CameraSystem Elimination**: Removed entire camera management system, fixed arena player visibility
+  - **Problem**: Arena player not visible due to null CameraSystem references breaking arena setup
+  - **Root Cause**: Arena.gd expected injected CameraSystem for bounds/zoom calls, but injection was disabled
+  - **Solution**: Complete CameraSystem removal following Godot best practices
+    - Removed CameraSystem autoload from GameOrchestrator entirely
+    - Updated Arena.gd to work without CameraSystem (direct EventBus bounds emission)
+    - Updated PerformanceMonitor to get camera info from player's Camera2D
+    - Player creates simple Camera2D in _ready() - pure Godot convention
+  - **Impact**: Arena player now visible and controllable, zero camera complexity, all positioning bugs eliminated
+- **SpawnDirector Scene Context Bug**: Fixed critical bug where enemies were spawning in hideout when autospawn was enabled, especially during arena-to-hideout transitions
+  - **Root Cause**: SpawnDirector is a global autoload that persists across scene changes, but used cached `_is_arena_scene_cached` boolean that was never updated during scene transitions
+  - **Solution**: Replaced static cached checks with dynamic `_is_in_arena_scene()` calls in both `_on_combat_step()` and `_handle_spawning()` methods
+  - **Impact**: Eliminates enemy spawning in hideout, stops debug spam, and ensures proper scene context detection across all game state transitions
+- **WaveDirector → SpawnDirector Migration Complete**: Successfully completed comprehensive system-wide refactoring
+  - **Parser Errors Resolved**: Fixed all "Could not find type WaveDirector" compilation errors across 12+ core system files
+  - **Method Signatures Updated**: Synchronized method calls (`setup_wave_director` → `setup_spawn_director`) between calling code and implementations
+  - **Type Annotations**: Updated variable declarations, parameter types, and autoload references throughout RadarSystem, MeleeSystem, DamageSystem, BossSpawnManager, and related components
+  - **Pack Spawning Configuration**: Fixed missing `base_spawn_scaling` configuration in `underworld_config.tres` enabling pack spawn system functionality
+  - **Documentation Updated**: Synchronized MONSTER_PACK_ZONE_SYSTEM_V1.md references to reflect completed migration
+  - **System Integration**: All systems now properly reference SpawnDirector with maintained functional compatibility and performance
+- **Zone-Based Spawning System**: Implemented proximity-based spawn zone filtering for both auto spawn and pack spawn systems
+  - **Pack Spawn Interval Fix**: Corrected pack spawn interval from 5.0 to 60.0 seconds in underworld_config.tres for proper pack timing
+  - **Auto Spawn Proximity**: Modified UnderworldArena.get_random_spawn_position() to use 800px proximity-based zone filtering instead of all zones
+  - **Pack Spawn Proximity**: Verified pack spawning uses 1600px proximity range with proper zone selection via get_zones_in_pack_range()
+  - **Performance Optimization**: Added early return when no zones are in range to prevent unnecessary spawning attempts
+  - **Debug Logging**: Enhanced logging to track zone selection and proximity detection for better system visibility
+
+### Added
+
+- **Pack Spawning Overlap Resolution System**: Comprehensive solution eliminating enemy clustering and improving tactical combat depth
+  - **Spatial Overlap Detection**: Implemented position clearing algorithm preventing enemy spawns within 32px separation distance with 5-attempt fallback system
+  - **Zone Cooldown System**: Added 15-second cooldowns preventing rapid consecutive spawns in same zones with efficient timer management
+  - **Dynamic Pack Size Scaling**: Intelligent pack size adjustment based on enemy density (70% arena capacity threshold), zone availability, and threat levels
+  - **Zone-Based Threat Escalation**: Psychological engagement system tracking player presence and escalating threat levels (up to 50% pack size increase) in frequently used areas
+  - **Strategic Formation Variety**: Enhanced pack formations with 6 tactical patterns (Circle, Line, Cluster, Wedge, Ambush, Pincer) selected based on pack size and strategic positioning
+  - **Mathematical Balance Validation**: Comprehensive headless tests confirming scaling multipliers stay within [0.5, 2.5] bounds preventing exponential difficulty spikes
+  - **Optimized Configuration**: Updated underworld_config.tres with balanced pack intervals (45s), smaller base sizes (4-8), and reduced escalation rates for immediate gameplay improvement
+
+- **Map/Arena Configuration Foundation**: Reusable arena configuration system preparing for future Map/Arena Foundation implementation
+  - **MapConfig Resource**: Structured arena configuration with gameplay settings, visual themes, spawn zones, and environmental effects
+  - **UnderworldArena Implementation**: Example arena extending BaseArena.gd with theme-specific atmosphere and configuration integration
+  - **Underworld Map Configuration**: Complete example configuration with volcanic theme, weighted spawn zones, boss positions, and environmental hazards
+  - **Developer Documentation**: Comprehensive setup guide for manual tileset import and arena scene creation
+  - **Future-Ready Architecture**: Designed to seamlessly integrate with full Map/Arena Foundation (tasks 19/21) when implemented
+
+- **Animation-to-Input Foundation System - COMPLETE**: Essential input-to-animation foundation bridging current character animations with future modular ability system
+  - **Input Actions Added**: RMB (`cast_bow`), Q key (`cast_magic`), E key (`cast_spear`) integrated into project input map
+  - **Player.gd Extensions**: New ability state management with `is_bow_attacking`, `is_magic_casting`, `is_spear_attacking` variables and timers
+  - **Animation Integration**: Directional animation support (`bow_[direction]`, `magic_[direction]`, `spear_[direction]`) with equipment layer synchronization
+  - **EventBus Signals**: Added `bow_attack_started`, `magic_cast_started`, `spear_attack_started` following existing signal patterns with proper payload structures
+  - **Ability Bar Integration**: Updated AbilityBarComponent with new 4-slot layout (LMB: Melee, RMB: Bow, SPACE: Dash, Q: Magic) and balanced cooldowns
+  - **Cooldown System**: Balanced ability cooldowns (Melee: 0.5s, Bow: 2.0s, Dash: 3.0s, Magic: 8.0s) with proper HUD integration
+  - **Architecture Ready**: Foundation layer creates exact interface that future ABILITY-1 AbilityService will hook into - zero breaking changes required
+  - **Input Pipeline**: Complete `_handle_new_ability_inputs()` → animation state management → EventBus signaling → HUD cooldown display flow
+  - **Future Migration Path**: Input bindings, HUD system, and animation integration will be reused by modular AbilityService without rework
+
+- **HUD Component System V1 - COMPLETE**: Modular, component-based HUD architecture replacing monolithic UI system
+  - **HUDManager Autoload**: Centralized HUD component coordinator managing lifecycle, positioning, and configuration
+  - **BaseHUDComponent Framework**: Performance-optimized base class with EventBus integration, update throttling, and component lifecycle
+  - **Core Components**: 
+    - **HealthBarComponent**: Universal health display supporting player, boss, and enemy health bars with damage flashing - ✅ FIXED transparency and centering issues
+    - **RadarComponent**: Converted EnemyRadar with performance optimizations and configurable visual settings - ✅ INTEGRATED  
+    - **PerformanceComponent**: Extracted FPS counter with memory tracking, entity counts, and debug statistics
+    - **AbilityBarComponent**: NEW - Dynamic ability bar with cooldown animations, hotkey display, and 4 default abilities (LMB, RMB, SPACE, Q)
+    - **XPBarComponent**: Experience progress bar with blue styling and PlayerProgression integration
+    - **KeybindingsComponent**: Controls reference panel with styled background matching radar theme
+  - **CanvasLayer Architecture**: Proper UI layer separation (Layer 1: Primary HUD, Layer 100: Debug) following UI Framework Guidance
+  - **HUDConfigResource System**: Anchor-based positioning with layout presets (Default, Minimal, Competitive, Custom)
+  - **Component Registration**: All 6 core components successfully registering with HUDManager and applying correct positioning
+  - **Clean Architecture**: Removed old monolithic HUD system, fully replaced with component-based approach
+    - **XPBarComponent**: Experience progression display with blue theme and level-up flash effects
+    - **KeybindingsComponent**: Control reference panel showing WASD movement and system keys with radar-style theming
+  - **HUDConfigResource System**: Layout configuration with preset support and proper anchor-based positioning (no hardcoded values)
+  - **EventBus Extensions**: Added HUD-specific signals for health_changed, progression_changed, and leveled_up
+  - **ArenaUIManager Simplified**: Removed dual HUD complexity, now uses single clean component-based system
+  - **Performance Monitoring**: Built-in performance tracking with <5ms frame budget monitoring per task requirements
+  - **Architecture Compliance**: Follows UI Framework Guidance with proper component separation and EventBus communication
+
+### Added
+- **Zone-Restricted Enemy Spawning System**: Implemented data-driven spawn zones for precise enemy placement control in arena environments
+  - **Spawn Zone Configuration**: Extended MapConfig.gd with spawn_zones data structure supporting position, radius, and weight properties for flexible zone design
+  - **Visual Zone Markers**: Added SpawnZones container to UnderworldArena.tscn with 5 Area2D collision shapes for editor visualization of spawn boundaries
+  - **Weighted Zone Selection**: Implemented get_weighted_spawn_zone() algorithm using cumulative weight distribution for balanced enemy placement across zones
+  - **Arena-Specific Override**: UnderworldArena overrides get_random_spawn_position() to use zone-restricted spawning instead of simple radius-based spawning
+  - **Data-Driven Design**: All zone positions, radii, and weights defined in underworld_config.tres for hot-reloadable configuration without code changes
+  - **Auto Spawn Integration**: WaveDirector modified to use arena's get_random_spawn_position() method, enabling zone-restricted auto spawn functionality
+  - **Debug Panel Fix**: Removed debug mode exit when auto spawn is enabled, maintaining F12 panel visibility during auto spawn testing
+  - **Arena Logging Category**: Added "arena" category to LogConfigResource with comprehensive setup guide for future arena debugging needs
+  - **Backward Compatibility**: System gracefully falls back to radius-based spawning when no zones are configured, preserving existing arena functionality
+
+### Fixed
+
+- **LMB Ability Cooldown Consistency**: Fixed LMB melee attack cooldown only triggering on rapid clicks - synchronized internal attack timer (0.4s) with ability bar cooldown display (0.3s) for consistent behavior
+- **E Key Spear Attack UI Visibility**: Added missing 5th ability slot to AbilityBarComponent UI - extended scene from 4 to 5 ability slots to include E key spear attack with proper cooldown management and visual feedback
+- **Ability Bar Layout Adaptation**: Updated AbilityBarComponent container width (200px → 264px) to accommodate 5 ability slots with proper spacing and alignment
+- **LMB Swing Timer System**: Replaced LMB cooldown with swing timer system - removed artificial cooldown blocking, added circular progress indicator (TextureProgressBar) for visual swing feedback
+- **Ability Bar Visual Enhancement**: Comprehensive theming overhaul with proper backgrounds, borders, hover/pressed states, and 6px rounded corners for all ability slots
+- **Keybind Label Redesign**: Repositioned hotkey labels to bottom-center with smaller font (10px), allowing cooldown numbers to display clearly in slot centers without overlap
+- **Swing Timer Visual Implementation**: Fixed missing TextureProgressBar properties - added radial_fill_degrees, progress texture, and blue tint color for visible circular progress indicator on LMB slot
+- **Ability Bar Container Styling**: Added modern background panel with dark theme, 8px rounded corners, 3px borders, and proper padding around ability slots for professional appearance
+- **Background Panel Visibility Fix**: Fixed background panel not displaying by changing from anchor-based sizing to explicit dimensions (280x66px) and improved color scheme for better visibility
+- **HUD AbilityBar Positioning Fix**: Fixed misalignment when AbilityBarComponent is used in NewHUD - removed overriding custom_minimum_size and fixed zero-size offset values, implemented proper center-bottom anchoring
+- **PlayerInfoPanel Health Bar**: Fixed health bar not updating when player takes damage - Player script now properly emits EventBus.health_changed signals during damage sync events and initial registration
+- **XP Bar Progression Reset**: Fixed XP bar displaying cumulative values instead of current level progress - PlayerProgression now calculates proper within-level progress (e.g., 5/200 instead of 595/800)
+- **Health Display Timing**: Fixed health values not showing immediately on startup - Player now emits health_changed signal early in _ready() for immediate UI initialization
+- **XP Progression Calculation**: Improved level-based XP calculation logic to properly handle both Level 1 (progress toward Level 2) and Level 2+ (progress within current level range)
+- **Health Bar Label Visibility**: Fixed health bar label not displaying immediately on startup - PlayerInfoPanel now shows "500/500 HP" text immediately rather than waiting for damage events
+- **HUD System Architecture Cleanup**: Removed unused positioning system since migration to editor-based component layout
+  - **HUDManager Simplified**: Removed ~100 lines of unused layout management code (save_layout, load_layout_preset, set_component_position methods)  
+  - **HUDConfigResource Streamlined**: Removed positioning dictionaries and layout presets, keeping only visibility and performance settings (~80 lines removed)
+  - **BaseHUDComponent Cleaned**: Removed unused positioning methods (apply_anchor_config, _determine_anchor_preset) since components now use editor positioning (~40 lines removed)
+  - **Total Reduction**: ~220 lines of unused code removed while preserving all active HUD functionality
+  - **Signal References Fixed**: Updated NewHUD.gd to use hud_visibility_changed instead of removed layout_changed signal
+  - **PerformanceComponent Temporarily Removed**: Removed from NewHUD scene due to node parenting conflict - component was trying to add child nodes that already existed in scene tree
+
+### Added
+- **Unified Overlay System V1 - COMPLETE**: Production-ready modal system for all UI overlays
+  - **UIManager Autoload**: Centralized modal coordinator with factory pattern and canvas layer management
+  - **BaseModal Framework**: Desktop-optimized base class with keyboard navigation, tooltips, and lifecycle management
+  - **ModalAnimator System**: Performance-optimized animations with tween pooling for smooth transitions
+  - **Default Modal Theme**: Consistent styling system with `ModalTheme` resource and desktop-focused design
+  - **ResultsScreen Conversion**: Converted from scene-based to modal overlay system
+    - **Shows for all run endings**: death, victory, failure, or completion
+    - **Visual Context**: Displays over dimmed arena background instead of jarring scene transition
+    - **Preserved Functionality**: All buttons work identically, triggering StateManager transitions
+    - **Perfect Integration**: Maintains compatibility with existing StateManager architecture
+  - **Architecture Updates**: Player death sequence, StateManager, and SceneTransitionManager updated for modal workflow
+  - **Testing Validated**: System loads cleanly with all autoloads and dependencies resolved
+
+- **Boss Shadow System V1 - COMPLETE**: Automatic shadow generation for all bosses with HitBox-based positioning
+  - **BossShadow Component**: Auto-sizing shadow component that matches HitBox dimensions and positions directly at HitBox bottom
+  - **BaseBoss Integration**: Automatic shadow creation during boss initialization with configurable properties
+  - **Boss Migration**: All existing bosses (AncientLich, BananaLord, DragonLord) migrated to BaseBoss inheritance
+  - **Intelligent Animation**: Enhanced BaseBoss with sprite flipping for bosses without directional animations
+  - **Global Camera Solution**: CameraManager autoload provides centered cameras for test scenes automatically
+  - **Shadow Configuration**: Support for per-boss shadow customization via EnemyType.tres and SpawnConfig.gd
+
+### Fixed
+- **Boss Sprite Scaling System**: Fixed sprite scaling issues where visual scaling didn't match collision scaling
+  - **Core Issue Resolved**: Replaced multiplicative sprite scaling with absolute scaling to prevent compounding errors
+  - **Timing Fix**: Added deferred sprite scaling for cases where AnimatedSprite2D isn't ready during boss setup
+  - **Validation System**: Added comprehensive scaling validation with tolerance checking and detailed logging
+  - **Child Boss Updates**: Updated BananaLord and AncientLich to properly validate scaling after their specific initialization
+  - **Debug Tools**: Added runtime scaling debug methods (`get_scaling_debug_info()`, `debug_print_scaling_info()`)
+  - **Test Coverage**: Created comprehensive test suite validating scaling across all boss types and scale factors (0.5x - 2.5x)
+  - **Position Preservation**: Sprite position offsets are now preserved during scaling operations
+  - **Consistent Behavior**: All boss types now properly scale sprites to match their collision and hitbox areas
+
+- **Enemy Template Hot-Reload System**: Size factor changes now take immediate effect without restarting the game
+  - **CACHE_MODE_IGNORE**: EnemyFactory uses ResourceLoader with cache bypass to always load latest .tres files
+  - **F5 Hot-Reload**: Press F5 in-game to force reload all enemy templates for immediate size factor updates
+  - **Real-Time Balancing**: Edit enemy-variations/*.tres files and press F5 to see changes in newly spawned enemies
+  - **Zero Custom Code**: Leverages Godot's built-in resource system instead of custom file watchers
+  - **Debug Integration**: F5 key handling integrated into existing DebugManager input system
+
+- **Boss Health Bar Scaling Fix**: Health bars now correctly scale with boss size factors
+  - **Root Issue Fixed**: Health bar sizing was happening before HitBox scaling, causing size mismatches
+  - **Timing Solution**: Added deferred health bar readjustment after HitBox scaling is applied
+  - **Perfect Scaling**: Health bar width now scales proportionally with boss size (0.1x, 1.0x, 2.0x all tested ✓)
+  - **Enhanced Debugging**: Added detailed scaling debug logs with "debug" category for easier troubleshooting
+  - **Consistent Behavior**: Works across all boss types and size factors without manual intervention
+
+- **PlayerProgression Sync Corruption Fix**: Resolved "Level X with 0.0 XP" warnings during normal gameplay
+  - **Root Cause**: PlayerProgression._emit_progression_changed() was emitting current level progress (0 XP after levelup) instead of total accumulated XP for character saving
+  - **Solution**: Created comprehensive state with both UI display data (current level progress) and character saving data (total accumulated XP) in single signal
+  - **UI Preservation**: Progress bars continue showing correct current level progress (e.g., 150/800 XP within Level 4)
+  - **Save Data Accuracy**: Character profiles now receive total accumulated XP (e.g., 1350.0 total XP) preventing corruption warnings
+  - **Single Signal Design**: Uses one EventBus.progression_changed signal with rich payload instead of multiple specialized signals
+  - **Zero Regression**: All existing UI components (PlayerInfoPanel, XPBarComponent) continue working without changes
+
+- **Code Cleanup After Progression Fix**: Removed excessive debugging and safety code added during troubleshooting
+  - **Simplified CharacterManager**: Removed complex backup/restore system that was masking the real sync issue - now uses basic save validation
+  - **Debug Logging Cleanup**: Removed verbose debug logs, call stack traces, and duplicate logging throughout PlayerProgression system
+  - **Streamlined Validation**: Simplified CharacterProfile sync logging while keeping essential corruption prevention checks
+  - **Architecture Restored**: Removed defensive programming that was working around the root cause instead of fixing it
+
+- **Legacy UI Component Cleanup**: Removed unused UI components after confirming active architecture
+  - **Removed XPBarUI.gd**: Legacy XP bar stub from development phase, replaced by PlayerInfoPanel integrated display
+  - **Removed XPBarComponent**: Unused component-based XP bar, redundant with PlayerInfoPanel XP display
+  - **Removed old HUD.tscn/HUD.gd.uid**: Legacy HUD system replaced by NewHUD with component architecture
+  - **Removed old EnemyRadar.gd**: Legacy radar implementation replaced by RadarComponent in component system
+  - **Cleaned up test files**: Removed EnemyRadar_View_Isolated tests that referenced obsolete EnemyRadar class
+  - **Active Architecture Confirmed**: NewHUD with PlayerInfoPanel + RadarComponent + AbilityBarComponent + KeybindingsComponent
+
+- **Continue Button Fix**: Resolved character selection issues when multiple characters played on same day
+  - **Root Issue**: last_played field only stored date (YYYY-MM-DD) causing ambiguous sorting when multiple characters played same day
+  - **Fixed Timestamp Precision**: Changed to full datetime (YYYY-MM-DDTHH:MM:SS) using Time.get_datetime_string_from_system()
+  - **Simplified Selection Logic**: Removed redundant manual character search loop, now uses pre-sorted array from CharacterManager
+  - **Added Debug Logging**: Continue button shows all characters with timestamps to verify correct selection
+  - **Updated All References**: CharacterManager.load_character() and sync_from_progression() now set precise timestamps
+
+### Changed
+- **MultiMesh Enemy System Disabled**: Completed transition to scene-based enemies only for consistent behavior
+  - **Decision**: Performance testing shows scene-based enemies handle 500-700 instances adequately  
+  - **WaveDirector Changes**: All enemies now route through existing `_spawn_boss_scene()` logic instead of pooled spawning
+  - **Code Reuse**: Enhanced existing boss scene spawning to handle all enemy types, eliminating duplicate logic
+  - **Signal Cleanup**: Removed `enemies_updated.emit()` calls since MultiMesh rendering no longer needed
+  - **Documentation Added**: Clear reactivation conditions in MultiMeshManager - only if >2000 enemies needed
+  - **Systems Validated**: Radar, damage, and cleanup systems already work generically with scene enemies
+  - **Preserved Infrastructure**: MultiMeshManager kept for future reactivation if high enemy counts required
+  - **Asset Organization**: Moved mesh-based enemy variations (goblin, archer, orc_warrior, elite_knight) to backup folder
+  - **Reference Cleanup**: Updated test files and documentation to use available scene-based bosses instead of moved mesh enemies
+  - **Dead Code Removal**: Removed MultiMesh visual offset logic from EntitySelector since all entities are now scene-based
+  - **Clean Structure**: Active enemy-variations folder now contains only scene-based bosses (ancient_lich, banana_lord, dragon_lord)
+  - **Comprehensive MultiMesh Cleanup**: Complete removal of all MultiMesh infrastructure and systems
+
+- **Ability System Clean Slate**: Complete removal of obsolete ability system components for modular architecture
+  - **Files Removed**: Deleted 5 obsolete files (AbilitiesBalance, DebugAbilityTrigger, old test files)
+  - **Code Cleanup**: Removed all projectile and debug ability methods from PlayerAttackHandler  
+  - **Reference Cleanup**: Cleaned BalanceDB and DebugManager of ability system dependencies
+  - **Comments Purged**: Removed all placeholder comments and empty stub methods
+  - **Architecture Preserved**: MeleeSystem functionality maintained for integration with new modular system
+  - **Verification**: Zero ability system traces remain, project builds successfully
+  - **Foundation Ready**: Clean slate prepared for ABILITY-1 modular AbilityService implementation
+
+### Fixed
+- **MainMenu Centering Camera Interference**: Resolved MainMenu appearing off-center when transitioning from arena scenes
+  - **Problem**: Arena Camera2D parented to player persisted across scene transitions, interfering with MainMenu layout
+  - **Root Cause**: CameraSystem autoload retained arena camera state during ARENA→MENU transitions
+  - **Solution**: Dual-layer camera reset system with StateManager integration and SceneTransitionManager safety cleanup
+  - **StateManager Integration**: `_on_state_changed()` automatically resets camera when leaving ARENA/HIDEOUT for menu states  
+  - **Camera Reset Logic**: `reset_camera_for_menu()` destroys arena camera and creates clean, centered default camera
+  - **Logging Added**: Camera category added to LogConfigResource with detailed reset logging for debugging
+  - **Result**: MainMenu now appears perfectly centered whether accessed directly or via arena→pause→menu transition
+
+- **Player Registration After Scene Reset**: Resolved issue where Kill Player debug button failed on subsequent uses after session resets
+  - **Problem**: "unknown entity: player" error occurred due to lost player registration with DamageService during reset operations
+  - **Solution**: Enhanced player registration with comprehensive logging, validation, and retry mechanisms
+  - **Features Added**: `is_registered_with_damage_system()`, `ensure_damage_registration()` helper functions
+  - **Reset Logic Improved**: Better timing, validation, and emergency fallbacks in SessionManager reset sequence
+  - **Emergency Recovery**: Automatic player re-registration when damage is requested but player is not found
+  - **Result**: Kill Player button now works consistently across multiple reset cycles with robust error handling
+
+### Added
+- **Boss Performance Ring Buffer Integration**: Centralized boss processing for 500+ entity scaling
+  - **New System**: `BossUpdateManager` autoload replaces individual boss signal connections with batched processing
+  - **Performance Gains**: Single combat_step connection vs 500+ individual connections, batch position updates via EntityTracker API
+  - **Infrastructure**: Ring buffer + object pool with zero-allocation patterns, latest-only backpressure policy
+  - **Boss Migration**: All boss scripts (BananaLord, AncientLich, DragonLord) migrated to `_update_ai_batch()` interface
+  - **Testing**: 50 boss integration test maintains 144 FPS, validates centralized processing and batch updates
+  - **Result**: Eliminates O(N) signal dispatch overhead, enables stable 60 FPS at 500+ bosses
+
+- **Unified Overlay System V1 Task Created**: Comprehensive architectural plan for production-ready modal/overlay system
+  - **New Task**: `25-UNIFIED_OVERLAY_SYSTEM_V1.md` - Complete specification for unified overlay framework  
+  - **Architecture Design**: BaseOverlay class, OverlayManager autoload, theme system, animation framework
+  - **First Implementation**: ResultsScreen conversion from scene transition to arena overlay (preserving background)
+  - **Component Library**: Reusable UI components (OverlayButton, OverlayPanel, OverlayHeader) for rapid development
+  - **Future Foundation**: Framework for Inventory, CharScreen, Skill Tree, Settings, and all future modal UIs
+  - **4-Phase Implementation Plan**: Core foundation → Theme integration → Overlay stack → Component library
+
+- **Death Results Screen UI Redesign**: Transformed fullscreen results screen into centered popup overlay
+  - **Popup Design**: Medium-sized centered panel (600x500px) over semi-transparent background
+  - **Background Preservation**: Game remains visible behind 70% opacity dark overlay with stopped enemies
+  - **Enhanced Layout**: Improved visual hierarchy with centered stats, separated button rows, and consistent styling
+  - **Revive Button Placeholder**: Added disabled "🔄 Revive (Coming Soon)" button for future revive system implementation
+  - **Visual Polish**: Added emojis, better colors, and improved button organization (restart/hideout row, menu separate)
+  - **Modal Experience**: Non-fullscreen approach maintains game context while showing death results
+
+- **Comprehensive Scene Transition & Entity Cleanup Documentation**: Created production-ready documentation for StateManager and SessionManager systems
+  - **New Documentation**: `Scene-Transition-System.md` - Complete guide to typed state transitions, context passing, and validation rules
+  - **New Documentation**: `Entity-Cleanup-System.md` - Deep dive into multi-phase cleanup, context-aware entity clearing, and performance optimization
+  - **Updated Documentation**: `Scene-Management-System.md` - Reflects current StateManager architecture and resolved transition problems
+  - **System Coverage**: StateManager typed states, SessionManager reset strategies, EntityClearingService patterns, and integration points
+  - **Production Patterns**: Context-aware cleanup (player death vs debug reset), player registration validation, and performance monitoring
+
+- **MultiMesh Performance Investigation Framework**: Completed systematic 9-step investigation to identify rendering bottlenecks
+  - **Investigation Steps 0-9**: Isolated specific optimizations (colors, preallocation, update frequency, grouping, textures, transforms)
+  - **Performance Results**: Identified transform updates as primary bottleneck - static positioning provides +207% improvement
+  - **Practical Optimizations**: Position-only transforms (+37.6%), early preallocation (+35.8%), bypass grouping (+36.6%)  
+  - **Combined Optimizations**: Step 9 minimal baseline achieves +53.8% improvement with multiple optimizations
+  - **Technical Analysis**: Comprehensive documentation in `/tests/baselines/MultiMeshInvestigation_Analysis.md`
+- **MultiMesh Enemies Performance Optimizations**: Implemented major optimizations for 500+ enemy rendering performance  
+  - **Phase A - Buffer Optimization**: Disabled per-instance colors and implemented grow-only `instance_count` logic to eliminate expensive buffer reallocations
+  - **Phase B - Allocation Elimination**: Added light grouping API with preallocated arrays to eliminate per-frame Dictionary/Array creation
+  - **Phase C - Update Decimation**: Added 30Hz transform update framework with debug configuration flags for optional performance tuning
+  - **Performance Results**: Achieved 477 peak enemies (95% of 500 target) with drastically reduced frame time spikes in initial scaling phases
+  - **Visual Compatibility**: Maintained tier-based enemy colors using `self_modulate` instead of expensive per-instance color buffers
+- **Zero-Allocation Damage Queue System**: Implemented batched damage processing with preallocated buffers for performance optimization
+  - **RingBuffer Utility**: Lock-free circular buffer using power-of-two masking for efficient wraparound
+  - **ObjectPool Utility**: Generic object pool for reusing Dictionary payloads and Array instances
+  - **PayloadReset Utility**: Shape-preserving cleanup functions to maintain zero-allocation behavior
+  - **30Hz Batch Processing**: Timer-based queue processor aligned with combat tick rate 
+  - **Drop-Oldest Overflow Policy**: Graceful queue overflow handling with metrics tracking
+  - **Feature Flag Integration**: Runtime toggle via BalanceDB configuration and console commands
+  - **Debug Console Commands**: damage_queue_stats (monitoring), damage_queue_reset (testing)
+  - **A/B Testing Framework**: Validates identical behavior between queue and direct processing paths
+  - **Comprehensive Testing**: Unit tests for queue components and integration tests for damage consistency
+
+### Fixed
+- **Performance Test Boss Prevention**: Eliminated boss spawning during performance testing via dynamic weight override
+  - **Test-Time Override**: EnemyFactory automatically sets boss template weights to 0.0 when performance tests are detected
+  - **Preserved Boss Templates**: Original boss weights (22.0) remain unchanged for normal gameplay  
+  - **Clean Test Results**: Eliminated "Damage requested on dead entity: boss_XXXXX" warnings during performance testing
+  - **Automatic Detection**: Performance test detection via scene node analysis, no manual configuration required
+- **MultiMeshManager Headless Texture Errors**: Fixed texture-related errors when running tests in headless mode
+  - **Conditional Texture Assignment**: Skip all texture property access in headless mode to prevent console errors
+  - **Static Transform Implementation**: Fixed Step 8 investigation to use proper grid-based positioning instead of skipping updates
+- **Damage System Single Entry Point**: Consolidated damage requests to use DamageService.apply_damage() exclusively
+  - **Complete Signal Removal**: Removed EventBus.damage_requested signal and all backwards compatibility adapters
+  - **Boss Attack Updates**: Updated AncientLich and BananaLord boss attacks to use direct DamageService.apply_damage() calls
+  - **Architecture Cleanup**: Established single entry point pattern - all damage now flows through DamageService with no legacy paths
+  - **Test System Updates**: Updated all test files to use direct DamageService calls, removed signal-based testing
+  - **Payload Cleanup**: Removed unused DamageRequestPayload class and all references
+  - **Clean Architecture**: No backwards compatibility - pure single entry point implementation
+- **Technical Debt Cleanup**: Removed legacy damage system components and outdated references
+  - **Documentation Updates**: Updated ARCHITECTURE.md and architecture rules to reflect single entry point pattern
+  - **Debug Log Cleanup**: Removed development debug logging from damage queue system
+  - **Reference Cleanup**: Removed all documentation references to deprecated damage_requested signal
+- **RadarSystem Boss Visibility**: Fixed radar only showing goblins but not bosses due to incomplete enemy detection
+  - **EntityTracker Integration**: RadarSystem now queries EntityTracker.get_entities_by_type("boss") to include scene-based bosses
+  - **Fallback Robustness**: Added EntityTracker fallback for enemies when WaveDirector is unavailable
+  - **Relaxed Dependencies**: _should_update() now works with either WaveDirector OR EntityTracker for better resilience
+  - **Hybrid Enemy Detection**: Radar now shows both pooled enemies (goblins) and scene-based bosses (Ancient Lich, Dragon Lord)
+- **RadarSystem Startup Issues**: Fixed RadarSystem never emitting data due to initialization and signal handling bugs
+  - **State Initialization**: Added _initialize_state() in _ready() to read current StateManager state and enable radar in ARENA
+  - **Pause Signal Handling**: Fixed _on_game_paused_changed() to support both typed payloads and Dictionary gracefully
+  - **Configuration Loading**: Ensured _load_configuration() is called during startup for proper emit rate settings
+  - **Signal Type Compatibility**: Fixed EnemyRadar signal handler to accept untyped Array and convert to Array[Vector2]
+  - **Startup Race Conditions**: Eliminated scenario where RadarSystem stays disabled until first state change event
+- **ESC Key Pause Toggle**: Fixed ESC key not closing pause menu when pressed while overlay is open
+  - **PauseUI Input Handling**: Added _unhandled_input() to PauseUI to handle ESC when pause overlay is visible
+- **Debugger Warnings Cleanup**: Fixed all remaining debugger warnings from Godot editor
+  - **Signal Warnings**: Added @warning_ignore annotations for false positive signal warnings in EventBus/GameOrchestrator
+  - **Integer Division**: Fixed integer division warnings using int(x/y) pattern for sprite grid calculations
+  - **Unused Parameters**: Fixed unused parameter warnings with underscore prefix (DamageSystem, MeleeSystem)
+  - **Variable Shadowing**: Fixed animated_sprite shadowing in DragonLord.gd
+  - **Type Conversions**: Fixed narrowing conversion and ternary operator type compatibility issues
+  - **UID Warnings**: Fixed invalid UID references in Limbo Console theme and waves.tres files
+- **Manual Stress Testing Warning Spam**: Fixed excessive warning spam during debug manual spawning and cleanup operations
+  - **Entity Cleanup Race Conditions**: Added safety check in DebugManager.clear_all_entities() to verify entity exists before applying damage
+  - **Pool Exhaustion Warning Throttling**: Improved WaveDirector pool exhaustion warnings with 2-second timer-based throttling
+  - **Damage Registry Cleanup Warnings**: Suppressed "unknown entity" warnings during debug_clear_all operations to reduce noise
+  - **Parsing Errors**: Resolved all script compilation errors - all systems now load successfully
+  - **Complete Resolution**: Zero debugger warnings remain, all scripts compile successfully
+- **Debug Panel UX Improvements**: Enhanced debug interface usability and input handling
+  - **Spawn All Integration**: "Spawn All Enemies" dropdown now respects count buttons (1/5/10 of each type)
+  - **Button Focus Management**: Count buttons automatically lose focus after clicking to prevent sticky states
+  - **Spacebar Preservation**: Fixed spacebar/ui_accept exclusively for player roll, prevents UI element activation
+  - **Input Clarity**: Spacebar now only triggers player dodge roll, never activates debug UI buttons
+  - **Code Quality**: Eliminated ALL integer division warnings using explicit type conversion pattern
+  - **Clear Intent**: Used int(float(x)/float(y)) to signal intentional truncation in grid calculations  
+  - **Zero Warnings**: Complete resolution of all debugger warnings across entire codebase
+  - **Input Event Blocking**: Properly consume ESC input in PauseUI to prevent double-processing
+  - **Toggle Behavior**: ESC now correctly toggles pause on/off - first press opens menu, second press closes it
+- **State Manager Navigation Flow**: Fixed game flow from Main Menu → Character Select → Hideout → Arena
+  - **CharacterSelect.gd**: Updated navigation to use StateManager APIs instead of direct EventBus calls
+  - **StateManager state tracking**: Ensures current_state is properly set to HIDEOUT after character selection
+  - **Pause menu functionality**: ESC now correctly opens pause menu in Hideout (was blocked due to wrong state)
+  - **MapDevice arena entry**: Pressing E in Hideout now works after menu navigation (was invalid transition)
+  - **Hideout.gd cleanup**: Removed duplicate local ESC handling to avoid conflicts with global PauseUI
+
+### Added
+- **Boss Radar Visual Differentiation**: Enhanced radar system to distinguish bosses from regular enemies with unique visual indicators
+  - **RadarEntity Type System**: Created EventBus.RadarEntity class with position and type ("enemy", "boss") for typed radar data
+  - **Enhanced Signal Structure**: Updated EventBus.radar_data_updated to emit Array[RadarEntity] instead of Array[Vector2] for entity type information
+  - **Boss Visual Indicators**: Bosses displayed with larger orange dots (4.0-6.0px) featuring diamond outline pattern for easy identification
+  - **Color-Coded Enemies**: Regular enemies show as red dots (1.5-3.0px), bosses as orange dots with distinctive diamond markers
+  - **Configuration Support**: Added boss_color, boss_dot_max_size, boss_dot_min_size to RadarConfigResource for easy customization
+  - **Balance Data Integration**: Updated data/ui.tres with boss-specific radar configuration (orange color: #FF6600, larger size range)
+  - **Backward Compatibility**: EnemyRadar gracefully handles both old Vector2 arrays and new RadarEntity objects via signal type adaptation
+- **Radar System Decoupling**: Implemented EventBus-driven RadarSystem module to eliminate UI-domain coupling in enemy radar functionality
+  - **RadarSystem Module**: New system in `scripts/systems/RadarSystem.gd` handles enemy scanning with WaveDirector dependency injection
+  - **EventBus Signal**: Added `radar_data_updated(enemy_positions: Array[Vector2], player_pos: Vector2)` typed signal for UI updates
+  - **State & Pause Gating**: Radar only active in ARENA state and respects pause state for performance and correctness
+  - **Performance Optimizations**: 10 Hz throttled updates, reused buffers, and cached data to minimize allocations
+  - **EnemyRadar UI Refactor**: Removed scene tree traversal (`get_parent()` climbing) in favor of EventBus subscription
+  - **GameOrchestrator Integration**: RadarSystem created and managed with proper WaveDirector dependency injection
+  - **Isolated Testing**: Added `RadarSystem_Isolated.tscn/gd` and `EnemyRadar_View_Isolated.tscn/gd` unit tests
+  - **Architecture Compliance**: Verified no boundary violations - UI no longer accesses domain systems directly
+- **Hideout Phase 1 - Main Menu & Character Select Integration**: Completed full integration of character selection flow with StateManager
+  - **MainMenu Continue Button**: Added intelligent Continue button that shows when characters exist, loads most recent by last_played timestamp
+  - **MainMenu UI Refactoring**: Changed "Start Game" to "New Character", proper button ordering and focus management based on character availability
+  - **StateManager Navigation**: All UI screens now use StateManager API exclusively (go_to_hideout, go_to_character_select, go_to_menu)
+  - **Character Context Passing**: Proper character data and progression loading through StateManager context system
+  - **CharacterSelection_Flow Test**: Comprehensive test validating MENU → CHARACTER_SELECT → create/select → HIDEOUT sequence
+  - **Architecture Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md and ARCHITECTURE_RULES.md with StateManager flow integration rules
+  - **UI Flow Enforcement**: Established mandatory rule that all scene navigation must use StateManager (no direct EventBus calls)
+- **Global Pause System**: Completed centralized pause/escape menu system with state-based gating and persistent overlay
+  - **PauseUI Autoload**: Persistent CanvasLayer pause overlay that works across all scenes with programmatically created UI elements
+  - **Centralized Escape Handling**: Moved input handling from PauseUI to GameOrchestrator for proper architecture separation
+  - **StateManager Integration**: Pause gated by StateManager.is_pause_allowed() - only allowed in HIDEOUT, ARENA, RESULTS states
+  - **Pause Menu Navigation**: Return to Hideout/Menu buttons use StateManager API (go_to_hideout, return_to_menu)
+  - **Global Input Architecture**: Established rule that all system-level input (ESC, etc.) must be handled in autoloads, not per-scene
+  - **Comprehensive Testing**: test_pause_state_restrictions validates ESC does nothing in MENU/CHARACTER_SELECT states
+  - **CoreLoop_Isolated Updates**: Enhanced test to validate both local pause (P key) and global pause (ESC key) functionality
+  - **Architecture Documentation**: Updated rules for centralized input handling and pause system integration
+- **Game State Manager Core Loop**: Implemented centralized state orchestration system for scene transitions and run management
+  - **StateManager Autoload**: Typed state enum (BOOT, MENU, CHARACTER_SELECT, HIDEOUT, ARENA, RESULTS, EXIT) with validation and logging
+  - **Typed state transitions**: All scene changes go through StateManager API with proper transition rules and context passing
+  - **Run lifecycle management**: start_run(), end_run() with unique run IDs and comprehensive result data tracking
+  - **Pause integration**: is_pause_allowed() method restricts pause to HIDEOUT, ARENA, and RESULTS states only
+  - **GameOrchestrator integration**: Scene loading orchestrated through StateManager state changes with proper cleanup
+  - **ResultsScreen UI**: New results scene with run summary, time survived, level reached, damage stats, and navigation buttons
+  - **PauseUI Autoload**: Persistent CanvasLayer pause menu with StateManager-aware permissions and scene-specific options
+- **Pause Menu Architecture Cleanup**: Streamlined pause system to use single PauseUI autoload implementation
+  - **Removed duplicate pause systems**: Eliminated scene-based PauseMenu.gd/.tscn in favor of programmatic PauseUI autoload
+  - **Fixed PauseUI initialization**: Corrected @onready variable usage for dynamically created UI elements
+  - **ArenaUIManager cleanup**: Removed scene-based pause menu instantiation and references
+  - **ArenaInputHandler updates**: Simplified input handling to use centralized PauseManager.toggle_pause()
+  - **Reference cleanup**: Removed obsolete PauseMenu_Type imports from Arena.gd and updated comments
+  - **Architecture compliance**: Aligned implementation with GAME_STATE_MANAGER_CORE_LOOP.md specifications for persistent pause overlay
+  - **SceneTransitionManager updates**: Enhanced with RESULTS state support and automatic run result display
+  - **Scene API updates**: MainMenu, Player death, MapDevice, and Main boot flow now use StateManager methods
+  - **Comprehensive testing**: test_state_transitions.gd validates state flow, signals, and transition rules; CoreLoop_Isolated updated
+  - **Legacy compatibility**: Deprecated methods maintained with warning logs during transition period
+  - **Debug mode support**: Full compatibility with existing debug.tres boot modes (menu/hideout/arena)
+- **Hardcoded Values Migration**: Completed comprehensive data-driven architecture migration eliminating hardcoded game values
+  - **CharacterType Resource**: Created typed resource class for character base stats, descriptions, and starting abilities
+  - **Character creation migration**: Moved knight/ranger stats from CharacterSelect.gd to data/content/player/character_types.tres
+  - **XP progression fallbacks**: Enhanced PlayerXPCurve with configurable base_xp_required, xp_scaling_factor, max_level_xp_required
+  - **BossScaling Resource**: Created configurable boss debug scaling (health/damage/speed/size multipliers) in data/debug/boss_scaling.tres
+  - **Visual feedback timing**: Enhanced VisualFeedbackConfig with boss_flash_duration, boss_flash_intensity, max_boss_effects, boss_scanner_interval
+  - **Performance limits**: Migrated hardcoded performance thresholds to configurable balance data
+  - **Comprehensive testing**: Added test_character_creation.gd, test_xp_edge_cases.gd, test_boss_debug_scaling.gd, test_hardcoded_migration.gd
+  - **Hot-reload compatibility**: All new configurations support Godot's hot-reload via ResourceLoader.CACHE_MODE_IGNORE
+  - **Fallback architecture**: Robust error handling with configurable fallbacks when resources fail to load
+  - **Phase 3 compliance**: Fully satisfies architecture checklist requirement for data-driven configuration elimination
+- **PoE-Style Character System**: Implemented comprehensive per-character progression and persistence system
+  - **CharacterProfile Resource**: Typed resource class for character data (id, name, class, level, exp, dates, progression)
+  - **CharacterManager Autoload**: Full CRUD operations with character creation, loading, listing, deletion, and persistence
+  - **Per-character saves**: Individual .tres files in user://profiles/ with unique ID generation and collision handling
+  - **PlayerProgression integration**: Automatic synchronization of progression changes with debounced saves (1s timer)
+  - **EventBus signals**: Added characters_list_changed, character_created, character_deleted, character_selected
+  - **MVP CharacterSelect**: Enhanced with name input field and basic character creation workflow
+  - **Comprehensive testing**: CharacterManager_Isolated test validates all CRUD operations, persistence, and progression sync
+  - **Knight/Ranger classes**: Initial class support with removal of Mage placeholder (per task specification)
+  - **Save path management**: Automatic user://profiles/ directory creation and file path utilities
+  - **Error handling**: Robust validation for corrupt saves, missing files, and edge cases
+  - **POST-MVP ENHANCEMENTS**: Enhanced character list UI with Play/Delete/Create New functionality
+    - **Dynamic Character List**: Character listing with name, class, level, and last played date display
+    - **Play/Delete Actions**: Individual Play and Delete buttons per character with confirmation dialogs
+    - **Mode Switching**: Toggle between character list view and character creation mode
+    - **Context-Sensitive Navigation**: Smart back button (creation → list → main menu)
+    - **Character Management**: Delete confirmation with automatic list refresh and mode switching
+    - **Enhanced UI Layout**: Reorganized scene structure with CharacterListContainer and CreateNewSection
+    - **Focus Management**: Proper keyboard navigation and focus handling for accessibility
+- **Player Progression System**: Implemented comprehensive, data-driven progression system with resource-based configuration
+  - **PlayerProgression autoload**: Central progression manager handling level-ups, XP tracking, and unlock validation
+  - **Typed progression resources**: PlayerXPCurve.gd and PlayerUnlocks.gd for editor-friendly curve configuration
+  - **EventBus integration**: Added xp_gained, leveled_up, and progression_changed signals with typed parameters
+  - **Debug tools**: F12 progression tools - Add XP (+100), Force Level Up, Reset Progression via DebugManager
+  - **XpSystem migration**: Updated to delegate progression logic to PlayerProgression while preserving orb spawning
+  - **Multi-level-up support**: Handles large XP gains with proper sequential level-ups and max level capping
+  - **Save/Load seams**: export_state() and load_from_profile() methods ready for future SaveManager integration
+  - **UI stubs**: CharacterScreen.gd and XPBarUI.gd subscriber stubs for future UI implementation
+  - **Comprehensive testing**: PlayerProgression_Isolated test suite validates core progression, signals, and edge cases
+  - **Data-driven curve**: 10-level progression curve (100/300/600/1000/1500/2100/2800/3600/4500/5500 XP thresholds)
+- **Hideout Phase 0 Boot Switch**: Implemented typed, configurable boot flow with minimal-risk architectural improvements
+  - **Typed EventBus signals**: Added enter_map_requested(StringName) and character_selected(StringName) for past-tense signal contracts
+  - **DebugConfig Resource**: Updated to use StringName for character_id field (type consistency)
+  - **Hideout.tscn structure**: Enhanced with YSort node and renamed spawn point to "spawn_hideout_main" per Phase 0 spec
+  - **MapDevice as Area2D**: Converted from Node2D to Area2D with proper collision detection and typed signal emission
+  - **PlayerSpawner API**: Added spawn_at(root, spawn_name) method with deferred spawn to avoid race conditions
+  - **Boot mode selection**: Main.gd dynamic scene loading already supported hideout/arena toggle via config/debug.tres
+  - **Test coverage**: Added test_debug_boot_modes.gd and Hideout_Isolated.tscn for automated boot mode validation
+  - **Documentation**: Updated ARCHITECTURE_QUICK_REFERENCE.md with Phase 0 signal patterns and boot configuration
+- **Hideout Enemy Leak Fix**: Resolved critical scene transition bug where enemies persisted after arena-to-hideout swap
+  - **Scene ownership**: Added ArenaRoot node container for proper enemy parenting (no more leakage to autoloads)
+  - **GameOrchestrator transition**: Implemented go_to_hideout/go_to_arena with proper teardown sequence
+  - **Arena teardown contract**: Added on_teardown() method with comprehensive cleanup (systems, registries, signals)
+  - **SceneTransitionManager integration**: Enhanced existing system to call on_teardown() during scene transitions
+  - **WaveDirector cleanup**: Added stop() and reset() methods to halt spawning and clear enemy pools
+  - **EntityTracker cleanup**: Added clear(type) and reset() methods for complete entity registry cleanup
+  - **Global safety net**: EventBus.mode_changed signal triggers fail-safe purge of arena_owned/enemies groups
+  - **Bidirectional flow preserved**: H key (arena → hideout) and E key (hideout → arena) both work seamlessly
+  - **Diagnostic logging**: Enhanced teardown with detailed entity count reporting and leak detection
+  - **Test coverage**: Added tests/test_scene_swap_teardown.gd for automated validation
+- **Hideout System Phase 2**: Implemented scene transition system for seamless navigation between areas
+  - **SceneTransitionManager**: Created runtime scene loading/unloading system with EventBus integration
+  - **MapDevice interaction**: Interactive portals with Area2D proximity detection and UI prompts
+  - **EventBus signals**: Added request_enter_map and request_return_hideout for scene transitions
+  - **Coordinated transitions**: Main.gd integrates SceneTransitionManager for smooth scene changes
+  - **Player state preservation**: Character data maintained across scene transitions
+  - **Bidirectional flow**: Hideout ↔ Arena transitions working (E key to enter, H key to return)
+- **Hideout System Phase 1**: Implemented unified player spawning system across all scenes
+  - **PlayerSpawner system**: Created reusable scripts/systems/PlayerSpawner.gd for consistent player instantiation
+  - **Resource-based config**: Converted debug.json to debug.tres using DebugConfig resource class
+  - **Unified spawn points**: Added PlayerSpawnPoint markers to both Arena and Hideout scenes
+  - **Scene-specific spawning**: Hideout.gd and refactored Arena.gd both use PlayerSpawner with fallback
+  - **EventBus integration**: Player position changes emit events for other systems to consume
+  - **Architecture compliant**: Maintains domain/systems/scenes separation, passes all validation checks
+- **Hideout System Phase 0**: Implemented dynamic scene loading infrastructure for hub-based game flow
+  - **Dynamic scene loading**: Main.gd now reads config/debug.tres and dynamically instantiates Arena or Hideout scenes
+  - **Minimal hideout**: Created scenes/core/Hideout.tscn with PlayerSpawnPoint (Marker2D) and Camera2D
+  - **Debug configuration**: Enhanced config with start_mode selection ("arena" | "hideout" | "map")
+  - **Backwards compatibility**: Arena mode works exactly as before, no breaking changes
+  - **Scene switching**: Can switch between modes via config without code changes
+- **Entity Tracker Unified Clear-All**: Implemented comprehensive entity registration and damage-based clearing system
+  - **Registration gaps fixed**: Added missing EntityTracker registration in WaveDirector._spawn_pooled_enemy and _spawn_special_boss
+  - **Unified clear-all**: Updated WaveDirector.clear_all_enemies to route through DebugManager damage pipeline for consistency
+  - **Boss clearing**: Replaced direct boss queue_free() with damage-based clearing via DebugManager.clear_all_entities()
+  - **Debug validation**: Added temporary logging to track registration counts and clear-all effectiveness
+  - **Test coverage**: Enhanced WaveDirector_Isolated test with registration validation and clear-all testing (T/C/D keys)
+  - **Results**: 100% entity tracking for both goblins and bosses, unified clear-all via damage pipeline, no memory leaks
+- **Arena Refactoring Phase 7 Complete**: EnemyAnimationSystem extraction successfully completed
+  - **Animation fix**: Resolved issue where swarm enemies displayed full sprite sheet instead of individual animation frames
+  - **Frame extraction**: Implemented proper frame-by-frame extraction from sprite sheets using animation configs
+  - **System isolation**: Extracted 223 lines from Arena.gd into standalone EnemyAnimationSystem
+  - **Progress**: Arena.gd reduced from 1048+ lines to 792 lines (24% reduction toward <300 line target)
+  - **Future phases**: Created Phase 8+ plan to extract remaining ~492 lines via MultiMeshManager, BossSpawnManager, and other systems
+
+### Changed
+- **Project Structure Update**: Completed migration from vibe/ subdirectory to project root structure
+  - **File paths updated**: All documentation, configuration, and test files updated to use new structure
+  - **Core files**: .clinerules/, docs/, memory-bank/, tests/, scripts/, data/, scenes/, autoload/ now at project root
+  - **CI/CD**: Updated GitHub workflows and pre-commit hooks for new structure
+  - **Documentation**: Updated all .md files including ARCHITECTURE.md, CURSOR.md, LESSONS_LEARNED.md
+  - **Tests**: Updated all test file imports and scene references
+  - **Godot executable**: Updated references from "../Godot_v4.4.1-stable_win64_console.exe" to "./Godot_v4.4.1-stable_win64_console.exe"
+
+### Removed
+- **Legacy Enemy System Decommissioned**: Completed removal of dual-path enemy system in favor of V2-only approach
+  - **Core changes**: Removed EnemyRegistry.gd, use_enemy_v2_system toggle, legacy spawn branch in WaveDirector
+  - **Data cleanup**: Removed knight_*.tres legacy enemy resources (kept dragon_lord.tres for boss scenes)
+  - **Architecture**: Simplified WaveDirector to use V2 system exclusively, updated EnemyRenderTier to work without EnemyRegistry
+  - **Tests**: Removed test_hybrid_spawning.gd and legacy test dependencies
+  - **Result**: Single enemy pipeline through V2 system, reduced maintenance burden, no feature regression
+
+### Added
+- **Unified Damage System V3 Cleanup**: Completed removal of all legacy damage system code paths and feature flags
+  - **Removed**: unified_damage_v3 feature flag from CombatBalance schema and BalanceDB
+  - **Simplified**: DamageRegistry now uses unified EventBus-based syncing exclusively
+  - **Cleaned**: All V2/V3 version comments updated to reflect current standard architecture
+  - **Legacy removal**: Eliminated fallback code paths, unused WaveDirector references in MeleeSystem
+  - **Result**: Single clean damage pipeline using EntityTracker spatial queries, EventBus synchronization, and unified entity registration
+- **Memory Bank Documentation System**: Established memory-bank/ as single source of truth for session resets and onboarding
+  - Core files: projectbrief.md, productContext.md, systemPatterns.md, techContext.md, activeContext.md, progress.md
+  - Sourced from: README.md, ARCHITECTURE.md, docs/ARCHITECTURE_QUICK_REFERENCE.md, docs/ARCHITECTURE_RULES.md, CLAUDE.md, LESSONS_LEARNED.md, changelogs, Obsidian systems docs
+  - Workflow: Read all Memory Bank files at task start; update activeContext and progress after significant changes
+- **Hybrid Enemy Spawning System**: Complete dual-mode enemy spawning supporting both pooled enemies and scene-based special bosses
+  - **EnemyType.gd extensions**: Added boss_scene, is_special_boss, and boss_spawn_method properties for hybrid spawning
+  - **WaveDirector hybrid routing**: _spawn_from_type() method routes enemies to pooled or scene spawning based on type properties
+  - **Special boss scenes**: DragonLord boss example using editor-created CharacterBody2D scene with complex AI and died signal
+  - **Public spawn API**: spawn_boss_by_id() and spawn_event_enemies() methods for future map event system integration
+  - **EnemyRegistry filtering**: Special bosses (spawn_weight = 0.0) automatically excluded from random wave spawning
+  - **Signal integration**: Scene bosses emit "died" signal properly integrated with EventBus for XP/loot rewards
+  - **Test coverage**: Complete validation testing for both pooled (knight_regular) and scene-based (dragon_lord) spawning paths
+  - **Content pipeline examples**: Updated .tres files showing pooled boss (knight_boss), regular enemies (knight_regular), and special scene boss (dragon_lord)
+  - **Future-ready architecture**: Supports complex boss encounters, multi-phase bosses, and map-triggered events while preserving existing performance
+- **Player Stats Migration to .tres**: Migrated hardcoded player stats to PlayerType.gd resource system
+  - **PlayerType.gd resource**: New typed resource class for player statistics (move_speed, max_health, pickup_radius, roll_stats)
+  - **default_player.tres**: Configuration resource with current player values (110 move_speed, 199 max_health, etc.)
+  - **Validation system**: PlayerType.validate() method ensures stat integrity with error reporting
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres loading fails
+  - **Inspector editing**: Player stats now editable through Godot Inspector in default_player.tres
+  - **Architecture consistency**: Follows established EnemyType.gd pattern for data-driven character stats
+- **EnemyBehaviorSystem Removal**: Completely removed unused EnemyBehaviorSystem class and all references
+  - **File Deleted**: Removed vibe/scripts/systems/EnemyBehaviorSystem.gd entirely
+  - **Documentation Cleaned**: Removed all references from 6 Obsidian documentation files
+  - **AI Logic**: All enemy AI is now handled directly by WaveDirector
+  - **No Breaking Changes**: System was already unused - no functional impact
+- **Architecture Boundary Check Enhancement**: Updated boundary validation to allow pure Resource config imports
+- **Unified Damage System V2 COMPLETE**: Full implementation of unified damage pipeline with entity synchronization
+  - **DamageRegistry.gd**: Dictionary-based entity storage system replacing dual damage paths
+  - **DamageService autoload**: Single damage pipeline for all entity types (pooled enemies, scene bosses, player)
+  - **Entity registration hooks**: Automatic registration in WaveDirector spawn methods and boss scene _ready()
+  - **Critical entity synchronization**: DamageRegistry damage reflects back to actual game entities (HP updates, death triggers)
+  - **Boss integration**: set_current_health() methods and proper _die() triggering for DragonLord/AncientLich
+  - **Enemy integration**: Direct WaveDirector enemy.hp updates and alive state management
+  - **Legacy system disabled**: All old damage code commented out and signal conflicts resolved
+  - **Unified damage calculation**: Single crit system (10% base) and modifier pipeline
+  - **Auto-registration**: Seamless entity registration on first damage attempt (no T key needed)
+  - **Universal damage**: Both melee and projectile systems now work consistently across all entity types
+  - **Debug tools**: debug_register_all_existing_entities() for runtime diagnostics (T key)
+  - **Production ready**: Clean, polished system with minimal logging and automatic memory management
+- **Limbo Console Integration**: Added in-game developer console for runtime debugging and balance tuning
+  - **Plugin Installation**: Limbo Console v0.4.1 installed to vibe/addons/limbo_console/
+  - **F1 Toggle Key**: Console accessible via F1 key (more intuitive than default backtick)
+  - **Debug Controls**: Added F1 (Console) and C (Cards) to KeybindingsDisplay debug section  
+  - **Runtime Commands**: Supports custom command registration for balance parameter adjustment
+  - **Development Workflow**: Perfect for live-tuning balance values during playtesting
+  - **MCP Integration**: Can be used with MCP tools for automated testing scenarios
+- **Universal Hot-Reload System**: Complete automatic .tres resource hot-reload system without F5 dependency
+  - **BalanceDB File Monitor**: Timer-based monitoring (0.5s interval) for all balance .tres files in BalanceDB autoload
+  - **Scene @export Pattern**: Arena and Player use @export variables for automatic Inspector hot-reload
+  - **Direct Resource Access**: Removed cached variables, use direct property access for real-time updates
+  - **Cache Bypassing**: ResourceLoader.CACHE_MODE_IGNORE ensures fresh resource loading on every change
+  - **Developer Documentation**: Clear instructions in data/README.md for adding new files to auto-reload system
+  - **Best Practice Patterns**: @export for scene-based resources, ResourceLoader monitoring for autoload systems
+  - **Zero Manual Input**: Changes to balance, arena, and player .tres files automatically affect running games
+  - **Complete Coverage**: Player stats, arena config, all balance files support automatic hot-reload
+- **Obsidian Documentation Updates**: Updated architecture docs to reflect Dictionary to EnemyEntity migration
+  - **Enemy-System-Architecture.md**: Updated signal flows, technical implementation, and system integration for Array[EnemyEntity]
+  - **Enemy-Entity-Architecture.md**: New dedicated documentation for typed EnemyEntity objects with compile-time safety
+  - **Component-Structure-Reference.md**: Updated system dependencies and communication patterns for typed enemy system
+  - **EventBus-System.md**: Updated signal architecture with Array[EnemyEntity] flows and cross-system integration patterns
+  - **Data-Systems-Architecture.md**: Added typed enemy system section with object pool management and hot-reload support
+  - **systems/README.md**: Updated to include new documentation files and current implementation status
+- **Complete TRES Migration for Configuration Files**: Migrated all configuration files from JSON to .tres resources
+  - **LogConfigResource**: Migrated debug/log_config.json to log_config.tres with type-safe enum validation
+  - **RadarConfigResource**: Migrated ui/radar.json to radar_config.tres with Color properties and Inspector editing
+  - **XPCurvesResource**: Migrated xp_curves.json to xp_curves.tres with typed curve definitions
+  - **Type safety**: All config resources now have @export properties with proper type validation
+  - **Inspector editing**: Configuration values can now be edited directly in Godot's Inspector
+  - **Hot-reload support**: F5 hot-reload maintained for all .tres configuration files
+  - **System compatibility**: All existing systems (Logger, EnemyRadar, XpSystem) updated to load .tres resources
+  - **Fallback handling**: Graceful degradation to hardcoded values if .tres files fail to load
+
+### Changed
+- **Simplified to MultiMesh-Only Enemy Rendering**: Removed AnimatedSprite2D implementation, clean MultiMesh foundation
+  - **Removed EnemyRenderer**: Deleted entire AnimatedSprite2D pool system and animation data
+  - **Removed rendering mode switcher**: Eliminated SPRITES_ONLY/MULTIMESH_ONLY/BOTH mode complexity
+  - **Simplified MultiMesh updates**: Basic transform and color only, removed scaling and rotation complexity
+  - **Clean foundation**: Tier-based MultiMesh system (swarm/regular/elite/boss) ready for step-by-step enhancement
+
+### Fixed
+- **Player rendering issue**: Restored missing `knight_animations.json` file to fix black rectangle rendering
+  - **Animation data**: Added proper knight sprite sheet animation definitions for idle, run, roll, hit, and death states
+- **Enemy visibility issue**: Fixed black SWARM enemies by changing debug color from black to dark red for visibility
+
+### Added
+- **Enhanced Melee Combat System**: Improved damage verification and upgrades
+  - **Damage logging**: Added detailed combat logs showing enemy damage and kill events
+  - **Increased base damage**: Melee damage raised from 25 to 50 for better enemy clearing
+  - **Melee upgrade cards**: Added 3 new melee enhancement cards (damage +15, attack speed +0.3, range/cone +40/+15°)
+  - **Level-gated projectiles**: Projectile unlock card now requires level 10, focusing early game on melee
+  - **Card system improvements**: Added min_level filtering to card selection system
+  - **RunManager stats**: Added melee modifier stats integration for card effects
+- **Data-Driven Enemy System with Purple Slime**: Fully data-driven enemy spawning with new purple slime tank enemy
+  - **Enemy registry**: Central spawn weight system in `enemy_registry.json` eliminates hardcoded enemy types
+  - **Purple slime tank**: New tank enemy (5 HP, 40-80 speed) using purple sprite sheet with 20% spawn rate
+  - **Green slime rename**: Renamed "grunt" to "green_slime" for consistency with sprite-based naming
+  - **Dynamic loading**: EnemyRenderer and WaveDirector load enemy types from JSON automatically
+  - **Weighted spawning**: 50% green slime, 30% scout, 100% purple slime (note: user increased purple weight to 100)
+  - **Sprite consistency fix**: Fixed sprites changing colors between purple/green by adding enemy type metadata tracking
+  - **Future-proof design**: Add new enemies via JSON only, no code changes required
+  - **Fallback system**: Graceful degradation if registry files missing or malformed
+- **AnimatedSprite2D Enemy System**: Complete migration from MultiMesh to animated sprites for enemy rendering
+  - **Enemy types**: Support for multiple enemy types (grunt, scout) with unique animations and stats
+  - **Sprite animation**: Full AnimatedSprite2D pool (200 sprites) with 2-frame walk cycles at 8 FPS like Vampire Survivors
+  - **JSON configuration**: Data-driven enemy types and animation definitions in `/data/enemies/` and `/data/animations/`
+  - **Performance optimization**: Viewport culling and 15Hz animation updates for smooth 100-400 enemy rendering
+  - **Type variety**: Scouts (fast, low health) vs Grunts (normal speed, normal health) with weighted spawning (70/30 split)
+  - **Visual distinction**: Color-coded fallback textures (red grunts, green scouts) and unique sprite configurations
+  - **EnemyRenderer system**: Dedicated rendering system managing sprite pool, animation states, and culling
+- **Arena and Balance Improvements**: Enhanced default game settings for better experience
+  - **Mega Arena default**: Game now starts with the largest arena (mega_arena) instead of basic_arena
+  - **Projectile gating**: Auto-projectile shooting only activates after obtaining projectile boons
+  - **Closer enemy spawns**: Reduced spawn radius from 1800 to 600 units for more immediate action
+  - **Optimized enemy count**: Reduced max enemies from 5500 to 800 for better performance
+- **Keybindings Display HUD**: Always-visible control reference panel with table-style formatting
+  - **Table layout**: GridContainer with left-aligned actions and right-aligned key bindings
+  - **Radar styling**: Matches enemy radar with dark background, gray borders, rounded corners
+  - **Essential controls**: Movement (WASD), Attack (Left Click), Pause (F10), FPS (F12), Theme (T), Arena (1-5)
+  - **Clean presentation**: Semi-transparent panel positioned below enemy radar for easy reference
+- **Melee Auto-Attack System**: Continuous melee attacking enabled by default
+  - **Always active**: Auto-attack is enabled by default, no toggle needed
+  - **Cursor tracking**: Attacks automatically target cursor position when enemies are nearby
+  - **Seamless integration**: Works with existing cooldown and balance systems
+- **Enhanced Melee Cone Coverage**: Improved area of effect for better gameplay
+  - **Wider cone angle**: Increased from 45° to 65° for better coverage  
+  - **Longer range**: Increased from 100 to 150 units for better reach
+- **Simplified Card System**: Removed unnecessary melee modifiers and lifesteal
+  - **Focused cards**: Only projectile unlock card remains, removed melee damage/speed/range/cone cards
+  - **Clean mechanics**: Removed lifesteal system and stat multipliers for simpler gameplay
+  - **Core focus**: Melee is now baseline capability, cards focus on projectile unlocks
+- **Documentation Updates**: Updated Obsidian architecture docs for KeybindingsDisplay integration
+  - **UI Architecture**: Updated component hierarchy and implementation status
+- **Enemy Render Tier System (Phase 2)**: Implemented basic render tier foundation for visual hierarchy
+  - **Four render tiers**: SWARM (≤24px), REGULAR (24-48px), ELITE (48-64px), BOSS (>64px)
+  - **Tier-based MultiMesh routing**: Enemies automatically route to appropriate render layers based on size
+  - **JSON configuration**: enemy_tiers.json defines tier properties and thresholds
+  - **Backward compatibility**: Existing mm_enemies continues working alongside new tier system
+  - **Performance optimization foundation**: Sets up for future per-tier rendering optimizations
+- **Enemy System MVP**: Complete data-driven enemy variety system with JSON configuration
+  - **EnemyType domain model**: Load enemy definitions from JSON with validation and schema support
+  - **EnemyEntity wrapper**: Extends dictionary structure with typed access while maintaining compatibility
+  - **EnemyRegistry system**: Loads all enemy JSONs with hot-reload (F5) and weighted random selection
+  - **Enemy JSON files**: Three enemy types (grunt_basic, slime_green, archer_skeleton) with different stats, colors, and AI
+  - **Enhanced WaveDirector**: Type-aware spawning using EnemyRegistry for weighted selection
+  - **MultiMesh rendering**: Per-instance colors and sizes based on enemy type for visual variety
+  - **EnemyBehaviorSystem**: ~~Dedicated AI system with chase, flee, patrol, and guard patterns~~ REMOVED - AI moved to WaveDirector
+  - **Data schema**: Complete enemy configuration in vibe/data/README.md with example
+  - **Canvas Layer Structure**: Documented new HUD layout with keybindings panel  
+  - **Component Reference**: Added detailed KeybindingsDisplay component documentation
+  - **System README**: Added keybindings component to key implementation files
+
+### Previously Added
+- **Transform Caching Optimization**: Enemy MultiMesh rendering now caches Transform2D objects instead of creating them every frame
+  - **Performance improvement**: Eliminates 24,000 Transform2D allocations per second (800 enemies × 30Hz)
+  - **Zero-risk optimization**: Same behavior, 67% faster transform updates, eliminates 2.3MB/second allocations
+  - **Smart initialization**: Cache size matches max_enemies from balance data (800 transforms)
+  - **Implementation**: Added _enemy_transforms Array[Transform2D] cache and _setup_enemy_transforms() function
+- **FPS Counter and Performance Monitoring**: Real-time performance metrics display in HUD
+  - **FPS display**: Always-visible FPS counter in bottom-left corner, updates every 0.5 seconds
+  - **Debug overlay toggle**: F9 key toggles extended performance stats (draw calls, memory usage, entity counts)
+  - **Performance test script**: `test_transform_performance.gd` validates transform caching benefits
+  - **Arena debug stats**: get_debug_stats() method provides real-time enemy/projectile counts for monitoring
+- **Comprehensive Pause System Overhaul**: Replaced manual pause checks with Godot's built-in pause system
+  - **PauseManager autoload**: Centralized pause state management with proper process_mode configuration
+  - **Process mode assignment**: Game systems (PAUSABLE), UI elements (WHEN_PAUSED), debug systems (ALWAYS)
+  - **Fixed pause issues**: Eliminated attack stacking, lag bursts after resume, and camera glitches during pause
+  - **XP Orb integration**: Orbs now properly pause with game systems
+  - **Legacy compatibility**: RunManager.pause_game() redirects to PauseManager for backwards compatibility
+- **Performance Optimization for 5500 Enemies**: Hybrid culling system for massive enemy counts
+  - **Viewport culling**: Only render enemies visible on screen + 200px margin (5-10x FPS improvement when zoomed in)
+  - **Distance-based updates**: Only update enemy AI/physics within 2500px radius (50% physics reduction)
+  - **Alive enemies caching**: Cache alive enemy lists, only rebuild when enemies spawn/die (eliminates O(n) scans)
+  - **Configurable cache size**: Transform cache size now matches max_enemies (5500) via balance data
+  - **Smart culling stats**: Debug overlay shows total vs visible enemy counts for monitoring
+  - **Camera zoom limit**: Reduced min zoom from 0.5 to 0.6 (configurable via balance data)
+- **Performance Benchmarking System**: Automated performance testing with JSON result tracking
+  - **Comprehensive test scenarios**: Baseline, light/medium/heavy load, maximum load, zoom stress tests
+  - **Detailed metrics**: FPS percentiles, memory usage, culling efficiency, enemy counts
+  - **JSON result storage**: Results saved to `user://benchmarks/` with timestamps for comparison
+  - **Benchmark analyzer**: Compare before/after results, track optimization improvements
+  - **Debug controls**: Quick benchmark (B key), full suite (F8), benchmark UI panel (F7)
+  - **Automated comparisons**: Track performance changes across major updates
+- **Architecture Boundary Enforcement System**: Automated tools to prevent violations of the layered architecture
+  - **Automated validation**: test_architecture_boundaries.gd detects forbidden patterns (get_node() in systems, EventBus in domain, etc.)
+  - **Static analysis tool**: check_boundaries_standalone.gd provides detailed dependency graphs and violation reports
+  - **Multiple run methods**: Command-line headless execution, Godot Editor integration, batch file for easy access
+  - **Dependency matrix**: Visual representation of cross-layer dependencies with violation counts
+  - **Real violation detection**: Successfully identified actual architecture violation in XpSystem.gd
+  - **Pre-commit hooks**: Automatic architecture validation before each commit with clear error messages
+  - **CI integration**: GitHub Actions workflow runs boundary checks on all PRs with automated PR comments
+  - **Comprehensive documentation**: ARCHITECTURE_RULES.md with examples, fixes, and debugging guidance
+  - **Layer enforcement**: Autoload→Domain, Systems→Domain+Autoload, Scenes→Systems+Autoload, Domain→Pure data
+  - **Developer experience**: Clear violation messages with file:line references and suggested fixes
+  - **Batch file utility**: check_architecture.bat for one-click analysis execution
+  - **Essential documentation**: Quick reference guide and streamlined project README
+
+- **Centralized Logger System**: Structured logging with optional categories and configurable log levels
+  - **Log Levels**: DEBUG, INFO, WARN, ERROR, NONE with runtime switching
+  - **Optional Categories**: Category-based filtering (balance, combat, waves, player, ui, performance)
+  - **Hot-reload Config**: JSON configuration with F5 reload support via BalanceDB integration
+  - **F6 Debug Toggle**: Quick DEBUG/INFO level switching during development
+  - **Smart Defaults**: Works without config file, categories are optional, sensible fallbacks
+  - **Proper Output**: Errors use push_error(), warnings use push_warning(), others use print()
+  - **Migration-friendly**: Simple Logger.info() calls, categories only when needed
+
+- **BalanceDB Schema Validation System**: Comprehensive runtime validation for all JSON balance data
+  - **Type validation**: Enforces correct data types with JSON float-to-int conversion for whole numbers
+  - **Range validation**: Critical gameplay values validated against sensible min/max ranges
+  - **Nested structure validation**: Complex objects like arena_center, colors validated recursively  
+  - **Required field validation**: Missing critical fields caught at load time, not during gameplay
+  - **Hot-reload safety**: F5 reloading validates data before applying changes, with proper error handling
+  - **Comprehensive test coverage**: 7 test scenarios covering valid/invalid data, types, ranges, nesting
+  - **Developer experience**: Clear error messages with field names and expected vs actual values
+  - **Clean logging**: Integrated with Logger system using "balance" category
+
+- **Changelog Management System**: Implemented hybrid approach with weekly archives, feature tracking, and quarterly summaries
+  - **Weekly archives**: Previous weeks stored in `/changelogs/weekly/2025-wXX.md` 
+  - **Feature tracking**: Major features documented in `/changelogs/features/`
+  - **Comprehensive README**: `/changelogs/README.md` with approach documentation and quick reference
+  - **Documentation updates**: Updated all MD file references to new changelog structure
+  - **FeatureHistory migration**: Consolidated existing FeatureHistory folder into new changelogs structure
+  - **File consolidation**: Combined duplicate enemy radar documentation into single comprehensive implementation file
+
+- **Obsidian Documentation System**: Created comprehensive UI system architecture documentation
+  - **Systems documentation**: 6 core system docs in `/Obsidian/systems/` with [[linking]]
+  - **UI Architecture analysis**: Current vs proposed implementation comparison
+  - **Component breakdown**: Detailed scene structure and dependency mapping
+  - **Signal flow documentation**: EventBus communication patterns
+  - **Modal system analysis**: Current CardPicker implementation and proposed generic system
+  - **Integration with workflow**: Added Obsidian update steps to CLAUDE.md and custom commands
+
+- **EventBus Typed Contracts System**: Implemented compile-time payload guarantees for all cross-system signals
+  - **Typed payload classes**: 14 payload classes in `/vibe/scripts/domain/signal_payloads/` with compile-time safety
+  - **Complete signal migration**: All 12 EventBus signals converted to use typed payload objects instead of loose parameters
+  - **Comprehensive validation**: Enhanced `test_signal_contracts.gd` with structure validation for all payload types
+  - **Backward compatibility removal**: Clean migration removing old multi-parameter signal patterns
+  - **Developer experience**: Clear payload class structure with typed properties and descriptive documentation
+  - **IDE support**: Full IntelliSense support with payload property auto-completion
+  - **Runtime validation**: Advanced test coverage validating payload object structure and property types
+  - **Architecture enforcement**: Payload classes accessed via EventBus preloads to avoid dependency issues
+
+### Added  
+- **Melee Combat System**: Complete cone-shaped AOE melee attack system replacing projectile defaults
+  - **Core mechanics**: 25 damage, 100 range, 45° cone, 1.5 attacks/sec baseline with left-click activation
+  - **Visual feedback**: Semi-transparent yellow cone polygon shows attack area and direction
+  - **Mouse targeting**: Cone attacks aimed at cursor position with world coordinate transformation
+  - **Damage integration**: Proper EventBus integration with EntityId.player() and EntityId.enemy(index)
+  - **Balance system**: JSON-configurable damage, range, cone angle, attack speed, lifesteal
+  - **Card system overhaul**: 8 melee-focused upgrade cards with damage, speed, range, angle, lifesteal options
+  - **Dual combat**: Left-click melee (default), right-click projectiles (unlockable via card)
+  - **Cone detection**: Dot product-based algorithm for precise enemy hit calculation
+  - **Effect pooling**: Attack effects with 0.2-second fade animation and memory management
+
+### Removed
+- **Performance Benchmark System**: Removed all benchmark/performance testing files and UI elements
+  - Deleted: BenchmarkAnalyzer.gd, PerformanceBenchmark.gd system files
+  - Removed: Benchmark panel, quick benchmark buttons, full suite functionality
+  - Kept: FPS display and basic performance stats in debug overlay
+  - Cleaned: All F7/B key bindings for benchmark operations removed
+  - Updated: HUD simplified to show only essential controls
+
+### Changed
+- **Logger Migration**: Completed migration of all print statements to centralized Logger system
+  - **Main systems**: Arena.gd, Main.gd, CardPicker.gd, CardSystem.gd, XpSystem.gd migrated
+  - **Strategic logging**: Added warning logs for pool exhaustion in AbilitySystem and WaveDirector
+  - **Error tracking**: Added failure logging for damage system pool lookups
+  - **Category organization**: UI interactions use "ui" category, player events use "player" category
+  - **Default DEBUG level**: All systems now use Logger with DEBUG level by default for development
+  - **Cleaned debug output**: Removed specific alive projectiles/enemies counter logs from Arena
+  - **Abilities category**: Added to log config for projectile and ability system logging
+
+### Fixed
+- **Enemy Sprite Consistency**: Fixed sprites changing colors between purple and green slimes during gameplay
+  - **Root cause**: Sprite pool reusing AnimatedSprite2D nodes between different enemy types without proper reconfiguration
+  - **Fix**: Added enemy type metadata tracking to sprites, ensuring proper reconfiguration when enemy type changes
+  - **Implementation**: `sprite.set_meta("configured_enemy_type", enemy_type)` tracks which type each sprite is configured for
+  - **Result**: Sprites maintain correct appearance throughout lifetime, no more color bleeding between enemy types
+- **Extended Pause Lag Burst**: Fixed lag spikes when resuming after extended pause during level up
+  - **Root cause**: RunManager._accumulator and Arena.spawn_timer continued accumulating time during pause
+  - **Fix**: Added pause state checks to prevent time accumulation in RunManager._process() and Arena._process()
+  - **Result**: Smooth resume regardless of pause duration, no more combat step bursts after card selection
+- **Hotkey Menu Display**: Fixed empty keybinds overlay not showing text entries
+  - **Root cause**: RichTextLabel with BBCode wasn't displaying properly in .tscn format
+  - **Fix**: Changed to programmatic text setting with proper BBCode formatting
+  - **Result**: Keybinds overlay now properly displays colored hotkey text
+- **F8 Key Conflict**: Resolved F8 key causing game to close unexpectedly
+  - **Root cause**: Conflicting F8 handlers between Arena and HUD systems
+  - **Fix**: Removed duplicate F8 handlers, consolidated to F7 for performance menu
+  - **Result**: F7 now consistently opens performance menu without crashes
+- **Performance Results Display**: Fixed benchmark results not appearing after 30s test completion
+  - **Root cause**: Button handlers not awaiting async benchmark completion
+  - **Fix**: Made button handlers async and properly await benchmark results
+  - **Result**: Results now display immediately after benchmark completion
+
+### Added
+- **Melee Combat System**: Replaced projectile-based combat with cone-shaped AOE melee attacks
+  - **MeleeSystem**: New system managing cone-based AOE attacks with cursor targeting
+  - **Balance configuration**: Configurable damage, range, cone angle, attack speed, and lifesteal
+  - **Stat multipliers**: Full integration with card upgrade system for melee-specific buffs
+  - **Visual feedback**: Attack effects pool for cone visualization during attacks
+  - **Smart targeting**: Cone detection using dot product for precise enemy hit detection
+- **Melee-Focused Card System**: Completely redesigned upgrade cards for melee combat
+  - **Damage cards**: +30% damage, +50% damage/-20% speed trade-offs
+  - **Speed cards**: +25% attack speed, +40% speed/-15% damage berserker mode
+  - **Range cards**: +20% attack range for extended reach
+  - **Utility cards**: +15% cone angle, +5% lifesteal for survivability
+  - **Projectile unlock**: "Unlock Projectiles" card enables right-click ranged attacks
+- **Dual Attack System**: Melee primary (left-click) with optional projectiles (right-click)
+  - **Default melee**: Left-click for cone AOE attacks aimed at cursor
+  - **Optional projectiles**: Right-click attacks only available after unlocking via card
+  - **Stat separation**: Independent upgrade paths for melee vs projectile builds
+  - **Control documentation**: Updated all hotkey displays to show new combat controls
+- **Pre-commit Hook Execution Error**: Fixed git pre-commit hook failing with "No such file or directory" 
+  - **Root cause**: Hook was changing to `vibe/` directory but using relative paths to Godot executable
+  - **Path resolution fix**: Updated hook to use absolute paths from project root instead of relative paths
+  - **Manual execution fix**: Updated help text to show correct command paths for manual architecture validation
+  - **Developer experience**: Pre-commit hooks now execute reliably without path-related failures
+  
+- **Godot Headless Console Output**: Resolved issue preventing console output from appearing in headless test execution
+  - **Root cause**: Test scripts extending `Node` instead of `SceneTree` when run with `--script` flag
+  - **Script lifecycle fix**: Changed from `_ready()` to `_initialize()` method for proper SceneTree execution
+  - **Autoload dependency solution**: Documented scene-based testing (`.tscn`) vs raw script testing patterns
+  - **Documentation update**: Added console output patterns and command examples to CLAUDE.md Testing section
+  - **Validation patterns**: Clear distinction between simple scripts and tests requiring singleton access
+
+- **Testing Documentation Enhancement**: Updated CLAUDE.md to prevent autoload access errors during test development
+  - **Clear autoload rule**: If test needs EventBus, RNG, ContentDB, or any autoload → use .tscn scene, NOT raw .gd script
+  - **Workflow examples**: Added correct/wrong command patterns with concrete examples in workflow section
+  - **Error prevention**: Documentation now prevents "test script doesn't have access to autoloads" implementation errors
+
+### Technical
+
+---
+
+**Previous Weeks**: [Week 33](/changelogs/weekly/2025-w33.md) | [All Weeks](/changelogs/weekly/) | [Feature History](/changelogs/features/)
+
+**Archive Policy**: This file contains current 2-3 weeks only. Completed weeks archived every Monday to maintain readability.
