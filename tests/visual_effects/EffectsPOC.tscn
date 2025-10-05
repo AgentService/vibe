@@ -1,0 +1,34 @@
+[gd_scene load_steps=2 format=3 uid="uid://rwc5qfde7u6r"]
+
+[ext_resource type="Script" uid="uid://dkjktuve7vh4a" path="res://tests/visual_effects/EffectsPOC.gd" id="1_0y4pc"]
+
+[node name="EffectsPOC" type="Node2D"]
+script = ExtResource("1_0y4pc")
+
+[node name="Background" type="ColorRect" parent="."]
+offset_right = 1920.0
+offset_bottom = 1080.0
+color = Color(0.1, 0.1, 0.1, 1)
+
+[node name="Camera2D" type="Camera2D" parent="."]
+position = Vector2(960, 540)
+
+[node name="TestPlayer" type="Sprite2D" parent="."]
+position = Vector2(960, 540)
+
+[node name="ControlPanel" type="CanvasLayer" parent="."]
+
+[node name="VBoxContainer" type="VBoxContainer" parent="ControlPanel"]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 20.0
+offset_bottom = 20.0
+
+[node name="TitleLabel" type="Label" parent="ControlPanel/VBoxContainer"]
+layout_mode = 2
+text = "Effects POC - Press 1-3 for methods"
+
+[node name="ScaleSlider" type="HSlider" parent="ControlPanel/VBoxContainer"]
+layout_mode = 2
+min_value = 0.5
+value = 0.5

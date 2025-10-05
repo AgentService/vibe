@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://0p2t0utpgpcp"]
+
+[ext_resource type="Script" uid="uid://cem0xa0a5ynwa" path="res://tests/visual_effects/effects/MethodB_GPUParticles.gd" id="1_4m5av"]
+
+[node name="MethodB_GPUParticles_AOE" type="GPUParticles2D"]
+script = ExtResource("1_4m5av")
