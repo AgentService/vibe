@@ -2,6 +2,22 @@
 
 ## [Current Week - In Progress]
 
+### Content - Added Tome Icons (2025-10-06)
+
+**Added rune icon to tome items in unlock shop:**
+- ✅ Updated damage_tome.tres with runeGrey_slab_001.png icon
+- ✅ Updated agility_tome.tres with runeGrey_slab_001.png icon
+- ✅ Icon: `res://assets/ui/runes/icons/runeGrey_slab_001.png`
+
+**Visual Improvement:**
+- Tomes now display distinctive rune slab icon in UnlockShop grid
+- Replaces empty icon_path with thematically appropriate rune imagery
+- Consistent visual identity for knowledge/ability upgrade items
+
+**Files Modified:**
+- `data/content/tomes/damage_tome.tres` - Added rune icon path
+- `data/content/tomes/agility_tome.tres` - Added rune icon path
+
 ### MapSelectButton - Removed Tier Display (2025-10-06)
 
 **Removed tier from MapSelectButton component (tier selected via MapDetailsPanel instead):**
