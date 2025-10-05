@@ -63,7 +63,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="IconTexture" type="TextureRect" parent="Frame/MarginContainer/Button/CenterContainer"]
-custom_minimum_size = Vector2(64, 64)
+custom_minimum_size = Vector2(50, 50)
 layout_mode = 2
 mouse_filter = 2
 expand_mode = 1
