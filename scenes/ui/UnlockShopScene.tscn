@@ -1,7 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://rnror6wcucq6"]
+[gd_scene load_steps=6 format=3 uid="uid://rnror6wcucq6"]
 
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_0tjmd"]
 [ext_resource type="Script" uid="uid://bnrgnx8lacjcx" path="res://scenes/ui/UnlockShopScene.gd" id="1_6x8l0"]
 [ext_resource type="PackedScene" uid="uid://c61s0opcwmbj2" path="res://scenes/ui/components/UnlockShop.tscn" id="1_t5vr2"]
+[ext_resource type="PackedScene" uid="uid://c8j5w7md6n3bp" path="res://scenes/ui/components/BackButton.tscn" id="2_backbutton"]
 [ext_resource type="PackedScene" uid="uid://bpy31oghdcrek" path="res://scenes/ui/components/ShopAdminPanel.tscn" id="3_admin"]
 
 [node name="UnlockShopScene" type="Control"]
@@ -11,6 +13,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_0tjmd")
 script = ExtResource("1_6x8l0")
 
 [node name="UnlockShop" parent="." instance=ExtResource("1_t5vr2")]
@@ -28,14 +31,13 @@ offset_bottom = 350.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" parent="." instance=ExtResource("2_backbutton")]
 unique_name_in_owner = true
 layout_mode = 0
-offset_left = 20.0
-offset_top = 20.0
-offset_right = 120.0
-offset_bottom = 60.0
-text = "BACK"
+offset_left = 50.0
+offset_top = 50.0
+offset_right = 200.0
+offset_bottom = 100.0
 
 [node name="ShopAdminPanel" parent="." instance=ExtResource("3_admin")]
 unique_name_in_owner = true

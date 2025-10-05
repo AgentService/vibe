@@ -1,0 +1,111 @@
+[gd_scene load_steps=4 format=3 uid="uid://b4w0ihgbsbg36"]
+
+[ext_resource type="Script" uid="uid://cm0615ypl0lkk" path="res://scenes/ui/components/MapSelectButton.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_hover"]
+
+[sub_resource type="StyleBoxTexture" id="hover_style"]
+texture = ExtResource("2_hover")
+texture_margin_left = 1.0
+texture_margin_top = 1.0
+texture_margin_right = 1.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(288, 80, 16, 16)
+
+[node name="MapSelectButton" type="Control"]
+custom_minimum_size = Vector2(500, 150)
+layout_mode = 3
+anchors_preset = 0
+size_flags_horizontal = 3
+script = ExtResource("1_script")
+
+[node name="MapButton" type="Button" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/focus = SubResource("hover_style")
+theme_override_styles/hover = SubResource("hover_style")
+theme_override_styles/pressed = SubResource("hover_style")
+
+[node name="MarginContainer" type="MarginContainer" parent="MapButton"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="HBoxContainer" type="HBoxContainer" parent="MapButton/MarginContainer"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 15
+
+[node name="IconPanel" type="PanelContainer" parent="MapButton/MarginContainer/HBoxContainer"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="MapIcon" type="TextureRect" parent="MapButton/MarginContainer/HBoxContainer/IconPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="InfoPanel" type="VBoxContainer" parent="MapButton/MarginContainer/HBoxContainer"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+theme_override_constants/separation = 8
+
+[node name="MapName" type="Label" parent="MapButton/MarginContainer/HBoxContainer/InfoPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Forest"
+
+[node name="MapDescription" type="Label" parent="MapButton/MarginContainer/HBoxContainer/InfoPanel"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+text = "A green place full of trees, birds and great vibes. Also everything will try to kill you."
+autowrap_mode = 3
+
+[node name="DisabledOverlay" type="ColorRect" parent="MapButton"]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="ComingSoonLabel" type="Label" parent="MapButton/DisabledOverlay"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -60.0
+offset_top = -14.0
+offset_right = 60.0
+offset_bottom = 14.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "COMING SOON"
+horizontal_alignment = 1
+vertical_alignment = 1

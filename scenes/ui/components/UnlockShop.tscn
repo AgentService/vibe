@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://sfd5qa42ggy4" path="res://scenes/ui/components/UnlockShop.gd" id="1_d3dqv"]
 [ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_vy11w"]
-[ext_resource type="Texture2D" uid="uid://bsicc4js7ta8j" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Panel/panel-008.png" id="3_jkmsa"]
+[ext_resource type="Texture2D" uid="uid://1kk4ql5k1ajq" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Transparent center/panel-transparent-center-008.png" id="3_texture"]
 [ext_resource type="PackedScene" uid="uid://cwmwcg005byrv" path="res://scenes/ui/components/MainButton.tscn" id="4_mainbutton"]
 
 [node name="UnlockShop" type="Control"]
@@ -17,7 +17,7 @@ theme = ExtResource("1_vy11w")
 script = ExtResource("1_d3dqv")
 
 [node name="Stats" type="NinePatchRect" parent="."]
-self_modulate = Color(0.0392157, 0.231373, 0.270588, 1)
+self_modulate = Color(0.0392157, 0.231373, 0.270588, 0.898039)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,7 +25,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 size_flags_vertical = 3
-texture = ExtResource("3_jkmsa")
+texture = ExtResource("3_texture")
 region_rect = Rect2(0, 0, 48, 48)
 patch_margin_left = 16
 patch_margin_top = 16
@@ -151,6 +151,7 @@ theme_override_constants/separation = 15
 custom_minimum_size = Vector2(385, 110)
 layout_mode = 2
 size_flags_horizontal = 3
+theme_override_constants/separation = 5
 
 [node name="ItemName" type="Label" parent="MarginContainer/VBoxContainer3/VBoxContainer/ItemDetailsPanel/HBoxContainer/LeftPanel"]
 unique_name_in_owner = true
@@ -161,6 +162,7 @@ text = "Select an item"
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 30)
 layout_mode = 2
+size_flags_vertical = 3
 text = "Item description will appear here"
 autowrap_mode = 3
 
@@ -168,12 +170,14 @@ autowrap_mode = 3
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 8
 clip_text = true
 
 [node name="ItemFlavorText" type="Label" parent="MarginContainer/VBoxContainer3/VBoxContainer/ItemDetailsPanel/HBoxContainer/LeftPanel"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 20)
 layout_mode = 2
+size_flags_vertical = 10
 autowrap_mode = 3
 clip_text = true
 text_overrun_behavior = 3

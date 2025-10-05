@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8j5w7md6n3bp"]
+
+[ext_resource type="PackedScene" uid="uid://cwmwcg005byrv" path="res://scenes/ui/components/MainButton.tscn" id="1_mainbutton"]
+
+[node name="BackButton" instance=ExtResource("1_mainbutton")]
+custom_minimum_size = Vector2(150, 50)
+theme = null
+button_text = "< Back"

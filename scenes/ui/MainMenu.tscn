@@ -54,6 +54,7 @@ theme_override_constants/margin_bottom = 50
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
+theme = ExtResource("1_2ysvc")
 
 [node name="PlayButton" parent="MainButtonMenu/NinePatchRect/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
 unique_name_in_owner = true

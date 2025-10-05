@@ -227,3 +227,36 @@ func get_stats() -> Dictionary:
 		"total_entries": get_total_entries(),
 		"maps": get_maps_with_entries()
 	}
+
+## TODO(UI-phase2): Get total runs for a specific map (across all tiers)
+## Currently returns count of leaderboard entries (max 10 per tier)
+## Should track actual total runs played separately
+func get_total_runs_for_map(map_id: String) -> int:
+	if not _leaderboard_data.has(map_id):
+		return 0
+
+	var total := 0
+	for tier in _leaderboard_data[map_id].keys():
+		total += _leaderboard_data[map_id][tier].size()
+
+	# PLACEHOLDER: This counts leaderboard entries, not actual total runs
+	# Future: Add separate _total_runs_data[map_id] = count tracking
+	return total
+
+## TODO(UI-phase2): Get best run for a specific map (across all tiers)
+## Currently returns best from Tier 1, should check all tiers
+func get_best_run_for_map(map_id: String) -> Dictionary:
+	if not _leaderboard_data.has(map_id):
+		return {}
+
+	# PLACEHOLDER: Only checks Tier 1
+	# Future: Loop through all tiers and find absolute best
+	var best_entry := {}
+	var best_fragments := -1
+
+	if _leaderboard_data[map_id].has(1):
+		var tier1_entries = _leaderboard_data[map_id][1]
+		if not tier1_entries.is_empty():
+			best_entry = tier1_entries[0]  # Already sorted by fragments
+
+	return best_entry

@@ -2,6 +2,93 @@
 
 ## [Current Week - In Progress]
 
+### MapSelectButton - Removed Tier Display (2025-10-06)
+
+**Removed tier from MapSelectButton component (tier selected via MapDetailsPanel instead):**
+- ✅ Removed MapTier Label node from MapSelectButton.tscn (line 74-77)
+- ✅ Removed `@export var map_tier` property from MapSelectButton.gd
+- ✅ Removed `@onready var map_tier_label` reference from MapSelectButton.gd
+- ✅ Removed `p_tier` parameter from `setup()` method signature
+- ✅ Removed tier assignment in `_apply_properties()` method
+- ✅ Updated usage documentation in docstring
+
+**Architecture Rationale:**
+- Maps don't have inherent tiers - players select difficulty tier separately
+- Tier is a gameplay modifier selected in MapDetailsPanel difficulty grid
+- Each map (Forest, Underworld) can be played at any tier (1-4)
+- Displaying tier on map button implied incorrect map-tier binding
+
+**Before:** `setup("forest_arena", "Forest", "Tier 1", "Description...", icon, false)`
+**After:** `setup("forest_arena", "Forest", "Description...", icon, false)`
+
+### UI Consistency - Standardized Back Buttons (2025-10-05)
+
+**Created reusable BackButton component for all menu scenes:**
+- ✅ Created BackButton.tscn component (extends MainButton)
+- ✅ Standardized position: offset (50, 50), size 150x50
+- ✅ Standardized text: "< Back" with arrow
+- ✅ Updated UnlockShopScene to use BackButton component
+- ✅ Updated MapSelect to use BackButton component
+- ✅ Updated CharacterSelect to use BackButton component
+
+**Technical Details:**
+- Component inherits from MainButton for consistent styling
+- Single source of truth for back button appearance
+- Eliminates duplicate inline button definitions
+- `button_text = "< Back"` property set in component
+
+**Before:** Each scene had different back button styling (UnlockShop had "BACK" at (20,20) with 100x40 size)
+**After:** All three scenes use identical BackButton component at (50,50) with 150x50 size
+
+### Main Menu Background Blur (2025-10-05)
+
+**Added subtle blur effect to main menu background:**
+- ✅ Created custom shader with adjustable blur_amount uniform (default: 5.0)
+- ✅ Applied ShaderMaterial to MenuBackground BackgroundImage
+- ✅ 9-sample box blur for soft, diffused background effect
+- ✅ Integrated darkening directly in shader (darken_color uniform)
+
+**Technical Details:**
+- Shader uses simple 3x3 box blur pattern (9 texture samples)
+- `blur_amount` uniform allows runtime adjustment (0.0-5.0 range)
+- `darken_color` uniform (default: vec4(0.2, 0.2, 0.2, 1.0)) for background dimming
+- Final COLOR = blurred texture * darken_color for combined effect
+- Offset calculation: `blur_amount / 1000.0` for subtle effect
+
+### UI Consistency - MapSelect Scene Update (2025-10-05)
+
+**Aligned MapSelect with Kenny UI styling pattern:**
+- ✅ Replaced old raven_starter.png textures → Kenny UI panel-008.png
+- ✅ Applied consistent dark teal NinePatchRect panels (Color 0.0392157, 0.231373, 0.270588, 1)
+- ✅ Updated scene structure to match UnlockShop/CharacterSelect patterns
+- ✅ Simplified layout: MapSelectionPanel (left, 700x600) + MapDetailsPanel (right, 500x600)
+- ✅ Added MainMenu theme with 30px margins
+- ✅ Connected map buttons to show details panel on selection
+- ✅ Updated MapSelect.gd to reference new node paths with unique names
+- ✅ Forest map fully functional, Underworld disabled (content pending)
+- ✅ Removed orphaned WindowPositioner autoload from project.godot
+- ✅ Added difficulty tier grid with checkboxes (Tier 1-4, stages, reward multipliers)
+- ✅ Integrated LocalLeaderboard tracking for total runs and best stats
+- ✅ Added placeholder methods to LocalLeaderboard: `get_total_runs_for_map()`, `get_best_run_for_map()`
+- ✅ Created MapSelectButton component (reusable like CharacterSelectButton and ShopItemCard)
+- ✅ Added disabled overlay state with "COMING SOON" label for locked maps
+- ✅ Completed MapSelectButton integration: unified signal handler `_on_map_selected(map_id)`
+- ✅ Removed old map-specific handlers (_on_forest_selected, _on_underworld_selected)
+- ✅ Configured map_id properties: Forest ("forest_arena"), Underworld ("underworld_arena")
+- ✅ Added hover/focus/pressed button styling to match CharacterSelectButton pattern
+- ✅ Implemented visual selection state: Forest auto-selected on load with focus style
+- ✅ Added `set_selected()` method to MapSelectButton for focus management
+
+**Technical Details:**
+- Map selection buttons trigger details panel visibility
+- Difficulty tier grid: 3 columns (Tier, Stages, Reward) with 4 rows of data
+- Total runs counter dynamically pulled from LocalLeaderboard
+- Best depth and highscore displayed from player's best run
+- Details panel automatically populates with Forest map data on scene load
+- START RUN button transitions to arena with SessionState integration
+- Clean two-panel layout with scrollable map list and fixed-size details panel
+- Fixed "File not found" error for removed WindowPositioner.gd autoload
+
 ### Changelog Reorganization (2025-10-04)
 
 **Simplified Structure:**

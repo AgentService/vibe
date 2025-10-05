@@ -1,13 +1,14 @@
-[gd_scene load_steps=10 format=3 uid="uid://cbd8dq01vc102"]
+[gd_scene load_steps=11 format=3 uid="uid://cbd8dq01vc102"]
 
 [ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_5awgd"]
 [ext_resource type="Script" uid="uid://bfeajakefcqkm" path="res://scenes/ui/CharacterSelect.gd" id="1_6un01"]
+[ext_resource type="PackedScene" uid="uid://c8j5w7md6n3bp" path="res://scenes/ui/components/BackButton.tscn" id="2_backbutton"]
 [ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="4_3y4k6"]
+[ext_resource type="Texture2D" uid="uid://1kk4ql5k1ajq" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Transparent center/panel-transparent-center-008.png" id="4_5awgd"]
 [ext_resource type="PackedScene" uid="uid://jnyrd17k5mnv" path="res://scenes/ui/components/CharacterSelectButton.tscn" id="10_3y4k6"]
 [ext_resource type="Texture2D" uid="uid://bj0iwwp5kg2sx" path="res://assets/ui/abilities/icons/bow.png" id="10_5awgd"]
 [ext_resource type="Texture2D" uid="uid://jpmqo1pif0c6" path="res://assets/ui/S6.png" id="11_01kyv"]
 [ext_resource type="Texture2D" uid="uid://cpp67bhjfd54e" path="res://assets/ui/passives/icons/evasion.png" id="11_74ejh"]
-[ext_resource type="Texture2D" uid="uid://bsicc4js7ta8j" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Panel/panel-008.png" id="11_wgqxq"]
 [ext_resource type="PackedScene" uid="uid://cwmwcg005byrv" path="res://scenes/ui/components/MainButton.tscn" id="15_wgqxq"]
 
 [node name="CharacterSelect" type="Control"]
@@ -20,15 +21,13 @@ grow_vertical = 2
 theme = ExtResource("1_5awgd")
 script = ExtResource("1_6un01")
 
-[node name="BackButton" type="Button" parent="."]
+[node name="BackButton" parent="." instance=ExtResource("2_backbutton")]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(150, 50)
 layout_mode = 0
 offset_left = 50.0
 offset_top = 50.0
 offset_right = 200.0
 offset_bottom = 100.0
-text = "< Back"
 
 [node name="CharacterSelectionPanel" type="MarginContainer" parent="."]
 layout_mode = 1
@@ -42,7 +41,7 @@ self_modulate = Color(0.0392157, 0.231373, 0.270588, 1)
 show_behind_parent = true
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("11_wgqxq")
+texture = ExtResource("4_5awgd")
 region_rect = Rect2(0, 0, 48, 48)
 patch_margin_left = 32
 patch_margin_top = 32
@@ -101,7 +100,7 @@ offset_bottom = 850.0
 self_modulate = Color(0.0392157, 0.231373, 0.270588, 1)
 layout_mode = 2
 size_flags_vertical = 3
-texture = ExtResource("11_wgqxq")
+texture = ExtResource("4_5awgd")
 region_rect = Rect2(0, 0, 48, 48)
 patch_margin_left = 32
 patch_margin_top = 32

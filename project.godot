@@ -49,7 +49,6 @@ SessionState="*res://autoload/SessionState.gd"
 LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
 MenuBackgroundManager="*res://autoload/MenuBackgroundManager.gd"
 PersistentRiftFragments="*res://scenes/ui/components/PersistentRiftFragments.tscn"
-WindowPositioner="*res://autoload/WindowPositioner.gd"
 
 [display]
 

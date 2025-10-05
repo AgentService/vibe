@@ -16,8 +16,13 @@ extends Control
 ##
 ## TODO: Phase 2 - Add map thumbnails and tier buttons (1-5)
 
-@onready var back_button: Button = $BackButton
-@onready var start_run_button: Button = $MarginContainer_CharacterSelect2/NinePatchRect/MarginContainer7/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/startRun
+@onready var back_button: Button = %BackButton
+@onready var start_run_button: Button = %StartButton
+@onready var map_details_panel: MarginContainer = %MapDetailsPanel
+
+# Map button components (MapSelectButton)
+@onready var forest_button: MapSelectButton = $MapSelectionPanel/MarginContainer/VBoxContainer3/VBoxContainer/MapListScroll/MapList/MapSelectButton
+@onready var underworld_button: MapSelectButton = $MapSelectionPanel/MarginContainer/VBoxContainer3/VBoxContainer/MapListScroll/MapList/MapSelectButton2
 
 # Selection state (character passed from CharacterSelect)
 var selected_character: String = "knight"  # Default fallback
@@ -28,6 +33,16 @@ func _ready() -> void:
 	# Connect navigation buttons
 	back_button.pressed.connect(_on_back_pressed)
 	start_run_button.pressed.connect(_on_start_run_pressed)
+
+	# Connect map selection button signals
+	forest_button.pressed.connect(_on_map_selected)
+	underworld_button.pressed.connect(_on_map_selected)
+
+	# Initialize panel with default map (Forest)
+	_update_map_details(selected_map)
+
+	# Set Forest as visually selected by default
+	forest_button.set_selected(true)
 
 	Logger.info("MapSelect loaded (character: %s)" % selected_character, "ui")
 
@@ -52,6 +67,57 @@ func _on_back_pressed() -> void:
 		})
 	else:
 		Logger.error("EventBus not available - cannot return to character select", "ui")
+
+func _on_map_selected(map_id: String) -> void:
+	"""Map button selected - update details panel with LocalLeaderboard data"""
+	selected_map = map_id
+	Logger.info("Map selected: %s" % selected_map, "ui")
+
+	# Update visual selection state
+	_update_selection_state(map_id)
+
+	# Update details panel with selected map data
+	_update_map_details(selected_map)
+	map_details_panel.visible = true
+
+func _update_selection_state(map_id: String) -> void:
+	"""Update which button shows the focus/selected state"""
+	# Deselect all buttons first
+	forest_button.set_selected(false)
+	underworld_button.set_selected(false)
+
+	# Select the chosen button
+	if map_id == "forest_arena":
+		forest_button.set_selected(true)
+	elif map_id == "underworld_arena":
+		underworld_button.set_selected(true)
+
+func _update_map_details(map_id: String) -> void:
+	"""Update the details panel with map-specific data"""
+	var map_title = %MapTitle
+	var map_runs = %MapRuns
+	var best_depth = %BestDepth
+	var best_score = %BestScore
+
+	# Get map stats from LocalLeaderboard
+	if LocalLeaderboard:
+		var total_runs = LocalLeaderboard.get_total_runs_for_map(map_id)
+		var best_run = LocalLeaderboard.get_best_run_for_map(map_id)
+
+		# Update runs count
+		map_runs.text = str(total_runs) + " Runs"
+
+		# Update best stats if available
+		if best_run and not best_run.is_empty():
+			best_depth.get_node("Value").text = str(best_run.get("stage_reached", "-"))
+			best_score.get_node("Value").text = str(best_run.get("rift_fragments_earned", "-"))
+		else:
+			best_depth.get_node("Value").text = "-"
+			best_score.get_node("Value").text = "-"
+	else:
+		map_runs.text = "0 Runs"
+		best_depth.get_node("Value").text = "-"
+		best_score.get_node("Value").text = "-"
 
 func _on_start_run_pressed() -> void:
 	"""Start the run with selected character, map, and tier (matching MainMenu flow)"""

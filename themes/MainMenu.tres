@@ -28,7 +28,7 @@ content_margin_bottom = 8.0
 bg_color = Color(0.6, 0.6, 0.6, 0)
 
 [resource]
-Button/font_sizes/font_size = 26
+Button/font_sizes/font_size = 20
 Button/fonts/font = null
 Button/styles/normal = SubResource("StyleBoxTexture_ba6bw")
 HSeparator/styles/separator = SubResource("StyleBoxLine_yviw4")
