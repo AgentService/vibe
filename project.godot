@@ -33,15 +33,15 @@ CheatSystem="*res://autoload/CheatSystem.gd"
 EntityClearingService="*res://autoload/EntityClearingService.gd"
 DebugManager="*res://autoload/DebugManager.gd"
 SessionManager="*res://autoload/SessionManager.gd"
+EventMasterySystem="*res://autoload/EventMasterySystem.gd"
 EntityTracker="*res://scripts/systems/EntityTracker.gd"
 DamageService="*res://scripts/systems/damage_v2/DamageRegistry.gd"
 BossUpdateManager="*res://scripts/systems/boss/BossUpdateManager.gd"
+LimboConsole="*res://addons/limbo_console/limbo_console.gd"
+GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
 UIManager="*res://autoload/UIManager.gd"
 ThemeManager="*res://autoload/ThemeManager.gd"
 HUDManager="*res://scripts/systems/ui_framework/HUDManager.gd"
-GDAIMCPRuntime="*res://addons/gdai-mcp-plugin-godot/gdai_mcp_runtime.gd"
-LimboConsole="*res://addons/limbo_console/limbo_console.gd"
-EventMasterySystem="*res://autoload/EventMasterySystem.gd"
 ClearingSemantics="*res://scripts/domain/ClearingSemantics.gd"
 ProceduralMapManager="*res://autoload/ProceduralMapManager.gd"
 MetaProgression="*res://autoload/MetaProgression.gd"
@@ -49,14 +49,14 @@ SessionState="*res://autoload/SessionState.gd"
 LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
 MenuBackgroundManager="*res://autoload/MenuBackgroundManager.gd"
 PersistentRiftFragments="*res://scenes/ui/components/PersistentRiftFragments.tscn"
+WindowPositioner="*res://autoload/WindowPositioner.gd"
 
 [display]
 
 window/size/viewport_width=1920
 window/size/viewport_height=1080
-window/size/initial_position_type=0
-window/size/initial_position=Vector2i(455, 555)
-window/size/initial_screen=2
+window/size/initial_position_type=4
+window/size/initial_screen=1
 window/size/always_on_top=true
 window/stretch/mode="canvas_items"
 
@@ -155,6 +155,9 @@ enabled=PackedStringArray("gdai-mcp-plugin-godot", "limbo_console")
 
 textures/canvas_textures/default_texture_filter=0
 driver/threads/thread_model="safe"
+anti_aliasing/quality/msaa_2d=3
+2d/snap_2d_transforms_to_pixel=true
+2d/snap_2d_vertices_to_pixel=true
 rendering/2d/snap/snap_2d_transforms_to_pixel=true
 rendering/2d/snap/snap_2d_vertices_to_pixel=true
 rendering/2d/snap_2d_transforms_to_pixel=true

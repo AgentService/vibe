@@ -13,28 +13,28 @@ const FALLBACK_ICON = "res://icon.svg"
 const CharacterButtonScene = preload("res://scenes/ui/components/CharacterSelectButton.tscn")
 
 # Character selection grid (dynamically populated)
-@onready var character_grid: GridContainer = $CharacterSelectionPanel/VBoxContainer2/VBoxContainer3/NinePatchRect/MarginContainer/VBoxContainer/GridContainer
+@onready var character_grid: GridContainer = %CharacterGrid
 
-# Character info display (right panel)
-@onready var character_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/name
-@onready var character_rank_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/rank
-@onready var character_runs_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/VBoxContainer/runcount
-@onready var character_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer2/VBoxContainer/Description
-@onready var character_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+# Character info display (right panel) - using unique names
+@onready var character_name_label: Label = %CharacterName
+@onready var character_rank_label: Label = %CharacterRank
+@onready var character_runs_label: Label = %CharacterRuns
+@onready var character_description_label: Label = %CharacterDescription
+@onready var character_icon: TextureRect = %CharacterIcon
 
-# Main ability display
-@onready var ability_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label
-@onready var ability_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer/Label3
-@onready var ability_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainAbility/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+# Main ability display - using unique names
+@onready var ability_name_label: Label = %AbilityName
+@onready var ability_description_label: Label = %AbilityDescription
+@onready var ability_icon: TextureRect = %AbilityIcon
 
-# Main passive display
-@onready var passive_name_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label
-@onready var passive_description_label: Label = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer/Label3
-@onready var passive_icon: TextureRect = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MainPassive/HBoxContainer/NinePatchRect/MarginContainer/TextureRect
+# Main passive display - using unique names
+@onready var passive_name_label: Label = %PassiveName
+@onready var passive_description_label: Label = %PassiveDescription
+@onready var passive_icon: TextureRect = %PassiveIcon
 
-# Navigation buttons
-@onready var confirm_button: Button = $CharacterInfoPanel/NinePatchRect/VBoxContainer3/MarginContainer6/VBoxContainer/HBoxContainer/confirm
-@onready var back_button: Button = $BackButton
+# Navigation buttons - using unique names
+@onready var confirm_button: MainButton = %ConfirmButton
+@onready var back_button: Button = %BackButton
 
 # Selection state
 var selected_character: String = ""

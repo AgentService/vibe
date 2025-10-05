@@ -1,9 +1,9 @@
 [gd_scene load_steps=5 format=3 uid="uid://d128c4kosb2vl"]
 
-[ext_resource type="Script" uid="uid://dx0gksra8e5fy" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
-[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_xpiny"]
-[ext_resource type="PackedScene" uid="uid://cgqmq41cjt2f1" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
-[ext_resource type="PackedScene" uid="uid://b7kw8j4n5xr3v" path="res://scenes/ui/components/MainButton.tscn" id="6_mainbutton"]
+[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="1_2ysvc"]
+[ext_resource type="Script" uid="uid://mji6akgybm27" path="res://scenes/ui/MainMenu.gd" id="1_vjtqc"]
+[ext_resource type="PackedScene" uid="uid://b1mxhyae6p0nl" path="res://scenes/ui/components/Leaderboard.tscn" id="5_xpiny"]
+[ext_resource type="PackedScene" uid="uid://cwmwcg005byrv" path="res://scenes/ui/components/MainButton.tscn" id="6_mainbutton"]
 
 [node name="MainMenu_v2" type="Control"]
 layout_mode = 3
@@ -12,7 +12,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme = ExtResource("1_xpiny")
+theme = ExtResource("1_2ysvc")
 script = ExtResource("1_vjtqc")
 
 [node name="MainButtonMenu" type="MarginContainer" parent="."]
@@ -22,40 +22,63 @@ anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -100.0
-offset_top = -150.0
-offset_right = 80.0
-offset_bottom = 100.0
+offset_left = -150.0
+offset_top = -200.0
+offset_right = 150.0
+offset_bottom = 200.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="MainButtonMenu"]
+[node name="NinePatchRect" type="NinePatchRect" parent="MainButtonMenu"]
+self_modulate = Color(0.129412, 0.239216, 0.313726, 0.847059)
 layout_mode = 2
+region_rect = Rect2(0, 0, 96, 96)
+patch_margin_left = 45
+patch_margin_top = 46
+patch_margin_right = 45
+patch_margin_bottom = 46
 
-[node name="VBoxContainer2" type="VBoxContainer" parent="MainButtonMenu/MarginContainer"]
+[node name="MarginContainer" type="MarginContainer" parent="MainButtonMenu/NinePatchRect"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 50
+theme_override_constants/margin_top = 50
+theme_override_constants/margin_right = 50
+theme_override_constants/margin_bottom = 50
+
+[node name="VBoxContainer2" type="VBoxContainer" parent="MainButtonMenu/NinePatchRect/MarginContainer"]
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 
-[node name="Play" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+[node name="PlayButton" parent="MainButtonMenu/NinePatchRect/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+unique_name_in_owner = true
 layout_mode = 2
 button_text = "Play"
 
-[node name="Play2" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+[node name="UnlocksButton" parent="MainButtonMenu/NinePatchRect/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+unique_name_in_owner = true
 layout_mode = 2
 button_text = "Unlocks"
 
-[node name="Play3" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+[node name="OptionsButton" parent="MainButtonMenu/NinePatchRect/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+unique_name_in_owner = true
 layout_mode = 2
 button_text = "Options"
 
-[node name="Play4" parent="MainButtonMenu/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+[node name="QuitButton" parent="MainButtonMenu/NinePatchRect/MarginContainer/VBoxContainer2" instance=ExtResource("6_mainbutton")]
+unique_name_in_owner = true
 layout_mode = 2
 button_text = "Quit"
 
 [node name="Leaderboard" parent="." instance=ExtResource("5_xpiny")]
+unique_name_in_owner = true
 layout_mode = 0
-offset_left = 1431.0
-offset_top = 400.0
-offset_right = 1831.0
-offset_bottom = 1000.0
+offset_left = 1427.0
+offset_top = 448.0
+offset_right = 1877.0
+offset_bottom = 1048.0

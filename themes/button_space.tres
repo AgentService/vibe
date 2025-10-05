@@ -1,0 +1,51 @@
+[gd_resource type="Theme" load_steps=7 format=3 uid="uid://cwsbtwutpd5ah"]
+
+[ext_resource type="Texture2D" uid="uid://b6od8uj7ufmsy" path="res://assets/ui/kenny/button_square_gradient.png" id="1_4qnnk"]
+[ext_resource type="Texture2D" uid="uid://dhc5u0xfyjbtk" path="res://assets/ui/kenny/button_square_depth_gradient.png" id="2_s8f8i"]
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_s8f8i"]
+texture = ExtResource("1_4qnnk")
+texture_margin_left = 24.0
+texture_margin_top = 24.0
+texture_margin_right = 24.0
+texture_margin_bottom = 24.0
+modulate_color = Color(0.0980392, 0.490196, 0.419608, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xnr13"]
+content_margin_left = 8.0
+content_margin_top = 8.0
+content_margin_right = 8.0
+content_margin_bottom = 12.0
+texture = ExtResource("2_s8f8i")
+texture_margin_left = 24.0
+texture_margin_top = 24.0
+texture_margin_right = 24.0
+texture_margin_bottom = 24.0
+modulate_color = Color(0.0980392, 0.490196, 0.419608, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_q8uvm"]
+texture = ExtResource("2_s8f8i")
+texture_margin_left = 24.0
+texture_margin_top = 24.0
+texture_margin_right = 24.0
+texture_margin_bottom = 24.0
+modulate_color = Color(0.0985861, 0.491433, 0.418153, 1)
+
+[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4qnnk"]
+texture = ExtResource("1_4qnnk")
+texture_margin_left = 8.0
+texture_margin_top = 8.0
+texture_margin_right = 8.0
+texture_margin_bottom = 4.0
+region_rect = Rect2(0, 0, 128, 128)
+modulate_color = Color(0.0980392, 0.490196, 0.419608, 1)
+
+[resource]
+Button/colors/font_color = Color(1, 1, 1, 1)
+Button/colors/font_focus_color = Color(0.99558, 0.99558, 0.99558, 1)
+Button/colors/font_hover_color = Color(1, 1, 1, 1)
+Button/colors/font_pressed_color = Color(1, 1, 1, 1)
+Button/styles/focus = SubResource("StyleBoxTexture_s8f8i")
+Button/styles/hover = SubResource("StyleBoxTexture_xnr13")
+Button/styles/normal = SubResource("StyleBoxTexture_q8uvm")
+Button/styles/pressed = SubResource("StyleBoxTexture_4qnnk")

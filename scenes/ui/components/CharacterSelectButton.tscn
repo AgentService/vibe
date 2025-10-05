@@ -1,46 +1,44 @@
-[gd_scene load_steps=7 format=3 uid="uid://jnyrd17k5mnv"]
+[gd_scene load_steps=6 format=3 uid="uid://jnyrd17k5mnv"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/CharacterSelectButton.gd" id="2_script"]
-[ext_resource type="Texture2D" uid="uid://dwytq0pc31siy" path="res://assets/ui/kenny/panel-border-011.png" id="2_uannh"]
-[ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="3_uannh"]
+[ext_resource type="Texture2D" uid="uid://cy7y8nqv6tk0k" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Transparent center/panel-transparent-center-000.png" id="2_panel"]
+[ext_resource type="Script" uid="uid://c1ts480c57thr" path="res://scenes/ui/components/CharacterSelectButton.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_whe2u"]
+[ext_resource type="Texture2D" uid="uid://bq26qqd3gnfvk" path="res://assets/ui/characters/portraits/ranger_portrait.png" id="3_portrait"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_n0kx4"]
-texture = ExtResource("2_uannh")
-texture_margin_left = 20.0
-texture_margin_top = 20.0
-texture_margin_right = 20.0
-texture_margin_bottom = 20.0
-modulate_color = Color(0, 0, 0, 1)
+[sub_resource type="StyleBoxTexture" id="hover_style"]
+texture = ExtResource("2_whe2u")
+texture_margin_left = 1.0
+texture_margin_top = 1.0
+texture_margin_right = 1.0
+texture_margin_bottom = 1.0
+region_rect = Rect2(288, 80, 16, 16)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_whe2u"]
-texture = ExtResource("2_uannh")
-texture_margin_left = 20.0
-texture_margin_top = 20.0
-texture_margin_right = 20.0
-texture_margin_bottom = 20.0
-modulate_color = Color(0.47788, 0.47788, 0.47788, 1)
-
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_uannh"]
-texture = ExtResource("2_uannh")
-texture_margin_left = 20.0
-texture_margin_top = 20.0
-texture_margin_right = 20.0
-texture_margin_bottom = 20.0
-modulate_color = Color(0.364706, 0.364706, 0.364706, 1)
-
-[node name="CharacterSelectButton" type="VBoxContainer"]
-size_flags_horizontal = 3
+[node name="CharacterSelectButton" type="Control"]
+custom_minimum_size = Vector2(120, 120)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 120.0
+offset_bottom = 120.0
+size_flags_horizontal = 0
+size_flags_vertical = 0
 script = ExtResource("2_script")
 
 [node name="Frame" type="NinePatchRect" parent="."]
-self_modulate = Color(0.362829, 0.362829, 0.362829, 1)
-custom_minimum_size = Vector2(100, 100)
-layout_mode = 2
-region_rect = Rect2(0, 0, 96, 96)
-patch_margin_left = 30
-patch_margin_top = 30
-patch_margin_right = 30
-patch_margin_bottom = 30
+self_modulate = Color(0.00392157, 0.0431373, 0.054902, 1)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_panel")
+region_rect = Rect2(0, 0, 48, 48)
+patch_margin_left = 16
+patch_margin_top = 16
+patch_margin_right = 16
+patch_margin_bottom = 16
+axis_stretch_horizontal = 1
+axis_stretch_vertical = 1
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -49,39 +47,53 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme_override_constants/margin_left = 12
+theme_override_constants/margin_top = 12
+theme_override_constants/margin_right = 12
+theme_override_constants/margin_bottom = 12
 
-[node name="Button" type="Button" parent="Frame/MarginContainer"]
+[node name="SelectButton" type="Button" parent="Frame/MarginContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_styles/focus = SubResource("StyleBoxTexture_n0kx4")
-theme_override_styles/hover = SubResource("StyleBoxTexture_whe2u")
-theme_override_styles/pressed = SubResource("StyleBoxTexture_uannh")
-theme_override_styles/normal = SubResource("StyleBoxTexture_uannh")
+theme_override_styles/focus = SubResource("hover_style")
+theme_override_styles/hover = SubResource("hover_style")
+theme_override_styles/pressed = SubResource("hover_style")
 
-[node name="Layout" type="VBoxContainer" parent="Frame/MarginContainer/Button"]
+[node name="CharacterPortrait" type="TextureRect" parent="Frame/MarginContainer/SelectButton"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(60, 60)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -32.0
-offset_top = -42.0
-offset_right = 32.0
-offset_bottom = 42.0
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="Portrait" type="TextureRect" parent="Frame/MarginContainer/Button/Layout"]
-layout_mode = 2
-size_flags_vertical = 3
-texture = ExtResource("3_uannh")
+mouse_filter = 2
+texture = ExtResource("3_portrait")
+expand_mode = 1
 stretch_mode = 5
 
-[node name="Name" type="Label" parent="Frame/MarginContainer/Button/Layout"]
+[node name="VBoxContainer" type="VBoxContainer" parent="Frame"]
+visible = false
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -13.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="CharacterNameLabel" type="Label" parent="Frame/VBoxContainer"]
+unique_name_in_owner = true
 layout_mode = 2
-theme_override_colors/font_shadow_color = Color(0, 0, 0, 1)
+size_flags_horizontal = 4
+size_flags_vertical = 3
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
-theme_override_constants/outline_size = 10
-text = "Mage"
+theme_override_constants/outline_size = 14
+theme_override_font_sizes/font_size = 12
+text = "Ranger"
 horizontal_alignment = 1
 vertical_alignment = 1

@@ -19,13 +19,13 @@ extends Control
 const PORTRAIT_PATH = "res://assets/ui/characters/portraits/"
 
 # Leaderboard component
-@onready var leaderboard: Leaderboard = $Leaderboard
+@onready var leaderboard: Leaderboard = %Leaderboard
 
-# Menu buttons
-@onready var play_button: MainButton = $MainButtonMenu/MarginContainer/VBoxContainer2/Play
-@onready var unlocks_button: MainButton = $MainButtonMenu/MarginContainer/VBoxContainer2/Play2
-@onready var options_button: MainButton = $MainButtonMenu/MarginContainer/VBoxContainer2/Play3
-@onready var quit_button: MainButton = $MainButtonMenu/MarginContainer/VBoxContainer2/Play4
+# Menu buttons - using unique names for hierarchy independence
+@onready var play_button: MainButton = %PlayButton
+@onready var unlocks_button: MainButton = %UnlocksButton
+@onready var options_button: MainButton = %OptionsButton
+@onready var quit_button: MainButton = %QuitButton
 
 func _ready() -> void:
 	# Connect menu buttons

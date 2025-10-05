@@ -10,10 +10,10 @@ const LeaderboardEntryScene = preload("res://scenes/ui/components/LeaderboardEnt
 # Daily reset configuration (24 hours in seconds)
 const RESET_INTERVAL_SECONDS: int = 24 * 60 * 60
 
-@onready var tab_bar: TabBar = $VBoxContainer/HBoxContainer/TabBar
-@onready var global_container: VBoxContainer = $VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Global
-@onready var friends_container: VBoxContainer = $VBoxContainer3/Stats/MarginContainer/VBoxContainer/VBoxContainer_Friends
-@onready var reset_label: Label = $VBoxContainer3/Header/MarginContainer/HBoxContainer/ResetContainer/ResetLabel
+@onready var tab_bar: TabBar = %TabBar
+@onready var global_container: VBoxContainer = %GlobalEntries
+@onready var friends_container: VBoxContainer = %FriendsEntries
+@onready var reset_label: Label = %ResetLabel
 
 # Optional callbacks for data loading
 var _global_data_provider: Callable

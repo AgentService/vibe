@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3 uid="uid://d1vfmn5xf08db"]
 
-[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_frame"]
-[ext_resource type="Script" uid="uid://ckuuufkla1x8i" path="res://scenes/ui/components/LeaderboardEntry.gd" id="2_script"]
+[ext_resource type="Texture2D" uid="uid://xpdajk1q5vgp" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Transparent center/panel-transparent-center-015.png" id="2_ofkxy"]
+[ext_resource type="Script" uid="uid://blhovcrlwcrja" path="res://scenes/ui/components/LeaderboardEntry.gd" id="2_script"]
 
 [node name="LeaderboardEntry" type="MarginContainer"]
 offset_right = 6.0
@@ -9,15 +9,15 @@ offset_bottom = 40.0
 script = ExtResource("2_script")
 
 [node name="Frame" type="NinePatchRect" parent="."]
+self_modulate = Color(0.0392157, 0.231373, 0.270588, 1)
 custom_minimum_size = Vector2(0, 40)
 layout_mode = 2
-size_flags_vertical = 3
-texture = ExtResource("1_frame")
-region_rect = Rect2(0, 64, 16, 16)
-patch_margin_left = 3
-patch_margin_top = 3
-patch_margin_right = 3
-patch_margin_bottom = 3
+texture = ExtResource("2_ofkxy")
+region_rect = Rect2(0, 0, 48, 48)
+patch_margin_left = 8
+patch_margin_top = 8
+patch_margin_right = 8
+patch_margin_bottom = 8
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -30,6 +30,7 @@ theme_override_constants/margin_bottom = 5
 
 [node name="HboxEntry" type="HBoxContainer" parent="Frame/MarginContainer"]
 layout_mode = 2
+size_flags_horizontal = 4
 size_flags_vertical = 3
 
 [node name="Rank" type="Label" parent="Frame/MarginContainer/HboxEntry"]
@@ -62,7 +63,7 @@ horizontal_alignment = 2
 text_overrun_behavior = 3
 
 [node name="CharacterIcon" type="TextureRect" parent="Frame/MarginContainer/HboxEntry/Stats"]
-custom_minimum_size = Vector2(30, 30)
+custom_minimum_size = Vector2(25, 25)
 layout_mode = 2
 size_flags_horizontal = 8
 expand_mode = 1

@@ -1,8 +1,8 @@
-[gd_scene load_steps=5 format=3 uid="uid://cnqh8j4b5xr3v"]
+[gd_scene load_steps=5 format=3 uid="uid://c1ar0hfibgi0i"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/ShopItemCard.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://b6y8alknjqfh1" path="res://scenes/ui/components/ShopItemCard.gd" id="1_script"]
+[ext_resource type="Texture2D" uid="uid://cy7y8nqv6tk0k" path="res://assets/ui/kenny/kenney_fantasy-ui-borders/PNG/Default/Transparent center/panel-transparent-center-000.png" id="2_766ch"]
 [ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="2_frame"]
-[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="3_theme"]
 
 [sub_resource type="StyleBoxTexture" id="hover_style"]
 texture = ExtResource("2_frame")
@@ -10,10 +10,6 @@ texture_margin_left = 1.0
 texture_margin_top = 1.0
 texture_margin_right = 1.0
 texture_margin_bottom = 1.0
-expand_margin_left = 6.0
-expand_margin_top = 6.0
-expand_margin_right = 6.0
-expand_margin_bottom = 6.0
 region_rect = Rect2(288, 80, 16, 16)
 
 [node name="ShopItemCard" type="Control"]
@@ -22,22 +18,22 @@ layout_mode = 3
 anchors_preset = 0
 size_flags_horizontal = 0
 size_flags_vertical = 0
-theme = ExtResource("3_theme")
 script = ExtResource("1_script")
 
 [node name="Frame" type="NinePatchRect" parent="."]
+self_modulate = Color(0.00392157, 0.0431373, 0.054902, 1)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-texture = ExtResource("2_frame")
-region_rect = Rect2(0, 64, 16, 16)
-patch_margin_left = 3
-patch_margin_top = 3
-patch_margin_right = 3
-patch_margin_bottom = 3
+texture = ExtResource("2_766ch")
+region_rect = Rect2(0, 0, 48, 48)
+patch_margin_left = 16
+patch_margin_top = 16
+patch_margin_right = 16
+patch_margin_bottom = 16
 
 [node name="MarginContainer" type="MarginContainer" parent="Frame"]
 layout_mode = 1
@@ -73,39 +69,30 @@ mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="OverlayContainer" type="Control" parent="."]
+[node name="OverlayContainer" type="MarginContainer" parent="."]
 visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="DimOverlay" type="ColorRect" parent="OverlayContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-color = Color(0, 0, 0, 0.5)
-
-[node name="CostLabel" type="Label" parent="OverlayContainer"]
+custom_minimum_size = Vector2(70, 70)
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
-offset_left = -20.0
-offset_top = -11.5
-offset_right = 20.0
-offset_bottom = 11.5
+offset_left = -36.0
+offset_top = -36.0
+offset_right = 36.0
+offset_bottom = 36.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+
+[node name="DimOverlay" type="ColorRect" parent="OverlayContainer"]
+layout_mode = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.5)
+
+[node name="CostLabel" type="Label" parent="OverlayContainer"]
+layout_mode = 2
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 2
 text = "💎 100"

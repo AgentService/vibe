@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="PathConfiguration" load_steps=2 format=3 uid="uid://vu5ufdk38dao"]
 
-[ext_resource type="Script" uid="uid://6ag6n3yvhf0p" path="res://scripts/resources/PathConfiguration.gd" id="1_PathConfigScript"]
+[ext_resource type="Script" uid="uid://5ah4sv6bftqq" path="res://scripts/resources/PathConfiguration.gd" id="1_PathConfigScript"]
 
 [resource]
 script = ExtResource("1_PathConfigScript")

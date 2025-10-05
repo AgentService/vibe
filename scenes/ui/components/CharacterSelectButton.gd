@@ -1,4 +1,4 @@
-extends VBoxContainer
+extends Control
 class_name CharacterSelectButton
 
 ## Reusable character selection button component
@@ -6,9 +6,9 @@ class_name CharacterSelectButton
 
 signal character_selected(character_id: String)
 
-@onready var portrait: TextureRect = $Frame/MarginContainer/Button/Layout/Portrait
-@onready var name_label: Label = $Frame/MarginContainer/Button/Layout/Name
-@onready var button: Button = $Frame/MarginContainer/Button
+@onready var portrait: TextureRect = %CharacterPortrait
+@onready var name_label: Label = %CharacterNameLabel
+@onready var button: Button = %SelectButton
 
 var character_id: String = ""
 var _is_initialized: bool = false

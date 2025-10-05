@@ -9,9 +9,9 @@ extends Control
 ## - Handles back navigation to MainMenu
 ## - Integrates with MetaProgression for discovery/unlock state
 
-@onready var unlock_shop: UnlockShop = $UnlockShop
-@onready var back_button: Button = $BackButton
-@onready var admin_panel: ShopAdminPanel = $ShopAdminPanel
+@onready var unlock_shop: UnlockShop = %UnlockShop
+@onready var back_button: Button = %BackButton
+@onready var admin_panel: ShopAdminPanel = %ShopAdminPanel
 
 # Item metadata cache (loaded from /data/content/*/*.tres)
 var item_metadata_cache: Dictionary = {}  # {item_id: ItemMetadata}

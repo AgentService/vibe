@@ -1,13 +1,11 @@
-[gd_scene load_steps=3 format=3 uid="uid://cj4yacsdqebq1"]
+[gd_scene load_steps=2 format=3 uid="uid://bpy31oghdcrek"]
 
-[ext_resource type="Script" path="res://scenes/ui/components/ShopAdminPanel.gd" id="1_admin"]
-[ext_resource type="Theme" uid="uid://drb2dbep3npgi" path="res://themes/MainMenu.tres" id="2_theme"]
+[ext_resource type="Script" uid="uid://gvgoxkk8smb" path="res://scenes/ui/components/ShopAdminPanel.gd" id="1_admin"]
 
 [node name="ShopAdminPanel" type="VBoxContainer"]
 custom_minimum_size = Vector2(400, 300)
 offset_right = 400.0
 offset_bottom = 300.0
-theme = ExtResource("2_theme")
 theme_override_constants/separation = 5
 script = ExtResource("1_admin")
 

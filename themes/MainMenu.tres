@@ -1,65 +1,40 @@
 [gd_resource type="Theme" load_steps=7 format=3 uid="uid://drb2dbep3npgi"]
 
-[ext_resource type="Texture2D" uid="uid://c6vp1bqtooxtt" path="res://assets/ui/raven_starter.png" id="1_bj2h4"]
-
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_ba6bw"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_2ysvc"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("1_bj2h4")
-texture_margin_left = 2.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(160, 32, 16, 15)
-modulate_color = Color(0.619608, 0.588235, 1, 1)
+[sub_resource type="StyleBoxLine" id="StyleBoxLine_yviw4"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_xpiny"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("1_bj2h4")
-texture_margin_left = 2.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(160, 32, 16, 15)
-modulate_color = Color(0.619608, 0.588235, 1, 1)
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_focus"]
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_bhu4a"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("1_bj2h4")
-texture_margin_left = 2.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 1.0
-region_rect = Rect2(160, 32, 16, 15)
-modulate_color = Color(0.619608, 0.588235, 1, 1)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_hovered"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
 
-[sub_resource type="StyleBoxTexture" id="StyleBoxTexture_e2per"]
-content_margin_left = 12.0
-content_margin_top = 6.0
-content_margin_right = 12.0
-content_margin_bottom = 6.0
-texture = ExtResource("1_bj2h4")
-texture_margin_left = 2.0
-texture_margin_top = 2.0
-texture_margin_right = 2.0
-texture_margin_bottom = 2.0
-region_rect = Rect2(192, 32, 16, 16)
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_selected"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0, 0, 0, 0.47451)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_tab_unselected"]
+content_margin_left = 16.0
+content_margin_top = 8.0
+content_margin_right = 16.0
+content_margin_bottom = 8.0
+bg_color = Color(0.6, 0.6, 0.6, 0)
 
 [resource]
 Button/font_sizes/font_size = 26
 Button/fonts/font = null
 Button/styles/normal = SubResource("StyleBoxTexture_ba6bw")
-TabBar/styles/tab_focus = SubResource("StyleBoxTexture_2ysvc")
-TabBar/styles/tab_hovered = SubResource("StyleBoxTexture_xpiny")
-TabBar/styles/tab_selected = SubResource("StyleBoxTexture_bhu4a")
-TabBar/styles/tab_unselected = SubResource("StyleBoxTexture_e2per")
+HSeparator/styles/separator = SubResource("StyleBoxLine_yviw4")
+TabBar/constants/h_separation = 16
+TabBar/constants/outline_size = 0
+TabBar/styles/tab_focus = SubResource("StyleBoxEmpty_focus")
+TabBar/styles/tab_hovered = SubResource("StyleBoxFlat_tab_hovered")
+TabBar/styles/tab_selected = SubResource("StyleBoxFlat_tab_selected")
+TabBar/styles/tab_unselected = SubResource("StyleBoxFlat_tab_unselected")

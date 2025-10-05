@@ -1,4 +1,4 @@
-extends VBoxContainer
+extends Control
 class_name UnlockShop
 
 ## Reusable Unlock Shop component with Items/Tomes/Skills/Characters tabs
@@ -6,24 +6,24 @@ class_name UnlockShop
 ## Integrates with MetaProgression for discovery/unlock states
 ## Currency display handled by PersistentRiftFragments autoload
 
-@onready var tab_bar: TabBar = $TabContainer/HBoxContainer/TabBar
+@onready var tab_bar: TabBar = %TabBar
 
 # Notification icon
 var _notification_icon: Texture2D = null
 
-# Item grid containers (one per tab)
-@onready var item_grid_items: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Items
-@onready var item_grid_tomes: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Tomes
-@onready var item_grid_skills: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Skills
-@onready var item_grid_characters: GridContainer = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemGridScroll/ItemGrid_Characters
+# Item grid containers (one per tab) - using unique names
+@onready var item_grid_items: GridContainer = %ItemsGrid
+@onready var item_grid_tomes: GridContainer = %TomesGrid
+@onready var item_grid_skills: GridContainer = %SkillsGrid
+@onready var item_grid_characters: GridContainer = %CharactersGrid
 
-# Item details panel labels
-@onready var item_name_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemName
-@onready var item_description_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemDescription
-@onready var item_stats_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemStats
-@onready var item_flavor_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/LeftPanel/ItemFlavorText
-@onready var quest_progress_label: Label = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/QuestProgress
-@onready var unlock_button: Button = $ContentContainer/ShopContent/MarginContainer/VBoxContainer/ItemDetailsPanel/MarginContainer/HBoxContainer/RightPanel/UnlockButton
+# Item details panel labels - using unique names
+@onready var item_name_label: Label = %ItemName
+@onready var item_description_label: Label = %ItemDescription
+@onready var item_stats_label: Label = %ItemStats
+@onready var item_flavor_label: Label = %ItemFlavorText
+@onready var quest_progress_label: Label = %QuestProgress
+@onready var unlock_button: Button = %UnlockButton
 
 # Data providers for each category (Callable pattern from Leaderboard)
 var _items_data_provider: Callable
@@ -291,9 +291,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	# DISCOVERED + LOCKED: Show full details with unlock button
 	elif is_discovered and not is_unlocked:
-		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-
-		item_name_label.text = item_metadata.display_name + " (" + rarity_name + ")"
+		item_name_label.text = item_metadata.display_name
 		item_name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 
 		item_description_label.text = item_metadata.description
@@ -320,9 +318,7 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	# UNLOCKED: Show full details
 	else:
-		var rarity_name = ItemMetadata.get_rarity_name(item_metadata.rarity)
-
-		item_name_label.text = item_metadata.display_name + " (" + rarity_name + ")"
+		item_name_label.text = item_metadata.display_name
 		item_name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
 
 		item_description_label.text = item_metadata.description
