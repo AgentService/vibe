@@ -18,6 +18,9 @@ var test_aoe: float = 150.0
 var test_color: Color = Color.WHITE
 var active_effects: Array[Node] = []
 
+# Default spawn position if player doesn't exist
+var default_spawn_pos: Vector2 = Vector2(960, 540)
+
 # Auto-fire settings
 var auto_fire_enabled: bool = false
 var auto_fire_interval: float = 1.0
@@ -106,7 +109,9 @@ func _spawn_effect(scene: PackedScene, method_name: String, is_aoe: bool) -> voi
 	var effect = scene.instantiate()
 
 	# Configure effect
-	var spawn_pos = player.global_position
+	var spawn_pos = default_spawn_pos
+	if player:
+		spawn_pos = player.global_position
 
 	# For projectiles, spawn around player in a circle
 	if not is_aoe:
@@ -123,7 +128,8 @@ func _spawn_effect(scene: PackedScene, method_name: String, is_aoe: bool) -> voi
 		})
 	else:
 		effect.global_position = spawn_pos
-		effect.scale = Vector2.ONE * test_scale
+		if effect.has_method("set_scale"):
+			effect.scale = Vector2.ONE * test_scale
 		effect.modulate = test_color
 
 	add_child(effect)
