@@ -2,30 +2,48 @@
 
 ## [Current Week - In Progress]
 
-### Task: Cone Arrow Ability (Ranger Volley) - Documentation (2025-10-06)
+### Ranger Volley Ability + Debug Panel - Implemented (2025-10-06)
 
-**Created task document for second projectile ability variant:**
-- ✅ Documented how to create cone arrow ability (non-homing)
-- ✅ Identified that cone spread system is already built-in
-- ✅ Only 3 field changes needed: `is_homing=false`, `homing_strength=0.0`, unique ID/name
-- ✅ Estimated implementation time: 15-20 minutes
+**Implemented cone arrow ability and ability testing popup:**
+- ✅ Created `ranger_volley.tres` with cone spread (is_homing=false)
+- ✅ Built `AbilityTestingPopup` for runtime ability slot management
+- ✅ Integrated with DebugPanel via "🎯 Ability Testing" button
+- ✅ Auto-registration via AbilityManager directory scanner
 
-**Key Insight:**
-- Cone spread already implemented in `_calculate_spread_direction()`
-- 40-degree total spread, evenly distributed projectiles
-- Homing vs non-homing creates completely different gameplay feel
-- Demonstrates declarative ability design (config-driven)
+**Ranger Volley (Cone Arrows):**
+- Arrows fire straight in 40° cone pattern (no homing curve)
+- Same stats as ranger_arrow (44 damage, 0.5s cooldown, 3 projectiles)
+- Demonstrates config-driven ability creation (3 field changes)
+- Uses existing cone spread system (_calculate_spread_direction)
+
+**Ability Testing Popup:**
+- Simplified debug panel for equipping abilities without hardcoding
+- 4 slot dropdowns (auto-populated from AbilityManager)
+- "+1 Lv" buttons per slot for testing level scaling
+- "Equip Selected" applies to player's AbilityController
+- "Clear All" removes equipped abilities
+- Real-time display of equipped abilities (name + level)
+
+**Debug Panel Integration:**
+- Added button to DebugPanel right column
+- Popup-based approach (600x400px, non-blocking)
+- Proper lifecycle management (create/reuse/cleanup)
+- Follows ability-debug-panel-design.md specification
 
 **Architecture Benefits:**
-- Same arrow visual scene (Arrow.tscn)
-- Same damage/pooling/tome systems
-- Hot-reload via Godot resource system
-- No code changes required
+- No hardcoded ability IDs in Player.gd test keybinds
+- Direct AbilityController API integration
+- Hot-reload compatible (AbilityManager scanner)
+- Declarative ability design (config files only)
 
 **Files Created:**
-- `Obsidian/03-tasks/2d_ABILITIES_cone_arrow_ability.md` - Full task specification
+- `data/content/abilities/projectile/ranger_volley.tres`
+- `scenes/debug/AbilityTestingPopup.tscn` + `.gd`
 
-**Next:** Implement ranger_volley.tres and test both ability variants
+**Files Modified:**
+- `scenes/debug/DebugPanel.tscn` + `.gd` (button + popup management)
+
+**Next:** Test both abilities side-by-side, verify tome compatibility
 
 ### Overkill Prevention - Working Solution Verified (2025-10-06)
 
