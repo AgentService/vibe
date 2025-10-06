@@ -2,6 +2,36 @@
 
 ## [Current Week - In Progress]
 
+### Ability System - Phase 1.2 Complete (2025-10-06)
+
+**Completed full ability system foundation with 30Hz deterministic updates:**
+- ✅ Created AbilityController system class (component-based architecture)
+- ✅ Refactored Player.gd to delegate all ability logic to AbilityController
+- ✅ Integrated with EventBus.combat_step for fixed 30Hz updates (deterministic cooldowns)
+- ✅ Added DebugAbilityDisplay UI component for real-time ability/tome visualization
+- ✅ Connected to RunManager's existing fixed-step accumulator
+
+**Architecture Benefits:**
+- **Deterministic timing**: Abilities run at exact 30Hz regardless of framerate
+- **Clean separation**: Player handles movement, AbilityController handles abilities
+- **Future-proof**: Compatible with networked play and replay systems
+- **Memory efficient**: Proper EventBus cleanup via _notification()
+
+**Files Created:**
+- `scripts/systems/AbilityController.gd` - Ability management component (275 lines)
+- `scripts/ui/debug/DebugAbilityDisplay.gd` - Debug visualization component
+- `autoload/AbilityManager.gd` - Ability registry autoload (from previous commit)
+- `tests/ability_system/AbilityManager_test.tscn/gd` - Autoload validation tests
+
+**Files Modified:**
+- `scenes/arena/Player.gd` - Reduced from 1110 to ~930 lines (ability logic extracted)
+- `scenes/arena/Player.tscn` - Added DebugAbilityDisplay label node
+- `project.godot` - Registered AbilityManager autoload
+
+**Branch:** `ability_system` (Phase 1.1-1.4 implementation)
+
+**Next:** Phase 1.3 - First vertical slice (Ranger Arrow ability with projectile spawning)
+
 ### Visual Effects POC - Testing Playground Created (2025-10-06)
 
 **Created interactive test harness for ability visual effects experimentation:**
