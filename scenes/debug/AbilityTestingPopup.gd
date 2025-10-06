@@ -291,10 +291,16 @@ func _on_apply_button_pressed() -> void:
 			if updated_ability is ProjectileAbility:
 				updated_ability.projectile_count = int(projectile_spinner.value)
 
-			# Preserve level from equipped ability
+			# Preserve level and tome modifiers from equipped ability
 			if equipped_ability.ability_level > 1:
+				# Manually set level and recalculate (don't use level_up, that scales base values)
 				updated_ability.ability_level = equipped_ability.ability_level
-				updated_ability._apply_level_scaling()
+
+			# Copy tome modifiers from equipped ability
+			updated_ability._active_modifiers = equipped_ability._active_modifiers.duplicate(true)
+
+			# Recalculate final stats with new base values + existing modifiers
+			updated_ability._recalculate_final_stats()
 
 			# Replace equipped ability
 			ability_controller.ability_slots[i] = updated_ability

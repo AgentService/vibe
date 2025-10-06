@@ -1,7 +1,24 @@
-[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=3 format=3]
+[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/ProjectileAbility.gd" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/abilities/projectiles/Arrow.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/entities/AbilityProjectile.gd" id="2_shu3x"]
+[ext_resource type="Texture2D" path="res://assets/effects/kenney_particle-pack/PNG (Transparent)/Rotated/muzzle_04_rotated.png" id="3_w327y"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arrow"]
+size = Vector2(6, 3)
+
+[sub_resource type="PackedScene" id="PackedScene_kkast"]
+_bundled = {
+"conn_count": 0,
+"conns": PackedInt32Array(),
+"editable_instances": [],
+"names": PackedStringArray("Arrow", "Node2D", "script", "Sprite2D", "Sprite2D", "self_modulate", "position", "scale", "texture", "Area2D", "Area2D", "collision_layer", "collision_mask", "CollisionShape2D", "CollisionShape2D", "visible", "shape"),
+"node_count": 4,
+"node_paths": [NodePath("."), NodePath("."), NodePath("./Area2D")],
+"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 1, 2, 0, 0, 1073741824, 0, 4, 3, -1, 4, 5, 1, 6, 2, 7, 3, 8, 4, 0, 1073741825, 0, 10, 9, -1, 2, 11, 5, 12, 6, 0, 1073741826, 0, 14, 13, -1, 2, 15, 7, 16, 8, 0),
+"variants": [ExtResource("2_shu3x"), Color(0.509017, 0.673618, 0.760641, 1), Vector2(0, 5.96046e-08), Vector2(0.084, 0.042), ExtResource("3_w327y"), 4, 2, false, SubResource("RectangleShape2D_arrow")],
+"version": 3
+}
 
 [resource]
 script = ExtResource("1")
@@ -23,11 +40,11 @@ level_breakpoints = Array[int]([])
 breakpoint_bonuses = Array[String]([])
 tags = Array[String](["damage", "cooldown", "projectile"])
 base_damage = 44.0
-base_cooldown = 0.2
+base_cooldown = 12.0
 damage_type = "physical"
 inherent_element = ""
 projectile_speed = 800.0
-projectile_count = 5
+projectile_count = 12
 projectile_lifetime = 1.0
 buff_duration = 5.0
 buff_stat_name = ""
@@ -37,4 +54,4 @@ aoe_duration = 0.5
 orbit_radius = 80.0
 orbit_rotation_speed = 3.14159
 orbit_projectile_count = 3
-visual_scene = ExtResource("2")
+visual_scene = SubResource("PackedScene_kkast")
