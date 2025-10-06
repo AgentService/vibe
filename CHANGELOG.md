@@ -2,6 +2,37 @@
 
 ## [Current Week - In Progress]
 
+### Boss Hit Feedback Tween Refactor (2025-10-07)
+
+**Fixed persistent boss flash effects by converting from manual timer to tween-based system:**
+
+**Problems Fixed:**
+- ✅ Boss flash effects sometimes stayed permanently active after hits
+- ✅ Rapid hits caused flash shader to persist instead of resetting
+- ✅ Cleanup ordering bug: material reset called after dictionary erase
+- ✅ Rapid-hit bug: second hit saved shader material as "original" material
+
+**Refactoring Changes:**
+- ✅ Converted from manual `_process()` timer tracking to Godot's tween system
+- ✅ Replaced `boss_flash_effects` Dictionary with `active_flash_tweens` (instance_id → Tween)
+- ✅ Used sprite metadata to preserve original material across rapid hits
+- ✅ Removed ~50 lines of manual progress/cleanup code (_update_boss_flash_effects, _apply_boss_flash_effect)
+- ✅ Added automatic cleanup via `tween.finished` callback
+- ✅ Kill/restart tweens on rapid hits (prevents state corruption)
+
+**Benefits:**
+- Automatic state management - tweens self-destruct on completion
+- Cleaner code - 50% reduction in flash system complexity
+- Better performance - no manual progress calculations every frame
+- Rapid-hit safe - metadata persists, tweens restart cleanly
+- Battle-tested - uses Godot's proven tween interpolation
+
+**Testing:**
+- ✅ Single hits flash and reset properly
+- ✅ Rapid hits restart flash cleanly without persistence
+- ✅ Burst damage handled correctly
+- ✅ Boss death cleanup prevents tween leaks
+
 ### Resource Folder Organization (2025-10-07)
 
 **Organized `scripts/resources/` into logical subfolders for better maintainability:**
