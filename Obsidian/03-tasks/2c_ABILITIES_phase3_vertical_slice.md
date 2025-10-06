@@ -15,6 +15,31 @@ Validate entire ability pipeline: definition → manager → player → auto-cas
 
 ---
 
+## 🏗️ Architecture Reminder (Phase 1.1 Refactor)
+
+**This phase follows the Phase 1.1 baseline vs computed stats architecture:**
+
+- **base_damage, base_cooldown, etc.** → Immutable baseline values (set in .tres files)
+- **final_damage, final_cooldown, etc.** → Computed values (base × modifiers)
+- **Projectile payload uses final_damage** → Ensures tome modifiers affect actual damage output
+
+**Key Pattern:**
+```gdscript
+# ✓ Correct: Projectile uses final_damage (includes tome modifiers)
+var projectile_data = {
+    "damage": final_damage,  # NOT base_damage
+    # ...
+}
+
+# ✗ Wrong: Using base_damage bypasses tome modifiers
+var projectile_data = {
+    "damage": base_damage,  # BUG - ignores tome modifiers
+    # ...
+}
+```
+
+---
+
 ## 🔄 Architecture Pattern: Hybrid Spawning & Damage
 
 **This phase implements the hybrid pattern:**
@@ -226,7 +251,7 @@ Instantiate scene manually, verify:
   tags = PackedStringArray("projectile", "damage", "physical", "cooldown")
 
   base_damage = 15.0
-  cooldown = 1.0
+  base_cooldown = 1.0
   damage_type = "physical"
 
   projectile_count = 1

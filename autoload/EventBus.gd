@@ -179,6 +179,50 @@ signal ability_cooldown_started(ability_id: String, duration: float)
 @warning_ignore("unused_signal")
 signal ability_ready(ability_id: String)
 
+# === Ability System (Phase 1) ===
+## Ability activated - emitted when an ability is fired/used
+@warning_ignore("unused_signal")
+signal ability_activated(ability_id: String)
+
+## Projectile ability requested - emitted by ProjectileAbility with spawn data
+@warning_ignore("unused_signal")
+signal ability_projectile_requested(projectile_data: Dictionary)
+
+## Ability acquired - emitted when player gains a new ability
+@warning_ignore("unused_signal")
+signal ability_acquired(ability_id: String, slot: int)
+
+## Ability leveled up - emitted when ability gains levels
+@warning_ignore("unused_signal")
+signal ability_leveled_up(ability_id: String, new_level: int)
+
+# === Tome System (Phase 1) ===
+## Tome acquired - emitted when player gains a tome/modifier
+@warning_ignore("unused_signal")
+signal tome_acquired(tome_id: String, stack_count: int)
+
+# === Gold Economy (Future) ===
+## Gold gained - emitted when player earns gold
+@warning_ignore("unused_signal")
+signal gold_gained(amount: int, source: String)
+
+## Gold spent - emitted when player spends gold
+@warning_ignore("unused_signal")
+signal gold_spent(amount: int, purpose: String)
+
+# === Chest System (Future) ===
+## Chest spawned - emitted when a chest appears in the arena
+@warning_ignore("unused_signal")
+signal chest_spawned(chest_position: Vector2, is_free: bool)
+
+## Chest opened - emitted when player opens a chest
+@warning_ignore("unused_signal")
+signal chest_opened(chest_cost: int, is_free: bool)
+
+## Item acquired - emitted when player receives an item from chest/drop
+@warning_ignore("unused_signal")
+signal item_acquired(item_id: String, rarity: String)
+
 ## Damage numbers requested - emitted for floating damage text display
 @warning_ignore("unused_signal")
 signal damage_numbers_requested(amount: int, damage_type: String, position: Vector2)

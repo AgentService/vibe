@@ -50,9 +50,15 @@ func configure(params: Dictionary) -> void:
 	# Start emission
 	emitting = true
 
-	# Auto-cleanup
-	await get_tree().create_timer(lifetime).timeout
-	queue_free()
+	# Auto-cleanup - wait until in tree
+	if is_inside_tree():
+		await get_tree().create_timer(lifetime).timeout
+		queue_free()
+	else:
+		# Wait for tree_entered, then cleanup
+		await tree_entered
+		await get_tree().create_timer(lifetime).timeout
+		queue_free()
 
 func _create_particle_texture(size: int, color: Color) -> ImageTexture:
 	var img = Image.create(size, size, false, Image.FORMAT_RGBA8)

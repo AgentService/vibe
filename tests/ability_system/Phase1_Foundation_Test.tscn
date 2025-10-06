@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://c8k3nan5l2pqr"]
+
+[ext_resource type="Script" path="res://tests/ability_system/Phase1_Foundation_Test.gd" id="1_foundation_test"]
+
+[node name="Phase1_Foundation_Test" type="Node"]
+script = ExtResource("1_foundation_test")

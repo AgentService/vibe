@@ -15,6 +15,26 @@ Integrate with Arena's 30Hz combat step for auto-cast system.
 
 ---
 
+## 🏗️ Architecture Reminder (Phase 1.1 Refactor)
+
+**This phase follows the Phase 1.1 baseline vs computed stats architecture:**
+
+- **base_damage, base_cooldown, etc.** → Immutable baseline values (never modified after level-up)
+- **final_damage, final_cooldown, etc.** → Computed values (base × modifiers, recalculated on modifier changes)
+- **TomeModifier descriptors** → Stored in `_tome_modifiers` array, applied via `_recalculate_final_stats()`
+- **Idempotent replacement** → Same tome_id replaces old modifier (not exponential stacking)
+
+**Key Pattern:**
+```gdscript
+# ✓ Correct: Use final_damage for computed output
+var damage_to_deal = ability.final_damage  # Includes tome modifiers
+
+# ✗ Wrong: Don't mutate base_damage directly (except for level-up)
+ability.base_damage *= 1.15  # BUG - breaks baseline immutability
+```
+
+---
+
 ## ✅ Tasks
 
 ### Task 1.2.1: Create AbilityManager Singleton (~1.5 hours)
@@ -68,12 +88,17 @@ func _ready():
 		var instance1 = AbilityManager.create_ability_instance("ranger_arrow")
 		var instance2 = AbilityManager.create_ability_instance("ranger_arrow")
 
-		instance1.base_damage = 999.0
-		print("Instance 1 damage: ", instance1.base_damage)  # 999.0
-		print("Instance 2 damage: ", instance2.base_damage)  # Original value
-		print("Definition damage: ", definition.base_damage)  # Original value
+		# Test baseline vs computed stats separation (Phase 1.1 architecture)
+		# Baseline (base_damage) is immutable, computed (final_damage) includes modifiers
+		instance1.base_damage = 15.0  # Set immutable baseline
+		instance1._recalculate_final_stats()
+		print("Instance 1 base_damage: ", instance1.base_damage)    # 15.0
+		print("Instance 1 final_damage: ", instance1.final_damage)  # 15.0 (no modifiers)
+		print("Instance 2 base_damage: ", instance2.base_damage)    # Original value
+		print("Definition base_damage: ", definition.base_damage)   # Original value
 
-		if instance2.base_damage != 999.0 and definition.base_damage != 999.0:
+		# Test that instances are independent (modifying instance1 doesn't affect instance2)
+		if instance2.base_damage != instance1.base_damage and definition.base_damage == instance2.base_damage:
 			print("✓ Instances are independent")
 		else:
 			print("✗ Instances are NOT independent - duplicate() failed")

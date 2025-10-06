@@ -8,3 +8,4 @@ script = ExtResource("1_rrvyv")
 [node name="Sprite2D" type="Sprite2D" parent="."]
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+speed_scale = 3.257

@@ -15,6 +15,39 @@ Validate modifier system with DPS/TTK measurements.
 
 ---
 
+## 🏗️ Architecture Reminder (Phase 1.1 Refactor)
+
+**This phase validates the Phase 1.1 baseline vs computed stats architecture:**
+
+- **base_damage** → Immutable baseline (15.0 for Ranger Arrow, NEVER changes after tome application)
+- **final_damage** → Computed value (15.0 → 17.25 → 19.84 with tome stacks)
+- **TomeModifier descriptors** → Idempotent replacement (applying same tome_id replaces old modifier)
+- **Multiplicative stacking** → `final_damage = base_damage * pow(multiplier, stack_count)`
+
+**Expected Behavior:**
+```gdscript
+# Ranger Arrow baseline
+arrow.base_damage = 15.0
+arrow.final_damage = 15.0  # No modifiers yet
+
+# Apply Tome of Power (×1 stack, 1.15 multiplier)
+tome.apply_to_ability(arrow, 1)
+arrow.base_damage == 15.0       # ✓ Immutable baseline unchanged
+arrow.final_damage == 17.25     # ✓ Computed: 15.0 * 1.15^1
+
+# Apply Tome of Power (×2 stacks) - REPLACES previous modifier
+tome.apply_to_ability(arrow, 2)
+arrow.base_damage == 15.0       # ✓ Still immutable
+arrow.final_damage == 19.84     # ✓ Computed: 15.0 * 1.15^2 (NOT 17.25 * 1.15)
+```
+
+**Test Validation:**
+- Always check `final_damage` for output damage (NOT `base_damage`)
+- `base_damage` should NEVER change after tome application
+- Idempotent replacement prevents exponential stacking bugs
+
+---
+
 ## ✅ Tasks
 
 ### Task 1.4.1: Create TomeManager Singleton (~1 hour)
@@ -185,17 +218,17 @@ func _ready():
 - [ ] Modify script to test 3 scenarios:
 
 **Scenario 1: Ranger Arrow Only (Baseline)**
-- Ranger Arrow (15 dmg, 1.0s cooldown)
+- Ranger Arrow (base: 15 dmg, final: 15 dmg, cooldown: 1.0s)
 - Expected DPS: 15 / 1.0 = **15 DPS**
 - Expected TTK (100 HP enemy): 100 / 15 DPS ≈ **6.67 seconds**
 
 **Scenario 2: Ranger Arrow + Tome of Power (×1)**
-- Ranger Arrow (17.25 dmg, 1.0s cooldown)
+- Ranger Arrow (base: 15 dmg, final: 17.25 dmg, cooldown: 1.0s)
 - Expected DPS: 17.25 / 1.0 = **17.25 DPS**
 - Expected TTK (100 HP enemy): 100 / 17.25 DPS ≈ **5.8 seconds**
 
 **Scenario 3: Ranger Arrow + Tome of Power (×2)**
-- Ranger Arrow (19.84 dmg, 1.0s cooldown)
+- Ranger Arrow (base: 15 dmg, final: 19.84 dmg, cooldown: 1.0s)
 - Expected DPS: 19.84 / 1.0 = **19.84 DPS**
 - Expected TTK (100 HP enemy): 100 / 19.84 DPS ≈ **5.04 seconds**
 
@@ -229,8 +262,11 @@ func _ready():
 			tome.apply_to_ability(arrow, 2)
 			print("Applied Tome of Power ×2")
 
-	print("Final damage: %.2f" % arrow.base_damage)
-	print("Final cooldown: %.2f" % arrow.cooldown)
+	# Phase 1.1 Architecture: base_damage is immutable, final_damage is computed
+	print("Base damage (immutable): %.2f" % arrow.base_damage)      # Always 15.0
+	print("Final damage (computed): %.2f" % arrow.final_damage)     # 15.0, 17.25, or 19.84
+	print("Base cooldown: %.2f" % arrow.base_cooldown)              # Always 1.0
+	print("Final cooldown: %.2f" % arrow.final_cooldown)            # Always 1.0 (no cooldown modifiers in this test)
 
 	player.ability_slots[0] = arrow
 	player.ability_cooldowns[0] = 0.0

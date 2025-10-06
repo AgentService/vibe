@@ -3,9 +3,24 @@ extends Node2D
 # Method C: Line2D (AOE Circle)
 # Procedurally generated circle using Line2D
 
-@onready var line: Line2D = $Line2D
+var line: Line2D
+
+func _ready() -> void:
+	line = $Line2D
+	if line:
+		line.width = 5.0
+		line.default_color = Color.WHITE
 
 func configure(params: Dictionary) -> void:
+	# Ensure line is ready
+	if not line:
+		line = $Line2D
+
+	if not line:
+		push_warning("Line2D node not found")
+		queue_free()
+		return
+
 	# Position
 	global_position = params.get("position", Vector2.ZERO)
 
@@ -30,9 +45,3 @@ func configure(params: Dictionary) -> void:
 	var tween = create_tween()
 	tween.tween_property(line, "modulate:a", 0.0, 0.3)
 	tween.tween_callback(queue_free)
-
-func _ready() -> void:
-	if not line:
-		line = $Line2D
-	line.width = 5.0
-	line.default_color = Color.WHITE

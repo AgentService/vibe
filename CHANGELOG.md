@@ -2,6 +2,41 @@
 
 ## [Current Week - In Progress]
 
+### Visual Effects POC - Testing Playground Created (2025-10-06)
+
+**Created interactive test harness for ability visual effects experimentation:**
+- ✅ Created POC test scene: `tests/visual_effects/EffectsPOC.tscn`
+- ✅ Implemented 3 visual methods: Sprite+Shader, GPUParticles2D, Line2D
+- ✅ Added auto-fire system (1 second interval, toggleable)
+- ✅ Added stress test (spawn 100 random effects)
+- ✅ Live parameter control: scale (0.5-3.0x), AOE radius (50-500px), color
+- ✅ Real-time debug display in window title (FPS, active effects count)
+
+**Visual Effect Methods (Placeholder Implementations):**
+- **Method A (Sprite+Shader)**: Projectile + AOE variants with tween fade
+- **Method B (GPUParticles2D)**: Projectile + AOE variants with particle emission
+- **Method C (Line2D)**: AOE circle with procedural generation
+
+**Keyboard Controls:**
+- `1-5`: Spawn different visual effect methods
+- `A`: Toggle auto-fire for continuous effect spawning
+- `+/-`: Adjust scale, `[/]`: Adjust AOE radius, `R`: Random color
+- `SPACE`: Stress test (100 effects), `C`: Clear all effects
+
+**Branch:** `visual-effects-poc` (POC development branch)
+
+**Next Steps:**
+1. Add textures to Sprite2D nodes (replace icon.svg)
+2. Create glow shaders for Method A
+3. Test performance with 100+ effects to measure FPS
+4. Document findings and choose best method for Phase 6
+
+**Files Created:**
+- `tests/visual_effects/EffectsPOC.tscn` - Main test scene
+- `tests/visual_effects/EffectsPOC.gd` - Test harness script
+- `tests/visual_effects/README.md` - Testing documentation
+- `tests/visual_effects/effects/` - Effect method implementations (6 files)
+
 ### Content - Added Tome Icons (2025-10-06)
 
 **Added rune icon to tome items in unlock shop:**
