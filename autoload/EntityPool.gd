@@ -103,9 +103,9 @@ func _create_entity_reset() -> Callable:
 			entity.get_parent().remove_child(entity)
 
 		# Reset common properties (if entity has them)
-		if entity.has("position"):
+		if "position" in entity:
 			entity.position = Vector2.ZERO
-		if entity.has("visible"):
+		if "visible" in entity:
 			entity.visible = true
 
 
