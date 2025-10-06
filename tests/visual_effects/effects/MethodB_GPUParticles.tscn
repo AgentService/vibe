@@ -3,6 +3,7 @@
 [ext_resource type="Script" uid="uid://cem0xa0a5ynwa" path="res://tests/visual_effects/effects/MethodB_GPUParticles.gd" id="1_ry283"]
 
 [node name="MethodB_GPUParticles" type="GPUParticles2D"]
+amount = 1
 lifetime = 3.32
 explosiveness = 0.1
 randomness = 0.12
