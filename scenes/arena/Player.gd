@@ -103,18 +103,11 @@ func _ready() -> void:
 	ability_controller = AbilityController.new(self)
 
 	# Auto-equip starting abilities from player_type.tres
-	Logger.debug("Player._ready: player_type=%s" % player_type, "abilities")
-	if player_type:
-		Logger.debug("Player._ready: player_type.id=%s, starting_abilities=%s" % [player_type.id, player_type.starting_abilities], "abilities")
-		if not player_type.starting_abilities.is_empty():
-			for i in range(min(player_type.starting_abilities.size(), ability_controller.ability_slots.size())):
-				var ability_id: String = player_type.starting_abilities[i]
-				equip_ability(ability_id, i)
-				Logger.info("Player: Auto-equipped %s to slot %d" % [ability_id, i], "abilities")
-		else:
-			Logger.warn("Player._ready: starting_abilities is empty for player_type %s" % player_type.id, "abilities")
-	else:
-		Logger.warn("Player._ready: player_type is null!", "abilities")
+	if player_type and not player_type.starting_abilities.is_empty():
+		for i in range(min(player_type.starting_abilities.size(), ability_controller.ability_slots.size())):
+			var ability_id: String = player_type.starting_abilities[i]
+			equip_ability(ability_id, i)
+			Logger.info("Player: Auto-equipped %s to slot %d" % [ability_id, i], "abilities")
 
 	# CAMERA: Simple player-following camera (Godot best practice)
 	var camera = Camera2D.new()

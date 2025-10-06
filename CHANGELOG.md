@@ -10,9 +10,10 @@
 - ✅ Removed hardcoded `equip_ability()` logic from Arena.gd (cleaner architecture)
 - ✅ Created `ranger_player.tres` with `starting_abilities = ["heartseeker"]`
 - ✅ Updated PlayerRanger.tscn to use ranger_player.tres instead of default_player.tres
-- ✅ Fixed `DamageAbility._base_projectile_count` initialization bug (wasn't reading from .tres)
-  - Added zero-check initialization pattern: `if _base_projectile_count == 0: _base_projectile_count = projectile_count`
-  - Fixes issue where projectile_count was reset to 1 instead of using .tres value (3)
+- ✅ **FIXED** `DamageAbility._base_projectile_count` initialization bug
+  - **Root Cause:** `_init()` ran BEFORE `duplicate()` copied .tres properties → initialized from default value (1) instead of .tres value (3)
+  - **Fix:** Removed initialization from `_init()`, only initialize in `_recalculate_final_stats()` (runs AFTER properties are copied)
+  - Heartseeker now correctly fires 3 projectiles instead of 1
 
 **Testing Tool UX Improvements:**
 - ✅ Renamed abilities to be character-agnostic: "ranger_arrow" → "heartseeker", "ranger_volley" → "volley"

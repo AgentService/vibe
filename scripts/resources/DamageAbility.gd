@@ -114,9 +114,10 @@ func _init() -> void:
 	final_damage = base_damage
 	final_cooldown = base_cooldown
 
-	# Initialize _base_projectile_count (for abilities created via code, not .tres)
-	if _base_projectile_count == 0:
-		_base_projectile_count = projectile_count
+	# NOTE: Do NOT initialize _base_projectile_count here!
+	# When duplicate(true) is called, _init() runs BEFORE .tres properties are copied,
+	# so projectile_count still has the default value (1), not the .tres value (3).
+	# Initialize _base_projectile_count in _recalculate_final_stats() instead.
 
 # ============================================================================
 # MODIFIER MANAGEMENT
@@ -159,7 +160,7 @@ func remove_modifier(tome_id: String) -> void:
 ## - Modifiers can apply to any ability with matching properties
 func _recalculate_final_stats() -> void:
 	# Initialize _base_projectile_count from .tres file on first call
-	# (Godot doesn't call _init() when loading Resources from files)
+	# This runs AFTER duplicate() copies .tres properties, so we get the correct value
 	if _base_projectile_count == 0:
 		_base_projectile_count = projectile_count
 
