@@ -23,8 +23,8 @@ var boss_flash_material: ShaderMaterial
 @export var flash_duration_override: float = 0.0  ## Flash duration override (0 = use config file)
 @export var flash_intensity_override: float = 0.0  ## Flash intensity override (0 = use config file)
 
-# Flash effect tracking: boss_instance_id -> flash_data
-var boss_flash_effects: Dictionary = {}
+# Active tweens for flash effects: instance_id -> Tween
+var active_flash_tweens: Dictionary = {}
 var boss_knockback_effects: Dictionary = {}
 
 # Boss references by instance ID
@@ -89,9 +89,16 @@ func register_boss(boss: Node) -> void:
 func unregister_boss(boss: Node) -> void:
 	"""Unregister a boss from hit feedback tracking"""
 	var instance_id = boss.get_instance_id()
+
+	# Kill active tween if exists
+	if active_flash_tweens.has(instance_id):
+		var tween = active_flash_tweens[instance_id]
+		if tween and tween.is_valid():
+			tween.kill()
+		active_flash_tweens.erase(instance_id)
+
 	registered_bosses.erase(instance_id)
 	cached_boss_sprites.erase(instance_id)
-	boss_flash_effects.erase(instance_id)
 	boss_knockback_effects.erase(instance_id)
 	Logger.debug("Boss " + boss.name + " unregistered from hit feedback", "bosses")
 
@@ -140,40 +147,72 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 		_add_boss_knockback(instance_id, boss, payload.source_position, payload.knockback_distance)
 
 func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
-	# Use cached sprite reference for performance
+	"""Tween-based flash effect - cleaner and handles rapid hits automatically"""
 	var cached_sprite = cached_boss_sprites.get(instance_id, null)
-	
-	# Use editor overrides if specified, otherwise use config values
-	# Use boss-specific config values or fallback to general flash config
+	if not cached_sprite:
+		return
+
+	# Calculate duration and intensity
 	var duration = visual_config.boss_flash_duration if visual_config.boss_flash_duration > 0 else visual_config.flash_duration
 	var intensity = visual_config.boss_flash_intensity if visual_config.boss_flash_intensity > 0 else visual_config.flash_intensity
-	
-	# Allow scene-level overrides if specified
+
+	# Allow scene-level overrides
 	if flash_duration_override > 0:
 		duration = flash_duration_override
 	if flash_intensity_override > 0:
 		intensity = flash_intensity_override
-	
-	# Store original material BEFORE applying shader (modulate stays untouched)
-	var original_material = cached_sprite.material if cached_sprite else null
-	
-	# Create a unique shader material instance for this boss
-	var material_instance: ShaderMaterial = null
-	if boss_flash_material and cached_sprite:
-		material_instance = boss_flash_material.duplicate() as ShaderMaterial
-		cached_sprite.material = material_instance
-	
-	var flash_data := {
-		"timer": 0.0,
-		"duration": duration,
-		"flash_intensity": intensity,
-		"boss": boss,
-		"animated_sprite": cached_sprite,
-		"shader_material": material_instance,
-		"original_material": original_material
-	}
-	
-	boss_flash_effects[instance_id] = flash_data
+
+	# Preserve original material ONCE using metadata (survives rapid hits)
+	if not cached_sprite.has_meta("_boss_original_material"):
+		cached_sprite.set_meta("_boss_original_material", cached_sprite.material)
+		Logger.debug("Saved original material for " + boss.name, "bosses")
+
+	# Kill existing tween if rapid hit occurs
+	if active_flash_tweens.has(instance_id):
+		var old_tween = active_flash_tweens[instance_id]
+		if old_tween and old_tween.is_valid():
+			old_tween.kill()
+		Logger.debug("Rapid hit detected - restarting flash for " + boss.name, "bosses")
+
+	# Create shader material instance
+	if not boss_flash_material:
+		Logger.warn("No boss flash shader material available", "bosses")
+		return
+
+	var material_instance = boss_flash_material.duplicate() as ShaderMaterial
+	cached_sprite.material = material_instance
+
+	# Create tween for flash effect
+	var tween = get_tree().create_tween()
+	tween.set_ease(Tween.EASE_OUT)
+	tween.set_trans(Tween.TRANS_QUAD)
+
+	# Tween flash intensity from max to 0
+	var normalized_intensity = clampf(intensity / 10.0, 0.0, 1.0)
+	tween.tween_method(
+		func(value: float):
+			if material_instance and is_instance_valid(cached_sprite):
+				material_instance.set_shader_parameter("flash_modifier", value),
+		normalized_intensity,  # Start at full intensity
+		0.0,                   # Fade to zero
+		duration
+	)
+
+	# Reset material when tween completes
+	tween.finished.connect(_on_flash_tween_finished.bind(instance_id, cached_sprite))
+
+	# Store tween reference
+	active_flash_tweens[instance_id] = tween
+
+func _on_flash_tween_finished(instance_id: int, sprite: AnimatedSprite2D) -> void:
+	"""Called when flash tween completes - restore original material"""
+	if sprite and is_instance_valid(sprite):
+		var original_material = sprite.get_meta("_boss_original_material", null)
+		sprite.material = original_material
+		Logger.debug("Flash tween completed - material restored", "bosses")
+
+	# Remove tween reference
+	active_flash_tweens.erase(instance_id)
 
 func _find_animated_sprite(boss: Node) -> AnimatedSprite2D:
 	"""Find the AnimatedSprite2D node within the boss hierarchy"""
@@ -247,34 +286,8 @@ func _add_boss_knockback(instance_id: int, boss: Node, source_pos: Vector2, knoc
 		boss_knockback_effects[instance_id] = knockback_data
 
 func _process(delta: float) -> void:
-	_update_boss_flash_effects(delta)
+	# Only knockback uses manual updates now - flash uses tweens
 	_update_boss_knockback_effects(delta)
-
-func _update_boss_flash_effects(delta: float) -> void:
-	var completed_effects: Array[int] = []
-	
-	for instance_id in boss_flash_effects.keys():
-		var flash_data: Dictionary = boss_flash_effects[instance_id]
-		var boss = flash_data.boss
-		
-		if not is_instance_valid(boss):
-			completed_effects.append(instance_id)
-			continue
-		
-		flash_data.timer += delta
-		var progress: float = flash_data.timer / flash_data.duration
-		
-		if progress >= 1.0:
-			completed_effects.append(instance_id)
-			continue
-		
-		# Apply flash effect to boss modulate
-		_apply_boss_flash_effect(flash_data, progress)
-	
-	# Clean up completed effects
-	for instance_id in completed_effects:
-		_reset_boss_color(instance_id)
-		boss_flash_effects.erase(instance_id)
 
 func _update_boss_knockback_effects(delta: float) -> void:
 	var completed_effects: Array[int] = []
@@ -321,24 +334,6 @@ func _update_boss_knockback_effects(delta: float) -> void:
 		Logger.warn("Boss knockback effects exceeded %d, performing cleanup" % visual_config.max_boss_effects, "performance")
 		_cleanup_oldest_boss_effects()
 
-func _apply_boss_flash_effect(flash_data: Dictionary, progress: float) -> void:
-	var shader_material = flash_data.shader_material as ShaderMaterial
-	
-	if not shader_material:
-		return  # No shader material available
-	
-	# Calculate flash intensity using curve - inverted for proper flash effect
-	var curve_value: float = visual_config.flash_curve.sample(progress) if visual_config.flash_curve else (1.0 - progress)
-	var flash_intensity: float = curve_value * flash_data.flash_intensity
-	
-	# Normalize flash intensity to 0.0-1.0 range for shader
-	var normalized_intensity = clampf(flash_intensity / 10.0, 0.0, 1.0)  # Assuming max intensity is around 10
-	
-	# Set shader parameters for white flash
-	shader_material.set_shader_parameter("flash_color", Color.WHITE)
-	shader_material.set_shader_parameter("flash_modifier", normalized_intensity)
-	
-
 func _apply_boss_knockback_effect(knockback_data: Dictionary, _progress: float) -> void:
 	var boss = knockback_data.boss
 	
@@ -364,15 +359,6 @@ func _apply_boss_knockback_effect(knockback_data: Dictionary, _progress: float) 
 		boss.velocity = knockback_data.current_velocity
 		boss.move_and_slide()
 		
-
-func _reset_boss_color(instance_id: int) -> void:
-	var flash_data = boss_flash_effects.get(instance_id, {})
-	if flash_data.has("boss") and is_instance_valid(flash_data.boss):
-		# Reset AnimatedSprite2D material to original (modulate stays unchanged)
-		if flash_data.has("animated_sprite") and flash_data.animated_sprite:
-			flash_data.animated_sprite.material = flash_data.get("original_material", null)
-		
-		Logger.debug("Boss flash shader reset for " + flash_data.boss.name + " (modulate preserved)", "bosses")
 
 func _scan_for_bosses() -> void:
 	"""Automatically find and register boss entities in the scene tree"""
@@ -417,34 +403,52 @@ func _is_node_a_boss(node: Node) -> bool:
 func _cleanup_oldest_boss_effects() -> void:
 	"""Emergency cleanup of oldest boss effects"""
 	var effect_ages: Array = []
-	
+
 	# Collect effect ages
 	for instance_id in boss_knockback_effects.keys():
 		var effect_data = boss_knockback_effects[instance_id]
 		if effect_data.has("timer"):
 			effect_ages.append({"id": instance_id, "age": effect_data.timer})
-	
+
 	# Sort by age (oldest first)
 	effect_ages.sort_custom(func(a, b): return a.age > b.age)
-	
+
 	# Remove oldest 10 effects
 	var remove_count = min(10, effect_ages.size())
 	for i in range(remove_count):
 		var instance_id = effect_ages[i].id
 		boss_knockback_effects.erase(instance_id)
-		boss_flash_effects.erase(instance_id)
-	
+
+		# Also kill any active flash tweens
+		if active_flash_tweens.has(instance_id):
+			var tween = active_flash_tweens[instance_id]
+			if tween and tween.is_valid():
+				tween.kill()
+			active_flash_tweens.erase(instance_id)
+
 	Logger.warn("Boss emergency cleanup removed " + str(remove_count) + " oldest effects", "performance")
 
 func cleanup_all_boss_effects() -> void:
 	"""Public method to force cleanup of all boss effects"""
-	boss_flash_effects.clear()
+	# Kill all active flash tweens
+	for instance_id in active_flash_tweens.keys():
+		var tween = active_flash_tweens[instance_id]
+		if tween and tween.is_valid():
+			tween.kill()
+
+	active_flash_tweens.clear()
 	boss_knockback_effects.clear()
 	Logger.info("All boss hit feedback effects cleared", "bosses")
 
 func cleanup_boss_effects_for_instance(instance_id: int) -> void:
 	"""Clean up all effects for a specific boss instance"""
-	boss_flash_effects.erase(instance_id)
+	# Kill active flash tween
+	if active_flash_tweens.has(instance_id):
+		var tween = active_flash_tweens[instance_id]
+		if tween and tween.is_valid():
+			tween.kill()
+		active_flash_tweens.erase(instance_id)
+
 	boss_knockback_effects.erase(instance_id)
 	Logger.debug("Cleaned up effects for boss instance: " + str(instance_id), "bosses")
 
