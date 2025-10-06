@@ -24,8 +24,8 @@ extends Node
 
 ## Scene references for pooled entity types
 const POOLED_ENTITY_SCENES = {
-	# Projectiles will be added as abilities are created
-	# "arrow": preload("res://scenes/abilities/projectiles/Arrow.tscn"),
+	# Projectiles
+	"arrow": preload("res://scenes/abilities/projectiles/Arrow.tscn"),
 	# "fireball": preload("res://scenes/abilities/projectiles/Fireball.tscn"),
 
 	# XP Orb (existing scene)

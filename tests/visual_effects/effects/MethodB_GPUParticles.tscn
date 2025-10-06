@@ -4,7 +4,6 @@
 
 [node name="MethodB_GPUParticles" type="GPUParticles2D"]
 amount = 1
-lifetime = 3.32
-explosiveness = 0.1
-randomness = 0.12
+lifetime = 1.15
+explosiveness = 0.77
 script = ExtResource("1_ry283")
