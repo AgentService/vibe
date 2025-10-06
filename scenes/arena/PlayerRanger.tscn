@@ -2173,6 +2173,7 @@ texture = ExtResource("4_66fk3")
 texture_scale = 2.77
 
 [node name="DebugAbilityDisplay" type="Label" parent="."]
+z_index = 10
 offset_left = -387.0
 offset_top = -212.0
 offset_right = -147.0

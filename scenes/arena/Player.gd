@@ -298,9 +298,13 @@ func _handle_new_ability_inputs() -> void:
 		if _is_ability_ready("spear_attack"):
 			_handle_spear_attack()
 
-# TODO: REMOVE AFTER TESTING - Tome application test keybinds (Alt+0/1/2/3)
+# TODO: REMOVE AFTER TESTING - Test keybinds for tome/ability systems
 func _input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and event.alt_pressed:
+	if not event is InputEventKey or not event.pressed:
+		return
+
+	# Alt+0/1/2/3: Tome system testing
+	if event.alt_pressed:
 		match event.keycode:
 			KEY_0:
 				_test_clear_tomes()
@@ -310,6 +314,18 @@ func _input(event: InputEvent) -> void:
 				_test_equip_tome("tome_speed")
 			KEY_3:
 				_test_equip_tome("tome_projectiles")
+
+	# Ctrl+1/2/3/4: Level up abilities in slots
+	elif event.ctrl_pressed:
+		match event.keycode:
+			KEY_1:
+				_test_level_up_ability(0)
+			KEY_2:
+				_test_level_up_ability(1)
+			KEY_3:
+				_test_level_up_ability(2)
+			KEY_4:
+				_test_level_up_ability(3)
 
 func _test_equip_tome(tome_id: String) -> void:
 	if not ability_controller:
@@ -353,6 +369,27 @@ func _log_tome_state() -> void:
 			(1.0 - (ability.final_cooldown / ability.base_cooldown)) * 100.0
 		], "debug")
 		Logger.info("  projectile_count: %d" % ability.projectile_count, "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
+
+func _test_level_up_ability(slot_index: int) -> void:
+	if not ability_controller:
+		Logger.warn("No ability_controller found", "debug")
+		return
+
+	var ability = ability_controller.ability_slots[slot_index]
+	if not ability:
+		Logger.warn("No ability in slot %d" % slot_index, "debug")
+		return
+
+	# Level up via AbilityController
+	ability_controller.level_up_ability(ability.ability_id, 1)
+
+	# Log results
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("Leveled up [%d] %s → Lv%d" % [slot_index, ability.ability_name, ability.ability_level], "debug")
+	Logger.info("  base_damage: %.2f → final_damage: %.2f" % [ability.base_damage, ability.final_damage], "debug")
+	Logger.info("  base_cooldown: %.2f → final_cooldown: %.2f" % [ability.base_cooldown, ability.final_cooldown], "debug")
+	Logger.info("  projectile_count: %d" % ability.projectile_count, "debug")
 	Logger.info("═══════════════════════════════════════", "debug")
 
 func _test_clear_tomes() -> void:

@@ -2,6 +2,32 @@
 
 ## [Current Week - In Progress]
 
+### Projectile Knockback Support (2025-10-06)
+
+**Added knockback support to projectile abilities:**
+- ✅ Added `knockback_distance` property to ProjectileAbility resource class
+- ✅ Updated AbilityProjectile to use **current player position** for knockback direction
+- ✅ Configured ranger_arrow.tres with 50px knockback distance
+- ✅ Integrated with existing BossHitFeedback system (shader flash + velocity-based knockback)
+- ✅ Fixed knockback direction: enemies always pushed **away from player** (not projectile)
+- ✅ Added `PlayerState.get_position()` method for proper encapsulation
+- ✅ Fixed rapid-fire knockback: **accumulates velocity** instead of replacing
+
+**Architecture:**
+- Knockback flows through: ProjectileAbility → projectile_data → AbilityProjectile → DamageService → DamageAppliedPayload → BossHitFeedback
+- Uses boss velocity system with hit-stop (0.15s freeze) and organic decay (0.82 factor)
+- Uses **PlayerState.get_position()** (30Hz cached position via combat_step)
+- **Accumulative knockback:** Rapid hits add velocity together instead of canceling
+- Hit-stop resets on each hit for impact feel, velocity accumulates for pushback
+- Proper encapsulation: Systems should use get_position() not direct property access
+
+**Files Modified:**
+- `scripts/resources/ProjectileAbility.gd` - Added knockback_distance export and data payload
+- `scripts/entities/AbilityProjectile.gd` - Use PlayerState.get_position() for knockback direction
+- `scripts/systems/boss/BossHitFeedback.gd` - Accumulative knockback for rapid-fire abilities
+- `autoload/PlayerState.gd` - Added get_position() encapsulation method
+- `data/content/abilities/projectile/ranger_arrow.tres` - Set knockback_distance = 50.0
+
 ### Ability System - Phase 1.2 Complete (2025-10-06)
 
 **Completed full ability system foundation with 30Hz deterministic updates:**

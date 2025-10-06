@@ -15,21 +15,16 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed:
 		return
-	
+
 	var key_event := event as InputEventKey
-	
-	# Ctrl+1: Toggle God Mode
-	if key_event.ctrl_pressed and key_event.keycode == KEY_1:
-		toggle_god_mode()
-		get_viewport().set_input_as_handled()
-	
-	# Ctrl+2: Toggle Spawn Disabled
-	elif key_event.ctrl_pressed and key_event.keycode == KEY_2:
-		toggle_spawn_disabled()
-		get_viewport().set_input_as_handled()
-	
+
+	# NOTE: Ctrl+1/2 keybinds removed - use console commands instead:
+	#   CheatSystem.toggle_god_mode()
+	#   CheatSystem.toggle_spawn_disabled()
+	# God mode is enabled by default (see god_mode: bool = true)
+
 	# F10: Silent Pause
-	elif key_event.keycode == KEY_F10:
+	if key_event.keycode == KEY_F10:
 		toggle_silent_pause()
 		get_viewport().set_input_as_handled()
 

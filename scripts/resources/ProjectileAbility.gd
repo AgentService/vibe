@@ -61,6 +61,9 @@ enum FireMode {
 ## Pierce count - how many enemies projectile can pass through
 @export var pierce_count: int = 0
 
+## Knockback distance applied on hit (pixels)
+@export var knockback_distance: float = 0.0
+
 
 # ============================================================================
 # INITIALIZATION
@@ -198,7 +201,7 @@ func _calculate_spread_direction(base_direction: Vector2, projectile_index: int,
 		return base_direction
 
 	# Total spread angle in radians (adjustable for tighter/wider spread)
-	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(90.0)  # 30 degrees total spread
+	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(40.0)  # 30 degrees total spread
 
 	# Calculate angle offset for this projectile
 	# Center the spread around the base direction
@@ -278,7 +281,8 @@ func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictio
 		"homing_strength": homing_strength,
 		"chains_to_enemies": chains_to_enemies,
 		"chain_radius": chain_radius,
-		"pierce_count": pierce_count
+		"pierce_count": pierce_count,
+		"knockback_distance": knockback_distance
 	}
 
 	# Add visual references if available

@@ -77,6 +77,9 @@ var homing_strength: float = 0.5
 ## Source player ID (for damage attribution)
 var source_player_id: String = "player"
 
+## Knockback distance applied on hit (pixels)
+var knockback_distance: float = 100.0
+
 ## Visual scene key for pooling
 var visual_scene_key: String = "arrow"
 
@@ -146,12 +149,13 @@ func initialize(projectile_data: Dictionary) -> void:
 	lifetime = projectile_data.get("projectile_lifetime", 2.0)
 	is_homing = projectile_data.get("is_homing", true)
 	homing_strength = projectile_data.get("homing_strength", 0.5)
+	knockback_distance = projectile_data.get("knockback_distance", 0.0)
 	visual_scene_key = projectile_data.get("visual_scene_key", "arrow")
 
 	# Initialize runtime state
 	_remaining_pierce = pierce_count
 	_remaining_lifetime = lifetime
-	position = projectile_data.get("source_position", Vector2.ZERO)
+	position = projectile_data.get("source_position", Vector2.ZERO)  # Spawn at player position
 	_initialized = true
 
 	# Rotate sprite to match direction
@@ -199,6 +203,12 @@ func _on_area_entered(area: Area2D) -> void:
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
+	# Check if target is still alive (prevents overkill waste)
+	# If multiple projectiles hit the same target in one frame, only the first applies damage
+	if EntityTracker and not EntityTracker.is_entity_alive(enemy_id):
+		# Target already dead - continue flying without consuming pierce
+		return
+
 	# Call DamageService directly (entities use direct calls, not EventBus)
 	if DamageService:
 		# Build damage tags array including element and damage type
@@ -210,18 +220,24 @@ func _on_enemy_collision(enemy_id: String) -> void:
 		for tag in damage_tags:
 			full_tags.append(tag)
 
-		# Apply damage (DamageService signature: target_id, amount, source, tags)
+		# Apply damage (DamageService signature: target_id, amount, source, tags, knockback_distance, source_position)
+		# Use CURRENT player position for knockback direction (enemies pushed away from player)
+		# PlayerState.get_position() returns 30Hz-updated cached position
+		var current_player_pos: Vector2 = PlayerState.get_position() if PlayerState else global_position
+
 		DamageService.apply_damage(
 			enemy_id,          # target ID
 			damage,            # damage amount
 			source_player_id,  # source identifier
-			full_tags          # damage tags
+			full_tags,         # damage tags
+			knockback_distance, # knockback distance in pixels
+			current_player_pos # current player position for knockback direction (away from player)
 		)
 
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)
 
-	# Decrement pierce count
+	# Decrement pierce count (only if we actually hit a living target)
 	_remaining_pierce -= 1
 	if _remaining_pierce < 0:
 		# Use call_deferred to avoid removing CollisionObject during physics callback

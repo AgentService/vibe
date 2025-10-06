@@ -135,9 +135,9 @@ func _on_damage_applied(payload: DamageAppliedPayload) -> void:
 	# Start flash effect
 	_start_boss_flash_effect(instance_id, boss)
 	
-	# Start knockback effect if knockback distance > 0
+	# Start or accumulate knockback effect if knockback distance > 0
 	if payload.knockback_distance > 0.0:
-		_start_boss_knockback_effect(instance_id, boss, payload.source_position, payload.knockback_distance)
+		_add_boss_knockback(instance_id, boss, payload.source_position, payload.knockback_distance)
 
 func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	# Use cached sprite reference for performance
@@ -205,28 +205,46 @@ func _find_animated_sprite_recursive(node: Node) -> AnimatedSprite2D:
 	
 	return null
 
-func _start_boss_knockback_effect(instance_id: int, boss: Node, source_pos: Vector2, knockback_distance: float) -> void:
+## Adds knockback to a boss (accumulates if already in knockback).
+## This allows rapid-fire abilities to stack knockback instead of canceling it.
+func _add_boss_knockback(instance_id: int, boss: Node, source_pos: Vector2, knockback_distance: float) -> void:
 	# Calculate knockback direction
 	var boss_pos: Vector2 = boss.global_position
 	var knockback_dir: Vector2 = (boss_pos - source_pos).normalized()
 	if knockback_dir.length() < 0.1:
 		knockback_dir = Vector2(1, 0)  # Fallback direction
-	
+
 	# Enhanced knockback with editor-configurable force calculation
 	var knockback_force = knockback_distance * knockback_force_multiplier
 	var knockback_velocity = knockback_dir * knockback_force
-	
-	var knockback_data := {
-		"timer": 0.0,
-		"duration": visual_config.knockback_duration * knockback_duration_multiplier,
-		"initial_velocity": knockback_velocity,
-		"current_velocity": knockback_velocity,
-		"boss": boss,
-		"hit_stop_duration": hit_stop_duration,
-		"hit_stop_timer": 0.0
-	}
-	
-	boss_knockback_effects[instance_id] = knockback_data
+
+	# Check if boss already has active knockback
+	if boss_knockback_effects.has(instance_id):
+		var existing_data = boss_knockback_effects[instance_id]
+
+		# Accumulate velocity (additive knockback for rapid hits)
+		existing_data.current_velocity += knockback_velocity
+
+		# Reset hit-stop timer for fresh impact feel
+		existing_data.hit_stop_timer = 0.0
+
+		# Extend duration slightly to allow accumulated knockback to play out
+		existing_data.timer = max(0.0, existing_data.timer - 0.1)
+
+		Logger.debug("Accumulated knockback for boss: " + boss.name + " (velocity: " + str(existing_data.current_velocity.length()) + ")", "bosses")
+	else:
+		# Create new knockback effect
+		var knockback_data := {
+			"timer": 0.0,
+			"duration": visual_config.knockback_duration * knockback_duration_multiplier,
+			"initial_velocity": knockback_velocity,
+			"current_velocity": knockback_velocity,
+			"boss": boss,
+			"hit_stop_duration": hit_stop_duration,
+			"hit_stop_timer": 0.0
+		}
+
+		boss_knockback_effects[instance_id] = knockback_data
 
 func _process(delta: float) -> void:
 	_update_boss_flash_effects(delta)
