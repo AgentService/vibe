@@ -149,6 +149,12 @@ func _ready() -> void:
 	Logger.info("Arena: About to setup player", "debug")
 	_setup_player()
 	Logger.info("Arena: Player setup complete, XP system will be injected by GameOrchestrator", "debug")
+
+	# Phase 1.3: Setup EntityPool parent for projectile spawning
+	if EntityPool:
+		EntityPool.set_entity_parent(self)
+		Logger.debug("Arena: Set EntityPool parent to arena for projectile spawning", "abilities")
+
 	_setup_ui()
 	Logger.info("Arena: UI setup complete", "debug")
 	
@@ -303,6 +309,13 @@ func _setup_player() -> void:
 	if player:
 		PlayerState.set_player_reference(player)
 		Logger.debug("PlayerState reference set immediately after player creation", "arena")
+
+	# Phase 1.3: Auto-equip Ranger Arrow for testing
+	if player and player.has_method("equip_ability"):
+		# Wait one frame for AbilityController to initialize
+		await get_tree().process_frame
+		player.equip_ability("ranger_arrow", 0)
+		Logger.info("Arena: Auto-equipped Ranger Arrow to player slot 0 for testing", "abilities")
 
 	# Camera setup now handled in injection method
 
