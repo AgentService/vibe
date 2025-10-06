@@ -1,8 +1,13 @@
 ## ProjectileAbility.gd
 ## Projectile-based ability subclass with auto-fire support.
 ##
-## This class extends BaseAbility to handle projectile-based attacks.
+## This class extends DamageAbility to handle projectile-based attacks.
 ## Projectiles are spawned via EventBus signals (signal-based decoupling).
+##
+## Class Hierarchy:
+## - BaseAbility (universal: id, name, icon, tags, level, visuals)
+##   - DamageAbility (damage, cooldown, scaling, breakpoints)
+##     - ProjectileAbility (projectile-specific behavior) ← YOU ARE HERE
 ##
 ## Auto-Fire Design:
 ## - activate() is called automatically when cooldown is ready
@@ -22,7 +27,7 @@
 ## Usage:
 ##   var fireball: ProjectileAbility = load("res://data/content/abilities/fireball.tres")
 ##   fireball.activate(player, {"enemies": enemy_array})  # Auto-fires at closest
-extends BaseAbility
+extends DamageAbility
 class_name ProjectileAbility
 
 # ============================================================================
@@ -67,25 +72,23 @@ enum FireMode {
 ## Spread angle in degrees for multi-projectile attacks (total cone angle)
 @export_range(0.0, 180.0) var spread_angle: float = 40.0
 
+## Projectile movement speed in pixels/second
+@export var projectile_speed: float = 800.0
+
+## Projectile lifetime in seconds before auto-destroying
+@export var projectile_lifetime: float = 3.0
+
 
 # ============================================================================
 # INITIALIZATION
 # ============================================================================
 
 func _init() -> void:
-	# NOTE: Don't call super._init() - Resource doesn't have a callable _init()
+	super._init()  # Initialize DamageAbility (DAMAGE/COOLDOWN tags, computed stats)
 
 	# Ensure PROJECTILE tag is always present
 	if not has_tag(AbilityTags.PROJECTILE):
 		tags.append(AbilityTags.PROJECTILE)
-
-	# Add COOLDOWN tag by default for progression scaling
-	if not has_tag(AbilityTags.COOLDOWN):
-		tags.append(AbilityTags.COOLDOWN)
-
-	# Add DAMAGE tag by default
-	if not has_tag(AbilityTags.DAMAGE):
-		tags.append(AbilityTags.DAMAGE)
 
 
 # ============================================================================

@@ -310,13 +310,6 @@ func _setup_player() -> void:
 		PlayerState.set_player_reference(player)
 		Logger.debug("PlayerState reference set immediately after player creation", "arena")
 
-	# Phase 1.3: Auto-equip Ranger Arrow for testing
-	if player and player.has_method("equip_ability"):
-		# Wait one frame for AbilityController to initialize
-		await get_tree().process_frame
-		player.equip_ability("ranger_arrow", 0)
-		Logger.info("Arena: Auto-equipped Ranger Arrow to player slot 0 for testing", "abilities")
-
 	# Camera setup now handled in injection method
 
 # DEPRECATED: XP system setup moved to GameOrchestrator injection

@@ -11,6 +11,16 @@ extends Window
 # Editor controls
 @onready var ability_dropdown: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/AbilityDropdown
 
+# Property labels (for visibility control)
+@onready var damage_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/DamageLabel
+@onready var cooldown_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/CooldownLabel
+@onready var count_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/CountLabel
+@onready var spread_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/SpreadLabel
+@onready var speed_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/SpeedLabel
+@onready var pierce_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/PierceLabel
+@onready var chain_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainLabel
+@onready var chain_radius_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainRadiusLabel
+
 # Property spinners (grid layout)
 @onready var damage_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/DamageSpinner
 @onready var cooldown_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/CooldownSpinner
@@ -26,6 +36,9 @@ extends Window
 # Editor buttons
 @onready var save_button: Button = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/EditorButtons/SaveButton
 @onready var apply_button: Button = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/EditorButtons/ApplyButton
+
+# Tags display
+@onready var tags_display: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/TagsDisplay
 
 # File info
 @onready var file_path_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/FilePathLabel
@@ -56,9 +69,6 @@ extends Window
 @onready var clear_all_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/ActionButtons/ClearAllButton
 @onready var level_up_all_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TestingButtons/LevelUpAllButton
 @onready var refresh_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TestingButtons/RefreshButton
-
-# Info display
-@onready var equipped_info: RichTextLabel = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/EquippedInfo
 
 # ============================================================================
 # STATE
@@ -98,8 +108,8 @@ func _ready() -> void:
 	level_up_all_button.pressed.connect(_on_level_up_all_pressed)
 	refresh_button.pressed.connect(_on_refresh_button_pressed)
 
-	# Defer refresh until player is available
-	call_deferred("_refresh_equipped_display")
+	# Prefill slot dropdowns with currently equipped abilities
+	call_deferred("_prefill_equipped_abilities")
 
 	Logger.info("AbilityTestingPopup initialized (full editor mode)", "debug")
 
@@ -123,7 +133,7 @@ func _populate_ability_dropdown() -> void:
 	for ability_id in available_abilities:
 		var definition = AbilityManager.get_definition(ability_id)
 		if definition:
-			ability_dropdown.add_item("%s - %s" % [definition.ability_name, ability_id])
+			ability_dropdown.add_item(ability_id)
 
 			# Store file path for saving (scan content directory)
 			var file_path = _find_ability_file_path(ability_id)
@@ -175,14 +185,8 @@ func _on_ability_dropdown_selected(item_index: int) -> void:
 		_clear_editor_fields()
 		return
 
-	# Extract ability_id from dropdown text (format: "Name - ability_id")
-	var dropdown_text = ability_dropdown.get_item_text(item_index)
-	var parts = dropdown_text.split(" - ")
-	if parts.size() != 2:
-		Logger.warn("Failed to parse ability_id from dropdown: %s" % dropdown_text, "debug")
-		return
-
-	var ability_id = parts[1]
+	# Extract ability_id from dropdown text (format: "ability_id")
+	var ability_id = ability_dropdown.get_item_text(item_index)
 	_load_ability_to_editor(ability_id)
 
 
@@ -197,30 +201,42 @@ func _load_ability_to_editor(ability_id: String) -> void:
 	current_ability = definition.duplicate(true)
 	current_ability_file = ability_file_paths.get(ability_id, "")
 
-	# Populate base stats
-	damage_spinner.value = definition.base_damage
-	cooldown_spinner.value = definition.base_cooldown
+	# Configure property visibility based on ability type (duck typing)
+	_configure_visible_properties(definition)
 
-	# Projectile-specific properties
-	if definition is ProjectileAbility:
+	# Populate property values using duck typing (only set if property exists)
+	if "base_damage" in definition:
+		damage_spinner.value = definition.base_damage
+
+	if "base_cooldown" in definition:
+		cooldown_spinner.value = definition.base_cooldown
+
+	if "projectile_count" in definition:
 		count_spinner.value = definition.projectile_count
+
+	if "spread_angle" in definition:
 		spread_spinner.value = definition.spread_angle
+
+	if "projectile_speed" in definition:
 		speed_spinner.value = definition.projectile_speed
+
+	if "pierce_count" in definition:
 		pierce_spinner.value = definition.pierce_count
+
+	if "chains_to_enemies" in definition:
 		chain_spinner.value = definition.chains_to_enemies
+
+	if "chain_radius" in definition:
 		chain_radius_spinner.value = definition.chain_radius
+
+	if "is_homing" in definition:
 		homing_check.button_pressed = definition.is_homing
+
+	if "homing_strength" in definition:
 		homing_strength_spinner.value = definition.homing_strength
-	else:
-		# Set defaults for non-projectile abilities
-		count_spinner.value = 1
-		spread_spinner.value = 40.0
-		speed_spinner.value = 800.0
-		pierce_spinner.value = 0
-		chain_spinner.value = 0
-		chain_radius_spinner.value = 150.0
-		homing_check.button_pressed = false
-		homing_strength_spinner.value = 0.5
+
+	# Update tags display
+	_update_tags_display(definition)
 
 	# Update file info
 	if not current_ability_file.is_empty():
@@ -249,8 +265,93 @@ func _clear_editor_fields() -> void:
 	homing_check.button_pressed = false
 	homing_strength_spinner.value = 0.5
 
+	tags_display.text = "(No ability selected)"
+
 	file_path_label.text = "Path: (No ability selected)"
 	last_saved_label.text = "Last Saved: Never"
+
+
+## Updates the tags display with a comma-separated list of tags
+func _update_tags_display(ability: BaseAbility) -> void:
+	if not ability or not "tags" in ability:
+		tags_display.text = "(No tags)"
+		return
+
+	var ability_tags: Array = ability.tags
+	if ability_tags.is_empty():
+		tags_display.text = "(No tags)"
+	else:
+		# Join tags with comma separator
+		tags_display.text = ", ".join(ability_tags)
+
+
+## Configures property field visibility based on ability's actual properties.
+## Uses property introspection to show only relevant fields.
+##
+## Property Mapping:
+## - base_damage (DamageAbility) → damage fields
+## - base_cooldown (DamageAbility) → cooldown fields
+## - projectile_count (DamageAbility) → count fields
+## - spread_angle (ProjectileAbility) → spread fields
+## - projectile_speed (ProjectileAbility) → speed fields
+## - pierce_count (ProjectileAbility) → pierce fields
+## - chains_to_enemies (ProjectileAbility) → chain fields
+## - chain_radius (ProjectileAbility) → chain_radius fields
+## - is_homing (ProjectileAbility) → homing fields
+## - homing_strength (ProjectileAbility) → homing_strength fields
+func _configure_visible_properties(ability: BaseAbility) -> void:
+	if not ability:
+		return
+
+	# Show/hide damage (DamageAbility)
+	var has_damage = "base_damage" in ability
+	damage_label.visible = has_damage
+	damage_spinner.visible = has_damage
+
+	# Show/hide cooldown (DamageAbility)
+	var has_cooldown = "base_cooldown" in ability
+	cooldown_label.visible = has_cooldown
+	cooldown_spinner.visible = has_cooldown
+
+	# Show/hide count (DamageAbility)
+	var has_count = "projectile_count" in ability
+	count_label.visible = has_count
+	count_spinner.visible = has_count
+
+	# Show/hide spread (ProjectileAbility)
+	var has_spread = "spread_angle" in ability
+	spread_label.visible = has_spread
+	spread_spinner.visible = has_spread
+
+	# Show/hide speed (ProjectileAbility)
+	var has_speed = "projectile_speed" in ability
+	speed_label.visible = has_speed
+	speed_spinner.visible = has_speed
+
+	# Show/hide pierce (ProjectileAbility)
+	var has_pierce = "pierce_count" in ability
+	pierce_label.visible = has_pierce
+	pierce_spinner.visible = has_pierce
+
+	# Show/hide chain (ProjectileAbility)
+	var has_chain = "chains_to_enemies" in ability
+	chain_label.visible = has_chain
+	chain_spinner.visible = has_chain
+
+	# Show/hide chain_radius (ProjectileAbility)
+	var has_chain_radius = "chain_radius" in ability
+	chain_radius_label.visible = has_chain_radius
+	chain_radius_spinner.visible = has_chain_radius
+
+	# Show/hide homing (ProjectileAbility)
+	var has_homing = "is_homing" in ability
+	homing_check.visible = has_homing
+	homing_strength_spinner.visible = has_homing
+
+	Logger.debug("Configured property visibility for %s (%s properties visible)" % [
+		ability.ability_id,
+		[has_damage, has_cooldown, has_count, has_spread, has_speed, has_pierce, has_chain, has_chain_radius, has_homing].count(true)
+	], "debug")
 
 
 ## Saves current ability changes to .tres file
@@ -263,18 +364,36 @@ func _on_save_button_pressed() -> void:
 		Logger.error("Cannot save: file path not found for %s" % current_ability.ability_id, "debug")
 		return
 
-	# Update ability data from editor fields
-	current_ability.base_damage = damage_spinner.value
-	current_ability.base_cooldown = cooldown_spinner.value
+	# Update ability data from editor fields using duck typing
+	# Only update properties that exist on the ability (visible fields)
+	if "base_damage" in current_ability:
+		current_ability.base_damage = damage_spinner.value
 
-	if current_ability is ProjectileAbility:
+	if "base_cooldown" in current_ability:
+		current_ability.base_cooldown = cooldown_spinner.value
+
+	if "projectile_count" in current_ability:
 		current_ability.projectile_count = int(count_spinner.value)
+
+	if "spread_angle" in current_ability:
 		current_ability.spread_angle = spread_spinner.value
+
+	if "projectile_speed" in current_ability:
 		current_ability.projectile_speed = speed_spinner.value
+
+	if "pierce_count" in current_ability:
 		current_ability.pierce_count = int(pierce_spinner.value)
+
+	if "chains_to_enemies" in current_ability:
 		current_ability.chains_to_enemies = int(chain_spinner.value)
+
+	if "chain_radius" in current_ability:
 		current_ability.chain_radius = chain_radius_spinner.value
+
+	if "is_homing" in current_ability:
 		current_ability.is_homing = homing_check.button_pressed
+
+	if "homing_strength" in current_ability:
 		current_ability.homing_strength = homing_strength_spinner.value
 
 	# Save to .tres file
@@ -309,18 +428,38 @@ func _on_apply_button_pressed() -> void:
 			# Create a new instance from current editor values
 			var updated_ability = AbilityManager.create_ability_instance(current_ability.ability_id)
 
-			# Apply editor changes to the new instance
-			updated_ability.base_damage = damage_spinner.value
-			updated_ability.base_cooldown = cooldown_spinner.value
+			# Apply editor changes to the new instance using duck typing
+			if "base_damage" in updated_ability:
+				updated_ability.base_damage = damage_spinner.value
 
-			if updated_ability is ProjectileAbility:
-				updated_ability._base_projectile_count = int(count_spinner.value)
+			if "base_cooldown" in updated_ability:
+				updated_ability.base_cooldown = cooldown_spinner.value
+
+			if "projectile_count" in updated_ability:
+				# Update both projectile_count and _base_projectile_count
+				updated_ability.projectile_count = int(count_spinner.value)
+				if "_base_projectile_count" in updated_ability:
+					updated_ability._base_projectile_count = int(count_spinner.value)
+
+			if "spread_angle" in updated_ability:
 				updated_ability.spread_angle = spread_spinner.value
+
+			if "projectile_speed" in updated_ability:
 				updated_ability.projectile_speed = speed_spinner.value
+
+			if "pierce_count" in updated_ability:
 				updated_ability.pierce_count = int(pierce_spinner.value)
+
+			if "chains_to_enemies" in updated_ability:
 				updated_ability.chains_to_enemies = int(chain_spinner.value)
+
+			if "chain_radius" in updated_ability:
 				updated_ability.chain_radius = chain_radius_spinner.value
+
+			if "is_homing" in updated_ability:
 				updated_ability.is_homing = homing_check.button_pressed
+
+			if "homing_strength" in updated_ability:
 				updated_ability.homing_strength = homing_strength_spinner.value
 
 			# Preserve level and tome modifiers from equipped ability
@@ -340,7 +479,6 @@ func _on_apply_button_pressed() -> void:
 
 	if applied_count > 0:
 		Logger.info("Applied changes to %d equipped slot(s)" % applied_count, "debug")
-		_refresh_equipped_display()
 	else:
 		Logger.debug("Ability %s not currently equipped" % current_ability.ability_id, "debug")
 
@@ -366,7 +504,37 @@ func _populate_slot_dropdowns() -> void:
 		for ability_id in available_abilities:
 			var definition = AbilityManager.get_definition(ability_id)
 			if definition:
-				dropdown.add_item("%s - %s" % [definition.ability_name, ability_id])
+				dropdown.add_item(ability_id)
+
+
+## Prefills slot dropdowns with currently equipped abilities
+func _prefill_equipped_abilities() -> void:
+	var player = _get_player()
+	if not player or not "ability_controller" in player or not player.ability_controller:
+		Logger.debug("Player not available for prefill", "debug")
+		return
+
+	var ability_controller = player.ability_controller
+
+	# Set each dropdown to match equipped ability
+	for i in range(ability_controller.ability_slots.size()):
+		var equipped_ability = ability_controller.ability_slots[i]
+
+		if equipped_ability:
+			# Find the dropdown item index for this ability_id
+			var ability_id = equipped_ability.ability_id
+			var dropdown = slot_dropdowns[i]
+
+			for item_idx in range(dropdown.item_count):
+				if dropdown.get_item_text(item_idx) == ability_id:
+					dropdown.selected = item_idx
+					selected_ability_ids[i] = ability_id
+					Logger.debug("Prefilled slot %d with %s" % [i + 1, ability_id], "debug")
+					break
+		else:
+			# No ability equipped - select "(None)"
+			slot_dropdowns[i].selected = 0
+			selected_ability_ids[i] = ""
 
 
 ## Handles slot dropdown selection
@@ -375,13 +543,9 @@ func _on_slot_dropdown_selected(item_index: int, slot_index: int) -> void:
 		# "(None)" selected
 		selected_ability_ids[slot_index] = ""
 	else:
-		# Extract ability_id from dropdown text (format: "Name - ability_id")
-		var dropdown_text = slot_dropdowns[slot_index].get_item_text(item_index)
-		var parts = dropdown_text.split(" - ")
-		if parts.size() == 2:
-			selected_ability_ids[slot_index] = parts[1]
-		else:
-			Logger.warn("Failed to parse ability_id from dropdown: %s" % dropdown_text, "debug")
+		# Extract ability_id from dropdown text (format: "ability_id")
+		var ability_id = slot_dropdowns[slot_index].get_item_text(item_index)
+		selected_ability_ids[slot_index] = ability_id
 
 	Logger.debug("Slot %d selected: %s" % [slot_index + 1, selected_ability_ids[slot_index]], "debug")
 
@@ -411,9 +575,6 @@ func _on_equip_button_pressed() -> void:
 
 		Logger.info("Equipped slot %d: %s" % [i, ability_id if not ability_id.is_empty() else "(None)"], "debug")
 
-	# Refresh display
-	_refresh_equipped_display()
-
 
 ## Level up ability in specific slot
 func _on_level_up_pressed(slot_index: int) -> void:
@@ -430,7 +591,6 @@ func _on_level_up_pressed(slot_index: int) -> void:
 	if ability:
 		ability_controller.level_up_ability(ability.ability_id, 1)
 		Logger.info("Leveled up slot %d: %s → Lv%d" % [slot_index + 1, ability.ability_name, ability.ability_level], "debug")
-		_refresh_equipped_display()
 	else:
 		Logger.warn("No ability in slot %d to level up" % (slot_index + 1), "debug")
 
@@ -450,7 +610,6 @@ func _on_clear_all_pressed() -> void:
 		ability_controller.clear_ability_slot(i)
 
 	Logger.info("Cleared all equipped abilities", "debug")
-	_refresh_equipped_display()
 
 
 ## Levels up all equipped abilities by 1
@@ -473,7 +632,6 @@ func _on_level_up_all_pressed() -> void:
 
 	if leveled_count > 0:
 		Logger.info("Leveled up %d equipped abilities" % leveled_count, "debug")
-		_refresh_equipped_display()
 	else:
 		Logger.debug("No equipped abilities to level up", "debug")
 
@@ -486,30 +644,6 @@ func _on_refresh_button_pressed() -> void:
 		_populate_ability_dropdown()
 		_populate_slot_dropdowns()
 		Logger.info("Refreshed abilities from files", "debug")
-
-
-## Refreshes the "Currently Equipped" display
-func _refresh_equipped_display() -> void:
-	var player = _get_player()
-	if not player:
-		equipped_info.text = "[color=gray]Player not spawned yet...[/color]"
-		return
-
-	if not "ability_controller" in player or not player.ability_controller:
-		equipped_info.text = "[color=red]AbilityController not found[/color]"
-		return
-
-	var ability_controller = player.ability_controller
-	var display_text = ""
-
-	for i in range(ability_controller.ability_slots.size()):
-		var ability = ability_controller.ability_slots[i]
-		if ability:
-			display_text += "[b]Slot %d:[/b] %s (Lv %d)\n" % [i + 1, ability.ability_name, ability.ability_level]
-		else:
-			display_text += "[b]Slot %d:[/b] [color=gray](Empty)[/color]\n" % (i + 1)
-
-	equipped_info.text = display_text
 
 
 ## Gets player reference

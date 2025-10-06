@@ -242,6 +242,12 @@ func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
 	if not ability or stack_count <= 0:
 		return
 
+	# Duck typing: verify ability supports modifiers (DamageAbility, etc.)
+	# UtilityAbility (Phase 1 stub) doesn't have add_modifier() yet
+	if not ability.has_method("add_modifier"):
+		push_warning("Tome '%s' cannot apply to ability '%s' - no add_modifier() method (non-damage ability?)" % [tome_id, ability.ability_id])
+		return
+
 	# Clamp to stack limit (0 = infinite)
 	var effective_stacks: int = stack_count
 	if stack_limit > 0:
@@ -252,7 +258,8 @@ func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
 	modifier.tome_id = tome_id
 	modifier.stack_count = effective_stacks
 
-	# Copy ability modifiers
+	# Copy ability modifiers (duck typing in DamageAbility._recalculate_final_stats)
+	# Each ability subclass checks for relevant properties using: "property_name" in modifier
 	modifier.damage_multiplier = damage_multiplier
 	modifier.cooldown_multiplier = cooldown_multiplier
 	modifier.area_multiplier = area_multiplier
@@ -265,6 +272,7 @@ func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
 	modifier.chain_bonus = chain_bonus
 
 	# Pass descriptor to ability (triggers idempotent replacement + rebuild)
+	# Duck typing: ability.add_modifier() decides which properties to use
 	ability.add_modifier(modifier)
 
 

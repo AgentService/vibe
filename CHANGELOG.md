@@ -2,6 +2,112 @@
 
 ## [Current Week - In Progress]
 
+### Data-Driven Starting Abilities (2025-10-07)
+
+**Implemented automatic ability equipping via player_type.tres configuration:**
+- ✅ Added `starting_abilities: Array[String]` property to PlayerType
+- ✅ Player auto-equips starting abilities in `_ready()` from `player_type.tres`
+- ✅ Removed hardcoded `equip_ability()` logic from Arena.gd (cleaner architecture)
+- ✅ Created `ranger_player.tres` with `starting_abilities = ["heartseeker"]`
+- ✅ Updated PlayerRanger.tscn to use ranger_player.tres instead of default_player.tres
+- ✅ Fixed `DamageAbility._base_projectile_count` initialization bug (wasn't reading from .tres)
+  - Added zero-check initialization pattern: `if _base_projectile_count == 0: _base_projectile_count = projectile_count`
+  - Fixes issue where projectile_count was reset to 1 instead of using .tres value (3)
+
+**Testing Tool UX Improvements:**
+- ✅ Renamed abilities to be character-agnostic: "ranger_arrow" → "heartseeker", "ranger_volley" → "volley"
+- ✅ Simplified dropdown display to show only `ability_id` (removed "Name - ability_id" format)
+- ✅ Added prefill system: slot dropdowns show currently equipped abilities on tool open
+- ✅ Removed redundant "Currently Equipped" section (slots now show equipped state directly)
+- ✅ Made window more compact: 1100x700 → 900x600, columns 450px → 350px
+
+**Ability Progression Fixes:**
+- ✅ Fixed `DamageAbility.level_up()` to accept optional `levels: int = 1` parameter
+  - Supports future upgrade options that give multiple levels at once
+
+### Ability System Architecture Refactor (2025-10-06)
+
+**Refactored ability class hierarchy for cleaner .tres files and better designer experience:**
+
+**Class Hierarchy Changes:**
+- ✅ Slimmed down `BaseAbility` from 50+ properties to 10 universal properties
+  - Kept only: ability_id, ability_name, description, icon, tags, ability_level, max_level, visual_scene, impact_effect
+  - Removed: ALL damage, cooldown, projectile, buff, AOE, orbit properties
+- ✅ Created `DamageAbility` (extends BaseAbility) with 10 damage-specific properties
+  - Added: base_damage, damage_type, inherent_element, base_cooldown, projectile_count
+  - Added: damage_scaling_per_level, cooldown_scaling_per_level, level_breakpoints, breakpoint_bonuses
+  - Added: final_damage, final_cooldown (computed), _active_modifiers (runtime)
+  - Includes: Modifier system (add_modifier, remove_modifier, _recalculate_final_stats)
+  - Includes: Progression system (level_up with scaling and breakpoints)
+- ✅ Updated `ProjectileAbility` to extend DamageAbility (was extending BaseAbility)
+  - Kept 9 projectile-specific properties: fire_mode, is_homing, homing_strength, chains_to_enemies, chain_radius, pierce_count, knockback_distance, spread_angle, projectile_speed, projectile_lifetime
+  - Now uses `super._init()` to initialize parent class tags and computed stats
+- ✅ Created `UtilityAbility` stub (extends BaseAbility) for future non-damage abilities
+  - Properties: duration, base_cooldown, final_cooldown
+  - Stub for future ShieldAbility, MovementAbility, etc.
+- ✅ Created `BuffAbility` stub (extends UtilityAbility) for future buff abilities
+  - Properties: stat_target, stat_multiplier, flat_bonus, can_stack, max_stacks
+  - Stub for future player stat buff system
+
+**Duck Typing for Cross-Hierarchy Modifiers:**
+- ✅ Updated `BaseTome.apply_to_ability()` with duck typing check
+  - Added `has_method("add_modifier")` check to fail gracefully on non-damage abilities
+  - TomeModifier descriptor holds ALL possible properties (damage, speed, pierce, etc.)
+  - Each ability class checks `"property_name" in modifier` to apply relevant modifiers only
+  - Tomes can modify any ability without tight coupling to class hierarchy
+- ✅ `DamageAbility._recalculate_final_stats()` uses duck typing for modifier application
+  - Checks for: damage_multiplier, cooldown_multiplier, projectile_count_bonus
+  - Future ProjectileAbility can add checks for: pierce_bonus, chain_bonus, etc.
+
+**Ability Testing Tool Updates:**
+- ✅ Added property visibility system using duck typing
+  - Added `_configure_visible_properties()` method using `"property_name" in ability` checks
+  - Shows/hides UI fields based on ability type (ProjectileAbility shows 10 fields, DamageAbility shows 3)
+  - Added label references for visibility control (damage_label, cooldown_label, etc.)
+- ✅ Updated save/apply logic to use duck typing
+  - Removed `if ability is ProjectileAbility` type checks
+  - Uses `"property_name" in ability` for all property access
+  - Only updates properties that exist on the ability (visible fields)
+  - Future-proof: new ability types automatically work without code changes
+- ✅ Added tags display below properties grid
+  - Shows comma-separated list of ability tags
+  - Helps designers understand ability categorization at a glance
+
+**Content File Cleanup:**
+- ✅ Cleaned `ranger_arrow.tres` - removed 8 obsolete properties
+  - Removed: buff_duration, buff_stat_name, buff_multiplier, aoe_radius, aoe_duration, orbit_radius, orbit_rotation_speed, orbit_projectile_count
+  - Added: spread_angle (was missing, now 40.0)
+  - Reorganized properties in logical order: BaseAbility → DamageAbility → ProjectileAbility
+  - Properties: 26 relevant properties (was 36 with obsolete)
+- ✅ Cleaned `ranger_volley.tres` - same cleanup as ranger_arrow
+
+**Designer Experience Improvements:**
+- Opening `ranger_arrow.tres` in Godot Inspector now shows 26 relevant properties (was 50+ with many irrelevant)
+- Clear property organization: Core Identity → Damage → Cooldown → Projectile Behavior
+- No confusing buff_duration or orbit_radius on projectile abilities
+- Ability Testing Tool only shows relevant fields (10 for ProjectileAbility, 3 for DamageAbility)
+- Duck typing makes the system extensible: new ability types "just work"
+
+**Files Created:**
+- `scripts/resources/DamageAbility.gd` (332 lines) - Intermediate base class for damage abilities
+- `scripts/resources/UtilityAbility.gd` (107 lines) - Stub for non-damage abilities
+- `scripts/resources/BuffAbility.gd` (114 lines) - Stub for buff abilities
+
+**Files Modified:**
+- `scripts/resources/BaseAbility.gd` - Slimmed from ~590 lines to 173 lines
+- `scripts/resources/ProjectileAbility.gd` - Updated to extend DamageAbility, added projectile_speed/projectile_lifetime
+- `scripts/resources/BaseTome.gd` - Added duck typing check in apply_to_ability()
+- `scenes/debug/AbilityTestingPopup.gd` - Added visibility system, updated save/apply logic
+- `data/content/abilities/projectile/ranger_arrow.tres` - Cleaned obsolete properties
+- `data/content/abilities/projectile/ranger_volley.tres` - Cleaned obsolete properties
+
+**Migration Notes:**
+- Existing .tres files are backward compatible (Godot ignores unknown properties)
+- Obsolete properties were removed manually from ranger_arrow.tres and ranger_volley.tres
+- Future .tres files created in Inspector will only show relevant properties
+
+---
+
 ### Path-Aware Forest Arena Tuning (2025-10-06)
 
 **Reduced default procedural generation parameters for smaller, tighter arenas:**

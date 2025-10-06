@@ -16,6 +16,9 @@ class_name PlayerType
 @export var collision_radius: float = 8.0
 @export var attack_animation_duration: float = 0.4
 
+## Starting abilities equipped automatically on spawn
+@export var starting_abilities: Array[String] = []
+
 func validate() -> Array[String]:
 	var errors: Array[String] = []
 	
