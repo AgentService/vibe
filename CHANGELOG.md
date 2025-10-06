@@ -89,9 +89,18 @@
 - `scenes/debug/AbilityTestingPopup.tscn` (completely rewritten, two-column layout)
 - `scenes/debug/AbilityTestingPopup.gd` (completely rewritten, 475 lines, full editor)
 
+**Bug Fixes:**
+- ✅ Fixed newline display in "Currently Equipped" RichTextLabel (`\\n` → `\n`)
+- ✅ Fixed shared definition mutation (duplicate ability on load to editor)
+- ✅ Fixed base_damage/base_cooldown not applying (added `_recalculate_final_stats()` call)
+- ✅ Fixed projectile_count not applying (set `_base_projectile_count` instead of `projectile_count`)
+  - Root cause: `_recalculate_final_stats()` resets `projectile_count = _base_projectile_count`
+  - Solution: Set the baseline value that recalculation uses
+
 **Files Modified:**
 - `scenes/debug/DebugPanel.tscn` + `.gd` (button + popup management)
 - `scripts/systems/AbilityController.gd` (added clear_ability_slot method)
+- `scenes/debug/AbilityTestingPopup.gd` (4 bug fixes applied)
 
 **Complete:** 100% of ability-debug-panel-design.md spec implemented
 
