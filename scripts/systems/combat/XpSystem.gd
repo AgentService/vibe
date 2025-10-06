@@ -68,7 +68,6 @@ func _spawn_xp_orb(pos: Vector2, xp_value: int) -> void:
 
 func _on_xp_collected(amount: int) -> void:
 	# XP orb collected
-	Logger.info("XpSystem: XP orb collected - %d XP" % amount, "progression")
 	# Delegate XP processing to PlayerProgression autoload
 	if PlayerProgression:
 		PlayerProgression.gain_exp(float(amount))

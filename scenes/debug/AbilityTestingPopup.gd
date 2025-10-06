@@ -10,11 +10,18 @@ extends Window
 
 # Editor controls
 @onready var ability_dropdown: OptionButton = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/AbilityDropdown
-@onready var name_field: LineEdit = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/NameField
-@onready var damage_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/DamageSpinner
-@onready var cooldown_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/CooldownSpinner
-@onready var projectile_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/ProjectileSpinner
-@onready var tags_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/TagsLabel
+
+# Property spinners (grid layout)
+@onready var damage_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/DamageSpinner
+@onready var cooldown_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/CooldownSpinner
+@onready var count_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/CountSpinner
+@onready var spread_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/SpreadSpinner
+@onready var speed_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/SpeedSpinner
+@onready var pierce_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/PierceSpinner
+@onready var chain_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainSpinner
+@onready var chain_radius_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainRadiusSpinner
+@onready var homing_check: CheckBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingCheck
+@onready var homing_strength_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingStrengthSpinner
 
 # Editor buttons
 @onready var save_button: Button = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/EditorButtons/SaveButton
@@ -190,22 +197,30 @@ func _load_ability_to_editor(ability_id: String) -> void:
 	current_ability = definition.duplicate(true)
 	current_ability_file = ability_file_paths.get(ability_id, "")
 
-	# Populate editor fields
-	name_field.text = definition.ability_name
+	# Populate base stats
 	damage_spinner.value = definition.base_damage
 	cooldown_spinner.value = definition.base_cooldown
 
-	# Projectile count only if ProjectileAbility
+	# Projectile-specific properties
 	if definition is ProjectileAbility:
-		projectile_spinner.value = definition.projectile_count
-		projectile_spinner.visible = true
-		$PanelContainer/MarginContainer/HBoxContainer/LeftColumn/ProjectileLabel.visible = true
+		count_spinner.value = definition.projectile_count
+		spread_spinner.value = definition.spread_angle
+		speed_spinner.value = definition.projectile_speed
+		pierce_spinner.value = definition.pierce_count
+		chain_spinner.value = definition.chains_to_enemies
+		chain_radius_spinner.value = definition.chain_radius
+		homing_check.button_pressed = definition.is_homing
+		homing_strength_spinner.value = definition.homing_strength
 	else:
-		projectile_spinner.visible = false
-		$PanelContainer/MarginContainer/HBoxContainer/LeftColumn/ProjectileLabel.visible = false
-
-	# Display tags
-	tags_label.text = "Tags: " + ", ".join(definition.tags)
+		# Set defaults for non-projectile abilities
+		count_spinner.value = 1
+		spread_spinner.value = 40.0
+		speed_spinner.value = 800.0
+		pierce_spinner.value = 0
+		chain_spinner.value = 0
+		chain_radius_spinner.value = 150.0
+		homing_check.button_pressed = false
+		homing_strength_spinner.value = 0.5
 
 	# Update file info
 	if not current_ability_file.is_empty():
@@ -223,11 +238,16 @@ func _clear_editor_fields() -> void:
 	current_ability = null
 	current_ability_file = ""
 
-	name_field.text = ""
 	damage_spinner.value = 25.0
 	cooldown_spinner.value = 1.5
-	projectile_spinner.value = 3.0
-	tags_label.text = "Tags: (No ability selected)"
+	count_spinner.value = 3.0
+	spread_spinner.value = 40.0
+	speed_spinner.value = 800.0
+	pierce_spinner.value = 0
+	chain_spinner.value = 0
+	chain_radius_spinner.value = 150.0
+	homing_check.button_pressed = false
+	homing_strength_spinner.value = 0.5
 
 	file_path_label.text = "Path: (No ability selected)"
 	last_saved_label.text = "Last Saved: Never"
@@ -244,12 +264,18 @@ func _on_save_button_pressed() -> void:
 		return
 
 	# Update ability data from editor fields
-	current_ability.ability_name = name_field.text
 	current_ability.base_damage = damage_spinner.value
 	current_ability.base_cooldown = cooldown_spinner.value
 
 	if current_ability is ProjectileAbility:
-		current_ability.projectile_count = int(projectile_spinner.value)
+		current_ability.projectile_count = int(count_spinner.value)
+		current_ability.spread_angle = spread_spinner.value
+		current_ability.projectile_speed = speed_spinner.value
+		current_ability.pierce_count = int(pierce_spinner.value)
+		current_ability.chains_to_enemies = int(chain_spinner.value)
+		current_ability.chain_radius = chain_radius_spinner.value
+		current_ability.is_homing = homing_check.button_pressed
+		current_ability.homing_strength = homing_strength_spinner.value
 
 	# Save to .tres file
 	var save_result = ResourceSaver.save(current_ability, current_ability_file)
@@ -257,7 +283,7 @@ func _on_save_button_pressed() -> void:
 	if save_result == OK:
 		last_save_time = Time.get_ticks_msec() / 1000.0
 		last_saved_label.text = "Last Saved: Just now"
-		Logger.info("Saved ability: %s to %s" % [current_ability.ability_name, current_ability_file], "debug")
+		Logger.info("Saved ability: %s to %s" % [current_ability.ability_id, current_ability_file], "debug")
 	else:
 		Logger.error("Failed to save ability: %s (error code: %d)" % [current_ability_file, save_result], "debug")
 
@@ -284,12 +310,18 @@ func _on_apply_button_pressed() -> void:
 			var updated_ability = AbilityManager.create_ability_instance(current_ability.ability_id)
 
 			# Apply editor changes to the new instance
-			updated_ability.ability_name = name_field.text
 			updated_ability.base_damage = damage_spinner.value
 			updated_ability.base_cooldown = cooldown_spinner.value
 
 			if updated_ability is ProjectileAbility:
-				updated_ability._base_projectile_count = int(projectile_spinner.value)
+				updated_ability._base_projectile_count = int(count_spinner.value)
+				updated_ability.spread_angle = spread_spinner.value
+				updated_ability.projectile_speed = speed_spinner.value
+				updated_ability.pierce_count = int(pierce_spinner.value)
+				updated_ability.chains_to_enemies = int(chain_spinner.value)
+				updated_ability.chain_radius = chain_radius_spinner.value
+				updated_ability.is_homing = homing_check.button_pressed
+				updated_ability.homing_strength = homing_strength_spinner.value
 
 			# Preserve level and tome modifiers from equipped ability
 			if equipped_ability.ability_level > 1:

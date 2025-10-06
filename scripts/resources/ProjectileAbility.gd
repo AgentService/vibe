@@ -64,6 +64,9 @@ enum FireMode {
 ## Knockback distance applied on hit (pixels)
 @export var knockback_distance: float = 0.0
 
+## Spread angle in degrees for multi-projectile attacks (total cone angle)
+@export_range(0.0, 180.0) var spread_angle: float = 40.0
+
 
 # ============================================================================
 # INITIALIZATION
@@ -200,13 +203,13 @@ func _calculate_spread_direction(base_direction: Vector2, projectile_index: int,
 	if total_projectiles == 1:
 		return base_direction
 
-	# Total spread angle in radians (adjustable for tighter/wider spread)
-	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(40.0)  # 30 degrees total spread
+	# Total spread angle in radians (use configured spread_angle property)
+	var total_spread_angle: float = deg_to_rad(spread_angle)
 
 	# Calculate angle offset for this projectile
 	# Center the spread around the base direction
-	var spread_per_projectile := TOTAL_SPREAD_ANGLE / float(total_projectiles - 1)
-	var angle_offset := -TOTAL_SPREAD_ANGLE / 2.0 + (projectile_index * spread_per_projectile)
+	var spread_per_projectile := total_spread_angle / float(total_projectiles - 1)
+	var angle_offset := -total_spread_angle / 2.0 + (projectile_index * spread_per_projectile)
 
 	# Get base angle and apply offset
 	var base_angle := base_direction.angle()

@@ -29,7 +29,7 @@ theme_override_constants/separation = 20
 [node name="LeftColumn" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer"]
 custom_minimum_size = Vector2(450, 0)
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 4
 
 [node name="EditorTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2
@@ -49,52 +49,118 @@ layout_mode = 2
 [node name="HSeparator2" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2
 
-[node name="NameLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="PropertiesLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2
-text = "Name:"
+text = "Properties:"
 
-[node name="NameField" type="LineEdit" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="PropertiesGrid" type="GridContainer" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2
-placeholder_text = "Ability name"
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 4
+columns = 2
 
-[node name="DamageLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="DamageLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
-text = "Base Damage:"
+text = "Damage:"
 
-[node name="DamageSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="DamageSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
+size_flags_horizontal = 3
 min_value = 1.0
 max_value = 999.0
 step = 0.5
 value = 25.0
 allow_greater = true
 
-[node name="CooldownLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="CooldownLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
 text = "Cooldown:"
 
-[node name="CooldownSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="CooldownSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
+size_flags_horizontal = 3
 min_value = 0.1
 max_value = 60.0
 step = 0.1
 value = 1.1
 allow_greater = true
 
-[node name="ProjectileLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="CountLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
-text = "Projectile Count:"
+text = "Count:"
 
-[node name="ProjectileSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="CountSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
+size_flags_horizontal = 3
 min_value = 1.0
 max_value = 50.0
 value = 3.0
 allow_greater = true
 
-[node name="TagsLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
+[node name="SpreadLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
-text = "Tags: (projectile, damage)"
+text = "Spread °:"
+
+[node name="SpreadSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 180.0
+step = 5.0
+value = 40.0
+
+[node name="SpeedLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Speed:"
+
+[node name="SpeedSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 50.0
+max_value = 2000.0
+step = 50.0
+value = 800.0
+allow_greater = true
+
+[node name="PierceLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Pierce:"
+
+[node name="PierceSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 20.0
+
+[node name="ChainLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Chain:"
+
+[node name="ChainSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 20.0
+
+[node name="ChainRadiusLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Chain Radius:"
+
+[node name="ChainRadiusSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 50.0
+max_value = 500.0
+step = 10.0
+value = 150.0
+
+[node name="HomingCheck" type="CheckBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Homing"
+
+[node name="HomingStrengthSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+step = 0.1
+value = 0.5
 
 [node name="HSeparator3" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2
