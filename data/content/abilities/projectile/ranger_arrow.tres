@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ProjectileAbility.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/projectiles/Arrow.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+
+ability_id = "ranger_arrow"
+ability_name = "Ranger Arrow"
+description = "Fire a piercing arrow that deals physical damage"
+ability_level = 1
+max_level = 20
+tags = PackedStringArray("projectile", "damage", "physical", "cooldown")
+
+base_damage = 15.0
+base_cooldown = 1.0
+damage_type = "physical"
+inherent_element = ""
+
+projectile_count = 1
+projectile_speed = 600.0
+projectile_lifetime = 2.0
+pierce_count = 0
+
+fire_mode = 0
+is_homing = false
+homing_strength = 0.0
+chains_to_enemies = 0
+chain_radius = 0.0
+
+visual_scene = ExtResource("2")
