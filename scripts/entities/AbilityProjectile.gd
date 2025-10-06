@@ -44,7 +44,7 @@ var direction: Vector2 = Vector2.RIGHT
 ## Movement speed (pixels/second)
 var speed: float = 400.0
 
-## Damage dealt on hit
+## Damage dealt on hit (overwritten by initialize())
 var damage: float = 15.0
 
 ## Damage type (physical, fire, cold, etc.)
@@ -118,7 +118,8 @@ func _physics_process(delta: float) -> void:
 	# Update lifetime
 	_remaining_lifetime -= delta
 	if _remaining_lifetime <= 0.0:
-		despawn()
+		# Use call_deferred to avoid removing CollisionObject during physics callback
+		call_deferred("despawn")
 		return
 
 	# Homing logic (simple version - adjust direction toward closest enemy)
@@ -143,7 +144,7 @@ func initialize(projectile_data: Dictionary) -> void:
 	damage_tags = projectile_data.get("tags", [])
 	pierce_count = projectile_data.get("pierce_count", 0)
 	lifetime = projectile_data.get("projectile_lifetime", 2.0)
-	is_homing = projectile_data.get("is_homing", false)
+	is_homing = projectile_data.get("is_homing", true)
 	homing_strength = projectile_data.get("homing_strength", 0.5)
 	visual_scene_key = projectile_data.get("visual_scene_key", "arrow")
 
@@ -191,9 +192,11 @@ func _on_area_entered(area: Area2D) -> void:
 	var enemy_id: String = ""
 	if "entity_id" in enemy_node:
 		enemy_id = enemy_node.entity_id
+		Logger.debug("Arrow hit enemy with entity_id: %s" % enemy_id, "abilities")
 	else:
 		# Fallback: use instance ID
 		enemy_id = str(enemy_node.get_instance_id())
+		Logger.warn("Arrow hit enemy without entity_id, using instance ID: %s" % enemy_id, "abilities")
 
 	# Apply damage via DamageService (direct call - entity pattern)
 	_on_enemy_collision(enemy_id)
@@ -226,7 +229,8 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	# Decrement pierce count
 	_remaining_pierce -= 1
 	if _remaining_pierce < 0:
-		despawn()
+		# Use call_deferred to avoid removing CollisionObject during physics callback
+		call_deferred("despawn")
 
 
 # ============================================================================

@@ -98,6 +98,11 @@ func _auto_cast_ready_abilities() -> void:
 		if not ability or ability_cooldowns[i] > 0.0:
 			continue
 
+		# Check if there are enemies in range before firing
+		var enemies = _get_nearby_enemies()
+		if enemies.is_empty():
+			continue  # Don't fire if no enemies
+
 		# Auto-cast ability
 		activate_ability(i)
 
@@ -131,12 +136,13 @@ func activate_ability(slot_index: int) -> void:
 
 
 ## Creates the activation context dictionary for abilities.
-## Context includes player reference, enemy list, and facing direction.
+## Context includes player reference and enemy list.
+## Direction is determined by ability's fire_mode setting.
 func _create_activation_context() -> Dictionary:
 	return {
 		"player": _player,
-		"enemies": _get_nearby_enemies(),
-		"direction": _get_player_facing_direction()
+		"enemies": _get_nearby_enemies()
+		# Don't include "direction" - let ability use its fire_mode (CLOSEST_ENEMY, etc.)
 	}
 
 
@@ -281,13 +287,35 @@ func _find_empty_tome_slot() -> int:
 # HELPER FUNCTIONS
 # ============================================================================
 
-## Gets nearby enemies for ability targeting (stub for Phase 1.3).
-## Returns empty array until enemy tracking is implemented.
+## Gets nearby enemies for ability targeting.
+## Returns array of enemy nodes within detection range.
 func _get_nearby_enemies() -> Array:
-	# TODO (Phase 1.3): Query EntityTracker or enemy group
-	# var enemies = get_tree().get_nodes_in_group("enemies")
-	# return enemies.filter(func(e): return e.global_position.distance_to(_player.global_position) < 500)
-	return []
+	if not _player or not is_instance_valid(_player):
+		return []
+
+	# Access scene tree through player node (RefCounted doesn't have get_tree())
+	var tree := _player.get_tree()
+	if not tree:
+		return []
+
+	var all_enemies = tree.get_nodes_in_group("enemies")
+	var nearby_enemies: Array = []
+
+	const DETECTION_RANGE: float = 800.0  # Detection range in pixels
+
+	for enemy in all_enemies:
+		if not is_instance_valid(enemy):
+			continue
+
+		var enemy_node := enemy as Node2D
+		if not enemy_node:
+			continue
+
+		var distance := _player.global_position.distance_to(enemy_node.global_position)
+		if distance <= DETECTION_RANGE:
+			nearby_enemies.append(enemy_node)
+
+	return nearby_enemies
 
 
 ## Gets the player's current facing direction.

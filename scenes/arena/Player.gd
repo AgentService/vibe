@@ -100,9 +100,7 @@ func _ready() -> void:
 	_register_with_damage_system()
 
 	# ABILITY SYSTEM: Initialize ability controller (Phase 1.2)
-	Logger.debug("Player._ready() - About to initialize AbilityController", "debug")
 	ability_controller = AbilityController.new(self)
-	Logger.debug("Player._ready() - AbilityController initialized: %s" % str(ability_controller), "debug")
 
 	# CAMERA: Simple player-following camera (Godot best practice)
 	var camera = Camera2D.new()

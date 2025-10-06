@@ -27,37 +27,27 @@ var _ability_controller: RefCounted = null
 # ============================================================================
 
 func _ready() -> void:
-	Logger.debug("DebugAbilityDisplay._ready() called", "debug")
-
 	# Wait one frame to ensure parent's _ready() has completed
 	# (Child _ready() runs before parent _ready() in Godot)
 	await get_tree().process_frame
 
 	# Get player reference from parent (this label is a child of the player)
 	_player = get_parent()
-	Logger.debug("DebugAbilityDisplay: Parent node = %s" % (_player.name if _player else "null"), "debug")
 
 	if not _player:
-		Logger.warn("DebugAbilityDisplay: No parent node found", "debug")
 		visible = false
 		return
 
 	# Get AbilityController reference
 	if "ability_controller" in _player:
 		_ability_controller = _player.ability_controller
-		Logger.debug("DebugAbilityDisplay: Found ability_controller = %s" % str(_ability_controller), "debug")
-	else:
-		Logger.debug("DebugAbilityDisplay: 'ability_controller' property not found in player", "debug")
 
 	if not _ability_controller:
-		Logger.warn("DebugAbilityDisplay: Player missing ability_controller property", "debug")
 		visible = false
 		return
 
 	# Setup label styling
 	_setup_label_styling()
-
-	Logger.debug("DebugAbilityDisplay initialized successfully, visible = %s" % visible, "debug")
 
 
 ## Sets up label appearance for readability
@@ -81,16 +71,11 @@ func _setup_label_styling() -> void:
 
 func _process(_delta: float) -> void:
 	if not _player or not _ability_controller:
-		Logger.debug("DebugAbilityDisplay._process: Missing player=%s or controller=%s" % [_player != null, _ability_controller != null], "debug")
 		return
 
 	# Build display string
 	var display_text := _build_display_string()
 	text = display_text
-
-	# Debug log first few frames
-	if Engine.get_frames_drawn() % 60 == 0:  # Log once per second
-		Logger.debug("DebugAbilityDisplay: text = '%s', visible = %s" % [display_text.substr(0, 50), visible], "debug")
 
 
 ## Builds formatted display string showing ability system state

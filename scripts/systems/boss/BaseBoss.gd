@@ -10,6 +10,9 @@ signal died
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: BossHealthBar = $BossHealthBar
 
+# Entity ID for damage system integration
+var entity_id: String = ""
+
 # Boss configuration (override in child classes)
 var spawn_config: SpawnConfig
 var max_health: float = 300.0
@@ -66,7 +69,7 @@ func _ready() -> void:
 		EventBus.player_died.connect(_on_player_died)
 	
 	# DAMAGE V3: Register with both DamageService and EntityTracker
-	var entity_id = "boss_" + str(get_instance_id())
+	entity_id = "boss_" + str(get_instance_id())  # Store in property for external access
 	var entity_data = {
 		"id": entity_id,
 		"type": "boss",
@@ -75,7 +78,7 @@ func _ready() -> void:
 		"alive": true,
 		"pos": global_position
 	}
-	
+
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)

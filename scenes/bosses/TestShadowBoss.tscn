@@ -21,6 +21,8 @@ position = Vector2(0, -3)
 shape = SubResource("CircleShape2D_test")
 
 [node name="HitBox" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
 shape = SubResource("CircleShape2D_test")

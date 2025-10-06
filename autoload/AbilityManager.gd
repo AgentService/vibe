@@ -148,7 +148,13 @@ func create_ability_instance(ability_id: String) -> BaseAbility:
 		return null
 
 	# Deep duplicate to create independent instance
-	return definition.duplicate(true) as BaseAbility
+	var instance := definition.duplicate(true) as BaseAbility
+
+	# Initialize final stats from base stats (fixes base_damage → final_damage sync)
+	if instance and instance.has_method("_recalculate_final_stats"):
+		instance._recalculate_final_stats()
+
+	return instance
 
 
 ## Returns the file path for an ability (for debugging/hot-reload).
