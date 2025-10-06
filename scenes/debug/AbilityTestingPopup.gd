@@ -186,7 +186,8 @@ func _load_ability_to_editor(ability_id: String) -> void:
 		Logger.warn("Failed to load ability: %s" % ability_id, "debug")
 		return
 
-	current_ability = definition
+	# Duplicate the definition to avoid modifying the shared AbilityManager definition
+	current_ability = definition.duplicate(true)
 	current_ability_file = ability_file_paths.get(ability_id, "")
 
 	# Populate editor fields
@@ -272,23 +273,31 @@ func _on_apply_button_pressed() -> void:
 		Logger.warn("Player or AbilityController not found for apply", "debug")
 		return
 
-	# Update ability data from editor fields (same as save)
-	current_ability.ability_name = name_field.text
-	current_ability.base_damage = damage_spinner.value
-	current_ability.base_cooldown = cooldown_spinner.value
-
-	if current_ability is ProjectileAbility:
-		current_ability.projectile_count = int(projectile_spinner.value)
-
 	var ability_controller = player.ability_controller
 	var applied_count = 0
 
-	# Refresh any equipped instances with this ability_id
+	# Find equipped slots with this ability
 	for i in range(ability_controller.ability_slots.size()):
 		var equipped_ability = ability_controller.ability_slots[i]
 		if equipped_ability and equipped_ability.ability_id == current_ability.ability_id:
-			# Re-create instance from updated definition
-			ability_controller.ability_slots[i] = current_ability.duplicate(true)
+			# Create a new instance from current editor values
+			var updated_ability = AbilityManager.create_ability_instance(current_ability.ability_id)
+
+			# Apply editor changes to the new instance
+			updated_ability.ability_name = name_field.text
+			updated_ability.base_damage = damage_spinner.value
+			updated_ability.base_cooldown = cooldown_spinner.value
+
+			if updated_ability is ProjectileAbility:
+				updated_ability.projectile_count = int(projectile_spinner.value)
+
+			# Preserve level from equipped ability
+			if equipped_ability.ability_level > 1:
+				updated_ability.ability_level = equipped_ability.ability_level
+				updated_ability._apply_level_scaling()
+
+			# Replace equipped ability
+			ability_controller.ability_slots[i] = updated_ability
 			applied_count += 1
 
 	if applied_count > 0:
