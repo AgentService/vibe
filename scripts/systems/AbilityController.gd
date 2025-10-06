@@ -60,9 +60,11 @@ func _init(player: Node2D) -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		# Disconnect from EventBus to prevent memory leaks
-		if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
-			EventBus.combat_step.disconnect(_on_combat_step)
-			Logger.debug("AbilityController disconnected from combat_step", "abilities")
+		if EventBus and is_instance_valid(EventBus):
+			var callable_ref = Callable(self, "_on_combat_step")
+			if EventBus.combat_step.is_connected(callable_ref):
+				EventBus.combat_step.disconnect(callable_ref)
+				Logger.debug("AbilityController disconnected from combat_step", "abilities")
 
 
 # ============================================================================
