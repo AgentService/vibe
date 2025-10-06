@@ -223,9 +223,8 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_handle_facing()
 
-	# Ability System (Phase 1.2) - Delegate to controller
-	if ability_controller:
-		ability_controller.update(delta)
+	# Ability System (Phase 1.2) - AbilityController updates via EventBus.combat_step (30Hz)
+	# No manual update needed here - connected in AbilityController._init()
 
 func _handle_roll_input() -> void:
 	if Input.is_action_just_pressed("ui_accept") and not is_rolling and not _is_any_ability_active():

@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" uid="uid://chgd617wssuaq" path="res://assets/sprites/craftpix-net-180537-free-swordsman-1-3-level-pixel-top-down-sprite-character/PNG/Swordsman_lvl3/With_shadow/Swordsman_lvl3_Idle_with_shadow.png" id="3_m76ws"]
 [ext_resource type="Texture2D" uid="uid://c7jvh7xtqmqm0" path="res://assets/sprites/craftpix-net-180537-free-swordsman-1-3-level-pixel-top-down-sprite-character/PNG/Swordsman_lvl3/With_shadow/Swordsman_lvl3_Death_with_shadow.png" id="6_fsprk"]
 [ext_resource type="Texture2D" uid="uid://ca2set0jptos0" path="res://assets/sprites/shadow.png" id="8_wdiha"]
+[ext_resource type="Script" path="res://scripts/ui/debug/DebugAbilityDisplay.gd" id="9_debug"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_2vb30"]
 atlas = ExtResource("3_4xcit")
@@ -1070,3 +1071,10 @@ shadow_filter = 1
 shadow_filter_smooth = 1.9
 texture = ExtResource("8_wdiha")
 texture_scale = 2.98
+
+[node name="DebugAbilityDisplay" type="Label" parent="."]
+offset_left = -120.0
+offset_top = -150.0
+offset_right = 120.0
+offset_bottom = -50.0
+script = ExtResource("9_debug")

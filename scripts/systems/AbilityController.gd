@@ -10,11 +10,15 @@
 ## - Handle ability equip/level-up/tome application
 ## - Provide context for ability activation (player ref, enemies, direction)
 ##
+## Architecture:
+## - Uses EventBus.combat_step (30Hz fixed timestep) for deterministic updates
+## - Ensures consistent cooldown timing regardless of framerate
+## - Compatible with future networked play / replay systems
+##
 ## Usage:
 ##   var ability_controller = AbilityController.new(player)
 ##   ability_controller.equip_ability("ranger_arrow", 0)
-##   # In _physics_process:
-##   ability_controller.update(delta)
+##   # Combat step handled automatically via EventBus
 extends RefCounted
 class_name AbilityController
 
@@ -44,15 +48,33 @@ var tome_stacks: Array[int] = [0, 0, 0, 0]
 func _init(player: Node2D) -> void:
 	_player = player
 
+	# Connect to 30Hz fixed-step combat loop
+	if EventBus:
+		EventBus.combat_step.connect(_on_combat_step)
+		Logger.debug("AbilityController connected to combat_step", "abilities")
+	else:
+		Logger.warn("AbilityController: EventBus not available for combat_step connection", "abilities")
+
+
+## Cleanup when controller is freed
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		# Disconnect from EventBus to prevent memory leaks
+		if EventBus and EventBus.combat_step.is_connected(_on_combat_step):
+			EventBus.combat_step.disconnect(_on_combat_step)
+			Logger.debug("AbilityController disconnected from combat_step", "abilities")
+
 
 # ============================================================================
-# UPDATE LOOP
+# UPDATE LOOP (30Hz FIXED STEP)
 # ============================================================================
 
-## Updates ability cooldowns and triggers auto-cast.
-## Should be called every frame from Player._physics_process(delta).
-func update(delta: float) -> void:
-	_update_cooldowns(delta)
+## Combat step handler - runs at fixed 30Hz via EventBus.combat_step
+## Ensures deterministic ability cooldowns and auto-casting
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+	var delta_time := payload.delta_time  # Always 1/30 = 0.0333s
+
+	_update_cooldowns(delta_time)
 	_auto_cast_ready_abilities()
 
 
