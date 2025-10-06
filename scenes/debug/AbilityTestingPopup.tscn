@@ -5,7 +5,7 @@
 [node name="AbilityTestingPopup" type="Window"]
 title = "Ability Testing Tool"
 initial_position = 2
-size = Vector2i(1000, 700)
+size = Vector2i(1100, 700)
 script = ExtResource("1")
 
 [node name="PanelContainer" type="PanelContainer" parent="."]
