@@ -2,6 +2,31 @@
 
 ## [Current Week - In Progress]
 
+### Task: Cone Arrow Ability (Ranger Volley) - Documentation (2025-10-06)
+
+**Created task document for second projectile ability variant:**
+- ✅ Documented how to create cone arrow ability (non-homing)
+- ✅ Identified that cone spread system is already built-in
+- ✅ Only 3 field changes needed: `is_homing=false`, `homing_strength=0.0`, unique ID/name
+- ✅ Estimated implementation time: 15-20 minutes
+
+**Key Insight:**
+- Cone spread already implemented in `_calculate_spread_direction()`
+- 40-degree total spread, evenly distributed projectiles
+- Homing vs non-homing creates completely different gameplay feel
+- Demonstrates declarative ability design (config-driven)
+
+**Architecture Benefits:**
+- Same arrow visual scene (Arrow.tscn)
+- Same damage/pooling/tome systems
+- Hot-reload via Godot resource system
+- No code changes required
+
+**Files Created:**
+- `Obsidian/03-tasks/2d_ABILITIES_cone_arrow_ability.md` - Full task specification
+
+**Next:** Implement ranger_volley.tres and test both ability variants
+
 ### Overkill Prevention - Working Solution Verified (2025-10-06)
 
 **Implemented and verified projectile overkill prevention (Option B - Queue Bypass):**
