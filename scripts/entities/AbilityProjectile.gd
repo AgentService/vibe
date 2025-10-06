@@ -16,6 +16,61 @@
 ## 5. _on_enemy_collision() calls DamageService.apply_damage()
 ## 6. despawn() returns to EntityPool
 ##
+## OVERKILL PREVENTION CHALLENGE (CRITICAL DESIGN ISSUE): TODO
+## When multiple projectiles hit the same target simultaneously (e.g., 5 arrows one-shotting
+## a 900 HP boss), all projectiles currently apply damage and despawn, wasting 4 arrows.
+##
+## Root Cause:
+## - DamageService uses zero-allocation queue (_queue_enabled = true by default)
+## - Damage is queued and processed on next 30Hz tick, not immediately
+## - Arrow1 hits → damage queued (boss still alive in registry)
+## - Arrow2 hits → checks is_alive → TRUE (damage not processed yet) → queues again
+## - Arrow3/4/5 same problem → all queue damage
+## - Next 30Hz tick → all damages process, massive overkill
+##
+## Attempted Solutions:
+## 1. ✓ Check DamageService.is_entity_alive() before applying damage (current implementation)
+##    → FAILS with damage queue enabled (entity stays alive until queue processes)
+##
+## Potential Solutions (not yet implemented):
+## A. Disable damage queue globally
+##    - Pro: Overkill prevention works immediately
+##    - Con: Loses zero-allocation performance benefit
+##    - Con: May be needed for crazy multi-ability scenarios
+##
+## B. Bypass damage queue for projectiles (call _process_damage_immediate directly)
+##    - Pro: Overkill prevention works for projectiles
+##    - Pro: Keeps queue for other damage sources
+##    - Con: Bypasses private API (fragile)
+##    - Con: Inconsistent damage timing (some immediate, some queued)
+##
+## C. Stagger projectile spawn timing (spread over 2-3 frames)
+##    - Pro: Natural target distribution
+##    - Pro: Keeps damage queue
+##    - Con: Changes gameplay feel (arrows don't fire "simultaneously")
+##    - Con: Doesn't solve the root problem, just reduces frequency
+##
+## D. Smart target selection (each arrow picks different target if multiple available)
+##    - Pro: Optimal damage distribution
+##    - Pro: Keeps damage queue
+##    - Con: Complex logic (nearest-unassigned-target algorithm)
+##    - Con: Requires tracking "assigned targets" during volley
+##
+## E. Check damage queue for pending lethal damage before applying
+##    - Pro: Works with queue enabled
+##    - Con: Couples to queue internals
+##    - Con: Complex (need to sum queued damage per target)
+##
+## F. Accept overkill as intended behavior
+##    - Pro: Simple, no changes needed
+##    - Con: Feels bad with high projectile counts
+##    - Con: Players can't optimize around it
+##
+## Current Status:
+## - Alive check implemented but ineffective with damage queue
+## - TODO: Choose and implement one of the solutions above
+## - TODO: Remove verbose logging after solution implemented
+##
 ## Usage:
 ##   # Entity automatically initialized by EntityPool after spawn
 ##   # No manual setup needed
@@ -82,6 +137,11 @@ var knockback_distance: float = 100.0
 
 ## Visual scene key for pooling
 var visual_scene_key: String = "arrow"
+
+## TEMP: Bypass damage queue for overkill prevention testing
+## Set to true to call _process_damage_immediate() directly (bypasses queue)
+## TODO: Remove after choosing permanent solution from header documentation
+const BYPASS_DAMAGE_QUEUE_FOR_TESTING: bool = true
 
 ## Has the projectile been initialized?
 var _initialized: bool = false
@@ -203,10 +263,23 @@ func _on_area_entered(area: Area2D) -> void:
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
+	Logger.info("═══ Arrow collision: target=%s, damage=%.1f ═══" % [enemy_id, damage], "abilities")
+
 	# Check if target is still alive (prevents overkill waste)
 	# If multiple projectiles hit the same target in one frame, only the first applies damage
-	if EntityTracker and not EntityTracker.is_entity_alive(enemy_id):
+	# This works because Godot processes collision callbacks synchronously - when Arrow2's
+	# callback runs, DamageService already marked the entity as dead (line 345: _entity_alive[index] = 0)
+	var is_alive: bool = false
+	if DamageService:
+		is_alive = DamageService.is_entity_alive(enemy_id)
+		Logger.info("  DamageService check: is_alive=%s" % is_alive, "abilities")
+	else:
+		Logger.warn("  DamageService not available!", "abilities")
+		is_alive = true  # Fallback: assume alive if service unavailable
+
+	if not is_alive:
 		# Target already dead - continue flying without consuming pierce
+		Logger.info("  → SKIPPED (target already dead)", "abilities")
 		return
 
 	# Call DamageService directly (entities use direct calls, not EventBus)
@@ -220,27 +293,49 @@ func _on_enemy_collision(enemy_id: String) -> void:
 		for tag in damage_tags:
 			full_tags.append(tag)
 
-		# Apply damage (DamageService signature: target_id, amount, source, tags, knockback_distance, source_position)
 		# Use CURRENT player position for knockback direction (enemies pushed away from player)
 		# PlayerState.get_position() returns 30Hz-updated cached position
 		var current_player_pos: Vector2 = PlayerState.get_position() if PlayerState else global_position
 
-		DamageService.apply_damage(
-			enemy_id,          # target ID
-			damage,            # damage amount
-			source_player_id,  # source identifier
-			full_tags,         # damage tags
-			knockback_distance, # knockback distance in pixels
-			current_player_pos # current player position for knockback direction (away from player)
-		)
+		# TEMP: Queue bypass for overkill prevention testing
+		if BYPASS_DAMAGE_QUEUE_FOR_TESTING:
+			Logger.info("  → Applying IMMEDIATE damage (queue bypassed)", "abilities")
+			# Call private API directly (bypasses queue, updates alive state immediately)
+			# This makes the alive check (line 274) work correctly for subsequent arrows
+			DamageService._process_damage_immediate(
+				enemy_id,
+				damage,
+				source_player_id,
+				full_tags,
+				knockback_distance,
+				current_player_pos
+			)
+			Logger.info("  → Immediate damage applied", "abilities")
+		else:
+			Logger.info("  → Applying QUEUED damage (normal path)", "abilities")
+			# Normal path: damage queued for 30Hz tick
+			# Overkill prevention WILL NOT WORK with this path
+			DamageService.apply_damage(
+				enemy_id,
+				damage,
+				source_player_id,
+				full_tags,
+				knockback_distance,
+				current_player_pos
+			)
+			Logger.info("  → Queued damage applied", "abilities")
+	else:
+		Logger.warn("  DamageService not available!", "abilities")
 
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)
 
 	# Decrement pierce count (only if we actually hit a living target)
 	_remaining_pierce -= 1
+	Logger.info("  → Pierce count: %d remaining" % _remaining_pierce, "abilities")
 	if _remaining_pierce < 0:
 		# Use call_deferred to avoid removing CollisionObject during physics callback
+		Logger.info("  → Despawning projectile", "abilities")
 		call_deferred("despawn")
 
 
