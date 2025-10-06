@@ -2,42 +2,45 @@
 
 ## [Current Week - In Progress]
 
-### Overkill Prevention - Queue Bypass Implementation (2025-10-06)
+### Overkill Prevention - Working Solution Verified (2025-10-06)
 
-**Implemented temporary solution for projectile overkill prevention:**
+**Implemented and verified projectile overkill prevention (Option B - Queue Bypass):**
 - ✅ Added comprehensive header documentation listing 6 potential solutions (A-F)
 - ✅ Implemented Option B (bypass damage queue) with `BYPASS_DAMAGE_QUEUE_FOR_TESTING` flag
-- ✅ Calls `_process_damage_immediate()` directly to update alive state synchronously
-- ✅ Subsequent arrows in volley correctly skip already-dead targets
+- ✅ **VERIFIED WORKING:** Arrows 2-5 in volley correctly skip already-dead targets
+- ✅ Cleaned up verbose debug logging after verification
 - ✅ Kept old queued approach commented out for reference
 
-**Problem Identified:**
+**Problem Solved:**
 - DamageService uses zero-allocation queue (`_queue_enabled=true`) by default
 - Damage queued for 30Hz tick processing, not applied immediately
-- When 5 arrows hit 900HP boss simultaneously, all see `is_alive=true`
-- All 5 arrows apply damage and despawn, wasting 4 arrows
+- When 5 arrows hit 900HP boss simultaneously, all saw `is_alive=true` (before fix)
+- All 5 arrows applied damage and despawned, wasting 4 arrows (before fix)
+
+**How It Works:**
+- **Arrow 1:** `is_alive=true` → applies immediate damage → `is_alive_after=false` ✓
+- **Arrow 2-5:** `is_alive=false` → **SKIPPED (target already dead)** ✓
+- `_process_damage_immediate()` updates `_entity_alive[index] = 0` synchronously
+- Godot processes collision callbacks sequentially, not simultaneously
+- Each arrow sees updated alive state from previous arrow in same frame
 
 **Solution Options Documented:**
 - **Option A:** Disable queue globally (works but loses performance)
-- **Option B:** Bypass queue for projectiles (current test implementation)
+- **Option B:** Bypass queue for projectiles (✓ current working implementation)
 - **Option C:** Stagger spawn timing (doesn't solve root issue)
-- **Option D:** Smart target selection (complex algorithm)
+- **Option D:** Smart target selection (complex algorithm, may still be useful)
 - **Option E:** Check queue for pending damage (couples to internals)
 - **Option F:** Accept overkill as intended (simple but feels bad)
-
-**Architecture:**
-- Queue bypass calls private API (`_process_damage_immediate()`) - fragile but testable
-- Alive check (line 274) now works correctly for arrows 2-5 in volley
-- Decision not final - queue may be needed for future "crazy abilities"
 
 **Files Modified:**
 - `scripts/entities/AbilityProjectile.gd`:
   * Added 73-line header documentation analyzing problem + solutions
   * Added `BYPASS_DAMAGE_QUEUE_FOR_TESTING` const flag (line 144)
   * Modified `_on_enemy_collision()` with conditional damage logic
-  * Kept queued approach commented out for reference
+  * Removed verbose logging after verification
+  * Updated header "Current Status" to reflect working solution
 
-**Next:** Test effectiveness, choose permanent solution from 6 options
+**Next:** Monitor performance, decide if permanent or evaluate Option C/D for better targeting
 
 ### Projectile Knockback Support (2025-10-06)
 
