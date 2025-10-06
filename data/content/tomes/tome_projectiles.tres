@@ -8,6 +8,6 @@ tome_id = "tome_projectiles"
 tome_name = "Tome of Multiplication"
 description = "Add +1 projectile per stack. Stacks additively."
 rarity = "common"
-stack_limit = 5
+stack_limit = 100
 applicable_tags = Array[String]([])
 projectile_count_bonus = 1
