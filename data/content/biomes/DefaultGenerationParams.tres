@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="GenerationParams" load_steps=3 format=3 uid="uid://dx4m8l2y6gk7n"]
 
-[ext_resource type="Script" uid="uid://tjvmx0enlugx" path="res://scripts/resources/GenerationParams.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://tjvmx0enlugx" path="res://scripts/resources/world/GenerationParams.gd" id="1_0"]
 [ext_resource type="Resource" uid="uid://50oqmbysowkn" path="res://data/content/boundaries/DefaultSimpleBoundary.tres" id="2_0"]
 
 [resource]

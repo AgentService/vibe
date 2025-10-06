@@ -2,6 +2,33 @@
 
 ## [Current Week - In Progress]
 
+### Resource Folder Organization (2025-10-07)
+
+**Organized `scripts/resources/` into logical subfolders for better maintainability:**
+
+**Folder Structure:**
+- ✅ Created `scripts/resources/abilities/` subfolder
+  - Moved: BaseAbility.gd, DamageAbility.gd, ProjectileAbility.gd, BuffAbility.gd, UtilityAbility.gd
+- ✅ Created `scripts/resources/tomes/` subfolder
+  - Moved: BaseTome.gd
+- ✅ Created `scripts/resources/cards/` subfolder
+  - Moved: CardResource.gd, CardPoolResource.gd
+- ✅ Created `scripts/resources/world/` subfolder
+  - Moved: BiomeConfig.gd, MapConfig.gd, PathAwareBoundaryConfig.gd, ForestTileMapping.gd, GenerationParams.gd, DecorationThemeConfig.gd
+
+**Path Updates:**
+- ✅ Updated all .tres resource files to reference new script paths
+  - Updated: 2 ability files, 3 tome files, 5 card files, 1 card pool file, 10+ biome/map files
+- ✅ Class hierarchy uses `extends ClassName` (no path updates needed)
+- ✅ No preload/load statements found that needed updating
+- ✅ Fixed CardSystem loading error (melee_pool.tres path updated)
+
+**Benefits:**
+- Logical grouping matches `data/content/` structure (abilities/, tomes/, cards/, biomes/)
+- Easier navigation with 34 resource scripts now organized into categories
+- Scalable architecture for future ability types (MeleeAbility, AoEAbility, etc.)
+- Clear separation between game systems
+
 ### Data-Driven Starting Abilities (2025-10-07)
 
 **Implemented automatic ability equipping via player_type.tres configuration:**

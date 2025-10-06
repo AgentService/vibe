@@ -12,6 +12,8 @@ script = ExtResource("1")
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = -2.0
+offset_right = 2.0
 grow_horizontal = 2
 grow_vertical = 2
 
@@ -26,7 +28,7 @@ theme_override_constants/margin_bottom = 5
 layout_mode = 2
 
 [node name="LeftColumn" type="VBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer"]
-custom_minimum_size = Vector2(250, 0)
+custom_minimum_size = Vector2(150, 0)
 layout_mode = 2
 theme_override_constants/separation = 2
 

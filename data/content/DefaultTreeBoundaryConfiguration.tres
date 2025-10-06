@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="TreeBoundaryConfiguration" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="TreeBoundaryConfiguration" load_steps=2 format=3 uid="uid://dj4b0cnhj6ydt"]
 
-[ext_resource type="Script" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="1_TreeConfigScript"]
+[ext_resource type="Script" uid="uid://fkabpk8gjck7" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="1_TreeConfigScript"]
 
 [resource]
 script = ExtResource("1_TreeConfigScript")
@@ -10,10 +10,13 @@ tree_density = 0.95
 placement_randomness = 0.3
 max_random_offset = 8
 tree_boundary_width = 950.0
+path_buffer_distance = 48.0
 use_path_radius_generation = true
-use_optimized_path_collision = true
 enforce_boundary_continuity = true
 max_boundary_gap = 48.0
+use_optimized_path_collision = true
 use_prebuilt_tree_field = true
 prebuilt_field_density = 0.7
 use_localized_path_corridors = false
+streaming_buffer_size = 1024
+enable_memory_bounded_generation = false

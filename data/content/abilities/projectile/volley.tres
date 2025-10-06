@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="ProjectileAbility" load_steps=6 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/ProjectileAbility.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/resources/abilities/ProjectileAbility.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/entities/AbilityProjectile.gd" id="2_shu3x"]
 [ext_resource type="Texture2D" path="res://assets/effects/kenney_particle-pack/PNG (Transparent)/Rotated/muzzle_04_rotated.png" id="3_w327y"]
 

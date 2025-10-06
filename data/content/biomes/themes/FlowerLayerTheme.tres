@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="DecorationThemeConfig" load_steps=2 format=3 uid="uid://dfjtf6ss8j2ff"]
 
-[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/DecorationThemeConfig.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/world/DecorationThemeConfig.gd" id="1_0"]
 
 [resource]
 script = ExtResource("1_0")

@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="PathAwareBoundaryConfig" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/PathAwareBoundaryConfig.gd" id="1_0"]
+[ext_resource type="Script" path="res://scripts/resources/world/PathAwareBoundaryConfig.gd" id="1_0"]
 
 [resource]
 script = ExtResource("1_0")

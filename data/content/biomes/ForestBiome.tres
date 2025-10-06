@@ -1,7 +1,7 @@
 [gd_resource type="Resource" script_class="BiomeConfig" load_steps=13 format=3 uid="uid://c6i8y5m1kcg4v"]
 
-[ext_resource type="Script" uid="uid://ba7vsoi6hm3xj" path="res://scripts/resources/BiomeConfig.gd" id="1_0"]
-[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/DecorationThemeConfig.gd" id="1_2a5jm"]
+[ext_resource type="Script" uid="uid://ba7vsoi6hm3xj" path="res://scripts/resources/world/BiomeConfig.gd" id="1_0"]
+[ext_resource type="Script" uid="uid://b32ewpqnraf44" path="res://scripts/resources/world/DecorationThemeConfig.gd" id="1_2a5jm"]
 [ext_resource type="Script" uid="uid://c5tvvqf2x7yv8" path="res://scripts/resources/InteractiveObjectConfig.gd" id="1_yw8u5"]
 [ext_resource type="Script" uid="uid://b4uuwoueo217l" path="res://scripts/resources/TreeObjectConfig.gd" id="3_j1ct2"]
 [ext_resource type="Resource" uid="uid://bqfwxknr65kah" path="res://data/content/biomes/themes/GreenVegetationTheme.tres" id="4_green"]
