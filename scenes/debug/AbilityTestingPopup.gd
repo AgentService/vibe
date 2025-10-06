@@ -70,6 +70,34 @@ extends Window
 @onready var level_up_all_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TestingButtons/LevelUpAllButton
 @onready var refresh_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TestingButtons/RefreshButton
 
+# Tome dropdowns
+@onready var tome_dropdowns: Array[OptionButton] = [
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container/Tome1Dropdown,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container/Tome2Dropdown,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container/Tome3Dropdown,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container/Tome4Dropdown
+]
+
+# Tome stack labels
+@onready var tome_stack_labels: Array[Label] = [
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container/StackLabel,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container/StackLabel,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container/StackLabel,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container/StackLabel
+]
+
+# Tome stack buttons
+@onready var tome_stack_buttons: Array[Button] = [
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container/StackBtn,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container/StackBtn,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container/StackBtn,
+	$PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container/StackBtn
+]
+
+# Tome action buttons
+@onready var equip_tome_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TomeButtons/EquipTomeButton
+@onready var clear_tomes_button: Button = $PanelContainer/MarginContainer/HBoxContainer/RightColumn/TomeButtons/ClearTomesButton
+
 # ============================================================================
 # STATE
 # ============================================================================
@@ -83,6 +111,9 @@ var last_save_time: float = 0.0
 # Slot equipment state
 var selected_ability_ids: Array[String] = ["", "", "", ""]  # ability_id per slot
 
+# Tome equipment state
+var selected_tome_ids: Array[String] = ["", "", "", ""]  # tome_id per slot
+
 
 # ============================================================================
 # INITIALIZATION
@@ -92,6 +123,7 @@ func _ready() -> void:
 	# Load all abilities from AbilityManager
 	_populate_ability_dropdown()
 	_populate_slot_dropdowns()
+	_populate_tome_dropdowns()
 
 	# Connect LEFT COLUMN signals
 	ability_dropdown.item_selected.connect(_on_ability_dropdown_selected)
@@ -107,6 +139,14 @@ func _ready() -> void:
 	clear_all_button.pressed.connect(_on_clear_all_pressed)
 	level_up_all_button.pressed.connect(_on_level_up_all_pressed)
 	refresh_button.pressed.connect(_on_refresh_button_pressed)
+
+	# Connect TOME signals
+	for i in range(tome_dropdowns.size()):
+		tome_dropdowns[i].item_selected.connect(_on_tome_dropdown_selected.bind(i))
+		tome_stack_buttons[i].pressed.connect(_on_stack_button_pressed.bind(i))
+
+	equip_tome_button.pressed.connect(_on_equip_tome_button_pressed)
+	clear_tomes_button.pressed.connect(_on_clear_tomes_button_pressed)
 
 	# Prefill slot dropdowns with currently equipped abilities
 	call_deferred("_prefill_equipped_abilities")
@@ -644,6 +684,135 @@ func _on_refresh_button_pressed() -> void:
 		_populate_ability_dropdown()
 		_populate_slot_dropdowns()
 		Logger.info("Refreshed abilities from files", "debug")
+
+
+# ============================================================================
+# TOME EQUIPMENT
+# ============================================================================
+
+## Populates all tome dropdowns with available tomes
+func _populate_tome_dropdowns() -> void:
+	if not TomeManager:
+		Logger.warn("TomeManager not available", "debug")
+		return
+
+	# Get all available tomes
+	var available_tomes = TomeManager.get_all_tome_ids()
+
+	for dropdown in tome_dropdowns:
+		dropdown.clear()
+		dropdown.add_item("(None)")  # First option = empty slot
+
+		# Add all tomes
+		for tome_id in available_tomes:
+			var definition = TomeManager.get_definition(tome_id)
+			if definition:
+				dropdown.add_item(tome_id)
+
+	Logger.debug("Populated tome dropdowns with %d tomes" % available_tomes.size(), "debug")
+
+
+## Handles tome dropdown selection
+func _on_tome_dropdown_selected(item_index: int, slot_index: int) -> void:
+	if item_index == 0:
+		# "(None)" selected
+		selected_tome_ids[slot_index] = ""
+	else:
+		# Extract tome_id from dropdown text
+		var tome_id = tome_dropdowns[slot_index].get_item_text(item_index)
+		selected_tome_ids[slot_index] = tome_id
+
+	Logger.debug("Tome slot %d selected: %s" % [slot_index + 1, selected_tome_ids[slot_index]], "debug")
+
+
+## Equips selected tome from dropdown to player
+func _on_equip_tome_button_pressed() -> void:
+	var player = _get_player()
+	if not player or not "ability_controller" in player or not player.ability_controller:
+		Logger.warn("Player or AbilityController not found for tome equip", "debug")
+		return
+
+	var ability_controller = player.ability_controller
+
+	# Find the first selected tome
+	var tome_id: String = ""
+	var slot_index: int = -1
+	for i in range(selected_tome_ids.size()):
+		if not selected_tome_ids[i].is_empty():
+			tome_id = selected_tome_ids[i]
+			slot_index = i
+			break
+
+	if tome_id.is_empty():
+		Logger.warn("No tome selected for equip", "debug")
+		return
+
+	# Load tome definition and equip it
+	var tome_definition = TomeManager.get_definition(tome_id)
+	if not tome_definition:
+		Logger.error("Failed to load tome: %s" % tome_id, "debug")
+		return
+
+	# Equip tome (AbilityController will handle stacking if already equipped)
+	ability_controller.equip_tome(tome_definition)
+
+	# Update stack label
+	_refresh_tome_stack_labels(ability_controller)
+
+	Logger.info("Equipped tome: %s" % tome_id, "debug")
+
+
+## Increases stack count for specific tome slot
+func _on_stack_button_pressed(slot_index: int) -> void:
+	var player = _get_player()
+	if not player or not "ability_controller" in player or not player.ability_controller:
+		return
+
+	var ability_controller = player.ability_controller
+	var tome_id = selected_tome_ids[slot_index]
+
+	if tome_id.is_empty():
+		Logger.warn("No tome selected in slot %d" % (slot_index + 1), "debug")
+		return
+
+	# Load and equip tome (increments stack if already equipped)
+	var tome_definition = TomeManager.get_definition(tome_id)
+	if tome_definition:
+		ability_controller.equip_tome(tome_definition)
+		_refresh_tome_stack_labels(ability_controller)
+		Logger.info("Increased stack for tome: %s" % tome_id, "debug")
+
+
+## Clears all equipped tomes
+func _on_clear_tomes_button_pressed() -> void:
+	var player = _get_player()
+	if not player or not "ability_controller" in player or not player.ability_controller:
+		return
+
+	var ability_controller = player.ability_controller
+
+	# Clear all tome slots
+	for i in range(ability_controller.tome_slots.size()):
+		ability_controller.tome_slots[i] = null
+		ability_controller.tome_stacks[i] = 0
+
+	# Recalculate all abilities (removes tome modifiers)
+	for ability in ability_controller.ability_slots:
+		if ability and ability.has_method("_recalculate_final_stats"):
+			ability._active_modifiers.clear()
+			ability._recalculate_final_stats()
+
+	# Update UI
+	_refresh_tome_stack_labels(ability_controller)
+
+	Logger.info("Cleared all equipped tomes", "debug")
+
+
+## Refreshes stack count labels for all tome slots
+func _refresh_tome_stack_labels(ability_controller) -> void:
+	for i in range(ability_controller.tome_slots.size()):
+		var stack_count = ability_controller.tome_stacks[i]
+		tome_stack_labels[i].text = "(x%d)" % stack_count
 
 
 ## Gets player reference

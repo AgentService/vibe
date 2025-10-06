@@ -318,3 +318,122 @@ text = "Level Up All"
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Refresh from Files"
+
+[node name="HSeparator3" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="TomeTitle" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+text = "Tome Equipment"
+horizontal_alignment = 1
+
+[node name="HSeparator4" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="Tome1Container" type="HBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Tome 1:"
+
+[node name="Tome1Dropdown" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StackLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container"]
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+text = "(x0)"
+horizontal_alignment = 2
+
+[node name="StackBtn" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome1Container"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+1"
+
+[node name="Tome2Container" type="HBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Tome 2:"
+
+[node name="Tome2Dropdown" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StackLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container"]
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+text = "(x0)"
+horizontal_alignment = 2
+
+[node name="StackBtn" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome2Container"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+1"
+
+[node name="Tome3Container" type="HBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Tome 3:"
+
+[node name="Tome3Dropdown" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StackLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container"]
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+text = "(x0)"
+horizontal_alignment = 2
+
+[node name="StackBtn" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome3Container"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+1"
+
+[node name="Tome4Container" type="HBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container"]
+custom_minimum_size = Vector2(80, 0)
+layout_mode = 2
+text = "Tome 4:"
+
+[node name="Tome4Dropdown" type="OptionButton" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container"]
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="StackLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container"]
+custom_minimum_size = Vector2(35, 0)
+layout_mode = 2
+text = "(x0)"
+horizontal_alignment = 2
+
+[node name="StackBtn" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/Tome4Container"]
+custom_minimum_size = Vector2(40, 0)
+layout_mode = 2
+text = "+1"
+
+[node name="HSeparator5" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="TomeButtons" type="HBoxContainer" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn"]
+layout_mode = 2
+
+[node name="EquipTomeButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/TomeButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Equip Tome"
+
+[node name="ClearTomesButton" type="Button" parent="PanelContainer/MarginContainer/HBoxContainer/RightColumn/TomeButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Clear Tomes"

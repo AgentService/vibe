@@ -48,6 +48,14 @@
 - ✅ Added prefill system: slot dropdowns show currently equipped abilities on tool open
 - ✅ Removed redundant "Currently Equipped" section (slots now show equipped state directly)
 - ✅ Made window more compact: 1100x700 → 900x600, columns 450px → 350px
+- ✅ **Added Tome Equipment UI to AbilityTestingPopup**
+  - Added 4 tome dropdowns populated from TomeManager
+  - Added stack count labels (x0, x1, x2, etc.)
+  - Added +1 Stack buttons for each tome slot
+  - Added "Equip Tome" button to apply selected tome to player
+  - Added "Clear Tomes" button to remove all equipped tomes
+  - Replaced keyboard shortcuts (Alt+1,2,3) with visual UI controls
+  - Stack labels update dynamically when tomes are equipped/stacked
 
 **Ability Progression Fixes:**
 - ✅ Fixed `DamageAbility.level_up()` to accept optional `levels: int = 1` parameter
