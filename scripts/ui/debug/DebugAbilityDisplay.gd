@@ -27,18 +27,19 @@ var _ability_controller: RefCounted = null
 # ============================================================================
 
 func _ready() -> void:
-	# Find player reference
-	_player = get_tree().get_first_node_in_group("player")
+	# Get player reference from parent (this label is a child of the player)
+	_player = get_parent()
 
 	if not _player:
-		Logger.warn("DebugAbilityDisplay: Player not found in 'player' group", "abilities")
+		Logger.warn("DebugAbilityDisplay: No parent node found", "abilities")
 		visible = false
 		return
 
 	# Get AbilityController reference
-	if _player.has("ability_controller"):
+	if "ability_controller" in _player:
 		_ability_controller = _player.ability_controller
-	else:
+
+	if not _ability_controller:
 		Logger.warn("DebugAbilityDisplay: Player missing ability_controller property", "abilities")
 		visible = false
 		return
