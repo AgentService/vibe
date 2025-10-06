@@ -2,13 +2,15 @@
 
 ## [Current Week - In Progress]
 
-### Ranger Volley Ability + Debug Panel - Implemented (2025-10-06)
+### Ranger Volley Ability + Debug Panel - Complete (2025-10-06)
 
 **Implemented cone arrow ability and ability testing popup:**
 - ✅ Created `ranger_volley.tres` with cone spread (is_homing=false)
 - ✅ Built `AbilityTestingPopup` for runtime ability slot management
 - ✅ Integrated with DebugPanel via "🎯 Ability Testing" button
 - ✅ Auto-registration via AbilityManager directory scanner
+- ✅ Fixed AbilityController access pattern (member variable, not child node)
+- ✅ Fixed player group lookup ("player" singular, not "players")
 
 **Ranger Volley (Cone Arrows):**
 - Arrows fire straight in 40° cone pattern (no homing curve)
@@ -32,9 +34,16 @@
 
 **Architecture Benefits:**
 - No hardcoded ability IDs in Player.gd test keybinds
-- Direct AbilityController API integration
+- Direct AbilityController API integration via property access
 - Hot-reload compatible (AbilityManager scanner)
 - Declarative ability design (config files only)
+
+**Implementation Details:**
+- AbilityController is a member variable (`ability_controller = AbilityController.new(self)`)
+- Access via `player.ability_controller`, NOT `player.get_node("AbilityController")`
+- Fixed in 4 methods: equip, level_up, clear_all, refresh_display
+- Player is in group "player" (singular), not "players"
+- Added `clear_ability_slot()` method to AbilityController API
 
 **Files Created:**
 - `data/content/abilities/projectile/ranger_volley.tres`
@@ -42,8 +51,10 @@
 
 **Files Modified:**
 - `scenes/debug/DebugPanel.tscn` + `.gd` (button + popup management)
+- `scenes/debug/AbilityTestingPopup.gd` (fixed AbilityController access pattern)
+- `scripts/systems/AbilityController.gd` (added clear_ability_slot method)
 
-**Next:** Test both abilities side-by-side, verify tome compatibility
+**Ready for Testing:** Both ranger_arrow (homing) and ranger_volley (cone) available in-game via ability testing popup
 
 ### Overkill Prevention - Working Solution Verified (2025-10-06)
 

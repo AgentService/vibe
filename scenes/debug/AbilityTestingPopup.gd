@@ -92,11 +92,11 @@ func _on_equip_button_pressed() -> void:
 	if not player:
 		return
 
-	if not player.has_node("AbilityController"):
+	if not "ability_controller" in player or not player.ability_controller:
 		Logger.warn("Player has no AbilityController!", "debug")
 		return
 
-	var ability_controller = player.get_node("AbilityController")
+	var ability_controller = player.ability_controller
 
 	# Equip abilities to slots
 	for i in range(4):
@@ -121,10 +121,10 @@ func _on_level_up_pressed(slot_index: int) -> void:
 	if not player:
 		return
 
-	if not player.has_node("AbilityController"):
+	if not "ability_controller" in player or not player.ability_controller:
 		return
 
-	var ability_controller = player.get_node("AbilityController")
+	var ability_controller = player.ability_controller
 	var ability = ability_controller.ability_slots[slot_index]
 
 	if ability:
@@ -141,10 +141,10 @@ func _on_clear_all_pressed() -> void:
 	if not player:
 		return
 
-	if not player.has_node("AbilityController"):
+	if not "ability_controller" in player or not player.ability_controller:
 		return
 
-	var ability_controller = player.get_node("AbilityController")
+	var ability_controller = player.ability_controller
 
 	for i in range(4):
 		ability_controller.clear_ability_slot(i)
@@ -160,11 +160,11 @@ func _refresh_equipped_display() -> void:
 		equipped_info.text = "[color=gray]Player not spawned yet...[/color]"
 		return
 
-	if not player.has_node("AbilityController"):
+	if not "ability_controller" in player or not player.ability_controller:
 		equipped_info.text = "[color=red]AbilityController not found[/color]"
 		return
 
-	var ability_controller = player.get_node("AbilityController")
+	var ability_controller = player.ability_controller
 	var display_text = ""
 
 	for i in range(ability_controller.ability_slots.size()):

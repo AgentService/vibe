@@ -199,6 +199,20 @@ func find_ability_slot(ability_id: String) -> int:
 	return -1
 
 
+## Clears an ability slot, removing the equipped ability.
+func clear_ability_slot(slot_index: int) -> void:
+	if slot_index < 0 or slot_index >= ability_slots.size():
+		Logger.warn("Invalid slot index: %d" % slot_index, "abilities")
+		return
+
+	var ability := ability_slots[slot_index]
+	if ability:
+		Logger.info("Cleared ability: %s from slot %d" % [ability.ability_name, slot_index], "abilities")
+
+	ability_slots[slot_index] = null
+	ability_cooldowns[slot_index] = 0.0
+
+
 ## Finds the first empty ability slot.
 ## Returns -1 if all slots are full.
 func _find_empty_ability_slot() -> int:
