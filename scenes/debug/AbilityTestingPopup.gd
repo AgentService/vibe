@@ -43,8 +43,8 @@ func _ready() -> void:
 	equip_button.pressed.connect(_on_equip_button_pressed)
 	clear_all_button.pressed.connect(_on_clear_all_pressed)
 
-	# Refresh display
-	_refresh_equipped_display()
+	# Defer refresh until player is available (popup may open before player spawns)
+	call_deferred("_refresh_equipped_display")
 
 	Logger.info("AbilityTestingPopup initialized", "debug")
 
@@ -157,7 +157,7 @@ func _on_clear_all_pressed() -> void:
 func _refresh_equipped_display() -> void:
 	var player = _get_player()
 	if not player:
-		equipped_info.text = "[color=red]Player not found[/color]"
+		equipped_info.text = "[color=gray]Player not spawned yet...[/color]"
 		return
 
 	if not player.has_node("AbilityController"):
@@ -179,7 +179,8 @@ func _refresh_equipped_display() -> void:
 
 ## Gets player reference
 func _get_player() -> Node:
-	var player = get_tree().get_first_node_in_group("players")
+	var player = get_tree().get_first_node_in_group("player")  # Note: singular "player" group
 	if not player:
-		Logger.warn("Player not found for ability testing", "debug")
+		# Debug-level log only (player may not be spawned yet when popup opens)
+		Logger.debug("Player not found for ability testing", "debug")
 	return player

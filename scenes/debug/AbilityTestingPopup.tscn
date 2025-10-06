@@ -1,6 +1,6 @@
-[gd_scene load_steps=2 format=3 uid="uid://cdjm8x4g5h9p2"]
+[gd_scene load_steps=2 format=3 uid="uid://d3p3m3bv5jkng"]
 
-[ext_resource type="Script" path="res://scenes/debug/AbilityTestingPopup.gd" id="1"]
+[ext_resource type="Script" uid="uid://dgxd7ltcfo221" path="res://scenes/debug/AbilityTestingPopup.gd" id="1"]
 
 [node name="AbilityTestingPopup" type="Window"]
 title = "Ability Testing Tool"
