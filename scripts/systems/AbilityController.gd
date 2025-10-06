@@ -72,7 +72,7 @@ func _notification(what: int) -> void:
 ## Combat step handler - runs at fixed 30Hz via EventBus.combat_step
 ## Ensures deterministic ability cooldowns and auto-casting
 func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
-	var delta_time := payload.delta_time  # Always 1/30 = 0.0333s
+	var delta_time: float = payload.delta_time  # Always 1/30 = 0.0333s
 
 	_update_cooldowns(delta_time)
 	_auto_cast_ready_abilities()
