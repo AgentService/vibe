@@ -7,7 +7,7 @@
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_arrow"]
 size = Vector2(6, 3)
 
-[sub_resource type="PackedScene" id="PackedScene_kkast"]
+[sub_resource type="PackedScene" id="PackedScene_shu3x"]
 _bundled = {
 "conn_count": 0,
 "conns": PackedInt32Array(),
@@ -40,11 +40,11 @@ level_breakpoints = Array[int]([])
 breakpoint_bonuses = Array[String]([])
 tags = Array[String](["damage", "cooldown", "projectile"])
 base_damage = 44.0
-base_cooldown = 12.0
+base_cooldown = 1.0
 damage_type = "physical"
 inherent_element = ""
 projectile_speed = 800.0
-projectile_count = 12
+projectile_count = 33
 projectile_lifetime = 1.0
 buff_duration = 5.0
 buff_stat_name = ""
@@ -54,4 +54,4 @@ aoe_duration = 0.5
 orbit_radius = 80.0
 orbit_rotation_speed = 3.14159
 orbit_projectile_count = 3
-visual_scene = SubResource("PackedScene_kkast")
+visual_scene = SubResource("PackedScene_shu3x")

@@ -289,7 +289,7 @@ func _on_apply_button_pressed() -> void:
 			updated_ability.base_cooldown = cooldown_spinner.value
 
 			if updated_ability is ProjectileAbility:
-				updated_ability.projectile_count = int(projectile_spinner.value)
+				updated_ability._base_projectile_count = int(projectile_spinner.value)
 
 			# Preserve level and tome modifiers from equipped ability
 			if equipped_ability.ability_level > 1:
