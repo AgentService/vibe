@@ -152,6 +152,10 @@ text = "Reset Session"
 layout_mode = 2
 text = "Kill Player"
 
+[node name="AbilityTestingButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "🎯 Ability Testing"
+
 [node name="RadarDisabledCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
 layout_mode = 2
 text = "Disable Radar"
