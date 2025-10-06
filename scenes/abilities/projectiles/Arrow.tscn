@@ -13,7 +13,7 @@ script = ExtResource("1")
 modulate = Color(1, 0.8, 0, 1)
 position = Vector2(-0.147968, -0.0449294)
 rotation = -1.54985
-scale = Vector2(0.0158915, 0.03989)
+scale = Vector2(1, 2.5)
 texture = ExtResource("2_hu233")
 
 [node name="Area2D" type="Area2D" parent="."]
