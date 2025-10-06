@@ -87,17 +87,22 @@ var _initialized: bool = false
 # NODE REFERENCES
 # ============================================================================
 
-@onready var area_2d: Area2D = $Area2D
-@onready var sprite: Sprite2D = $Sprite2D
+var area_2d: Area2D = null
+var sprite: Sprite2D = null
 
 # ============================================================================
 # LIFECYCLE
 # ============================================================================
 
 func _ready() -> void:
-	# Connect collision detection
-	if area_2d:
+	# Connect collision detection (check if Area2D exists)
+	if has_node("Area2D"):
+		area_2d = get_node("Area2D")
 		area_2d.area_entered.connect(_on_area_entered)
+
+	# Get sprite reference
+	if has_node("Sprite2D"):
+		sprite = get_node("Sprite2D")
 
 	# Add to pooled projectiles group
 	add_to_group("ability_projectiles")
@@ -184,7 +189,7 @@ func _on_area_entered(area: Area2D) -> void:
 
 	# Get enemy ID
 	var enemy_id: String = ""
-	if enemy_node.has("entity_id"):
+	if "entity_id" in enemy_node:
 		enemy_id = enemy_node.entity_id
 	else:
 		# Fallback: use instance ID
