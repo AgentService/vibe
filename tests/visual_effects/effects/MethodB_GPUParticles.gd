@@ -11,9 +11,13 @@ func _ready() -> void:
 	lifetime = 0.8
 	one_shot = true
 
-	# Create simple particle texture if none exists
+	# Use Kenney particle pack or create fallback texture
 	if not texture:
-		texture = _create_particle_texture(16, Color.WHITE)
+		var particle_path = "res://assets/effects/kenney_particle-pack/PNG (Transparent)/spark_01.png"
+		if ResourceLoader.exists(particle_path):
+			texture = load(particle_path)
+		else:
+			texture = _create_particle_texture(16, Color.WHITE)
 
 	# Create process material if not exists
 	if not process_material:

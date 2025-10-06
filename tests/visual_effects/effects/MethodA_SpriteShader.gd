@@ -8,16 +8,24 @@ var sprite: Sprite2D
 func _ready() -> void:
 	sprite = $Sprite2D
 
-	# Create a simple white circle texture if none exists
+	# Use Kenney particle pack or create fallback texture
 	if sprite and not sprite.texture:
-		sprite.texture = _create_circle_texture(64, Color.WHITE)
+		var particle_path = "res://assets/effects/kenney_particle-pack/PNG (Transparent)/light_01.png"
+		if ResourceLoader.exists(particle_path):
+			sprite.texture = load(particle_path)
+		else:
+			sprite.texture = _create_circle_texture(64, Color.WHITE)
 
 func configure(params: Dictionary) -> void:
 	# Ensure sprite is ready
 	if not sprite:
 		sprite = $Sprite2D
 		if sprite and not sprite.texture:
-			sprite.texture = _create_circle_texture(64, Color.WHITE)
+			var particle_path = "res://assets/effects/kenney_particle-pack/PNG (Transparent)/light_01.png"
+			if ResourceLoader.exists(particle_path):
+				sprite.texture = load(particle_path)
+			else:
+				sprite.texture = _create_circle_texture(64, Color.WHITE)
 	# Position
 	global_position = params.get("position", Vector2.ZERO)
 
