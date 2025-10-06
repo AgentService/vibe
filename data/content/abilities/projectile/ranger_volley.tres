@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=3 format=3 uid="uid://b8xvw3m4k6p2n"]
+[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=3 format=3]
 
-[ext_resource type="Script" uid="uid://cm476cx2lyil2" path="res://scripts/resources/ProjectileAbility.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://dnwh3g2sib1wj" path="res://scenes/abilities/projectiles/Arrow.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/resources/ProjectileAbility.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/abilities/projectiles/Arrow.tscn" id="2"]
 
 [resource]
 script = ExtResource("1")
@@ -23,11 +23,11 @@ level_breakpoints = Array[int]([])
 breakpoint_bonuses = Array[String]([])
 tags = Array[String](["damage", "cooldown", "projectile"])
 base_damage = 44.0
-base_cooldown = 0.5
+base_cooldown = 0.1
 damage_type = "physical"
 inherent_element = ""
 projectile_speed = 800.0
-projectile_count = 3
+projectile_count = 5
 projectile_lifetime = 1.0
 buff_duration = 5.0
 buff_stat_name = ""

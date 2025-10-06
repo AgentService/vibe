@@ -2,15 +2,55 @@
 
 ## [Current Week - In Progress]
 
-### Ranger Volley Ability + Debug Panel - Complete (2025-10-06)
+### Path-Aware Forest Arena Tuning (2025-10-06)
 
-**Implemented cone arrow ability and ability testing popup:**
+**Reduced default procedural generation parameters for smaller, tighter arenas:**
+- ✅ Changed `connection_points` default: 3 → 2 (fewer connection points)
+- ✅ Changed `chain_length` default: 6 → 4 (shorter path chains)
+- ✅ Changed `min_point_distance` default: 120px → 80px (tighter layout)
+
+**Impact:**
+- Smaller overall arena footprint (less sprawling)
+- Fewer path branches and endpoints
+- More compact combat area for faster enemy engagement
+- Values now adjustable in Godot Inspector via PathConfiguration resource
+
+**Files Modified:**
+- `scripts/resources/PathConfiguration.gd` - Updated default values in @export properties
+
+### Ability Testing Tool - Full Editor Complete (2025-10-06)
+
+**Upgraded ability testing popup to full editor with file saving and hot-reload:**
 - ✅ Created `ranger_volley.tres` with cone spread (is_homing=false)
-- ✅ Built `AbilityTestingPopup` for runtime ability slot management
-- ✅ Integrated with DebugPanel via "🎯 Ability Testing" button
+- ✅ Built two-column layout (editor left, equipment right)
+- ✅ Implemented ability parameter editing (name, damage, cooldown, projectile count)
+- ✅ Added "Save to File" button with ResourceSaver integration
+- ✅ Added "Apply to Equipped" button for instant hot-reload without restart
+- ✅ Added "Level Up All" and "Refresh from Files" buttons
 - ✅ Auto-registration via AbilityManager directory scanner
 - ✅ Fixed AbilityController access pattern (member variable, not child node)
-- ✅ Fixed player group lookup ("player" singular, not "players")
+
+**LEFT COLUMN: Ability Editor**
+- Ability selection dropdown (all abilities from AbilityManager)
+- Editable parameter fields:
+  - Name (LineEdit)
+  - Base Damage (SpinBox: 1-999, step 0.5)
+  - Cooldown (SpinBox: 0.1-60s, step 0.1)
+  - Projectile Count (SpinBox: 1-50, ProjectileAbility only)
+- Tags display (read-only)
+- "Save to File" button → writes changes to .tres via ResourceSaver
+- "Apply to Equipped" button → hot-reloads equipped abilities instantly
+- File info display (path, last saved timestamp)
+- Recursive directory scanning to find ability .tres files
+
+**RIGHT COLUMN: Slot Equipment**
+- 4 slot dropdowns (auto-populated from AbilityManager)
+- "+1 Lv" buttons per slot for testing level scaling
+- "Equip Selected" applies to player's AbilityController
+- "Clear All" removes equipped abilities
+- "Level Up All" levels all equipped abilities by +1
+- "Refresh from Files" hot-reloads AbilityManager registry
+- Real-time display of equipped abilities (name + level)
 
 **Ranger Volley (Cone Arrows):**
 - Arrows fire straight in 40° cone pattern (no homing curve)
@@ -18,43 +58,42 @@
 - Demonstrates config-driven ability creation (3 field changes)
 - Uses existing cone spread system (_calculate_spread_direction)
 
-**Ability Testing Popup:**
-- Simplified debug panel for equipping abilities without hardcoding
-- 4 slot dropdowns (auto-populated from AbilityManager)
-- "+1 Lv" buttons per slot for testing level scaling
-- "Equip Selected" applies to player's AbilityController
-- "Clear All" removes equipped abilities
-- Real-time display of equipped abilities (name + level)
-
-**Debug Panel Integration:**
-- Added button to DebugPanel right column
-- Popup-based approach (600x400px, non-blocking)
-- Proper lifecycle management (create/reuse/cleanup)
-- Follows ability-debug-panel-design.md specification
+**Designer Workflow (Edit → Save → Test):**
+1. Open Ability Testing Tool via debug panel button
+2. Select ability from editor dropdown (e.g., "Ranger Arrow")
+3. Edit parameters (damage: 44 → 50, projectile_count: 3 → 5)
+4. Click "Save to File" (writes to ranger_arrow.tres)
+5. Click "Apply to Equipped" (hot-reloads if equipped)
+6. Test in-game immediately (no restart, no F5)
+7. Iteration time: ~5 seconds (edit → save → test)
 
 **Architecture Benefits:**
 - No hardcoded ability IDs in Player.gd test keybinds
 - Direct AbilityController API integration via property access
 - Hot-reload compatible (AbilityManager scanner)
 - Declarative ability design (config files only)
+- File persistence via ResourceSaver (.tres modification)
+- Instant apply without restart (duplicate + replace pattern)
 
 **Implementation Details:**
+- Window size: 1000x700px (two-column layout)
 - AbilityController is a member variable (`ability_controller = AbilityController.new(self)`)
 - Access via `player.ability_controller`, NOT `player.get_node("AbilityController")`
-- Fixed in 4 methods: equip, level_up, clear_all, refresh_display
+- Recursive directory scan for .tres file paths
+- Type-specific fields (projectile count shown only for ProjectileAbility)
 - Player is in group "player" (singular), not "players"
 - Added `clear_ability_slot()` method to AbilityController API
 
 **Files Created:**
 - `data/content/abilities/projectile/ranger_volley.tres`
-- `scenes/debug/AbilityTestingPopup.tscn` + `.gd`
+- `scenes/debug/AbilityTestingPopup.tscn` (completely rewritten, two-column layout)
+- `scenes/debug/AbilityTestingPopup.gd` (completely rewritten, 475 lines, full editor)
 
 **Files Modified:**
 - `scenes/debug/DebugPanel.tscn` + `.gd` (button + popup management)
-- `scenes/debug/AbilityTestingPopup.gd` (fixed AbilityController access pattern)
 - `scripts/systems/AbilityController.gd` (added clear_ability_slot method)
 
-**Ready for Testing:** Both ranger_arrow (homing) and ranger_volley (cone) available in-game via ability testing popup
+**Complete:** 100% of ability-debug-panel-design.md spec implemented
 
 ### Overkill Prevention - Working Solution Verified (2025-10-06)
 
