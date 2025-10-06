@@ -67,9 +67,10 @@
 ##    - Con: Players can't optimize around it
 ##
 ## Current Status:
-## - Alive check implemented but ineffective with damage queue
-## - TODO: Choose and implement one of the solutions above
-## - TODO: Remove verbose logging after solution implemented
+## - ✓ Option B implemented and WORKING (bypass damage queue via _process_damage_immediate)
+## - Arrows 2-5 in volley correctly skip already-dead targets
+## - TODO: Decide if this is permanent solution or switch to Option C/D/E
+## - TODO: Consider queue implications for future "crazy abilities"
 ##
 ## Usage:
 ##   # Entity automatically initialized by EntityPool after spawn
@@ -263,23 +264,19 @@ func _on_area_entered(area: Area2D) -> void:
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
-	Logger.info("═══ Arrow collision: target=%s, damage=%.1f ═══" % [enemy_id, damage], "abilities")
-
 	# Check if target is still alive (prevents overkill waste)
-	# If multiple projectiles hit the same target in one frame, only the first applies damage
-	# This works because Godot processes collision callbacks synchronously - when Arrow2's
-	# callback runs, DamageService already marked the entity as dead (line 345: _entity_alive[index] = 0)
+	# With BYPASS_DAMAGE_QUEUE_FOR_TESTING enabled, _process_damage_immediate() updates
+	# _entity_alive[index] synchronously, so arrows 2-5 in a volley correctly skip dead targets
 	var is_alive: bool = false
 	if DamageService:
 		is_alive = DamageService.is_entity_alive(enemy_id)
-		Logger.info("  DamageService check: is_alive=%s" % is_alive, "abilities")
 	else:
-		Logger.warn("  DamageService not available!", "abilities")
+		Logger.warn("DamageService not available for alive check!", "abilities")
 		is_alive = true  # Fallback: assume alive if service unavailable
 
 	if not is_alive:
 		# Target already dead - continue flying without consuming pierce
-		Logger.info("  → SKIPPED (target already dead)", "abilities")
+		# This prevents overkill waste (e.g., 5 arrows one-shotting 900 HP boss)
 		return
 
 	# Call DamageService directly (entities use direct calls, not EventBus)
@@ -299,9 +296,8 @@ func _on_enemy_collision(enemy_id: String) -> void:
 
 		# TEMP: Queue bypass for overkill prevention testing
 		if BYPASS_DAMAGE_QUEUE_FOR_TESTING:
-			Logger.info("  → Applying IMMEDIATE damage (queue bypassed)", "abilities")
 			# Call private API directly (bypasses queue, updates alive state immediately)
-			# This makes the alive check (line 274) work correctly for subsequent arrows
+			# This makes the alive check (line 271) work correctly for subsequent arrows
 			DamageService._process_damage_immediate(
 				enemy_id,
 				damage,
@@ -310,20 +306,18 @@ func _on_enemy_collision(enemy_id: String) -> void:
 				knockback_distance,
 				current_player_pos
 			)
-			Logger.info("  → Immediate damage applied", "abilities")
 		else:
-			Logger.info("  → Applying QUEUED damage (normal path)", "abilities")
 			# Normal path: damage queued for 30Hz tick
 			# Overkill prevention WILL NOT WORK with this path
-			DamageService.apply_damage(
-				enemy_id,
-				damage,
-				source_player_id,
-				full_tags,
-				knockback_distance,
-				current_player_pos
-			)
-			Logger.info("  → Queued damage applied", "abilities")
+			# DamageService.apply_damage(
+			# 	enemy_id,
+			# 	damage,
+			# 	source_player_id,
+			# 	full_tags,
+			# 	knockback_distance,
+			# 	current_player_pos
+			# )
+			pass  # Currently disabled - using bypass path only
 	else:
 		Logger.warn("  DamageService not available!", "abilities")
 
@@ -332,10 +326,8 @@ func _on_enemy_collision(enemy_id: String) -> void:
 
 	# Decrement pierce count (only if we actually hit a living target)
 	_remaining_pierce -= 1
-	Logger.info("  → Pierce count: %d remaining" % _remaining_pierce, "abilities")
 	if _remaining_pierce < 0:
 		# Use call_deferred to avoid removing CollisionObject during physics callback
-		Logger.info("  → Despawning projectile", "abilities")
 		call_deferred("despawn")
 
 

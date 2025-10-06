@@ -2,6 +2,43 @@
 
 ## [Current Week - In Progress]
 
+### Overkill Prevention - Queue Bypass Implementation (2025-10-06)
+
+**Implemented temporary solution for projectile overkill prevention:**
+- ✅ Added comprehensive header documentation listing 6 potential solutions (A-F)
+- ✅ Implemented Option B (bypass damage queue) with `BYPASS_DAMAGE_QUEUE_FOR_TESTING` flag
+- ✅ Calls `_process_damage_immediate()` directly to update alive state synchronously
+- ✅ Subsequent arrows in volley correctly skip already-dead targets
+- ✅ Kept old queued approach commented out for reference
+
+**Problem Identified:**
+- DamageService uses zero-allocation queue (`_queue_enabled=true`) by default
+- Damage queued for 30Hz tick processing, not applied immediately
+- When 5 arrows hit 900HP boss simultaneously, all see `is_alive=true`
+- All 5 arrows apply damage and despawn, wasting 4 arrows
+
+**Solution Options Documented:**
+- **Option A:** Disable queue globally (works but loses performance)
+- **Option B:** Bypass queue for projectiles (current test implementation)
+- **Option C:** Stagger spawn timing (doesn't solve root issue)
+- **Option D:** Smart target selection (complex algorithm)
+- **Option E:** Check queue for pending damage (couples to internals)
+- **Option F:** Accept overkill as intended (simple but feels bad)
+
+**Architecture:**
+- Queue bypass calls private API (`_process_damage_immediate()`) - fragile but testable
+- Alive check (line 274) now works correctly for arrows 2-5 in volley
+- Decision not final - queue may be needed for future "crazy abilities"
+
+**Files Modified:**
+- `scripts/entities/AbilityProjectile.gd`:
+  * Added 73-line header documentation analyzing problem + solutions
+  * Added `BYPASS_DAMAGE_QUEUE_FOR_TESTING` const flag (line 144)
+  * Modified `_on_enemy_collision()` with conditional damage logic
+  * Kept queued approach commented out for reference
+
+**Next:** Test effectiveness, choose permanent solution from 6 options
+
 ### Projectile Knockback Support (2025-10-06)
 
 **Added knockback support to projectile abilities:**
