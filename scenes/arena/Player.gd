@@ -298,6 +298,82 @@ func _handle_new_ability_inputs() -> void:
 		if _is_ability_ready("spear_attack"):
 			_handle_spear_attack()
 
+# TODO: REMOVE AFTER TESTING - Tome application test keybinds (Alt+0/1/2/3)
+func _input(event: InputEvent) -> void:
+	if event is InputEventKey and event.pressed and event.alt_pressed:
+		match event.keycode:
+			KEY_0:
+				_test_clear_tomes()
+			KEY_1:
+				_test_equip_tome("tome_damage")
+			KEY_2:
+				_test_equip_tome("tome_speed")
+			KEY_3:
+				_test_equip_tome("tome_projectiles")
+
+func _test_equip_tome(tome_id: String) -> void:
+	if not ability_controller:
+		Logger.warn("No ability_controller found", "debug")
+		return
+
+	var tome = TomeManager.get_definition(tome_id)
+	if not tome:
+		Logger.warn("%s not found" % tome_id, "debug")
+		return
+
+	# Equip tome via AbilityController (handles stacking and slot management)
+	ability_controller.equip_tome(tome)
+
+	# Log current state for debugging
+	_log_tome_state()
+
+func _log_tome_state() -> void:
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("Tome Slots:", "debug")
+	for i in range(ability_controller.tome_slots.size()):
+		var tome = ability_controller.tome_slots[i]
+		if tome:
+			var stacks = ability_controller.tome_stacks[i]
+			Logger.info("  [%d] %s ×%d" % [i, tome.tome_name, stacks], "debug")
+		else:
+			Logger.info("  [%d] Empty" % i, "debug")
+
+	# Show first ability stats
+	var ability = ability_controller.ability_slots[0]
+	if ability:
+		Logger.info("Ability: %s" % ability.ability_name, "debug")
+		Logger.info("  base_damage: %.2f → final_damage: %.2f (%.1f%% increase)" % [
+			ability.base_damage,
+			ability.final_damage,
+			((ability.final_damage / ability.base_damage) - 1.0) * 100.0
+		], "debug")
+		Logger.info("  base_cooldown: %.2f → final_cooldown: %.2f (%.1f%% faster)" % [
+			ability.base_cooldown,
+			ability.final_cooldown,
+			(1.0 - (ability.final_cooldown / ability.base_cooldown)) * 100.0
+		], "debug")
+		Logger.info("  projectile_count: %d" % ability.projectile_count, "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
+
+func _test_clear_tomes() -> void:
+	if not ability_controller:
+		return
+
+	# Clear all tome slots
+	for i in range(ability_controller.tome_slots.size()):
+		ability_controller.tome_slots[i] = null
+		ability_controller.tome_stacks[i] = 0
+
+	# Remove modifiers from abilities
+	for ability in ability_controller.ability_slots:
+		if ability:
+			for mod in ability.get_active_modifiers():
+				ability.remove_modifier(mod.tome_id)
+
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("CLEARED ALL TOMES", "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
+
 # Update new ability timers
 func _update_new_abilities(delta: float) -> void:
 	# Update bow attack

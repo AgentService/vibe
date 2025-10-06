@@ -198,7 +198,7 @@ func _calculate_spread_direction(base_direction: Vector2, projectile_index: int,
 		return base_direction
 
 	# Total spread angle in radians (adjustable for tighter/wider spread)
-	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(180.0)  # 30 degrees total spread
+	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(90.0)  # 30 degrees total spread
 
 	# Calculate angle offset for this projectile
 	# Center the spread around the base direction
@@ -209,7 +209,7 @@ func _calculate_spread_direction(base_direction: Vector2, projectile_index: int,
 	var base_angle := base_direction.angle()
 	var final_angle := base_angle + angle_offset
 
-	# Return rotated direction vector
+	# Return rotated direction vectoras
 	return Vector2(cos(final_angle), sin(final_angle))
 
 

@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3 uid="uid://c8rtq6m3nwp2j"]
+
+[ext_resource type="Script" path="res://scripts/resources/BaseTome.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+tome_id = "tome_speed"
+tome_name = "Tome of Swiftness"
+description = "Reduce ability cooldowns by 8% per stack. Stacks multiplicatively."
+rarity = "common"
+stack_limit = 10
+applicable_tags = Array[String]([])
+cooldown_multiplier = 0.92

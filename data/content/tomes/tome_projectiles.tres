@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3 uid="uid://d1xy8nan4pqr5"]
+
+[ext_resource type="Script" path="res://scripts/resources/BaseTome.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+tome_id = "tome_projectiles"
+tome_name = "Tome of Multiplication"
+description = "Add +1 projectile per stack. Stacks additively."
+rarity = "common"
+stack_limit = 5
+applicable_tags = Array[String]([])
+projectile_count_bonus = 1

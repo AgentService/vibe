@@ -174,8 +174,11 @@ var _active_modifiers: Array = []  # Array[TomeModifier] - typed in Godot 4.2+
 ## Projectile speed (pixels/second) - only for PROJECTILE tag
 @export var projectile_speed: float = 300.0
 
-## Projectile count - only for PROJECTILE tag
+## Projectile count - only for PROJECTILE tag (COMPUTED from base + modifiers)
 @export var projectile_count: int = 1
+
+## Base projectile count (immutable baseline for tome modifier calculations)
+var _base_projectile_count: int = -1
 
 ## Projectile lifetime (seconds) - only for PROJECTILE tag
 @export var projectile_lifetime: float = 2.0
@@ -389,11 +392,16 @@ func remove_modifier(tome_id: String) -> void:
 ##   - remove_modifier() when tome is removed
 ##   - level_up() when baseline stats change
 func _recalculate_final_stats() -> void:
-	# Start from immutable baseline
+	# Initialize baseline for projectile_count if not yet set
+	if _base_projectile_count == -1:
+		_base_projectile_count = projectile_count
+
+	# Start from immutable baselines
 	final_damage = base_damage
 	final_cooldown = base_cooldown
+	projectile_count = _base_projectile_count
 
-	# Apply all tome modifiers multiplicatively
+	# Apply all tome modifiers
 	for modifier in _active_modifiers:
 		# Damage multiplier (e.g., Tome of Power: 1.15^stack_count)
 		if modifier.damage_multiplier != 1.0:
@@ -403,7 +411,9 @@ func _recalculate_final_stats() -> void:
 		if modifier.cooldown_multiplier != 1.0:
 			final_cooldown *= pow(modifier.cooldown_multiplier, modifier.stack_count)
 
-		# Future: Add more stat multipliers here (projectile_speed, aoe_radius, etc.)
+		# Projectile count bonus (additive, e.g., Tome of Multiplication: +1 per stack)
+		if modifier.projectile_count_bonus != 0:
+			projectile_count += modifier.projectile_count_bonus * modifier.stack_count
 
 
 ## Returns a list of all active tome modifiers on this ability.
