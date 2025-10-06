@@ -2173,8 +2173,8 @@ texture = ExtResource("4_66fk3")
 texture_scale = 2.77
 
 [node name="DebugAbilityDisplay" type="Label" parent="."]
-offset_left = -120.0
-offset_top = -150.0
-offset_right = 120.0
-offset_bottom = -50.0
+offset_left = -387.0
+offset_top = -212.0
+offset_right = -147.0
+offset_bottom = -112.0
 script = ExtResource("8_6afhd")

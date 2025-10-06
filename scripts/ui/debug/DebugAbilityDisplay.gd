@@ -29,6 +29,10 @@ var _ability_controller: RefCounted = null
 func _ready() -> void:
 	Logger.debug("DebugAbilityDisplay._ready() called", "debug")
 
+	# Wait one frame to ensure parent's _ready() has completed
+	# (Child _ready() runs before parent _ready() in Godot)
+	await get_tree().process_frame
+
 	# Get player reference from parent (this label is a child of the player)
 	_player = get_parent()
 	Logger.debug("DebugAbilityDisplay: Parent node = %s" % (_player.name if _player else "null"), "debug")
