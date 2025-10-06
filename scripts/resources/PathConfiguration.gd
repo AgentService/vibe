@@ -10,13 +10,13 @@ extends Resource
 @export var enable_path_generation: bool = true
 
 ## Number of connection points for path network (configurable chain length)
-@export_range(2, 10, 1) var connection_points: int = 3
+@export_range(2, 10, 1) var connection_points: int = 2
 
 ## Chain length for the outward path (how many points in sequence)
-@export_range(2, 10, 1) var chain_length: int = 6
+@export_range(2, 10, 1) var chain_length: int = 4
 
 ## Minimum distance between connection points (pixels)
-@export_range(50, 500, 10) var min_point_distance: float = 120.0
+@export_range(50, 500, 10) var min_point_distance: float = 80.0
 
 # path_extension_width parameter removed
 

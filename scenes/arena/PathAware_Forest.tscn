@@ -11,8 +11,8 @@
 script = ExtResource("2_xp5hq")
 enable_path_generation = true
 connection_points = 3
-chain_length = 5
-min_point_distance = 800.0
+chain_length = 3
+min_point_distance = 500.0
 path_width = 1500.0
 path_smoothing = 0.4
 enable_path_variation = true

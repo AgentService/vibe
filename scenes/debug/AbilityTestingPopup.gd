@@ -458,9 +458,9 @@ func _refresh_equipped_display() -> void:
 	for i in range(ability_controller.ability_slots.size()):
 		var ability = ability_controller.ability_slots[i]
 		if ability:
-			display_text += "[b]Slot %d:[/b] %s (Lv %d)\\n" % [i + 1, ability.ability_name, ability.ability_level]
+			display_text += "[b]Slot %d:[/b] %s (Lv %d)\n" % [i + 1, ability.ability_name, ability.ability_level]
 		else:
-			display_text += "[b]Slot %d:[/b] [color=gray](Empty)[/color]\\n" % (i + 1)
+			display_text += "[b]Slot %d:[/b] [color=gray](Empty)[/color]\n" % (i + 1)
 
 	equipped_info.text = display_text
 
