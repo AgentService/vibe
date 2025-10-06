@@ -111,7 +111,7 @@ animations = [{
 radius = 4.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7bior"]
-size = Vector2(14, 16)
+size = Vector2(16, 16)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_5yvh4"]
 radius = 8.0
@@ -132,13 +132,11 @@ position = Vector2(0, -3)
 shape = SubResource("CircleShape2D_7bior")
 
 [node name="HitBox" type="Area2D" parent="."]
-visible = false
-position = Vector2(0, 7.5)
 collision_layer = 2
 collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
-position = Vector2(0, -13.5)
+position = Vector2(0, -7)
 shape = SubResource("RectangleShape2D_7bior")
 
 [node name="AttackTimer" type="Timer" parent="."]

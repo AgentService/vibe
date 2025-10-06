@@ -174,8 +174,6 @@ func _on_ability_projectile_requested(projectile_data: Dictionary) -> void:
 	else:
 		Logger.warn("EntityPool: Projectile '%s' missing initialize() method" % visual_key, "pooling")
 
-	Logger.debug("EntityPool: Spawned projectile '%s' at %s" % [visual_key, projectile_data.get("origin", Vector2.ZERO)], "pooling")
-
 
 # ============================================================================
 # UTILITY / DEBUG

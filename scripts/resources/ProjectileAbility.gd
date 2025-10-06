@@ -104,14 +104,21 @@ func activate(player: Node2D, context: Dictionary) -> void:
 		push_warning("ProjectileAbility.activate() called without player node")
 		return
 
-	# Determine firing direction based on fire_mode
-	var firing_direction: Vector2 = _determine_firing_direction(player, context)
+	# Determine base firing direction based on fire_mode
+	var base_direction: Vector2 = _determine_firing_direction(player, context)
 
-	# Create projectile data payload
-	var projectile_data: Dictionary = _create_projectile_data(player, firing_direction, context)
+	# Spawn multiple projectiles with spread (multi-shot)
+	var projectiles_to_spawn := maxi(1, projectile_count)  # At least 1 projectile
 
-	# Emit signal for projectile spawning system to handle
-	EventBus.ability_projectile_requested.emit(projectile_data)
+	for i in range(projectiles_to_spawn):
+		# Calculate spread angle for this projectile
+		var spread_direction := _calculate_spread_direction(base_direction, i, projectiles_to_spawn)
+
+		# Create projectile data payload with spread direction
+		var projectile_data: Dictionary = _create_projectile_data(player, spread_direction, context)
+
+		# Emit signal for projectile spawning system to handle
+		EventBus.ability_projectile_requested.emit(projectile_data)
 
 	# Also emit generic ability_activated signal
 	EventBus.ability_activated.emit(ability_id)
@@ -167,11 +174,55 @@ func _get_direction_to_closest_enemy(player: Node2D, context: Dictionary) -> Vec
 			closest_distance = distance
 			closest_enemy = enemy_node
 
-	# Return direction to closest enemy
+	# Return direction to closest enemy's hitbox center
 	if closest_enemy:
-		return (closest_enemy.global_position - player_pos).normalized()
+		var target_position := _get_enemy_hitbox_center(closest_enemy)
+		return (target_position - player_pos).normalized()
 	else:
 		return Vector2.RIGHT
+
+
+## Calculates spread direction for multi-shot projectiles.
+## Distributes projectiles evenly across a spread cone.
+##
+## Parameters:
+##   base_direction: Vector2 - The main firing direction
+##   projectile_index: int - Which projectile this is (0, 1, 2, ...)
+##   total_projectiles: int - Total number of projectiles to spawn
+##
+## Returns:
+##   Vector2 - Direction with spread angle applied
+func _calculate_spread_direction(base_direction: Vector2, projectile_index: int, total_projectiles: int) -> Vector2:
+	# No spread needed for single projectile
+	if total_projectiles == 1:
+		return base_direction
+
+	# Total spread angle in radians (adjustable for tighter/wider spread)
+	const TOTAL_SPREAD_ANGLE: float = deg_to_rad(180.0)  # 30 degrees total spread
+
+	# Calculate angle offset for this projectile
+	# Center the spread around the base direction
+	var spread_per_projectile := TOTAL_SPREAD_ANGLE / float(total_projectiles - 1)
+	var angle_offset := -TOTAL_SPREAD_ANGLE / 2.0 + (projectile_index * spread_per_projectile)
+
+	# Get base angle and apply offset
+	var base_angle := base_direction.angle()
+	var final_angle := base_angle + angle_offset
+
+	# Return rotated direction vector
+	return Vector2(cos(final_angle), sin(final_angle))
+
+
+## Gets the center position of an enemy's hitbox.
+## Returns enemy global_position if HitBox not found.
+func _get_enemy_hitbox_center(enemy: Node2D) -> Vector2:
+	# Try to find HitBox Area2D child node
+	var hitbox := enemy.get_node_or_null("HitBox")
+	if hitbox and hitbox is Area2D:
+		return hitbox.global_position
+
+	# Fallback: use enemy position
+	return enemy.global_position
 
 
 ## Gets a random direction vector.
@@ -208,9 +259,13 @@ func _get_random_direction() -> Vector2:
 ##   visual_scene: PackedScene - Projectile visual (if set)
 ##   impact_effect: PackedScene - Impact effect (if set)
 func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictionary) -> Dictionary:
+	# Spawn projectile at character center + offset up
+	const SPAWN_Y_OFFSET: float = -24.0  # Pixels up from character origin
+	var spawn_position := player.global_position + Vector2(0, SPAWN_Y_OFFSET)
+
 	var data: Dictionary = {
 		"ability_id": ability_id,
-		"source_position": player.global_position,
+		"source_position": spawn_position,
 		"direction": direction,
 		"damage": final_damage,  # Use FINAL damage (includes tome modifiers), NOT base_damage
 		"element": inherent_element,

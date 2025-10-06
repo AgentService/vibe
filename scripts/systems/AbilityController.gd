@@ -132,8 +132,6 @@ func activate_ability(slot_index: int) -> void:
 	# Start cooldown using final_cooldown (includes tome modifiers)
 	ability_cooldowns[slot_index] = ability.final_cooldown
 
-	Logger.debug("Activated ability: %s (cooldown: %.2fs)" % [ability.ability_name, ability.final_cooldown], "abilities")
-
 
 ## Creates the activation context dictionary for abilities.
 ## Context includes player reference and enemy list.

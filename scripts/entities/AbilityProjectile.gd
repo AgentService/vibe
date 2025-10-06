@@ -158,8 +158,6 @@ func initialize(projectile_data: Dictionary) -> void:
 	if sprite:
 		sprite.rotation = direction.angle()
 
-	Logger.debug("AbilityProjectile initialized: %s at %s" % [ability_id, position], "abilities")
-
 
 ## Resets projectile state for pool recycling.
 ## Called by EntityPool when projectile is returned to pool.
@@ -170,8 +168,6 @@ func reset() -> void:
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
 	visible = true
-
-	Logger.debug("AbilityProjectile reset for pool", "abilities")
 
 
 # ============================================================================
@@ -192,7 +188,6 @@ func _on_area_entered(area: Area2D) -> void:
 	var enemy_id: String = ""
 	if "entity_id" in enemy_node:
 		enemy_id = enemy_node.entity_id
-		Logger.debug("Arrow hit enemy with entity_id: %s" % enemy_id, "abilities")
 	else:
 		# Fallback: use instance ID
 		enemy_id = str(enemy_node.get_instance_id())
@@ -298,5 +293,3 @@ func despawn() -> void:
 	else:
 		# Fallback: just hide and queue free
 		queue_free()
-
-	Logger.debug("AbilityProjectile despawned: %s" % ability_id, "abilities")
