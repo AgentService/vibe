@@ -96,18 +96,38 @@
   - **Problem:** Bosses without "wake_up" animation threw errors on spawn
   - **Fix:** Check if animation exists, fallback to first available animation
   - **Result:** All bosses work regardless of animation setup
-- ✅ **Fixed animation_prefix auto-movement bug** - Prevent BaseBoss auto-play interference
+- ✅ **Fixed animation_prefix auto-movement bug** - 5-iteration debugging journey (REAL root cause found!)
   - **Problem:** AncientSlime and DemonOverlord moved immediately on spawn despite wake-up mechanic
-  - **Root Cause Discovery (3 iterations):**
-    - Iteration 1: Thought `animation_prefix` set in `_ready()` caused issue → moved to wake-up callbacks
-    - Iteration 2: Still auto-moving → discovered BaseBoss._ready() auto-plays `animation_prefix + "_south"`
-    - Iteration 3: Found BaseBoss has default `animation_prefix = "walk"` → even commenting out still used default
-  - **Final Solution:** Set `animation_prefix = ""` BEFORE calling `super._ready()` to prevent auto-play
-  - **Implementation:**
-    - Set `animation_prefix = ""` before `super._ready()` prevents BaseBoss from playing any directional animation
-    - After wake-up completes: set to "walking" (AncientSlime) or "scary_walk" (DemonOverlord) in callbacks
-    - Empty string prevents BaseBoss line 53-55 auto-play: `var default_anim = animation_prefix + "_south"`
-  - **Result:** Bosses correctly pause and wait for player proximity before moving
+  - **Root Cause Discovery (5 iterations - ultrathinking analysis):**
+    - **Iteration 1:** Thought `animation_prefix` set in `_ready()` caused issue → moved to wake-up callbacks → still auto-moving
+    - **Iteration 2:** Discovered BaseBoss._ready() auto-plays `animation_prefix + "_south"` → still auto-moving
+    - **Iteration 3:** Found BaseBoss has default `animation_prefix = "walk"` → set to empty string before super._ready() → still auto-moving
+    - **Iteration 4:** Scene files had `animation = &"walking_east"` hardcoded → added `animated_sprite.stop()` → **STILL auto-moving!**
+    - **Iteration 5 (REAL ROOT CAUSE):** `_aggro()` fallback set `has_woken_up = true` IMMEDIATELY, bypassing entire wake-up mechanic!
+  - **The Actual Bug:**
+    ```gdscript
+    func _aggro() -> void:
+        # ...
+        else:
+            animation_prefix = "walking"  # ← Enables BaseBoss directional animations
+            animated_sprite.play()
+            has_woken_up = true  # ← BUG: Movement guard removed immediately!
+    ```
+  - **Why This Caused Instant Movement:**
+    1. Boss spawns: `has_woken_up = false`, animation paused
+    2. Player within 5500px chase_range → `_aggro()` fires immediately
+    3. Fallback sets `animation_prefix + has_woken_up = true` IMMEDIATELY
+    4. Next AI update: `if not has_woken_up: return` doesn't trigger → boss MOVES!
+  - **Final Solution:** Wait for animation completion, not just aggro trigger
+    1. Connect `animation_finished` signal in _ready() fallback (was missing!)
+    2. Remove `animation_prefix` and `has_woken_up` from _aggro() fallback
+    3. Change _on_animation_finished() to check `is_aggroed and not has_woken_up` (handles ANY animation)
+  - **Result:** Wake-up animation COMPLETES before boss can move, regardless of which animation is used
+  - **Lessons Learned:**
+    - Scene file properties load BEFORE _ready() runs
+    - Fallback code paths need same safeguards as primary paths
+    - Signal connections are required for ALL animation branches, not just "wake_up"
+    - Animation completion ≠ aggro trigger - they're separate events!
 
 **Technical Details:**
 - Properties: `has_woken_up: bool`, `is_aggroed: bool` track wake-up state
