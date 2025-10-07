@@ -58,34 +58,24 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 
 	sprite.material = material_instance
 
-	# Tween dissolve from 1.0 (invisible) to 0.0 (fully visible)
+	# Tween dissolve from 1.0 (invisible) to 0.0 (fully visible) using property animation
 	var tween = scene_tree.create_tween()
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_CUBIC)
 
-	# Store sprite reference as weak ref to avoid lambda capture issues
-	var sprite_ref = weakref(sprite)
+	# Animate shader parameter directly - no lambda needed, avoids capture issues
+	tween.tween_property(material_instance, "shader_parameter/dissolve_progress", 0.0, SPAWN_DURATION).from(1.0)
 
-	# Use weak reference in tween method to prevent "Lambda capture freed" errors
-	tween.tween_method(
-		func(value: float):
-			var sprite_instance = sprite_ref.get_ref()
-			if sprite_instance and is_instance_valid(sprite_instance) and sprite_instance.material:
-				sprite_instance.material.set_shader_parameter("dissolve_progress", value),
-		1.0,  # Start fully dissolved (invisible)
-		0.0,  # End fully materialized (visible)
-		SPAWN_DURATION
-	)
-
-	# Restore original material after spawn completes
-	tween.finished.connect(func():
-		var sprite_instance = sprite_ref.get_ref()
-		if sprite_instance and is_instance_valid(sprite_instance):
-			var orig = sprite_instance.get_meta("_enemy_original_material", null)
-			sprite_instance.material = orig
-	)
+	# Restore original material after spawn completes - use bound callable to avoid lambda capture
+	tween.finished.connect(_on_spawn_tween_finished.bind(sprite, original_material))
 
 	return tween
+
+## Tween completion callback - restores original material
+## Uses bound parameters (passed via .bind()) to avoid lambda capture issues
+static func _on_spawn_tween_finished(sprite: AnimatedSprite2D, original_material: Material) -> void:
+	if sprite and is_instance_valid(sprite):
+		sprite.material = original_material
 
 ## Create procedural noise texture for dissolve pattern
 static func _create_noise_texture() -> NoiseTexture2D:
