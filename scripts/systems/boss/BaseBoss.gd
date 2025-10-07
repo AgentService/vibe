@@ -40,10 +40,6 @@ var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child n
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
 
-# PERFORMANCE OPTIMIZATION: Update skipping variables
-var _update_skip_counter: int = 0
-var _accumulated_dt: float = 0.0
-
 # SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
 # NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
 # Future: Add EnemyType.spawn_behavior enum to customize per-enemy
@@ -59,9 +55,6 @@ func _perform_attack() -> void:
 	# Child classes should implement specific attack behavior
 
 func _ready() -> void:
-	# PERFORMANCE PROFILING: Track BaseBoss initialization time
-	var start_time_us := Time.get_ticks_usec()
-
 	# SPAWN SYSTEM: Start in spawning group (not targetable yet)
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
@@ -132,20 +125,8 @@ func _ready() -> void:
 	_update_health_bar()
 
 	# Setup personal space area for boss-to-boss spacing control
-	# PERFORMANCE: Disabled for high enemy counts (400+) - causes O(n²) physics checks
-	# TODO: Re-enable with spatial partitioning or distance-based culling if performance allows
-	# _setup_personal_space_area()
-
-	# PERFORMANCE PROFILING: Log if initialization is slow
-	# TODO: REMOVE/REDUCE this profiling after optimization complete (creates overhead at scale)
-	var elapsed_us := Time.get_ticks_usec() - start_time_us
-	var elapsed_ms := elapsed_us / 1000.0
-
-	if elapsed_ms > 5.0:
-		Logger.warn("⚠️ BOSS INIT SLOW: %.2f ms for %s" % [elapsed_ms, get_boss_name()], "LAG")
-	elif elapsed_ms > 1.0:
-		Logger.info("Boss init: %.2f ms for %s" % [elapsed_ms, get_boss_name()], "LAG")
-
+	_setup_personal_space_area()
+	
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
@@ -196,9 +177,8 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 ## UNIFIED SCALING SYSTEM: Apply consistent scaling to all boss components
 func apply_unified_scaling(scale_factor: float) -> void:
 
-	# Step 1: Scale sprite (visual component) - apply immediately for deferred spawning
-	# When using call_deferred for add_child, we need immediate scaling before node enters tree
-	_apply_sprite_scaling(scale_factor)
+	# Step 1: Scale sprite (visual component) - always defer to ensure node readiness
+	call_deferred("_apply_sprite_scaling", scale_factor)
 	
 	# Step 2: Scale collision shape (physics/movement)
 	var collision_shape = get_node_or_null("CollisionShape2D")
@@ -217,8 +197,7 @@ func apply_unified_scaling(scale_factor: float) -> void:
 		Logger.warn("HitBox not found for scaling", "debug")
 	
 	# Step 4: Notify all scalable components after scaling changes
-	# Apply immediately for deferred spawning (node not yet in tree)
-	_notify_components_scaled(scale_factor)
+	call_deferred("_notify_components_scaled", scale_factor)
 	
 ## COMPONENT SCALING NOTIFICATION: Notify all components that boss has been scaled
 func _notify_components_scaled(scale_factor: float) -> void:
@@ -233,25 +212,8 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
 func _update_ai_batch(dt: float) -> void:
-	# PERFORMANCE OPTIMIZATION: Update skipping for distant enemies
-	# Enemies far from player (>800 units) update every other frame = 50% CPU reduction
-	# Close enemies update every frame for responsive combat
-
-	# Always accumulate time
-	_accumulated_dt += dt
+	_update_ai(dt)
 	last_attack_time += dt
-
-	# Skip updates for distant enemies (distance check happens inside _update_ai)
-	_update_skip_counter += 1
-	if _update_skip_counter >= 2:
-		_update_skip_counter = 0
-		_update_ai(_accumulated_dt)  # Pass accumulated time
-		_accumulated_dt = 0.0
-	else:
-		# For close enemies, update every frame
-		# (Distance LOD will handle this internally)
-		_update_ai(dt)
-		_accumulated_dt = 0.0
 
 ## Base AI logic - child classes can override or extend
 func _update_ai(_dt: float) -> void:
@@ -266,25 +228,9 @@ func _update_ai(_dt: float) -> void:
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
-
+	
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
-
-	# PERFORMANCE OPTIMIZATION: Distance-based LOD (Level of Detail)
-	# Far enemies use simplified AI - just beeline toward player
-	# Saves: animation updates, collision checks, precise pathfinding
-	if distance_to_player > 800:
-		# Simple movement: direct line to player
-		var direction: Vector2 = (target_position - global_position).normalized()
-		velocity = direction * speed
-
-		# Skip expensive move_and_slide(), just update position directly
-		global_position += velocity * _dt
-
-		# Update position in damage system (still needed for collision detection)
-		var entity_id = "boss_" + str(get_instance_id())
-		DamageService.update_entity_position(entity_id, global_position)
-		return  # Skip all other processing
 	
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
@@ -293,20 +239,16 @@ func _update_ai(_dt: float) -> void:
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 
-			# PERFORMANCE: Personal space disabled for high enemy counts
 			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
-			# var spacing_force = apply_personal_space_forces()
-			# if spacing_force.length_squared() > 0.1:  # Only log when significant spacing occurs
-			# 	Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
-			# velocity += spacing_force
+			var spacing_force = apply_personal_space_forces()
+			if spacing_force.length_squared() > 0.1:  # Only log when significant spacing occurs
+				Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+
+			# Apply personal space forces - these work with collision layers
+			velocity += spacing_force
 
 			# Safety: Check if still valid before physics update
 			if not is_inside_tree() or is_queued_for_deletion():
-				return
-
-			# BUGFIX: Prevent "body->get_space() is null" error during boss removal
-			# When bosses die/despawn during combat_step, physics space can be null
-			if not is_instance_valid(self):
 				return
 
 			move_and_slide()

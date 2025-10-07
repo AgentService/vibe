@@ -65,21 +65,9 @@ func _initialize_attack_effects_pool() -> void:
 		}
 
 func _on_combat_step(payload) -> void:
-	# PERFORMANCE PROFILING: Track MeleeSystem combat step time
-	var start_time_us := Time.get_ticks_usec()
-
 	_update_cooldown(payload.dt)
 	_update_attack_effects(payload.dt)
 	_handle_auto_attack()
-
-	# PERFORMANCE PROFILING: Log if significant time spent
-	var elapsed_us := Time.get_ticks_usec() - start_time_us
-	var elapsed_ms := elapsed_us / 1000.0
-
-	if elapsed_ms > 8.0:
-		Logger.warn("⚠️ MELEE SYSTEM SLOW: %.2f ms" % elapsed_ms, "LAG")
-	elif elapsed_ms > 3.0:
-		Logger.info("MeleeSystem step: %.2f ms" % elapsed_ms, "LAG")
 
 func _update_cooldown(dt: float) -> void:
 	if attack_cooldown > 0.0:

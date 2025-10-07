@@ -468,24 +468,11 @@ func _on_combat_step(payload) -> void:
 	if not PlayerState.has_player_reference():
 		return
 
-	# PERFORMANCE PROFILING: Track TOTAL combat step time
-	var frame_start_us := Time.get_ticks_usec()
-
 	# Zone management now handled by EventSpawnManager.update()
 	_handle_spawning(payload.dt)
 	_update_enemies(payload.dt)
 	_update_breach_system(payload.dt)
 	# DECISION: No longer emit enemies_updated signal for MultiMesh - scene enemies self-manage
-
-	# PERFORMANCE PROFILING: ALWAYS log total frame time to track performance
-	var frame_elapsed_us := Time.get_ticks_usec() - frame_start_us
-	var frame_elapsed_ms := frame_elapsed_us / 1000.0
-
-	# ALWAYS log to see all frame times
-	if frame_elapsed_ms > 16.0:  # More than half a 30Hz frame (33ms / 2)
-		Logger.warn("⚠️ SPAWN COMBAT STEP SLOW: %.2f ms" % frame_elapsed_ms, "LAG")
-	elif frame_elapsed_ms > 3.0:
-		Logger.info("SpawnDirector step: %.2f ms" % frame_elapsed_ms, "LAG")
 
 
 ## DAMAGE V3: Handle unified damage sync events for pooled enemies
@@ -788,10 +775,7 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Use YSort_Objects container for proper Y-sorting, fallback to ArenaRoot
 	var spawn_container = _get_ysort_container_or_arena_root()
 
-	# PERFORMANCE FIX: Use deferred add_child to avoid frame freezes when spawning many enemies
-	# Synchronous add_child with 30-50 enemies per frame can cause 1-2 second freezes
-	# All enemies are scene-based BaseBoss instances, so defer all to prevent main thread blocking
-	spawn_container.add_child.call_deferred(enemy_instance)
+	spawn_container.add_child(enemy_instance)
 
 	# Add to semantic groups for proper cleanup behavior
 	ClearingSemantics.add_semantic_group(enemy_instance, ClearingSemantics.CLEAR_WITH_ENEMIES)
@@ -918,27 +902,16 @@ func _update_enemies(dt: float) -> void:
 	# Skip enemy AI updates if paused for debug
 	if ai_paused:
 		return
-
-	# PERFORMANCE PROFILING: Track enemy AI update time
-	var start_time_us := Time.get_ticks_usec()
-
-	# PERFORMANCE FIX: Cap delta time to prevent enemies moving too fast during lag spikes
-	# When stuttering occurs, dt can spike to 0.1-0.5 seconds, causing enemies to "teleport"
-	const MAX_DELTA_TIME := 0.05  # Cap at 50ms (3x normal 30Hz frame time)
-	var clamped_dt := minf(dt, MAX_DELTA_TIME)
-
+	
 	# PERFORMANCE OPTIMIZATION: Pre-calculate values once
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	var update_distance_squared: float = update_distance * update_distance  # Eliminate sqrt calls
 	var target_x: float = target_pos.x
 	var target_y: float = target_pos.y
-
+	
 	# ZERO-ALLOC: Clear entity update queue for this frame
 	_entity_update_queue.clear()
-
-	# Track how many enemies we're actually updating
-	var enemies_processed := 0
 	
 	# PERFORMANCE: Direct bit-field iteration instead of get_alive_enemies() (eliminates array allocation)
 	for i in range(max_enemies):
@@ -971,9 +944,9 @@ func _update_enemies(dt: float) -> void:
 				enemy.direction.x = norm_x
 				enemy.direction.y = norm_y
 				
-				# Update position directly (using clamped delta to prevent speed-up during lag)
-				enemy.pos.x = enemy_x + enemy.vel.x * clamped_dt
-				enemy.pos.y = enemy_y + enemy.vel.y * clamped_dt
+				# Update position directly
+				enemy.pos.x = enemy_x + enemy.vel.x * dt
+				enemy.pos.y = enemy_y + enemy.vel.y * dt
 				
 				# ZERO-ALLOC: Use pooled payload instead of Dictionary allocation
 				var entity_id: String = get_enemy_entity_id(i)  # Direct index access (O(1))
@@ -981,33 +954,21 @@ func _update_enemies(dt: float) -> void:
 				if update_payload:
 					update_payload["entity_id"] = entity_id
 					update_payload["position"] = enemy.pos
-
+					
 					# Queue for batch processing
 					if not _entity_update_queue.try_push(update_payload):
 						# Queue full - release payload back to pool and continue
 						_update_payload_pool.release(update_payload)
-					else:
-						enemies_processed += 1
-
+	
 	# ZERO-ALLOC BATCH PROCESSING: Process ring buffer and release payloads back to pool
 	while not _entity_update_queue.is_empty():
 		var update_payload = _entity_update_queue.try_pop()
 		if update_payload:
 			EntityTracker.update_entity_position(update_payload["entity_id"], update_payload["position"])
 			DamageService.update_entity_position(update_payload["entity_id"], update_payload["position"])
-
+			
 			# Release payload back to pool for reuse
 			_update_payload_pool.release(update_payload)
-
-	# PERFORMANCE PROFILING: Log enemy AI update time
-	var elapsed_us := Time.get_ticks_usec() - start_time_us
-	var elapsed_ms := elapsed_us / 1000.0
-
-	# ALWAYS log when we have any enemies to track performance (even if 0 to verify execution)
-	if elapsed_ms > 8.0:
-		Logger.warn("⚠️ ENEMY AI SLOW: %.2f ms for %d enemies" % [elapsed_ms, enemies_processed], "LAG")
-	elif enemies_processed > 0:
-		Logger.info("Enemy AI: %.2f ms for %d enemies" % [elapsed_ms, enemies_processed], "LAG")
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
