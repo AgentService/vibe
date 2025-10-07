@@ -112,7 +112,7 @@ func _check_enemy_player_collisions() -> void:
 	# PERFORMANCE: Use spatial query instead of checking all enemies
 	# Only check enemies within collision radius (massive savings at 400+ enemies)
 	var collision_radius := enemy_radius + player_radius
-	var nearby_enemy_ids := EntityTracker.get_entities_in_area(player_pos, collision_radius, ["enemy"])
+	var nearby_enemy_ids := EntityTracker.get_entities_in_radius(player_pos, collision_radius, "enemy")
 
 	# Check collision with nearby enemies only
 	for enemy_id in nearby_enemy_ids:
