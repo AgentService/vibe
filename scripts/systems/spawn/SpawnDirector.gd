@@ -949,7 +949,7 @@ func _update_enemies(dt: float) -> void:
 				enemy.pos.y = enemy_y + enemy.vel.y * dt
 				
 				# ZERO-ALLOC: Use pooled payload instead of Dictionary allocation
-				var entity_id: String = get_enemy_entity_id(i)  # Direct index access (O(1))
+				var entity_id: String = _pre_generated_entity_ids[i]  # O(1) array access (pre-computed)
 				var update_payload = _update_payload_pool.acquire()
 				if update_payload:
 					update_payload["entity_id"] = entity_id
@@ -964,9 +964,9 @@ func _update_enemies(dt: float) -> void:
 	while not _entity_update_queue.is_empty():
 		var update_payload = _entity_update_queue.try_pop()
 		if update_payload:
+			# Only update EntityTracker - DamageService syncs via signal automatically
 			EntityTracker.update_entity_position(update_payload["entity_id"], update_payload["position"])
-			DamageService.update_entity_position(update_payload["entity_id"], update_payload["position"])
-			
+
 			# Release payload back to pool for reuse
 			_update_payload_pool.release(update_payload)
 

@@ -21,6 +21,7 @@ const CLEANUP_INTERVAL: float = 5.0
 # Signals for entity lifecycle
 signal entity_registered(entity_id: String, entity_type: String)
 signal entity_unregistered(entity_id: String)
+signal entity_position_updated(entity_id: String, new_position: Vector2)
 
 func _ready() -> void:
 	Logger.info("EntityTracker initialized", "combat")
@@ -183,9 +184,12 @@ func update_entity_position(id: String, new_pos: Vector2) -> void:
 	# Update spatial index
 	_remove_from_spatial_index(id, old_pos)
 	_update_spatial_index(id, new_pos)
-	
+
 	# Update entity data
 	entity_data["pos"] = new_pos
+
+	# Emit signal for systems that need position updates (e.g., DamageService)
+	entity_position_updated.emit(id, new_pos)
 
 ## BOSS PERFORMANCE V2: Batch update entity positions for zero-allocation processing
 ## Used by BossUpdateManager to replace individual position updates

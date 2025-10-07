@@ -48,9 +48,14 @@ signal entity_unregistered(entity_id: String)
 func _ready() -> void:
 	Logger.info("DamageRegistry initialized", "combat")
 	_setup_queue_if_enabled()
-	
+
 	# Connect to pause system for queue management
 	EventBus.game_paused_changed.connect(_on_paused_changed)
+
+	# Connect to EntityTracker for automatic position synchronization
+	if EntityTracker:
+		EntityTracker.entity_position_updated.connect(_on_entity_position_updated)
+		Logger.info("DamageRegistry: Connected to EntityTracker position updates", "combat")
 
 ## Setup zero-allocation damage queue if enabled by config
 func _setup_queue_if_enabled() -> void:
@@ -447,6 +452,11 @@ func update_entity_position(entity_id: String, new_pos: Vector2) -> void:
 	if index != -1:
 		_entity_positions_x[index] = new_pos.x
 		_entity_positions_y[index] = new_pos.y
+
+## Signal handler for EntityTracker position updates
+## Automatically syncs positions from EntityTracker to DamageRegistry
+func _on_entity_position_updated(entity_id: String, new_position: Vector2) -> void:
+	update_entity_position(entity_id, new_position)
 
 ## Get entity data by ID - returns Dictionary for backward compatibility
 func get_entity(entity_id: String) -> Dictionary:
