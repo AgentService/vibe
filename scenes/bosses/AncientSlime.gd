@@ -18,8 +18,10 @@ func _ready() -> void:
 	attack_cooldown = 1.0  # Slightly slower attacks
 	attack_range = 125.0
 	# chase_range = 320.0  # Using BaseBoss default (5500.0)
-	# animation_prefix set after wake-up in _on_animation_finished() to avoid auto-playing
-	
+
+	# Prevent BaseBoss from auto-playing directional animations before wake-up
+	animation_prefix = ""  # Will be set to "walking" after wake-up completes
+
 	# Shadow is handled by BossShadow scene instance in the .tscn file
 
 	# Call parent _ready() to handle all base initialization (including shadow setup)
