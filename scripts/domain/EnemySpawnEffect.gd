@@ -66,16 +66,22 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 	# Animate shader parameter directly - no lambda needed, avoids capture issues
 	tween.tween_property(material_instance, "shader_parameter/dissolve_progress", 0.0, SPAWN_DURATION).from(1.0)
 
-	# Restore original material after spawn completes - use bound callable to avoid lambda capture
-	tween.finished.connect(_on_spawn_tween_finished.bind(sprite, original_material))
+	# Restore original material after spawn completes - use instance ID to avoid object binding issues
+	var sprite_id = sprite.get_instance_id()
+	tween.finished.connect(_on_spawn_tween_finished.bind(sprite_id))
 
 	return tween
 
 ## Tween completion callback - restores original material
-## Uses bound parameters (passed via .bind()) to avoid lambda capture issues
-static func _on_spawn_tween_finished(sprite: AnimatedSprite2D, original_material: Material) -> void:
+## Uses instance ID (passed via .bind()) to safely retrieve sprite and restore material
+static func _on_spawn_tween_finished(sprite_id: int) -> void:
+	var sprite = instance_from_id(sprite_id) as AnimatedSprite2D
 	if sprite and is_instance_valid(sprite):
-		sprite.material = original_material
+		# Retrieve original material from metadata
+		var original_material = sprite.get_meta("_enemy_original_material", null)
+		if original_material != null:
+			sprite.material = original_material
+			sprite.remove_meta("_enemy_original_material")  # Cleanup metadata
 
 ## Create procedural noise texture for dissolve pattern
 static func _create_noise_texture() -> NoiseTexture2D:
