@@ -2,6 +2,133 @@
 
 ## [Current Week - In Progress]
 
+### Unified Enemy Spawn System (2025-10-07)
+
+**Implemented unified spawn system with group-based targeting and centralized spawn behavior:**
+
+**Architecture:**
+- ✅ **Group-based targeting system**: Enemies transition "spawning" → "targetable" after 0.5s animation
+  - Spawning enemies not targetable by auto-targeting abilities (Heartseeker, etc.)
+  - AbilityController queries "targetable" group instead of "enemies" group
+  - Efficient scene tree filtering - single query point optimization
+- ✅ **Centralized spawn behavior in BaseBoss**: All spawn logic now handled by parent class
+  - `_is_spawning` flag pauses AI during spawn animation (prevents movement/attacks)
+  - Spawn effect, group management, and state transitions owned by BaseBoss._ready()
+  - Child bosses only add custom behaviors (wake-up, death effects, etc.)
+- ✅ **Reduced spawn duration**: 0.6s → 0.5s for faster gameplay pacing
+- ✅ **Fixed duplicate spawn effects**: Removed redundant `EnemySpawnEffect.apply_spawn_effect()` calls from 6 boss files
+- ✅ **Logging consolidation**: Reduced from 3 logs per spawn to 1 log under "spawn" category
+- ✅ **Defensive metadata handling**: Added `has_meta()` check before `get_meta()` to prevent crashes
+
+**Boss Files Fixed:**
+- ✅ AncientSlime.gd - Removed duplicate spawn effect, added `_is_spawning` check
+- ✅ BananaLord.gd - Removed duplicate spawn effect, added `_is_spawning` check
+- ✅ AncientLich.gd - Removed duplicate spawn effect, added `_is_spawning` check
+- ✅ DragonLord.gd - Removed duplicate spawn effect, added `_is_spawning` check
+- ✅ DemonOverlord.gd - Removed duplicate spawn effect, added `_is_spawning` check
+- ✅ TestShadowBoss.gd - Removed duplicate spawn effect, added `_is_spawning` check
+
+**Implementation Pattern:**
+```gdscript
+# BaseBoss._ready() - Centralized spawn behavior
+func _ready() -> void:
+    add_to_group("spawning")  # Not targetable yet
+    add_to_group("enemies")
+
+    var spawn_tween = EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+    if spawn_tween:
+        spawn_tween.finished.connect(_on_spawn_animation_complete)
+
+func _on_spawn_animation_complete() -> void:
+    _is_spawning = false
+    remove_from_group("spawning")
+    add_to_group("targetable")  # Now targetable
+    Logger.debug("%s ready" % get_boss_name(), "spawn")
+
+# Child bosses check spawn state
+func _update_ai(_dt: float) -> void:
+    if _is_spawning or ai_paused or _is_dying:
+        return  # Pause AI during spawn, death, or manual pause
+```
+
+**Targeting System Integration:**
+```gdscript
+# AbilityController.gd - Group-based filtering
+func _get_nearby_enemies() -> Array:
+    var all_enemies = tree.get_nodes_in_group("targetable")  # Filters spawning enemies
+    # ... distance filtering ...
+```
+
+**Architecture Benefits:**
+- Single source of truth for spawn behavior (BaseBoss)
+- Future-proof for custom spawn types (instant, delayed, portal, etc.)
+- Compatible with death effects (same extensibility pattern)
+- Minimal performance overhead (group queries optimized by Godot)
+- Consistent 0.5s spawn timing for all bosses
+
+**Wake-Up Animation Integration:**
+- ✅ **Wake-up animations now play during spawn dissolve (0.5s concurrent)**
+  - BaseBoss checks for "wake_up" animation, plays it during spawn if available
+  - Falls back to default directional animation if wake_up not present
+  - Automatically transitions from wake_up → default after spawn completes
+  - Removed separate wake-up mechanic from all child boss classes (was causing sequential delays)
+- ✅ **Consistent 0.5s spawn timing for ALL bosses** regardless of animation presence
+  - Before: spawn dissolve (0.5s) → wake-up animation (variable) → AI starts
+  - After: spawn dissolve + wake-up animation (0.5s concurrent) → AI starts
+
+**Debug Panel Boss Spawning Fixed:**
+- ✅ **Dynamic boss detection in DebugManager**
+  - Removed hardcoded boss list ["ancient_lich", "dragon_lord"]
+  - Now checks template.boss_scene_path or template.render_tier == "boss" dynamically
+  - DemonOverlord, BananaLord, AncientSlime now spawn correctly via debug panel
+  - All boss types automatically detected from enemy templates
+- ✅ **Fixed DemonOverlord template validation error**
+  - **Bug:** `speed_range = Vector2(800, 90)` had min > max (backwards!)
+  - **Bug:** `damage_range = Vector2(40, 500)` had suspiciously high max value
+  - **Fix:** `speed_range = Vector2(80, 90)` and `damage_range = Vector2(40, 50)`
+  - Template now passes validation and loads correctly
+
+**Boss Health/Damage Data-Driven:**
+- ✅ **Removed hardcoded stats from boss scripts** - Templates now control health/damage
+  - **Problem:** Boss scripts had hardcoded `max_health = 200` that overrode template data
+  - **Solution:** Removed hardcoded health/damage from `_ready()`, kept only attack-specific values
+  - **Result:** Boss health now comes from template files (banana_lord.tres: 5000-6000 HP, etc.)
+  - Updated: BananaLord, DragonLord, DemonOverlord, AncientSlime
+  - Already clean: AncientLich
+
+**Boss Scaling System Removed:**
+- ✅ **Removed boss-scaling.tres and all references** - Will be replaced by progression system
+  - Deleted `/data/core/boss-scaling.tres` resource file
+  - Deleted `/scripts/domain/BossScaling.gd` class definition
+  - Removed boss scaling application from `DebugManager._spawn_debug_boss()`
+  - Debug spawns now use base template stats without multipliers
+  - Deleted test files: `test_boss_debug_scaling.gd`, `test_boss_scaling.tscn`
+  - Updated `test_hardcoded_migration.gd` to remove BossScaling integration tests
+  - Clarified "boss scaling" comment in BossUpdateManager (handling many bosses, not feature)
+
+**Cleanup:**
+- ✅ **Removed TestShadowBoss** - Unused test boss removed from codebase
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd` - Added `_is_spawning` flag, group management, concurrent wake-up animation support
+- `scripts/systems/AbilityController.gd` - Changed "enemies" → "targetable" group query
+- `scripts/domain/EnemySpawnEffect.gd` - Reduced SPAWN_DURATION 0.6s → 0.5s, defensive metadata check
+- `autoload/DebugManager.gd` - Dynamic boss detection (removed hardcoded list), reduced spawn logs from 3 to 1
+- `scenes/bosses/AncientSlime.gd` - Removed wake-up mechanic, removed hardcoded health/damage
+- `scenes/bosses/BananaLord.gd` - Removed wake-up mechanic, removed hardcoded health/damage
+- `scenes/bosses/DragonLord.gd` - Removed wake-up mechanic, removed hardcoded health/damage
+- `scenes/bosses/DemonOverlord.gd` - Removed wake-up mechanic, removed hardcoded health/damage
+- `scenes/bosses/AncientLich.gd` - Already clean (no changes needed)
+- `scenes/CLAUDE.md` - Updated boss spawn pattern documentation with correct/incorrect examples
+- `data/content/enemy-variations/demon_overlord.tres` - Fixed backwards speed_range and excessive damage_range
+
+**Files Deleted:**
+- `scenes/bosses/TestShadowBoss.gd` - Unused test boss
+- `scenes/bosses/TestShadowBoss.tscn` - Unused test boss scene
+
+**Documentation Updates Needed:**
+- `/Obsidian/systems/BaseBoss-Architecture.md` - Document spawn lifecycle and extensibility pattern
+
 ### Enemy Spawn Dissolve Effect (2025-10-07)
 
 **Implemented unified spawn materialization effect for all boss enemies:**

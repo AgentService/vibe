@@ -199,18 +199,19 @@ func _ready() -> void:
 extends BaseBoss
 
 func _ready() -> void:
-    super._ready()  # BaseBoss handles shadows, scaling, registration
+    super._ready()  # BaseBoss handles shadows, scaling, spawn effects, registration
 
-    # Boss-specific initialization
+    # Boss-specific initialization (after spawn completes)
     _setup_lich_abilities()
     _configure_death_animation()
 
-func _update_ai_batch(delta_time: float) -> void:
-    # Called by BossUpdateManager for performance
-    if not is_alive():
+func _update_ai(_dt: float) -> void:
+    # IMPORTANT: Always check spawn state first when overriding AI
+    if _is_spawning or ai_paused or _is_dying:
         return
 
-    _update_lich_ai(delta_time)
+    # Boss-specific AI logic
+    _update_lich_ai(_dt)
     _check_phase_transitions()
 
 # Death integration with EventBus
@@ -220,6 +221,41 @@ func _die() -> void:
     # Boss-specific death behavior
     _trigger_death_explosion()
     _spawn_loot()
+```
+
+**Spawn System Pattern:**
+```gdscript
+# BaseBoss centralizes all spawn behavior - DON'T duplicate in child classes
+
+# ✅ CORRECT: Let BaseBoss handle spawn effect
+func _ready() -> void:
+    super._ready()  # Handles spawn dissolve, group management, state flags
+    # Note: Spawn dissolve effect already applied by BaseBoss._ready()
+    _setup_boss_specific_behavior()
+
+# ❌ WRONG: Don't duplicate spawn effect in child class
+func _ready() -> void:
+    super._ready()
+    EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())  # ❌ DUPLICATE!
+    _setup_boss_specific_behavior()
+
+# ✅ CORRECT: Check spawn state when overriding _update_ai()
+func _update_ai(_dt: float) -> void:
+    if _is_spawning or ai_paused or _is_dying:
+        return  # Pause AI during spawn animation (0.5s)
+
+    # Your custom AI logic here
+    super._update_ai(_dt)
+
+# Spawn lifecycle (managed by BaseBoss):
+# 1. _ready() → add_to_group("spawning") - NOT targetable
+# 2. 0.5s dissolve animation with cyan edge glow
+# 3. Animation complete → remove_from_group("spawning") + add_to_group("targetable")
+# 4. _is_spawning = false → AI resumes
+
+# Targeting integration:
+# - AbilityController queries "targetable" group (filters spawning enemies)
+# - Auto-targeting abilities (Heartseeker) skip spawning enemies
 ```
 
 **Boss Factory Integration:**

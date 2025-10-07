@@ -15,7 +15,6 @@ var debug_enabled: bool = false  # Start disabled, check config in _ready()
 var radar_disabled: bool = false  # Performance flag to disable radar calculation and display
 var selected_entity_id: String = ""
 var debug_ui: Control
-var boss_scaling: BossScaling
 
 
 # System references for debug operations
@@ -27,11 +26,7 @@ var debug_system_controls: DebugSystemControls
 func _ready() -> void:
 	instance = self
 	process_mode = Node.PROCESS_MODE_ALWAYS  # Work during pause
-	
-	# Load boss scaling configuration
-	_load_boss_scaling()
-	
-	
+
 	# Check debug configuration to determine initial state
 	_check_debug_config()
 	
@@ -64,24 +59,6 @@ func _check_debug_config() -> void:
 			debug_enabled = false
 	else:
 		debug_enabled = false
-
-func _load_boss_scaling() -> void:
-	"""Load boss scaling configuration from data-driven resource."""
-	var resource_path := "res://data/core/boss-scaling.tres"
-	
-	if not ResourceLoader.exists(resource_path):
-		Logger.warn("Boss scaling resource not found: %s, using defaults" % resource_path, "debug")
-		boss_scaling = BossScaling.new()  # Use defaults
-		return
-	
-	var loaded_scaling = ResourceLoader.load(resource_path) as BossScaling
-	if not loaded_scaling:
-		Logger.warn("Failed to load boss scaling from: %s, using defaults" % resource_path, "debug")
-		boss_scaling = BossScaling.new()  # Use defaults
-		return
-	
-	boss_scaling = loaded_scaling
-	Logger.info("Loaded boss scaling configuration from data", "debug")
 
 func _input(event: InputEvent) -> void:
 	if not event is InputEventKey or not event.pressed:
@@ -243,8 +220,7 @@ func spawn_enemy_at_position(enemy_type: String, position: Vector2, count: int =
 	if not debug_enabled:
 		Logger.warn("Cannot spawn enemies - debug mode not active", "debug")
 		return
-		
-	Logger.info("Debug spawn requested: %d x %s at %s" % [count, enemy_type, position], "debug")
+
 	emit_signal("spawning_requested", enemy_type, position, count)
 
 func spawn_enemy_at_cursor(enemy_type: String, count: int = 1) -> void:
@@ -298,11 +274,17 @@ func _on_spawning_requested(enemy_type: String, position: Vector2, count: int) -
 	if not debug_enabled:
 		Logger.warn("Spawning requested but debug mode not active", "debug")
 		return
-		
-	Logger.info("Processing spawn request: %d x %s at %s" % [count, enemy_type, position], "debug")
-	
-	# Check if it's a boss type (ancient_lich, dragon_lord)
-	if enemy_type in ["ancient_lich", "dragon_lord"]:
+
+	# Check if it's a boss type dynamically from template data
+	const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
+	var is_boss = false
+
+	if enemy_type in EnemyFactoryScript._templates:
+		var template = EnemyFactoryScript._templates[enemy_type]
+		# Boss if: has boss_scene_path OR render_tier is "boss"
+		is_boss = not template.boss_scene_path.is_empty() or template.render_tier == "boss"
+
+	if is_boss:
 		_spawn_debug_boss(enemy_type, position, count)
 	else:
 		_spawn_debug_regular_enemy(enemy_type, position, count)
@@ -330,17 +312,9 @@ func _spawn_debug_boss(boss_type: String, position: Vector2, count: int) -> void
 		# Use EnemyFactory to generate boss config
 		const EnemyFactoryScript = preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 		var boss_config = EnemyFactoryScript.spawn_from_template_id(boss_type, spawn_context)
-		
+
 		if boss_config:
-			# Scale bosses using configurable multipliers
-			if boss_scaling:
-				boss_scaling.apply_scaling(boss_config)
-			else:
-				# Emergency fallback if scaling config failed to load
-				boss_config.health *= 3.0
-				boss_config.damage *= 1.5
-				boss_config.size_scale *= 1.2
-			
+			# Boss stats come directly from template files (no scaling)
 			# Convert to legacy enemy type for existing spawn system
 			var legacy_type := boss_config.to_enemy_type()
 			legacy_type.is_special_boss = true
@@ -362,8 +336,8 @@ func _spawn_debug_regular_enemy(enemy_type: String, position: Vector2, count: in
 	if not spawn_director:
 		Logger.error("SpawnDirector not available for regular enemy spawning", "debug")
 		return
-		
-	Logger.info("Spawning %d regular enemy(ies) of type %s" % [count, enemy_type], "debug")
+
+	Logger.debug("Debug spawned: %d x %s" % [count, enemy_type], "spawn")
 	
 	for i in count:
 		# Spread out multiple enemies in a circle pattern

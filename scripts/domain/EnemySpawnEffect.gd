@@ -4,7 +4,7 @@ class_name EnemySpawnEffect
 ## Handles enemy spawn dissolve animation
 ## Applies shader material and tweens dissolve_progress from 1.0 (invisible) to 0.0 (visible)
 
-const SPAWN_DURATION = 0.6  # Seconds for full spawn animation
+const SPAWN_DURATION = 0.5  # Seconds for full spawn animation (enemies become targetable after)
 const EDGE_GLOW_COLOR = Color(0.0, 1.0, 1.0, 1.0)  # Cyan edge glow
 
 static var _spawn_material: ShaderMaterial = null
@@ -76,12 +76,18 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 ## Uses instance ID (passed via .bind()) to safely retrieve sprite and restore material
 static func _on_spawn_tween_finished(sprite_id: int) -> void:
 	var sprite = instance_from_id(sprite_id) as AnimatedSprite2D
-	if sprite and is_instance_valid(sprite):
-		# Retrieve original material from metadata
-		var original_material = sprite.get_meta("_enemy_original_material", null)
-		if original_material != null:
-			sprite.material = original_material
-			sprite.remove_meta("_enemy_original_material")  # Cleanup metadata
+	if not sprite or not is_instance_valid(sprite):
+		return
+
+	# Check if metadata exists before trying to retrieve it (defensive pattern)
+	if sprite.has_meta("_enemy_original_material"):
+		var original_material = sprite.get_meta("_enemy_original_material")
+		sprite.material = original_material
+		sprite.remove_meta("_enemy_original_material")  # Cleanup metadata
+	else:
+		# Metadata missing - clear material to default (no shader lingering)
+		sprite.material = null
+		Logger.debug("Spawn tween finished but metadata missing - clearing material", "effects")
 
 ## Create procedural noise texture for dissolve pattern
 static func _create_noise_texture() -> NoiseTexture2D:

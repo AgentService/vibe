@@ -7,31 +7,19 @@ extends BaseBoss
 class_name AncientLich
 
 # AncientLich specific properties
-var has_woken_up: bool = false
 var is_taking_damage: bool = false
-var is_aggroed: bool = false
 
 func _ready() -> void:
-	# Call parent _ready() to handle base initialization (stats applied via SpawnConfig)
+	# Call parent _ready() to handle base initialization (spawn effect + animation)
 	super._ready()
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
 
-	# AncientLich specific setup after base initialization
-	_setup_ancient_lich_specific_behavior()
+	# Connect animation finished for damage animation
+	if animated_sprite:
+		animated_sprite.connect("animation_finished", _on_animation_finished)
 
 func get_boss_name() -> String:
 	return "AncientLich"
-
-func _setup_ancient_lich_specific_behavior() -> void:
-	# Apply spawn dissolve effect
-	if animated_sprite:
-		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
-		Logger.debug("AncientLich spawn dissolve effect applied", "bosses")
-
-	# Start with wake_up animation and pause it on first frame
-	if animated_sprite and animated_sprite.sprite_frames:
-		animated_sprite.play("wake_up")
-		animated_sprite.pause()  # Stay on first frame until aggroed
-		animated_sprite.connect("animation_finished", _on_animation_finished)
 
 # Override _exit_tree to call parent cleanup
 func _exit_tree() -> void:
@@ -58,31 +46,15 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 	if entity_id == expected_entity_id and not payload.get("is_death", false):
 		_trigger_damage_animation()
 
-# Override parent AI with AncientLich-specific wake-up behavior
+# Override parent AI for AncientLich-specific behavior (optional)
 func _update_ai(_dt: float) -> void:
-	# Skip AI updates if paused by debug system
-	if ai_paused:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
 		return
-		
-	# Get player position from PlayerState
-	if not PlayerState.has_player_reference():
-		return
-		
-	target_position = PlayerState.position
-	var distance_to_player: float = global_position.distance_to(target_position)
-	
-	# Trigger aggro when player gets close
-	if distance_to_player <= chase_range and not is_aggroed:
-		_aggro()
-		return
-	
-	# Only move after fully waking up
-	if not has_woken_up:
-		return
-	
+
 	# Call parent AI behavior for standard movement and attacks
 	super._update_ai(_dt)
-	
+
 	# Add AncientLich specific behavior here if needed
 
 # Override parent attack with AncientLich-specific magic damage
@@ -98,22 +70,14 @@ func _perform_attack() -> void:
 
 # AncientLich specific methods
 
-func _aggro() -> void:
-	if is_aggroed:
-		return
-	is_aggroed = true
-	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
-
 func _on_animation_finished() -> void:
-	if animated_sprite.animation == "wake_up":
-		has_woken_up = true
-		animated_sprite.play("default")
-	elif animated_sprite.animation == "damage_taken":
+	# Handle damage animation completion
+	if animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")
 
 func _trigger_damage_animation() -> void:
-	# Trigger damage animation if not already playing and boss is awake
-	if not is_taking_damage and has_woken_up:
+	# Trigger damage animation if not already playing
+	if not is_taking_damage:
 		is_taking_damage = true
 		animated_sprite.play("damage_taken")

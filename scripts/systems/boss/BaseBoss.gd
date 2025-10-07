@@ -29,6 +29,7 @@ var attack_range: float = 80.0
 var chase_range: float = 5500.0
 var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
+var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
 const PERSONAL_SPACE_STRENGTH: float = 175.0  # Balanced spacing force that works with chase behavior
@@ -39,6 +40,12 @@ var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child n
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
 
+# SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
+# NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
+# Future: Add EnemyType.spawn_behavior enum to customize per-enemy
+# Possible values: "immediate", "dissolve", "dramatic" (longer dissolve), "wake_up" (boss-specific)
+# Death effects: Follow same pattern as spawn with EnemyDeathEffect.gd
+
 # Child classes should override these methods
 func get_boss_name() -> String:
 	return "BaseBoss"
@@ -48,17 +55,48 @@ func _perform_attack() -> void:
 	# Child classes should implement specific attack behavior
 
 func _ready() -> void:
-	# Start default animation if available
+	# SPAWN SYSTEM: Start in spawning group (not targetable yet)
+	add_to_group("spawning")
+	add_to_group("enemies")  # Functional group for all enemies
+
+	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
+	# Example with spawn_config.spawn_behavior enum:
+	#   match spawn_config.spawn_behavior:
+	#       "immediate": _on_spawn_animation_complete()  # Skip effect
+	#       "dissolve": _apply_dissolve_spawn()          # Current default
+	#       "dramatic": _apply_dissolve_spawn(1.5)       # Longer duration
+	#       "wake_up": _apply_wake_up_spawn()            # Boss-specific
+
+	# SPAWN ANIMATION: Play wake_up animation during spawn if available, otherwise default
+	# This ensures consistent 0.5s spawn timing regardless of animation presence
 	if animated_sprite and animated_sprite.sprite_frames:
-		var default_anim = animation_prefix + "_south"
-		if animated_sprite.sprite_frames.has_animation(default_anim):
-			animated_sprite.play(default_anim)
-	
+		# Try wake_up animation first (plays during spawn dissolve)
+		if animated_sprite.sprite_frames.has_animation("wake_up"):
+			animated_sprite.play("wake_up")
+		else:
+			# Fallback to default directional animation
+			var default_anim = animation_prefix + "_south"
+			if animated_sprite.sprite_frames.has_animation(default_anim):
+				animated_sprite.play(default_anim)
+
+		# Apply spawn dissolve effect (0.5s animation) - runs alongside animation
+		var spawn_tween = EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		if spawn_tween:
+			spawn_tween.finished.connect(_on_spawn_animation_complete)
+		else:
+			# Fallback if effect system not initialized
+			Logger.warn("EnemySpawnEffect failed for %s - immediately targetable" % get_boss_name(), "spawn")
+			_on_spawn_animation_complete()
+	else:
+		# No sprite, immediately make targetable
+		Logger.warn("No sprite found for %s - immediately targetable" % get_boss_name(), "spawn")
+		_on_spawn_animation_complete()
+
 	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
 	BossUpdateManager.register_boss(self, boss_id)
 	Logger.debug(get_boss_name() + " registered with BossUpdateManager as " + boss_id, "performance")
-	
+
 	# Connect to signals
 	if EventBus:
 		# DAMAGE V3: Listen for unified damage sync events
@@ -67,7 +105,7 @@ func _ready() -> void:
 		EventBus.cheat_toggled.connect(_on_cheat_toggled)
 		# LIFECYCLE: Stop AI when player dies to prevent physics errors
 		EventBus.player_died.connect(_on_player_died)
-	
+
 	# DAMAGE V3: Register with both DamageService and EntityTracker
 	entity_id = "boss_" + str(get_instance_id())  # Store in property for external access
 	var entity_data = {
@@ -82,7 +120,7 @@ func _ready() -> void:
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
-	
+
 	# Initialize health bar
 	_update_health_bar()
 
@@ -94,17 +132,31 @@ func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
 	BossUpdateManager.unregister_boss(boss_id)
-	
+
 	# Clean up signal connections
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
 		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
-	
+
 	# DAMAGE V3: Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
 	DamageService.unregister_entity(entity_id)
 	EntityTracker.unregister_entity(entity_id)
+
+## SPAWN SYSTEM: Called when spawn animation completes - makes enemy targetable and resumes AI
+func _on_spawn_animation_complete() -> void:
+	_is_spawning = false  # Resume AI
+	remove_from_group("spawning")
+	add_to_group("targetable")
+
+	# Ensure default animation is playing after spawn (in case wake_up animation was used)
+	if animated_sprite and animated_sprite.sprite_frames:
+		# If wake_up was playing, switch to default
+		if animated_sprite.animation == "wake_up":
+			var default_anim = animation_prefix + "_south"
+			if animated_sprite.sprite_frames.has_animation(default_anim):
+				animated_sprite.play(default_anim)
 
 func setup_from_spawn_config(config: SpawnConfig) -> void:
 	spawn_config = config
@@ -165,8 +217,8 @@ func _update_ai_batch(dt: float) -> void:
 
 ## Base AI logic - child classes can override or extend
 func _update_ai(_dt: float) -> void:
-	# Skip AI updates if dying, paused, or being removed
-	if _is_dying or ai_paused:
+	# Skip AI updates if dying, paused, spawning, or being removed
+	if _is_dying or ai_paused or _is_spawning:
 		return
 
 	# Skip if boss is being removed or not in tree
@@ -334,6 +386,14 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 
 func _die() -> void:
 	_is_dying = true  # Prevent any further AI updates
+
+	# FUTURE: Add death dissolve effect (reverse of spawn)
+	# Example: EnemyDeathEffect.apply_death_effect(animated_sprite, 0.4)
+	#   - Reverse progress: 0.0 → 1.0 (visible → invisible)
+	#   - Keep enemy alive during effect, queue_free() after tween
+	#   - Delay XP orb spawn until effect completes
+	# Current: Instant death, no effect
+
 	died.emit()
 	queue_free()
 

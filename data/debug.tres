@@ -27,4 +27,4 @@ pathgen = true
 bosses = false
 characters = false
 clearing = true
-spawn = false
+spawn = true

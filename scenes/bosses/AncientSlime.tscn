@@ -140,20 +140,11 @@ animations = [{
 }, {
 "frames": [{
 "duration": 1.0,
-"texture": ExtResource("12_e0")
-}, {
-"duration": 1.0,
-"texture": ExtResource("13_e1")
-}, {
-"duration": 1.0,
-"texture": ExtResource("14_e2")
-}, {
-"duration": 1.0,
-"texture": ExtResource("15_e3")
+"texture": ExtResource("4_s0")
 }],
-"loop": true,
+"loop": false,
 "name": &"default",
-"speed": 8.0
+"speed": 6.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -269,5 +260,4 @@ collision_layer = 0
 collision_mask = 2
 
 [node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-visible = false
 shape = SubResource("CircleShape2D_83bbo")

@@ -4,44 +4,18 @@ extends BaseBoss
 
 class_name AncientSlime
 
-# Wake-up mechanic properties
-var has_woken_up: bool = false
-var is_aggroed: bool = false
-
 func _ready() -> void:
-	# Set custom ancient slime stats
-	max_health = 500.0
-	current_health = 500.0
-	damage = 40.0
-	# speed will be set by BaseBoss from SpawnConfig - no override needed
-	attack_damage = 40.0
+	# Stats are set by setup_from_spawn_config() from template data (ancient_slime.tres)
+	# Only override attack-specific values not in template
 	attack_cooldown = 2.5  # Slightly slower attacks
 	attack_range = 85.0
-	# chase_range = 320.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "walking"  # Uses walking_north, walking_south, etc.
-	
+
 	# Shadow is handled by BossShadow scene instance in the .tscn file
 
-	# Call parent _ready() to handle all base initialization (including shadow setup)
+	# Call parent _ready() to handle all base initialization (spawn effect + animation)
 	super._ready()
-
-	# Apply spawn dissolve effect
-	if animated_sprite:
-		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
-		Logger.debug("AncientSlime spawn dissolve effect applied", "bosses")
-
-	# Setup wake-up animation - pause on first frame until player approaches
-	if animated_sprite and animated_sprite.sprite_frames:
-		# Check if wake_up animation exists, otherwise use default
-		if animated_sprite.sprite_frames.has_animation("wake_up"):
-			animated_sprite.play("wake_up")
-			animated_sprite.pause()  # Stay on first frame until aggroed
-			animated_sprite.connect("animation_finished", _on_animation_finished)
-		else:
-			# Fall back to pausing default animation if no wake_up animation
-			animated_sprite.play("default")
-			animated_sprite.pause()
-			has_woken_up = false  # Will wake up on aggro
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
 
 func get_boss_name() -> String:
 	return "AncientSlime"
@@ -85,23 +59,10 @@ func _play_attack_animation() -> void:
 	if animated_sprite.sprite_frames.has_animation(attack_anim):
 		animated_sprite.play(attack_anim)
 
-# Override AI to implement wake-up mechanic
+# Override AI for slime-specific behavior (optional)
 func _update_ai(_dt: float) -> void:
-	if ai_paused:
-		return
-	if not PlayerState.has_player_reference():
-		return
-
-	target_position = PlayerState.position
-	var distance_to_player = global_position.distance_to(target_position)
-
-	# Trigger aggro when player gets close
-	if distance_to_player <= chase_range and not is_aggroed:
-		_aggro()
-		return
-
-	# Only move after fully waking up
-	if not has_woken_up:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
 		return
 
 	# Call base AI (handles chase, movement, directional animations)
@@ -111,23 +72,3 @@ func _update_ai(_dt: float) -> void:
 	# - Poison pools when health < 50%
 	# - Slime split ability
 	# - Slower movement when damaged
-
-# Trigger wake-up animation when player approaches
-func _aggro() -> void:
-	if is_aggroed:
-		return
-	is_aggroed = true
-
-	# Check if wake_up animation exists
-	if animated_sprite.sprite_frames.has_animation("wake_up"):
-		animated_sprite.play("wake_up")
-	else:
-		# No wake_up animation - just unpause and wake up immediately
-		animated_sprite.play("default")
-		has_woken_up = true
-
-# Complete wake-up and transition to default animation
-func _on_animation_finished() -> void:
-	if animated_sprite.animation == "wake_up":
-		has_woken_up = true
-		animated_sprite.play("default")

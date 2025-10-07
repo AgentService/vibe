@@ -2,7 +2,7 @@ extends Node
 
 ## Boss Update Manager - Centralized boss processing for performance optimization
 ## Replaces individual boss signal connections with single batched update system
-## Uses ring buffer + object pool with zero-allocation patterns for 500+ boss scaling
+## Uses ring buffer + object pool with zero-allocation patterns for handling 500+ bosses
 
 const RingBuffer = preload("res://scripts/utils/RingBuffer.gd")
 const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")

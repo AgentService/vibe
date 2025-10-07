@@ -301,6 +301,7 @@ func _find_empty_tome_slot() -> int:
 
 ## Gets nearby enemies for ability targeting.
 ## Returns array of enemy nodes within detection range.
+## Only returns targetable enemies (filters out spawning enemies).
 func _get_nearby_enemies() -> Array:
 	if not _player or not is_instance_valid(_player):
 		return []
@@ -310,7 +311,9 @@ func _get_nearby_enemies() -> Array:
 	if not tree:
 		return []
 
-	var all_enemies = tree.get_nodes_in_group("enemies")
+	# SPAWN SYSTEM: Use "targetable" group to filter out spawning enemies
+	# Enemies transition: spawning (0.5s) → targetable after spawn animation
+	var all_enemies = tree.get_nodes_in_group("targetable")
 	var nearby_enemies: Array = []
 
 	const DETECTION_RANGE: float = 800.0  # Detection range in pixels
