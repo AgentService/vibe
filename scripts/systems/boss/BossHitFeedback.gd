@@ -187,17 +187,9 @@ func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_QUAD)
 
-	# Tween flash intensity from max to 0
+	# Tween flash intensity from max to 0 using property animation (no lambda capture)
 	var normalized_intensity = clampf(intensity / 10.0, 0.0, 1.0)
-	tween.tween_method(
-		func(value: float):
-			# Access via sprite.material to avoid lambda capture issues
-			if is_instance_valid(cached_sprite) and cached_sprite.material:
-				cached_sprite.material.set_shader_parameter("flash_modifier", value),
-		normalized_intensity,  # Start at full intensity
-		0.0,                   # Fade to zero
-		duration
-	)
+	tween.tween_property(material_instance, "shader_parameter/flash_modifier", 0.0, duration).from(normalized_intensity)
 
 	# Reset material when tween completes
 	tween.finished.connect(_on_flash_tween_finished.bind(instance_id))
