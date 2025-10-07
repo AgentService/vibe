@@ -31,6 +31,9 @@ var ring_spawn_threshold: float = 50.0  # Spawn new ring every 50px expansion
 var revealed_enemies: Dictionary = {}  # position_key -> enemy_node mapping
 var breach_id: String = ""  # Unique ID for this breach instance
 
+# PERFORMANCE: Pending spawn queue for rate-limited spawning
+var pending_ring_spawns: int = 0  # How many enemies still need to spawn from current ring
+
 # SECTOR TRACKING: Divide circle into sectors for even distribution
 var sector_enemy_counts: Dictionary = {}  # sector_id -> enemy_count
 var total_sectors: int = 16  # Divide circle into 16 sectors
@@ -148,7 +151,12 @@ func should_spawn_enemies() -> bool:
 	return should_spawn_new_ring()
 
 func should_spawn_new_ring() -> bool:
-	"""Check if we should spawn a new enemy ring at current radius"""
+	"""Check if we should spawn a new enemy ring at current radius OR continue pending spawns"""
+	# Continue spawning if we have pending enemies from previous ring
+	if pending_ring_spawns > 0:
+		return true
+
+	# Otherwise, check if radius has expanded enough for a new ring
 	return phase == Phase.EXPANDING and (current_radius - last_ring_spawn_radius >= ring_spawn_threshold)
 
 func reset_spawn_timer() -> void:

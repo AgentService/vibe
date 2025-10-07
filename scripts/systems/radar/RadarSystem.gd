@@ -91,7 +91,7 @@ func _process(delta: float) -> void:
 	# Old radar system: Direct EntityTracker scanning (only when new system is disabled)
 	if _radar_update_manager:
 		return  # New system active, skip old processing
-	
+
 	if not _enabled or not EntityTracker:
 		return
 	

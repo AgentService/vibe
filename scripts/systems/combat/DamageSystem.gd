@@ -104,22 +104,37 @@ func _exit_tree() -> void:
 		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
 
 func _check_enemy_player_collisions() -> void:
+	# PERFORMANCE PROFILING: Track collision detection time
+	var start_time_us := Time.get_ticks_usec()
+
 	var alive_enemies := spawn_director.get_alive_enemies()
 	var player_pos := PlayerState.position
-	
+
 	if player_pos == Vector2.ZERO:
 		return  # Player position not set
-	
+
+	var checks_performed := 0
 	for enemy in alive_enemies:
 		var enemy_pos := enemy.pos as Vector2
 		var distance := player_pos.distance_to(enemy_pos)
 		var collision_distance := enemy_radius + player_radius
-		
+		checks_performed += 1
+
 		if distance <= collision_distance:
 			# Enemy hits player - use unified damage system
 			var damage_amount: float = 1.0  # Standard enemy collision damage
 			DamageService.apply_damage("player", damage_amount)
 			break  # Only one damage per frame
+
+	# PERFORMANCE PROFILING: Log collision detection time
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	# ALWAYS log when we have any enemies to track performance (even if 0 to verify execution)
+	if elapsed_ms > 8.0:
+		Logger.warn("⚠️ COLLISION SLOW: %.2f ms for %d enemies" % [elapsed_ms, checks_performed], "LAG")
+	elif checks_performed > 0:
+		Logger.info("Collision: %.2f ms for %d enemies" % [elapsed_ms, checks_performed], "LAG")
 
 # Old damage_requested handler removed - replaced by DamageService
 # Projectile collision damage now handled directly via DamageService.apply_damage()

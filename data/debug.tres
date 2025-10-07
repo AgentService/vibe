@@ -4,27 +4,27 @@
 
 [resource]
 script = ExtResource("1_am23r")
-log_level = "INFO"
+log_level = "DEBUG"
 balance = false
 combat = false
-waves = true
+waves = false
 player = false
 ui = false
-abilities = true
-signals = true
+abilities = false
+signals = false
 collision = false
 performance = false
-debug = true
+debug = false
 radar = false
 camera = false
 arena = true
 events = false
-system = true
+system = false
 progression = false
 input = false
-session = true
-pathgen = true
+session = false
+pathgen = false
 bosses = false
 characters = false
-clearing = true
-spawn = true
+clearing = false
+spawn = false

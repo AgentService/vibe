@@ -45,13 +45,15 @@ func register_boss(boss: CharacterBody2D, boss_id: String) -> void:
 	if _boss_index.has(boss_id):
 		Logger.warn("Boss already registered: %s" % boss_id, "performance")
 		return
-	
+
 	var idx: int = _boss_ids.size()
 	_boss_index[boss_id] = idx
 	_boss_ids.push_back(boss_id)
 	_boss_nodes.push_back(boss)
-	
-	Logger.info("Boss registered: %s (index: %d, total: %d)" % [boss_id, idx, _boss_ids.size()], "performance")
+
+	# PERFORMANCE: Only log every 50 registrations to avoid log spam during mass spawns
+	if (_boss_ids.size() % 50 == 0) or (_boss_ids.size() <= 10):
+		Logger.info("Boss registered: %s (total: %d)" % [boss_id, _boss_ids.size()], "LAG")
 
 ## Unregister boss using O(1) swap-remove
 ## @param boss_id: String unique identifier
@@ -79,9 +81,12 @@ func unregister_boss(boss_id: String) -> void:
 
 ## Central combat step handler - replaces individual boss connections
 func _on_combat_step(payload) -> void:
+	# PERFORMANCE PROFILING: Track BossUpdateManager combat step time
+	var start_time_us := Time.get_ticks_usec()
+
 	var dt: float = payload.dt
 	var count: int = _boss_ids.size()
-	
+
 	if count == 0:
 		return  # No bosses to process
 	
@@ -128,6 +133,16 @@ func _on_combat_step(payload) -> void:
 		
 		# Process position updates immediately for consistency
 		_process_position_updates()
+
+	# PERFORMANCE PROFILING: Log if significant time spent
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	if count > 0:  # Only log when there are bosses
+		if elapsed_ms > 8.0:
+			Logger.warn("⚠️ BOSS UPDATE SLOW: %.2f ms for %d bosses" % [elapsed_ms, count], "LAG")
+		elif elapsed_ms > 3.0:
+			Logger.info("BossUpdateManager step: %.2f ms for %d bosses" % [elapsed_ms, count], "LAG")
 
 ## Process batched position updates for EntityTracker
 func _process_position_updates() -> void:

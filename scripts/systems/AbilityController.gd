@@ -74,10 +74,22 @@ func _notification(what: int) -> void:
 ## Combat step handler - runs at fixed 30Hz via EventBus.combat_step
 ## Ensures deterministic ability cooldowns and auto-casting
 func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+	# PERFORMANCE PROFILING: Track AbilityController combat step time
+	var start_time_us := Time.get_ticks_usec()
+
 	var delta_time: float = payload.dt  # Always 1/30 = 0.0333s
 
 	_update_cooldowns(delta_time)
 	_auto_cast_ready_abilities()
+
+	# PERFORMANCE PROFILING: Log if significant time spent
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	if elapsed_ms > 8.0:
+		Logger.warn("⚠️ ABILITY CONTROLLER SLOW: %.2f ms" % elapsed_ms, "LAG")
+	elif elapsed_ms > 3.0:
+		Logger.info("AbilityController step: %.2f ms" % elapsed_ms, "LAG")
 
 
 ## Decrements all active cooldowns by delta time.

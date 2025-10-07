@@ -300,12 +300,29 @@ func _calculate_ring_enemy_count(radius: float) -> int:
 
 func _spawn_edge_ring(breach_event: EventInstance) -> void:
 	"""Spawn a ring of enemies at configured edge factor of current breach radius"""
+	# PERFORMANCE PROFILING: Track spawn time
+	var start_time_us := Time.get_ticks_usec()
+
 	var edge_factor = breach_config.edge_spawn_factor if breach_config else 0.87
 	var ring_radius = breach_event.current_radius * edge_factor
-	var enemy_count = _calculate_ring_enemy_count(breach_event.current_radius)
+
+	# Check if we're continuing a previous ring or starting a new one
+	var enemy_count: int
+	if breach_event.pending_ring_spawns > 0:
+		# Continue spawning from previous ring
+		enemy_count = breach_event.pending_ring_spawns
+	else:
+		# New ring - calculate full enemy count
+		enemy_count = _calculate_ring_enemy_count(breach_event.current_radius)
+
+	# PERFORMANCE: Limit enemies per frame to avoid stuttering
+	# REDUCED: Testing with 5 enemies per frame to isolate spawn cost
+	const MAX_SPAWNS_PER_FRAME := 10  # Only spawn 5 enemies per 30Hz frame (testing)
+	var enemies_to_spawn_now := mini(enemy_count, MAX_SPAWNS_PER_FRAME)
+	var remaining_enemies := enemy_count - enemies_to_spawn_now
 
 	# Get emptiest sectors for spawn prioritization
-	var target_sectors = breach_event.get_emptiest_sectors(enemy_count)
+	var target_sectors = breach_event.get_emptiest_sectors(enemies_to_spawn_now)
 	var spawned_count = 0
 
 	# PERFORMANCE: Disabled debug logging during ring spawn (called frequently during expansion)
@@ -313,7 +330,10 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 	# 	ring_radius, enemy_count, target_sectors
 	# ], "events")
 
-	for i in range(enemy_count):
+	var zone_failures := 0
+	var spawn_failures := 0
+
+	for i in range(enemies_to_spawn_now):
 		# Use sector prioritization
 		var target_sector = target_sectors[i % target_sectors.size()]
 		var sector_angle = (TAU / breach_event.total_sectors) * target_sector
@@ -332,6 +352,7 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 			# Try to find a valid position near the ring
 			spawn_pos = _find_valid_position_near_ring(breach_event, target_sector, ring_radius)
 			if spawn_pos == Vector2.ZERO:  # No valid position found
+				zone_failures += 1
 				continue
 
 		var enemy_node = _spawn_breach_enemy_at_position(spawn_pos, breach_event)
@@ -346,13 +367,39 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 			breach_event.revealed_enemies[position_key] = enemy_node
 
 			spawned_count += 1
+		else:
+			spawn_failures += 1
 
-	# Mark that we've spawned this ring
-	breach_event.mark_ring_spawned()
+	# Update pending spawn count
+	breach_event.pending_ring_spawns = remaining_enemies
 
-	Logger.info("Spawned ring: %d enemies at radius %.1f for breach %s" % [
-		spawned_count, ring_radius, breach_event.breach_id
-	], "events")
+	# PERFORMANCE PROFILING: ALWAYS log spawn time to identify bottleneck
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	# Debug: Verify function execution with failure tracking
+	if zone_failures > 0 or spawn_failures > 0:
+		Logger.warn("⚠️ SPAWN FAILURES: zone=%d, spawn=%d (requested=%d, spawned=%d, time=%.2fms)" % [
+			zone_failures, spawn_failures, enemies_to_spawn_now, spawned_count, elapsed_ms
+		], "LAG")
+	else:
+		Logger.debug("_spawn_edge_ring completed: spawned=%d, requested=%d, pending=%d, time=%.2fms" % [
+			spawned_count, enemies_to_spawn_now, remaining_enemies, elapsed_ms
+		], "LAG")
+
+	# Always log ALL spawn operations
+	if elapsed_ms > 5.0:
+		Logger.warn("⚠️ RING SPAWN SLOW: %.2f ms for %d enemies (breach %s)" % [
+			elapsed_ms, spawned_count, breach_event.breach_id
+		], "LAG")
+	else:
+		Logger.info("Ring spawn: %.2f ms for %d enemies (breach %s)" % [
+			elapsed_ms, spawned_count, breach_event.breach_id
+		], "LAG")
+
+	# Only mark ring as fully spawned if no enemies remain
+	if remaining_enemies == 0:
+		breach_event.mark_ring_spawned()
 
 # NOTE: _find_enemy_at_position() removed - no longer needed with direct node references
 
@@ -567,6 +614,9 @@ func _initialize_breach_trackers() -> void:
 
 func _on_combat_step(payload) -> void:
 	"""30Hz fixed-step update handler for deterministic performance"""
+	# PERFORMANCE PROFILING: Track BreachEventHandler combat step time
+	var start_time_us := Time.get_ticks_usec()
+
 	if not payload:
 		return
 
@@ -583,6 +633,16 @@ func _on_combat_step(payload) -> void:
 
 	# Clean up completed breaches
 	_cleanup_completed_breaches()
+
+	# PERFORMANCE PROFILING: Log if significant time spent
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	if active_breach_events.size() > 0:  # Only log when there are active breaches
+		if elapsed_ms > 8.0:
+			Logger.warn("⚠️ BREACH HANDLER SLOW: %.2f ms for %d breaches" % [elapsed_ms, active_breach_events.size()], "LAG")
+		elif elapsed_ms > 3.0:
+			Logger.info("BreachHandler step: %.2f ms for %d breaches" % [elapsed_ms, active_breach_events.size()], "LAG")
 
 func _update_active_breaches_optimized(dt: float) -> void:
 	"""Optimized breach lifecycle updates using 30Hz fixed-step timing"""
@@ -620,6 +680,9 @@ func _add_enemy_to_breach(enemy: Node2D, breach_id: String) -> bool:
 
 func _cleanup_breach_enemies_optimized(breach_event: EventInstance) -> void:
 	"""Zero-allocation enemy cleanup with spatial partitioning optimization"""
+	# PERFORMANCE PROFILING: Track cleanup time
+	var start_time_us := Time.get_ticks_usec()
+
 	if not breach_trackers.has(breach_event.breach_id):
 		return  # No tracker for this breach
 
@@ -660,8 +723,24 @@ func _cleanup_breach_enemies_optimized(breach_event: EventInstance) -> void:
 	# Batch cleanup marked enemies during safe phase
 	if cleanup_count > 0:
 		tracker.cleanup_marked()
-		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s" % [
-			cleanup_count, breach_event.breach_id
+
+	# PERFORMANCE PROFILING: ALWAYS log cleanup time to identify bottleneck
+	var elapsed_us := Time.get_ticks_usec() - start_time_us
+	var elapsed_ms := elapsed_us / 1000.0
+
+	# Always log - we need to see ALL cleanup times
+	if elapsed_ms > 0.0:
+		Logger.warn("⚠️ CLEANUP SLOW: %.2f ms for %d enemies (breach %s)" % [
+			elapsed_ms, cleanup_count, breach_event.breach_id
+		], "events")
+	elif cleanup_count > 0:
+		Logger.info("Cleanup: %.2f ms for %d enemies (breach %s)" % [
+			elapsed_ms, cleanup_count, breach_event.breach_id
+		], "events")
+
+	if cleanup_count > 0:
+		Logger.info("SHRINK: Removed %d breach enemies touched by border for breach %s (%.1fms)" % [
+			cleanup_count, breach_event.breach_id, elapsed_ms
 		], "events")
 
 func _handle_capacity_overflow(breach_id: String) -> void:
