@@ -89,8 +89,8 @@ func _aggro() -> void:
 	if animated_sprite.sprite_frames.has_animation("wake_up"):
 		animated_sprite.play("wake_up")
 	else:
-		# No wake_up animation - just unpause and wake up immediately
-		animated_sprite.play("default")
+		# No wake_up animation - just unpause current animation and wake up immediately
+		animated_sprite.play()  # Resume current animation
 		has_woken_up = true
 
 # Complete wake-up and transition to default animation

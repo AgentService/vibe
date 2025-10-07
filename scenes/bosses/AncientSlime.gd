@@ -32,16 +32,18 @@ func _ready() -> void:
 
 	# Setup wake-up animation - pause on first frame until player approaches
 	if animated_sprite and animated_sprite.sprite_frames:
-		# Check if wake_up animation exists, otherwise use default
+		# Check if wake_up animation exists, otherwise use first available animation
 		if animated_sprite.sprite_frames.has_animation("wake_up"):
 			animated_sprite.play("wake_up")
 			animated_sprite.pause()  # Stay on first frame until aggroed
 			animated_sprite.connect("animation_finished", _on_animation_finished)
 		else:
-			# Fall back to pausing default animation if no wake_up animation
-			animated_sprite.play("default")
-			animated_sprite.pause()
-			has_woken_up = false  # Will wake up on aggro
+			# Fall back to first available animation and pause it
+			var anim_names = animated_sprite.sprite_frames.get_animation_names()
+			if anim_names.size() > 0:
+				animated_sprite.play(anim_names[0])
+				animated_sprite.pause()
+				has_woken_up = false  # Will wake up on aggro
 
 func get_boss_name() -> String:
 	return "AncientSlime"
@@ -122,8 +124,8 @@ func _aggro() -> void:
 	if animated_sprite.sprite_frames.has_animation("wake_up"):
 		animated_sprite.play("wake_up")
 	else:
-		# No wake_up animation - just unpause and wake up immediately
-		animated_sprite.play("default")
+		# No wake_up animation - just unpause current animation and wake up immediately
+		animated_sprite.play()  # Resume current animation
 		has_woken_up = true
 
 # Complete wake-up and transition to default animation
