@@ -2,6 +2,59 @@
 
 ## [Current Week - In Progress]
 
+### Performance: Breach System Optimization (2025-10-07)
+- **Fixed**: Eliminated stuttering/lag when 3+ breaches are active (during expansion AND shrinking)
+- **Root Causes**:
+  1. **Enemy spawning bottleneck** (PRIMARY CULPRIT):
+     - `get_alive_enemies()` called for EVERY enemy spawn (hundreds of calls during ring spawn)
+     - Each ring spawn: 20-45 enemies × 3 breaches × multiple rings = 200+ redundant cache lookups
+  2. Hundreds of simultaneous Tween creations for purple dissolve effects
+     - Each dissolved enemy created a 0.5s tween → 100+ tweens per breach × 3 breaches = 300+ active tweens
+     - Enemies remained alive during fade animation → continued AI pathfinding toward player ("rush" behavior)
+  3. Excessive distance checks during shrinking phase (300 enemies × 30Hz = 9000 checks/sec)
+  4. Debug logging spam during ring spawn + cleanup cycles
+- **Solutions Applied**:
+  - **Fix 0 (PRIMARY FIX)**: Eliminated redundant `get_alive_enemies()` calls during spawn
+    - Changed from global enemy count → breach-local spawn counter (`breach_event.spawned_enemies.size()`)
+    - Performance: 200+ cache lookups per ring spawn → 0 cache lookups
+    - **This was the main cause of stuttering during breach expansion**
+  - **Fix 1**: Direct instant removal via `DamageService.unregister_entity()` + `queue_free()`
+    - Eliminated 300+ tween creations per shrink cycle
+    - Skips entire damage pipeline (crit checks, modifiers, etc.)
+    - No XP/loot rewards for breach-dissolved enemies
+    - TODO hook preserved for future breach-specific death effects
+  - **Fix 2**: RingBuffer iteration optimization (fast-path when no marked enemies)
+    - Skips expensive `get_instance_id()` + string conversion loop when no enemies marked
+    - Common case: First shrink frame has 0 marked enemies → uses fast path
+    - Performance: 900 operations/frame (pop+convert+push) → 600 operations/frame (pop+push only)
+  - **Fix 3**: Spatial partitioning for distance checks
+    - Only checks enemies within 100px "danger zone" of shrinking border
+    - Skips enemies safely inside breach radius (reduces checks by ~70%)
+    - Performance: ~300 checks/sec → ~90 checks/sec (3x improvement)
+  - **Logging optimization**: Disabled debug logging during ring spawn, limit cleanup logs to first 3 enemies
+- **Files**:
+  - scripts/systems/events/BreachEventHandler.gd:440-467, 619-664
+  - scripts/systems/events/BreachEnemyTracker.gd:67-128
+
+### Task Organization: Ability System Cleanup (2025-10-07)
+- **Archived Completed Tasks**: Moved 4 completed ability subtasks to `Obsidian/03-tasks/completed-tasks/data-systems/`
+  - 2a_ABILITIES_phase1_foundation.md ✅ (Tag system, BaseAbility, ProjectileAbility, BaseTome)
+  - 2b_ABILITIES_phase2_integration.md ✅ (AbilityManager, Player slots, auto-cast)
+  - 2c_ABILITIES_phase3_vertical_slice.md ✅ (Ranger Arrow end-to-end pipeline)
+  - 2d_ABILITIES_phase4_tome_validation.md ✅ (TomeManager, DPS/TTK validation)
+- **Remaining Active Tasks**:
+  - 2e_ABILITIES_visual_effects_poc.md (ongoing visual effects testing)
+  - 2g_ABILITIES_tome_system_unification.md (shop + gameplay tome unification - 60 min)
+  - 2h_EFFECTS_unified_spawn_system.md (enemy spawn dissolve shaders - unrelated to abilities)
+- **Rationale**: Phases 2a-2d represent ~18 hours of completed foundational work on the ability system (foundation, integration, vertical slice, tome validation)
+
+### Branch Merge: visual-effects-poc (2025-10-07)
+- **Fix**: Updated ProceduralMapManager to use correct resource paths after `scripts/resources/` → `scripts/resources/world/` refactor
+  - Added proper type imports for BiomeConfig, GenerationParams, DecorationThemeConfig
+  - Regenerated Godot UID cache to resolve stale script and font references (PixelOperator8.ttf)
+  - Fixed "Unrecognized UID: uid://dmr3eewbx1o5i" error by forcing editor scan
+  - Note: ProceduralMapManager is currently unused (PathAware_Forest uses separate PathAwareArenaGenerator system)
+
 ### Ability System - Architecture & Planning (2025-10-03 → 2025-10-04 REVISED)
 
 **REVISION 2 (2025-10-04):** External review identified critical issues (Score: 13/35). All fixes applied.

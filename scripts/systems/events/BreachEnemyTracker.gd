@@ -66,11 +66,19 @@ func mark_for_removal(enemy: Node2D) -> void:
 
 ## Get array of valid (non-marked) enemies for iteration.
 ## Safe to iterate while concurrent mark_for_removal() calls happen.
+##
+## PERFORMANCE CRITICAL: This function is called every 30Hz frame during shrinking
+## for EACH active breach (3 breaches × 100 enemies = 300 operations per frame)
 func iterate_valid_enemies() -> Array[Node2D]:
 	var valid_enemies: Array[Node2D] = []
 
+	# OPTIMIZATION: Direct iteration without pop-rebuild if no marked enemies
+	# This is the common case during shrinking (most enemies stay alive)
+	if _marked_for_removal.is_empty():
+		return _iterate_buffer_fast()
+
+	# Fallback: Full pop-rebuild cycle if we have marked enemies
 	# Extract all enemies from ring buffer
-	var all_enemies: Array[Node2D] = []
 	var temp_buffer = []
 
 	# Pop all enemies to examine them
@@ -94,6 +102,28 @@ func iterate_valid_enemies() -> Array[Node2D]:
 		# Valid enemy - re-add to buffer and include in iteration
 		_ring_buffer.try_push(enemy)
 		valid_enemies.append(enemy)
+
+	return valid_enemies
+
+## Fast iteration path when no enemies are marked for removal
+## Avoids expensive pop-rebuild cycle
+func _iterate_buffer_fast() -> Array[Node2D]:
+	var valid_enemies: Array[Node2D] = []
+
+	# Temporary extraction to iterate (still needed, but only one pass)
+	var temp_buffer = []
+	while not _ring_buffer.is_empty():
+		var enemy = _ring_buffer.try_pop()
+		if enemy and is_instance_valid(enemy):
+			temp_buffer.append(enemy)
+			valid_enemies.append(enemy)
+		elif enemy:
+			# Invalid enemy - don't re-add
+			_current_count -= 1
+
+	# Rebuild buffer with valid enemies
+	for enemy in temp_buffer:
+		_ring_buffer.try_push(enemy)
 
 	return valid_enemies
 

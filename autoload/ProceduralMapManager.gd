@@ -3,6 +3,12 @@ extends Node
 ## ProceduralMapManager - Runtime procedural arena generation system
 ## Coordinates with MapDevice and StateManager for on-demand map creation
 
+# Type imports
+const BiomeConfig_Type = preload("res://scripts/resources/world/BiomeConfig.gd")
+const GenerationParams_Type = preload("res://scripts/resources/world/GenerationParams.gd")
+const DecorationThemeConfig_Type = preload("res://scripts/resources/world/DecorationThemeConfig.gd")
+const ProceduralArenaGenerator_Type = preload("res://scripts/systems/arena_generation/ProceduralArenaGenerator.gd")
+
 signal procedural_arena_generated(arena_scene: Node2D)
 signal generation_failed(error_message: String)
 
@@ -11,7 +17,7 @@ var _available_biomes: Dictionary = {}
 var _generation_templates: Dictionary = {}
 
 # Current generation settings
-var _default_generation_params: GenerationParams
+var _default_generation_params: GenerationParams_Type
 var _current_seed_base: int = 0
 
 func _ready() -> void:
@@ -24,7 +30,7 @@ func _load_available_biomes() -> void:
 	"""Load all available biome configurations"""
 
 	# Load Forest biome
-	var forest_biome = load("res://data/content/biomes/ForestBiome.tres") as BiomeConfig
+	var forest_biome = load("res://data/content/biomes/ForestBiome.tres") as BiomeConfig_Type
 	if forest_biome:
 		_available_biomes["forest"] = forest_biome
 		Logger.debug("Loaded biome: Forest", "procedural")
@@ -38,7 +44,7 @@ func _load_generation_templates() -> void:
 	"""Load different generation parameter templates for variety"""
 
 	# Small arena template
-	var small_template = GenerationParams.new()
+	var small_template = GenerationParams_Type.new()
 	small_template.arena_size = Vector2i(30, 20)
 	small_template.boundary_width = 2
 	small_template.decoration_density = 0.03
@@ -46,7 +52,7 @@ func _load_generation_templates() -> void:
 	_generation_templates["small"] = small_template
 
 	# Standard arena template
-	var standard_template = GenerationParams.new()
+	var standard_template = GenerationParams_Type.new()
 	standard_template.arena_size = Vector2i(40, 30)
 	standard_template.boundary_width = 3
 	standard_template.decoration_density = 0.05
@@ -54,7 +60,7 @@ func _load_generation_templates() -> void:
 	_generation_templates["standard"] = standard_template
 
 	# Large arena template
-	var large_template = GenerationParams.new()
+	var large_template = GenerationParams_Type.new()
 	large_template.arena_size = Vector2i(60, 45)
 	large_template.boundary_width = 4
 	large_template.decoration_density = 0.07
@@ -65,9 +71,9 @@ func _load_generation_templates() -> void:
 
 func _setup_default_params() -> void:
 	"""Initialize default generation parameters"""
-	_default_generation_params = load("res://data/content/biomes/DefaultGenerationParams.tres") as GenerationParams
+	_default_generation_params = load("res://data/content/biomes/DefaultGenerationParams.tres") as GenerationParams_Type
 	if not _default_generation_params:
-		_default_generation_params = GenerationParams.new()
+		_default_generation_params = GenerationParams_Type.new()
 		Logger.warn("Could not load default generation params, using fallback", "procedural")
 
 func generate_random_arena(size_hint: String = "standard") -> Node2D:
@@ -120,7 +126,7 @@ func generate_arena_with_config(biome_name: String, size_hint: String = "standar
 
 	return _create_arena_scene(selected_biome, generation_params)
 
-func _create_arena_scene(biome_config: BiomeConfig, generation_params: GenerationParams) -> Node2D:
+func _create_arena_scene(biome_config: BiomeConfig_Type, generation_params: GenerationParams_Type) -> Node2D:
 	"""Create the actual arena scene with ProceduralArenaGenerator"""
 
 	# Create the arena scene structure
@@ -128,7 +134,7 @@ func _create_arena_scene(biome_config: BiomeConfig, generation_params: Generatio
 	arena_scene.name = "ProceduralArena_" + str(generation_params.generation_seed)
 
 	# Create the generator node
-	var generator = ProceduralArenaGenerator.new()
+	var generator = ProceduralArenaGenerator_Type.new()
 	generator.name = "ProceduralArenaGenerator"
 	generator.biome_config = biome_config
 	generator.generation_params = generation_params.duplicate()  # Use a copy to avoid modifying template

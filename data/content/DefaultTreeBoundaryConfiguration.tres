@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="TreeBoundaryConfiguration" load_steps=2 format=3 uid="uid://dj4b0cnhj6ydt"]
 
-[ext_resource type="Script" uid="uid://fkabpk8gjck7" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="1_TreeConfigScript"]
+[ext_resource type="Script" uid="uid://dphmif6hr76ry" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="1_TreeConfigScript"]
 
 [resource]
 script = ExtResource("1_TreeConfigScript")

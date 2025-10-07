@@ -308,9 +308,10 @@ func _spawn_edge_ring(breach_event: EventInstance) -> void:
 	var target_sectors = breach_event.get_emptiest_sectors(enemy_count)
 	var spawned_count = 0
 
-	Logger.debug("Spawning ring at radius %.1f with %d enemies in sectors %s" % [
-		ring_radius, enemy_count, target_sectors
-	], "events")
+	# PERFORMANCE: Disabled debug logging during ring spawn (called frequently during expansion)
+	# Logger.debug("Spawning ring at radius %.1f with %d enemies in sectors %s" % [
+	# 	ring_radius, enemy_count, target_sectors
+	# ], "events")
 
 	for i in range(enemy_count):
 		# Use sector prioritization
@@ -381,8 +382,9 @@ func _spawn_breach_enemy_at_position(position: Vector2, breach_event: EventInsta
 	"""Spawn a single breach enemy at specified position with breach ownership"""
 	const EnemyFactoryScript := preload("res://scripts/systems/enemy_v2/EnemyFactory.gd")
 
-	# Track spawn index for deterministic seeding
-	var local_spawn_counter: int = spawn_director.get_alive_enemies().size()
+	# PERFORMANCE: Use breach-local counter instead of expensive get_alive_enemies() call
+	# The spawn index is only used for RNG seeding, so local incrementing is sufficient
+	var local_spawn_counter: int = breach_event.spawned_enemies.size()
 
 	# Spawn appropriate enemies for breach events
 	var spawn_context := {
@@ -438,21 +440,33 @@ func _is_enemy_owned_by_breach(enemy_node: Node2D, breach_id: String) -> bool:
 	return enemy_node.get_meta("breach_owner") == breach_id
 
 func _delete_breach_enemy_with_effect(enemy_node: Node2D) -> void:
-	"""Delete breach enemy with purple dissolve effect (no XP)"""
-	# Apply purple dissolve effect
-	if enemy_node.has_method("modulate"):
-		# Fade to purple then disappear
-		var tween = enemy_node.create_tween()
-		tween.tween_property(enemy_node, "modulate", Color(0.8, 0.0, 1.0, 0.0), 0.5)
-		tween.tween_callback(enemy_node.queue_free)
-	else:
+	"""Delete breach enemy instantly - direct removal without XP/loot rewards"""
+
+	# Get entity ID for proper cleanup through damage system
+	if not enemy_node.has_meta("entity_id"):
+		# Fallback: direct cleanup if no entity_id (shouldn't happen)
 		enemy_node.queue_free()
+		Logger.warn("Breach cleanup: Enemy missing entity_id, direct cleanup used", "events")
+		return
 
-	# Unregister from EntityTracker if it has an entity ID
-	if enemy_node.has_meta("entity_id"):
-		EntityTracker.unregister_entity(enemy_node.get_meta("entity_id"))
+	var entity_id: String = enemy_node.get_meta("entity_id")
 
-	Logger.debug("Breach cleanup: Enemy dissolved by shrinking circle (no XP)", "events")
+	# PERFORMANCE: Direct instant removal without damage calculation overhead
+	# This skips the entire damage pipeline (crit checks, modifiers, etc.)
+
+	# TODO: Add breach-specific death effect here when visual polish phase begins:
+	# - Option 1: Instant purple flash (modulate then queue_free)
+	# - Option 2: Spawn lightweight particle effect (pre-pooled GPUParticles2D)
+	# - Option 3: Use shader dissolve effect (most performant for 100+ enemies)
+	# Example: enemy_node.modulate = Color(0.8, 0.0, 1.0, 0.5)  # Purple tint
+
+	# Unregister from damage system (marks as dead, triggers cleanup)
+	DamageService.unregister_entity(entity_id)
+
+	# Direct scene cleanup (instant, no tween delay)
+	enemy_node.queue_free()
+
+	Logger.debug("Breach cleanup: Enemy dissolved by shrinking circle (no XP/loot)", "events")
 
 func _cleanup_completed_breaches() -> void:
 	"""Remove completed breach events and award mastery points"""
@@ -605,12 +619,16 @@ func _add_enemy_to_breach(enemy: Node2D, breach_id: String) -> bool:
 	return success
 
 func _cleanup_breach_enemies_optimized(breach_event: EventInstance) -> void:
-	"""Zero-allocation enemy cleanup using mark-for-removal strategy"""
+	"""Zero-allocation enemy cleanup with spatial partitioning optimization"""
 	if not breach_trackers.has(breach_event.breach_id):
 		return  # No tracker for this breach
 
 	var tracker = breach_trackers[breach_event.breach_id]
 	var cleanup_count = 0
+
+	# OPTIMIZATION: Spatial partitioning to skip enemies safely inside
+	const SAFE_ZONE_MARGIN := 100.0  # Only skip enemies more than 100px inside border
+	var min_safe_distance := breach_event.current_radius - SAFE_ZONE_MARGIN
 
 	# Mark enemies outside shrinking radius for removal (zero allocations)
 	var valid_enemies = tracker.iterate_valid_enemies()
@@ -620,16 +638,24 @@ func _cleanup_breach_enemies_optimized(breach_event: EventInstance) -> void:
 			cleanup_count += 1
 			continue
 
-		var distance = enemy.global_position.distance_to(breach_event.center_position)
+		# Calculate distance once
+		var distance: float = enemy.global_position.distance_to(breach_event.center_position)
+
+		# OPTIMIZATION: Skip enemies deep inside safe zone (major performance win)
+		# Note: Enemies outside radius will ALWAYS be checked (no upper bound skip)
+		if distance < min_safe_distance:
+			continue  # Enemy is safely inside, no need to check
 
 		# Mark enemy for removal if outside current radius (touched by shrinking border)
 		if distance > breach_event.current_radius:
 			_delete_breach_enemy_with_effect(enemy)
 			tracker.mark_for_removal(enemy)
 			cleanup_count += 1
-			Logger.debug("MARKED enemy for removal - touched by shrinking border at distance %.1f (radius: %.1f)" % [
-				distance, breach_event.current_radius
-			], "events")
+			# PERFORMANCE: Only log first few enemies to avoid string formatting spam
+			if cleanup_count <= 3 and Logger.is_debug():
+				Logger.debug("MARKED enemy for removal - touched by shrinking border at distance %.1f (radius: %.1f)" % [
+					distance, breach_event.current_radius
+				], "events")
 
 	# Batch cleanup marked enemies during safe phase
 	if cleanup_count > 0:

@@ -10,3 +10,4 @@ theme = ExtResource("1_74xkn")
 
 [node name="UnlockShop" parent="." instance=ExtResource("1_t5vr2")]
 layout_mode = 0
+offset_right = 700.0

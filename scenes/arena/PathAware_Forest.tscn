@@ -1,18 +1,18 @@
-[gd_scene load_steps=15 format=4 uid="uid://crv2d8h41pu0v"]
+[gd_scene load_steps=15 format=4 uid="uid://cs8myq5vipmss"]
 
-[ext_resource type="Script" uid="uid://d052f3ru1qbmr" path="res://scripts/systems/arena_generation/PathAwareArenaGenerator.gd" id="1_2vw51"]
-[ext_resource type="Script" uid="uid://5ah4sv6bftqq" path="res://scripts/resources/PathConfiguration.gd" id="2_xp5hq"]
-[ext_resource type="Script" uid="uid://cyhs7fh64v015" path="res://scenes/arena/PathAware_Forest.gd" id="3_pathgen_test"]
-[ext_resource type="Script" uid="uid://fkabpk8gjck7" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="3_ya1e2"]
+[ext_resource type="Script" uid="uid://bmhg2x458d8p5" path="res://scripts/systems/arena_generation/PathAwareArenaGenerator.gd" id="1_2vw51"]
+[ext_resource type="Script" uid="uid://6ag6n3yvhf0p" path="res://scripts/resources/PathConfiguration.gd" id="2_xp5hq"]
+[ext_resource type="Script" uid="uid://dg60kmsp2ca2c" path="res://scenes/arena/PathAware_Forest.gd" id="3_pathgen_test"]
+[ext_resource type="Script" uid="uid://dphmif6hr76ry" path="res://scripts/resources/TreeBoundaryConfiguration.gd" id="3_ya1e2"]
 [ext_resource type="Texture2D" uid="uid://cgibtnsrlhtst" path="res://assets/sprites/raven/Raven Fantasy - 2D PixelArt Tileset and Sprites - Green Forest 2/All Tileset/48x48.png" id="4_ya1e2"]
 [ext_resource type="PackedScene" uid="uid://bdhkrcc8rvnca" path="res://scenes/arena/Arena.tscn" id="7_arena_base"]
 
 [sub_resource type="Resource" id="Resource_bdf5f"]
 script = ExtResource("2_xp5hq")
 enable_path_generation = true
-connection_points = 3
-chain_length = 3
-min_point_distance = 220.0
+connection_points = 5
+chain_length = 5
+min_point_distance = 500.0
 path_width = 1500.0
 path_smoothing = 0.4
 enable_path_variation = true
