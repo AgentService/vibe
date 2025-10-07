@@ -104,18 +104,26 @@ func _exit_tree() -> void:
 		BalanceDB.balance_reloaded.disconnect(_load_balance_values)
 
 func _check_enemy_player_collisions() -> void:
-	var alive_enemies := spawn_director.get_alive_enemies()
 	var player_pos := PlayerState.position
-	
+
 	if player_pos == Vector2.ZERO:
 		return  # Player position not set
-	
-	for enemy in alive_enemies:
-		var enemy_pos := enemy.pos as Vector2
+
+	# PERFORMANCE: Use spatial query instead of checking all enemies
+	# Only check enemies within collision radius (massive savings at 400+ enemies)
+	var collision_radius := enemy_radius + player_radius
+	var nearby_enemy_ids := EntityTracker.get_entities_in_area(player_pos, collision_radius, ["enemy"])
+
+	# Check collision with nearby enemies only
+	for enemy_id in nearby_enemy_ids:
+		var enemy_data := EntityTracker.get_entity(enemy_id)
+		if enemy_data.is_empty() or not enemy_data.get("alive", false):
+			continue
+
+		var enemy_pos := enemy_data.get("pos", Vector2.ZERO) as Vector2
 		var distance := player_pos.distance_to(enemy_pos)
-		var collision_distance := enemy_radius + player_radius
-		
-		if distance <= collision_distance:
+
+		if distance <= collision_radius:
 			# Enemy hits player - use unified damage system
 			var damage_amount: float = 1.0  # Standard enemy collision damage
 			DamageService.apply_damage("player", damage_amount)
