@@ -30,22 +30,16 @@ func _ready() -> void:
 
 	# Setup wake-up animation - pause on first frame until player approaches
 	if animated_sprite and animated_sprite.sprite_frames:
-		# CRITICAL: Stop any animation set in scene file
-		animated_sprite.stop()
-
-		# Check if wake_up animation exists, otherwise use first available animation
+		# Check if wake_up animation exists, otherwise use default
 		if animated_sprite.sprite_frames.has_animation("wake_up"):
 			animated_sprite.play("wake_up")
 			animated_sprite.pause()  # Stay on first frame until aggroed
 			animated_sprite.connect("animation_finished", _on_animation_finished)
 		else:
-			# Fall back to first available animation and pause it
-			var anim_names = animated_sprite.sprite_frames.get_animation_names()
-			if anim_names.size() > 0:
-				animated_sprite.play(anim_names[0])
-				animated_sprite.pause()
-				animated_sprite.connect("animation_finished", _on_animation_finished)
-				has_woken_up = false  # Will wake up when animation completes
+			# Fall back to pausing default animation if no wake_up animation
+			animated_sprite.play("default")
+			animated_sprite.pause()
+			has_woken_up = false  # Will wake up on aggro
 
 func get_boss_name() -> String:
 	return "DragonLord"
@@ -92,12 +86,12 @@ func _aggro() -> void:
 	if animated_sprite.sprite_frames.has_animation("wake_up"):
 		animated_sprite.play("wake_up")
 	else:
-		# No wake_up animation - just resume paused animation and wait for completion
-		animated_sprite.play()  # Resume current animation
-
-# Complete wake-up and transition to directional animations
-func _on_animation_finished() -> void:
-	# Only trigger wake-up if we're aggroed and haven't woken up yet
-	if is_aggroed and not has_woken_up:
+		# No wake_up animation - just unpause and wake up immediately
+		animated_sprite.play("default")
 		has_woken_up = true
-		# Let BaseBoss handle directional animation selection
+
+# Complete wake-up and transition to default animation
+func _on_animation_finished() -> void:
+	if animated_sprite.animation == "wake_up":
+		has_woken_up = true
+		animated_sprite.play("default")

@@ -73,73 +73,66 @@
 - `scenes/bosses/AncientLich.gd` - Added spawn effect in _setup_ancient_lich_specific_behavior()
 - `scenes/bosses/BananaLord.gd` - Added spawn effect in _setup_banana_lord_behavior()
 
-### Boss Wake-up Mechanic Implementation (2025-10-07)
+### Boss Wake-Up Mechanic (2025-10-07)
 
-**Implemented universal wake-up mechanic for all 6 bosses - bosses pause on spawn until player approaches:**
+**Implemented player proximity wake-up system for all bosses:**
 
-**Core Pattern:**
-- ✅ Bosses play "wake_up" animation and pause on first frame until player enters chase range
-- ✅ Player proximity triggers aggro, resuming wake-up animation
-- ✅ After wake-up completes, boss transitions to normal movement/attack AI
-- ✅ Defensive animation fallback - gracefully handles bosses without "wake_up" animation
+**Features:**
+- ✅ Bosses pause on spawn (first animation frame) until player approaches
+- ✅ Triggers aggro when player enters `chase_range` (5500.0px default)
+- ✅ Plays "wake_up" animation if available, otherwise uses "default" animation
+- ✅ Graceful fallback prevents errors when wake_up animation doesn't exist
+- ✅ Creates dramatic encounter moments - bosses wait for you to approach
 
-**Bosses Modified:**
-- ✅ DragonLord.gd - Added wake-up mechanic with defensive animation checks
-- ✅ TestShadowBoss.gd - Added wake-up mechanic with defensive animation checks
-- ✅ DemonOverlord.gd - Added wake-up mechanic + animation_prefix timing fix
-- ✅ AncientSlime.gd - Added wake-up mechanic + animation_prefix timing fix
-- ✅ AncientLich.gd - Already had wake-up mechanic (reference implementation)
-- ✅ BananaLord.gd - Already had wake-up mechanic (reference implementation)
+**Boss Integration:**
+- ✅ DragonLord.gd - Added wake-up mechanic with animation fallback
+- ✅ TestShadowBoss.gd - Added wake-up mechanic with animation fallback
+- ✅ DemonOverlord.gd - Added wake-up mechanic with animation fallback
+- ✅ AncientSlime.gd - Added wake-up mechanic with animation fallback
+- ✅ AncientLich.gd - Already had wake-up mechanic
+- ✅ BananaLord.gd - Already had wake-up mechanic
 
-**Bug Fixes (same session):**
-- ✅ **Fixed missing animation errors** - Defensive checks for "wake_up" animation
-  - **Problem:** Bosses without "wake_up" animation threw errors on spawn
-  - **Fix:** Check if animation exists, fallback to first available animation
-  - **Result:** All bosses work regardless of animation setup
-- ✅ **Fixed animation_prefix auto-movement bug** - 5-iteration debugging journey (REAL root cause found!)
-  - **Problem:** AncientSlime and DemonOverlord moved immediately on spawn despite wake-up mechanic
-  - **Root Cause Discovery (5 iterations - ultrathinking analysis):**
-    - **Iteration 1:** Thought `animation_prefix` set in `_ready()` caused issue → moved to wake-up callbacks → still auto-moving
-    - **Iteration 2:** Discovered BaseBoss._ready() auto-plays `animation_prefix + "_south"` → still auto-moving
-    - **Iteration 3:** Found BaseBoss has default `animation_prefix = "walk"` → set to empty string before super._ready() → still auto-moving
-    - **Iteration 4:** Scene files had `animation = &"walking_east"` hardcoded → added `animated_sprite.stop()` → **STILL auto-moving!**
-    - **Iteration 5 (REAL ROOT CAUSE):** `_aggro()` fallback set `has_woken_up = true` IMMEDIATELY, bypassing entire wake-up mechanic!
-  - **The Actual Bug:**
-    ```gdscript
-    func _aggro() -> void:
-        # ...
-        else:
-            animation_prefix = "walking"  # ← Enables BaseBoss directional animations
-            animated_sprite.play()
-            has_woken_up = true  # ← BUG: Movement guard removed immediately!
-    ```
-  - **Why This Caused Instant Movement:**
-    1. Boss spawns: `has_woken_up = false`, animation paused
-    2. Player within 5500px chase_range → `_aggro()` fires immediately
-    3. Fallback sets `animation_prefix + has_woken_up = true` IMMEDIATELY
-    4. Next AI update: `if not has_woken_up: return` doesn't trigger → boss MOVES!
-  - **Final Solution:** Wait for animation completion, not just aggro trigger
-    1. Connect `animation_finished` signal in _ready() fallback (was missing!)
-    2. Remove `animation_prefix` and `has_woken_up` from _aggro() fallback
-    3. Change _on_animation_finished() to check `is_aggroed and not has_woken_up` (handles ANY animation)
-  - **Result:** Wake-up animation COMPLETES before boss can move, regardless of which animation is used
-  - **Lessons Learned:**
-    - Scene file properties load BEFORE _ready() runs
-    - Fallback code paths need same safeguards as primary paths
-    - Signal connections are required for ALL animation branches, not just "wake_up"
-    - Animation completion ≠ aggro trigger - they're separate events!
+**Implementation Pattern:**
+```gdscript
+# Properties
+var has_woken_up: bool = false
+var is_aggroed: bool = false
 
-**Technical Details:**
-- Properties: `has_woken_up: bool`, `is_aggroed: bool` track wake-up state
-- Override `_update_ai()` to return early if not woken up
-- Signal connection: `animation_finished` → `_on_animation_finished()` for transition
-- Aggro trigger: distance check in `_update_ai()` → calls `_aggro()` to resume animation
+# _ready(): Check for wake_up animation
+if animated_sprite.sprite_frames.has_animation("wake_up"):
+    animated_sprite.play("wake_up")
+    animated_sprite.pause()
+else:
+    # Fallback to default animation if wake_up missing
+    animated_sprite.play("default")
+    animated_sprite.pause()
+
+# _update_ai(): Wait until player approaches
+if distance_to_player <= chase_range and not is_aggroed:
+    _aggro()
+    return
+if not has_woken_up:
+    return  # Don't move until awake
+
+# _aggro(): Resume animation or wake up immediately
+if animated_sprite.sprite_frames.has_animation("wake_up"):
+    animated_sprite.play("wake_up")
+else:
+    animated_sprite.play("default")
+    has_woken_up = true  # Skip wake animation
+```
+
+**Architecture Benefits:**
+- Defensive programming - graceful degradation for missing animations
+- Consistent player experience across all bosses
+- No gameplay logic changes - purely behavioral enhancement
+- Compatible with spawn dissolve effect (runs independently)
 
 **Files Modified:**
-- `scenes/bosses/DragonLord.gd` - Wake-up mechanic with animation fallback
-- `scenes/bosses/TestShadowBoss.gd` - Wake-up mechanic with animation fallback
-- `scenes/bosses/DemonOverlord.gd` - Wake-up mechanic + animation_prefix timing
-- `scenes/bosses/AncientSlime.gd` - Wake-up mechanic + animation_prefix timing
+- `scenes/bosses/DragonLord.gd` - Added wake-up mechanic (44 lines added)
+- `scenes/bosses/TestShadowBoss.gd` - Added wake-up mechanic (44 lines added)
+- `scenes/bosses/DemonOverlord.gd` - Added wake-up mechanic (48 lines added)
+- `scenes/bosses/AncientSlime.gd` - Added wake-up mechanic (48 lines added)
 
 ### Boss Hit Feedback Tween Refactor (2025-10-07)
 

@@ -1,6 +1,6 @@
 [gd_scene load_steps=21 format=3 uid="uid://c5iwguoi5ujyi"]
 
-[ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
+[ext_resource type="Script" uid="uid://daebvlrlln0r5" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="3_lw0tx"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="4_5yvh4"]
@@ -123,7 +123,6 @@ script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_lw0tx")
-animation = &"wake_up"
 offset = Vector2(0, -9.135)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

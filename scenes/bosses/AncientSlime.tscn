@@ -1,6 +1,6 @@
 [gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
 
-[ext_resource type="Script" uid="uid://bt7og6sdb0rqd" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
+[ext_resource type="Script" uid="uid://b0i0nhq42ph04" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="3_shadow"]
 [ext_resource type="Texture2D" uid="uid://lh7fpy0feqr" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_000.png" id="4_s0"]
@@ -152,6 +152,23 @@ animations = [{
 "texture": ExtResource("15_e3")
 }],
 "loop": true,
+"name": &"default",
+"speed": 8.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("12_e0")
+}, {
+"duration": 1.0,
+"texture": ExtResource("13_e1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("14_e2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("15_e3")
+}],
+"loop": true,
 "name": &"walking_east",
 "speed": 6.0
 }, {
@@ -223,7 +240,6 @@ script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_slime")
-animation = &"walking_east"
 offset = Vector2(0, -15.585)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
