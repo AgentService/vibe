@@ -32,6 +32,9 @@ func _ready() -> void:
 
 	# Setup wake-up animation - pause on first frame until player approaches
 	if animated_sprite and animated_sprite.sprite_frames:
+		# CRITICAL: Stop any animation set in scene file (e.g., scary_walk_south_west)
+		animated_sprite.stop()
+
 		# Check if wake_up animation exists, otherwise use default
 		if animated_sprite.sprite_frames.has_animation("wake_up"):
 			animated_sprite.play("wake_up")

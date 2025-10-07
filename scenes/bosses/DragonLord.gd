@@ -30,6 +30,9 @@ func _ready() -> void:
 
 	# Setup wake-up animation - pause on first frame until player approaches
 	if animated_sprite and animated_sprite.sprite_frames:
+		# CRITICAL: Stop any animation set in scene file
+		animated_sprite.stop()
+
 		# Check if wake_up animation exists, otherwise use first available animation
 		if animated_sprite.sprite_frames.has_animation("wake_up"):
 			animated_sprite.play("wake_up")
