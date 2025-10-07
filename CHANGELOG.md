@@ -73,6 +73,54 @@
 - `scenes/bosses/AncientLich.gd` - Added spawn effect in _setup_ancient_lich_specific_behavior()
 - `scenes/bosses/BananaLord.gd` - Added spawn effect in _setup_banana_lord_behavior()
 
+### Boss Wake-up Mechanic Implementation (2025-10-07)
+
+**Implemented universal wake-up mechanic for all 6 bosses - bosses pause on spawn until player approaches:**
+
+**Core Pattern:**
+- ✅ Bosses play "wake_up" animation and pause on first frame until player enters chase range
+- ✅ Player proximity triggers aggro, resuming wake-up animation
+- ✅ After wake-up completes, boss transitions to normal movement/attack AI
+- ✅ Defensive animation fallback - gracefully handles bosses without "wake_up" animation
+
+**Bosses Modified:**
+- ✅ DragonLord.gd - Added wake-up mechanic with defensive animation checks
+- ✅ TestShadowBoss.gd - Added wake-up mechanic with defensive animation checks
+- ✅ DemonOverlord.gd - Added wake-up mechanic + animation_prefix timing fix
+- ✅ AncientSlime.gd - Added wake-up mechanic + animation_prefix timing fix
+- ✅ AncientLich.gd - Already had wake-up mechanic (reference implementation)
+- ✅ BananaLord.gd - Already had wake-up mechanic (reference implementation)
+
+**Bug Fixes (same session):**
+- ✅ **Fixed missing animation errors** - Defensive checks for "wake_up" animation
+  - **Problem:** Bosses without "wake_up" animation threw errors on spawn
+  - **Fix:** Check if animation exists, fallback to first available animation
+  - **Result:** All bosses work regardless of animation setup
+- ✅ **Fixed animation_prefix auto-movement bug** - Prevent BaseBoss auto-play interference
+  - **Problem:** AncientSlime and DemonOverlord moved immediately on spawn despite wake-up mechanic
+  - **Root Cause Discovery (3 iterations):**
+    - Iteration 1: Thought `animation_prefix` set in `_ready()` caused issue → moved to wake-up callbacks
+    - Iteration 2: Still auto-moving → discovered BaseBoss._ready() auto-plays `animation_prefix + "_south"`
+    - Iteration 3: Found BaseBoss has default `animation_prefix = "walk"` → even commenting out still used default
+  - **Final Solution:** Set `animation_prefix = ""` BEFORE calling `super._ready()` to prevent auto-play
+  - **Implementation:**
+    - Set `animation_prefix = ""` before `super._ready()` prevents BaseBoss from playing any directional animation
+    - After wake-up completes: set to "walking" (AncientSlime) or "scary_walk" (DemonOverlord) in callbacks
+    - Empty string prevents BaseBoss line 53-55 auto-play: `var default_anim = animation_prefix + "_south"`
+  - **Result:** Bosses correctly pause and wait for player proximity before moving
+
+**Technical Details:**
+- Properties: `has_woken_up: bool`, `is_aggroed: bool` track wake-up state
+- Override `_update_ai()` to return early if not woken up
+- Signal connection: `animation_finished` → `_on_animation_finished()` for transition
+- Aggro trigger: distance check in `_update_ai()` → calls `_aggro()` to resume animation
+
+**Files Modified:**
+- `scenes/bosses/DragonLord.gd` - Wake-up mechanic with animation fallback
+- `scenes/bosses/TestShadowBoss.gd` - Wake-up mechanic with animation fallback
+- `scenes/bosses/DemonOverlord.gd` - Wake-up mechanic + animation_prefix timing
+- `scenes/bosses/AncientSlime.gd` - Wake-up mechanic + animation_prefix timing
+
 ### Boss Hit Feedback Tween Refactor (2025-10-07)
 
 **Fixed persistent boss flash effects by converting from manual timer to tween-based system:**
