@@ -69,6 +69,11 @@ const POOL_EXHAUSTION_WARNING_COOLDOWN: float = 2.0  # Only warn every 2 seconds
 # AI pause functionality for debug interface
 var ai_paused: bool = false
 
+# STAGGERED AI UPDATES: Spread AI processing across frames to reduce per-frame load
+# At 400 enemies with batch_size=50: 50 enemies/frame × 30Hz = 1500 updates/sec (down from 12K)
+var _ai_update_offset: int = 0  # Current batch offset in enemy pool
+const AI_UPDATE_BATCH_SIZE: int = 50  # Enemies processed per frame (configurable via balance)
+
 # UNIFIED SPAWNING: Wave spawning state
 var current_run_time: float = 0.0
 var current_wave_level: int = 1
@@ -902,19 +907,24 @@ func _update_enemies(dt: float) -> void:
 	# Skip enemy AI updates if paused for debug
 	if ai_paused:
 		return
-	
+
 	# PERFORMANCE OPTIMIZATION: Pre-calculate values once
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	var update_distance_squared: float = update_distance * update_distance  # Eliminate sqrt calls
 	var target_x: float = target_pos.x
 	var target_y: float = target_pos.y
-	
+
 	# ZERO-ALLOC: Clear entity update queue for this frame
 	_entity_update_queue.clear()
-	
-	# PERFORMANCE: Direct bit-field iteration instead of get_alive_enemies() (eliminates array allocation)
-	for i in range(max_enemies):
+
+	# STAGGERED AI: Calculate batch range for this frame
+	# This spreads 400 enemies across 8 frames (400/50) = ~13ms AI budget per enemy over 8 frames
+	var batch_start: int = _ai_update_offset
+	var batch_end: int = min(_ai_update_offset + AI_UPDATE_BATCH_SIZE, max_enemies)
+
+	# PERFORMANCE: Only process enemies in current batch window
+	for i in range(batch_start, batch_end):
 		if not _is_enemy_alive_bitfield(i):
 			continue
 			
@@ -969,6 +979,11 @@ func _update_enemies(dt: float) -> void:
 
 			# Release payload back to pool for reuse
 			_update_payload_pool.release(update_payload)
+
+	# STAGGERED AI: Advance batch offset for next frame
+	_ai_update_offset += AI_UPDATE_BATCH_SIZE
+	if _ai_update_offset >= max_enemies:
+		_ai_update_offset = 0  # Wrap around to start
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
@@ -1026,15 +1041,18 @@ func stop() -> void:
 func reset() -> void:
 	"""Reset WaveDirector state for clean scene transitions"""
 	Logger.info("WaveDirector: Resetting state", "waves")
-	
+
 	# Reset spawn timer
 	spawn_timer = 0.0
-	
+
 	# Clear cached alive enemies
 	_alive_enemies_cache.clear()
 	_cache_dirty = true
 	_last_free_index = 0
-	
+
+	# Reset staggered AI offset
+	_ai_update_offset = 0
+
 	# Reset AI pause state
 	ai_paused = false
 	
