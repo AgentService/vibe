@@ -55,7 +55,6 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 	# Check if sprite already has modulate applied (e.g., breach enemies)
 	if sprite.modulate != Color.WHITE:
 		material_instance.set_shader_parameter("modulate_tint", sprite.modulate)
-		Logger.debug("Applied sprite modulate to shader: %s" % sprite.modulate, "events")
 
 	sprite.material = material_instance
 
@@ -75,11 +74,13 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 	)
 
 	# Restore original material after spawn completes
+	# Store sprite reference as weak ref to avoid lambda capture issues
+	var sprite_ref = weakref(sprite)
 	tween.finished.connect(func():
-		if is_instance_valid(sprite):
-			var orig = sprite.get_meta("_enemy_original_material", null)
-			sprite.material = orig
-			Logger.debug("Enemy spawn effect completed", "effects")
+		var sprite_instance = sprite_ref.get_ref()
+		if sprite_instance and is_instance_valid(sprite_instance):
+			var orig = sprite_instance.get_meta("_enemy_original_material", null)
+			sprite_instance.material = orig
 	)
 
 	return tween

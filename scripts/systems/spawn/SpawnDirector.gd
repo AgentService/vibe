@@ -761,12 +761,10 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 
 	# Apply modulation if specified - set on sprite before spawn effect
 	if spawn_config.modulate != Color.WHITE:
-		Logger.debug("Applying breach modulate: %s to boss %s" % [spawn_config.modulate, spawn_config.template_id], "events")
 		# Find AnimatedSprite2D and apply modulate so it dissolves in with color
 		var sprite = enemy_instance.get_node_or_null("AnimatedSprite2D")
 		if sprite:
 			sprite.modulate = spawn_config.modulate
-			Logger.debug("Breach modulate applied to sprite", "events")
 		else:
 			Logger.warn("Could not find AnimatedSprite2D on boss %s for modulate" % spawn_config.template_id, "events")
 
