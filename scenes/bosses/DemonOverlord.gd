@@ -4,6 +4,10 @@ extends BaseBoss
 
 class_name DemonOverlord
 
+# Wake-up mechanic properties
+var has_woken_up: bool = false
+var is_aggroed: bool = false
+
 func _ready() -> void:
 	# Set custom demon overlord stats
 	max_health = 400.0
@@ -24,6 +28,19 @@ func _ready() -> void:
 		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
 		Logger.debug("DemonOverlord spawn dissolve effect applied", "bosses")
 
+	# Setup wake-up animation - pause on first frame until player approaches
+	if animated_sprite and animated_sprite.sprite_frames:
+		# Check if wake_up animation exists, otherwise use default
+		if animated_sprite.sprite_frames.has_animation("wake_up"):
+			animated_sprite.play("wake_up")
+			animated_sprite.pause()  # Stay on first frame until aggroed
+			animated_sprite.connect("animation_finished", _on_animation_finished)
+		else:
+			# Fall back to pausing default animation if no wake_up animation
+			animated_sprite.play("default")
+			animated_sprite.pause()
+			has_woken_up = false  # Will wake up on aggro
+
 func get_boss_name() -> String:
 	return "DemonOverlord"
 
@@ -37,10 +54,47 @@ func _perform_attack() -> void:
 		var damage_tags = ["fire", "boss", "demon"]
 		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
 
-# Custom demon overlord behavior can be added here
-func _update_ai(dt: float) -> void:
-	# Call base AI first (handles chase, movement, directional animations)
-	super._update_ai(dt)
-	
+# Override AI to implement wake-up mechanic
+func _update_ai(_dt: float) -> void:
+	if ai_paused:
+		return
+	if not PlayerState.has_player_reference():
+		return
+
+	target_position = PlayerState.position
+	var distance_to_player = global_position.distance_to(target_position)
+
+	# Trigger aggro when player gets close
+	if distance_to_player <= chase_range and not is_aggroed:
+		_aggro()
+		return
+
+	# Only move after fully waking up
+	if not has_woken_up:
+		return
+
+	# Call base AI (handles chase, movement, directional animations)
+	super._update_ai(_dt)
+
 	# Add any custom demon overlord AI behavior here
 	# For example: special attacks, phase changes, etc.
+
+# Trigger wake-up animation when player approaches
+func _aggro() -> void:
+	if is_aggroed:
+		return
+	is_aggroed = true
+
+	# Check if wake_up animation exists
+	if animated_sprite.sprite_frames.has_animation("wake_up"):
+		animated_sprite.play("wake_up")
+	else:
+		# No wake_up animation - just unpause and wake up immediately
+		animated_sprite.play("default")
+		has_woken_up = true
+
+# Complete wake-up and transition to default animation
+func _on_animation_finished() -> void:
+	if animated_sprite.animation == "wake_up":
+		has_woken_up = true
+		animated_sprite.play("default")
