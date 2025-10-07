@@ -191,24 +191,26 @@ func _start_boss_flash_effect(instance_id: int, boss: Node) -> void:
 	var normalized_intensity = clampf(intensity / 10.0, 0.0, 1.0)
 	tween.tween_method(
 		func(value: float):
-			if material_instance and is_instance_valid(cached_sprite):
-				material_instance.set_shader_parameter("flash_modifier", value),
+			# Access via sprite.material to avoid lambda capture issues
+			if is_instance_valid(cached_sprite) and cached_sprite.material:
+				cached_sprite.material.set_shader_parameter("flash_modifier", value),
 		normalized_intensity,  # Start at full intensity
 		0.0,                   # Fade to zero
 		duration
 	)
 
 	# Reset material when tween completes
-	tween.finished.connect(_on_flash_tween_finished.bind(instance_id, cached_sprite))
+	tween.finished.connect(_on_flash_tween_finished.bind(instance_id))
 
 	# Store tween reference
 	active_flash_tweens[instance_id] = tween
 
-func _on_flash_tween_finished(instance_id: int, sprite: AnimatedSprite2D) -> void:
+func _on_flash_tween_finished(instance_id: int) -> void:
 	"""Called when flash tween completes - restore original material"""
-	if sprite and is_instance_valid(sprite):
-		var original_material = sprite.get_meta("_boss_original_material", null)
-		sprite.material = original_material
+	var cached_sprite = cached_boss_sprites.get(instance_id, null)
+	if cached_sprite and is_instance_valid(cached_sprite):
+		var original_material = cached_sprite.get_meta("_boss_original_material", null)
+		cached_sprite.material = original_material
 		Logger.debug("Flash tween completed - material restored", "bosses")
 
 	# Remove tween reference

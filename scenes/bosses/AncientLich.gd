@@ -22,6 +22,11 @@ func get_boss_name() -> String:
 	return "AncientLich"
 
 func _setup_ancient_lich_specific_behavior() -> void:
+	# Apply spawn dissolve effect
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("AncientLich spawn dissolve effect applied", "bosses")
+
 	# Start with wake_up animation and pause it on first frame
 	if animated_sprite and animated_sprite.sprite_frames:
 		animated_sprite.play("wake_up")

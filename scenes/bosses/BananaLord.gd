@@ -33,7 +33,12 @@ func get_boss_name() -> String:
 
 # BananaLord specific setup after BaseBoss initialization
 func _setup_banana_lord_behavior() -> void:
-	# Start with wake_up animation and pause it on first frame  
+	# Apply spawn dissolve effect before wake_up animation
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("BananaLord spawn dissolve effect applied", "bosses")
+
+	# Start with wake_up animation and pause it on first frame
 	if animated_sprite and animated_sprite.sprite_frames:
 		animated_sprite.play("wake_up")
 		animated_sprite.pause()  # Stay on first frame until aggroed

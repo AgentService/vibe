@@ -2,6 +2,77 @@
 
 ## [Current Week - In Progress]
 
+### Enemy Spawn Dissolve Effect (2025-10-07)
+
+**Implemented unified spawn materialization effect for all boss enemies:**
+
+**Bug Fixes (same session):**
+- ✅ **Fixed lambda capture error in BossHitFeedback** - Boss flash tween callback
+  - **Problem:** `_on_flash_tween_finished(instance_id, sprite)` captured `sprite` parameter, causing "Lambda capture at index 1 was freed" error
+  - **Fix:** Changed callback signature to `_on_flash_tween_finished(instance_id)` and lookup sprite via `cached_boss_sprites.get(instance_id)`
+  - **Fix:** Updated tween lambda to access `cached_sprite.material` directly instead of capturing local `material_instance` variable
+  - **Result:** No more lambda capture errors during boss hit feedback
+- ✅ **Fixed breach modulate timing** - Purple tint now shows during spawn dissolve
+  - **Problem:** Breach event purple modulation was applied to boss node, but spawn dissolve shader completely replaced sprite color
+  - **Root Cause:** Shader didn't respect the sprite's modulate property - it only used texture colors directly
+  - **Fix:** Added `modulate_tint` uniform to spawn dissolve shader and applied it to final color
+  - **Implementation:**
+    - SpawnDirector stores `spawn_modulate` metadata on boss node
+    - EnemySpawnEffect reads metadata and sets `modulate_tint` shader parameter
+    - Shader multiplies final color by `modulate_tint` (defaults to white for non-breach enemies)
+    - After spawn completes, applies modulate to sprite node to preserve tint
+  - **Result:** Purple breach enemies dissolve in with tint AND keep it after spawn completes
+
+**Shader System:**
+- ✅ Created `shaders/enemy_spawn_dissolve.gdshader` - Noise-based dissolve shader
+  - Uses FastNoiseLite (Simplex noise, 256x256 seamless texture) for organic dissolve pattern
+  - Configurable dissolve_progress (0-1), edge_width, edge_color, noise_scale
+  - Cyan edge glow (0.0, 1.0, 1.0, 1.0) during materialization
+  - Tween-driven animation from invisible (progress=1.0) to fully visible (progress=0.0)
+
+**Helper System:**
+- ✅ Created `scripts/domain/EnemySpawnEffect.gd` - Reusable spawn effect helper
+  - Static class with shared shader material and noise texture
+  - `initialize()` called once in Arena._ready() for resource setup
+  - `apply_spawn_effect(sprite, scene_tree)` creates per-instance material and tween
+  - Consistent 0.6s spawn duration across all enemies
+  - Automatic cleanup: restores original material on completion
+  - Fixed lambda capture issue: access `sprite.material` directly instead of local variable
+
+**Boss Integration:**
+- ✅ Applied spawn dissolve to ALL 6 boss scripts:
+  - TestShadowBoss.gd (lines 13-15)
+  - DemonOverlord.gd (lines 23-25)
+  - AncientSlime.gd (lines 25-27)
+  - DragonLord.gd (lines 23-25)
+  - AncientLich.gd (lines 26-28)
+  - BananaLord.gd (in `_setup_banana_lord_behavior`)
+- ✅ Effect runs independently of wake-up animations
+- ✅ No invincibility added (per user request for simplicity)
+- ✅ Unified spawn timing: 0.6s for all bosses
+
+**Architecture Benefits:**
+- Tween-based system with automatic cleanup
+- Shared shader material for memory efficiency
+- Per-instance material duplication for independent control
+- Metadata-based state preservation (original material restored)
+- No gameplay impact - purely visual effect
+- Scalable to all enemy types (not just bosses)
+
+**Files Created:**
+- `shaders/enemy_spawn_dissolve.gdshader` - Noise-based dissolve shader
+- `scripts/domain/EnemySpawnEffect.gd` - Static helper class for spawn effects
+- `SPAWN_EFFECT_USAGE.md` - Documentation for integration patterns
+
+**Files Modified:**
+- `scenes/arena/Arena.gd` - Added `EnemySpawnEffect.initialize()` in _ready()
+- `scenes/bosses/TestShadowBoss.gd` - Added spawn effect after super._ready()
+- `scenes/bosses/DemonOverlord.gd` - Added spawn effect after super._ready()
+- `scenes/bosses/AncientSlime.gd` - Added spawn effect after super._ready()
+- `scenes/bosses/DragonLord.gd` - Added spawn effect after super._ready()
+- `scenes/bosses/AncientLich.gd` - Added spawn effect in _setup_ancient_lich_specific_behavior()
+- `scenes/bosses/BananaLord.gd` - Added spawn effect in _setup_banana_lord_behavior()
+
 ### Boss Hit Feedback Tween Refactor (2025-10-07)
 
 **Fixed persistent boss flash effects by converting from manual timer to tween-based system:**

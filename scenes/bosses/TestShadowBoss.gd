@@ -9,6 +9,11 @@ func _ready() -> void:
 	# Call parent _ready() to handle all base initialization (stats applied via SpawnConfig)
 	super._ready()
 
+	# Apply spawn dissolve effect
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("TestShadowBoss spawn dissolve effect applied", "bosses")
+
 func get_boss_name() -> String:
 	return "TestShadowBoss"
 

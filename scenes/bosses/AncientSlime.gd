@@ -17,9 +17,14 @@ func _ready() -> void:
 	animation_prefix = "walking"  # Uses walking_north, walking_south, etc.
 	
 	# Shadow is handled by BossShadow scene instance in the .tscn file
-	
+
 	# Call parent _ready() to handle all base initialization (including shadow setup)
 	super._ready()
+
+	# Apply spawn dissolve effect
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("AncientSlime spawn dissolve effect applied", "bosses")
 
 func get_boss_name() -> String:
 	return "AncientSlime"

@@ -15,9 +15,14 @@ func _ready() -> void:
 	attack_range = 90.0
 	# chase_range = 400.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "scary_walk"  # Uses scary_walk_north, scary_walk_south, etc.
-	
+
 	# Call parent _ready() to handle all base initialization
 	super._ready()
+
+	# Apply spawn dissolve effect
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("DemonOverlord spawn dissolve effect applied", "bosses")
 
 func get_boss_name() -> String:
 	return "DemonOverlord"

@@ -759,14 +759,21 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 		enemy_instance.spawn_config = spawn_config
 		enemy_instance.setup_from_spawn_config(spawn_config)
 
-	# Apply modulation if specified (for all enemies, not just breach)
+	# Apply modulation if specified - set on sprite before spawn effect
 	if spawn_config.modulate != Color.WHITE:
-		enemy_instance.modulate = spawn_config.modulate
+		Logger.debug("Applying breach modulate: %s to boss %s" % [spawn_config.modulate, spawn_config.template_id], "events")
+		# Find AnimatedSprite2D and apply modulate so it dissolves in with color
+		var sprite = enemy_instance.get_node_or_null("AnimatedSprite2D")
+		if sprite:
+			sprite.modulate = spawn_config.modulate
+			Logger.debug("Breach modulate applied to sprite", "events")
+		else:
+			Logger.warn("Could not find AnimatedSprite2D on boss %s for modulate" % spawn_config.template_id, "events")
 
 	# Apply event-specific properties based on strategy
 	if spawn_config.event_id and spawn_config.event_id.begins_with("breach_"):
 		enemy_instance.set_meta("breach_spawned", true)
-	
+
 	# Use YSort_Objects container for proper Y-sorting, fallback to ArenaRoot
 	var spawn_container = _get_ysort_container_or_arena_root()
 

@@ -15,9 +15,14 @@ func _ready() -> void:
 	attack_cooldown = 2.0
 	attack_range = 90.0
 	# chase_range = 400.0  # Using BaseBoss default (5500.0)
-	
+
 	# Call parent _ready() to handle base initialization
 	super._ready()
+
+	# Apply spawn dissolve effect
+	if animated_sprite:
+		EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		Logger.debug("DragonLord spawn dissolve effect applied", "bosses")
 
 func get_boss_name() -> String:
 	return "DragonLord"

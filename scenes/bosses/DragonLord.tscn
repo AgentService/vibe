@@ -123,7 +123,7 @@ script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_lw0tx")
-frame = 2
+animation = &"wake_up"
 offset = Vector2(0, -9.135)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

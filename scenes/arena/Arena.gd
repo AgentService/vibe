@@ -110,6 +110,10 @@ func _ready() -> void:
 	# Call BaseArena._ready() first to setup base functionality
 	super._ready()
 
+	# Initialize enemy spawn dissolve effect system
+	EnemySpawnEffect.initialize()
+	Logger.info("Enemy spawn dissolve effect initialized", "effects")
+
 	# Apply map configuration if available
 	if map_config:
 		_apply_map_config()
