@@ -63,19 +63,21 @@ static func apply_spawn_effect(sprite: AnimatedSprite2D, scene_tree: SceneTree) 
 	tween.set_ease(Tween.EASE_OUT)
 	tween.set_trans(Tween.TRANS_CUBIC)
 
-	# Use sprite.material directly instead of capturing material_instance
+	# Store sprite reference as weak ref to avoid lambda capture issues
+	var sprite_ref = weakref(sprite)
+
+	# Use weak reference in tween method to prevent "Lambda capture freed" errors
 	tween.tween_method(
 		func(value: float):
-			if is_instance_valid(sprite) and sprite.material:
-				sprite.material.set_shader_parameter("dissolve_progress", value),
+			var sprite_instance = sprite_ref.get_ref()
+			if sprite_instance and is_instance_valid(sprite_instance) and sprite_instance.material:
+				sprite_instance.material.set_shader_parameter("dissolve_progress", value),
 		1.0,  # Start fully dissolved (invisible)
 		0.0,  # End fully materialized (visible)
 		SPAWN_DURATION
 	)
 
 	# Restore original material after spawn completes
-	# Store sprite reference as weak ref to avoid lambda capture issues
-	var sprite_ref = weakref(sprite)
 	tween.finished.connect(func():
 		var sprite_instance = sprite_ref.get_ref()
 		if sprite_instance and is_instance_valid(sprite_instance):
