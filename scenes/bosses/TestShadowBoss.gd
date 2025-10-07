@@ -34,7 +34,8 @@ func _ready() -> void:
 			if anim_names.size() > 0:
 				animated_sprite.play(anim_names[0])
 				animated_sprite.pause()
-				has_woken_up = false  # Will wake up on aggro
+				animated_sprite.connect("animation_finished", _on_animation_finished)
+				has_woken_up = false  # Will wake up when animation completes
 
 func get_boss_name() -> String:
 	return "TestShadowBoss"
@@ -81,12 +82,12 @@ func _aggro() -> void:
 	if animated_sprite.sprite_frames.has_animation("wake_up"):
 		animated_sprite.play("wake_up")
 	else:
-		# No wake_up animation - just unpause current animation and wake up immediately
+		# No wake_up animation - just resume paused animation and wait for completion
 		animated_sprite.play()  # Resume current animation
-		has_woken_up = true
 
-# Complete wake-up and transition to default animation
+# Complete wake-up and transition to directional animations
 func _on_animation_finished() -> void:
-	if animated_sprite.animation == "wake_up":
+	# Only trigger wake-up if we're aggroed and haven't woken up yet
+	if is_aggroed and not has_woken_up:
 		has_woken_up = true
-		animated_sprite.play("default")
+		# Let BaseBoss handle directional animation selection
