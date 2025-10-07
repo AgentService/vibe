@@ -18,7 +18,7 @@ func _ready() -> void:
 	attack_cooldown = 1.8
 	attack_range = 90.0
 	# chase_range = 400.0  # Using BaseBoss default (5500.0)
-	animation_prefix = "scary_walk"  # Uses scary_walk_north, scary_walk_south, etc.
+	# animation_prefix set after wake-up in _on_animation_finished() to avoid auto-playing
 
 	# Call parent _ready() to handle all base initialization
 	super._ready()
@@ -36,10 +36,12 @@ func _ready() -> void:
 			animated_sprite.pause()  # Stay on first frame until aggroed
 			animated_sprite.connect("animation_finished", _on_animation_finished)
 		else:
-			# Fall back to pausing default animation if no wake_up animation
-			animated_sprite.play("default")
-			animated_sprite.pause()
-			has_woken_up = false  # Will wake up on aggro
+			# Fall back to first available animation and pause it
+			var anim_names = animated_sprite.sprite_frames.get_animation_names()
+			if anim_names.size() > 0:
+				animated_sprite.play(anim_names[0])
+				animated_sprite.pause()
+				has_woken_up = false  # Will wake up on aggro
 
 func get_boss_name() -> String:
 	return "DemonOverlord"
@@ -90,6 +92,7 @@ func _aggro() -> void:
 		animated_sprite.play("wake_up")
 	else:
 		# No wake_up animation - just unpause current animation and wake up immediately
+		animation_prefix = "scary_walk"  # Enable directional animations
 		animated_sprite.play()  # Resume current animation
 		has_woken_up = true
 
@@ -97,4 +100,5 @@ func _aggro() -> void:
 func _on_animation_finished() -> void:
 	if animated_sprite.animation == "wake_up":
 		has_woken_up = true
-		animated_sprite.play("default")
+		animation_prefix = "scary_walk"  # Enable directional animations after wake-up
+		animated_sprite.play()
