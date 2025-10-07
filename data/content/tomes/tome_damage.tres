@@ -1,13 +1,27 @@
-[gd_resource type="Resource" script_class="BaseTome" load_steps=2 format=3 uid="uid://bkdv3j1q2hwf8"]
+[gd_resource type="Resource" script_class="BaseTome" load_steps=3 format=3 uid="uid://bkdv3j1q2hwf8"]
 
-[ext_resource type="Script" path="res://scripts/resources/tomes/BaseTome.gd" id="1"]
+[ext_resource type="Script" uid="uid://lvycm5mu0ig5" path="res://scripts/resources/tomes/BaseTome.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://u1phiu54p6t0" path="res://assets/ui/tomes/icons/mb (1).png" id="1_fcnhg"]
 
 [resource]
 script = ExtResource("1")
 tome_id = "tome_damage"
 tome_name = "Tome of Power"
 description = "Increase all damage by 15% per stack. Stacks multiplicatively."
+icon = ExtResource("1_fcnhg")
 rarity = "common"
 stack_limit = 10
 applicable_tags = Array[String]([])
 damage_multiplier = 1.15
+cooldown_multiplier = 1.0
+projectile_count_bonus = 0
+area_multiplier = 1.0
+projectile_speed_multiplier = 1.0
+duration_multiplier = 1.0
+pierce_bonus = 0
+chain_bonus = 0
+movement_speed_multiplier = 1.0
+max_hp_bonus = 0
+luck_bonus = 0.0
+xp_gain_multiplier = 1.0
+pickup_radius_multiplier = 1.0

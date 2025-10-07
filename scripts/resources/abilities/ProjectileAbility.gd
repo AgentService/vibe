@@ -55,7 +55,7 @@ enum FireMode {
 @export var is_homing: bool = false
 
 ## Homing strength (0.0 = no homing, 1.0 = perfect tracking)
-@export_range(0.0, 1.0) var homing_strength: float = 0.5
+@export_range(0.0, 5.0) var homing_strength: float = 0.5
 
 ## Projectile chains to nearby enemies after hitting
 @export var chains_to_enemies: int = 0

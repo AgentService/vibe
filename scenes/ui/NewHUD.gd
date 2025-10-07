@@ -90,7 +90,6 @@ func _on_health_changed(current_health: float, max_health: float) -> void:
 func _on_progression_changed(state: Dictionary) -> void:
 	# PlayerInfoPanel handles progression updates via its own EventBus connections
 	var level = int(state.get("level", 1))
-	Logger.debug("New HUD: Progression changed - Level: %d (handled by PlayerInfoPanel)" % [level], "ui")
 
 func _on_leveled_up(new_level: int, prev_level: int) -> void:
 	# PlayerInfoPanel handles level updates via its own EventBus connections
