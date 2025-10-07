@@ -15,10 +15,10 @@ func _ready() -> void:
 	damage = 40.0
 	# speed will be set by BaseBoss from SpawnConfig - no override needed
 	attack_damage = 40.0
-	attack_cooldown = 2.5  # Slightly slower attacks
-	attack_range = 85.0
+	attack_cooldown = 1.0  # Slightly slower attacks
+	attack_range = 125.0
 	# chase_range = 320.0  # Using BaseBoss default (5500.0)
-	animation_prefix = "walking"  # Uses walking_north, walking_south, etc.
+	# animation_prefix set after wake-up in _on_animation_finished() to avoid auto-playing
 	
 	# Shadow is handled by BossShadow scene instance in the .tscn file
 
@@ -125,6 +125,7 @@ func _aggro() -> void:
 		animated_sprite.play("wake_up")
 	else:
 		# No wake_up animation - just unpause current animation and wake up immediately
+		animation_prefix = "walking"  # Enable directional animations
 		animated_sprite.play()  # Resume current animation
 		has_woken_up = true
 
@@ -132,4 +133,5 @@ func _aggro() -> void:
 func _on_animation_finished() -> void:
 	if animated_sprite.animation == "wake_up":
 		has_woken_up = true
+		animation_prefix = "walking"  # Enable directional animations after wake-up
 		animated_sprite.play("default")
