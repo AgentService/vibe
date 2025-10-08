@@ -82,6 +82,12 @@ func _physics_process(delta: float) -> void:
 - ✅ **Movement:** Smooth continuous chase behavior (no stuttering)
 - ✅ **AI responsiveness:** Enemies update direction every 1.67s (acceptable for chase AI)
 
+**Performance Fix - String Allocation in Hot Path (BaseBoss.gd:308):**
+- ✅ **Removed string concatenation from `_physics_process()`**
+  - Before: `var entity_id = "boss_" + str(get_instance_id())` every frame per enemy
+  - After: Use cached `self.entity_id` property (set once in `_ready()`)
+  - Impact: Eliminates 30,000 string allocations/sec with 1000 enemies (1000 × 30Hz)
+
 ### Performance Investigation - 400+ Enemy Lag (2025-10-08)
 
 **Issue:** Lag-induced speed bursts persist at 400+ enemies despite multiple optimization attempts.

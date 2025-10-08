@@ -304,78 +304,16 @@ func _physics_process(_delta: float) -> void:
 		move_and_slide()
 
 		# Update position in damage system (only when actually moving)
-		var entity_id = "boss_" + str(get_instance_id())
+		# Use cached entity_id from _ready() to avoid string allocation every frame
 		DamageService.update_entity_position(entity_id, global_position)
 
-## DIRECTIONAL ANIMATION SYSTEM
-## Automatically converts movement direction to appropriate 8-directional animation
-## Falls back to sprite flipping if directional animations don't exist
+## DIRECTIONAL ANIMATION SYSTEM - Simplified for left/right sprite flipping only
+## Performance: No angle calculations, no string building, no animation lookups
 func _update_directional_animation(direction: Vector2) -> void:
-	if not animated_sprite or not animated_sprite.sprite_frames:
-		return
-	
-	# First, try 8-directional animations
-	if _try_directional_animation(direction):
-		return
-	
-	# Fallback: Use basic sprite flipping for non-directional sprites
-	_apply_sprite_flipping(direction)
-
-## Try to use 8-directional animations
-func _try_directional_animation(direction: Vector2) -> bool:
-	# Convert direction to 8-directional animation
-	var angle = direction.angle()
-	var animation_name = animation_prefix + "_"
-	
-	# Convert angle to 8 directions
-	if angle >= -PI/8 and angle < PI/8:
-		animation_name += "east"
-	elif angle >= PI/8 and angle < 3*PI/8:
-		animation_name += "south_east"
-	elif angle >= 3*PI/8 and angle < 5*PI/8:
-		animation_name += "south"
-	elif angle >= 5*PI/8 and angle < 7*PI/8:
-		animation_name += "south_west"
-	elif angle >= 7*PI/8 or angle < -7*PI/8:
-		animation_name += "west"
-	elif angle >= -7*PI/8 and angle < -5*PI/8:
-		animation_name += "north_west"
-	elif angle >= -5*PI/8 and angle < -3*PI/8:
-		animation_name += "north"
-	else:  # -3*PI/8 to -PI/8
-		animation_name += "north_east"
-	
-	# Check if the directional animation exists
-	if animated_sprite.sprite_frames.has_animation(animation_name):
-		# Only change animation if it's different
-		if animated_sprite.animation != animation_name:
-			animated_sprite.play(animation_name)
-		return true  # Return true because directional animation exists (whether we changed it or not)
-	
-	# Fallback: Try cardinal direction if diagonal doesn't exist (for 4-directional sprites)
-	var fallback_name = animation_prefix + "_"
-	if abs(direction.x) > abs(direction.y):
-		# Horizontal movement dominates
-		fallback_name += "east" if direction.x > 0 else "west"
-	else:
-		# Vertical movement dominates
-		fallback_name += "south" if direction.y > 0 else "north"
-	
-	# Check if cardinal fallback exists
-	if animated_sprite.sprite_frames.has_animation(fallback_name):
-		# Only change animation if it's different
-		if animated_sprite.animation != fallback_name:
-			animated_sprite.play(fallback_name)
-		return true  # Return true because we found a fallback animation
-	
-	return false  # No directional animation exists
-
-## Apply basic sprite flipping when directional animations aren't available
-func _apply_sprite_flipping(direction: Vector2) -> void:
 	if not animated_sprite:
 		return
 
-	# Use simple left/right flipping based on horizontal movement
+	# Simple left/right sprite flipping based on horizontal movement
 	if abs(direction.x) > 0.1:  # Only flip if there's significant horizontal movement
 		animated_sprite.flip_h = direction.x < 0  # Flip when moving left
 
