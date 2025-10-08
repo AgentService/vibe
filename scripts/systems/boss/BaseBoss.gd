@@ -64,11 +64,11 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# PERFORMANCE: Disable enemy-to-enemy collision for high entity counts
+	# PERFORMANCE: Disable ALL collision for high entity counts (700+ bosses)
 	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can hit them)
-	# Mask 1 (Terrain): Enemy only collides with terrain (enemies pass through each other)
+	# Mask 0 (None): Enemy doesn't collide with anything (passes through terrain + enemies)
 	collision_layer = 2  # Exist on Layer 2
-	collision_mask = 1   # Collide with Layer 1 only (terrain)
+	collision_mask = 0   # ULTRA PERFORMANCE: No collision at all (walk through walls)
 
 	# CRITICAL PERFORMANCE: Disable Area2D monitoring to reduce physics overhead
 	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
@@ -135,7 +135,7 @@ func _ready() -> void:
 	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
 	BossUpdateManager.register_boss(self, boss_id)
-	Logger.debug(get_boss_name() + " registered with BossUpdateManager as " + boss_id, "performance")
+	# Logger.debug(get_boss_name() + " registered with BossUpdateManager as " + boss_id, "performance")
 
 	# Connect to signals
 	if EventBus:
@@ -168,6 +168,7 @@ func _ready() -> void:
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
+	# Logger.debug("🗑️  %s exiting tree (boss_id: %s)" % [get_boss_name(), boss_id], "performance")
 	BossUpdateManager.unregister_boss(boss_id)
 
 	# Clean up signal connections
@@ -440,6 +441,7 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 
 func _die() -> void:
 	_is_dying = true  # Prevent any further AI updates
+	# Logger.debug("💀 %s dying (entity_id: %s)" % [get_boss_name(), entity_id], "performance")
 
 	# FUTURE: Add death dissolve effect (reverse of spawn)
 	# Example: EnemyDeathEffect.apply_death_effect(animated_sprite, 0.4)

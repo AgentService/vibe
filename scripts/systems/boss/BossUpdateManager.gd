@@ -74,7 +74,7 @@ func register_boss(boss: CharacterBody2D, boss_id: String) -> void:
 ## @param boss_id: String unique identifier
 func unregister_boss(boss_id: String) -> void:
 	if not _boss_index.has(boss_id):
-		Logger.warn("Boss not found for unregistration: %s" % boss_id, "performance")
+		Logger.warn("Boss not found for unregistration: %s (total: %d)" % [boss_id, _boss_ids.size()], "performance")
 		return
 
 	var idx: int = _boss_index[boss_id]
@@ -92,7 +92,7 @@ func unregister_boss(boss_id: String) -> void:
 	_boss_nodes.resize(last_idx)
 	_boss_index.erase(boss_id)
 
-	Logger.info("Boss unregistered: %s (remaining: %d)" % [boss_id, _boss_ids.size()], "performance")
+	Logger.info("✓ Boss unregistered: %s (remaining: %d)" % [boss_id, _boss_ids.size()], "performance")
 
 ## Calculate visible viewport rect for culling
 ## Returns Rect2 in world coordinates with margin for off-screen buffer
@@ -243,5 +243,13 @@ func get_debug_info() -> Dictionary:
 		"pool_available": _batched_payload_pool.available_count(),
 		"boss_ids": _boss_ids
 	}
+
+## DEBUG: Print boss count every few seconds
+var _debug_timer: float = 0.0
+func _process(delta: float) -> void:
+	_debug_timer += delta
+	if _debug_timer >= 5.0:  # Every 5 seconds
+		_debug_timer = 0.0
+		Logger.info("BossUpdateManager: %d bosses registered" % _boss_ids.size(), "performance")
 
 # Note: Boss batch payload factory and reset functions are now handled by PayloadReset utility class
