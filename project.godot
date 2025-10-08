@@ -159,6 +159,7 @@ cast_melee={
 [physics]
 
 common/physics_ticks_per_second=30
+common/physics_interpolation=true
 
 [plugins]
 

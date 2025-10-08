@@ -188,11 +188,11 @@ func _on_combat_step(payload) -> void:
 	# Store previous position for interpolation
 	_previous_position = _physics_position
 
-	# Move projectile at fixed timestep
-	_physics_position += direction * speed * payload.delta_time
+	# Move projectile at fixed timestep (payload.dt is the fixed delta time)
+	_physics_position += direction * speed * payload.dt
 
 	# Update lifetime
-	_remaining_lifetime -= payload.delta_time
+	_remaining_lifetime -= payload.dt
 	if _remaining_lifetime <= 0.0:
 		# Use call_deferred to avoid issues during physics callback
 		call_deferred("despawn")
@@ -200,7 +200,7 @@ func _on_combat_step(payload) -> void:
 
 	# Homing logic (simple version - adjust direction toward closest enemy)
 	if is_homing and homing_strength > 0.0:
-		_update_homing_direction(payload.delta_time)
+		_update_homing_direction(payload.dt)
 
 
 ## OPTION A: Smooth visual rendering (called every frame)
