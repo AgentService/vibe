@@ -145,6 +145,17 @@ func _ready() -> void:
 		if personal_space_area:
 			personal_space_area.monitoring = false
 
+	# SYNCHRONIZED ANIMATION: Stop AnimationPlayer auto-playback
+	if USE_SYNCHRONIZED_ANIMATION and animated_sprite:
+		# Set random offset and stop auto animation
+		_animation_time_offset = randf() * 1.0
+		animated_sprite.stop()
+		# Set animation name for synchronized playback
+		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation(animation_prefix):
+			animated_sprite.animation = animation_prefix
+		elif animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("default"):
+			animated_sprite.animation = "default"
+
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
@@ -237,6 +248,10 @@ func _notify_components_scaled(scale_factor: float) -> void:
 func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
+
+	# SYNCHRONIZED ANIMATION: Update every frame even when idle
+	if USE_SYNCHRONIZED_ANIMATION and animated_sprite and current_direction != Vector2.ZERO:
+		_update_synchronized_animation(current_direction)
 
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
