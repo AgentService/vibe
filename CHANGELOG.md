@@ -2,6 +2,37 @@
 
 ## [Current Week - In Progress]
 
+### Synchronized Animation System (2025-10-08)
+
+**Massive performance optimization for high enemy counts:**
+
+**Problem:**
+- 1000 bosses = 1000 individual AnimationPlayer updates per frame
+- Each boss independently calculates animation frames
+- Huge CPU overhead from redundant animation processing
+
+**Solution:**
+- All bosses of same type now share global animation clock
+- Calculate frame index from `Time.get_ticks_msec()` + modulo
+- Directly set `AnimatedSprite2D.frame` (bypasses AnimationPlayer)
+- Random 0-1s offset per boss prevents perfect synchronization
+
+**Performance Impact:**
+- **Expected: 20-30% FPS gain with 500+ enemies**
+- Before: O(n) AnimationPlayer updates (expensive)
+- After: O(n) simple arithmetic (cheap modulo operation)
+
+**Technical Details:**
+```gdscript
+var global_time_sec = (Time.get_ticks_msec() / 1000.0) + _animation_time_offset
+var current_frame = int(global_time_sec * fps) % frame_count
+animated_sprite.frame = current_frame  # Direct set, no AnimationPlayer
+```
+
+**Toggle:**
+- `USE_SYNCHRONIZED_ANIMATION = true` (enabled by default)
+- Set to `false` to restore original per-boss animation
+
 ### FPS Limiter System (2025-10-08)
 
 **New FPSLimiter autoload for game-standard FPS control:**
