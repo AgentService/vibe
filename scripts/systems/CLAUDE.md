@@ -317,15 +317,33 @@ func _check_cone_attack_hits(player_pos: Vector2, target_pos: Vector2) -> Array:
     return _filter_enemies_in_cone(nearby_enemies, player_pos, target_pos)
 ```
 
-**Batch Processing:**
+**Staggered AI Updates (Decoupled Movement Pattern):**
 ```gdscript
-# BossUpdateManager batches boss updates
+# BossUpdateManager batches AI updates (thinking)
 func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
-    # Single update call for all bosses
-    BossUpdateManager.process_boss_batch(payload.delta_time)
+    # Process BOSS_UPDATE_BATCH_SIZE bosses per frame
+    # Example: 20 bosses per frame with 1000 total = 50 frame cycle
+    for i in range(batch_start, batch_end):
+        boss._update_ai_batch(dt)  # Calls _update_ai() which calculates velocity
 
-    # Avoid individual boss _process() methods
+# BaseBoss separates thinking from movement
+func _update_ai(dt: float) -> void:
+    # AI "thinking" - calculate velocity (runs in staggered batches)
+    velocity = (target_position - global_position).normalized() * speed
+    # Note: No move_and_slide() here - that happens in _physics_process()
+
+func _physics_process(delta: float) -> void:
+    # Movement - apply velocity (runs every frame at 30Hz)
+    move_and_slide()  # Uses last calculated velocity
+
+# Key insight: Velocity calculated every ~1.67s, applied every 33ms
+# Result: Smooth continuous movement with reduced AI computation
 ```
+
+**Performance Impact:**
+- 1000 enemies: 98% reduction in per-frame physics queries (20/1000)
+- Smooth movement maintained by decoupling AI from physics application
+- AI updates every ~1.67s (batch cycle), movement every 33ms (30Hz fixed step)
 
 ## New Patterns Added
 

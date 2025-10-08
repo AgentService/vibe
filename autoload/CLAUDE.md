@@ -117,6 +117,39 @@ func _physics_process(delta: float) -> void:
 # - Call reset_physics_interpolation() when teleporting pooled entities
 ```
 
+### 🔄 **EntityPool Physics Interpolation Pattern**
+
+**Pooled Entity Reset with Interpolation:**
+```gdscript
+# EntityPool.gd - Reset callable for pooled entities
+func _create_entity_reset() -> Callable:
+    return func(entity: Node) -> void:
+        # Remove from scene tree
+        if entity.get_parent():
+            entity.get_parent().remove_child(entity)
+
+        # Reset common properties
+        if "position" in entity:
+            entity.position = Vector2.ZERO
+        if "visible" in entity:
+            entity.visible = true
+
+        # Reset physics interpolation to prevent streaking
+        if entity.has_method("reset_physics_interpolation"):
+            entity.reset_physics_interpolation()
+
+# Why this matters:
+# - Godot's physics interpolation tracks previous position for smoothing
+# - When pooled entity is repositioned (e.g., arrow fired at new location),
+#   interpolation would streak from old position to new position
+# - reset_physics_interpolation() clears previous position, preventing artifact
+```
+
+**Usage Pattern:**
+- Applied automatically to: Projectiles, XP orbs, visual effects
+- Not needed for: Continuous movement entities (enemies, player)
+- Called when: Entity returned to pool and before repositioning
+
 ### 🎲 **RNG Deterministic Streams**
 
 **Named Stream Pattern:**

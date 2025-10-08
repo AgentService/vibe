@@ -32,9 +32,14 @@ var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
+const PERSONAL_SPACE_ENABLED: bool = false  # Performance: Disable enemy spacing (allows overlapping) for 700+ enemies
 const PERSONAL_SPACE_STRENGTH: float = 1.0  # Gentle spacing force prevents charging burst on spawn
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
+
+# PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
+const SKIP_SPAWN_ANIMATION: bool = true  # Skip 0.5s spawn dissolve effect (cyan edge glow)
+const SKIP_WAKEUP_CHECK: bool = true  # Skip wake_up → default animation transition check
 
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
@@ -59,6 +64,13 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
+	# PERFORMANCE: Disable enemy-to-enemy collision for high enemy counts (450+)
+	# Enemies exist on Layer 2 (for player/projectiles to detect and damage)
+	collision_layer = 2
+	# Enemies only collide with Layer 1 (Terrain) - walk through each other
+	# Result: Eliminates ~101,000 collision pairs with 450 enemies (450×449/2)
+	collision_mask = 1
+
 	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
 	# Example with spawn_config.spawn_behavior enum:
 	#   match spawn_config.spawn_behavior:
@@ -69,7 +81,8 @@ func _ready() -> void:
 
 	# SPAWN ANIMATION: Play wake_up animation during spawn if available, otherwise default
 	# This ensures consistent 0.5s spawn timing regardless of animation presence
-	if animated_sprite and animated_sprite.sprite_frames:
+	# Performance: Can be disabled via SKIP_SPAWN_ANIMATION for high enemy counts
+	if not SKIP_SPAWN_ANIMATION and animated_sprite and animated_sprite.sprite_frames:
 		# Try wake_up animation first (plays during spawn dissolve)
 		if animated_sprite.sprite_frames.has_animation("wake_up"):
 			animated_sprite.play("wake_up")
@@ -88,8 +101,7 @@ func _ready() -> void:
 			Logger.warn("EnemySpawnEffect failed for %s - immediately targetable" % get_boss_name(), "spawn")
 			_on_spawn_animation_complete()
 	else:
-		# No sprite, immediately make targetable
-		Logger.warn("No sprite found for %s - immediately targetable" % get_boss_name(), "spawn")
+		# Skip spawn animation for performance or no sprite available
 		_on_spawn_animation_complete()
 
 	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager
@@ -125,11 +137,12 @@ func _ready() -> void:
 	_update_health_bar()
 
 	# Setup personal space area for boss-to-boss spacing control
-	_setup_personal_space_area()
+	if PERSONAL_SPACE_ENABLED:
+		_setup_personal_space_area()
 
-	# Disable personal space during spawn animation to prevent initial burst
-	if personal_space_area:
-		personal_space_area.monitoring = false
+		# Disable personal space during spawn animation to prevent initial burst
+		if personal_space_area:
+			personal_space_area.monitoring = false
 
 
 func _exit_tree() -> void:
@@ -155,11 +168,12 @@ func _on_spawn_animation_complete() -> void:
 	add_to_group("targetable")
 
 	# Enable personal space detection now that spawn is complete
-	if personal_space_area:
+	if PERSONAL_SPACE_ENABLED and personal_space_area:
 		personal_space_area.monitoring = true
 
 	# Ensure default animation is playing after spawn (in case wake_up animation was used)
-	if animated_sprite and animated_sprite.sprite_frames:
+	# Performance: Can be disabled via SKIP_WAKEUP_CHECK to avoid expensive animation queries
+	if not SKIP_WAKEUP_CHECK and animated_sprite and animated_sprite.sprite_frames:
 		# If wake_up was playing, switch to default
 		if animated_sprite.animation == "wake_up":
 			var default_anim = animation_prefix + "_south"
@@ -219,11 +233,14 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
 	
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
+## STAGGERED AI: Only AI logic (thinking) runs in batches, movement runs every frame
 func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## Base AI logic - child classes can override or extend
+## STAGGERED AI: AI update (calculates velocity) - called in batches by BossUpdateManager
+## Movement (move_and_slide) now handled separately in _physics_process() every frame
+## NOTE: Child classes can override this method - just remember movement happens in _physics_process()
 func _update_ai(_dt: float) -> void:
 	# Skip AI updates if dying, paused, spawning, or being removed
 	if _is_dying or ai_paused or _is_spawning:
@@ -236,14 +253,14 @@ func _update_ai(_dt: float) -> void:
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
-	
+
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
-	
+
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
-			# Move toward player
+			# Calculate velocity (AI "thinking") - move_and_slide() now in _physics_process()
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 
@@ -255,32 +272,41 @@ func _update_ai(_dt: float) -> void:
 			# Apply personal space forces - these work with collision layers
 			velocity += spacing_force
 
-			# Safety: Check if still valid before physics update
-			if not is_inside_tree() or is_queued_for_deletion():
-				return
-
-			move_and_slide()
-			
 			# Update directional animation automatically
 			_update_directional_animation(direction)
 			current_direction = direction
-			
-			# Update position in damage system
-			var entity_id = "boss_" + str(get_instance_id())
-			DamageService.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
-			
+
 			# Update facing direction for attacks (but don't override attack animations)
 			var direction_to_player: Vector2 = (target_position - global_position).normalized()
 			current_direction = direction_to_player
-			
+
 			if last_attack_time >= attack_cooldown:
 				_perform_attack()
 				last_attack_time = 0.0
 			# Note: Don't play walking animations during attack cooldown
 			# Let the attack animation from _perform_attack() play uninterrupted
+
+## STAGGERED AI: Apply movement every frame (30Hz) even when AI only updates in batches
+## This ensures smooth movement - velocity is calculated in staggered batches, applied every frame
+func _physics_process(_delta: float) -> void:
+	# Skip movement if dying, paused, or spawning
+	if _is_dying or ai_paused or _is_spawning:
+		return
+
+	# Skip if boss is being removed or not in tree
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
+	# Apply velocity calculated during batched AI updates
+	if velocity.length_squared() > 0.1:
+		move_and_slide()
+
+		# Update position in damage system (only when actually moving)
+		var entity_id = "boss_" + str(get_instance_id())
+		DamageService.update_entity_position(entity_id, global_position)
 
 ## DIRECTIONAL ANIMATION SYSTEM
 ## Automatically converts movement direction to appropriate 8-directional animation

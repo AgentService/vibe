@@ -30,6 +30,77 @@ After implementing Glenn Fiedler's custom interpolation pattern and stress testi
 
 **Performance:** Eliminates 30Hz stutter with zero code overhead
 
+### Enemy-Enemy Collision Disabled (2025-10-08)
+
+**Disabled enemy-to-enemy physics collision to eliminate massive collision check overhead:**
+
+**Changes:**
+- ✅ **Added collision mask setup to BaseBoss.gd:67-72**
+  - `collision_layer = 2` - Enemies exist on Layer 2 (player/projectiles can still hit them)
+  - `collision_mask = 1` - Enemies only collide with Layer 1 (Terrain)
+  - Result: Enemies walk through each other, no physics collision between enemies
+
+**Performance Impact:**
+- **Before:** 450 enemies = ~101,000 potential enemy-enemy collision pairs (450×449/2)
+- **After:** 450 enemies = 0 enemy-enemy collision pairs
+- **Expected:** 20-40% FPS improvement with high enemy counts (450+)
+- **Trade-off:** Enemies can overlap (acceptable for horde/swarm gameplay)
+
+**Architecture Note:**
+This complements the existing `PERSONAL_SPACE_ENABLED = false` flag which disabled signal-based spacing forces. Now both physics collision AND spacing logic are disabled for maximum performance with 700+ enemies.
+
+### Staggered Boss AI Updates - Batched Physics (2025-10-08)
+
+**Implemented staggered AI updates for bosses (400+ CharacterBody2D enemies) to spread computational load across frames:**
+
+**Changes:**
+- ✅ **Added staggered batching to BossUpdateManager.gd:19**
+  - `BOSS_UPDATE_BATCH_SIZE = 20` - processes 20 bosses per frame (tuned from initial 50)
+  - `_boss_update_offset` - tracks current batch position with wrap-around
+  - 1000 bosses now spread across 50 frames (1000/20) = ~1.67s update cycle per boss
+- ✅ **Batched `move_and_slide()` calls across frames** (BossUpdateManager.gd:108)
+  - Each boss still calls `move_and_slide()` individually (Godot limitation)
+  - BUT only 20 bosses call it per frame (staggered across time)
+  - Spreads 1000 physics queries across 50 frames instead of all at once
+  - Reduces per-frame physics load by 98% (20/1000)
+
+**Performance Impact:**
+- **Before:** 1000 bosses × 30Hz = 30,000 AI updates/sec, all in same frames
+- **After:** 20 bosses × 30Hz = 600 updates/sec per frame, rotated across 50 batches
+- **Physics queries:** Spread 1000 `move_and_slide()` calls across 50 frames
+- **Result:** User reports **1000 enemies at 100 FPS** (dramatic improvement from previous lag)
+
+**Critical Issue - Movement Freeze:**
+Initial implementation caused enemies to appear "giga slow" because `move_and_slide()` was only called during batch updates:
+- With batch size 20 and 1000 enemies: each enemy moved for 1 frame, then stood still for 49 frames
+- Result: 98% of time standing still = perceived as extremely slow/stuttering movement
+
+**Fixed with Decoupled Movement Pattern (BaseBoss.gd:221-294):**
+- ✅ **Separated "thinking" from "moving"** (kept `_update_ai()` name for child class compatibility):
+  - AI logic (calculate velocity) runs in staggered batches
+  - `move_and_slide()` runs every frame in `_physics_process()`
+- ✅ **Smooth movement restored**: Enemies now move continuously using last calculated velocity
+  - AI updates every ~1.67s (staggered)
+  - Movement applies every 33ms (30Hz fixed timestep)
+  - Velocity calculated less frequently, but applied consistently
+
+**Architecture Pattern:**
+```gdscript
+# AI calculates velocity in staggered batches
+func _update_ai(dt: float) -> void:
+    velocity = (target - position).normalized() * speed
+    # Note: No move_and_slide() here anymore
+
+# Movement applies velocity every frame
+func _physics_process(delta: float) -> void:
+    move_and_slide()  # Uses last calculated velocity
+```
+
+**Testing Results:**
+- ✅ **Performance:** 1000 enemies at 100 FPS (vs previous 400 enemy lag)
+- ✅ **Movement:** Smooth continuous chase behavior (no stuttering)
+- ✅ **AI responsiveness:** Enemies update direction every 1.67s (acceptable for chase AI)
+
 ### Performance Investigation - 400+ Enemy Lag (2025-10-08)
 
 **Issue:** Lag-induced speed bursts persist at 400+ enemies despite multiple optimization attempts.

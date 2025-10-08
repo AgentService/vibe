@@ -13,6 +13,12 @@ var _boss_ids: PackedStringArray = PackedStringArray()
 var _boss_nodes: Array[CharacterBody2D] = []
 var _boss_index: Dictionary = {} # id -> index
 
+# STAGGERED AI UPDATES: Spread boss processing across frames to reduce per-frame load
+# At 400 bosses with batch_size=50: 50 bosses/frame × 30Hz = 1500 updates/sec (down from 12K)
+# This also staggers move_and_slide() calls, spreading physics queries across 8 frames
+var _boss_update_offset: int = 1  # Current batch offset in boss array
+const BOSS_UPDATE_BATCH_SIZE: int = 140  # Bosses processed per frame (tune based on performance)
+
 # Reusable batched payload buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()
 var _pos_buf: PackedVector2Array = PackedVector2Array()
@@ -78,37 +84,51 @@ func unregister_boss(boss_id: String) -> void:
 	Logger.info("Boss unregistered: %s (remaining: %d)" % [boss_id, _boss_ids.size()], "performance")
 
 ## Central combat step handler - replaces individual boss connections
+## STAGGERED UPDATES: Only processes BOSS_UPDATE_BATCH_SIZE bosses per frame
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
 	var count: int = _boss_ids.size()
-	
+
 	if count == 0:
 		return  # No bosses to process
-	
+
 	# Clear reusable buffers without reallocations
 	_ids_buf.resize(0)
-	_pos_buf.resize(0)  
+	_pos_buf.resize(0)
 	_ai_flags_buf.resize(0)
-	
-	# Iterate by index - avoid dictionary key arrays in hot loop
-	for i in range(count):
+
+	# STAGGERED AI: Calculate batch range for this frame
+	# Example: 400 bosses / 50 batch = 8 frames to update all
+	# Each boss updates every ~266ms (8 frames × 33ms) instead of every 33ms
+	var batch_start: int = _boss_update_offset
+	var batch_end: int = min(_boss_update_offset + BOSS_UPDATE_BATCH_SIZE, count)
+
+	# PERFORMANCE: Only process bosses in current batch window
+	# This also staggers move_and_slide() calls, spreading physics queries across frames
+	for i in range(batch_start, batch_end):
 		var boss := _boss_nodes[i]
 		if not is_instance_valid(boss):
 			# Mark for cleanup but don't modify arrays during iteration
 			continue
-		
+
 		# Collect boss data for batch processing
 		_ids_buf.push_back(_boss_ids[i])
 		_pos_buf.push_back(boss.global_position)
 		_ai_flags_buf.push_back(1) # true - boss is active
-		
+
 		# Call boss AI update with enforced interface
+		# This triggers move_and_slide() inside the boss, spreading physics across frames
 		if boss.has_method("_update_ai_batch"):
 			boss._update_ai_batch(dt)
 		else:
 			Logger.warn("Boss %s missing _update_ai_batch method - using fallback" % _boss_ids[i], "performance")
 			if boss.has_method("_update_ai"):
 				boss._update_ai(dt)
+
+	# STAGGERED AI: Advance batch offset for next frame
+	_boss_update_offset += BOSS_UPDATE_BATCH_SIZE
+	if _boss_update_offset >= count:
+		_boss_update_offset = 0  # Wrap around to start
 	
 	# Create single batched payload per step
 	if _ids_buf.size() > 0:
