@@ -35,6 +35,13 @@ var _damage_dealt_pool: ObjectPool
 @warning_ignore("unused_signal")
 signal combat_step(payload)
 
+## OPTION A: Emitted every render frame with interpolation alpha [0,1]
+## Used for smooth visual rendering between physics steps (Glenn Fiedler pattern)
+## alpha = 0.0: just finished a physics step
+## alpha = 1.0: about to take next physics step
+@warning_ignore("unused_signal")
+signal render_interpolate(alpha: float)
+
 # DAMAGE SIGNALS
 # NOTE: damage_requested signal removed - use DamageService.apply_damage() directly
 

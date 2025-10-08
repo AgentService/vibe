@@ -97,6 +97,10 @@ var ability_id: String = ""
 ## Firing direction (normalized)
 var direction: Vector2 = Vector2.RIGHT
 
+## OPTION A: Interpolation state for smooth rendering
+var _physics_position: Vector2 = Vector2.ZERO  # Position updated at fixed physics rate
+var _previous_position: Vector2 = Vector2.ZERO  # Previous physics position for interpolation
+
 ## Movement speed (pixels/second)
 var speed: float = 400.0
 
@@ -171,24 +175,43 @@ func _ready() -> void:
 	# Add to pooled projectiles group
 	add_to_group("ability_projectiles")
 
+	# OPTION A: Connect to fixed-step physics and interpolation signals
+	EventBus.combat_step.connect(_on_combat_step)
+	EventBus.render_interpolate.connect(_on_render_interpolate)
 
-func _physics_process(delta: float) -> void:
+
+## OPTION A: Fixed-step physics update (called at 30Hz via EventBus.combat_step)
+func _on_combat_step(payload) -> void:
 	if not _initialized:
 		return
 
-	# Move projectile
-	position += direction * speed * delta
+	# Store previous position for interpolation
+	_previous_position = _physics_position
+
+	# Move projectile at fixed timestep
+	_physics_position += direction * speed * payload.delta_time
 
 	# Update lifetime
-	_remaining_lifetime -= delta
+	_remaining_lifetime -= payload.delta_time
 	if _remaining_lifetime <= 0.0:
-		# Use call_deferred to avoid removing CollisionObject during physics callback
+		# Use call_deferred to avoid issues during physics callback
 		call_deferred("despawn")
 		return
 
 	# Homing logic (simple version - adjust direction toward closest enemy)
 	if is_homing and homing_strength > 0.0:
-		_update_homing_direction(delta)
+		_update_homing_direction(payload.delta_time)
+
+
+## OPTION A: Smooth visual rendering (called every frame)
+func _on_render_interpolate(alpha: float) -> void:
+	if not _initialized:
+		return
+
+	# Smoothly interpolate between previous and current physics positions
+	# alpha = 0.0: just finished physics step (show _physics_position)
+	# alpha = 1.0: about to take next physics step (show blended position)
+	position = _previous_position.lerp(_physics_position, alpha)
 
 
 # ============================================================================
@@ -216,7 +239,13 @@ func initialize(projectile_data: Dictionary) -> void:
 	# Initialize runtime state
 	_remaining_pierce = pierce_count
 	_remaining_lifetime = lifetime
-	position = projectile_data.get("source_position", Vector2.ZERO)  # Spawn at player position
+
+	# OPTION A: Initialize interpolation positions
+	var spawn_pos = projectile_data.get("source_position", Vector2.ZERO)
+	position = spawn_pos
+	_physics_position = spawn_pos
+	_previous_position = spawn_pos
+
 	_initialized = true
 
 	# Rotate sprite to match direction
@@ -232,6 +261,8 @@ func reset() -> void:
 	_remaining_pierce = 0
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
+	_physics_position = Vector2.ZERO
+	_previous_position = Vector2.ZERO
 	visible = true
 
 

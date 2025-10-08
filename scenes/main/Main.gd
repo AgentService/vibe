@@ -10,6 +10,11 @@ var debug_config: DebugConfig
 var scene_transition_manager: SceneTransitionManagerScript
 
 func _ready() -> void:
+	# Disable VSync and cap at 60 FPS (VSync would sync to monitor refresh rate, e.g., 144 Hz)
+	DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+	Engine.max_fps = 60
+	Logger.info("VSync disabled, FPS locked to 60 for performance testing", "main")
+
 	Logger.info("Main scene initializing with dynamic scene loading", "main")
 	_setup_scene_transition_manager()
 	_load_debug_config()

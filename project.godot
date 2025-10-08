@@ -13,6 +13,7 @@ config_version=5
 config/name="Vibe"
 run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
+run/max_fps=60
 config/icon="res://icon.svg"
 
 [autoload]
@@ -53,6 +54,10 @@ LocalLeaderboard="*res://autoload/LocalLeaderboard.gd"
 MenuBackgroundManager="*res://autoload/MenuBackgroundManager.gd"
 PersistentRiftFragments="*res://scenes/ui/components/PersistentRiftFragments.tscn"
 
+[debug]
+
+settings/stdout/print_fps=true
+
 [display]
 
 window/size/viewport_width=1920
@@ -61,6 +66,8 @@ window/size/initial_position_type=4
 window/size/initial_screen=1
 window/size/always_on_top=true
 window/stretch/mode="canvas_items"
+window/vsync/vsync_mode=0
+application/run/max_fps=60
 
 [editor_plugins]
 
@@ -148,6 +155,10 @@ cast_melee={
 2d_physics/layer_2="Bosses"
 2d_physics/layer_3="Player"
 2d_physics/layer_4="Projectiles"
+
+[physics]
+
+common/physics_ticks_per_second=30
 
 [plugins]
 
