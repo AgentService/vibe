@@ -255,13 +255,25 @@ func _update_ai_minimal(accumulated_dt: float, player_pos: Vector2) -> void:
 	var attack_range_sq := attack_range * attack_range
 
 	if dist_sq > attack_range_sq:
-		# Chase: Direct velocity assignment (Godot's physics interpolation handles smoothness)
-		velocity = to_player.normalized() * speed
+		# Chase: Scale velocity by accumulated time for correct movement distance
+		# With batch size 20 at 1000 enemies, this boss updates every ~1.67s
+		# We need to move the distance we WOULD have moved if updating every frame
+		var physics_dt: float = 1.0 / 30.0  # 0.033s per physics step
+		var scale_factor: float = accumulated_dt / physics_dt
+		velocity = to_player.normalized() * speed * scale_factor
 		move_and_slide()
 
 		# Simple sprite flip
-		if animated_sprite and abs(to_player.x) > 0.1:
-			animated_sprite.flip_h = to_player.x < 0
+		if animated_sprite:
+			if abs(to_player.x) > 0.1:
+				animated_sprite.flip_h = to_player.x < 0
+
+			# Ensure animation is playing
+			if animated_sprite.sprite_frames and not animated_sprite.is_playing():
+				if animated_sprite.sprite_frames.has_animation("default"):
+					animated_sprite.play("default")
+				elif animated_sprite.sprite_frames.has_animation(animation_prefix):
+					animated_sprite.play(animation_prefix)
 	else:
 		# Attack: Stop moving
 		velocity = Vector2.ZERO
