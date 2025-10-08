@@ -2,6 +2,47 @@
 
 ## [Current Week - In Progress]
 
+### Performance Investigation - 400+ Enemy Lag (2025-10-08)
+
+**Issue:** Lag-induced speed bursts persist at 400+ enemies despite multiple optimization attempts.
+
+**Attempted Fixes:**
+- ✅ **EnemyPhysicsController reversion**: Removed experimental centralized physics (7 commits reverted)
+  - Restored CharacterBody2D + move_and_slide() pattern
+  - Simplified boss architecture back to standard Godot patterns
+  - Kept 3 real performance optimizations (spatial grid, staggered AI, API fix)
+- ✅ **Enemy speed corrections**: Fixed template speeds from 500-1000 → 160-240 px/s
+  - Centralized speed configuration in BaseBoss.gd (line 21: 100.0)
+  - Commented out per-template override (line 166)
+- ✅ **Charging burst fix restoration**: Fixed bosses "charging" after spawn
+  - PERSONAL_SPACE_STRENGTH reduced to 1.0 (gentle force)
+  - Personal space monitoring disabled during spawn, re-enabled after
+- ✅ **Physics step limiter**: Added MAX_PHYSICS_STEPS_PER_FRAME = 3 in RunManager
+  - Prevents accumulator spiral during lag spikes
+  - Clamps max physics catch-up to 100ms (3 × 33ms steps)
+  - **Result: Issue persists** - lag still causes speed bursts
+
+**Root Cause Analysis:**
+The fixed-timestep accumulator pattern in RunManager allows 3 physics steps per frame during lag:
+- Normal frame (16ms): 0 steps, accumulator carries forward
+- Lag spike (150ms): 3 steps executed, 50ms remaining
+- Each step moves enemies by `velocity × 0.033s`
+- Result: 3× normal distance in one visual frame = perceived speed burst
+
+**Next Approaches to Consider:**
+1. **Animation baking + MultiMesh approach**: Separate visual layer from logic
+   - Render 400+ enemies as single MultiMeshInstance2D batch
+   - Bake sprite animations into texture atlas
+   - Keep CharacterBody2D logic layer separate
+2. **Hard cap at 400 enemies max**: Design constraint instead of performance fix
+   - Wave director stops spawning at 400 enemy limit
+   - Implement enemy recycling for sustained gameplay
+
+**Performance Preserved:**
+- Spatial grid collision detection (99% reduction vs linear scan)
+- Staggered AI updates (87.5% reduction vs per-frame all enemies)
+- EntityTracker spatial query fix (correct API usage)
+
 ### Unified Enemy Spawn System (2025-10-07)
 
 **Implemented unified spawn system with group-based targeting and centralized spawn behavior:**
