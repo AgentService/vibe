@@ -2,27 +2,33 @@
 
 ## [Current Week - In Progress]
 
-### Physics Interpolation Enabled (2025-10-08)
+### Physics Interpolation - Godot Native Implementation (2025-10-08)
 
-**Implemented Godot's built-in physics interpolation for smooth 30Hz → 60/120/144Hz rendering:**
+**Transitioned from custom interpolation to Godot's built-in physics interpolation for 30Hz → 60/120/144Hz rendering:**
 
 **Changes:**
 - ✅ **Enabled `common/physics_interpolation=true`** in project.godot:162
   - 30Hz combat logic now renders smoothly at monitor refresh rate (60/120/144 FPS)
-  - Zero CPU cost - interpolation happens at render time only
+  - Zero CPU cost - interpolation happens at render time in engine C++ code
   - 2D auto-resets on tree entry (less boilerplate than 3D)
 - ✅ **Added `reset_physics_interpolation()` to EntityPool.gd:112**
   - Prevents streaking artifacts when pooled entities are repositioned
   - Called automatically during pool reset for arrows, XP orbs, projectiles
+- ✅ **Removed custom interpolation from AbilityProjectile.gd**
+  - Deleted `_physics_position` and `_previous_position` tracking variables
+  - Removed `EventBus.render_interpolate` signal connection
+  - Removed `_on_render_interpolate()` manual lerp function
+  - Position now updated directly in `_on_combat_step()` - Godot interpolates automatically
+- ✅ **Simplified RunManager.gd** - removed custom accumulator approach
+  - Now uses Godot's `_physics_process()` for fixed-step timing
+  - Removed `_accumulator`, `COMBAT_DT`, and `MAX_PHYSICS_STEPS_PER_FRAME` constants
+  - Removed custom `_process()` accumulator loop
+  - Emits `combat_step` signal from `_physics_process()` at 30Hz
 
-**Architecture Notes:**
-- **No conflicts found**: Arena.gd player spawn uses tree entry (auto-reset applies)
-- **Boss scripts**: No manual position jumps/teleports requiring reset calls
-- **Projectile consideration**: AbilityProjectile.gd has custom interpolation (lines 206-214) - may cause double interpolation
-  - Current: Godot physics interpolation + custom `_physics_position.lerp()` logic
-  - Monitor for "floaty" projectile movement; may need to disable one layer
+**Architecture Decision:**
+After implementing Glenn Fiedler's custom interpolation pattern and stress testing at 450+ entities, no visual difference was observed compared to Godot's built-in system. Since the game doesn't require deterministic replay or rollback netcode, using Godot's simpler, faster (C++), zero-maintenance solution is the better choice.
 
-**Performance:** Should eliminate 30Hz stutter at zero performance cost
+**Performance:** Eliminates 30Hz stutter with zero code overhead
 
 ### Performance Investigation - 400+ Enemy Lag (2025-10-08)
 
