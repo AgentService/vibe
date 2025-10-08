@@ -19,6 +19,9 @@ var _boss_index: Dictionary = {} # id -> index
 var _boss_update_offset: int = 0  # Current batch offset in boss array
 const BOSS_UPDATE_BATCH_SIZE: int = 20  # Bosses processed per frame (tune based on performance)
 
+# Track accumulated time for each boss since their last update
+var _boss_time_accumulators: PackedFloat32Array = PackedFloat32Array()
+
 # Reusable batched payload buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()
 var _pos_buf: PackedVector2Array = PackedVector2Array()
@@ -51,12 +54,13 @@ func register_boss(boss: CharacterBody2D, boss_id: String) -> void:
 	if _boss_index.has(boss_id):
 		Logger.warn("Boss already registered: %s" % boss_id, "performance")
 		return
-	
+
 	var idx: int = _boss_ids.size()
 	_boss_index[boss_id] = idx
 	_boss_ids.push_back(boss_id)
 	_boss_nodes.push_back(boss)
-	
+	_boss_time_accumulators.push_back(0.0)  # Initialize accumulator for this boss
+
 	Logger.info("Boss registered: %s (index: %d, total: %d)" % [boss_id, idx, _boss_ids.size()], "performance")
 
 ## Unregister boss using O(1) swap-remove
@@ -65,22 +69,24 @@ func unregister_boss(boss_id: String) -> void:
 	if not _boss_index.has(boss_id):
 		Logger.warn("Boss not found for unregistration: %s" % boss_id, "performance")
 		return
-	
+
 	var idx: int = _boss_index[boss_id]
 	var last_idx: int = _boss_ids.size() - 1
-	
+
 	if idx != last_idx:
 		# Swap with last element to maintain contiguous array
 		var last_id: String = _boss_ids[last_idx]
 		_boss_ids[idx] = last_id
 		_boss_nodes[idx] = _boss_nodes[last_idx]
+		_boss_time_accumulators[idx] = _boss_time_accumulators[last_idx]  # Swap accumulator too
 		_boss_index[last_id] = idx
-	
+
 	# Remove last element
 	_boss_ids.resize(last_idx)
 	_boss_nodes.resize(last_idx)
+	_boss_time_accumulators.resize(last_idx)  # Remove accumulator
 	_boss_index.erase(boss_id)
-	
+
 	Logger.info("Boss unregistered: %s (remaining: %d)" % [boss_id, _boss_ids.size()], "performance")
 
 ## Central combat step handler - replaces individual boss connections
@@ -91,6 +97,15 @@ func _on_combat_step(payload) -> void:
 
 	if count == 0:
 		return  # No bosses to process
+
+	# PERFORMANCE: Get player position ONCE for entire batch (shared across all 20 bosses)
+	if not PlayerState.has_player_reference():
+		return  # No player, skip AI updates
+	var player_pos: Vector2 = PlayerState.position  # Single lookup instead of 20
+
+	# Accumulate time for ALL bosses every frame (even those not in current batch)
+	for i in range(count):
+		_boss_time_accumulators[i] += dt
 
 	# Clear reusable buffers without reallocations
 	_ids_buf.resize(0)
@@ -116,14 +131,22 @@ func _on_combat_step(payload) -> void:
 		_pos_buf.push_back(boss.global_position)
 		_ai_flags_buf.push_back(1) # true - boss is active
 
-		# Call boss AI update with enforced interface
+		# Pass accumulated time since last update (typically 1.65s for batch size 20)
+		var accumulated_dt: float = _boss_time_accumulators[i]
+
+		# MINIMAL AI: Call ultra-simple AI with shared player position
 		# This triggers move_and_slide() inside the boss, spreading physics across frames
-		if boss.has_method("_update_ai_batch"):
-			boss._update_ai_batch(dt)
+		if boss.has_method("_update_ai_minimal"):
+			boss._update_ai_minimal(accumulated_dt, player_pos)  # Pass player_pos to avoid per-boss lookup
+		elif boss.has_method("_update_ai_batch"):
+			boss._update_ai_batch(accumulated_dt)  # Fallback to old AI
 		else:
-			Logger.warn("Boss %s missing _update_ai_batch method - using fallback" % _boss_ids[i], "performance")
+			Logger.warn("Boss %s missing AI methods - using fallback" % _boss_ids[i], "performance")
 			if boss.has_method("_update_ai"):
-				boss._update_ai(dt)
+				boss._update_ai(accumulated_dt)
+
+		# Reset accumulator after update
+		_boss_time_accumulators[i] = 0.0
 
 	# STAGGERED AI: Advance batch offset for next frame
 	_boss_update_offset += BOSS_UPDATE_BATCH_SIZE

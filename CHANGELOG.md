@@ -2,6 +2,15 @@
 
 ## [Current Week - In Progress]
 
+### Ranger Starting Ability Change (2025-10-08)
+
+**Changed ranger base attack from heartseeker to volley:**
+- ✅ **Updated ranger_player.tres** (line 16)
+  - Before: `starting_abilities = Array[String](["heartseeker"])`
+  - After: `starting_abilities = Array[String](["volley"])`
+  - Volley fires multiple arrows in a spread pattern (better for AoE clear)
+  - Heartseeker is single-target homing (more specialized)
+
 ### Physics Interpolation - Godot Native Implementation (2025-10-08)
 
 **Transitioned from custom interpolation to Godot's built-in physics interpolation for 30Hz → 60/120/144Hz rendering:**
@@ -51,42 +60,57 @@ After implementing Glenn Fiedler's custom interpolation pattern and stress testi
 - **Physics queries:** Spread 1000 `move_and_slide()` calls across 50 frames
 - **Result:** User reports **1000 enemies at 100 FPS** (dramatic improvement from previous lag)
 
-**Critical Issue - Movement Freeze:**
-Initial implementation caused enemies to appear "giga slow" because `move_and_slide()` was only called during batch updates:
-- With batch size 20 and 1000 enemies: each enemy moved for 1 frame, then stood still for 49 frames
-- Result: 98% of time standing still = perceived as extremely slow/stuttering movement
+**Critical Issue - Movement Speed:**
+Initial implementation caused enemies to move too slowly because they only moved one physics step worth of distance every 1.67 seconds:
+- With batch size 20 and 1000 enemies: each enemy updates once every 50 frames (1.67s)
+- velocity was calculated for one frame: `direction * speed * 0.033s`
+- But movement only applied once every 1.67s
+- Result: Enemy traveled 3.3 pixels every 1.67s = 1.98 px/s (instead of 100 px/s)
 
-**Fixed with Decoupled Movement Pattern (BaseBoss.gd:221-294):**
-- ✅ **Separated "thinking" from "moving"** (kept `_update_ai()` name for child class compatibility):
-  - AI logic (calculate velocity) runs in staggered batches
-  - `move_and_slide()` runs every frame in `_physics_process()`
-- ✅ **Smooth movement restored**: Enemies now move continuously using last calculated velocity
-  - AI updates every ~1.67s (staggered)
-  - Movement applies every 33ms (30Hz fixed timestep)
-  - Velocity calculated less frequently, but applied consistently
+**First Attempted Fix - Decoupled Movement (FAILED):**
+- Tried calling `move_and_slide()` every frame in `_physics_process()`
+- Result: ALL 1000 enemies calling move_and_slide() every frame = 30k physics queries/sec
+- Performance destroyed: Hard lag when AI unpaused (confirmed by user testing with PAUSE AI)
+
+**Correct Fix - Accumulated Delta Time (BossUpdateManager.gd + BaseBoss.gd):**
+- ✅ **BossUpdateManager tracks accumulated time per boss** (BossUpdateManager.gd:23-103)
+  - `_boss_time_accumulators: PackedFloat32Array` - one accumulator per boss
+  - Every frame: increment ALL accumulators by dt (0.033s)
+  - During batch update: pass accumulated_dt to boss (e.g., 1.65s)
+  - After update: reset accumulator to 0
+- ✅ **BaseBoss applies accumulated velocity** (BaseBoss.gd:234-286)
+  - Receives accumulated_dt instead of single-frame dt
+  - Calculates velocity normally: `direction * speed`
+  - Calls `move_and_slide()` once with accumulated velocity
+  - Movement distance correct for time elapsed
 
 **Architecture Pattern:**
 ```gdscript
-# AI calculates velocity in staggered batches
-func _update_ai(dt: float) -> void:
-    velocity = (target - position).normalized() * speed
-    # Note: No move_and_slide() here anymore
+# BossUpdateManager accumulates time for all bosses
+func _on_combat_step(payload) -> void:
+    # Increment ALL accumulators every frame
+    for i in range(boss_count):
+        _boss_time_accumulators[i] += dt  # dt = 0.033s
 
-# Movement applies velocity every frame
-func _physics_process(delta: float) -> void:
-    move_and_slide()  # Uses last calculated velocity
+    # Process batch of 20 bosses
+    for i in range(batch_start, batch_end):
+        var accumulated_dt = _boss_time_accumulators[i]  # e.g., 1.65s
+        boss._update_ai_batch(accumulated_dt)
+        _boss_time_accumulators[i] = 0.0  # Reset
+
+# BaseBoss scales velocity by time ratio for correct movement distance
+func _update_ai(accumulated_dt: float) -> void:  # accumulated_dt = 1.65s
+    var physics_dt = 1.0 / 30.0  # 0.033s
+    var scale_factor = accumulated_dt / physics_dt  # 1.65 / 0.033 = 50x
+    velocity = direction * speed * scale_factor  # 100 px/s * 50 = 5000 px/s
+    move_and_slide()  # Moves: 5000 * 0.033 = 165 pixels (correct for 1.65s!)
 ```
 
-**Testing Results:**
-- ✅ **Performance:** 1000 enemies at 100 FPS (vs previous 400 enemy lag)
-- ✅ **Movement:** Smooth continuous chase behavior (no stuttering)
-- ✅ **AI responsiveness:** Enemies update direction every 1.67s (acceptable for chase AI)
-
-**Performance Fix - String Allocation in Hot Path (BaseBoss.gd:308):**
-- ✅ **Removed string concatenation from `_physics_process()`**
-  - Before: `var entity_id = "boss_" + str(get_instance_id())` every frame per enemy
-  - After: Use cached `self.entity_id` property (set once in `_ready()`)
-  - Impact: Eliminates 30,000 string allocations/sec with 1000 enemies (1000 × 30Hz)
+**Performance Impact:**
+- ✅ **Move_and_slide() calls:** Only 20 per frame (staggered)
+- ✅ **Movement speed:** Correct (100 px/s maintained)
+- ✅ **Overhead:** Minimal (1000 float additions per frame for accumulators)
+- ✅ **Result:** 1000 enemies at 100 FPS with correct movement speed
 
 ### Performance Investigation - 400+ Enemy Lag (2025-10-08)
 

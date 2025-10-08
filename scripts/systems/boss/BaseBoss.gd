@@ -232,19 +232,50 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
 	
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
-## STAGGERED AI: Accumulate time between updates to maintain correct movement speed
-var _time_since_last_update: float = 0.0
+## STAGGERED AI: Receives accumulated time since last update (e.g., 1.65s with batch size 20)
+func _update_ai_batch(accumulated_dt: float) -> void:
+	_update_ai(accumulated_dt)
+	last_attack_time += accumulated_dt
 
-func _update_ai_batch(dt: float) -> void:
-	_time_since_last_update += dt
-	_update_ai(_time_since_last_update)
-	_time_since_last_update = 0.0  # Reset after update
-	last_attack_time += dt
+## MINIMAL AI: Ultra-simple chase behavior with player position from batch manager
+## This is called instead of _update_ai when BossUpdateManager passes player_pos
+func _update_ai_minimal(accumulated_dt: float, player_pos: Vector2) -> void:
+	# Skip AI updates if dying, paused, spawning, or being removed
+	if _is_dying or ai_paused or _is_spawning:
+		return
 
-## STAGGERED AI: AI update (calculates velocity) - called in batches by BossUpdateManager
-## Movement (move_and_slide) now handled separately in _physics_process() every frame
-## NOTE: Child classes can override this method - just remember movement happens in _physics_process()
-func _update_ai(_dt: float) -> void:
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
+	# Ultra-simple chase AI - no intermediate variables
+	var to_player := player_pos - global_position
+	var dist_sq := to_player.length_squared()
+
+	# Attack range check using squared distance (avoids sqrt)
+	var attack_range_sq := attack_range * attack_range
+
+	if dist_sq > attack_range_sq:
+		# Chase: Direct velocity assignment (Godot's physics interpolation handles smoothness)
+		velocity = to_player.normalized() * speed
+		move_and_slide()
+
+		# Simple sprite flip
+		if animated_sprite and abs(to_player.x) > 0.1:
+			animated_sprite.flip_h = to_player.x < 0
+	else:
+		# Attack: Stop moving
+		velocity = Vector2.ZERO
+
+		# Track attack cooldown
+		last_attack_time += accumulated_dt
+		if last_attack_time >= attack_cooldown:
+			_perform_attack()
+			last_attack_time = 0.0
+
+## STAGGERED AI: AI update with accumulated time for correct movement speed
+## @param accumulated_dt: Time since last update (e.g., 1.65s instead of 0.033s)
+## NOTE: Child classes can override this method
+func _update_ai(accumulated_dt: float) -> void:
 	# Skip AI updates if dying, paused, spawning, or being removed
 	if _is_dying or ai_paused or _is_spawning:
 		return
@@ -263,9 +294,14 @@ func _update_ai(_dt: float) -> void:
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
-			# Calculate velocity (AI "thinking") - move_and_slide() now in _physics_process()
+			# Calculate velocity scaled by accumulated time for correct movement distance
+			# move_and_slide() uses physics_dt (0.033s), but we accumulated time (e.g., 1.65s)
+			# Scale factor = accumulated_dt / physics_dt (e.g., 1.65 / 0.033 = 50x)
+			# This makes move_and_slide() move the correct distance for time elapsed
 			var direction: Vector2 = (target_position - global_position).normalized()
-			velocity = direction * speed
+			var physics_dt: float = 1.0 / 30.0  # Physics tick rate (30Hz = 0.0333s)
+			var scale_factor: float = accumulated_dt / physics_dt
+			velocity = direction * speed * scale_factor
 
 			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
 			var spacing_force = apply_personal_space_forces()
@@ -273,11 +309,22 @@ func _update_ai(_dt: float) -> void:
 				Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
 
 			# Apply personal space forces - these work with collision layers
-			velocity += spacing_force
+			velocity += spacing_force * scale_factor  # Scale spacing force too
+
+			# Safety check before physics update
+			if not is_inside_tree() or is_queued_for_deletion():
+				return
+
+			# Apply movement (staggered - only 20 bosses per frame call this)
+			# This will move: velocity × physics_dt = (speed × scale_factor) × physics_dt = speed × accumulated_dt
+			move_and_slide()
 
 			# Update directional animation automatically
 			_update_directional_animation(direction)
 			current_direction = direction
+
+			# Update position in damage system
+			DamageService.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
@@ -291,25 +338,6 @@ func _update_ai(_dt: float) -> void:
 				last_attack_time = 0.0
 			# Note: Don't play walking animations during attack cooldown
 			# Let the attack animation from _perform_attack() play uninterrupted
-
-## STAGGERED AI: Apply movement every frame (30Hz) even when AI only updates in batches
-## This ensures smooth movement - velocity is calculated in staggered batches, applied every frame
-func _physics_process(_delta: float) -> void:
-	# Skip movement if dying, paused, or spawning
-	if _is_dying or ai_paused or _is_spawning:
-		return
-
-	# Skip if boss is being removed or not in tree
-	if not is_inside_tree() or is_queued_for_deletion():
-		return
-
-	# Apply velocity calculated during batched AI updates
-	if velocity.length_squared() > 0.1:
-		move_and_slide()
-
-		# Update position in damage system (only when actually moving)
-		# Use cached entity_id from _ready() to avoid string allocation every frame
-		DamageService.update_entity_position(entity_id, global_position)
 
 ## DIRECTIONAL ANIMATION SYSTEM - Simplified for left/right sprite flipping only
 ## Performance: No angle calculations, no string building, no animation lookups
