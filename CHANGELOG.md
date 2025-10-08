@@ -2,6 +2,51 @@
 
 ## [Current Week - In Progress]
 
+### FPS Limiter System (2025-10-08)
+
+**New FPSLimiter autoload for game-standard FPS control:**
+
+**Features:**
+- ✅ 6 FPS modes: Unlimited, VSync, 30/60/120/144 FPS caps
+- ✅ Microsecond-precision frame timing (`OS.delay_usec`)
+- ✅ F4 hotkey to cycle through modes
+- ✅ Default: 60 FPS cap
+
+**How Games Do It:**
+- **Unlimited:** No cap, renders as fast as possible (competitive gaming)
+- **VSync:** Syncs to monitor refresh rate (tear-free, 60/144/240 Hz)
+- **Fixed caps:** 30/60/120/144 FPS with precise frame time limiting
+
+**Why Previous Approach Failed:**
+- `Engine.max_fps = 60` was unreliable (often ignored by Godot)
+- Manual frame timing with microsecond precision is industry standard
+- Calculates exact target frame time (e.g., 1/60 = 16,667 microseconds)
+- Sleeps remaining time if frame renders too fast
+
+**Usage:**
+```gdscript
+# Cycle modes
+FPSLimiter.cycle_fps_mode()  # Press F4
+
+# Set specific mode
+FPSLimiter.set_fps_mode(FPSLimiter.FPSMode.CAP_60)
+
+# Get current mode
+var mode_string = FPSLimiter.get_mode_string()  # "60 FPS"
+```
+
+**Performance Impact:**
+- Virtually zero overhead when in UNLIMITED or VSYNC mode
+- Only activates frame limiting in CAP_* modes
+- Uses high-priority process to ensure accurate timing
+
+### Personal Space Increase (2025-10-08)
+
+**Improved enemy separation:**
+- ✅ `BaseBoss.PERSONAL_SPACE_STRENGTH`: 1.0 → 2.5
+- Prevents excessive overlapping during high-density swarms
+- Maintains smooth movement while improving visual clarity
+
 ### Cleanup: Experimental AI Files Removed (2025-10-08)
 
 **Removed all experimental files from AI optimization attempts:**
