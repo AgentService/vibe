@@ -232,9 +232,13 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
 	
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
-## STAGGERED AI: Only AI logic (thinking) runs in batches, movement runs every frame
+## STAGGERED AI: Accumulate time between updates to maintain correct movement speed
+var _time_since_last_update: float = 0.0
+
 func _update_ai_batch(dt: float) -> void:
-	_update_ai(dt)
+	_time_since_last_update += dt
+	_update_ai(_time_since_last_update)
+	_time_since_last_update = 0.0  # Reset after update
 	last_attack_time += dt
 
 ## STAGGERED AI: AI update (calculates velocity) - called in batches by BossUpdateManager

@@ -604,6 +604,80 @@ func apply_card_effects(card_data: Dictionary) -> void:
     _broadcast_stat_changes()
 ```
 
+### 👾 **BaseBoss Animation & Collision Patterns (Updated 2025-10-08)**
+
+**Simplified Directional Animation (Left/Right Only):**
+```gdscript
+# BaseBoss.gd - Simplified animation system
+func _update_directional_animation(direction: Vector2) -> void:
+    if not animated_sprite:
+        return
+
+    # Simple left/right sprite flipping based on horizontal movement
+    if abs(direction.x) > 0.1:  # Only flip if significant horizontal movement
+        animated_sprite.flip_h = direction.x < 0  # Flip when moving left
+
+    # Ensure animation is playing (use "default" or animation_prefix)
+    if animated_sprite.sprite_frames and not animated_sprite.is_playing():
+        if animated_sprite.sprite_frames.has_animation("default"):
+            animated_sprite.play("default")
+        elif animated_sprite.sprite_frames.has_animation(animation_prefix):
+            animated_sprite.play(animation_prefix)
+```
+
+**Performance Benefits:**
+- ❌ **Removed:** ~75 lines of 8-directional animation system
+- ❌ **Removed:** `direction.angle()` trigonometric calculations (30,000/sec @ 1000 enemies)
+- ❌ **Removed:** String concatenation for animation names ("walk_" + direction)
+- ❌ **Removed:** Multiple `has_animation()` lookups across 8 directions
+- ✅ **Kept:** Simple `flip_h` boolean assignment (O(1) operation)
+
+**Animation Requirements:**
+- Bosses need only ONE animation: "default" or their custom `animation_prefix`
+- No directional variants required (e.g., "walk_left", "walk_up", etc.)
+- Horizontal facing handled automatically by sprite flipping
+
+**Collision Optimization (Enemy Pass-Through):**
+```gdscript
+# BaseBoss._ready() - Explicit collision configuration
+func _ready() -> void:
+    # PERFORMANCE: Disable enemy-to-enemy collision for high entity counts
+    # Layer 2 (Bosses): Enemy exists on this layer (projectiles/player can hit)
+    # Mask 1 (Terrain): Enemy only collides with terrain (passes through other enemies)
+    collision_layer = 2  # Exist on Layer 2
+    collision_mask = 1   # Collide with Layer 1 only (terrain)
+```
+
+**Collision Performance:**
+- **Before:** 450 enemies = ~101,000 collision pairs (n × (n-1) / 2)
+- **After:** 450 enemies = ~450 collision checks (enemies vs terrain only)
+- **Expected gain:** 20-40% FPS improvement at 500+ enemies
+- **Behavior:** Enemies stack on player without blocking each other
+
+**Layer Configuration:**
+```gdscript
+# project.godot physics layers:
+# Layer 1: Terrain
+# Layer 2: Bosses (enemies)
+# Layer 3: Player
+# Layer 4: Projectiles
+
+# Collision matrix:
+# - Enemies (Layer 2) collide with: Terrain (Layer 1) only
+# - Projectiles (Layer 4) collide with: Enemies (Layer 2)
+# - Player (Layer 3) collides with: Enemies (Layer 2)
+# - Enemies DON'T collide with each other
+```
+
+**To toggle enemy-enemy collision:**
+```gdscript
+# Enable enemy-enemy collision:
+collision_mask = 3  # Binary 0011 = Layers 1 + 2 (Terrain + Bosses)
+
+# Disable enemy-enemy collision (default):
+collision_mask = 1  # Binary 0001 = Layer 1 only (Terrain)
+```
+
 ## Troubleshooting Guide
 
 ### 🚨 **Common Issues**

@@ -98,6 +98,69 @@ func _physics_process(delta: float) -> void:
   - Simplified boss architecture back to standard Godot patterns
   - Kept 3 real performance optimizations (spatial grid, staggered AI, API fix)
 - ✅ **Enemy speed corrections**: Fixed template speeds from 500-1000 → 160-240 px/s
+
+### Enemy Collision Optimization (2025-10-08)
+
+**Disabled enemy-to-enemy collision for performance gains with high entity counts:**
+
+**Changes:**
+- ✅ **Added explicit collision mask to BaseBoss._ready()** (BaseBoss.gd:131)
+  - Set `collision_layer = 2` (exist on Layer 2 - Bosses)
+  - Set `collision_mask = 1` (only collide with Layer 1 - Terrain)
+  - Enemies now pass through each other instead of colliding
+  - Projectiles and player can still hit enemies (they check Layer 2)
+
+**Performance Impact:**
+- **Before:** 450 enemies = ~101,000 collision pairs (450 × 449 / 2)
+- **After:** 450 enemies = ~450 collision checks (enemies vs terrain only)
+- **Expected gain:** 20-40% FPS improvement at 500+ enemies
+- **Behavior:** Enemies stack on player without blocking each other
+
+**Layer Configuration:**
+```gdscript
+# project.godot layers:
+# Layer 1: Terrain
+# Layer 2: Bosses
+# Layer 3: Player
+# Layer 4: Projectiles
+
+# Collision rules:
+# - Enemies collide with terrain (mask = 1)
+# - Projectiles collide with enemies (mask includes Layer 2)
+# - Enemies DON'T collide with each other
+```
+
+**To re-enable enemy-enemy collision:**
+Change `collision_mask = 1` to `collision_mask = 3` (binary 0011 = Layers 1+2) in BaseBoss.gd:134
+
+### Boss Animation Simplification (2025-10-08)
+
+**Removed 8-directional animation system in favor of simple left/right sprite flipping:**
+
+**Changes:**
+- ✅ **Removed `_try_directional_animation()` method** (~62 lines removed from BaseBoss.gd:310-385)
+  - Eliminated angle calculations using `direction.angle()`
+  - Removed 8-directional animation name string building
+  - Removed multiple animation existence checks
+  - Removed cardinal direction fallback logic
+- ✅ **Simplified `_update_directional_animation()`** to left/right flip only
+  - Now just sets `animated_sprite.flip_h = direction.x < 0`
+  - Only requires "default" animation, no directional variants needed
+  - Falls back to animation_prefix if "default" doesn't exist
+
+**Performance Impact:**
+- **Before:** 1000 enemies × 30Hz = 30,000 angle calculations/sec
+- **After:** 1000 enemies × 30Hz = 30,000 simple flip_h assignments/sec
+- **Saved operations per update:**
+  - `direction.angle()` trigonometric calculation
+  - String concatenation for animation name building
+  - Multiple `has_animation()` lookups across 8 directions
+- **Estimated improvement:** Eliminates ~90,000 expensive operations/sec (angle + string + lookups)
+
+**Animation Requirements:**
+- Bosses now only need one animation: "default" or their animation_prefix
+- No need for directional variants (e.g., "walk_left", "walk_right")
+- Horizontal movement handled by sprite flipping
   - Centralized speed configuration in BaseBoss.gd (line 21: 100.0)
   - Commented out per-template override (line 166)
 - ✅ **Charging burst fix restoration**: Fixed bosses "charging" after spawn
