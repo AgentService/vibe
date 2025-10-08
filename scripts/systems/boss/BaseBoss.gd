@@ -235,6 +235,13 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
+## STAGGERED AI: Physics process runs EVERY frame (30Hz) even when AI is staggered
+## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
+func _physics_process(delta: float) -> void:
+	# Always apply movement if we have velocity (even when AI doesn't update)
+	if velocity.length_squared() > 0.01:
+		move_and_slide()
+
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
 func _update_ai(dt: float) -> void:
@@ -271,8 +278,8 @@ func _update_ai(dt: float) -> void:
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			# Apply movement
-			move_and_slide()
+			# STAGGERED AI: Don't call move_and_slide() here - handled in _physics_process()
+			# This allows AI to update every 20 frames while physics runs every frame
 
 			# Update directional animation automatically
 			_update_directional_animation(direction)
