@@ -13,15 +13,6 @@ var _boss_ids: PackedStringArray = PackedStringArray()
 var _boss_nodes: Array[CharacterBody2D] = []
 var _boss_index: Dictionary = {} # id -> index
 
-# STAGGERED AI UPDATES: Spread boss processing across frames to reduce per-frame load
-# At 400 bosses with batch_size=50: 50 bosses/frame × 30Hz = 1500 updates/sec (down from 12K)
-# This also staggers move_and_slide() calls, spreading physics queries across 8 frames
-var _boss_update_offset: int = 0  # Current batch offset in boss array
-const BOSS_UPDATE_BATCH_SIZE: int = 20  # Bosses processed per frame (tune based on performance)
-
-# Track accumulated time for each boss since their last update
-var _boss_time_accumulators: PackedFloat32Array = PackedFloat32Array()
-
 # Reusable batched payload buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()
 var _pos_buf: PackedVector2Array = PackedVector2Array()
@@ -59,7 +50,6 @@ func register_boss(boss: CharacterBody2D, boss_id: String) -> void:
 	_boss_index[boss_id] = idx
 	_boss_ids.push_back(boss_id)
 	_boss_nodes.push_back(boss)
-	_boss_time_accumulators.push_back(0.0)  # Initialize accumulator for this boss
 
 	Logger.info("Boss registered: %s (index: %d, total: %d)" % [boss_id, idx, _boss_ids.size()], "performance")
 
@@ -78,19 +68,17 @@ func unregister_boss(boss_id: String) -> void:
 		var last_id: String = _boss_ids[last_idx]
 		_boss_ids[idx] = last_id
 		_boss_nodes[idx] = _boss_nodes[last_idx]
-		_boss_time_accumulators[idx] = _boss_time_accumulators[last_idx]  # Swap accumulator too
 		_boss_index[last_id] = idx
 
 	# Remove last element
 	_boss_ids.resize(last_idx)
 	_boss_nodes.resize(last_idx)
-	_boss_time_accumulators.resize(last_idx)  # Remove accumulator
 	_boss_index.erase(boss_id)
 
 	Logger.info("Boss unregistered: %s (remaining: %d)" % [boss_id, _boss_ids.size()], "performance")
 
 ## Central combat step handler - replaces individual boss connections
-## STAGGERED UPDATES: Only processes BOSS_UPDATE_BATCH_SIZE bosses per frame
+## Processes ALL bosses every frame with shared player position lookup
 func _on_combat_step(payload) -> void:
 	var dt: float = payload.dt
 	var count: int = _boss_ids.size()
@@ -98,29 +86,18 @@ func _on_combat_step(payload) -> void:
 	if count == 0:
 		return  # No bosses to process
 
-	# PERFORMANCE: Get player position ONCE for entire batch (shared across all 20 bosses)
+	# PERFORMANCE: Get player position ONCE for all bosses
 	if not PlayerState.has_player_reference():
 		return  # No player, skip AI updates
-	var player_pos: Vector2 = PlayerState.position  # Single lookup instead of 20
-
-	# Accumulate time for ALL bosses every frame (even those not in current batch)
-	for i in range(count):
-		_boss_time_accumulators[i] += dt
+	var player_pos: Vector2 = PlayerState.position  # Single lookup for all enemies
 
 	# Clear reusable buffers without reallocations
 	_ids_buf.resize(0)
 	_pos_buf.resize(0)
 	_ai_flags_buf.resize(0)
 
-	# STAGGERED AI: Calculate batch range for this frame
-	# Example: 400 bosses / 50 batch = 8 frames to update all
-	# Each boss updates every ~266ms (8 frames × 33ms) instead of every 33ms
-	var batch_start: int = _boss_update_offset
-	var batch_end: int = min(_boss_update_offset + BOSS_UPDATE_BATCH_SIZE, count)
-
-	# PERFORMANCE: Only process bosses in current batch window
-	# This also staggers move_and_slide() calls, spreading physics queries across frames
-	for i in range(batch_start, batch_end):
+	# Process ALL bosses every frame (no staggering)
+	for i in range(count):
 		var boss := _boss_nodes[i]
 		if not is_instance_valid(boss):
 			# Mark for cleanup but don't modify arrays during iteration
@@ -131,27 +108,15 @@ func _on_combat_step(payload) -> void:
 		_pos_buf.push_back(boss.global_position)
 		_ai_flags_buf.push_back(1) # true - boss is active
 
-		# Pass accumulated time since last update (typically 1.65s for batch size 20)
-		var accumulated_dt: float = _boss_time_accumulators[i]
-
 		# MINIMAL AI: Call ultra-simple AI with shared player position
-		# This triggers move_and_slide() inside the boss, spreading physics across frames
 		if boss.has_method("_update_ai_minimal"):
-			boss._update_ai_minimal(accumulated_dt, player_pos)  # Pass player_pos to avoid per-boss lookup
+			boss._update_ai_minimal(dt, player_pos)  # Use dt, not accumulated_dt
 		elif boss.has_method("_update_ai_batch"):
-			boss._update_ai_batch(accumulated_dt)  # Fallback to old AI
+			boss._update_ai_batch(dt)  # Fallback to old AI
 		else:
 			Logger.warn("Boss %s missing AI methods - using fallback" % _boss_ids[i], "performance")
 			if boss.has_method("_update_ai"):
-				boss._update_ai(accumulated_dt)
-
-		# Reset accumulator after update
-		_boss_time_accumulators[i] = 0.0
-
-	# STAGGERED AI: Advance batch offset for next frame
-	_boss_update_offset += BOSS_UPDATE_BATCH_SIZE
-	if _boss_update_offset >= count:
-		_boss_update_offset = 0  # Wrap around to start
+				boss._update_ai(dt)
 	
 	# Create single batched payload per step
 	if _ids_buf.size() > 0:

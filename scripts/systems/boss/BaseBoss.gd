@@ -255,12 +255,8 @@ func _update_ai_minimal(accumulated_dt: float, player_pos: Vector2) -> void:
 	var attack_range_sq := attack_range * attack_range
 
 	if dist_sq > attack_range_sq:
-		# Chase: Scale velocity by accumulated time for correct movement distance
-		# With batch size 20 at 1000 enemies, this boss updates every ~1.67s
-		# We need to move the distance we WOULD have moved if updating every frame
-		var physics_dt: float = 1.0 / 30.0  # 0.033s per physics step
-		var scale_factor: float = accumulated_dt / physics_dt
-		velocity = to_player.normalized() * speed * scale_factor
+		# Chase: Simple direct velocity assignment
+		velocity = to_player.normalized() * speed
 		move_and_slide()
 
 		# Simple sprite flip
