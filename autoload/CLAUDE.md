@@ -54,14 +54,14 @@
 const CombatStepPayload_Type = preload("res://scripts/domain/signal_payloads/CombatStepPayload.gd")
 signal combat_step(payload)  # payload: CombatStepPayload_Type
 
-# EventBus emits
-var payload = CombatStepPayload_Type.new()
-payload.delta_time = RunManager.COMBAT_DT
+# EventBus emits (called from RunManager._physics_process at 30Hz)
+var payload = CombatStepPayload_Type.new(delta)
 EventBus.combat_step.emit(payload)
 
 # Systems connect
 EventBus.combat_step.connect(_on_combat_step)
 func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+    # payload.dt contains fixed timestep (0.033s for 30Hz)
 ```
 
 **High-Frequency Optimization:**
@@ -96,19 +96,25 @@ func setup_systems(injected_systems: Dictionary) -> void:
 
 ### ⏱️ **RunManager Fixed-Step Pattern**
 
-**30Hz Combat Timing:**
+**30Hz Combat Timing (Godot Native):**
 ```gdscript
-# Fixed-step accumulator pattern
-const COMBAT_DT: float = 1.0 / 30.0  # 30Hz
+# Uses Godot's built-in _physics_process() for fixed timestep
+# Configured in project.godot: physics_ticks_per_second=30
 
-func _process(delta: float) -> void:
-    if PauseManager.is_paused():
-        return  # Don't accumulate time during pause
+func _physics_process(delta: float) -> void:
+    # delta is always constant (0.033s for 30Hz)
+    # Godot handles the fixed timestep automatically
 
-    _accumulator += delta
-    while _accumulator >= COMBAT_DT:
-        _accumulator -= COMBAT_DT
-        _emit_combat_step()
+    # Create typed payload with fixed physics delta
+    var payload := EventBus.CombatStepPayload_Type.new(delta)
+
+    # Emit combat step - all systems process at 30Hz
+    EventBus.combat_step.emit(payload)
+
+# Physics interpolation (project.godot: physics_interpolation=true)
+# - Godot automatically smooths rendering between 30Hz physics steps
+# - No manual position tracking needed for entities
+# - Call reset_physics_interpolation() when teleporting pooled entities
 ```
 
 ### 🎲 **RNG Deterministic Streams**
@@ -267,7 +273,7 @@ StateManager.go_to_character_select() # Menu → Character Select
 ### ⚡ **Zero-Allocation Patterns**
 
 - **EventBus:** Object pools for high-frequency payloads (damage_applied, damage_dealt)
-- **RunManager:** Fixed accumulator, no per-frame allocations
+- **RunManager:** Uses Godot's native _physics_process(), no manual accumulation overhead
 - **RNG:** Cached stream instances, no dynamic creation
 
 ### 🔍 **Process Mode Management**
