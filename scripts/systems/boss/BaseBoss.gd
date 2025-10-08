@@ -32,7 +32,7 @@ var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_ENABLED: bool = false  # Performance: Disable enemy spacing (allows overlapping) for 700+ enemies
+const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
 const PERSONAL_SPACE_STRENGTH: float = 1.0  # Gentle spacing force prevents charging burst on spawn
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
@@ -230,60 +230,15 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	
 	# Future: Add other scalable components here
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
-	
+
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
-## STAGGERED AI: Receives accumulated time since last update (e.g., 1.65s with batch size 20)
-func _update_ai_batch(accumulated_dt: float) -> void:
-	_update_ai(accumulated_dt)
-	last_attack_time += accumulated_dt
+func _update_ai_batch(dt: float) -> void:
+	_update_ai(dt)
+	last_attack_time += dt
 
-## MINIMAL AI: Ultra-simple chase behavior with player position from batch manager
-## This is called instead of _update_ai when BossUpdateManager passes player_pos
-func _update_ai_minimal(accumulated_dt: float, player_pos: Vector2) -> void:
-	# Skip AI updates if dying, paused, spawning, or being removed
-	if _is_dying or ai_paused or _is_spawning:
-		return
-
-	if not is_inside_tree() or is_queued_for_deletion():
-		return
-
-	# Ultra-simple chase AI - no intermediate variables
-	var to_player := player_pos - global_position
-	var dist_sq := to_player.length_squared()
-
-	# Attack range check using squared distance (avoids sqrt)
-	var attack_range_sq := attack_range * attack_range
-
-	if dist_sq > attack_range_sq:
-		# Chase: Simple direct velocity assignment
-		velocity = to_player.normalized() * speed
-		move_and_slide()
-
-		# Simple sprite flip
-		if animated_sprite:
-			if abs(to_player.x) > 0.1:
-				animated_sprite.flip_h = to_player.x < 0
-
-			# Ensure animation is playing
-			if animated_sprite.sprite_frames and not animated_sprite.is_playing():
-				if animated_sprite.sprite_frames.has_animation("default"):
-					animated_sprite.play("default")
-				elif animated_sprite.sprite_frames.has_animation(animation_prefix):
-					animated_sprite.play(animation_prefix)
-	else:
-		# Attack: Stop moving
-		velocity = Vector2.ZERO
-
-		# Track attack cooldown
-		last_attack_time += accumulated_dt
-		if last_attack_time >= attack_cooldown:
-			_perform_attack()
-			last_attack_time = 0.0
-
-## STAGGERED AI: AI update with accumulated time for correct movement speed
-## @param accumulated_dt: Time since last update (e.g., 1.65s instead of 0.033s)
-## NOTE: Child classes can override this method
-func _update_ai(accumulated_dt: float) -> void:
+## Base AI logic - simple every-frame updates
+## Child classes can override or extend
+func _update_ai(dt: float) -> void:
 	# Skip AI updates if dying, paused, spawning, or being removed
 	if _is_dying or ai_paused or _is_spawning:
 		return
@@ -302,29 +257,22 @@ func _update_ai(accumulated_dt: float) -> void:
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
-			# Calculate velocity scaled by accumulated time for correct movement distance
-			# move_and_slide() uses physics_dt (0.033s), but we accumulated time (e.g., 1.65s)
-			# Scale factor = accumulated_dt / physics_dt (e.g., 1.65 / 0.033 = 50x)
-			# This makes move_and_slide() move the correct distance for time elapsed
+			# Move toward player - simple velocity calculation
 			var direction: Vector2 = (target_position - global_position).normalized()
-			var physics_dt: float = 1.0 / 30.0  # Physics tick rate (30Hz = 0.0333s)
-			var scale_factor: float = accumulated_dt / physics_dt
-			velocity = direction * speed * scale_factor
+			velocity = direction * speed
 
 			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
-			var spacing_force = apply_personal_space_forces()
-			if spacing_force.length_squared() > 0.1:  # Only log when significant spacing occurs
-				Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
-
-			# Apply personal space forces - these work with collision layers
-			velocity += spacing_force * scale_factor  # Scale spacing force too
+			if PERSONAL_SPACE_ENABLED:
+				var spacing_force = apply_personal_space_forces()
+				if spacing_force.length_squared() > 0.1:
+					Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+				velocity += spacing_force
 
 			# Safety check before physics update
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			# Apply movement (staggered - only 20 bosses per frame call this)
-			# This will move: velocity × physics_dt = (speed × scale_factor) × physics_dt = speed × accumulated_dt
+			# Apply movement
 			move_and_slide()
 
 			# Update directional animation automatically
@@ -347,13 +295,75 @@ func _update_ai(accumulated_dt: float) -> void:
 			# Note: Don't play walking animations during attack cooldown
 			# Let the attack animation from _perform_attack() play uninterrupted
 
-## DIRECTIONAL ANIMATION SYSTEM - Simplified for left/right sprite flipping only
-## Performance: No angle calculations, no string building, no animation lookups
+## DIRECTIONAL ANIMATION SYSTEM
+## Automatically converts movement direction to appropriate 8-directional animation
+## Falls back to sprite flipping if directional animations don't exist
 func _update_directional_animation(direction: Vector2) -> void:
+	if not animated_sprite or not animated_sprite.sprite_frames:
+		return
+
+	# First, try 8-directional animations
+	if _try_directional_animation(direction):
+		return
+
+	# Fallback: Use basic sprite flipping for non-directional sprites
+	_apply_sprite_flipping(direction)
+
+## Try to use 8-directional animations
+func _try_directional_animation(direction: Vector2) -> bool:
+	# Convert direction to 8-directional animation
+	var angle = direction.angle()
+	var animation_name = animation_prefix + "_"
+
+	# Convert angle to 8 directions
+	if angle >= -PI/8 and angle < PI/8:
+		animation_name += "east"
+	elif angle >= PI/8 and angle < 3*PI/8:
+		animation_name += "south_east"
+	elif angle >= 3*PI/8 and angle < 5*PI/8:
+		animation_name += "south"
+	elif angle >= 5*PI/8 and angle < 7*PI/8:
+		animation_name += "south_west"
+	elif angle >= 7*PI/8 or angle < -7*PI/8:
+		animation_name += "west"
+	elif angle >= -7*PI/8 and angle < -5*PI/8:
+		animation_name += "north_west"
+	elif angle >= -5*PI/8 and angle < -3*PI/8:
+		animation_name += "north"
+	else:  # -3*PI/8 to -PI/8
+		animation_name += "north_east"
+
+	# Check if the directional animation exists
+	if animated_sprite.sprite_frames.has_animation(animation_name):
+		# Only change animation if it's different
+		if animated_sprite.animation != animation_name:
+			animated_sprite.play(animation_name)
+		return true  # Return true because directional animation exists (whether we changed it or not)
+
+	# Fallback: Try cardinal direction if diagonal doesn't exist (for 4-directional sprites)
+	var fallback_name = animation_prefix + "_"
+	if abs(direction.x) > abs(direction.y):
+		# Horizontal movement dominates
+		fallback_name += "east" if direction.x > 0 else "west"
+	else:
+		# Vertical movement dominates
+		fallback_name += "south" if direction.y > 0 else "north"
+
+	# Check if cardinal fallback exists
+	if animated_sprite.sprite_frames.has_animation(fallback_name):
+		# Only change animation if it's different
+		if animated_sprite.animation != fallback_name:
+			animated_sprite.play(fallback_name)
+		return true  # Return true because we found a fallback animation
+
+	return false  # No directional animation exists
+
+## Apply basic sprite flipping when directional animations aren't available
+func _apply_sprite_flipping(direction: Vector2) -> void:
 	if not animated_sprite:
 		return
 
-	# Simple left/right sprite flipping based on horizontal movement
+	# Use simple left/right flipping based on horizontal movement
 	if abs(direction.x) > 0.1:  # Only flip if there's significant horizontal movement
 		animated_sprite.flip_h = direction.x < 0  # Flip when moving left
 

@@ -2,6 +2,43 @@
 
 ## [Current Week - In Progress]
 
+### AI Simplification - Remove Staggered Batching Complexity (2025-10-08)
+
+**Simplified boss AI by removing staggered batching in favor of straightforward every-frame updates:**
+
+**Changes:**
+- ✅ **Simplified BaseBoss._update_ai() to normal flow** (lines 288-345)
+  - **Removed:** `accumulated_dt` parameter and time scaling complexity
+  - **Removed:** `scale_factor = accumulated_dt / physics_dt` velocity multiplication
+  - **Removed:** `velocity += spacing_force * scale_factor` scaled personal space
+  - **Changed:** `velocity = direction * speed` (simple, no scaling)
+  - **Changed:** `velocity += spacing_force` (direct addition, no scaling)
+  - Result: ~15 lines simpler, easier to understand and maintain
+- ✅ **Restored 8-directional animation system** (lines 347-427)
+  - Added `_try_directional_animation()` with 8-directional angle-to-animation mapping
+  - Added `_apply_sprite_flipping()` fallback for non-directional sprites
+  - Supports: "walk_east", "walk_south_east", "walk_south", etc.
+  - Falls back to 4-directional if diagonals missing
+  - Falls back to sprite flipping if no directional animations
+- ✅ **Enabled personal space system** (line 35)
+  - `PERSONAL_SPACE_ENABLED = true` - prevents enemy overlapping
+  - `PERSONAL_SPACE_STRENGTH = 1.0` - gentle spacing force
+  - Personal space now conditional: only applied if enabled
+- ✅ **BossUpdateManager continues processing all bosses every frame** (line 99-120)
+  - Already was calling all bosses per frame via _update_ai_batch()
+  - No change needed - already optimal
+
+**Why this simplification?**
+- Staggered batching added complexity (time accumulators, velocity scaling) for marginal performance gains
+- Every-frame AI is simpler to reason about and debug
+- With collision optimization already in place, can likely handle 1000 enemies at 60+ FPS
+- If performance issues arise, can revisit staggered approach with proper profiling data
+
+**Performance tradeoff:**
+- Before: 20 AI updates/frame (staggered) = lower CPU, higher complexity
+- After: All AI updates/frame = simpler code, potentially higher CPU usage
+- Test with 1000 enemies to validate performance is acceptable
+
 ### Ranger Starting Ability Change (2025-10-08)
 
 **Changed ranger base attack from heartseeker to volley:**
