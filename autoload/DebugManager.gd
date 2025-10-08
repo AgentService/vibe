@@ -66,6 +66,13 @@ func _input(event: InputEvent) -> void:
 		
 	var key_event := event as InputEventKey
 	
+	# F4: Cycle FPS mode (Unlimited → VSync → 30/60/120/144)
+	if key_event.keycode == KEY_F4:
+		if FPSLimiter:
+			FPSLimiter.cycle_fps_mode()
+		get_viewport().set_input_as_handled()
+		return
+
 	# F5: Hot-reload enemy templates for immediate size factor changes
 	if key_event.keycode == KEY_F5:
 		Logger.info("F5 pressed: Hot-reloading enemy templates", "debug")
