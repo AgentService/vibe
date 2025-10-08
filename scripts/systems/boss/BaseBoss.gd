@@ -64,12 +64,11 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# PERFORMANCE: Disable enemy-to-enemy collision for high enemy counts (450+)
-	# Enemies exist on Layer 2 (for player/projectiles to detect and damage)
-	collision_layer = 2
-	# Enemies only collide with Layer 1 (Terrain) - walk through each other
-	# Result: Eliminates ~101,000 collision pairs with 450 enemies (450×449/2)
-	collision_mask = 1
+	# PERFORMANCE: Disable enemy-to-enemy collision for high entity counts
+	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can hit them)
+	# Mask 1 (Terrain): Enemy only collides with terrain (enemies pass through each other)
+	collision_layer = 2  # Exist on Layer 2
+	collision_mask = 1   # Collide with Layer 1 only (terrain)
 
 	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
 	# Example with spawn_config.spawn_behavior enum:

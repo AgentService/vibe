@@ -30,25 +30,6 @@ After implementing Glenn Fiedler's custom interpolation pattern and stress testi
 
 **Performance:** Eliminates 30Hz stutter with zero code overhead
 
-### Enemy-Enemy Collision Disabled (2025-10-08)
-
-**Disabled enemy-to-enemy physics collision to eliminate massive collision check overhead:**
-
-**Changes:**
-- ✅ **Added collision mask setup to BaseBoss.gd:67-72**
-  - `collision_layer = 2` - Enemies exist on Layer 2 (player/projectiles can still hit them)
-  - `collision_mask = 1` - Enemies only collide with Layer 1 (Terrain)
-  - Result: Enemies walk through each other, no physics collision between enemies
-
-**Performance Impact:**
-- **Before:** 450 enemies = ~101,000 potential enemy-enemy collision pairs (450×449/2)
-- **After:** 450 enemies = 0 enemy-enemy collision pairs
-- **Expected:** 20-40% FPS improvement with high enemy counts (450+)
-- **Trade-off:** Enemies can overlap (acceptable for horde/swarm gameplay)
-
-**Architecture Note:**
-This complements the existing `PERSONAL_SPACE_ENABLED = false` flag which disabled signal-based spacing forces. Now both physics collision AND spacing logic are disabled for maximum performance with 700+ enemies.
-
 ### Staggered Boss AI Updates - Batched Physics (2025-10-08)
 
 **Implemented staggered AI updates for bosses (400+ CharacterBody2D enemies) to spread computational load across frames:**

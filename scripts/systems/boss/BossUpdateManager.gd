@@ -16,8 +16,8 @@ var _boss_index: Dictionary = {} # id -> index
 # STAGGERED AI UPDATES: Spread boss processing across frames to reduce per-frame load
 # At 400 bosses with batch_size=50: 50 bosses/frame × 30Hz = 1500 updates/sec (down from 12K)
 # This also staggers move_and_slide() calls, spreading physics queries across 8 frames
-var _boss_update_offset: int = 1  # Current batch offset in boss array
-const BOSS_UPDATE_BATCH_SIZE: int = 140  # Bosses processed per frame (tune based on performance)
+var _boss_update_offset: int = 0  # Current batch offset in boss array
+const BOSS_UPDATE_BATCH_SIZE: int = 20  # Bosses processed per frame (tune based on performance)
 
 # Reusable batched payload buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()
