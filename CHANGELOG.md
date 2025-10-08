@@ -2,6 +2,34 @@
 
 ## [Current Week - In Progress]
 
+### Parser Error Fix (2025-10-08)
+
+**Fixed "Could not resolve class BaseBoss" parser error:**
+
+**Problem:**
+- AncientLich and other boss classes couldn't extend BaseBoss
+- Error: "Parser Error: Could not resolve class 'BaseBoss'"
+- Caused by incorrect function call after animation system refactor
+
+**Root Cause:**
+```gdscript
+# Line 323 called old function name:
+_update_synchronized_animation(direction)  # ❌ Function renamed!
+
+# Should call new name:
+_apply_centralized_animation_frame(direction)  # ✅ Correct
+```
+
+**Solution:**
+- Updated function call in `_update_directional_animation()` to use renamed function
+- Function was renamed as part of centralized animation system (line 400)
+- One call site at line 323 was not updated
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd:323` - Fixed function call
+
+---
+
 ### Personal Space System Fix (2025-10-08)
 
 **Fixed initialization order bug preventing boss spacing:**
