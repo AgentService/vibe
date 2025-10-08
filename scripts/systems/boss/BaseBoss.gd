@@ -72,6 +72,13 @@ func _ready() -> void:
 	collision_layer = 2  # Exist on Layer 2
 	collision_mask = 1   # Collide with Layer 1 only (terrain)
 
+	# Setup personal space area BEFORE spawn animation (needed for _on_spawn_animation_complete)
+	if PERSONAL_SPACE_ENABLED:
+		_setup_personal_space_area()
+		# Disable monitoring during spawn, re-enabled in _on_spawn_animation_complete()
+		if personal_space_area:
+			personal_space_area.monitoring = false
+
 	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
 	# Example with spawn_config.spawn_behavior enum:
 	#   match spawn_config.spawn_behavior:
@@ -136,14 +143,6 @@ func _ready() -> void:
 
 	# Initialize health bar
 	_update_health_bar()
-
-	# Setup personal space area for boss-to-boss spacing control
-	if PERSONAL_SPACE_ENABLED:
-		_setup_personal_space_area()
-
-		# Disable personal space during spawn animation to prevent initial burst
-		if personal_space_area:
-			personal_space_area.monitoring = false
 
 	# SYNCHRONIZED ANIMATION: Stop AnimationPlayer auto-playback
 	if USE_SYNCHRONIZED_ANIMATION and animated_sprite:
@@ -249,9 +248,9 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-	# SYNCHRONIZED ANIMATION: Update every frame even when idle
+	# SYNCHRONIZED ANIMATION: Get pre-calculated frame from BossUpdateManager
 	if USE_SYNCHRONIZED_ANIMATION and animated_sprite and current_direction != Vector2.ZERO:
-		_update_synchronized_animation(current_direction)
+		_apply_centralized_animation_frame(current_direction)
 
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
@@ -396,35 +395,20 @@ func _apply_sprite_flipping(direction: Vector2) -> void:
 		elif animated_sprite.sprite_frames.has_animation(animation_prefix):
 			animated_sprite.play(animation_prefix)
 
-## SYNCHRONIZED ANIMATION: All bosses of same type use shared global time
-## Performance: Eliminates per-boss AnimationPlayer overhead (1000 bosses = 20-30% FPS gain)
-func _update_synchronized_animation(direction: Vector2) -> void:
+## CENTRALIZED ANIMATION: Get pre-calculated frame from BossUpdateManager
+## Performance: BossUpdateManager calculates frames ONCE per boss type, we just apply it
+func _apply_centralized_animation_frame(direction: Vector2) -> void:
 	if not animated_sprite or not animated_sprite.sprite_frames:
 		return
 
-	# Get default animation to synchronize
-	var anim_name = "default"
-	if animated_sprite.sprite_frames.has_animation(animation_prefix):
-		anim_name = animation_prefix
+	# Get boss class name for centralized lookup
+	var boss_class_name = get_script().resource_path.get_file().get_basename()  # "BananaLord", "AncientLich", etc.
 
-	# Verify animation exists
-	if not animated_sprite.sprite_frames.has_animation(anim_name):
-		return
+	# Request pre-calculated frame from BossUpdateManager
+	var frame = BossUpdateManager.get_animation_frame(boss_class_name, animation_prefix, _animation_time_offset)
 
-	# Calculate current frame based on global time + random offset
-	var fps = animated_sprite.sprite_frames.get_animation_speed(anim_name)
-	var frame_count = animated_sprite.sprite_frames.get_frame_count(anim_name)
-
-	if frame_count == 0 or fps == 0:
-		return  # Invalid animation
-
-	# Use global time in milliseconds + offset for shared animation timing
-	var global_time_sec = (Time.get_ticks_msec() / 1000.0) + _animation_time_offset
-	var total_frames_elapsed = global_time_sec * fps
-	var current_frame = int(total_frames_elapsed) % frame_count
-
-	# Set frame directly (bypasses AnimationPlayer overhead)
-	animated_sprite.frame = current_frame
+	# Apply frame directly (no calculation needed!)
+	animated_sprite.frame = frame
 
 	# Apply sprite flipping for direction
 	if abs(direction.x) > 0.1:

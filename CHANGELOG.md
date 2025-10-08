@@ -2,6 +2,43 @@
 
 ## [Current Week - In Progress]
 
+### Personal Space System Fix (2025-10-08)
+
+**Fixed initialization order bug preventing boss spacing:**
+
+**Problem:**
+- Personal space area setup happened AFTER `_on_spawn_animation_complete()` was called
+- With `SKIP_SPAWN_ANIMATION = true`, spawn complete fired before `personal_space_area` was initialized
+- Result: `personal_space_area.monitoring = true` failed silently (null reference)
+- Bosses never detected each other in their personal space zones
+
+**Root Cause:**
+```gdscript
+# BROKEN order:
+Line 106:  _on_spawn_animation_complete() called
+Line 142:  _setup_personal_space_area() called ← TOO LATE!
+Line 184:  personal_space_area.monitoring = true ← NULL!
+```
+
+**Solution:**
+- Moved `_setup_personal_space_area()` to line 76 (before spawn animation logic)
+- Personal space area now properly initialized before `_on_spawn_animation_complete()`
+- Monitoring correctly enabled after spawn completes
+
+**Impact:**
+- ✅ Boss personal space detection now functional
+- ✅ 86px radius zones (BananaLord) properly detect nearby bosses
+- ✅ Gentle 2.5 px/s spacing forces applied during chase
+- ✅ Debug visualization (magenta circles) working when enabled
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd:75-80` - Personal space setup moved before spawn
+- `config/debug.tres:14` - Enabled `show_personal_space_circles = true` for debugging
+
+**Related:** This bug was introduced when `SKIP_SPAWN_ANIMATION = true` was added (commit 66ed59b) for high enemy count performance optimization.
+
+---
+
 ### Synchronized Animation System (2025-10-08)
 
 **Massive performance optimization for high enemy counts:**
