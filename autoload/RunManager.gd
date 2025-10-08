@@ -65,6 +65,7 @@ extends Node
 ## - ARCHITECTURE.md - Fixed-Step Combat Loop (Decision 5a)
 
 const COMBAT_DT: float = 1.0 / 30.0  # 30 Hz fixed step (33.33ms per step)
+const MAX_PHYSICS_STEPS_PER_FRAME: int = 3  # Prevent lag spiral (max 100ms catchup)
 
 @export var run_seed: int = 0:
 	set(value):
@@ -98,8 +99,9 @@ func _process(delta: float) -> void:
 	# Add frame time to accumulator
 	_accumulator += delta
 
-	# Process as many fixed steps as accumulated time allows
-	while _accumulator >= COMBAT_DT:
+	# Process as many fixed steps as accumulated time allows (up to limit)
+	var steps_this_frame: int = 0
+	while _accumulator >= COMBAT_DT and steps_this_frame < MAX_PHYSICS_STEPS_PER_FRAME:
 		# Create typed payload with fixed timestep
 		var payload := EventBus.CombatStepPayload_Type.new(COMBAT_DT)
 
@@ -108,6 +110,11 @@ func _process(delta: float) -> void:
 
 		# Subtract one fixed step from accumulator
 		_accumulator -= COMBAT_DT
+		steps_this_frame += 1
+
+	# If we hit the step limit, clamp accumulator to prevent infinite spiral
+	if steps_this_frame >= MAX_PHYSICS_STEPS_PER_FRAME:
+		_accumulator = 0.0  # Reset instead of letting debt build up
 
 ## Legacy method for compatibility - use PauseManager instead
 func pause_game(v: bool) -> void:
