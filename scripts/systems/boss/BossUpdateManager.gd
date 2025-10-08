@@ -104,17 +104,17 @@ func _get_visible_world_rect() -> Rect2:
 	var zoom: float = 1.0
 	var camera_pos := Vector2.ZERO
 
-	# Get camera from player if available
-	if PlayerState.has_player_reference():
-		var player = PlayerState.get_player_node()
-		if player:
+	# Try to get cached camera first (fast path)
+	if not _player_camera or not is_instance_valid(_player_camera):
+		# Find camera via player node (slow, but only once per run)
+		var players = get_tree().get_nodes_in_group("player")
+		if players.size() > 0:
+			var player = players[0]
 			var player_camera = player.get_node_or_null("PlayerCamera")
 			if player_camera and player_camera is Camera2D:
-				zoom = player_camera.zoom.x
-				camera_pos = player_camera.global_position
-				_player_camera = player_camera  # Cache for future frames
+				_player_camera = player_camera
 
-	# Use cached camera if player lookup failed
+	# Use camera if available
 	if _player_camera and is_instance_valid(_player_camera):
 		zoom = _player_camera.zoom.x
 		camera_pos = _player_camera.global_position

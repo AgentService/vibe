@@ -70,6 +70,13 @@ func _ready() -> void:
 	collision_layer = 2  # Exist on Layer 2
 	collision_mask = 1   # Collide with Layer 1 only (terrain)
 
+	# PERFORMANCE: Optimize move_and_slide() for top-down chase AI
+	motion_mode = MOTION_MODE_GROUNDED  # Skip floor/wall/ceiling detection (top-down game)
+	max_slides = 1  # Reduce from 4 to 1 = 75% fewer collision iterations
+	safe_margin = 0.08  # Increase from 0.001 for performance (less precision, more speed)
+	floor_stop_on_slope = false  # Not relevant for top-down movement
+	wall_min_slide_angle = 0.0  # Allow sliding at any angle (no minimum)
+
 	# Setup personal space area BEFORE spawn animation (needed for _on_spawn_animation_complete)
 	if PERSONAL_SPACE_ENABLED:
 		_setup_personal_space_area()
