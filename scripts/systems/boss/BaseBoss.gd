@@ -33,7 +33,7 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
 const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 1.0  # Gentle spacing force prevents charging burst on spawn
+const PERSONAL_SPACE_STRENGTH: float = 2.5  # Increased spacing force for better enemy separation
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
