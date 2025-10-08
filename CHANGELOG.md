@@ -2,6 +2,32 @@
 
 ## [Current Week - In Progress]
 
+### Cleanup: Experimental AI Files Removed (2025-10-08)
+
+**Removed all experimental files from AI optimization attempts:**
+
+**Deleted Files:**
+- ❌ `docs/MinimalAI_Integration_Guide.md` - staggered batching documentation
+- ❌ `docs/SimplestBossAI_Proposal.md` - experimental AI proposal
+- ❌ `scripts/systems/boss/MinimalBossAI.gd` - ultra-minimal AI implementation
+- ❌ `tests/ProjectileStressTest.gd` - stress test script
+- ❌ `tests/ProjectileStressTest.tscn` - stress test scene
+
+**Reverted:**
+- ✅ `scenes/bosses/BananaLord.tscn` - accidental animation changes during testing
+
+**Kept (Intentional):**
+- ✅ Physics interpolation code in `EntityPool.gd` - prevents pooled entity streaking artifacts
+- ✅ Physics interpolation documentation in `RunManager.gd` and `AbilityProjectile.gd`
+- ✅ `project.godot: physics_interpolation=true` - smooth rendering between 30Hz physics steps
+- ✅ FPS cap in `Main.gd` - intentional performance testing configuration
+
+**Clean Baseline Established:**
+- Baseline commit: `f5baed7` - Working every-frame AI with 8-directional animations
+- Game runs smoothly with normal enemy counts
+- Lags at 800+ enemies but no teleporting/weird movement
+- Ready for future optimization if needed
+
 ### AI Simplification - Remove Staggered Batching Complexity (2025-10-08)
 
 **Simplified boss AI by removing staggered batching in favor of straightforward every-frame updates:**
