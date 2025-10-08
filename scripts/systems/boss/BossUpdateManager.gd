@@ -18,9 +18,6 @@ var _ids_buf: PackedStringArray = PackedStringArray()
 var _pos_buf: PackedVector2Array = PackedVector2Array()
 var _ai_flags_buf: PackedByteArray = PackedByteArray() # 1 = true, 0 = false
 
-# SYNCHRONIZED ANIMATION: Centralized frame calculation (calculated ONCE per boss type per frame)
-var _animation_frames: Dictionary = {}  # "boss_class_name:anim_name" -> current_frame
-var _animation_metadata: Dictionary = {} # "boss_class_name:anim_name" -> {fps: float, frame_count: int}
 
 # Ring buffer with latest-only policy for backpressure
 var _boss_update_queue: RingBuffer
@@ -89,9 +86,6 @@ func _on_combat_step(payload) -> void:
 
 	if count == 0:
 		return  # No bosses to process
-
-	# SYNCHRONIZED ANIMATION: Calculate frames ONCE per boss type (before AI processing)
-	_update_centralized_animation_frames()
 
 	# PERFORMANCE: Get player position ONCE for all bosses
 	if not PlayerState.has_player_reference():
@@ -171,85 +165,3 @@ func get_debug_info() -> Dictionary:
 	}
 
 # Note: Boss batch payload factory and reset functions are now handled by PayloadReset utility class
-
-## SYNCHRONIZED ANIMATION: Calculate current frame for each boss type (called ONCE per frame)
-## This is the centralized controller that replaces per-boss animation calculations
-func _update_centralized_animation_frames() -> void:
-	var global_time_sec = Time.get_ticks_msec() / 1000.0
-
-	# Clear old frames (we'll recalculate for active boss types only)
-	_animation_frames.clear()
-
-	# Track which boss types we've calculated frames for
-	var calculated_types = {}
-
-	# Calculate frame for each unique boss type currently registered
-	for i in range(_boss_nodes.size()):
-		var boss = _boss_nodes[i]
-		if not is_instance_valid(boss):
-			continue
-
-		# Get animation metadata
-		var boss_class_name = boss.get_script().resource_path.get_file().get_basename()  # "BananaLord", "AncientLich", etc.
-		var anim_name = boss.get("animation_prefix") if boss.get("animation_prefix") else "walk"
-		var anim_key = boss_class_name + ":" + anim_name
-
-		# Skip if we already calculated this boss type's frame this iteration
-		if calculated_types.has(anim_key):
-			continue
-
-		calculated_types[anim_key] = true
-
-		# Get animation metadata (cache it for performance)
-		if not _animation_metadata.has(anim_key):
-			var animated_sprite = boss.get_node_or_null("AnimatedSprite2D")
-			if not animated_sprite or not animated_sprite.sprite_frames:
-				continue
-
-			# Check if animation exists
-			var final_anim_name = anim_name
-			if not animated_sprite.sprite_frames.has_animation(anim_name):
-				if animated_sprite.sprite_frames.has_animation("default"):
-					final_anim_name = "default"
-				else:
-					continue
-
-			# Cache metadata
-			var fps = animated_sprite.sprite_frames.get_animation_speed(final_anim_name)
-			var frame_count = animated_sprite.sprite_frames.get_frame_count(final_anim_name)
-
-			if fps == 0 or frame_count == 0:
-				continue
-
-			_animation_metadata[anim_key] = {
-				"fps": fps,
-				"frame_count": frame_count,
-				"anim_name": final_anim_name
-			}
-
-		# Calculate current frame for this boss type
-		var metadata = _animation_metadata[anim_key]
-		var total_frames_elapsed = global_time_sec * metadata.fps
-		var current_frame = int(total_frames_elapsed) % metadata.frame_count
-
-		# Store centralized frame (all bosses of this type will use this)
-		_animation_frames[anim_key] = current_frame
-
-## Get centralized animation frame for a boss type
-## Called by BaseBoss instances to retrieve pre-calculated frame
-func get_animation_frame(boss_class_name: String, anim_name: String, time_offset: float = 0.0) -> int:
-	var anim_key = boss_class_name + ":" + anim_name
-
-	# If centralized frame exists, apply boss's individual offset and return
-	if _animation_frames.has(anim_key):
-		var base_frame = _animation_frames[anim_key]
-
-		# Apply individual boss offset (to prevent perfect synchronization)
-		if time_offset > 0.0 and _animation_metadata.has(anim_key):
-			var metadata = _animation_metadata[anim_key]
-			var offset_frames = int(time_offset * metadata.fps)
-			return (base_frame + offset_frames) % metadata.frame_count
-
-		return base_frame
-
-	return 0  # Fallback if animation not calculated yet

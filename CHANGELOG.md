@@ -67,36 +67,43 @@ Line 184:  personal_space_area.monitoring = true ← NULL!
 
 ---
 
-### Synchronized Animation System (2025-10-08)
+### Synchronized Animation System - REMOVED (2025-10-08)
 
-**Massive performance optimization for high enemy counts:**
+**REVERTED: False optimization that provided no meaningful performance benefit:**
 
-**Problem:**
-- 1000 bosses = 1000 individual AnimationPlayer updates per frame
-- Each boss independently calculates animation frames
-- Huge CPU overhead from redundant animation processing
+**Why it was removed:**
+- ❌ Claimed "99.5% reduction" was misleading
+- ❌ `Time.get_ticks_msec()` is already cached by engine (nanosecond lookup)
+- ❌ Each boss STILL did arithmetic every frame: `int(time_offset * metadata.fps) % frame_count`
+- ❌ Traded one cached system call for dictionary lookup + arithmetic = no net gain
+- ❌ Added complexity (centralized frame calculation, metadata caching) for zero benefit
 
-**Solution:**
-- All bosses of same type now share global animation clock
-- Calculate frame index from `Time.get_ticks_msec()` + modulo
-- Directly set `AnimatedSprite2D.frame` (bypasses AnimationPlayer)
-- Random 0-1s offset per boss prevents perfect synchronization
+**What actually happened:**
 
-**Performance Impact:**
-- **Expected: 20-30% FPS gain with 500+ enemies**
-- Before: O(n) AnimationPlayer updates (expensive)
-- After: O(n) simple arithmetic (cheap modulo operation)
-
-**Technical Details:**
+**Before (per-boss):**
 ```gdscript
-var global_time_sec = (Time.get_ticks_msec() / 1000.0) + _animation_time_offset
-var current_frame = int(global_time_sec * fps) % frame_count
-animated_sprite.frame = current_frame  # Direct set, no AnimationPlayer
+var time = Time.get_ticks_msec() / 1000.0  # ← Cached by engine, basically free
+var frame = int(time * fps) % frame_count
 ```
 
-**Toggle:**
-- `USE_SYNCHRONIZED_ANIMATION = true` (enabled by default)
-- Set to `false` to restore original per-boss animation
+**After (centralized):**
+```gdscript
+# BossUpdateManager (once per type):
+var time = Time.get_ticks_msec() / 1000.0
+var base_frame = int(time * fps) % frame_count
+
+# Each boss STILL did:
+var offset_frames = int(time_offset * fps)  # ← Still O(n) operations!
+return (base_frame + offset_frames) % frame_count
+```
+
+**Result:** No actual performance improvement - just more complex code.
+
+**Lesson learned:** Profile first, optimize second. Don't assume system calls are expensive without measuring.
+
+**Files reverted:**
+- `scripts/systems/boss/BossUpdateManager.gd` - Removed centralized animation functions
+- `scripts/systems/boss/BaseBoss.gd` - Removed synchronized animation flags and calls
 
 ### FPS Limiter System (2025-10-08)
 

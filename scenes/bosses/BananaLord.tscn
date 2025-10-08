@@ -69,7 +69,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 5.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -103,7 +103,6 @@ script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_mjtd6")
-animation = &"wake_up"
 offset = Vector2(0, -25.625)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]

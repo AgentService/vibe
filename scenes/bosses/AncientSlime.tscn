@@ -1,6 +1,6 @@
 [gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
 
-[ext_resource type="Script" uid="uid://b0i0nhq42ph04" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
+[ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="3_shadow"]
 [ext_resource type="Texture2D" uid="uid://lh7fpy0feqr" path="res://assets/sprites/Ancient_Slime_Boss/animations/walking-4-frames/south/frame_000.png" id="4_s0"]

@@ -32,7 +32,7 @@ var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
+const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing to prevent overlapping
 const PERSONAL_SPACE_STRENGTH: float = 2.5  # Increased spacing force for better enemy separation
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
@@ -40,12 +40,10 @@ var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child n
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = true  # Skip 0.5s spawn dissolve effect (cyan edge glow)
 const SKIP_WAKEUP_CHECK: bool = true  # Skip wake_up → default animation transition check
-const USE_SYNCHRONIZED_ANIMATION: bool = true  # All bosses of same type share animation timing
 
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
-var _animation_time_offset: float = 0.0  # Random offset to break perfect synchronization
 
 # SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
 # NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
@@ -144,17 +142,6 @@ func _ready() -> void:
 	# Initialize health bar
 	_update_health_bar()
 
-	# SYNCHRONIZED ANIMATION: Stop AnimationPlayer auto-playback
-	if USE_SYNCHRONIZED_ANIMATION and animated_sprite:
-		# Set random offset and stop auto animation
-		_animation_time_offset = randf() * 1.0
-		animated_sprite.stop()
-		# Set animation name for synchronized playback
-		if animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation(animation_prefix):
-			animated_sprite.animation = animation_prefix
-		elif animated_sprite.sprite_frames and animated_sprite.sprite_frames.has_animation("default"):
-			animated_sprite.animation = "default"
-
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
@@ -248,10 +235,6 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-	# SYNCHRONIZED ANIMATION: Get pre-calculated frame from BossUpdateManager
-	if USE_SYNCHRONIZED_ANIMATION and animated_sprite and current_direction != Vector2.ZERO:
-		_apply_centralized_animation_frame(current_direction)
-
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
 func _update_ai(dt: float) -> void:
@@ -318,12 +301,7 @@ func _update_directional_animation(direction: Vector2) -> void:
 	if not animated_sprite or not animated_sprite.sprite_frames:
 		return
 
-	# SYNCHRONIZED ANIMATION: Use shared global time instead of individual playback
-	if USE_SYNCHRONIZED_ANIMATION:
-		_apply_centralized_animation_frame(direction)
-		return
-
-	# Original: Try 8-directional animations
+	# Try 8-directional animations
 	if _try_directional_animation(direction):
 		return
 
@@ -394,25 +372,6 @@ func _apply_sprite_flipping(direction: Vector2) -> void:
 			animated_sprite.play("default")
 		elif animated_sprite.sprite_frames.has_animation(animation_prefix):
 			animated_sprite.play(animation_prefix)
-
-## CENTRALIZED ANIMATION: Get pre-calculated frame from BossUpdateManager
-## Performance: BossUpdateManager calculates frames ONCE per boss type, we just apply it
-func _apply_centralized_animation_frame(direction: Vector2) -> void:
-	if not animated_sprite or not animated_sprite.sprite_frames:
-		return
-
-	# Get boss class name for centralized lookup
-	var boss_class_name = get_script().resource_path.get_file().get_basename()  # "BananaLord", "AncientLich", etc.
-
-	# Request pre-calculated frame from BossUpdateManager
-	var frame = BossUpdateManager.get_animation_frame(boss_class_name, animation_prefix, _animation_time_offset)
-
-	# Apply frame directly (no calculation needed!)
-	animated_sprite.frame = frame
-
-	# Apply sprite flipping for direction
-	if abs(direction.x) > 0.1:
-		animated_sprite.flip_h = direction.x < 0
 
 # OLD SEPARATION SYSTEM REMOVED - Now using PersonalSpaceArea + collision layers
 
