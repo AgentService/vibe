@@ -64,20 +64,14 @@ extends Node
 ## - Godot fixed timestep docs: https://docs.godotengine.org/en/stable/tutorials/scripting/idle_and_physics_processing.html
 ## - ARCHITECTURE.md - Fixed-Step Combat Loop (Decision 5a)
 
-## OPTION A constants (only used if Option A is active):
-const COMBAT_DT: float = 1.0 / 30.0  # Custom accumulator: 10 Hz (100ms per step)
-const MAX_PHYSICS_STEPS_PER_FRAME: int = 30  # Custom accumulator: Prevent lag spiral
-
-## OPTION B: Physics tick rate configured in project.godot [physics] section
-## Set common/physics_ticks_per_second=10 (or 15, 30) to control update frequency
+## Physics tick rate configured in project.godot [physics] section
+## Set common/physics_ticks_per_second to control update frequency (default: 30)
+## Set common/physics_interpolation=true for smooth rendering
 
 @export var run_seed: int = 0:
 	set(value):
 		run_seed = value
 		_seed_rng()
-
-# Accumulator stores leftover frame time between combat steps
-var _accumulator: float = 0.0
 
 func _ready() -> void:
 	# RunManager should pause with the game (stops time accumulation)
@@ -88,92 +82,40 @@ func _ready() -> void:
 		run_seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
 
-	Logger.info("RunManager initialized (Option A: custom accumulator with interpolation)", "systems")
+	Logger.info("RunManager initialized (using Godot physics_process)", "systems")
 
 
-## OPTION A: Custom Accumulator + Interpolation (ACTIVE)
+## Godot's Built-in Physics Process (ACTIVE)
 ## ================================================================
-## Pros: Deterministic replays, networkable, full control
-## Cons: Complex, requires tracking previous/current state in all entities
-func _process(delta: float) -> void:
-	## Fixed-step accumulator loop
-	## Runs multiple combat steps if frame took longer than COMBAT_DT
-	## Runs zero steps if frame was too fast (accumulator carries forward)
-
-	# Don't accumulate time when game is paused
-	if get_tree().paused:
-		return
-
-	# Add frame time to accumulator
-	_accumulator += delta
-
-	# Process as many fixed steps as accumulated time allows (up to limit)
-	var steps_this_frame: int = 0
-	while _accumulator >= COMBAT_DT and steps_this_frame < MAX_PHYSICS_STEPS_PER_FRAME:
-		# Create typed payload with fixed timestep
-		var payload := EventBus.CombatStepPayload_Type.new(COMBAT_DT)
-
-		# Emit combat step - all systems process this at exactly 30 Hz
-		EventBus.combat_step.emit(payload)
-
-		# Subtract one fixed step from accumulator
-		_accumulator -= COMBAT_DT
-		steps_this_frame += 1
-
-	# If we hit the step limit, clamp accumulator to prevent infinite spiral
-	if steps_this_frame >= MAX_PHYSICS_STEPS_PER_FRAME:
-		_accumulator = 0.0  # Reset instead of letting debt build up
-
-	# OPTION A: Interpolation for smooth rendering (Glenn Fiedler pattern)
-	# Calculate alpha [0,1] representing how far between physics steps we are
-	# alpha = 0.0 means we just finished a physics step
-	# alpha = 1.0 means we're about to take the next physics step
-	var alpha: float = _accumulator / COMBAT_DT
-
-	# Emit render interpolation signal for entities to update visual positions
-	# Entities use: render_pos = prev_pos * (1-alpha) + current_pos * alpha
-	EventBus.render_interpolate.emit(alpha)
-
-	# HOW TO USE INTERPOLATION IN ENTITIES:
-	# ======================================
-	# In BaseEnemy/BaseBoss/AbilityProjectile:
-	#
-	# var _physics_position: Vector2  # Updated in combat_step
-	# var _previous_position: Vector2  # Store before updating physics
-	#
-	# func _on_combat_step(payload):
-	#     _previous_position = _physics_position
-	#     _physics_position += velocity * payload.delta_time
-	#
-	# func _on_render_interpolate(alpha: float):
-	#     # Smoothly blend between previous and current for rendering
-	#     global_position = _previous_position.lerp(_physics_position, alpha)
-	#
-	# Benefits:
-	# - Eliminates visual stuttering at 10Hz physics
-	# - Enemies/projectiles appear to move smoothly at 60fps display
-	# - Physics logic stays deterministic at fixed timestep
-
-
-## OPTION B: Godot's _physics_process() (COMMENTED OUT)
-## ================================================================
-## Pros: Simple, engine-optimized, automatic interpolation, easy tuning
-## Cons: Non-deterministic, can't do lockstep networking, no frame-perfect replays
+## Uses Godot's optimized _physics_process() for fixed timestep combat.
 ##
-## Configure physics tick rate in project.godot:
-##   [physics] common/physics_ticks_per_second=10 (for 10Hz)
-##   [physics] common/physics_ticks_per_second=30 (for 30Hz)
+## Benefits:
+## - Engine-optimized C++ implementation (faster than GDScript accumulator)
+## - Automatic physics interpolation via physics_interpolation=true
+## - Simple, maintainable code
+## - Easy tuning via project.godot settings
 ##
-#func _physics_process(delta: float) -> void:
-	### Godot's built-in fixed timestep
-	### delta is always constant (e.g., 0.1s for 10Hz, 0.033s for 30Hz)
-	### Godot automatically handles interpolation for smooth rendering
-#
-	## Create typed payload with Godot's fixed physics delta
-	#var payload := EventBus.CombatStepPayload_Type.new(delta)
-#
-	## Emit combat step - all systems process at physics tick rate
-	#EventBus.combat_step.emit(payload)
+## Configuration in project.godot:
+##   [physics]
+##   common/physics_ticks_per_second=30       # Physics tick rate
+##   common/physics_interpolation=true        # Smooth rendering
+##
+## Physics Interpolation:
+## - Godot automatically interpolates transforms between physics ticks
+## - Works on local transforms in 2D (preserves scene tree pivots)
+## - No manual position tracking needed
+## - Call reset_physics_interpolation() when teleporting entities
+##
+func _physics_process(delta: float) -> void:
+	# Godot's built-in fixed timestep
+	# delta is always constant (e.g., 0.033s for 30Hz)
+	# Interpolation handled automatically by engine
+
+	# Create typed payload with Godot's fixed physics delta
+	var payload := EventBus.CombatStepPayload_Type.new(delta)
+
+	# Emit combat step - all systems process at physics tick rate
+	EventBus.combat_step.emit(payload)
 
 ## Legacy method for compatibility - use PauseManager instead
 func pause_game(v: bool) -> void:

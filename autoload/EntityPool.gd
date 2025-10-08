@@ -108,6 +108,10 @@ func _create_entity_reset() -> Callable:
 		if "visible" in entity:
 			entity.visible = true
 
+		# Reset physics interpolation to prevent streaking when repositioned
+		if entity.has_method("reset_physics_interpolation"):
+			entity.reset_physics_interpolation()
+
 
 # ============================================================================
 # POOL MANAGEMENT

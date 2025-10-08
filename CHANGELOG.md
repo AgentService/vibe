@@ -2,6 +2,28 @@
 
 ## [Current Week - In Progress]
 
+### Physics Interpolation Enabled (2025-10-08)
+
+**Implemented Godot's built-in physics interpolation for smooth 30Hz → 60/120/144Hz rendering:**
+
+**Changes:**
+- ✅ **Enabled `common/physics_interpolation=true`** in project.godot:162
+  - 30Hz combat logic now renders smoothly at monitor refresh rate (60/120/144 FPS)
+  - Zero CPU cost - interpolation happens at render time only
+  - 2D auto-resets on tree entry (less boilerplate than 3D)
+- ✅ **Added `reset_physics_interpolation()` to EntityPool.gd:112**
+  - Prevents streaking artifacts when pooled entities are repositioned
+  - Called automatically during pool reset for arrows, XP orbs, projectiles
+
+**Architecture Notes:**
+- **No conflicts found**: Arena.gd player spawn uses tree entry (auto-reset applies)
+- **Boss scripts**: No manual position jumps/teleports requiring reset calls
+- **Projectile consideration**: AbilityProjectile.gd has custom interpolation (lines 206-214) - may cause double interpolation
+  - Current: Godot physics interpolation + custom `_physics_position.lerp()` logic
+  - Monitor for "floaty" projectile movement; may need to disable one layer
+
+**Performance:** Should eliminate 30Hz stutter at zero performance cost
+
 ### Performance Investigation - 400+ Enemy Lag (2025-10-08)
 
 **Issue:** Lag-induced speed bursts persist at 400+ enemies despite multiple optimization attempts.

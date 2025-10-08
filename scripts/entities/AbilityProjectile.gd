@@ -11,10 +11,14 @@
 ## Lifecycle:
 ## 1. EntityPool spawns from pool
 ## 2. initialize(projectile_data) configures properties
-## 3. _physics_process() moves projectile and updates lifetime
+## 3. _on_combat_step() moves projectile at 30Hz (via EventBus.combat_step signal)
 ## 4. Area2D.area_entered detects enemy collisions
 ## 5. _on_enemy_collision() calls DamageService.apply_damage()
 ## 6. despawn() returns to EntityPool
+##
+## Physics Interpolation:
+## - Godot's physics_interpolation=true automatically smooths rendering between 30Hz steps
+## - No manual interpolation code needed (position updates in _on_combat_step are smoothed)
 ##
 ## OVERKILL PREVENTION CHALLENGE (CRITICAL DESIGN ISSUE): TODO
 ## When multiple projectiles hit the same target simultaneously (e.g., 5 arrows one-shotting
@@ -97,10 +101,6 @@ var ability_id: String = ""
 ## Firing direction (normalized)
 var direction: Vector2 = Vector2.RIGHT
 
-## OPTION A: Interpolation state for smooth rendering
-var _physics_position: Vector2 = Vector2.ZERO  # Position updated at fixed physics rate
-var _previous_position: Vector2 = Vector2.ZERO  # Previous physics position for interpolation
-
 ## Movement speed (pixels/second)
 var speed: float = 400.0
 
@@ -175,21 +175,18 @@ func _ready() -> void:
 	# Add to pooled projectiles group
 	add_to_group("ability_projectiles")
 
-	# OPTION A: Connect to fixed-step physics and interpolation signals
+	# Connect to fixed-step physics (Godot handles interpolation automatically)
 	EventBus.combat_step.connect(_on_combat_step)
-	EventBus.render_interpolate.connect(_on_render_interpolate)
 
 
-## OPTION A: Fixed-step physics update (called at 30Hz via EventBus.combat_step)
+## Fixed-step physics update (called at 30Hz via EventBus.combat_step)
+## Godot's physics_interpolation=true automatically smooths rendering between physics steps
 func _on_combat_step(payload) -> void:
 	if not _initialized:
 		return
 
-	# Store previous position for interpolation
-	_previous_position = _physics_position
-
-	# Move projectile at fixed timestep (payload.dt is the fixed delta time)
-	_physics_position += direction * speed * payload.dt
+	# Move projectile at fixed timestep (payload.dt is the fixed delta time, e.g., 0.033s for 30Hz)
+	position += direction * speed * payload.dt
 
 	# Update lifetime
 	_remaining_lifetime -= payload.dt
@@ -201,17 +198,6 @@ func _on_combat_step(payload) -> void:
 	# Homing logic (simple version - adjust direction toward closest enemy)
 	if is_homing and homing_strength > 0.0:
 		_update_homing_direction(payload.dt)
-
-
-## OPTION A: Smooth visual rendering (called every frame)
-func _on_render_interpolate(alpha: float) -> void:
-	if not _initialized:
-		return
-
-	# Smoothly interpolate between previous and current physics positions
-	# alpha = 0.0: just finished physics step (show _physics_position)
-	# alpha = 1.0: about to take next physics step (show blended position)
-	position = _previous_position.lerp(_physics_position, alpha)
 
 
 # ============================================================================
@@ -240,11 +226,8 @@ func initialize(projectile_data: Dictionary) -> void:
 	_remaining_pierce = pierce_count
 	_remaining_lifetime = lifetime
 
-	# OPTION A: Initialize interpolation positions
-	var spawn_pos = projectile_data.get("source_position", Vector2.ZERO)
-	position = spawn_pos
-	_physics_position = spawn_pos
-	_previous_position = spawn_pos
+	# Set spawn position
+	position = projectile_data.get("source_position", Vector2.ZERO)
 
 	_initialized = true
 
@@ -261,8 +244,6 @@ func reset() -> void:
 	_remaining_pierce = 0
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
-	_physics_position = Vector2.ZERO
-	_previous_position = Vector2.ZERO
 	visible = true
 
 
