@@ -74,6 +74,7 @@ class TomeModifier:
 	# Ability multipliers (1.0 = no change)
 	var damage_multiplier: float = 1.0
 	var cooldown_multiplier: float = 1.0
+	var range_multiplier: float = 1.0
 	var area_multiplier: float = 1.0
 	var projectile_speed_multiplier: float = 1.0
 	var duration_multiplier: float = 1.0
@@ -145,6 +146,9 @@ class TomeModifier:
 
 ## Cooldown multiplier per stack (1.0 = no change, 0.9 = -10% cooldown per stack)
 @export var cooldown_multiplier: float = 1.0
+
+## Range multiplier per stack (1.0 = no change, 1.25 = +25% range per stack)
+@export var range_multiplier: float = 1.0
 
 ## Projectile count bonus (flat addition per stack)
 @export var projectile_count_bonus: int = 0
@@ -262,6 +266,7 @@ func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
 	# Each ability subclass checks for relevant properties using: "property_name" in modifier
 	modifier.damage_multiplier = damage_multiplier
 	modifier.cooldown_multiplier = cooldown_multiplier
+	modifier.range_multiplier = range_multiplier
 	modifier.area_multiplier = area_multiplier
 	modifier.projectile_speed_multiplier = projectile_speed_multiplier
 	modifier.duration_multiplier = duration_multiplier
@@ -335,6 +340,7 @@ func to_dict() -> Dictionary:
 		"ability_modifiers": {
 			"damage_multiplier": damage_multiplier,
 			"cooldown_multiplier": cooldown_multiplier,
+			"range_multiplier": range_multiplier,
 			"projectile_count_bonus": projectile_count_bonus,
 			"area_multiplier": area_multiplier,
 			"projectile_speed_multiplier": projectile_speed_multiplier,
@@ -380,6 +386,9 @@ func validate() -> Array[String]:
 
 	if cooldown_multiplier < 0:
 		errors.append("cooldown_multiplier must be >= 0")
+
+	if range_multiplier < 0:
+		errors.append("range_multiplier must be >= 0")
 
 	if area_multiplier < 0:
 		errors.append("area_multiplier must be >= 0")

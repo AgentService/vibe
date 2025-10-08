@@ -67,6 +67,24 @@ var final_cooldown: float = 1.0
 @export var projectile_count: int = 1
 
 # ============================================================================
+# RANGE PROPERTIES
+# ============================================================================
+
+@export_group("Range")
+
+## Base effective range in pixels (detection radius for targeting)
+## This is the maximum distance at which this ability can engage enemies.
+## - Melee: 150-250px
+## - Short-range projectiles: 400-600px
+## - Medium-range projectiles: 600-900px
+## - Long-range projectiles: 900-1200px
+@export_range(50.0, 2000.0, 50.0) var base_range: float = 800.0
+
+## Final range after modifiers (computed at runtime)
+## Tomes can increase this via range_multiplier
+var final_range: float = 800.0
+
+# ============================================================================
 # PROGRESSION / SCALING (100% of damage abilities use these)
 # ============================================================================
 
@@ -113,6 +131,7 @@ func _init() -> void:
 	# Initialize computed stats
 	final_damage = base_damage
 	final_cooldown = base_cooldown
+	final_range = base_range
 
 	# NOTE: Do NOT initialize _base_projectile_count here!
 	# When duplicate(true) is called, _init() runs BEFORE .tres properties are copied,
@@ -167,6 +186,7 @@ func _recalculate_final_stats() -> void:
 	# Reset to base values
 	final_damage = base_damage
 	final_cooldown = base_cooldown
+	final_range = base_range
 	projectile_count = _base_projectile_count
 
 	# Apply all active modifiers
@@ -186,12 +206,22 @@ func _recalculate_final_stats() -> void:
 				mult = pow(mult, modifier.stack_count)
 			final_cooldown *= mult
 
+		# Range (multiplicative)
+		if "range_multiplier" in modifier:
+			var mult: float = modifier.range_multiplier
+			if "stack_count" in modifier:
+				mult = pow(mult, modifier.stack_count)
+			final_range *= mult
+
 		# Projectile count (additive per stack)
 		if "projectile_count_bonus" in modifier:
 			var bonus: int = modifier.projectile_count_bonus
 			if "stack_count" in modifier:
 				bonus *= modifier.stack_count
 			projectile_count += bonus
+
+	# Clamp range to reasonable bounds
+	final_range = clampf(final_range, 50.0, 3000.0)
 
 # ============================================================================
 # PROGRESSION
@@ -283,6 +313,8 @@ func to_dict() -> Dictionary:
 	data["inherent_element"] = inherent_element
 	data["base_cooldown"] = base_cooldown
 	data["final_cooldown"] = final_cooldown
+	data["base_range"] = base_range
+	data["final_range"] = final_range
 	data["projectile_count"] = projectile_count
 	data["damage_scaling"] = damage_scaling_per_level
 	data["cooldown_scaling"] = cooldown_scaling_per_level
@@ -310,6 +342,10 @@ func validate() -> Array[String]:
 	# Multi-hit validation
 	if projectile_count < 1:
 		errors.append("projectile_count must be >= 1")
+
+	# Range validation
+	if base_range <= 0:
+		errors.append("base_range must be > 0")
 
 	# Scaling validation
 	if damage_scaling_per_level <= 0:

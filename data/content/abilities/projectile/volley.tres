@@ -31,6 +31,7 @@ max_level = 20
 visual_scene = SubResource("PackedScene_shu3x")
 base_damage = 44.0
 base_cooldown = 1.0
+base_range = 900.0
 damage_type = "physical"
 inherent_element = ""
 projectile_count = 33

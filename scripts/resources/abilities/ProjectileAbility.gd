@@ -86,6 +86,12 @@ enum FireMode {
 func _init() -> void:
 	super._init()  # Initialize DamageAbility (DAMAGE/COOLDOWN tags, computed stats)
 
+	# Projectiles typically have longer range than melee
+	# Only override if using default value (800px from DamageAbility)
+	if base_range == 800.0:
+		base_range = 900.0  # Projectile default
+		final_range = 900.0
+
 	# Ensure PROJECTILE tag is always present
 	if not has_tag(AbilityTags.PROJECTILE):
 		tags.append(AbilityTags.PROJECTILE)

@@ -98,8 +98,8 @@ func _auto_cast_ready_abilities() -> void:
 		if not ability or ability_cooldowns[i] > 0.0:
 			continue
 
-		# Check if there are enemies in range before firing
-		var enemies = _get_nearby_enemies()
+		# Check if there are enemies in range before firing (using ability's range)
+		var enemies = _get_nearby_enemies(ability)
 		if enemies.is_empty():
 			continue  # Don't fire if no enemies
 
@@ -123,8 +123,8 @@ func activate_ability(slot_index: int) -> void:
 	if not ability:
 		return  # Empty slot, no warning needed
 
-	# Create activation context for ability
-	var context := _create_activation_context()
+	# Create activation context for ability (includes enemies in ability's range)
+	var context := _create_activation_context(ability)
 
 	# Activate the ability (ability handles signal emission)
 	ability.activate(_player, context)
@@ -134,12 +134,12 @@ func activate_ability(slot_index: int) -> void:
 
 
 ## Creates the activation context dictionary for abilities.
-## Context includes player reference and enemy list.
+## Context includes player reference and enemy list within ability's range.
 ## Direction is determined by ability's fire_mode setting.
-func _create_activation_context() -> Dictionary:
+func _create_activation_context(ability: BaseAbility) -> Dictionary:
 	return {
 		"player": _player,
-		"enemies": _get_nearby_enemies()
+		"enemies": _get_nearby_enemies(ability)
 		# Don't include "direction" - let ability use its fire_mode (CLOSEST_ENEMY, etc.)
 	}
 
@@ -299,10 +299,10 @@ func _find_empty_tome_slot() -> int:
 # HELPER FUNCTIONS
 # ============================================================================
 
-## Gets nearby enemies for ability targeting.
-## Returns array of enemy nodes within detection range.
-## Only returns targetable enemies (filters out spawning enemies).
-func _get_nearby_enemies() -> Array:
+## Gets nearby enemies within the CURRENT ABILITY'S effective range.
+## Uses the ability's final_range property for dynamic range detection.
+## Falls back to 800px if ability has no range property (utility abilities).
+func _get_nearby_enemies(ability: BaseAbility) -> Array:
 	if not _player or not is_instance_valid(_player):
 		return []
 
@@ -316,7 +316,10 @@ func _get_nearby_enemies() -> Array:
 	var all_enemies = tree.get_nodes_in_group("targetable")
 	var nearby_enemies: Array = []
 
-	const DETECTION_RANGE: float = 800.0  # Detection range in pixels
+	# Use ability's final_range (supports tome modifiers)
+	var detection_range: float = 800.0  # Default fallback
+	if ability is DamageAbility:
+		detection_range = ability.final_range
 
 	for enemy in all_enemies:
 		if not is_instance_valid(enemy):
@@ -327,7 +330,7 @@ func _get_nearby_enemies() -> Array:
 			continue
 
 		var distance := _player.global_position.distance_to(enemy_node.global_position)
-		if distance <= DETECTION_RANGE:
+		if distance <= detection_range:
 			nearby_enemies.append(enemy_node)
 
 	return nearby_enemies
