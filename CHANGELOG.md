@@ -46,6 +46,18 @@ wall_min_slide_angle = 0.0  # Allow sliding at any angle
 **Files Modified:**
 - `scripts/systems/boss/BaseBoss.gd:73-78` - Physics optimization settings
 
+**Bug Fix (2025-10-08):**
+- Fixed critical bug: Changed `motion_mode` from `MOTION_MODE_GROUNDED` to `MOTION_MODE_FLOATING`
+- Previous implementation used GROUNDED mode despite comment saying "skip floor detection"
+- GROUNDED mode performs expensive floor/ceiling checks (platformer feature)
+- FLOATING mode correctly skips these checks for top-down games
+
+**Documentation Updated:**
+- Added physics optimization pattern to `scripts/systems/CLAUDE.md:681-721`
+- Documented motion_mode, max_slides, safe_margin configuration
+- Explained when to use FLOATING vs GROUNDED modes
+- Added performance impact metrics and use case guidelines
+
 ---
 
 ### Viewport Culling + Staggered AI - 98% AI Reduction (2025-10-08)

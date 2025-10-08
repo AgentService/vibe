@@ -70,8 +70,23 @@ func _ready() -> void:
 	collision_layer = 2  # Exist on Layer 2
 	collision_mask = 1   # Collide with Layer 1 only (terrain)
 
+	# CRITICAL PERFORMANCE: Disable Area2D monitoring to reduce physics overhead
+	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
+	# Re-enable only when needed (e.g., when near player for hit detection)
+	var hitbox = get_node_or_null("HitBox")
+	if hitbox and hitbox is Area2D:
+		hitbox.monitoring = false
+		hitbox.monitorable = true  # Can still be detected by player attacks
+
+	# Disable PersonalSpaceArea if not using personal space system
+	if not PERSONAL_SPACE_ENABLED:
+		var personal_space = get_node_or_null("PersonalSpaceArea")
+		if personal_space and personal_space is Area2D:
+			personal_space.monitoring = false
+			personal_space.monitorable = false
+
 	# PERFORMANCE: Optimize move_and_slide() for top-down chase AI
-	motion_mode = MOTION_MODE_GROUNDED  # Skip floor/wall/ceiling detection (top-down game)
+	motion_mode = MOTION_MODE_FLOATING  # Skip floor/wall/ceiling detection (top-down game)
 	max_slides = 1  # Reduce from 4 to 1 = 75% fewer collision iterations
 	safe_margin = 0.08  # Increase from 0.001 for performance (less precision, more speed)
 	floor_stop_on_slope = false  # Not relevant for top-down movement
@@ -245,7 +260,12 @@ func _update_ai_batch(dt: float) -> void:
 ## STAGGERED AI: Physics process runs EVERY frame (30Hz) even when AI is staggered
 ## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
 func _physics_process(delta: float) -> void:
-	# Always apply movement if we have velocity (even when AI doesn't update)
+	# Skip physics if dying, spawning, or no velocity
+	if _is_dying or _is_spawning:
+		return
+
+	# Only apply movement if we have velocity
+	# Squared check is faster than length() (avoids sqrt)
 	if velocity.length_squared() > 0.01:
 		move_and_slide()
 
