@@ -320,7 +320,7 @@ func _update_directional_animation(direction: Vector2) -> void:
 
 	# SYNCHRONIZED ANIMATION: Use shared global time instead of individual playback
 	if USE_SYNCHRONIZED_ANIMATION:
-		_update_synchronized_animation(direction)
+		_apply_centralized_animation_frame(direction)
 		return
 
 	# Original: Try 8-directional animations
