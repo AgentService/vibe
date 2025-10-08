@@ -18,7 +18,7 @@ var spawn_config: SpawnConfig
 var max_health: float = 300.0
 var current_health: float = 300.0
 var damage: float = 40.0
-var speed: float = 60.0
+var speed: float = 100.0
 var attack_damage: float = 40.0
 var attack_cooldown: float = 2.0
 var last_attack_time: float = 0.0
@@ -32,7 +32,7 @@ var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_STRENGTH: float = 175.0  # Balanced spacing force that works with chase behavior
+const PERSONAL_SPACE_STRENGTH: float = 1.0  # Gentle spacing force prevents charging burst on spawn
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
@@ -126,7 +126,11 @@ func _ready() -> void:
 
 	# Setup personal space area for boss-to-boss spacing control
 	_setup_personal_space_area()
-	
+
+	# Disable personal space during spawn animation to prevent initial burst
+	if personal_space_area:
+		personal_space_area.monitoring = false
+
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
@@ -150,6 +154,10 @@ func _on_spawn_animation_complete() -> void:
 	remove_from_group("spawning")
 	add_to_group("targetable")
 
+	# Enable personal space detection now that spawn is complete
+	if personal_space_area:
+		personal_space_area.monitoring = true
+
 	# Ensure default animation is playing after spawn (in case wake_up animation was used)
 	if animated_sprite and animated_sprite.sprite_frames:
 		# If wake_up was playing, switch to default
@@ -163,7 +171,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	max_health = config.health
 	current_health = config.health
 	damage = config.damage
-	speed = config.speed
+	# speed = config.speed  # Use BaseBoss.gd default instead (line 21: speed = 100.0)
 	attack_damage = config.damage
 	
 	# Set position
