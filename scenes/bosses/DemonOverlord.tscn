@@ -1,7 +1,7 @@
 [gd_scene load_steps=72 format=3 uid="uid://cj52peu3ecx4l"]
 
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
-[ext_resource type="Script" uid="uid://don8bw6ppcqhk" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
+[ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
 [ext_resource type="Texture2D" uid="uid://cj4li0w17cl0g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_000.png" id="3_south0"]
 [ext_resource type="Texture2D" uid="uid://chlnrlajhmk5g" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_001.png" id="4_south1"]
 [ext_resource type="Texture2D" uid="uid://b457ceomq6ejn" path="res://assets/sprites/demon_overlord/animations/scary-walk/south/frame_002.png" id="5_south2"]
