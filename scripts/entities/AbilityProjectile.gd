@@ -281,7 +281,7 @@ func _on_area_entered(area: Area2D) -> void:
 func _check_ghost_collisions() -> void:
 	# Get ghost swarm spawner from arena (property access)
 	var arena = get_tree().current_scene
-	if not arena or not arena.has("ghost_swarm_spawner"):
+	if not arena or not "ghost_swarm_spawner" in arena:
 		return
 
 	var ghost_spawner = arena.ghost_swarm_spawner
