@@ -34,9 +34,10 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 50.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_CHECK_INTERVAL: float = 0.1  # Check every 100ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 150.0  # Push force when too close
+const MANUAL_SPACING_RADIUS: float = 350.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 10.0  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
@@ -464,6 +465,12 @@ func _on_player_died() -> void:
 
 ## MANUAL SPACING: Use EntityTracker to find nearby enemies and apply avoidance
 func _apply_manual_spacing() -> void:
+	# Skip spacing if we're very close to player (allow dense clustering around player)
+	var distance_to_player = global_position.distance_to(target_position)
+	if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
+		Logger.debug("%s: Within player min distance (%.0fpx), skipping spacing" % [get_boss_name(), distance_to_player], "collision")
+		return
+
 	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
 	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
 		global_position,
