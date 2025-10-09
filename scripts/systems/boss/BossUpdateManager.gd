@@ -2,11 +2,9 @@ extends Node
 
 ## Boss Update Manager - Centralized boss processing for performance optimization
 ## Replaces individual boss signal connections with single batched update system
-## Uses ring buffer + object pool with zero-allocation patterns for handling 500+ bosses
+## Position updates moved to _physics_process for post-movement accuracy
 
-const RingBuffer = preload("res://scripts/utils/RingBuffer.gd")
-const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")
-const PayloadReset = preload("res://scripts/utils/PayloadReset.gd")
+# Removed: RingBuffer, ObjectPool, PayloadReset - position updates now direct in _physics_process
 
 # Array-backed registry for zero-alloc iteration and O(1) removal (swap-remove)
 var _boss_ids: PackedStringArray = PackedStringArray()
@@ -27,15 +25,10 @@ var _viewport: Viewport = null
 var _player_camera: Camera2D = null
 const ENABLE_VIEWPORT_CULLING: bool = false  # Disabled: conflicts with large chase_range (5555px)
 
-# Reusable batched payload buffers (cleared each step, not reallocated)
+# Reusable buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()
 var _pos_buf: PackedVector2Array = PackedVector2Array()
 var _ai_flags_buf: PackedByteArray = PackedByteArray() # 1 = true, 0 = false
-
-
-# Ring buffer with latest-only policy for backpressure
-var _boss_update_queue: RingBuffer
-var _batched_payload_pool: ObjectPool
 
 func _ready() -> void:
 	Logger.info("BossUpdateManager initializing", "performance")
@@ -43,20 +36,10 @@ func _ready() -> void:
 	# Connect to combat step - single connection replaces 500+ individual connections
 	EventBus.combat_step.connect(_on_combat_step)
 
-	# Initialize ring buffer with 64 slots (one payload per frame is sufficient)
-	_boss_update_queue = RingBuffer.new()
-	_boss_update_queue.setup(64)
-
-	# Initialize object pool for batched payloads using PayloadReset utilities
-	_batched_payload_pool = ObjectPool.new()
-	_batched_payload_pool.setup(8, PayloadReset.create_boss_batch_payload, PayloadReset.clear_boss_batch_payload)
-
 	# Get viewport for culling calculations
 	_viewport = get_viewport()
 
-	Logger.info("BossUpdateManager ready - ring buffer capacity: %d, pool size: %d, viewport culling: %s" % [
-		_boss_update_queue.capacity(),
-		_batched_payload_pool.available_count(),
+	Logger.info("BossUpdateManager ready - viewport culling: %s, position updates: physics loop" % [
 		"enabled" if ENABLE_VIEWPORT_CULLING else "disabled"
 	], "performance")
 
@@ -184,9 +167,8 @@ func _on_combat_step(payload) -> void:
 				culled_count += 1
 				continue  # Boss is off-screen, skip AI update
 
-		# Collect boss data for batch processing
+		# Collect boss ID for AI update (position captured in _physics_process AFTER movement)
 		_ids_buf.push_back(_boss_ids[i])
-		_pos_buf.push_back(boss.global_position)
 		_ai_flags_buf.push_back(1) # true - boss is active
 
 		# STAGGERED AI: Scale dt by group count (each boss updates every 20 frames)
@@ -203,24 +185,8 @@ func _on_combat_step(payload) -> void:
 			if boss.has_method("_update_ai"):
 				boss._update_ai(scaled_dt)
 	
-	# Create single batched payload per step
-	if _ids_buf.size() > 0:
-		var p = _batched_payload_pool.acquire()
-		p["ids"] = _ids_buf.duplicate()  # Deep copy for async processing
-		p["positions"] = _pos_buf.duplicate()
-		p["ai_flags"] = _ai_flags_buf.duplicate()
-		
-		# Push to ring buffer with backpressure policy (drop oldest if full)
-		if not _boss_update_queue.try_push(p):
-			# Ring buffer full - drop oldest and try again
-			var dropped = _boss_update_queue.try_pop()
-			if dropped:
-				_batched_payload_pool.release(dropped)
-			_boss_update_queue.try_push(p)
-			Logger.debug("Ring buffer overflow - dropped oldest payload", "performance")
-		
-		# Process position updates immediately for consistency
-		_process_position_updates()
+	# Position updates moved to _physics_process() for post-movement accuracy
+	# AI updates no longer trigger batch position writes
 
 	# Optional debug logging for viewport culling performance
 	if ENABLE_VIEWPORT_CULLING and culled_count > 0:
@@ -230,30 +196,34 @@ func _on_combat_step(payload) -> void:
 			(culled_count * 100.0) / (count / AI_UPDATE_GROUPS)
 		], "performance")
 
-## Process batched position updates for EntityTracker
-func _process_position_updates() -> void:
-	# Use latest payload only for position updates (coalesce if multiple)
-	var latest = _boss_update_queue.try_pop()
-	if not latest:
-		return
-	
-	# BOSS PERFORMANCE V2: Use EntityTracker batch API for zero-allocation position updates
-	var ids: PackedStringArray = latest["ids"]
-	var positions: PackedVector2Array = latest["positions"]
-	
-	EntityTracker.batch_update_positions(ids, positions)
-	
-	# Return payload to pool
-	_batched_payload_pool.release(latest)
+## POST-MOVEMENT POSITION UPDATES: Capture positions AFTER physics applies movement
+## This ensures EntityTracker has fresh data for manual spacing, AoE queries, etc.
+func _physics_process(_delta: float) -> void:
+	var count: int = _boss_ids.size()
+	if count == 0:
+		return  # No bosses to update
+
+	# Clear position buffer (reuse allocations)
+	_pos_buf.resize(0)
+	_ids_buf.resize(0)
+
+	# Collect all boss positions AFTER movement has been applied
+	for i in range(count):
+		var boss := _boss_nodes[i]
+		if is_instance_valid(boss) and not boss.is_queued_for_deletion():
+			_ids_buf.push_back(_boss_ids[i])
+			_pos_buf.push_back(boss.global_position)  # Fresh position AFTER _physics_process
+
+	# Batch update EntityTracker with post-movement positions
+	if _ids_buf.size() > 0:
+		EntityTracker.batch_update_positions(_ids_buf, _pos_buf)
 
 ## Get debug info about manager state
 func get_debug_info() -> Dictionary:
 	return {
 		"registered_bosses": _boss_ids.size(),
-		"queue_count": _boss_update_queue.count(),
-		"queue_capacity": _boss_update_queue.capacity(),
-		"pool_available": _batched_payload_pool.available_count(),
-		"boss_ids": _boss_ids
+		"boss_ids": _boss_ids,
+		"position_update_mode": "physics_process_every_frame"
 	}
 
 ## DEBUG: Print boss count every few seconds
