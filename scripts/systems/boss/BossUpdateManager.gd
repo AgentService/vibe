@@ -20,7 +20,7 @@ const AI_UPDATE_GROUPS: int = 20  # Divide enemies into 20 groups (1000 enemies 
 # Viewport culling - skip AI updates for off-screen bosses
 var _viewport: Viewport = null
 var _player_camera: Camera2D = null
-const ENABLE_VIEWPORT_CULLING: bool = true
+const ENABLE_VIEWPORT_CULLING: bool = false  # Disabled: conflicts with large chase_range (5555px)
 
 # Reusable batched payload buffers (cleared each step, not reallocated)
 var _ids_buf: PackedStringArray = PackedStringArray()

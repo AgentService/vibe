@@ -26,20 +26,20 @@ var last_attack_time: float = 0.0
 # AI configuration (override in child classes)
 var target_position: Vector2
 var attack_range: float = 80.0
-var chase_range: float = 1200.0
+var chase_range: float = 5555.0
 var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
+const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing to prevent overlapping
 const PERSONAL_SPACE_STRENGTH: float = 30.0  # Strong spacing force comparable to chase speed (100 px/s)
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
-const SKIP_SPAWN_ANIMATION: bool = true  # Skip 0.5s spawn dissolve effect (cyan edge glow)
-const SKIP_WAKEUP_CHECK: bool = true  # Skip wake_up → default animation transition check
+const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
+const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
 
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
