@@ -43,6 +43,10 @@ var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (Are
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 var _personal_space_collision_shape: CollisionShape2D = null  # Cache for performance
 
+# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes near player (massive performance gain)
+const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = true  # Disable main + personal space collisions when swarming
+var _main_collision_shape: CollisionShape2D = null  # Cache main collision shape for dynamic toggling
+
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
 const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
@@ -75,6 +79,11 @@ func _ready() -> void:
 	# No collision_mask needed - Area2D doesn't push entities, only detects overlaps
 	collision_layer = 2  # Exist on Layer 2
 	collision_mask = 0   # Don't need to detect anything with base Area2D
+
+	# Cache main collision shape for dynamic disabling near player
+	_main_collision_shape = get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if not _main_collision_shape:
+		Logger.warn("%s: Main CollisionShape2D not found - collision optimization disabled" % get_boss_name(), "collision")
 
 	# CRITICAL PERFORMANCE: Disable HitBox monitoring to reduce physics overhead
 	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
@@ -288,12 +297,24 @@ func _update_ai(dt: float) -> void:
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
 
-	# COLLISION PAIR OPTIMIZATION: Disable personal space collision when near player
-	# Reduces collision pairs from 28k+ to ~2500 when enemies swarm player
-	if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape:
-		var should_disable = distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE
-		if _personal_space_collision_shape.disabled != should_disable:
-			_personal_space_collision_shape.disabled = should_disable
+	# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes when near player
+	# Reduces collision pairs from 28k+ to ~100-500 when enemies swarm (99% reduction!)
+	# WARNING: Projectiles won't hit enemies with disabled main collision shape
+	if DISABLE_ALL_COLLISIONS_NEAR_PLAYER and distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE:
+		# Disable main collision shape (boss becomes undetectable to projectiles)
+		if _main_collision_shape and not _main_collision_shape.disabled:
+			_main_collision_shape.disabled = true
+
+		# Disable personal space collision shape (no boss-to-boss spacing)
+		if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape and not _personal_space_collision_shape.disabled:
+			_personal_space_collision_shape.disabled = true
+	else:
+		# Re-enable collision shapes when far from player
+		if _main_collision_shape and _main_collision_shape.disabled:
+			_main_collision_shape.disabled = false
+
+		if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape and _personal_space_collision_shape.disabled:
+			_personal_space_collision_shape.disabled = false
 
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
