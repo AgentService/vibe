@@ -740,6 +740,11 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Event spawning now handled by individual event handlers (BreachEventHandler)
 	# No strategy registration needed - events manage their own spawn logic
 
+	# SCENE-BASED ENEMY CAP: Check max_enemies limit (applies to all scene-based enemies)
+	var current_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+	if current_enemy_count >= max_enemies:
+		# Silently skip spawning - pool is full
+		return null
 
 	# Try to get specific scene for this enemy type
 	var enemy_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id)
