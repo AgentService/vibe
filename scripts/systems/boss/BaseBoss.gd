@@ -35,11 +35,11 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_RADIUS: float = 800.0  # Detection radius for nearby enemies
 const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
-const MANUAL_SPACING_LATERAL_BIAS: float = 0.3  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
+const MANUAL_SPACING_STRENGTH: float = 1   # Push force when too close
+const MANUAL_SPACING_LATERAL_BIAS: float = 0.0  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
@@ -630,6 +630,15 @@ func _apply_manual_spacing() -> void:
 			# UNIFORM FORCE: Same strength regardless of distance (no falloff)
 			var push_direction = -to_other.normalized()  # Push away from other enemy
 
+			# LATERAL BIAS WITH DISTANCE GATING: Only apply lateral bias to enemies far from player
+			# Enemies close to player use pure radial separation to allow dense clustering
+			var effective_lateral_bias = MANUAL_SPACING_LATERAL_BIAS
+
+			# Within 2x min distance from player: use radial separation only (no lateral bias)
+			# This allows enemies to cluster naturally around the player without sideways pushing
+			if distance_to_player < (MANUAL_SPACING_MIN_DISTANCE * 2.0):
+				effective_lateral_bias = 1.0  # Pure radial (no sideways bias)
+
 			# LATERAL BIAS: Decompose force into radial (toward/away player) and tangential (sideways)
 			# This makes enemies prefer separating sideways, forming lines when approaching player
 			var to_player = (target_position - global_position).normalized()
@@ -642,9 +651,10 @@ func _apply_manual_spacing() -> void:
 			var tangential_component = push_direction - radial_component
 
 			# Apply bias: radial weight × radial + (1 - radial weight) × tangential
-			# LATERAL_BIAS = 0.3 means 30% radial, 70% sideways separation
-			var biased_direction = (radial_component * MANUAL_SPACING_LATERAL_BIAS +
-			                        tangential_component * (1.0 - MANUAL_SPACING_LATERAL_BIAS)).normalized()
+			# effective_lateral_bias = 1.0 means pure radial (close to player)
+			# effective_lateral_bias = LATERAL_BIAS means configured bias (far from player)
+			var biased_direction = (radial_component * effective_lateral_bias +
+									tangential_component * (1.0 - effective_lateral_bias)).normalized()
 
 			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
 			avoidance_force += biased_direction * MANUAL_SPACING_STRENGTH
