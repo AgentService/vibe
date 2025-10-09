@@ -306,9 +306,8 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
 size = Vector2(31, 41.5)
 
-[node name="DemonOverlord" type="Area2D"]
+[node name="DemonOverlord" type="Node2D"]
 y_sort_enabled = true
-collision_layer = 2
 script = ExtResource("1_kjm5n")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

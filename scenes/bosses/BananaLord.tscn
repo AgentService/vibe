@@ -89,9 +89,8 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(24, 63)
 
-[node name="BananaLord" type="Area2D"]
+[node name="BananaLord" type="Node2D"]
 y_sort_enabled = true
-collision_layer = 2
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

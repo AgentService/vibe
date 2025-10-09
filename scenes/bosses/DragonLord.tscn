@@ -110,7 +110,7 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7bior"]
 size = Vector2(16, 16)
 
-[node name="DragonLord" type="Area2D"]
+[node name="DragonLord" type="Node2D"]
 y_sort_enabled = true
 script = ExtResource("1_215q3")
 

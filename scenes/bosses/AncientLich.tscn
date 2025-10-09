@@ -110,8 +110,7 @@ animations = [{
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(14, 15)
 
-[node name="AncientLich" type="Area2D"]
-collision_layer = 2
+[node name="AncientLich" type="Node2D"]
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

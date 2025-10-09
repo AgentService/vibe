@@ -35,10 +35,14 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
 const MANUAL_SPACING_RADIUS: float = 999.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_MIN_DISTANCE: float = 50.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 1.5  # Push force when too close
+const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
+
+# KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
+var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
+const KNOCKBACK_DECAY: float = 30.0  # Decay rate in pixels per second (like move_toward resistance)
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -277,9 +281,17 @@ func _update_ai(dt: float) -> void:
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
+			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
+			# Uses move_toward() for smooth organic decay
+			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
+
 			# Move toward player - simple velocity calculation
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
+
+			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
+			# This separates enemies while maintaining chase behavior
+			velocity += spacing_knockback
 
 			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
 			if MANUAL_SPACING_ENABLED:
@@ -515,11 +527,14 @@ func _apply_manual_spacing() -> void:
 			# Stronger force when closer (inverse square falloff)
 			var force_multiplier = 1.0 - (distance / MANUAL_SPACING_RADIUS)
 			var push_direction = -to_other.normalized()  # Push away
-			avoidance_force += push_direction * MANUAL_SPACING_STRENGTH * force_multiplier
+			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
+			var impulse_strength = MANUAL_SPACING_STRENGTH * force_multiplier
+			avoidance_force += push_direction * impulse_strength
 
-	# Apply avoidance to velocity (additive with chase velocity)
+	# SET KNOCKBACK: Replace old knockback with new impulse (VS clone pattern)
+	# This creates sharp instant separation that decays smoothly
 	if avoidance_force.length_squared() > 0.1:
-		velocity += avoidance_force
+		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
