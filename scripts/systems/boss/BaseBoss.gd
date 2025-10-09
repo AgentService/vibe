@@ -50,9 +50,9 @@ const KNOCKBACK_DECAY: float = 5.0  # Decay rate in pixels per second (like move
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
 var _distance_cache_timer: float = 0.0
-const DISTANCE_CACHE_INTERVAL: float = 2.0  # Update distance every 200ms (6 frames @ 30Hz)
+const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 20  # Update EntityTracker position every 2 frames
+const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
@@ -271,7 +271,7 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 	target_position = player_pos  # Use cached player position from BossUpdateManager
 
 	# DISTANCE CACHING: Update distance periodically (not every frame)
-	# Reduces distance_to() calls by 83% (every 6 frames vs every frame)
+	# Reduces distance_to() calls by 83% (every 6 frames vs every frame @ 30Hz)
 	_distance_cache_timer += dt
 	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL:
 		_distance_cache_timer = 0.0
@@ -324,8 +324,8 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			# THROTTLED POSITION UPDATES: Update EntityTracker every 3 frames (not every frame)
-			# Reduces EntityTracker updates by 67% (10/sec vs 30/sec)
+			# THROTTLED POSITION UPDATES: Update EntityTracker every 2 frames (not every frame)
+			# Reduces EntityTracker updates by 50% (15/sec vs 30/sec @ 30Hz)
 			_position_update_counter += 1
 			if _position_update_counter >= POSITION_UPDATE_INTERVAL:
 				_position_update_counter = 0
