@@ -35,23 +35,24 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 800.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 1   # Push force when too close
+const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
 const MANUAL_SPACING_LATERAL_BIAS: float = 0.0  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
+const MAX_SPACING_NEIGHBORS: int = 10  # Max enemies to check per spacing calculation (reduces O(n²) → O(n×10))
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
 var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
-const KNOCKBACK_DECAY: float = 100.0  # Decay rate in pixels per second (like move_toward resistance)
+const KNOCKBACK_DECAY: float = 10.0  # Decay rate in pixels per second (like move_toward resistance)
 
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
 var _distance_cache_timer: float = 0.0
-const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
+const DISTANCE_CACHE_INTERVAL: float = 1.0  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
+const POSITION_UPDATE_INTERVAL: int = 10  # Update EntityTracker position every 2 frames
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
@@ -603,6 +604,12 @@ func _apply_manual_spacing() -> void:
 	if nearby_enemy_ids.is_empty():
 		return
 
+	# PERFORMANCE: Limit to closest N neighbors to prevent O(n²) explosions in dense clusters
+	# Example: 100 enemies checking 100 neighbors = 10,000 checks
+	#          100 enemies checking 10 neighbors = 1,000 checks (90% reduction!)
+	if nearby_enemy_ids.size() > MAX_SPACING_NEIGHBORS:
+		nearby_enemy_ids = _get_closest_neighbors(nearby_enemy_ids)
+
 	# Calculate avoidance force from all nearby enemies
 	var avoidance_force = Vector2.ZERO
 	for enemy_id in nearby_enemy_ids:
@@ -663,6 +670,33 @@ func _apply_manual_spacing() -> void:
 	# This creates sharp instant separation that decays smoothly
 	if avoidance_force.length_squared() > 0.1:
 		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
+
+## SPACING OPTIMIZATION: Get closest N neighbors to limit O(n²) complexity
+func _get_closest_neighbors(enemy_ids: Array) -> Array:
+	# Build array of distance-id pairs for sorting
+	var distance_pairs: Array = []
+
+	for enemy_id in enemy_ids:
+		if enemy_id == entity_id:
+			continue  # Skip self
+
+		var enemy_data = EntityTracker.get_entity(enemy_id)
+		if not enemy_data.has("pos"):
+			continue
+
+		var distance = global_position.distance_to(enemy_data["pos"])
+		distance_pairs.append({"dist": distance, "id": enemy_id})
+
+	# Sort by distance (closest first)
+	distance_pairs.sort_custom(func(a, b): return a["dist"] < b["dist"])
+
+	# Take only the closest MAX_SPACING_NEIGHBORS
+	var result: Array = []
+	var count = min(MAX_SPACING_NEIGHBORS, distance_pairs.size())
+	for i in range(count):
+		result.append(distance_pairs[i]["id"])
+
+	return result
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
