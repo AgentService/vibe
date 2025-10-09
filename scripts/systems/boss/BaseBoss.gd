@@ -52,8 +52,10 @@ var _cached_distance_to_player: float = 0.0
 var _distance_cache_initialized: bool = false  # Guard to seed cache on first update
 var _distance_cache_timer: float = 0.0
 const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
-var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
+
+# PHYSICS-BASED POSITION UPDATES: Moved from AI to physics loop for real-time accuracy
+var _physics_position_counter: int = 0
+const PHYSICS_POSITION_UPDATE_INTERVAL: int = 2  # Update DamageService every 2 physics frames (66ms @ 30Hz)
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
@@ -338,12 +340,7 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			# THROTTLED POSITION UPDATES: Update EntityTracker every 2 frames (not every frame)
-			# Reduces EntityTracker updates by 50% (15/sec vs 30/sec @ 30Hz)
-			_position_update_counter += 1
-			if _position_update_counter >= POSITION_UPDATE_INTERVAL:
-				_position_update_counter = 0
-				DamageService.update_entity_position(entity_id, global_position)
+			# NOTE: Position updates moved to _physics_process() for post-movement accuracy
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
@@ -370,6 +367,13 @@ func _physics_process(delta: float) -> void:
 	if velocity.length_squared() > 0.01:
 		# Direct position update (Node2D has no built-in physics)
 		global_position += velocity * delta
+
+	# POST-MOVEMENT POSITION UPDATES: Update DamageService with fresh position after movement
+	# Throttled to every 2 physics frames (66ms) for performance while maintaining accuracy
+	_physics_position_counter += 1
+	if _physics_position_counter >= PHYSICS_POSITION_UPDATE_INTERVAL:
+		_physics_position_counter = 0
+		DamageService.update_entity_position(entity_id, global_position)
 
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
