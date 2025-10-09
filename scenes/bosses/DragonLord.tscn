@@ -116,8 +116,9 @@ size = Vector2(16, 16)
 [sub_resource type="CircleShape2D" id="CircleShape2D_5yvh4"]
 radius = 20.0
 
-[node name="DragonLord" type="Node2D"]
+[node name="DragonLord" type="Area2D"]
 y_sort_enabled = true
+collision_layer = 2
 script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]

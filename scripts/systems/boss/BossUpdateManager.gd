@@ -9,9 +9,8 @@ const ObjectPool = preload("res://scripts/utils/ObjectPool.gd")
 const PayloadReset = preload("res://scripts/utils/PayloadReset.gd")
 
 # Array-backed registry for zero-alloc iteration and O(1) removal (swap-remove)
-# NODE2D: Bosses are now Node2D-based (no CharacterBody2D collision)
 var _boss_ids: PackedStringArray = PackedStringArray()
-var _boss_nodes: Array[Node2D] = []
+var _boss_nodes: Array[Area2D] = []  # AREA2D: Changed from CharacterBody2D
 var _boss_index: Dictionary = {} # id -> index
 
 # Staggered AI update system - spread AI across multiple frames
@@ -57,9 +56,9 @@ func _ready() -> void:
 	], "performance")
 
 ## Register boss with centralized manager
-## @param boss: Node2D boss node (NODE2D: Changed from CharacterBody2D)
+## @param boss: Area2D boss node (changed from CharacterBody2D)
 ## @param boss_id: String unique identifier (from existing boss pattern)
-func register_boss(boss: Node2D, boss_id: String) -> void:
+func register_boss(boss: Area2D, boss_id: String) -> void:
 	if _boss_index.has(boss_id):
 		Logger.warn("Boss already registered: %s" % boss_id, "performance")
 		return

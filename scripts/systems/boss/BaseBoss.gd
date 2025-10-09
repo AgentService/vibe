@@ -1,8 +1,8 @@
-extends Node2D
+extends Area2D
 
-## BaseBoss - Base class for all scene-based bosses (Node2D-based for no-collision spawning)
-## Provides unified damage integration, performance optimization, and directional animation logic
-## NODE2D ARCHITECTURE: No CharacterBody2D collision - enables spawning on tree tiles (Layer 0)
+## BaseBoss - Base class for all Area2D-based bosses
+## Provides unified damage integration, personal space system, and direct position movement
+## Uses Area2D for simplified collision and better performance with 1000+ enemies
 
 class_name BaseBoss
 
@@ -32,16 +32,13 @@ var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
-# NODE2D MOVEMENT: Manual velocity tracking (no CharacterBody2D physics)
-var velocity: Vector2 = Vector2.ZERO
+# AREA2D MOVEMENT: Direct position manipulation (no physics engine)
+var velocity: Vector2 = Vector2.ZERO  # Custom velocity for Area2D movement
 
-# PERSONAL SPACE SYSTEM: Area2D-based boss spacing (requires PhysicsBody2D for detection)
-# NODE2D LIMITATION: Area2D body_entered/body_exited signals only detect PhysicsBody2D (not plain Node2D)
-# SOLUTION: Bosses can optionally have a small CharacterBody2D child for detection (collision_layer = 2)
-# ALTERNATIVE: Disable Area2D and use distance-based detection in _update_ai() instead
-const PERSONAL_SPACE_ENABLED: bool = false  # Disabled by default for Node2D architecture
+# PERSONAL SPACE SYSTEM: Signal-based boss spacing via Area2D detection
+const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
 const PERSONAL_SPACE_STRENGTH: float = 30.0  # Strong spacing force comparable to chase speed (100 px/s)
-var nearby_bosses: Array[Node2D] = []  # Bosses currently in personal space (Node2D-based)
+var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (Area2D type)
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
@@ -71,11 +68,13 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# NODE2D ARCHITECTURE: No CharacterBody2D collision layers
-	# Enemies can spawn on tree tiles (Layer 0) without collision detection
-	# HitBox Area2D still provides damage detection for projectiles
+	# AREA2D COLLISION: Base Area2D handles main collision detection
+	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can detect us)
+	# No collision_mask needed - Area2D doesn't push entities, only detects overlaps
+	collision_layer = 2  # Exist on Layer 2
+	collision_mask = 0   # Don't need to detect anything with base Area2D
 
-	# CRITICAL PERFORMANCE: Disable Area2D monitoring to reduce physics overhead
+	# CRITICAL PERFORMANCE: Disable HitBox monitoring to reduce physics overhead
 	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
 	# Re-enable only when needed (e.g., when near player for hit detection)
 	var hitbox = get_node_or_null("HitBox")
@@ -220,10 +219,15 @@ func apply_unified_scaling(scale_factor: float) -> void:
 
 	# Step 1: Scale sprite (visual component) - always defer to ensure node readiness
 	call_deferred("_apply_sprite_scaling", scale_factor)
-
-	# Step 2: NODE2D - No CollisionShape2D to scale (no CharacterBody2D collision)
-	# Enemies use Area2D HitBox only for damage detection
-
+	
+	# Step 2: Scale collision shape (physics/movement)
+	var collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape:
+		var old_scale = collision_shape.scale
+		collision_shape.scale = Vector2.ONE * scale_factor
+	else:
+		Logger.warn("CollisionShape2D not found for scaling", "debug")
+	
 	# Step 3: Scale hitbox (combat detection) - only parent Area2D, child inherits
 	var hitbox = get_node_or_null("HitBox")
 	if hitbox:
@@ -231,7 +235,7 @@ func apply_unified_scaling(scale_factor: float) -> void:
 		hitbox.scale = Vector2.ONE * scale_factor
 	else:
 		Logger.warn("HitBox not found for scaling", "debug")
-
+	
 	# Step 4: Notify all scalable components after scaling changes
 	call_deferred("_notify_components_scaled", scale_factor)
 	
@@ -251,17 +255,17 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## NODE2D MOVEMENT: Direct position manipulation (no CharacterBody2D physics)
-## Physics process runs EVERY frame (30Hz) even when AI is staggered for smooth movement
+## AREA2D MOVEMENT: Direct position updates run EVERY frame (30Hz)
+## This ensures smooth movement - AI calculates velocity every 20 frames, movement applies it every frame
 func _physics_process(delta: float) -> void:
-	# Skip physics if dying, spawning, or no velocity
+	# Skip movement if dying, spawning, or no velocity
 	if _is_dying or _is_spawning:
 		return
 
 	# Only apply movement if we have velocity
 	# Squared check is faster than length() (avoids sqrt)
 	if velocity.length_squared() > 0.01:
-		# NODE2D: Direct position manipulation instead of move_and_slide()
+		# Direct position manipulation (no physics engine overhead)
 		global_position += velocity * delta
 
 ## Base AI logic - simple every-frame updates
@@ -482,10 +486,6 @@ func _on_player_died() -> void:
 	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
 ## Setup PersonalSpaceArea for signal-based boss spacing control
-## NODE2D WARNING: Area2D body_entered/body_exited only detect PhysicsBody2D (not plain Node2D)
-## For Node2D bosses, personal space requires one of:
-##   1. Small CharacterBody2D child node for detection (collision_layer = 2)
-##   2. Distance-based detection in _update_ai() loop (check nearby bosses manually)
 func _setup_personal_space_area() -> void:
 	personal_space_area = get_node("PersonalSpaceArea") as Area2D
 	if not personal_space_area:
@@ -493,14 +493,13 @@ func _setup_personal_space_area() -> void:
 		return
 
 	# Configure collision layers for boss-to-boss detection
-	# NOTE: Only works if bosses have PhysicsBody2D child for detection
 	personal_space_area.collision_layer = 0  # Don't exist on any layer
 	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
 
-	# Connect to area signals for boss detection
-	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
-	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
-	Logger.debug("%s: Personal space area configured for boss spacing" % get_boss_name(), "collision")
+	# AREA2D: Connect to area signals for Area2D-based boss detection
+	personal_space_area.area_entered.connect(_on_boss_entered_personal_space)
+	personal_space_area.area_exited.connect(_on_boss_exited_personal_space)
+	Logger.debug("%s: Personal space area configured for Area2D boss spacing" % get_boss_name(), "collision")
 
 	# Debug visualization removed - was using ColorRect which looked blocky
 	# To re-enable: Uncomment _setup_personal_space_debug_visual() call below
@@ -510,17 +509,17 @@ func _setup_personal_space_area() -> void:
 	# 		_setup_personal_space_debug_visual()
 
 ## Handle boss entering personal space - add to nearby list
-func _on_boss_entered_personal_space(body: Node2D) -> void:
-	# NODE2D: Cast to Node2D instead of CharacterBody2D
-	var boss = body as Node2D
+## AREA2D: Receives Area2D parameter from area_entered signal
+func _on_boss_entered_personal_space(area: Area2D) -> void:
+	var boss = area as Area2D
 	if boss and boss != self and boss.has_method("get_boss_name"):
 		nearby_bosses.append(boss)
 		Logger.debug("%s: %s entered personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
 
 ## Handle boss leaving personal space - remove from nearby list
-func _on_boss_exited_personal_space(body: Node2D) -> void:
-	# NODE2D: Cast to Node2D instead of CharacterBody2D
-	var boss = body as Node2D
+## AREA2D: Receives Area2D parameter from area_exited signal
+func _on_boss_exited_personal_space(area: Area2D) -> void:
+	var boss = area as Area2D
 	if boss and boss != self and boss.has_method("get_boss_name"):
 		nearby_bosses.erase(boss)
 		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
@@ -558,7 +557,7 @@ func apply_only_personal_space_movement(delta: float) -> void:
 	var spacing_force = apply_personal_space_forces()
 	if spacing_force.length_squared() > 0.1:
 		velocity = spacing_force
-		# NODE2D: Direct position manipulation instead of move_and_slide()
+		# AREA2D: Direct position movement
 		global_position += velocity * delta
 		Logger.debug("%s: Pure personal space movement: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
 
@@ -652,26 +651,32 @@ func get_scaling_debug_info() -> Dictionary:
 		"boss_name": get_boss_name(),
 		"sprite_scale": Vector2.ZERO,
 		"sprite_position": Vector2.ZERO,
+		"collision_scale": Vector2.ZERO,
 		"hitbox_scale": Vector2.ZERO,
 		"has_sprite": false,
+		"has_collision": false,
 		"has_hitbox": false,
 	}
-
+	
 	# Get sprite info
 	if animated_sprite:
 		info.sprite_scale = animated_sprite.scale
 		info.sprite_position = animated_sprite.position
 		info.has_sprite = true
-
-	# NODE2D: No CollisionShape2D to track (no CharacterBody2D collision)
-
+	
+	# Get collision info
+	var collision_shape = get_node_or_null("CollisionShape2D")
+	if collision_shape:
+		info.collision_scale = collision_shape.scale
+		info.has_collision = true
+	
 	# Get hitbox info
 	var hitbox = get_node_or_null("HitBox")
 	if hitbox:
 		info.hitbox_scale = hitbox.scale
 		info.has_hitbox = true
-
-
+	
+	
 	return info
 
 ## DEBUG TOOLS: Print scaling debug info to console
@@ -679,11 +684,11 @@ func debug_print_scaling_info() -> void:
 	var info = get_scaling_debug_info()
 	Logger.info("=== SCALING DEBUG: %s ===" % info.boss_name, "debug")
 	Logger.info("Sprite: scale=%v position=%v (present: %s)" % [info.sprite_scale, info.sprite_position, info.has_sprite], "debug")
+	Logger.info("Collision: scale=%v (present: %s)" % [info.collision_scale, info.has_collision], "debug")
 	Logger.info("HitBox: scale=%v (present: %s)" % [info.hitbox_scale, info.has_hitbox], "debug")
-
-	# NODE2D: No CollisionShape2D (no CharacterBody2D collision)
+	
 	# HitBoxShape inherits scaling from parent HitBox Area2D (no separate scaling needed)
-
+	
 	Logger.info("=== UNIFIED SCALING DEBUG END ===", "debug")
 
 # REMOVED: Old fragmented health bar scaling fix - now handled by unified component notification system
