@@ -38,7 +38,7 @@ const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacin
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
 const MANUAL_SPACING_MIN_DISTANCE: float = 10.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = false  # Whether to skip spacing for enemies close to player (false = always apply spacing)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 5.0  # Check every 500ms (not every frame)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
 const MANUAL_SPACING_LATERAL_BIAS: float = 0.1 # Radial weight (0.0 = pure sideways, 1.0 = no bias)
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
