@@ -49,6 +49,7 @@ const KNOCKBACK_DECAY: float = 5.0  # Decay rate in pixels per second (like move
 
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
+var _distance_cache_initialized: bool = false  # Guard to seed cache on first update
 var _distance_cache_timer: float = 0.0
 const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
@@ -283,10 +284,12 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 
 	# DISTANCE CACHING: Update distance periodically (not every frame)
 	# Reduces distance_to() calls by 83% (every 6 frames vs every frame @ 30Hz)
+	# Guard: Initialize cache on first update to prevent phantom attacks at distance=0.0
 	_distance_cache_timer += dt
-	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL:
+	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL or not _distance_cache_initialized:
 		_distance_cache_timer = 0.0
 		_cached_distance_to_player = global_position.distance_to(target_position)
+		_distance_cache_initialized = true
 
 	# Use cached distance for all checks
 	if _cached_distance_to_player <= chase_range:
