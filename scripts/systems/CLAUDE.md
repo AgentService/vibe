@@ -826,6 +826,82 @@ func test_spawn_cap() -> void:
     assert(final_count == max_enemies, "Cap enforcement failed")
 ```
 
+### ⚡ **Dynamic Collision Shape Disabling Pattern (Updated 2025-10-09)**
+
+**Problem:** Collision pairs grow exponentially when many Area2D collision shapes are active near each other.
+
+```gdscript
+# BaseBoss.gd - Proximity-based collision shape disabling
+const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Disable within 100px of player
+var _personal_space_collision_shape: CollisionShape2D = null  # Cache reference
+
+func _setup_personal_space_area() -> void:
+    personal_space_area = get_node("PersonalSpaceArea") as Area2D
+
+    # Cache CollisionShape2D for dynamic toggling
+    _personal_space_collision_shape = personal_space_area.get_node("PersonalSpaceShape")
+
+func _update_ai(dt: float) -> void:
+    var distance_to_player = global_position.distance_to(player_pos)
+
+    # COLLISION PAIR OPTIMIZATION: Disable collision shape when swarming player
+    if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape:
+        var should_disable = distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE
+        if _personal_space_collision_shape.disabled != should_disable:
+            _personal_space_collision_shape.disabled = should_disable
+```
+
+**Collision Pair Math:**
+```
+N enemies with collision shapes: N × (N-1) / 2 collision pairs
+
+Example with 700 enemies:
+- All active: 700 × 699 / 2 = 244,650 collision pairs
+- 100 near player (disabled): 600 × 599 / 2 = 179,700 pairs
+- Practical reduction: 28,000+ → 2,500-3,000 pairs when swarming
+
+Key insight: Enemies converging on player don't need spacing
+- They're all moving to the same point anyway
+- Collision pairs in swarm zone become negligible
+- Only outer enemies need spacing logic active
+```
+
+**Performance Impact:**
+- **Before:** 28,000+ collision pairs in combat
+- **After:** 2,500-3,000 collision pairs when enemies swarm
+- **Reduction:** 90%+ collision pair reduction in hot zone
+- **Pattern:** Disable collision shapes whenever they're not needed
+
+**When to use:**
+- ✅ Area2D-based personal space / separation systems
+- ✅ High entity counts (500-1000+ enemies)
+- ✅ Enemies that swarm a target (all converging to same point)
+- ✅ Proximity-based gameplay (within X distance = different behavior)
+
+**Tunable parameters:**
+```gdscript
+# Adjust disable distance based on gameplay:
+const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Close quarters
+const PERSONAL_SPACE_DISABLE_DISTANCE: float = 200.0  # Medium distance
+const PERSONAL_SPACE_DISABLE_DISTANCE: float = 50.0   # Very tight spacing
+
+# Pattern works for other collision shapes too:
+func _update_hitbox_collision(distance_to_player: float) -> void:
+    # Disable hitbox collision when far from player
+    if distance_to_player > 1000.0:
+        hitbox_collision_shape.disabled = true
+    else:
+        hitbox_collision_shape.disabled = false
+```
+
+**Real-world example:**
+```gdscript
+# User-reported results:
+# Before: 28,000+ collision pairs (choppy performance)
+# After: 2,500-3,000 collision pairs (smooth gameplay)
+# Game: Top-down wave survival with 700+ enemies swarming player
+```
+
 ## Troubleshooting Guide
 
 ### 🚨 **Common Issues**
