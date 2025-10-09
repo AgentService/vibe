@@ -114,7 +114,7 @@ radius = 4.0
 size = Vector2(16, 16)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_5yvh4"]
-radius = 20.0
+radius = 34.0
 
 [node name="DragonLord" type="CharacterBody2D"]
 y_sort_enabled = true

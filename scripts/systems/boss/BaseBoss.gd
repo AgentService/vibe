@@ -33,15 +33,9 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
 const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 20.0  # Separation force strength (pixels/second)
+const PERSONAL_SPACE_STRENGTH: float = 20.0  # Strong spacing force comparable to chase speed (100 px/s)
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
-var _personal_space_collision_shape: CollisionShape2D = null  # Cache for dynamic disabling
-
-# COLLISION PAIR OPTIMIZATION: Disable collision shapes near player to reduce physics overhead
-const DISABLE_MAIN_COLLISION_DISTANCE: float = 200.0  # Disable CharacterBody2D physics when this close to player
-const DISABLE_PERSONAL_SPACE_DISTANCE: float = 150.0  # Disable personal space when swarming player
-var _main_collision_shape: CollisionShape2D = null  # Cache main collision shape
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -97,11 +91,6 @@ func _ready() -> void:
 	safe_margin = 0.08  # Increase from 0.001 for performance (less precision, more speed)
 	floor_stop_on_slope = false  # Not relevant for top-down movement
 	wall_min_slide_angle = 0.0  # Allow sliding at any angle (no minimum)
-
-	# Cache main collision shape for dynamic disabling near player
-	_main_collision_shape = get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if not _main_collision_shape:
-		Logger.warn("%s: Main CollisionShape2D not found - collision optimization disabled" % get_boss_name(), "collision")
 
 	# Setup personal space area BEFORE spawn animation (needed for _on_spawn_animation_complete)
 	if PERSONAL_SPACE_ENABLED:
@@ -298,26 +287,6 @@ func _update_ai(dt: float) -> void:
 
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
-
-	# COLLISION PAIR OPTIMIZATION: Dynamically disable collision shapes near player
-	# This prevents expensive CharacterBody2D physics calculations when enemies swarm
-	if distance_to_player < DISABLE_MAIN_COLLISION_DISTANCE:
-		# Disable main collision shape (no CharacterBody2D physics with other enemies)
-		if _main_collision_shape and not _main_collision_shape.disabled:
-			_main_collision_shape.disabled = true
-	else:
-		# Re-enable main collision shape when far from player
-		if _main_collision_shape and _main_collision_shape.disabled:
-			_main_collision_shape.disabled = false
-
-	if PERSONAL_SPACE_ENABLED and distance_to_player < DISABLE_PERSONAL_SPACE_DISTANCE:
-		# Disable personal space when very close (no spacing needed when swarming)
-		if _personal_space_collision_shape and not _personal_space_collision_shape.disabled:
-			_personal_space_collision_shape.disabled = true
-	else:
-		# Re-enable personal space when at medium distance
-		if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape and _personal_space_collision_shape.disabled:
-			_personal_space_collision_shape.disabled = false
 
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
@@ -529,11 +498,6 @@ func _setup_personal_space_area() -> void:
 	personal_space_area.collision_layer = 0  # Don't exist on any layer
 	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
 
-	# Cache CollisionShape2D for dynamic enabling/disabling (performance optimization)
-	_personal_space_collision_shape = personal_space_area.get_node_or_null("PersonalSpaceShape") as CollisionShape2D
-	if not _personal_space_collision_shape:
-		Logger.warn("%s: PersonalSpaceShape not found - collision pair optimization disabled" % get_boss_name(), "collision")
-
 	# Connect to area signals for boss detection
 	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
 	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
@@ -561,16 +525,12 @@ func _on_boss_exited_personal_space(body: Node2D) -> void:
 		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
 
 ## Calculate spacing force to maintain personal space from other bosses
-## Uses the PersonalSpaceArea's CircleShape2D radius to prevent collision shape overlap
 func apply_personal_space_forces() -> Vector2:
 	if nearby_bosses.is_empty():
 		return Vector2.ZERO
 
 	var spacing_force = Vector2.ZERO
 	var my_position = global_position
-
-	# Get actual radius from PersonalSpaceArea's CircleShape2D (e.g., 80px for BananaLord)
-	# This represents the distance where bosses should start separating to avoid collision shape overlap
 	var personal_space_radius = _get_personal_space_radius()
 
 	for boss in nearby_bosses:
@@ -582,12 +542,9 @@ func apply_personal_space_forces() -> Vector2:
 		var distance = direction.length()
 
 		if distance > 0.1:  # Avoid division by zero
-			# Apply separation force proportional to overlap
-			# Force is strongest when bosses are touching (distance = 0)
-			# Force is zero when bosses are at personal_space_radius apart
+			# Normalize direction and apply constant force
 			direction = direction.normalized()
-			var overlap_ratio = 1.0 - min(distance / personal_space_radius, 1.0)  # 1.0 = full overlap, 0.0 = no overlap
-			var force_strength = PERSONAL_SPACE_STRENGTH * overlap_ratio
+			var force_strength = PERSONAL_SPACE_STRENGTH  # Constant force regardless of distance
 			spacing_force += direction * force_strength
 
 	return spacing_force
@@ -614,22 +571,24 @@ func debug_personal_space_status() -> void:
 			Logger.info("    * %s at %.1f px distance" % [boss.get_boss_name(), distance], "collision")
 
 ## Get the actual radius from PersonalSpaceArea's CircleShape2D
-## This returns the radius value set in the scene editor (e.g., BananaLord = 84px)
-## The radius represents the spacing distance to prevent collision shape overlap
 func _get_personal_space_radius() -> float:
 	if not personal_space_area:
-		return 32.0  # Default fallback if personal space not configured
+		Logger.debug("%s: No personal_space_area - using fallback 32.0" % get_boss_name(), "collision")
+		return 32.0  # Default fallback
 
 	var collision_shape = personal_space_area.get_child(0) as CollisionShape2D
 	if not collision_shape or not collision_shape.shape:
-		return 32.0  # Default fallback if shape not found
+		Logger.debug("%s: No collision shape or shape - using fallback 32.0" % get_boss_name(), "collision")
+		return 32.0  # Default fallback
 
 	var circle_shape = collision_shape.shape as CircleShape2D
 	if circle_shape:
-		# Return the actual radius from the scene (reflects boss size)
-		return circle_shape.radius
+		var radius = circle_shape.radius
+		Logger.debug("%s: PersonalSpaceArea radius from editor: %.1f" % [get_boss_name(), radius], "collision")
+		return radius
 
-	return 32.0  # Default fallback if not a CircleShape2D
+	Logger.debug("%s: Shape is not CircleShape2D - using fallback 32.0" % get_boss_name(), "collision")
+	return 32.0  # Default fallback
 
 ## Setup visual debug circle for PersonalSpaceArea
 func _setup_personal_space_debug_visual() -> void:
