@@ -26,14 +26,14 @@ var last_attack_time: float = 0.0
 # AI configuration (override in child classes)
 var target_position: Vector2
 var attack_range: float = 80.0
-var chase_range: float = 5500.0
+var chase_range: float = 1200.0
 var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 2.5  # Increased spacing force for better enemy separation
+const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
+const PERSONAL_SPACE_STRENGTH: float = 30.0  # Strong spacing force comparable to chase speed (100 px/s)
 var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
@@ -64,11 +64,11 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# PERFORMANCE: Disable ALL collision for high entity counts (700+ bosses)
+	# COLLISION CONFIGURATION: Enable collision layers for all bosses
 	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can hit them)
-	# Mask 0 (None): Enemy doesn't collide with anything (passes through terrain + enemies)
+	# Mask 1 (Terrain): Enemy collides with terrain (walks around walls)
 	collision_layer = 2  # Exist on Layer 2
-	collision_mask = 0   # ULTRA PERFORMANCE: No collision at all (walk through walls)
+	collision_mask = 1   # Collide with Layer 1 (terrain)
 
 	# CRITICAL PERFORMANCE: Disable Area2D monitoring to reduce physics overhead
 	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
@@ -494,16 +494,21 @@ func _setup_personal_space_area() -> void:
 		Logger.debug("%s: No PersonalSpaceArea found - boss spacing disabled" % get_boss_name(), "collision")
 		return
 
+	# Configure collision layers for boss-to-boss detection
+	personal_space_area.collision_layer = 0  # Don't exist on any layer
+	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
+
 	# Connect to area signals for boss detection
 	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
 	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
 	Logger.debug("%s: Personal space area configured for boss spacing" % get_boss_name(), "collision")
 
-	# Enable debug visualization if both debug mode and personal space circles are enabled
-	if DebugManager and DebugManager.debug_enabled:
-		var debug_config = load("res://config/debug.tres") as DebugConfig
-		if debug_config and debug_config.show_personal_space_circles:
-			_setup_personal_space_debug_visual()
+	# Debug visualization removed - was using ColorRect which looked blocky
+	# To re-enable: Uncomment _setup_personal_space_debug_visual() call below
+	# if DebugManager and DebugManager.debug_enabled:
+	# 	var debug_config = load("res://config/debug.tres") as DebugConfig
+	# 	if debug_config and debug_config.show_personal_space_circles:
+	# 		_setup_personal_space_debug_visual()
 
 ## Handle boss entering personal space - add to nearby list
 func _on_boss_entered_personal_space(body: Node2D) -> void:

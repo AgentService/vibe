@@ -2,6 +2,91 @@
 
 ## [Current Week - In Progress]
 
+### Personal Space System Activated (2025-10-09)
+
+**Enabled boss spacing to prevent excessive overlapping:**
+
+**Change:**
+- ✅ Set `PERSONAL_SPACE_ENABLED = true` in BaseBoss.gd:35 (was false for ultra performance)
+
+**How It Works:**
+- Each boss has a PersonalSpaceArea (Area2D with CircleShape2D, ~86px radius)
+- When bosses enter each other's personal space → gentle repulsion force applied
+- Spacing strength: 2.5 px/s (subtle, doesn't interfere with chase behavior)
+- Force strength scales with distance: stronger when closer, weaker when farther
+
+**Visual Behavior:**
+- **Before:** Bosses stack completely on top of each other (ghosting through)
+- **After:** Bosses maintain slight separation while chasing player
+- **Result:** Better visual clarity during high-density swarms
+
+**System Architecture:**
+```gdscript
+# PersonalSpaceArea detects nearby bosses via Area2D signals
+func _on_boss_entered_personal_space(body: Node2D):
+    nearby_bosses.append(boss)
+
+# Apply gentle spacing forces during chase (lines 232-237)
+var spacing_force = apply_personal_space_forces()
+velocity += spacing_force  # Added to chase velocity
+```
+
+**Collision Layers:**
+- CharacterBody2D: `collision_mask = 0` (no physics collision - still ghosts through walls)
+- PersonalSpaceArea: Monitors Layer 2 (boss-to-boss detection only)
+- **Result:** Bosses detect each other for spacing, but don't physically collide with terrain
+
+**Performance Impact:**
+- Uses Area2D signals (body_entered/body_exited) - efficient for moderate counts
+- Force calculation only runs for bosses in personal space radius
+- **Trade-off:** Slight performance cost (~5-10ms with 600+ bosses) vs. visual improvement
+- **Note:** System was disabled during performance optimization work for max FPS
+
+**Debug Visualization:**
+- ~~Enable in `config/debug.tres`: `show_personal_space_circles = true`~~
+- ~~Shows magenta circles around each boss (radius = PersonalSpaceArea size)~~
+- **REMOVED:** Debug ColorRect visualization (looked blocky, cluttered screen)
+- To re-enable: Uncomment `_setup_personal_space_debug_visual()` call in BaseBoss.gd:508-511
+
+**Collision Layer Configuration Fix:**
+- ✅ **Added collision_mask configuration to BaseBoss._setup_personal_space_area()** (lines 497-499)
+  - `personal_space_area.collision_layer = 0` (don't exist on any layer)
+  - `personal_space_area.collision_mask = 2` (detect Layer 2 where bosses are)
+  - **Result:** PersonalSpaceArea now automatically configured for ALL boss instances
+  - **Pattern:** Collision settings configured in code, not scene files (.tscn)
+
+**Spacing Force Strength Fix:**
+- ✅ **Increased PERSONAL_SPACE_STRENGTH from 2.5 → 75.0 px/s** (line 36)
+  - **Problem:** Original 2.5 px/s force was only 2.5% of chase velocity (100 px/s)
+  - **Result:** Spacing force was completely overwhelmed by chase behavior
+  - **Solution:** 75 px/s spacing force is now 75% as strong as chase velocity
+  - **Visual Impact:** Bosses now visibly separate instead of stacking perfectly
+
+**Collision Layer Re-enabled for Terrain:**
+- ✅ **Restored collision_layer and collision_mask configuration** (lines 70-71)
+  - `collision_layer = 2` (exist on Layer 2 for projectile/player detection)
+  - `collision_mask = 1` (collide with Layer 1 terrain - walk around walls)
+  - **Result:** Bosses now collide with terrain instead of walking through walls
+  - **Personal space:** Still handles boss-to-boss spacing via Area2D (no physical collision)
+
+**Projectile Collision Fix:**
+- ✅ **Added collision_mask = 2 to Arrow Area2D** (Arrow.tscn:19)
+  - **Problem:** Arrow Area2D had collision_layer = 4 but NO collision_mask (default 0)
+  - **Result:** Projectiles couldn't detect enemies at all (mask 0 = detect nothing)
+  - **Solution:** collision_mask = 2 allows projectiles to detect enemy HitBoxes on Layer 2
+  - **How it works:** Projectile Area2D (mask 2) → detects → Enemy HitBox Area2D (layer 2)
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd:35` - Changed PERSONAL_SPACE_ENABLED to true
+- `scripts/systems/boss/BaseBoss.gd:36` - Increased PERSONAL_SPACE_STRENGTH to 75.0
+- `scripts/systems/boss/BaseBoss.gd:70-71` - Re-enabled collision layers (terrain collision)
+- `scripts/systems/boss/BaseBoss.gd:497-499` - Added collision layer configuration in _setup_personal_space_area()
+- `scenes/abilities/projectiles/Arrow.tscn:19` - Added collision_mask = 2 for enemy detection
+
+**To Disable:** Set `PERSONAL_SPACE_ENABLED = false` for maximum performance (1000+ enemies)
+
+---
+
 ### move_and_slide() Physics Optimization (2025-10-08)
 
 **30% faster physics per boss using Godot's performance settings:**

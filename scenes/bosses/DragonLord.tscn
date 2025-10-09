@@ -70,7 +70,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"damage_taken",
-"speed": 10.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -87,7 +87,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 5.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -104,7 +104,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"wake_up",
-"speed": 5.0
+"speed": 1.0
 }]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_7bior"]
@@ -114,7 +114,7 @@ radius = 4.0
 size = Vector2(16, 16)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_5yvh4"]
-radius = 8.0
+radius = 20.0
 
 [node name="DragonLord" type="CharacterBody2D"]
 y_sort_enabled = true
@@ -123,6 +123,7 @@ script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_lw0tx")
+animation = &"wake_up"
 offset = Vector2(0, -9.135)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -154,10 +155,8 @@ metadata/_edit_use_anchors_ = true
 [node name="PersonalSpaceArea" type="Area2D" parent="."]
 position = Vector2(20, -2)
 collision_layer = 0
-collision_mask = 2
 
 [node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-visible = false
 position = Vector2(-20, -3)
 shape = SubResource("CircleShape2D_5yvh4")
 

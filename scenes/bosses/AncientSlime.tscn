@@ -67,7 +67,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack_east",
-"speed": 8.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -90,7 +90,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack_north",
-"speed": 8.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -113,7 +113,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack_south",
-"speed": 8.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -136,7 +136,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"attack_west",
-"speed": 8.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -144,7 +144,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"default",
-"speed": 6.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -161,7 +161,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_east",
-"speed": 6.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -178,7 +178,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_north",
-"speed": 6.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -195,7 +195,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_south",
-"speed": 6.0
+"speed": 1.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -212,7 +212,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_west",
-"speed": 6.0
+"speed": 1.0
 }]
 
 [sub_resource type="CapsuleShape2D" id="CapsuleShape2D_83bbo"]
@@ -223,7 +223,7 @@ height = 16.0
 size = Vector2(19, 38)
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_83bbo"]
-radius = 45.0
+radius = 66.0303
 
 [node name="AncientSlime" type="CharacterBody2D"]
 collision_layer = 2
@@ -231,6 +231,7 @@ script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_slime")
+animation = &"walking_west"
 offset = Vector2(0, -15.585)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
@@ -257,7 +258,6 @@ opacity = 0.8
 
 [node name="PersonalSpaceArea" type="Area2D" parent="."]
 collision_layer = 0
-collision_mask = 2
 
 [node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
 shape = SubResource("CircleShape2D_83bbo")
