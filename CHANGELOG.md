@@ -72,25 +72,19 @@ func _update_ai(dt: float) -> void:
         _personal_space_collision_shape.disabled = false
 ```
 
-**Collision Pair Optimization V2 (Dual System with HitBox - CURRENT):**
+**Collision Pair Optimization V2 (ALL Shapes - CURRENT):**
 ```gdscript
-# REFACTORED: Separate main collision and personal space into independent systems
+# NEW: Disable BOTH main + personal space collision shapes (99% reduction!)
 func _update_ai(dt: float) -> void:
     var distance_to_player = global_position.distance_to(player_pos)
 
-    # SYSTEM 1: Main collision (projectile detection) - uses MAIN_COLLISION_DISABLE_DISTANCE
+    # Within 100px of player: disable ALL collision shapes
     if distance_to_player < 100.0:
-        _main_collision_shape.disabled = true   # Reduce collision pairs
-        _hitbox.monitoring = true               # Enable HitBox for projectile hits!
+        _main_collision_shape.disabled = true      # No projectile detection
+        _personal_space_collision_shape.disabled = true  # No boss-to-boss spacing
     else:
-        _main_collision_shape.disabled = false  # Normal collision detection
-        _hitbox.monitoring = false              # Disable HitBox for performance
-
-    # SYSTEM 2: Personal space (boss spacing) - uses PERSONAL_SPACE_DISABLE_DISTANCE (independent)
-    if PERSONAL_SPACE_ENABLED and distance_to_player < 100.0:
-        _personal_space_collision_shape.disabled = true   # No spacing near player
-    elif PERSONAL_SPACE_ENABLED:
-        _personal_space_collision_shape.disabled = false  # Maintain spacing far from player
+        _main_collision_shape.disabled = false     # Re-enable projectile hits
+        _personal_space_collision_shape.disabled = false  # Re-enable spacing
 ```
 
 **Collision Pair Math:**
@@ -98,16 +92,14 @@ func _update_ai(dt: float) -> void:
   - Boss-to-boss pairs: 244,650 (700 × 699 / 2)
   - Boss-to-projectile pairs: ~245,000 (700 bosses × ~350 projectiles)
 - **V1 (personal space only):** 28,000+ → 2,500-3,000 pairs (90% reduction)
-- **V2 (dual system with HitBox):** ~490,000 → ~100-500 pairs (99% reduction!)
-- **Benefit:** Projectiles CAN still hit enemies via HitBox (no safe zone!)
+- **V2 (all shapes disabled):** ~490,000 → ~100-500 pairs (99% reduction!)
+- **Tradeoff:** Projectiles WON'T hit enemies within 100px of player
 
-**KEY IMPROVEMENT (V2 Refactor):**
-✅ **Separated systems** - Main collision and personal space now independent
-✅ **HitBox fallback** - Projectiles hit via HitBox when main collision disabled
-✅ **No safe zone** - Enemies remain vulnerable to projectiles near player
-✅ **Separate constants** - `MAIN_COLLISION_DISABLE_DISTANCE` vs `PERSONAL_SPACE_DISABLE_DISTANCE`
-- Toggle main collision: Set `MAIN_COLLISION_DISABLE_NEAR_PLAYER = false`
-- Toggle personal space: Set `PERSONAL_SPACE_ENABLED = true` (currently false)
+**CRITICAL WARNING:**
+⚠️ **V2 creates a "safe zone"** where swarming enemies become invulnerable to projectiles!
+- Within 100px: Main CollisionShape2D disabled → projectiles pass through
+- Beyond 100px: Main CollisionShape2D enabled → projectiles hit normally
+- Toggle behavior: Set `DISABLE_ALL_COLLISIONS_NEAR_PLAYER = false` to use V1 instead
 
 **Pattern:** Disable collision shapes whenever they're not gameplay-critical
 

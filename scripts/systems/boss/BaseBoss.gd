@@ -35,19 +35,17 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 # AREA2D MOVEMENT: Direct position manipulation (no physics engine)
 var velocity: Vector2 = Vector2.ZERO  # Custom velocity for Area2D movement
 
-# PERSONAL SPACE SYSTEM: Signal-based boss spacing via Area2D detection (SEPARATE from collision optimization)
-const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 30.0  # Strong spacing force comparable to chase speed (100 px/s)
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Disable personal space when this close to player (reduces boss-to-boss collision pairs)
-var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (Area2D type)
+# PERSONAL SPACE SYSTEM: Signal-based boss spacing via Area2D detection (INDEPENDENT from collision optimization)
+const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing forces to prevent overlapping
+const PERSONAL_SPACE_STRENGTH: float = 30.0  # Spacing force strength (30 px/s repulsion)
+var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (for spacing forces)
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
-var _personal_space_collision_shape: CollisionShape2D = null  # Cache for performance
 
-# MAIN COLLISION OPTIMIZATION: Disable main collision shape near player, use HitBox for projectile detection
-const MAIN_COLLISION_DISABLE_NEAR_PLAYER: bool = true  # Disable main CollisionShape2D when near player (massive collision pair reduction)
-const MAIN_COLLISION_DISABLE_DISTANCE: float = 100.0  # Distance threshold for disabling main collision (px)
+# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes near player (INDEPENDENT from personal space system)
+const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = true  # Disable main + personal space collisions when swarming
+const COLLISION_DISABLE_DISTANCE: float = 100.0  # Distance threshold for disabling collision shapes (99% reduction!)
 var _main_collision_shape: CollisionShape2D = null  # Cache main collision shape for dynamic toggling
-var _hitbox: Area2D = null  # Cache HitBox for dynamic projectile detection when main collision disabled
+var _personal_space_collision_shape: CollisionShape2D = null  # Cache personal space collision shape for optimization
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -82,19 +80,27 @@ func _ready() -> void:
 	collision_layer = 2  # Exist on Layer 2
 	collision_mask = 0   # Don't need to detect anything with base Area2D
 
-	# Cache main collision shape for dynamic disabling near player
+	# COLLISION OPTIMIZATION: Cache both collision shapes for dynamic disabling near player
 	_main_collision_shape = get_node_or_null("CollisionShape2D") as CollisionShape2D
 	if not _main_collision_shape:
-		Logger.warn("%s: Main CollisionShape2D not found - collision optimization disabled" % get_boss_name(), "collision")
+		Logger.warn("%s: Main CollisionShape2D not found - main collision optimization disabled" % get_boss_name(), "collision")
 
-	# Cache HitBox for dynamic projectile detection when main collision disabled
-	_hitbox = get_node_or_null("HitBox") as Area2D
-	if not _hitbox:
-		Logger.warn("%s: HitBox not found - projectile detection optimization disabled" % get_boss_name(), "collision")
+	# Cache personal space collision shape (INDEPENDENT of PERSONAL_SPACE_ENABLED - used for collision optimization)
+	var personal_space = get_node_or_null("PersonalSpaceArea")
+	if personal_space and personal_space is Area2D:
+		_personal_space_collision_shape = personal_space.get_node_or_null("PersonalSpaceShape") as CollisionShape2D
+		if not _personal_space_collision_shape:
+			Logger.warn("%s: PersonalSpaceShape not found - personal space collision optimization disabled" % get_boss_name(), "collision")
 	else:
-		# Start with HitBox monitoring disabled (will enable when main collision disabled)
-		_hitbox.monitoring = false
-		_hitbox.monitorable = true  # Can still be detected by projectiles/player attacks
+		Logger.debug("%s: No PersonalSpaceArea found - personal space collision optimization disabled" % get_boss_name(), "collision")
+
+	# CRITICAL PERFORMANCE: Disable HitBox monitoring to reduce physics overhead
+	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
+	# Re-enable only when needed (e.g., when near player for hit detection)
+	var hitbox = get_node_or_null("HitBox")
+	if hitbox and hitbox is Area2D:
+		hitbox.monitoring = false
+		hitbox.monitorable = true  # Can still be detected by player attacks
 
 	# Disable PersonalSpaceArea if not using personal space system
 	if not PERSONAL_SPACE_ENABLED:
@@ -300,30 +306,23 @@ func _update_ai(dt: float) -> void:
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
 
-	# SYSTEM 1: Main Collision Optimization (projectile detection)
-	# When near player: Disable main collision (reduce collision pairs), enable HitBox (allow projectile hits)
-	# When far from player: Enable main collision (normal behavior), disable HitBox (performance)
-	if MAIN_COLLISION_DISABLE_NEAR_PLAYER and distance_to_player < MAIN_COLLISION_DISABLE_DISTANCE:
-		# Near player: Disable main collision, enable HitBox for projectile detection
+	# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes when near player
+	# Enemies close to player don't need: main collision (projectiles) OR personal space collision (boss-to-boss)
+	# Result: 99% collision pair reduction (~490k → 100-500 pairs with 700 enemies)
+	# WARNING: Projectiles won't hit enemies within COLLISION_DISABLE_DISTANCE of player!
+	if DISABLE_ALL_COLLISIONS_NEAR_PLAYER and distance_to_player < COLLISION_DISABLE_DISTANCE:
+		# Disable main collision shape (boss becomes undetectable to projectiles)
 		if _main_collision_shape and not _main_collision_shape.disabled:
 			_main_collision_shape.disabled = true
-		if _hitbox and not _hitbox.monitoring:
-			_hitbox.monitoring = true  # Enable HitBox monitoring so projectiles can still hit
-	else:
-		# Far from player: Enable main collision, disable HitBox
-		if _main_collision_shape and _main_collision_shape.disabled:
-			_main_collision_shape.disabled = false
-		if _hitbox and _hitbox.monitoring:
-			_hitbox.monitoring = false  # Disable HitBox monitoring for performance
 
-	# SYSTEM 2: Personal Space Optimization (boss-to-boss spacing) - INDEPENDENT from main collision
-	# Only runs if PERSONAL_SPACE_ENABLED = true
-	if PERSONAL_SPACE_ENABLED and distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE:
-		# Disable personal space collision shape when near player (no boss-to-boss spacing needed)
+		# Disable personal space collision shape (no boss-to-boss collision detection)
 		if _personal_space_collision_shape and not _personal_space_collision_shape.disabled:
 			_personal_space_collision_shape.disabled = true
-	elif PERSONAL_SPACE_ENABLED:
-		# Re-enable personal space collision shape when far from player
+	else:
+		# Re-enable collision shapes when far from player
+		if _main_collision_shape and _main_collision_shape.disabled:
+			_main_collision_shape.disabled = false
+
 		if _personal_space_collision_shape and _personal_space_collision_shape.disabled:
 			_personal_space_collision_shape.disabled = false
 
@@ -526,7 +525,7 @@ func _on_player_died() -> void:
 	_is_dying = true
 	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
-## Setup PersonalSpaceArea for signal-based boss spacing control
+## Setup PersonalSpaceArea for signal-based boss spacing control (PERSONAL_SPACE_ENABLED = true only)
 func _setup_personal_space_area() -> void:
 	personal_space_area = get_node("PersonalSpaceArea") as Area2D
 	if not personal_space_area:
@@ -537,10 +536,8 @@ func _setup_personal_space_area() -> void:
 	personal_space_area.collision_layer = 0  # Don't exist on any layer
 	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
 
-	# Cache CollisionShape2D for dynamic enabling/disabling (performance optimization)
-	_personal_space_collision_shape = personal_space_area.get_node_or_null("PersonalSpaceShape") as CollisionShape2D
-	if not _personal_space_collision_shape:
-		Logger.warn("%s: PersonalSpaceShape not found - collision pair optimization disabled" % get_boss_name(), "collision")
+	# NOTE: _personal_space_collision_shape is already cached in _ready() for collision optimization
+	# No need to cache it again here
 
 	# AREA2D: Connect to area signals for Area2D-based boss detection
 	personal_space_area.area_entered.connect(_on_boss_entered_personal_space)
