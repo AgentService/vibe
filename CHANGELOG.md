@@ -204,6 +204,74 @@ current_direction = direction
 
 ---
 
+### Responsive Direction Updates - 66ms Tracking (2025-10-09)
+
+**Decoupled direction updates from animation updates for more responsive enemy movement:**
+
+**Problem:**
+- Direction and animation were coupled - both updated every 6-12 frames (200-400ms)
+- Enemies appeared to lag behind player movement significantly
+- User feedback: "enemies trail too far behind, direction update too slow"
+
+**Solution:**
+- ✅ **Decoupled systems** - Direction and animation now update independently
+- ✅ **Faster direction updates** - Every 2 frames (66ms @ 30Hz) - constant for all enemy counts
+- ✅ **Maintained animation throttling** - Every 6-12 frames (200-400ms) - adaptive based on enemy count
+- ✅ **Independent tuning** - Movement feel and visual performance can be optimized separately
+
+**Implementation:**
+```gdscript
+# Direction updates - responsive movement (66ms lag)
+var _direction_update_counter: int = 0
+const DIRECTION_UPDATE_INTERVAL: int = 2  # Constant - prioritizes movement feel
+
+if _direction_update_counter >= DIRECTION_UPDATE_INTERVAL:
+    direction = (target_position - global_position).normalized()
+    current_direction = direction  # Cache for next frames
+
+# Animation updates - visual performance (200-400ms lag)
+var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive
+if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+    _update_directional_animation(current_direction)
+```
+
+**Performance Impact:**
+
+| Metric | Before (Coupled) | After (Decoupled) | Trade-off |
+|--------|-----------------|-------------------|-----------|
+| **Direction updates** | 2.5-5/sec | 15/sec | 3x more frequent |
+| **Animation updates** | 2.5-5/sec | 2.5-5/sec | Unchanged |
+| **Movement lag** | 200-400ms | 66ms | **67-83% more responsive** |
+| **normalize() calls** | 2.5-5/sec | 15/sec | Still 50% vs every-frame (30/sec) |
+
+**Benefits:**
+- ✅ **Tight tracking** - Enemies follow player with <70ms lag (nearly instant)
+- ✅ **Natural pursuit** - Movement feels responsive and engaging
+- ✅ **Constant quality** - Same responsive feel at 100 or 1000 enemies
+- ✅ **Maintained performance** - Animation throttling unchanged (visual optimization preserved)
+- ✅ **Independent control** - Can tune movement and visuals separately
+
+**At 1000 enemies:**
+- **Direction normalize():** 15,000 calls/sec (was 2,500-5,000)
+- **Animation updates:** 2,500-5,000 calls/sec (unchanged)
+- **Cost increase:** Minimal - direction calculation is cheap (Vector2.normalized())
+- **Feel improvement:** Dramatic - enemies track player movement tightly
+
+**Design Philosophy:**
+- **Movement = gameplay** - Responsive tracking affects game feel (prioritized)
+- **Animation = visuals** - Can lag behind without affecting gameplay (optimized)
+- Decoupling allows independent optimization of gameplay feel vs visual performance
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd:55-57` - Added DIRECTION_UPDATE_INTERVAL constant
+- `scripts/systems/boss/BaseBoss.gd:284-311` - Decoupled direction from animation in _update_ai_minimal()
+
+**Commits:**
+- `6918808` - Initial decoupling (3 frame interval = 100ms)
+- `9e5a378` - Reduced to 2 frame interval (66ms) based on user feedback
+
+---
+
 ### Spacing Parameter Tuning (2025-10-09)
 
 **Adjusted spacing parameters for denser clustering near player:**
