@@ -70,7 +70,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"damage_taken",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -115,7 +115,7 @@ script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_mjtd6")
-frame = 2
+animation = &"damage_taken"
 offset = Vector2(0, -9.765)
 
 [node name="HitBox" type="Area2D" parent="."]

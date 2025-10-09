@@ -1,7 +1,8 @@
-extends Area2D
+extends Node2D
 
-## BaseBoss - Base class for all scene-based bosses (Area2D-based for performance)
+## BaseBoss - Base class for all scene-based bosses (Node2D-based for physics-free movement)
 ## Provides unified damage integration, performance optimization, and directional animation logic
+## HitBox child handles damage detection (Area2D), root node is pure movement/positioning
 
 class_name BaseBoss
 
@@ -73,16 +74,9 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# COLLISION CONFIGURATION: Enable collision layers for Area2D bosses
-	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can detect them)
-	# Mask 0: Area2D bosses don't need to detect anything (physics-free movement)
-	collision_layer = 2  # Exist on Layer 2
-	collision_mask = 0   # No collision detection needed (physics-free)
-
-	# CRITICAL PERFORMANCE: Area2D bosses use physics-free movement
-	# Monitoring disabled by default to reduce collision overhead
-	monitoring = false    # Don't detect other bodies (physics-free)
-	monitorable = true    # Can be detected by player attacks/projectiles
+	# NODE2D MIGRATION: Root node is now Node2D for physics-free movement
+	# HitBox child (Area2D) handles damage detection on Layer 2
+	# No collision properties needed on root node - pure positioning entity
 
 	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
 	# Example with spawn_config.spawn_behavior enum:
@@ -248,16 +242,16 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## AREA2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
+## NODE2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
 ## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
 func _physics_process(delta: float) -> void:
 	# Skip physics if dying, spawning, or no velocity
 	if _is_dying or _is_spawning:
 		return
 
-	# Apply Area2D movement (physics-free, no collision resolution)
+	# Apply Node2D movement (physics-free, no collision resolution)
 	if velocity.length_squared() > 0.01:
-		# Direct position update (Area2D has no move_and_slide)
+		# Direct position update (Node2D has no built-in physics)
 		global_position += velocity * delta
 
 ## Base AI logic - simple every-frame updates

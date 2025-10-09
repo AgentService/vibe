@@ -53,9 +53,9 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_xt85e")
 }],
-"loop": true,
+"loop": false,
 "name": &"damage_taken",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -69,7 +69,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,

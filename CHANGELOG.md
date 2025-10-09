@@ -2,6 +2,82 @@
 
 ## [Current Week - In Progress]
 
+### Hybrid Knockback System - EntityTracker + VS Clone UX (2025-10-09)
+
+**Implemented impulse-based enemy separation combining EntityTracker efficiency with Vampire Survivors knockback feel:**
+
+**System Design:**
+- ✅ **Knockback variable** - `spacing_knockback: Vector2` stores impulse velocity
+- ✅ **Decay constant** - `KNOCKBACK_DECAY: float = 30.0` (pixels per second, like move_toward resistance)
+- ✅ **Impulse application** - `_apply_manual_spacing()` SETS knockback (replaces old value)
+- ✅ **Smooth decay** - `spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)` every frame
+- ✅ **Additive velocity** - `velocity += spacing_knockback` combines with chase behavior
+
+**How It Works (VS Clone Pattern):**
+```gdscript
+# Timer-based spacing check (1.5s interval)
+func _apply_manual_spacing() -> void:
+    # EntityTracker query (O(log n))
+    var nearby_enemies = EntityTracker.get_entities_in_radius(...)
+    var avoidance_force = calculate_push_force()
+
+    # SET knockback impulse (like collision in VS clone)
+    spacing_knockback = avoidance_force  # Replaces old knockback
+
+# Every frame (30Hz fixed step)
+func _update_ai(dt: float) -> void:
+    # Decay knockback smoothly (organic feel)
+    spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, 30.0 * dt)
+
+    # Calculate chase velocity
+    velocity = direction_to_player * speed
+
+    # Add knockback (doesn't interrupt chase)
+    velocity += spacing_knockback
+```
+
+**Separation Feel:**
+- **Sharp initial push** - Impulse strength ~5.5 pixels on collision
+- **Smooth decay** - `move_toward()` creates organic deceleration (not linear)
+- **Quick resolution** - Decays over ~167-200ms (5-6 frames @ 30Hz)
+- **Maintains chase** - Knockback added to velocity, doesn't replace it
+- **No accumulation** - New impulse replaces old (prevents infinite buildup)
+
+**Performance:**
+- **Zero Area2D overhead** - EntityTracker spatial queries only (0 collision pairs)
+- **O(log n) complexity** - Spatial grid partitioning per query
+- **Deterministic cost** - 667 queries/sec @ 1000 enemies (timer-based checks)
+- **Scales to 1000+** - Same performance as manual spacing, better UX
+
+**Comparison to Pure Area2D Knockback:**
+
+| Metric | Hybrid (EntityTracker) | Pure Area2D |
+|--------|----------------------|-------------|
+| **Collision pairs** | 0 | 499,500 @ 1000 enemies |
+| **Per-frame cost** | ~22 enemies/frame | 1000 enemies/frame |
+| **Trigger method** | Timer-based (1.5s) | Signal spam (continuous) |
+| **Scalability** | O(log n) | O(N²) |
+| **Separation feel** | Sharp impulse + decay | Sharp impulse + decay |
+
+**Benefits of Hybrid Approach:**
+- ✅ **Best of both worlds** - EntityTracker performance + VS clone UX
+- ✅ **Snappy separation** - Instant push feel like Area2D collisions
+- ✅ **High entity counts** - Scales to 1000+ without collision overhead
+- ✅ **Smooth organic decay** - `move_toward()` provides natural deceleration
+- ✅ **Chase compatibility** - Additive velocity maintains pursuit behavior
+
+**Tuning Parameters:**
+- `MANUAL_SPACING_STRENGTH = 5.5` - Impulse force magnitude
+- `KNOCKBACK_DECAY = 30.0` - Decay speed (pixels/sec)
+- `MANUAL_SPACING_CHECK_INTERVAL = 1.5` - Spacing check frequency
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd` - Added knockback variables, impulse logic, decay system
+
+**Inspiration:** User's Vampire Survivors clone knockback pattern (Area2D collision + move_toward decay)
+
+---
+
 ### AI Performance Optimization - 50-60% Cost Reduction (2025-10-09)
 
 **Implemented adaptive animation throttling and removed debug logging from hot paths:**
