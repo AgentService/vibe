@@ -634,8 +634,10 @@ func _apply_manual_spacing() -> void:
 
 			# Within 2x min distance from player: use radial separation only (no lateral bias)
 			# This allows enemies to cluster naturally around the player without sideways pushing
-			if distance_to_player < (MANUAL_SPACING_MIN_DISTANCE * 2.0):
-				effective_lateral_bias = 1.0  # Pure radial (no sideways bias)
+			# Respects MANUAL_SPACING_RESPECT_MIN_DISTANCE flag
+			if MANUAL_SPACING_RESPECT_MIN_DISTANCE:
+				if distance_to_player < (MANUAL_SPACING_MIN_DISTANCE * 2.0):
+					effective_lateral_bias = 1.0  # Pure radial (no sideways bias)
 
 			# LATERAL BIAS: Decompose force into radial (toward/away player) and tangential (sideways)
 			# This makes enemies prefer separating sideways, forming lines when approaching player
