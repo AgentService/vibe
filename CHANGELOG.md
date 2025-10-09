@@ -2,6 +2,56 @@
 
 ## [Current Week - In Progress]
 
+### Enemy Chase Range & Spawn Cap Fixes (2025-10-09)
+
+**Fixed long-range chase behavior and enforced max_enemies cap for scene-based spawning:**
+
+**Problem 1: Enemies not chasing from 5555px distance**
+- **Root Cause:** Viewport culling optimization skipped AI updates for off-screen bosses
+- **Conflict:** `ENABLE_VIEWPORT_CULLING = true` with `chase_range = 5555px` meant enemies at 800-5555px never got AI updates
+- **Result:** Enemies spawned outside view were frozen (no chase behavior)
+
+**Solution:**
+- ✅ Disabled viewport culling: `ENABLE_VIEWPORT_CULLING = false` in BossUpdateManager.gd:23
+- ✅ Increased AI update distance: 2400px → 6000px in waves.tres:19
+- ✅ Comment added explaining conflict: "Disabled: conflicts with large chase_range (5555px)"
+
+**Problem 2: max_enemies cap not working**
+- **Root Cause:** System migrated to scene-based spawning, old pool cap in `_find_free_enemy()` never executed
+- **Discovery:** `_spawn_from_config_v2()` always calls `_spawn_boss_scene()` which had NO cap check (line 736)
+- **Result:** Unlimited enemy spawning despite `max_enemies = 300` in waves.tres
+
+**Solution:**
+- ✅ Added cap check in `_spawn_boss_scene()` (SpawnDirector.gd:743-747)
+```gdscript
+# SCENE-BASED ENEMY CAP: Check max_enemies limit
+var current_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+if current_enemy_count >= max_enemies:
+    return null  # Silently skip spawning
+```
+- ✅ Uses `get_tree().get_nodes_in_group("enemies")` for accurate scene-based counting
+- ✅ Cap now works for ALL scene-based enemies (boss, elite, regular, swarm)
+
+**Performance Impact:**
+- Staggered AI still provides 95% update reduction (20 AI updates per frame with 1000 enemies)
+- Removed viewport culling layer but kept spatial distribution benefits
+- max_enemies cap prevents runaway spawning (critical for performance)
+
+**Files Modified:**
+- `scripts/systems/boss/BossUpdateManager.gd:23` - Disabled viewport culling
+- `data/balance/waves.tres:7,19` - max_enemies = 300, enemy_update_distance = 6000.0
+- `scripts/systems/spawn/SpawnDirector.gd:743-747` - Added scene-based enemy cap check
+
+**User Modifications (Re-enabled Visual Polish):**
+- `scripts/systems/boss/BaseBoss.gd:41-42` - Re-enabled spawn animation & wakeup check
+- `scripts/systems/boss/BaseBoss.gd:35` - Disabled personal space (user preference)
+
+**Commits:**
+- Commit 99f2309: "fix(spawn): disable viewport culling to enable long-range chase behavior"
+- Commit 4896524: "fix(spawn): enforce max_enemies cap for scene-based spawning"
+
+---
+
 ### Personal Space System Activated (2025-10-09)
 
 **Enabled boss spacing to prevent excessive overlapping:**

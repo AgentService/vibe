@@ -720,6 +720,112 @@ func _physics_process(delta: float) -> void:
 
 **Result**: AI updates every ~667ms (20 frames), physics applies every ~33ms (30Hz) → smooth movement with minimal computation
 
+### 🚫 **Viewport Culling Tradeoff Pattern (Updated 2025-10-09)**
+
+**Problem:** Viewport culling optimizations can conflict with long-range gameplay mechanics.
+
+```gdscript
+# BossUpdateManager.gd - Viewport culling toggle
+const ENABLE_VIEWPORT_CULLING: bool = false  # Disabled: conflicts with large chase_range (5555px)
+
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+    # VIEWPORT CULLING: Skip AI for off-screen bosses (if enabled)
+    if ENABLE_VIEWPORT_CULLING and visible_rect.size.x > 0:
+        if not visible_rect.has_point(boss.global_position):
+            continue  # Boss is off-screen, skip AI update
+```
+
+**Tradeoff Analysis:**
+- ✅ **With culling enabled:** 80-90% additional AI reduction (on top of staggered AI)
+- ❌ **Gameplay conflict:** Enemies beyond viewport never update AI → frozen at long ranges
+- ❌ **Chase range limit:** If `chase_range > viewport_size`, culled enemies never chase
+- ⚖️ **Decision:** Disable culling when chase_range exceeds typical viewport size
+
+**When to use viewport culling:**
+- ✅ Chase range < 800px (typical viewport diagonal)
+- ✅ Enemies should only activate when player nearby
+- ❌ Large chase ranges (2000-5555px) for "always pursuing" enemies
+- ❌ Ranged enemies that shoot from off-screen
+
+**Companion balance:** Ensure `enemy_update_distance >= chase_range` to cover full detection radius:
+```gdscript
+# waves.tres balance file
+chase_range = 5555.0              # BaseBoss.gd
+enemy_update_distance = 6000.0     # Must be >= chase_range (waves.tres)
+```
+
+### 🎯 **Scene-Based Entity Cap Pattern (Updated 2025-10-09)**
+
+**Problem:** System migration from pooled to scene-based spawning lost max_enemies enforcement.
+
+```gdscript
+# SpawnDirector.gd - Scene-based enemy cap
+func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
+    # SCENE-BASED ENEMY CAP: Check max_enemies limit (applies to all scene-based enemies)
+    var current_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+    if current_enemy_count >= max_enemies:
+        # Silently skip spawning - pool is full
+        return null
+
+    # Instantiate scene
+    var boss_scene = load(boss_scene_path)
+    var boss = boss_scene.instantiate()
+
+    # Add to "enemies" group for cap tracking
+    boss.add_to_group("enemies")
+    arena_scene.add_child(boss)
+
+    return boss
+```
+
+**Migration Pattern:**
+```gdscript
+# OLD: Pooled enemy system with built-in cap
+func _find_free_enemy() -> int:
+    for i in range(max_enemies):  # Cap enforced by pool size
+        if not _enemy_pool[i].is_active:
+            return i
+    return -1  # Pool full
+
+# NEW: Scene-based system requires explicit cap check
+func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> Node2D:
+    # ❌ WRONG: Calls scene spawning with no cap
+    return _spawn_boss_scene(spawn_config)  # Unlimited spawning!
+
+    # ✅ CORRECT: Add cap check in _spawn_boss_scene() itself
+    # (See implementation above)
+```
+
+**Why scene-based counting:**
+- Scene-based enemies are NOT tracked in pre-allocated arrays
+- Must use `get_tree().get_nodes_in_group("enemies")` for accurate count
+- Group membership adds ~O(1) overhead per enemy (Godot's internal hash set)
+- Returns null when cap reached (caller handles gracefully)
+
+**Performance considerations:**
+- Group size check is O(1) with Godot's internal optimization
+- No memory allocations during check (uses cached group data)
+- Silent failure prevents log spam during sustained spawning
+
+**Testing cap enforcement:**
+```gdscript
+# Verify max_enemies cap works
+func test_spawn_cap() -> void:
+    var max_enemies = BalanceDB.get_waves_value("max_enemies")  # e.g., 300
+
+    # Spawn 400 enemies (exceeds cap)
+    for i in range(400):
+        var enemy = spawn_director.spawn_enemy("grunt", spawn_position)
+        if i < 300:
+            assert(enemy != null, "Should spawn within cap")
+        else:
+            assert(enemy == null, "Should fail beyond cap")
+
+    # Verify final count matches cap
+    var final_count = get_tree().get_nodes_in_group("enemies").size()
+    assert(final_count == max_enemies, "Cap enforcement failed")
+```
+
 ## Troubleshooting Guide
 
 ### 🚨 **Common Issues**
