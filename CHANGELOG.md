@@ -59,24 +59,49 @@ var nearby_bosses: Array[Area2D] = []
 - `scripts/systems/boss/BossUpdateManager.gd` - Updated type hints to Area2D
 - `scenes/bosses/*.tscn` - Root nodes changed from CharacterBody2D → Area2D (user)
 
-**Collision Pair Optimization (Dynamic Shape Disabling):**
+**Collision Pair Optimization V1 (Personal Space Only - UPDATED):**
 ```gdscript
-# Disable personal space collision when enemies swarm player
+# OLD: Only disabled personal space collision (90% reduction)
 func _update_ai(dt: float) -> void:
     var distance_to_player = global_position.distance_to(player_pos)
 
-    # Within 100px of player: disable collision shape (enemies converging anyway)
+    # Within 100px of player: disable personal space only
     if distance_to_player < 100.0:
-        _personal_space_collision_shape.disabled = true  # No collision pairs!
+        _personal_space_collision_shape.disabled = true
     else:
-        _personal_space_collision_shape.disabled = false  # Enable spacing
+        _personal_space_collision_shape.disabled = false
 ```
 
-**Collision Pair Reduction:**
-- **700 enemies all active:** ~245,000 collision pairs (700 × 699 / 2)
-- **100 near player (disabled), 600 far:** ~180,000 pairs for far enemies, ~50 near player
-- **Net reduction:** 28,000+ → 2,500-3,000 collision pairs when enemies swarm
-- **Pattern:** Disable collision shapes whenever they're not needed
+**Collision Pair Optimization V2 (ALL Shapes - CURRENT):**
+```gdscript
+# NEW: Disable BOTH main + personal space collision shapes (99% reduction!)
+func _update_ai(dt: float) -> void:
+    var distance_to_player = global_position.distance_to(player_pos)
+
+    # Within 100px of player: disable ALL collision shapes
+    if distance_to_player < 100.0:
+        _main_collision_shape.disabled = true      # No projectile detection
+        _personal_space_collision_shape.disabled = true  # No boss-to-boss spacing
+    else:
+        _main_collision_shape.disabled = false     # Re-enable projectile hits
+        _personal_space_collision_shape.disabled = false  # Re-enable spacing
+```
+
+**Collision Pair Math:**
+- **700 enemies all active:** ~490,000 total pairs
+  - Boss-to-boss pairs: 244,650 (700 × 699 / 2)
+  - Boss-to-projectile pairs: ~245,000 (700 bosses × ~350 projectiles)
+- **V1 (personal space only):** 28,000+ → 2,500-3,000 pairs (90% reduction)
+- **V2 (all shapes disabled):** ~490,000 → ~100-500 pairs (99% reduction!)
+- **Tradeoff:** Projectiles WON'T hit enemies within 100px of player
+
+**CRITICAL WARNING:**
+⚠️ **V2 creates a "safe zone"** where swarming enemies become invulnerable to projectiles!
+- Within 100px: Main CollisionShape2D disabled → projectiles pass through
+- Beyond 100px: Main CollisionShape2D enabled → projectiles hit normally
+- Toggle behavior: Set `DISABLE_ALL_COLLISIONS_NEAR_PLAYER = false` to use V1 instead
+
+**Pattern:** Disable collision shapes whenever they're not gameplay-critical
 
 **Next Steps:**
 - Test with 1000+ enemies to measure actual performance gains
