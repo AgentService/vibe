@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=19 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://o4uu7keayjcy" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
@@ -70,7 +70,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"damage_taken",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -107,27 +107,16 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_vnul3"]
-radius = 4.0
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(14, 15)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_ywjq4"]
-radius = 20.0
-
-[node name="AncientLich" type="Area2D"]
-collision_layer = 2
+[node name="AncientLich" type="Node2D"]
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_mjtd6")
-frame = 2
+animation = &"damage_taken"
 offset = Vector2(0, -9.765)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -3)
-shape = SubResource("CircleShape2D_vnul3")
 
 [node name="HitBox" type="Area2D" parent="."]
 position = Vector2(-1, -9)
@@ -147,10 +136,3 @@ wait_time = 2.5
 scale = Vector2(2, 2)
 offset = Vector2(0, -0.115)
 opacity = 0.8
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-collision_layer = 0
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-position = Vector2(0, -6)
-shape = SubResource("CircleShape2D_ywjq4")

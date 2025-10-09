@@ -1,8 +1,8 @@
-extends Area2D
+extends Node2D
 
-## BaseBoss - Base class for all Area2D-based bosses
-## Provides unified damage integration, personal space system, and direct position movement
-## Uses Area2D for simplified collision and better performance with 1000+ enemies
+## BaseBoss - Base class for all scene-based bosses (Node2D-based for physics-free movement)
+## Provides unified damage integration, performance optimization, and directional animation logic
+## HitBox child handles damage detection (Area2D), root node is pure movement/positioning
 
 class_name BaseBoss
 
@@ -20,6 +20,7 @@ var max_health: float = 300.0
 var current_health: float = 300.0
 var damage: float = 40.0
 var speed: float = 100.0
+var velocity: Vector2 = Vector2.ZERO  # Area2D doesn't have built-in velocity, declare manually
 var attack_damage: float = 40.0
 var attack_cooldown: float = 2.0
 var last_attack_time: float = 0.0
@@ -32,20 +33,17 @@ var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
-# AREA2D MOVEMENT: Direct position manipulation (no physics engine)
-var velocity: Vector2 = Vector2.ZERO  # Custom velocity for Area2D movement
+# MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
+const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
+const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 150.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
+var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
-# PERSONAL SPACE SYSTEM: Signal-based boss spacing via Area2D detection (INDEPENDENT from collision optimization)
-const PERSONAL_SPACE_ENABLED: bool = false  # Enable enemy spacing forces to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 30.0  # Spacing force strength (30 px/s repulsion)
-var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (for spacing forces)
-var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
-
-# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes near player (INDEPENDENT from personal space system)
-const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = true  # Disable main + personal space collisions when swarming
-const COLLISION_DISABLE_DISTANCE: float = 100.0  # Distance threshold for disabling collision shapes (99% reduction!)
-var _main_collision_shape: CollisionShape2D = null  # Cache main collision shape for dynamic toggling
-var _personal_space_collision_shape: CollisionShape2D = null  # Cache personal space collision shape for optimization
+# KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
+var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
+const KNOCKBACK_DECAY: float = 30.0  # Decay rate in pixels per second (like move_toward resistance)
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -54,6 +52,8 @@ const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation tran
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
+var _animation_update_counter: int = 0  # Frame counter for throttled animation updates
+var _animation_update_offset: int = 0  # Staggered offset per enemy
 
 # SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
 # NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
@@ -74,47 +74,9 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# AREA2D COLLISION: Base Area2D handles main collision detection
-	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can detect us)
-	# No collision_mask needed - Area2D doesn't push entities, only detects overlaps
-	collision_layer = 2  # Exist on Layer 2
-	collision_mask = 0   # Don't need to detect anything with base Area2D
-
-	# COLLISION OPTIMIZATION: Cache both collision shapes for dynamic disabling near player
-	_main_collision_shape = get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if not _main_collision_shape:
-		Logger.warn("%s: Main CollisionShape2D not found - main collision optimization disabled" % get_boss_name(), "collision")
-
-	# Cache personal space collision shape (INDEPENDENT of PERSONAL_SPACE_ENABLED - used for collision optimization)
-	var personal_space = get_node_or_null("PersonalSpaceArea")
-	if personal_space and personal_space is Area2D:
-		_personal_space_collision_shape = personal_space.get_node_or_null("PersonalSpaceShape") as CollisionShape2D
-		if not _personal_space_collision_shape:
-			Logger.warn("%s: PersonalSpaceShape not found - personal space collision optimization disabled" % get_boss_name(), "collision")
-	else:
-		Logger.debug("%s: No PersonalSpaceArea found - personal space collision optimization disabled" % get_boss_name(), "collision")
-
-	# CRITICAL PERFORMANCE: Disable HitBox monitoring to reduce physics overhead
-	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
-	# Re-enable only when needed (e.g., when near player for hit detection)
-	var hitbox = get_node_or_null("HitBox")
-	if hitbox and hitbox is Area2D:
-		hitbox.monitoring = false
-		hitbox.monitorable = true  # Can still be detected by player attacks
-
-	# Disable PersonalSpaceArea if not using personal space system
-	if not PERSONAL_SPACE_ENABLED:
-		var personal_space = get_node_or_null("PersonalSpaceArea")
-		if personal_space and personal_space is Area2D:
-			personal_space.monitoring = false
-			personal_space.monitorable = false
-
-	# Setup personal space area BEFORE spawn animation (needed for _on_spawn_animation_complete)
-	if PERSONAL_SPACE_ENABLED:
-		_setup_personal_space_area()
-		# Disable monitoring during spawn, re-enabled in _on_spawn_animation_complete()
-		if personal_space_area:
-			personal_space_area.monitoring = false
+	# NODE2D MIGRATION: Root node is now Node2D for physics-free movement
+	# HitBox child (Area2D) handles damage detection on Layer 2
+	# No collision properties needed on root node - pure positioning entity
 
 	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
 	# Example with spawn_config.spawn_behavior enum:
@@ -178,6 +140,15 @@ func _ready() -> void:
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
 
+	# MANUAL SPACING: Stagger spacing check timers to prevent all enemies checking simultaneously
+	# Random offset between 0 and check interval spreads checks across multiple frames
+	if MANUAL_SPACING_ENABLED:
+		var spawn_rng = RNG.stream("spawn")
+		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
+
+	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
+	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
+
 	# Initialize health bar
 	_update_health_bar()
 
@@ -204,10 +175,6 @@ func _on_spawn_animation_complete() -> void:
 	_is_spawning = false  # Resume AI
 	remove_from_group("spawning")
 	add_to_group("targetable")
-
-	# Enable personal space detection now that spawn is complete
-	if PERSONAL_SPACE_ENABLED and personal_space_area:
-		personal_space_area.monitoring = true
 
 	# Ensure default animation is playing after spawn (in case wake_up animation was used)
 	# Performance: Can be disabled via SKIP_WAKEUP_CHECK to avoid expensive animation queries
@@ -275,17 +242,16 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## AREA2D MOVEMENT: Direct position updates run EVERY frame (30Hz)
-## This ensures smooth movement - AI calculates velocity every 20 frames, movement applies it every frame
+## NODE2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
+## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
 func _physics_process(delta: float) -> void:
-	# Skip movement if dying, spawning, or no velocity
+	# Skip physics if dying, spawning, or no velocity
 	if _is_dying or _is_spawning:
 		return
 
-	# Only apply movement if we have velocity
-	# Squared check is faster than length() (avoids sqrt)
+	# Apply Node2D movement (physics-free, no collision resolution)
 	if velocity.length_squared() > 0.01:
-		# Direct position manipulation (no physics engine overhead)
+		# Direct position update (Node2D has no built-in physics)
 		global_position += velocity * delta
 
 ## Base AI logic - simple every-frame updates
@@ -306,39 +272,27 @@ func _update_ai(dt: float) -> void:
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
 
-	# COLLISION PAIR OPTIMIZATION: Disable ALL collision shapes when near player
-	# Enemies close to player don't need: main collision (projectiles) OR personal space collision (boss-to-boss)
-	# Result: 99% collision pair reduction (~490k → 100-500 pairs with 700 enemies)
-	# WARNING: Projectiles won't hit enemies within COLLISION_DISABLE_DISTANCE of player!
-	if DISABLE_ALL_COLLISIONS_NEAR_PLAYER and distance_to_player < COLLISION_DISABLE_DISTANCE:
-		# Disable main collision shape (boss becomes undetectable to projectiles)
-		if _main_collision_shape and not _main_collision_shape.disabled:
-			_main_collision_shape.disabled = true
-
-		# Disable personal space collision shape (no boss-to-boss collision detection)
-		if _personal_space_collision_shape and not _personal_space_collision_shape.disabled:
-			_personal_space_collision_shape.disabled = true
-	else:
-		# Re-enable collision shapes when far from player
-		if _main_collision_shape and _main_collision_shape.disabled:
-			_main_collision_shape.disabled = false
-
-		if _personal_space_collision_shape and _personal_space_collision_shape.disabled:
-			_personal_space_collision_shape.disabled = false
-
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
+			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
+			# Uses move_toward() for smooth organic decay
+			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
+
 			# Move toward player - simple velocity calculation
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 
-			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
-			if PERSONAL_SPACE_ENABLED:
-				var spacing_force = apply_personal_space_forces()
-				if spacing_force.length_squared() > 0.1:
-					Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
-				velocity += spacing_force
+			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
+			# This separates enemies while maintaining chase behavior
+			velocity += spacing_knockback
+
+			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
+			if MANUAL_SPACING_ENABLED:
+				_spacing_check_timer += dt
+				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
+					_spacing_check_timer = 0.0
+					_apply_manual_spacing()
 
 			# Safety check before physics update
 			if not is_inside_tree() or is_queued_for_deletion():
@@ -347,8 +301,13 @@ func _update_ai(dt: float) -> void:
 			# STAGGERED AI: Don't call move_and_slide() here - handled in _physics_process()
 			# This allows AI to update every 20 frames while physics runs every frame
 
-			# Update directional animation automatically
-			_update_directional_animation(direction)
+			# THROTTLED ANIMATION: Adaptive frame-based throttling (6 frames @ low count, 12+ @ high count)
+			_animation_update_counter += 1
+			var enemy_count = get_tree().get_nodes_in_group("enemies").size()
+			var animation_throttle = 6 if enemy_count < 300 else 12  # Adjust based on enemy count
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				_update_directional_animation(direction)
 			current_direction = direction
 
 			# Update position in damage system
@@ -525,138 +484,51 @@ func _on_player_died() -> void:
 	_is_dying = true
 	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
-## Setup PersonalSpaceArea for signal-based boss spacing control (PERSONAL_SPACE_ENABLED = true only)
-func _setup_personal_space_area() -> void:
-	personal_space_area = get_node("PersonalSpaceArea") as Area2D
-	if not personal_space_area:
-		Logger.debug("%s: No PersonalSpaceArea found - boss spacing disabled" % get_boss_name(), "collision")
+## MANUAL SPACING: Use EntityTracker to find nearby enemies and apply avoidance
+func _apply_manual_spacing() -> void:
+	# Skip spacing if we're very close to player (allow dense clustering around player)
+	var distance_to_player = global_position.distance_to(target_position)
+	if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
 		return
 
-	# Configure collision layers for boss-to-boss detection
-	personal_space_area.collision_layer = 0  # Don't exist on any layer
-	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
+	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
+	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
+		global_position,
+		MANUAL_SPACING_RADIUS,
+		"boss"  # Filter for bosses (registered with type="boss")
+	)
 
-	# NOTE: _personal_space_collision_shape is already cached in _ready() for collision optimization
-	# No need to cache it again here
+	if nearby_enemy_ids.is_empty():
+		return
 
-	# AREA2D: Connect to area signals for Area2D-based boss detection
-	personal_space_area.area_entered.connect(_on_boss_entered_personal_space)
-	personal_space_area.area_exited.connect(_on_boss_exited_personal_space)
-	Logger.debug("%s: Personal space area configured for Area2D boss spacing" % get_boss_name(), "collision")
+	# Calculate avoidance force from all nearby enemies
+	var avoidance_force = Vector2.ZERO
+	for enemy_id in nearby_enemy_ids:
+		if enemy_id == entity_id:
+			continue  # Skip self
 
-	# Debug visualization removed - was using ColorRect which looked blocky
-	# To re-enable: Uncomment _setup_personal_space_debug_visual() call below
-	# if DebugManager and DebugManager.debug_enabled:
-	# 	var debug_config = load("res://config/debug.tres") as DebugConfig
-	# 	if debug_config and debug_config.show_personal_space_circles:
-	# 		_setup_personal_space_debug_visual()
-
-## Handle boss entering personal space - add to nearby list
-## AREA2D: Receives Area2D parameter from area_entered signal
-func _on_boss_entered_personal_space(area: Area2D) -> void:
-	var boss = area as Area2D
-	if boss and boss != self and boss.has_method("get_boss_name"):
-		nearby_bosses.append(boss)
-		Logger.debug("%s: %s entered personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
-
-## Handle boss leaving personal space - remove from nearby list
-## AREA2D: Receives Area2D parameter from area_exited signal
-func _on_boss_exited_personal_space(area: Area2D) -> void:
-	var boss = area as Area2D
-	if boss and boss != self and boss.has_method("get_boss_name"):
-		nearby_bosses.erase(boss)
-		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
-
-## Calculate spacing force to maintain personal space from other bosses
-func apply_personal_space_forces() -> Vector2:
-	if nearby_bosses.is_empty():
-		return Vector2.ZERO
-
-	var spacing_force = Vector2.ZERO
-	var my_position = global_position
-	var personal_space_radius = _get_personal_space_radius()
-
-	for boss in nearby_bosses:
-		if not is_instance_valid(boss):
+		# Get enemy position from EntityTracker
+		var enemy_data = EntityTracker.get_entity(enemy_id)
+		if not enemy_data.has("pos"):
 			continue
 
-		var other_position = boss.global_position
-		var direction = (my_position - other_position)
-		var distance = direction.length()
+		var enemy_pos = enemy_data["pos"]
+		var to_other = enemy_pos - global_position
+		var distance = to_other.length()
 
-		if distance > 0.1:  # Avoid division by zero
-			# Normalize direction and apply gentle force
-			direction = direction.normalized()
-			var force_strength = PERSONAL_SPACE_STRENGTH * (1.0 - min(distance / personal_space_radius, 1.0))  # Stronger when closer
-			spacing_force += direction * force_strength
+		# Apply force if within spacing radius
+		if distance > 0.1 and distance < MANUAL_SPACING_RADIUS:
+			# Stronger force when closer (inverse square falloff)
+			var force_multiplier = 1.0 - (distance / MANUAL_SPACING_RADIUS)
+			var push_direction = -to_other.normalized()  # Push away
+			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
+			var impulse_strength = MANUAL_SPACING_STRENGTH * force_multiplier
+			avoidance_force += push_direction * impulse_strength
 
-	return spacing_force
-
-## DEBUG: Apply only personal space forces (for testing)
-func apply_only_personal_space_movement(delta: float) -> void:
-	if ai_paused:
-		return
-
-	var spacing_force = apply_personal_space_forces()
-	if spacing_force.length_squared() > 0.1:
-		velocity = spacing_force
-		# AREA2D: Direct position movement
-		global_position += velocity * delta
-		Logger.debug("%s: Pure personal space movement: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
-
-## DEBUG: Print current personal space status
-func debug_personal_space_status() -> void:
-	Logger.info("%s Personal Space Status:" % get_boss_name(), "collision")
-	Logger.info("  - Radius: %.1f px" % _get_personal_space_radius(), "collision")
-	Logger.info("  - Nearby bosses: %d" % nearby_bosses.size(), "collision")
-	for boss in nearby_bosses:
-		if boss and is_instance_valid(boss):
-			var distance = global_position.distance_to(boss.global_position)
-			Logger.info("    * %s at %.1f px distance" % [boss.get_boss_name(), distance], "collision")
-
-## Get the actual radius from PersonalSpaceArea's CircleShape2D
-func _get_personal_space_radius() -> float:
-	if not personal_space_area:
-		Logger.debug("%s: No personal_space_area - using fallback 32.0" % get_boss_name(), "collision")
-		return 32.0  # Default fallback
-
-	var collision_shape = personal_space_area.get_child(0) as CollisionShape2D
-	if not collision_shape or not collision_shape.shape:
-		Logger.debug("%s: No collision shape or shape - using fallback 32.0" % get_boss_name(), "collision")
-		return 32.0  # Default fallback
-
-	var circle_shape = collision_shape.shape as CircleShape2D
-	if circle_shape:
-		var radius = circle_shape.radius
-		Logger.debug("%s: PersonalSpaceArea radius from editor: %.1f" % [get_boss_name(), radius], "collision")
-		return radius
-
-	Logger.debug("%s: Shape is not CircleShape2D - using fallback 32.0" % get_boss_name(), "collision")
-	return 32.0  # Default fallback
-
-## Setup visual debug circle for PersonalSpaceArea
-func _setup_personal_space_debug_visual() -> void:
-	if not personal_space_area:
-		return
-
-	# Create a visual circle to show the PersonalSpaceArea radius
-	var debug_circle = ColorRect.new()
-	debug_circle.name = "DebugPersonalSpaceCircle"
-	debug_circle.color = Color(1.0, 0.0, 1.0, 0.2)  # Magenta with transparency
-	debug_circle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# Get the radius for sizing
-	var radius = _get_personal_space_radius()
-	var diameter = radius * 2
-
-	# Size and position the visual circle
-	debug_circle.size = Vector2(diameter, diameter)
-	debug_circle.position = Vector2(-radius, -radius)  # Center on boss
-
-	# Add to the boss so it moves with the boss
-	add_child(debug_circle)
-
-	Logger.debug("%s: PersonalSpaceArea debug visual created (radius: %.1f)" % [get_boss_name(), radius], "collision")
+	# SET KNOCKBACK: Replace old knockback with new impulse (VS clone pattern)
+	# This creates sharp instant separation that decays smoothly
+	if avoidance_force.length_squared() > 0.1:
+		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:

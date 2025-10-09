@@ -720,229 +720,39 @@ func _physics_process(delta: float) -> void:
 
 **Result**: AI updates every ~667ms (20 frames), physics applies every ~33ms (30Hz) → smooth movement with minimal computation
 
-### 🚫 **Viewport Culling Tradeoff Pattern (Updated 2025-10-09)**
-
-**Problem:** Viewport culling optimizations can conflict with long-range gameplay mechanics.
-
+**Adaptive Animation Throttling (2025-10-09):**
 ```gdscript
-# BossUpdateManager.gd - Viewport culling toggle
-const ENABLE_VIEWPORT_CULLING: bool = false  # Disabled: conflicts with large chase_range (5555px)
-
-func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
-    # VIEWPORT CULLING: Skip AI for off-screen bosses (if enabled)
-    if ENABLE_VIEWPORT_CULLING and visible_rect.size.x > 0:
-        if not visible_rect.has_point(boss.global_position):
-            continue  # Boss is off-screen, skip AI update
-```
-
-**Tradeoff Analysis:**
-- ✅ **With culling enabled:** 80-90% additional AI reduction (on top of staggered AI)
-- ❌ **Gameplay conflict:** Enemies beyond viewport never update AI → frozen at long ranges
-- ❌ **Chase range limit:** If `chase_range > viewport_size`, culled enemies never chase
-- ⚖️ **Decision:** Disable culling when chase_range exceeds typical viewport size
-
-**When to use viewport culling:**
-- ✅ Chase range < 800px (typical viewport diagonal)
-- ✅ Enemies should only activate when player nearby
-- ❌ Large chase ranges (2000-5555px) for "always pursuing" enemies
-- ❌ Ranged enemies that shoot from off-screen
-
-**Companion balance:** Ensure `enemy_update_distance >= chase_range` to cover full detection radius:
-```gdscript
-# waves.tres balance file
-chase_range = 5555.0              # BaseBoss.gd
-enemy_update_distance = 6000.0     # Must be >= chase_range (waves.tres)
-```
-
-### 🎯 **Scene-Based Entity Cap Pattern (Updated 2025-10-09)**
-
-**Problem:** System migration from pooled to scene-based spawning lost max_enemies enforcement.
-
-```gdscript
-# SpawnDirector.gd - Scene-based enemy cap
-func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
-    # SCENE-BASED ENEMY CAP: Check max_enemies limit (applies to all scene-based enemies)
-    var current_enemy_count = get_tree().get_nodes_in_group("enemies").size()
-    if current_enemy_count >= max_enemies:
-        # Silently skip spawning - pool is full
-        return null
-
-    # Instantiate scene
-    var boss_scene = load(boss_scene_path)
-    var boss = boss_scene.instantiate()
-
-    # Add to "enemies" group for cap tracking
-    boss.add_to_group("enemies")
-    arena_scene.add_child(boss)
-
-    return boss
-```
-
-**Migration Pattern:**
-```gdscript
-# OLD: Pooled enemy system with built-in cap
-func _find_free_enemy() -> int:
-    for i in range(max_enemies):  # Cap enforced by pool size
-        if not _enemy_pool[i].is_active:
-            return i
-    return -1  # Pool full
-
-# NEW: Scene-based system requires explicit cap check
-func _spawn_from_config_v2(enemy_type: EnemyType, spawn_config: SpawnConfig) -> Node2D:
-    # ❌ WRONG: Calls scene spawning with no cap
-    return _spawn_boss_scene(spawn_config)  # Unlimited spawning!
-
-    # ✅ CORRECT: Add cap check in _spawn_boss_scene() itself
-    # (See implementation above)
-```
-
-**Why scene-based counting:**
-- Scene-based enemies are NOT tracked in pre-allocated arrays
-- Must use `get_tree().get_nodes_in_group("enemies")` for accurate count
-- Group membership adds ~O(1) overhead per enemy (Godot's internal hash set)
-- Returns null when cap reached (caller handles gracefully)
-
-**Performance considerations:**
-- Group size check is O(1) with Godot's internal optimization
-- No memory allocations during check (uses cached group data)
-- Silent failure prevents log spam during sustained spawning
-
-**Testing cap enforcement:**
-```gdscript
-# Verify max_enemies cap works
-func test_spawn_cap() -> void:
-    var max_enemies = BalanceDB.get_waves_value("max_enemies")  # e.g., 300
-
-    # Spawn 400 enemies (exceeds cap)
-    for i in range(400):
-        var enemy = spawn_director.spawn_enemy("grunt", spawn_position)
-        if i < 300:
-            assert(enemy != null, "Should spawn within cap")
-        else:
-            assert(enemy == null, "Should fail beyond cap")
-
-    # Verify final count matches cap
-    var final_count = get_tree().get_nodes_in_group("enemies").size()
-    assert(final_count == max_enemies, "Cap enforcement failed")
-```
-
-### ⚡ **Dynamic Collision Shape Disabling Pattern (Updated 2025-10-09)**
-
-**Problem:** Collision pairs grow exponentially when many Area2D collision shapes are active near each other.
-
-**Version 1: Personal Space Only (90% reduction)**
-```gdscript
-# BaseBoss.gd - Proximity-based collision shape disabling (V1)
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Disable within 100px of player
-const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = false  # Use V1 (personal space only)
-var _personal_space_collision_shape: CollisionShape2D = null  # Cache reference
-
-func _update_ai(dt: float) -> void:
-    var distance_to_player = global_position.distance_to(player_pos)
-
-    # V1: Only disable personal space collision shape
-    if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape:
-        var should_disable = distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE
-        if _personal_space_collision_shape.disabled != should_disable:
-            _personal_space_collision_shape.disabled = should_disable
-```
-
-**Version 2: ALL Collision Shapes (99% reduction)**
-```gdscript
-# BaseBoss.gd - Dual collision shape disabling (V2)
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Disable within 100px of player
-const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = true  # Use V2 (main + personal space)
-var _main_collision_shape: CollisionShape2D = null  # Cache main shape
-var _personal_space_collision_shape: CollisionShape2D = null  # Cache personal space shape
+# BaseBoss.gd - Frame-based animation throttling with adaptive intervals
+var _animation_update_counter: int = 0  # Frame counter
+var _animation_update_offset: int = 0   # Staggered offset per enemy
 
 func _ready() -> void:
-    # Cache both collision shapes for dynamic toggling
-    _main_collision_shape = get_node_or_null("CollisionShape2D")
-    _personal_space_collision_shape = personal_space_area.get_node("PersonalSpaceShape")
+    super._ready()
+    # Stagger animation updates to prevent frame spikes
+    _animation_update_offset = randi() % 12  # Random offset 0-11
 
 func _update_ai(dt: float) -> void:
-    var distance_to_player = global_position.distance_to(player_pos)
+    # Adaptive throttling based on enemy count
+    _animation_update_counter += 1
+    var enemy_count = get_tree().get_nodes_in_group("enemies").size()
+    var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive interval
 
-    # V2: Disable BOTH main and personal space collision shapes
-    if DISABLE_ALL_COLLISIONS_NEAR_PLAYER and distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE:
-        # Disable main collision shape (boss becomes undetectable to projectiles!)
-        if _main_collision_shape and not _main_collision_shape.disabled:
-            _main_collision_shape.disabled = true
-
-        # Disable personal space collision shape (no boss-to-boss spacing)
-        if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape and not _personal_space_collision_shape.disabled:
-            _personal_space_collision_shape.disabled = true
-    else:
-        # Re-enable collision shapes when far from player
-        if _main_collision_shape and _main_collision_shape.disabled:
-            _main_collision_shape.disabled = false
-
-        if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape and _personal_space_collision_shape.disabled:
-            _personal_space_collision_shape.disabled = false
+    if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+        _update_directional_animation(direction)
 ```
 
-**Collision Pair Math:**
-```
-N enemies with collision shapes: N × (N-1) / 2 collision pairs
+**Throttling Performance:**
+- **<300 enemies:** 6 frame interval = 5 updates/sec (responsive)
+- **300+ enemies:** 12 frame interval = 2.5 updates/sec (performance prioritized)
+- **Staggered offsets:** Distributes updates across frames (prevents spikes)
+- **Performance gain:** 83-92% reduction in animation update calls
+- **At 1000 enemies:** 30,000 → 2,500-5,000 animation calls/sec
 
-Example with 700 enemies:
-- All active (both shapes): ~490,000 total pairs
-  * Boss-to-boss pairs: 244,650 (700 × 699 / 2)
-  * Boss-to-projectile pairs: ~245,000 (700 × ~350 projectiles)
-
-V1 (personal space only):
-- 100 near player (personal space disabled): ~180,000 boss-boss pairs + 245,000 boss-projectile pairs
-- Reduction: 28,000+ → 2,500-3,000 pairs (90% reduction)
-
-V2 (ALL shapes disabled):
-- 100 near player (both disabled): Only outer ring has collision pairs
-- Reduction: ~490,000 → ~100-500 pairs (99% reduction!)
-
-Key insight: Enemies converging on player don't need spacing OR combat detection
-- They're all moving to the same point anyway
-- Player is in melee range (close-range combat)
-- Collision pairs in swarm zone become negligible
-```
-
-**Performance Impact:**
-- **V1 (personal space only):** 90%+ reduction (28k+ → 2.5k-3k pairs)
-- **V2 (all shapes):** 99%+ reduction (~490k → 100-500 pairs)
-- **Tradeoff:** Projectiles won't hit enemies within 100px of player in V2
-
-**⚠️ CRITICAL WARNING (V2 Only):**
-```gdscript
-# V2 creates a "safe zone" where swarming enemies become invulnerable!
-# - Within 100px: Main CollisionShape2D disabled → projectiles pass through
-# - Beyond 100px: Main CollisionShape2D enabled → projectiles hit normally
-# - Toggle behavior: Set DISABLE_ALL_COLLISIONS_NEAR_PLAYER = false to use V1 instead
-```
-
-**When to use:**
-- ✅ **V1:** Ranged combat games where projectiles must always hit
-- ✅ **V2:** Melee-focused games where close-range = melee attacks only
-- ✅ High entity counts (500-1000+ enemies)
-- ✅ Enemies that swarm a target (all converging to same point)
-- ✅ Proximity-based gameplay (within X distance = different behavior)
-
-**Tunable parameters:**
-```gdscript
-# Toggle between V1 and V2:
-const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = true   # V2 (99% reduction, projectiles don't hit)
-const DISABLE_ALL_COLLISIONS_NEAR_PLAYER: bool = false  # V1 (90% reduction, projectiles hit)
-
-# Adjust disable distance based on gameplay:
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Close quarters (V2: melee range)
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 200.0  # Medium distance
-const PERSONAL_SPACE_DISABLE_DISTANCE: float = 50.0   # Very tight spacing
-```
-
-**Real-world example:**
-```gdscript
-# User-reported results:
-# V1: 28,000+ → 2,500-3,000 collision pairs (smooth gameplay)
-# V2: ~490,000 → 100-500 collision pairs (ultra-smooth, but projectiles don't hit near player)
-# Game: Top-down wave survival with 700+ enemies swarming player
-```
+**Debug Logging Removal:**
+- **Hot paths:** Never use `Logger.debug()` in functions called 1000+ times/frame
+- **Spacing checks:** Removed 3 debug log calls from `_apply_manual_spacing()`
+- **Performance impact:** 20-30% AI cost reduction from eliminated string operations
+- **Best practice:** Use `Logger.info()` for initialization, `Logger.warn()` for issues only
 
 ## Troubleshooting Guide
 

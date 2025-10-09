@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=19 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
@@ -70,7 +70,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"damage_taken",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -87,7 +87,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -104,32 +104,19 @@ animations = [{
 }],
 "loop": false,
 "name": &"wake_up",
-"speed": 1.0
+"speed": 5.0
 }]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_7bior"]
-radius = 4.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7bior"]
 size = Vector2(16, 16)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_5yvh4"]
-radius = 20.0
-
-[node name="DragonLord" type="Area2D"]
+[node name="DragonLord" type="Node2D"]
 y_sort_enabled = true
-collision_layer = 2
 script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_lw0tx")
-animation = &"wake_up"
 offset = Vector2(0, -9.135)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-z_index = 1
-position = Vector2(0, -3)
-shape = SubResource("CircleShape2D_7bior")
 
 [node name="HitBox" type="Area2D" parent="."]
 collision_layer = 2
@@ -151,14 +138,6 @@ anchor_bottom = 0.5
 grow_horizontal = 2
 grow_vertical = 2
 metadata/_edit_use_anchors_ = true
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-position = Vector2(20, -2)
-collision_layer = 0
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-position = Vector2(-20, -3)
-shape = SubResource("CircleShape2D_5yvh4")
 
 [node name="BossShadow" parent="." instance=ExtResource("4_5yvh4")]
 scale = Vector2(2, 2)
