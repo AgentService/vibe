@@ -558,6 +558,130 @@ func _validate_spawn_performance() -> void:
     ], "tilespawn")
 ```
 
+### 🎨 **MultiMesh Rendering for High-Count Entities (2025-01-10)**
+
+**Lightweight MultiMesh Foundation:**
+```gdscript
+# MultiMeshManager.gd - Simplified rendering for 1000+ simple entities
+class_name MultiMeshManager
+extends Node
+
+var mm_projectiles: MultiMeshInstance2D
+var mm_ghost_swarm: MultiMeshInstance2D
+
+# Object pools for memory efficiency
+var _multimesh_pool: Array[MultiMesh] = []
+var _quadmesh_pool: Dictionary = {}  # size_key -> QuadMesh
+
+func setup(projectiles: MultiMeshInstance2D, ghost_swarm: MultiMeshInstance2D) -> void:
+    mm_projectiles = projectiles
+    mm_ghost_swarm = ghost_swarm
+    _initialize_pools()
+    _setup_projectile_multimesh()
+    _setup_ghost_swarm_multimesh()
+
+func update_ghost_swarm(ghost_positions: PackedVector2Array) -> void:
+    var count := ghost_positions.size()
+    mm_ghost_swarm.multimesh.instance_count = count
+    for i in range(count):
+        var ghost_transform := Transform2D()
+        ghost_transform.origin = ghost_positions[i]
+        mm_ghost_swarm.multimesh.set_instance_transform_2d(i, ghost_transform)
+```
+
+**Ghost Swarm Pattern (Simple Chase AI):**
+```gdscript
+# GhostSwarmSpawner.gd - 1000+ non-interactive visual spectacle
+class_name GhostSwarmSpawner
+extends Node
+
+@export var ghost_count: int = 1000
+@export var spawn_radius: float = 800.0
+@export var charge_speed: float = 200.0
+@export var ghost_modulate: Color = Color(0.8, 0.9, 1.0, 0.7)
+
+var _ghost_positions: PackedVector2Array
+var _ghost_velocities: PackedVector2Array
+var _is_active: bool = false
+
+func spawn_ghost_wave(player_pos: Vector2, count: int = 0) -> void:
+    var spawn_count = count if count > 0 else ghost_count
+    _ghost_positions.resize(spawn_count)
+    _ghost_velocities.resize(spawn_count)
+
+    # Spawn ghosts in circle around player
+    for i in range(spawn_count):
+        var angle = (i / float(spawn_count)) * TAU
+        var offset = Vector2(cos(angle), sin(angle)) * spawn_radius
+        _ghost_positions[i] = player_pos + offset
+        var direction = (player_pos - _ghost_positions[i]).normalized()
+        _ghost_velocities[i] = direction * charge_speed
+
+    _multimesh_manager.update_ghost_swarm(_ghost_positions)
+    _is_active = true
+
+func _process(delta: float) -> void:
+    if not _is_active:
+        return
+
+    # Simple chase AI - recalculate direction each frame
+    for i in range(_ghost_positions.size()):
+        var direction = (player_pos - _ghost_positions[i]).normalized()
+        _ghost_velocities[i] = direction * charge_speed
+        _ghost_positions[i] += _ghost_velocities[i] * delta
+
+    _multimesh_manager.update_ghost_swarm(_ghost_positions)
+```
+
+**Arena Integration Pattern:**
+```gdscript
+# Arena.gd - Setup MultiMesh systems
+@onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
+@onready var mm_ghost_swarm: MultiMeshInstance2D = $MM_GhostSwarm
+
+var multimesh_manager: MultiMeshManager
+var ghost_swarm_spawner: GhostSwarmSpawner
+
+func _ready() -> void:
+    super._ready()
+
+    # Setup MultiMesh rendering system
+    multimesh_manager = MultiMeshManagerScript.new()
+    add_child(multimesh_manager)
+    multimesh_manager.setup(mm_projectiles, mm_ghost_swarm)
+
+    # Setup Ghost Swarm Spawner
+    ghost_swarm_spawner = GhostSwarmSpawnerScript.new()
+    add_child(ghost_swarm_spawner)
+    ghost_swarm_spawner.setup(multimesh_manager)
+
+    # Debug key for testing
+    Input.connect("key_pressed", _on_key_pressed)
+
+func _on_key_pressed(event: InputEventKey) -> void:
+    if event.keycode == KEY_G:
+        if ghost_swarm_spawner.is_active():
+            ghost_swarm_spawner.clear_ghost_wave()
+        else:
+            ghost_swarm_spawner.spawn_ghost_wave(player.global_position, 1000)
+```
+
+**Performance Characteristics:**
+- **Target:** 1000 ghosts @ 60 FPS (<3ms overhead)
+- **Scalability:** 2000-4000 for extreme pressure events
+- **Use cases:**
+  - ✅ Ghost swarms (1000+ visual-only enemies)
+  - ✅ Projectile foundation (200+ simultaneous projectiles)
+  - ❌ NOT for complex enemies with collision/AI (use scene-based)
+- **Memory:** Object pooling prevents allocations during gameplay
+- **Crossover point:** Scene-based excels <1000 complex entities, MultiMesh excels >1000 simple entities
+
+**Important Notes:**
+- Ghost swarms have NO collision detection (visual only)
+- Simple chase AI with PackedVector2Array for performance
+- Static sprite rendering with color modulation only (no animation system)
+- Designed for special event waves, not standard spawning
+
 ## System-Specific Patterns
 
 ### ⚔️ **MeleeSystem Cone Detection**

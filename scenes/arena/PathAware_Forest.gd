@@ -158,6 +158,9 @@ func set_randomization_mode(randomize: bool) -> void:
 
 ## Handle return to hideout
 func _input(event: InputEvent) -> void:
+	# Call parent input handler first (handles G key for ghost swarms, etc.)
+	super._input(event)
+
 	if event.is_action_pressed("ui_cancel"):  # ESC key
 		_return_to_hideout()
 
