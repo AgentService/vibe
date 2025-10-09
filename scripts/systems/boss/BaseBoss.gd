@@ -50,7 +50,7 @@ var _cached_distance_to_player: float = 0.0
 var _distance_cache_timer: float = 0.0
 const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 3  # Update EntityTracker position every 3 frames
+const POSITION_UPDATE_INTERVAL: int = 1  # Update EntityTracker position every 2 frames
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
@@ -614,6 +614,13 @@ func _apply_manual_spacing() -> void:
 			continue
 
 		var enemy_pos = enemy_data["pos"]
+
+		# DENSE CLUSTER EXEMPTION: Skip spacing forces from enemies within min distance of player
+		# This allows enemies to cluster tightly around player without pushing outer enemies away
+		var enemy_distance_to_player = enemy_pos.distance_to(target_position)
+		if enemy_distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
+			continue  # Enemy is in dense cluster zone - don't apply spacing from them
+
 		var to_other = enemy_pos - global_position
 		var distance = to_other.length()
 
