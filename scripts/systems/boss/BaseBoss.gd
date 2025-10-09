@@ -34,10 +34,10 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 350.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_RADIUS: float = 450.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 500.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 10.0  # Push force when too close
+const MANUAL_SPACING_STRENGTH: float = 5.0  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
@@ -139,6 +139,13 @@ func _ready() -> void:
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
+
+	# MANUAL SPACING: Stagger spacing check timers to prevent all enemies checking simultaneously
+	# Random offset between 0 and check interval spreads checks across multiple frames
+	if MANUAL_SPACING_ENABLED:
+		var spawn_rng = RNG.stream("spawn")
+		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
+		Logger.debug("%s: Spacing timer offset: %.2fs" % [get_boss_name(), _spacing_check_timer], "collision")
 
 	# Initialize health bar
 	_update_health_bar()
