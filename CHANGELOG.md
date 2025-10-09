@@ -2,6 +2,33 @@
 
 ## [Current Week - In Progress]
 
+### 🎨 FEATURE: MultiMesh Foundation for Ghost Swarms + Projectiles (2025-01-10)
+
+**Added lightweight MultiMesh rendering system for high-count simple entities:**
+- **MultiMeshManager**: Simplified 2-use-case manager (ghost swarms + projectiles)
+  - Object pooling (MultiMesh + QuadMesh reuse) for memory efficiency
+  - No animation system (static sprites with modulation)
+  - ~200 lines vs 568-line archived implementation
+- **GhostSwarmSpawner**: Special event system for visual spectacle waves
+  - 1000+ non-interactive ghosts charging player
+  - Simple chase AI (no collision, just movement)
+  - Debug key: Press **G** in arena to spawn/clear 1000 ghost swarm
+- **Arena Integration**: MM_Projectiles + MM_GhostSwarm nodes added
+  - Optional rendering path (scene-based enemies remain primary)
+  - Foundation ready for future projectile abilities
+
+**Performance targets:**
+- 1000 ghosts @ 60 FPS (<3ms overhead = 10% of 30 FPS budget)
+- Scalable to 2000-4000 for extreme pressure events
+- vs Scene-based: 60 FPS (MultiMesh) vs 30-40 FPS (with full AI+collision)
+
+**Use cases:**
+- Ghost waves for special breach events (visual pressure)
+- Future projectile rendering (200+ simultaneous)
+- Exponential scaling without performance degradation
+
+**Philosophy**: Pragmatic foundation - avoid complexity, support specific high-perf needs
+
 ### ⚡ FEATURE: Per-Boss Speed Variation Re-enabled (2025-10-09)
 
 **Re-enabled per-boss speed configuration from templates:**

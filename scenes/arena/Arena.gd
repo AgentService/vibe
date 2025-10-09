@@ -17,6 +17,8 @@ const BossSpawnManagerScript := preload("res://scripts/systems/spawn/BossSpawnMa
 const PlayerAttackHandlerScript := preload("res://scripts/systems/combat/PlayerAttackHandler.gd")
 const PlayerSpawnerScript := preload("res://scripts/systems/spawn/PlayerSpawner.gd")
 const VisualEffectsManagerScript := preload("res://scripts/systems/rendering/VisualEffectsManager.gd")
+const MultiMeshManagerScript := preload("res://scripts/systems/rendering/MultiMeshManager.gd")
+const GhostSwarmSpawnerScript := preload("res://scripts/systems/spawn/GhostSwarmSpawner.gd")
 const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjectionManager.gd")
 const ArenaInputHandlerScript := preload("res://scripts/systems/arena/ArenaInputHandler.gd")
 const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
@@ -30,6 +32,8 @@ const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelecto
 
 # Scene-based rendering approach
 @onready var melee_effects: Node2D = $MeleeEffects
+@onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
+@onready var mm_ghost_swarm: MultiMeshInstance2D = $MM_GhostSwarm
 var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
@@ -42,6 +46,8 @@ var spawn_director: SpawnDirector
 var arena_system: ArenaSystem
 var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
+var multimesh_manager: MultiMeshManager
+var ghost_swarm_spawner: GhostSwarmSpawner
 var system_injection_manager: SystemInjectionManager
 var arena_input_handler: ArenaInputHandler
 var entity_selector: EntitySelector
@@ -148,7 +154,19 @@ func _ready() -> void:
 	visual_effects_manager.boss_flash_intensity = boss_flash_intensity
 	add_child(visual_effects_manager)
 	visual_effects_manager.setup_hit_feedback_systems()
-	
+
+	# Setup MultiMesh rendering system (optional high-performance rendering)
+	multimesh_manager = MultiMeshManagerScript.new()
+	add_child(multimesh_manager)
+	multimesh_manager.setup(mm_projectiles, mm_ghost_swarm)
+	Logger.debug("MultiMeshManager initialized for ghost swarms and projectiles", "rendering")
+
+	# Setup Ghost Swarm Spawner for special events
+	ghost_swarm_spawner = GhostSwarmSpawnerScript.new()
+	add_child(ghost_swarm_spawner)
+	ghost_swarm_spawner.setup(multimesh_manager)
+	Logger.debug("GhostSwarmSpawner initialized for special waves", "ghost")
+
 	# Create and add new systems
 	Logger.info("Arena: About to setup player", "debug")
 	_setup_player()
@@ -379,21 +397,41 @@ func set_xp_system(injected_xp_system: XpSystem) -> void:
 
 func _input(event: InputEvent) -> void:
 	"""Handle arena-specific input events."""
-	
+
 	# Handle return to hideout (H key for testing)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_H:
 		_return_to_hideout()
 
+	# DEBUG: Test ghost swarm with G key
+	if event is InputEventKey and event.pressed and event.keycode == KEY_G:
+		_debug_spawn_ghost_swarm()
+
 func _return_to_hideout() -> void:
 	"""Return to hideout from arena (debug/testing function)."""
-	
+
 	Logger.info("Returning to hideout from arena", "arena")
-	
+
 	# Use GameOrchestrator for proper teardown sequence
 	if GameOrchestrator and GameOrchestrator.has_method("go_to_hideout"):
 		GameOrchestrator.go_to_hideout()
 	else:
 		Logger.error("GameOrchestrator.go_to_hideout() not available", "arena")
+
+func _debug_spawn_ghost_swarm() -> void:
+	"""DEBUG: Spawn ghost swarm for testing (G key)"""
+	if not player or not ghost_swarm_spawner:
+		Logger.warn("Cannot spawn ghost swarm - player or spawner not ready", "debug")
+		return
+
+	if ghost_swarm_spawner.is_active():
+		# Clear existing wave
+		ghost_swarm_spawner.clear_ghost_wave()
+		Logger.info("DEBUG: Ghost swarm cleared (press G again to spawn)", "debug")
+	else:
+		# Spawn new wave at player position
+		var ghost_count = 1000  # Start with 1000 ghosts
+		ghost_swarm_spawner.spawn_ghost_wave(player.global_position, ghost_count)
+		Logger.info("DEBUG: Spawned %d ghost swarm (press G to clear)" % ghost_count, "debug")
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
