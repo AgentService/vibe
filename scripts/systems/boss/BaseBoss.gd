@@ -34,10 +34,10 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 450.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 500.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 5.0  # Push force when too close
+const MANUAL_SPACING_RADIUS: float = 999.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 1.5  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
@@ -47,6 +47,8 @@ const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation tran
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
+var _animation_update_counter: int = 0  # Frame counter for throttled animation updates
+var _animation_update_offset: int = 0  # Staggered offset per enemy
 
 # SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
 # NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
@@ -145,7 +147,9 @@ func _ready() -> void:
 	if MANUAL_SPACING_ENABLED:
 		var spawn_rng = RNG.stream("spawn")
 		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
-		Logger.debug("%s: Spacing timer offset: %.2fs" % [get_boss_name(), _spacing_check_timer], "collision")
+
+	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
+	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
 
 	# Initialize health bar
 	_update_health_bar()
@@ -281,7 +285,6 @@ func _update_ai(dt: float) -> void:
 			if MANUAL_SPACING_ENABLED:
 				_spacing_check_timer += dt
 				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
-					Logger.debug("%s: Manual spacing timer triggered (%.2fs)" % [get_boss_name(), _spacing_check_timer], "collision")
 					_spacing_check_timer = 0.0
 					_apply_manual_spacing()
 
@@ -292,8 +295,13 @@ func _update_ai(dt: float) -> void:
 			# STAGGERED AI: Don't call move_and_slide() here - handled in _physics_process()
 			# This allows AI to update every 20 frames while physics runs every frame
 
-			# Update directional animation automatically
-			_update_directional_animation(direction)
+			# THROTTLED ANIMATION: Adaptive frame-based throttling (6 frames @ low count, 12+ @ high count)
+			_animation_update_counter += 1
+			var enemy_count = get_tree().get_nodes_in_group("enemies").size()
+			var animation_throttle = 6 if enemy_count < 300 else 12  # Adjust based on enemy count
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				_update_directional_animation(direction)
 			current_direction = direction
 
 			# Update position in damage system
@@ -475,7 +483,6 @@ func _apply_manual_spacing() -> void:
 	# Skip spacing if we're very close to player (allow dense clustering around player)
 	var distance_to_player = global_position.distance_to(target_position)
 	if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
-		Logger.debug("%s: Within player min distance (%.0fpx), skipping spacing" % [get_boss_name(), distance_to_player], "collision")
 		return
 
 	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
@@ -484,8 +491,6 @@ func _apply_manual_spacing() -> void:
 		MANUAL_SPACING_RADIUS,
 		"boss"  # Filter for bosses (registered with type="boss")
 	)
-
-	Logger.debug("%s: Manual spacing check - found %d nearby enemies" % [get_boss_name(), nearby_enemy_ids.size()], "collision")
 
 	if nearby_enemy_ids.is_empty():
 		return
@@ -514,7 +519,6 @@ func _apply_manual_spacing() -> void:
 
 	# Apply avoidance to velocity (additive with chase velocity)
 	if avoidance_force.length_squared() > 0.1:
-		Logger.debug("%s: Applying avoidance force: %.1f" % [get_boss_name(), avoidance_force.length()], "collision")
 		velocity += avoidance_force
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
