@@ -4,15 +4,29 @@
 
 ### Lateral Spacing Bias - Line-Forming Enemy Movement (2025-10-09)
 
-**Added lateral separation bias to enemy spacing for natural line-forming behavior when approaching player:**
+**Added lateral separation bias with distance gating for natural clustering and line-forming behavior:**
 
 **Changes:**
 - ✅ **New constant** - `MANUAL_SPACING_LATERAL_BIAS: float = 0.3` (30% radial, 70% sideways separation)
 - ✅ **Vector decomposition** - Splits spacing force into radial (toward/away player) and tangential (sideways) components
-- ✅ **Biased blending** - Applies weighted combination: `radial * 0.3 + tangential * 0.7`
-- ✅ **Line formation** - Enemies now prefer separating perpendicular to player approach direction
+- ✅ **Distance-gated bias** - Only applies lateral bias to enemies far from player (>200px)
+- ✅ **Three-zone system** - Dense cluster (0-100px), radial separation (100-200px), line formation (>200px)
 
-**Algorithm (BaseBoss.gd:633-650):**
+**Distance Zones (BaseBoss.gd:637-640):**
+```gdscript
+# Zone 1 (0-100px): No spacing - return early, allow dense stacking
+if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
+    return
+
+# Zone 2 (100-200px): Pure radial separation - enemies can still approach
+if distance_to_player < (MANUAL_SPACING_MIN_DISTANCE * 2.0):
+    effective_lateral_bias = 1.0  # No sideways push
+
+# Zone 3 (>200px): Lateral bias applied - form organized lines
+# effective_lateral_bias = MANUAL_SPACING_LATERAL_BIAS (0.0 = pure sideways)
+```
+
+**Algorithm (BaseBoss.gd:642-660):**
 ```gdscript
 # 1. Calculate push direction from enemy collision
 var push_direction = -to_other.normalized()
@@ -25,28 +39,34 @@ var radial_strength = push_direction.dot(to_player)
 var radial_component = to_player * radial_strength
 var tangential_component = push_direction - radial_component
 
-# 4. Apply lateral bias (30% radial, 70% sideways)
-var biased_direction = (radial_component * LATERAL_BIAS +
-                        tangential_component * (1.0 - LATERAL_BIAS)).normalized()
+# 4. Apply distance-gated bias
+var biased_direction = (radial_component * effective_lateral_bias +
+                        tangential_component * (1.0 - effective_lateral_bias)).normalized()
 
 # 5. Apply biased force
 avoidance_force += biased_direction * MANUAL_SPACING_STRENGTH
 ```
 
 **Behavior:**
-- **Before:** Enemies separated radially from each other (circular spread around player)
-- **After:** Enemies prefer sideways separation (form lines/arcs when approaching player)
-- **Tuning:** `LATERAL_BIAS = 0.0` = pure sideways, `1.0` = no bias (radial), `0.3` = 70% sideways preference
+- **Zone 1 (0-100px):** Dense clustering - enemies can stack on player without any separation
+- **Zone 2 (100-200px):** Radial separation - enemies push away from each other but continue approaching
+- **Zone 3 (>200px):** Line formation - enemies prefer sideways separation, forming organized attack waves
+
+**Tuning:**
+- `LATERAL_BIAS = 0.0` = pure sideways (current setting)
+- `LATERAL_BIAS = 1.0` = pure radial (no lateral preference)
+- `LATERAL_BIAS = 0.3` = 70% sideways, 30% radial
 
 **Performance:**
-- No additional cost - same vector operations, just different weighting
-- Replaces simple radial push with decomposed/biased push
+- Minimal cost - one distance comparison added per spacing check
+- Same vector decomposition operations as before
 - Same O(n) complexity for spacing checks
 
 **Visual Result:**
-- More natural clustering behavior when enemies approach from one direction
-- Reduces overlap when multiple enemies chase from same angle
-- Creates dynamic "wave" patterns instead of circular mobs
+- Natural dense clustering around player at melee range
+- Smooth transition to organized formations at medium distance
+- Dynamic "wave" patterns when enemies approach from one direction
+- Better visual clarity during combat with large enemy counts
 
 ---
 
