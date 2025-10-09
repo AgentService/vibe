@@ -1,6 +1,6 @@
-extends CharacterBody2D
+extends Area2D
 
-## BaseBoss - Base class for all scene-based bosses
+## BaseBoss - Base class for all scene-based bosses (Area2D-based for performance)
 ## Provides unified damage integration, performance optimization, and directional animation logic
 
 class_name BaseBoss
@@ -19,6 +19,7 @@ var max_health: float = 300.0
 var current_health: float = 300.0
 var damage: float = 40.0
 var speed: float = 100.0
+var velocity: Vector2 = Vector2.ZERO  # Area2D doesn't have built-in velocity, declare manually
 var attack_damage: float = 40.0
 var attack_cooldown: float = 2.0
 var last_attack_time: float = 0.0
@@ -31,10 +32,14 @@ var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
 var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
-# DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
+# KNOCKBACK SYSTEM: Impulse-based enemy spacing via Area2D collision detection
 const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
-const PERSONAL_SPACE_STRENGTH: float = 20.0  # Strong spacing force comparable to chase speed (100 px/s)
-var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
+const USE_KNOCKBACK_INSTEAD_OF_FORCE: bool = true  # Use impulse knockback instead of continuous force
+const KNOCKBACK_IMPULSE_STRENGTH: float = 11.0  # Knockback impulse strength on collision
+const KNOCKBACK_RESISTANCE: float = 20.0  # Knockback decay speed (px/s)
+const PERSONAL_SPACE_STRENGTH: float = 20.0  # Continuous force strength (only used when USE_KNOCKBACK_INSTEAD_OF_FORCE = false)
+var knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
+var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (now Area2D-based)
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
@@ -64,19 +69,16 @@ func _ready() -> void:
 	add_to_group("spawning")
 	add_to_group("enemies")  # Functional group for all enemies
 
-	# COLLISION CONFIGURATION: Enable collision layers for all bosses
-	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can hit them)
-	# Mask 1 (Terrain): Enemy collides with terrain (walks around walls)
+	# COLLISION CONFIGURATION: Enable collision layers for Area2D bosses
+	# Layer 2 (Bosses): Enemy exists on this layer (so projectiles/player can detect them)
+	# Mask 0: Area2D bosses don't need to detect anything (physics-free movement)
 	collision_layer = 2  # Exist on Layer 2
-	collision_mask = 1   # Collide with Layer 1 (terrain)
+	collision_mask = 0   # No collision detection needed (physics-free)
 
-	# CRITICAL PERFORMANCE: Disable Area2D monitoring to reduce physics overhead
-	# With 600+ bosses, Area2D collision checks cause 20-30ms physics bottleneck
-	# Re-enable only when needed (e.g., when near player for hit detection)
-	var hitbox = get_node_or_null("HitBox")
-	if hitbox and hitbox is Area2D:
-		hitbox.monitoring = false
-		hitbox.monitorable = true  # Can still be detected by player attacks
+	# CRITICAL PERFORMANCE: Area2D bosses use physics-free movement
+	# Monitoring disabled by default to reduce collision overhead
+	monitoring = false    # Don't detect other bodies (physics-free)
+	monitorable = true    # Can be detected by player attacks/projectiles
 
 	# Disable PersonalSpaceArea if not using personal space system
 	if not PERSONAL_SPACE_ENABLED:
@@ -84,13 +86,6 @@ func _ready() -> void:
 		if personal_space and personal_space is Area2D:
 			personal_space.monitoring = false
 			personal_space.monitorable = false
-
-	# PERFORMANCE: Optimize move_and_slide() for top-down chase AI
-	motion_mode = MOTION_MODE_FLOATING  # Skip floor/wall/ceiling detection (top-down game)
-	max_slides = 1  # Reduce from 4 to 1 = 75% fewer collision iterations
-	safe_margin = 0.08  # Increase from 0.001 for performance (less precision, more speed)
-	floor_stop_on_slope = false  # Not relevant for top-down movement
-	wall_min_slide_angle = 0.0  # Allow sliding at any angle (no minimum)
 
 	# Setup personal space area BEFORE spawn animation (needed for _on_spawn_animation_complete)
 	if PERSONAL_SPACE_ENABLED:
@@ -258,17 +253,23 @@ func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## STAGGERED AI: Physics process runs EVERY frame (30Hz) even when AI is staggered
+## AREA2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
 ## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
 func _physics_process(delta: float) -> void:
 	# Skip physics if dying, spawning, or no velocity
 	if _is_dying or _is_spawning:
 		return
 
-	# Only apply movement if we have velocity
-	# Squared check is faster than length() (avoids sqrt)
-	if velocity.length_squared() > 0.01:
-		move_and_slide()
+	# KNOCKBACK DECAY: Reduce knockback toward zero every frame
+	if USE_KNOCKBACK_INSTEAD_OF_FORCE and knockback.length_squared() > 0.1:
+		knockback = knockback.move_toward(Vector2.ZERO, KNOCKBACK_RESISTANCE * delta)
+
+	# Apply Area2D movement (physics-free, no collision resolution)
+	if velocity.length_squared() > 0.01 or knockback.length_squared() > 0.01:
+		# Combine chase velocity + knockback
+		var final_velocity = velocity + knockback
+		# Direct position update (Area2D has no move_and_slide)
+		global_position += final_velocity * delta
 
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend
@@ -295,12 +296,14 @@ func _update_ai(dt: float) -> void:
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 
-			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
-			if PERSONAL_SPACE_ENABLED:
+			# COLLISION SYSTEM: Apply spacing forces based on selected method
+			if PERSONAL_SPACE_ENABLED and not USE_KNOCKBACK_INSTEAD_OF_FORCE:
+				# CONTINUOUS FORCE: Apply spacing force every frame while overlapping
 				var spacing_force = apply_personal_space_forces()
 				if spacing_force.length_squared() > 0.1:
 					Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
 				velocity += spacing_force
+			# KNOCKBACK: Applied via impulse in _on_boss_entered_personal_space(), decays in _physics_process()
 
 			# Safety check before physics update
 			if not is_inside_tree() or is_queued_for_deletion():
@@ -494,13 +497,13 @@ func _setup_personal_space_area() -> void:
 		Logger.debug("%s: No PersonalSpaceArea found - boss spacing disabled" % get_boss_name(), "collision")
 		return
 
-	# Configure collision layers for boss-to-boss detection
+	# Configure collision layers for Area2D boss-to-boss detection
 	personal_space_area.collision_layer = 0  # Don't exist on any layer
-	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
+	personal_space_area.collision_mask = 2   # Detect Layer 2 (where Area2D bosses are)
 
-	# Connect to area signals for boss detection
-	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
-	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
+	# Connect to area signals for Area2D boss detection
+	personal_space_area.area_entered.connect(_on_boss_entered_personal_space)
+	personal_space_area.area_exited.connect(_on_boss_exited_personal_space)
 	Logger.debug("%s: Personal space area configured for boss spacing" % get_boss_name(), "collision")
 
 	# Debug visualization removed - was using ColorRect which looked blocky
@@ -510,16 +513,22 @@ func _setup_personal_space_area() -> void:
 	# 	if debug_config and debug_config.show_personal_space_circles:
 	# 		_setup_personal_space_debug_visual()
 
-## Handle boss entering personal space - add to nearby list
-func _on_boss_entered_personal_space(body: Node2D) -> void:
-	var boss = body as CharacterBody2D
+## Handle boss entering personal space - add to nearby list and apply knockback if enabled
+func _on_boss_entered_personal_space(area: Area2D) -> void:
+	var boss = area as Area2D
 	if boss and boss != self and boss.has_method("get_boss_name"):
 		nearby_bosses.append(boss)
 		Logger.debug("%s: %s entered personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
 
+		# KNOCKBACK: Apply impulse on collision
+		if USE_KNOCKBACK_INSTEAD_OF_FORCE and PERSONAL_SPACE_ENABLED:
+			var push_direction = global_position.direction_to(boss.global_position)
+			boss.knockback = push_direction * KNOCKBACK_IMPULSE_STRENGTH
+			Logger.debug("%s: Applied %.1f knockback to %s" % [get_boss_name(), KNOCKBACK_IMPULSE_STRENGTH, boss.get_boss_name()], "collision")
+
 ## Handle boss leaving personal space - remove from nearby list
-func _on_boss_exited_personal_space(body: Node2D) -> void:
-	var boss = body as CharacterBody2D
+func _on_boss_exited_personal_space(area: Area2D) -> void:
+	var boss = area as Area2D
 	if boss and boss != self and boss.has_method("get_boss_name"):
 		nearby_bosses.erase(boss)
 		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
@@ -557,7 +566,7 @@ func apply_only_personal_space_movement(delta: float) -> void:
 	var spacing_force = apply_personal_space_forces()
 	if spacing_force.length_squared() > 0.1:
 		velocity = spacing_force
-		move_and_slide()
+		global_position += velocity * delta  # Area2D physics-free movement
 		Logger.debug("%s: Pure personal space movement: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
 
 ## DEBUG: Print current personal space status

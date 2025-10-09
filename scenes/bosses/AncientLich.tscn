@@ -116,7 +116,7 @@ size = Vector2(14, 15)
 [sub_resource type="CircleShape2D" id="CircleShape2D_ywjq4"]
 radius = 35.0
 
-[node name="AncientLich" type="CharacterBody2D"]
+[node name="AncientLich" type="Area2D"]
 collision_layer = 2
 script = ExtResource("1_mjtd6")
 

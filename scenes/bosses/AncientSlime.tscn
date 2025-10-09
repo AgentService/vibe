@@ -225,7 +225,7 @@ size = Vector2(19, 38)
 [sub_resource type="CircleShape2D" id="CircleShape2D_83bbo"]
 radius = 66.0303
 
-[node name="AncientSlime" type="CharacterBody2D"]
+[node name="AncientSlime" type="Area2D"]
 collision_layer = 2
 script = ExtResource("1_slime")
 

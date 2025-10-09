@@ -96,7 +96,7 @@ size = Vector2(24, 63)
 [sub_resource type="CircleShape2D" id="CircleShape2D_w5q7g"]
 radius = 50.04
 
-[node name="BananaLord" type="CharacterBody2D"]
+[node name="BananaLord" type="Area2D"]
 y_sort_enabled = true
 collision_layer = 2
 script = ExtResource("1_mjtd6")

@@ -312,7 +312,7 @@ size = Vector2(31, 41.5)
 [sub_resource type="CircleShape2D" id="CircleShape2D_mo2wd"]
 radius = 60.0083
 
-[node name="DemonOverlord" type="CharacterBody2D"]
+[node name="DemonOverlord" type="Area2D"]
 y_sort_enabled = true
 collision_layer = 2
 script = ExtResource("1_kjm5n")
