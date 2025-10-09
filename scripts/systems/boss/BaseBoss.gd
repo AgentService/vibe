@@ -58,6 +58,11 @@ const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2
 var _direction_update_counter: int = 0
 const DIRECTION_UPDATE_INTERVAL: int = 1  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
 
+# ENEMY COUNT CACHING: Cache enemy count for adaptive throttling
+var _cached_enemy_count: int = 0
+var _enemy_count_cache_timer: float = 0.0
+const ENEMY_COUNT_CACHE_INTERVAL: float = 1.0  # Update enemy count every 1 second (not every frame)
+
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
 const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
@@ -162,6 +167,12 @@ func _ready() -> void:
 	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
 	# Offset matches max throttle interval (12 frames @ high enemy count)
 	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
+
+	# ENEMY COUNT CACHING: Initialize cache with current enemy count
+	_cached_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+	# Stagger enemy count updates similar to spacing checks
+	var spawn_rng_ec = RNG.stream("spawn")
+	_enemy_count_cache_timer = spawn_rng_ec.randf() * ENEMY_COUNT_CACHE_INTERVAL
 
 	# Initialize health bar
 	_update_health_bar()
@@ -404,10 +415,16 @@ func _update_ai(dt: float) -> void:
 			# STAGGERED AI: Don't call move_and_slide() here - handled in _physics_process()
 			# This allows AI to update every 20 frames while physics runs every frame
 
+			# ENEMY COUNT CACHING: Update cache periodically (every 1 second)
+			# Reduces get_tree().get_nodes_in_group() calls from 30/sec to 1/sec per enemy
+			_enemy_count_cache_timer += dt
+			if _enemy_count_cache_timer >= ENEMY_COUNT_CACHE_INTERVAL:
+				_enemy_count_cache_timer = 0.0
+				_cached_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+
 			# THROTTLED ANIMATION: Adaptive frame-based throttling (6 frames @ low count, 12+ @ high count)
 			_animation_update_counter += 1
-			var enemy_count = get_tree().get_nodes_in_group("enemies").size()
-			var animation_throttle = 6 if enemy_count < 300 else 12  # Adjust based on enemy count
+			var animation_throttle = 6 if _cached_enemy_count < 300 else 12  # Use cached count!
 
 			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
 				_update_directional_animation(direction)

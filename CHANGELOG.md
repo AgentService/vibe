@@ -49,6 +49,48 @@ After fix:
 
 ---
 
+### ⚡ OPTIMIZATION: Enemy Count Caching (2025-10-09)
+
+**Added enemy count caching to eliminate expensive tree traversals:**
+
+**The Issue:**
+- `_update_ai()` method called `get_tree().get_nodes_in_group("enemies").size()` every update
+- This is O(n) tree traversal across all scene nodes
+- Called 30 times per second for each enemy using standard AI path
+- Wasteful for adaptive animation throttling (300 enemy threshold check)
+
+**The Fix:**
+- Added `_cached_enemy_count` variable (cached value)
+- Added `_enemy_count_cache_timer` for periodic updates
+- Set `ENEMY_COUNT_CACHE_INTERVAL = 1.0` seconds (1 update/sec instead of 30/sec)
+- Initialize cache in `_ready()` with staggered timer offset
+- Update cache periodically in `_update_ai()` method
+- Use cached value for animation throttle decision
+
+**Performance Impact:**
+```
+Before: get_nodes_in_group() called 30 times/sec per enemy
+        = 30,000 calls/sec @ 1000 enemies
+
+After:  get_nodes_in_group() called 1 time/sec per enemy
+        = 1,000 calls/sec @ 1000 enemies
+
+Improvement: 97% reduction in tree traversal calls
+```
+
+**Notes:**
+- `_update_ai_minimal()` already received enemy_count from BossUpdateManager (no issue there)
+- This fix optimizes the fallback `_update_ai()` method
+- Staggered cache updates prevent frame spikes
+- Enemy count is only used for adaptive throttling (300 threshold), so 1-second cache is fine
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd:61-64` - Added enemy count cache variables
+- `scripts/systems/boss/BaseBoss.gd:171-175` - Initialize cache in _ready()
+- `scripts/systems/boss/BaseBoss.gd:418-427` - Use cached enemy count in _update_ai()
+
+---
+
 ### Spawn Timing Investigation (2025-10-09)
 
 **Investigated spawn animation timing mismatch between visual and gameplay states:**
