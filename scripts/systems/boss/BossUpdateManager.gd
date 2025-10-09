@@ -17,6 +17,11 @@ var _boss_index: Dictionary = {} # id -> index
 var _frame_counter: int = 0
 const AI_UPDATE_GROUPS: int = 20  # Divide enemies into 20 groups (1000 enemies = 50 per frame)
 
+# CENTRALIZED ENEMY COUNT CACHE: Query tree ONCE per second (not per enemy per frame)
+var _cached_enemy_count: int = 0
+var _enemy_count_update_counter: int = 0
+const ENEMY_COUNT_UPDATE_INTERVAL: int = 30  # Update every 30 frames (1 second @ 30Hz)
+
 # Viewport culling - skip AI updates for off-screen bosses
 var _viewport: Viewport = null
 var _player_camera: Camera2D = null
@@ -138,6 +143,13 @@ func _on_combat_step(payload) -> void:
 		return  # No player, skip AI updates
 	var player_pos: Vector2 = PlayerState.position  # Single lookup for all enemies
 
+	# CENTRALIZED ENEMY COUNT: Update cache once per second (not per enemy per frame!)
+	# At 1000 enemies: 30,000 queries/sec → 1 query/sec = 99.997% reduction
+	_enemy_count_update_counter += 1
+	if _enemy_count_update_counter >= ENEMY_COUNT_UPDATE_INTERVAL:
+		_enemy_count_update_counter = 0
+		_cached_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+
 	# VIEWPORT CULLING: Calculate visible rect ONCE per frame
 	var visible_rect: Rect2
 	if ENABLE_VIEWPORT_CULLING:
@@ -181,9 +193,9 @@ func _on_combat_step(payload) -> void:
 		# dt = 0.0333s (30Hz) → scaled_dt = 0.0333 * 20 = 0.666s between updates
 		var scaled_dt: float = dt * AI_UPDATE_GROUPS
 
-		# Call AI with scaled delta time
+		# Call AI with scaled delta time + cached enemy count (avoids 30k tree queries/sec)
 		if boss.has_method("_update_ai_minimal"):
-			boss._update_ai_minimal(scaled_dt, player_pos)
+			boss._update_ai_minimal(scaled_dt, player_pos, _cached_enemy_count)
 		elif boss.has_method("_update_ai_batch"):
 			boss._update_ai_batch(scaled_dt)
 		else:

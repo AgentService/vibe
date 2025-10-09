@@ -45,6 +45,13 @@ var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
 const KNOCKBACK_DECAY: float = 30.0  # Decay rate in pixels per second (like move_toward resistance)
 
+# PERFORMANCE CACHING: Cache expensive calculations across multiple frames
+var _cached_distance_to_player: float = 0.0
+var _distance_cache_timer: float = 0.0
+const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
+var _position_update_counter: int = 0
+const POSITION_UPDATE_INTERVAL: int = 3  # Update EntityTracker position every 3 frames
+
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
 const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
@@ -147,7 +154,8 @@ func _ready() -> void:
 		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
 
 	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
-	_animation_update_offset = randi() % 4  # Random offset 0-11 for staggered updates
+	# Offset matches max throttle interval (12 frames @ high enemy count)
+	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
 
 	# Initialize health bar
 	_update_health_bar()
@@ -240,6 +248,86 @@ func _notify_components_scaled(scale_factor: float) -> void:
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
 func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
+	last_attack_time += dt
+
+## PERFORMANCE OPTIMIZED AI: Minimal AI update with cached values from BossUpdateManager
+## Called by BossUpdateManager with cached player_pos and enemy_count
+## Implements distance caching, direction caching, and throttled updates
+func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> void:
+	# Skip AI updates if dying, paused, spawning, or being removed
+	if _is_dying or ai_paused or _is_spawning:
+		return
+
+	# Skip if boss is being removed or not in tree
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
+	target_position = player_pos  # Use cached player position from BossUpdateManager
+
+	# DISTANCE CACHING: Update distance periodically (not every frame)
+	# Reduces distance_to() calls by 83% (every 6 frames vs every frame)
+	_distance_cache_timer += dt
+	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL:
+		_distance_cache_timer = 0.0
+		_cached_distance_to_player = global_position.distance_to(target_position)
+
+	# Use cached distance for all checks
+	if _cached_distance_to_player <= chase_range:
+		if _cached_distance_to_player > attack_range:
+			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
+			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
+
+			# DIRECTION CACHING: Calculate direction only during animation updates
+			# Reuse cached direction between animation frames for velocity
+			var direction: Vector2
+			_animation_update_counter += 1
+			var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive based on cached enemy_count!
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				# Calculate fresh direction + update animation
+				direction = (target_position - global_position).normalized()
+				current_direction = direction  # Cache for next frames
+				_update_directional_animation(direction)
+			else:
+				# Reuse cached direction (eliminates normalize() calls)
+				direction = current_direction
+
+			# Move toward player using cached/fresh direction
+			velocity = direction * speed
+
+			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
+			velocity += spacing_knockback
+
+			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
+			if MANUAL_SPACING_ENABLED:
+				_spacing_check_timer += dt
+				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
+					_spacing_check_timer = 0.0
+					_apply_manual_spacing()
+
+			# Safety check before physics update
+			if not is_inside_tree() or is_queued_for_deletion():
+				return
+
+			# THROTTLED POSITION UPDATES: Update EntityTracker every 3 frames (not every frame)
+			# Reduces EntityTracker updates by 67% (10/sec vs 30/sec)
+			_position_update_counter += 1
+			if _position_update_counter >= POSITION_UPDATE_INTERVAL:
+				_position_update_counter = 0
+				DamageService.update_entity_position(entity_id, global_position)
+		else:
+			# In attack range - stop and attack
+			velocity = Vector2.ZERO
+
+			# Update facing direction for attacks (but don't override attack animations)
+			var direction_to_player: Vector2 = (target_position - global_position).normalized()
+			current_direction = direction_to_player
+
+			if last_attack_time >= attack_cooldown:
+				_perform_attack()
+				last_attack_time = 0.0
+
+	# Update attack cooldown
 	last_attack_time += dt
 
 ## NODE2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
