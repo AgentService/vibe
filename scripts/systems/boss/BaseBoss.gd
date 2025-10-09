@@ -615,13 +615,6 @@ func _apply_manual_spacing() -> void:
 			continue
 
 		var enemy_pos = enemy_data["pos"]
-
-		# DENSE CLUSTER EXEMPTION: Skip spacing forces from enemies within min distance of player
-		# This allows enemies to cluster tightly around player without pushing outer enemies away
-		var enemy_distance_to_player = enemy_pos.distance_to(target_position)
-		if enemy_distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
-			continue  # Enemy is in dense cluster zone - don't apply spacing from them
-
 		var to_other = enemy_pos - global_position
 		var distance = to_other.length()
 
