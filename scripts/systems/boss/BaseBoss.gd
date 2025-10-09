@@ -37,7 +37,7 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
 const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
-const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = true  # Whether to skip spacing for enemies close to player (false = always apply spacing)
+const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = false  # Whether to skip spacing for enemies close to player (false = always apply spacing)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
 const MANUAL_SPACING_LATERAL_BIAS: float = 0.33  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
@@ -589,10 +589,12 @@ func _on_player_died() -> void:
 
 ## MANUAL SPACING: Use EntityTracker to find nearby enemies and apply avoidance
 func _apply_manual_spacing() -> void:
+	# Calculate distance to player (used for min distance check and lateral bias gating)
+	var distance_to_player = global_position.distance_to(target_position)
+
 	# Skip spacing if we're very close to player (allow dense clustering around player)
 	# Can be disabled with MANUAL_SPACING_RESPECT_MIN_DISTANCE = false
 	if MANUAL_SPACING_RESPECT_MIN_DISTANCE:
-		var distance_to_player = global_position.distance_to(target_position)
 		if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
 			return
 
