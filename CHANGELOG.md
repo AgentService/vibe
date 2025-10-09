@@ -2,6 +2,20 @@
 
 ## [Current Week - In Progress]
 
+### ⚡ FEATURE: Per-Boss Speed Variation Re-enabled (2025-10-09)
+
+**Re-enabled per-boss speed configuration from templates:**
+- **Change**: Uncommented `speed = config.speed` in `BaseBoss.setup_from_spawn_config()`
+- **Impact**: Bosses now use configured speed ranges from `.tres` files
+- **Boss Speed Ranges**:
+  - BananaLord: 380-500 px/s (very fast, aggressive)
+  - DemonOverlord: 220-240 px/s (medium-fast)
+  - DragonLord: 200-220 px/s (medium-fast)
+  - AncientLich: 190-210 px/s (medium pace)
+  - AncientSlime: 160-180 px/s (slow, tanky)
+- **Previous behavior**: All bosses used fixed 100 px/s (ignored templates)
+- **Hot-reload**: Edit `.tres` speed_range and press F5 to test values
+
 ### 🔥 CRITICAL FIX: Position Staleness Chain Reaction (2025-10-09)
 
 **Fixed cascading timing bugs from staggered AI optimization that broke spacing, AoE, and damage systems:**

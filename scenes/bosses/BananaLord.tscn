@@ -112,6 +112,5 @@ wait_time = 2.5
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
 
 [node name="BossShadow" parent="." instance=ExtResource("4_7b065")]
-visible = false
 scale = Vector2(3.13333, 3.50883)
 offset = Vector2(0, -0.01)

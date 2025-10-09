@@ -218,7 +218,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	max_health = config.health
 	current_health = config.health
 	damage = config.damage
-	# speed = config.speed  # Use BaseBoss.gd default instead (line 21: speed = 100.0)
+	speed = config.speed  # ✅ Per-boss speed from template (e.g., BananaLord: 380-500, AncientSlime: 160-180)
 	attack_damage = config.damage
 	
 	# Set position
