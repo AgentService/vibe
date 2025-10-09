@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
+[gd_scene load_steps=47 format=3 uid="uid://cyejk5ial4frs"]
 
 [ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
@@ -222,9 +222,6 @@ height = 16.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hj45v"]
 size = Vector2(19, 38)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_83bbo"]
-radius = 66.0303
-
 [node name="AncientSlime" type="Area2D"]
 collision_layer = 2
 script = ExtResource("1_slime")
@@ -255,9 +252,3 @@ shape = SubResource("RectangleShape2D_hj45v")
 scale = Vector2(1.93333, 1.88571)
 offset = Vector2(0, 0.165)
 opacity = 0.8
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-collision_layer = 0
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-shape = SubResource("CircleShape2D_83bbo")

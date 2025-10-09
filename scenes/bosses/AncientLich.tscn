@@ -1,4 +1,4 @@
-[gd_scene load_steps=21 format=3 uid="uid://1m8y72s2e63o"]
+[gd_scene load_steps=20 format=3 uid="uid://1m8y72s2e63o"]
 
 [ext_resource type="Script" uid="uid://o4uu7keayjcy" path="res://scenes/bosses/AncientLich.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://qssnggw4h5bu" path="res://assets/sprites/slime_green.png" id="2_vnul3"]
@@ -113,9 +113,6 @@ radius = 4.0
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(14, 15)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_ywjq4"]
-radius = 35.0
-
 [node name="AncientLich" type="Area2D"]
 collision_layer = 2
 script = ExtResource("1_mjtd6")
@@ -147,12 +144,3 @@ wait_time = 2.5
 scale = Vector2(2, 2)
 offset = Vector2(0, -0.115)
 opacity = 0.8
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-visible = false
-collision_layer = 0
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-visible = false
-position = Vector2(0, -6)
-shape = SubResource("CircleShape2D_ywjq4")
