@@ -35,11 +35,13 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 150.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_RADIUS_BASE: float = 500.0  # Base detection radius (fallback if no HitBox)
+const MANUAL_SPACING_RADIUS_MULTIPLIER: float = 3.0  # Multiply hitbox size by this for spacing radius
+const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
+var _spacing_radius: float = 500.0  # Per-enemy spacing radius (calculated from HitBoxShape)
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
 var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
@@ -147,7 +149,11 @@ func _ready() -> void:
 		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
 
 	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
-	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
+	_animation_update_offset = randi() % 4  # Random offset 0-11 for staggered updates
+
+	# DYNAMIC SPACING RADIUS: Calculate per-enemy spacing radius from HitBoxShape dimensions
+	if MANUAL_SPACING_ENABLED:
+		_calculate_spacing_radius_from_hitbox()
 
 	# Initialize health bar
 	_update_health_bar()
@@ -492,9 +498,10 @@ func _apply_manual_spacing() -> void:
 		return
 
 	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
+	# Uses per-enemy spacing radius calculated from HitBoxShape dimensions
 	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
 		global_position,
-		MANUAL_SPACING_RADIUS,
+		_spacing_radius,
 		"boss"  # Filter for bosses (registered with type="boss")
 	)
 
@@ -516,10 +523,10 @@ func _apply_manual_spacing() -> void:
 		var to_other = enemy_pos - global_position
 		var distance = to_other.length()
 
-		# Apply force if within spacing radius
-		if distance > 0.1 and distance < MANUAL_SPACING_RADIUS:
+		# Apply force if within spacing radius (per-enemy radius calculated from HitBoxShape)
+		if distance > 0.1 and distance < _spacing_radius:
 			# Stronger force when closer (inverse square falloff)
-			var force_multiplier = 1.0 - (distance / MANUAL_SPACING_RADIUS)
+			var force_multiplier = 1.0 - (distance / _spacing_radius)
 			var push_direction = -to_other.normalized()  # Push away
 			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
 			var impulse_strength = MANUAL_SPACING_STRENGTH * force_multiplier
@@ -529,6 +536,53 @@ func _apply_manual_spacing() -> void:
 	# This creates sharp instant separation that decays smoothly
 	if avoidance_force.length_squared() > 0.1:
 		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
+
+## DYNAMIC SPACING RADIUS: Calculate spacing radius from HitBoxShape dimensions
+## Automatically adapts to enemy size - small enemies have small radius, large enemies have large radius
+func _calculate_spacing_radius_from_hitbox() -> void:
+	var hitbox = get_node_or_null("HitBox")
+	if not hitbox:
+		_spacing_radius = MANUAL_SPACING_RADIUS_BASE
+		Logger.debug("%s: No HitBox found - using base spacing radius %.0fpx" % [get_boss_name(), _spacing_radius], "spacing")
+		return
+
+	var hitbox_shape = hitbox.get_node_or_null("HitBoxShape") as CollisionShape2D
+	if not hitbox_shape or not hitbox_shape.shape:
+		_spacing_radius = MANUAL_SPACING_RADIUS_BASE
+		Logger.debug("%s: No HitBoxShape found - using base spacing radius %.0fpx" % [get_boss_name(), _spacing_radius], "spacing")
+		return
+
+	var shape = hitbox_shape.shape
+	var base_radius: float = 0.0
+
+	# Calculate radius based on shape type
+	if shape is CircleShape2D:
+		base_radius = shape.radius
+	elif shape is RectangleShape2D:
+		# Use max dimension (width or height) / 2 for radius
+		var rect_size = shape.size
+		base_radius = max(rect_size.x, rect_size.y) / 2.0
+	elif shape is CapsuleShape2D:
+		# Use radius + half height for elongated shapes
+		base_radius = shape.radius + (shape.height / 2.0)
+	else:
+		# Unsupported shape type - use base radius
+		_spacing_radius = MANUAL_SPACING_RADIUS_BASE
+		Logger.warn("%s: Unsupported HitBoxShape type: %s - using base spacing radius %.0fpx" % [
+			get_boss_name(), shape.get_class(), _spacing_radius
+		], "spacing")
+		return
+
+	# Apply scale factor from HitBox Area2D (accounts for boss scaling)
+	var hitbox_scale = hitbox.scale.x  # Assume uniform scaling
+	base_radius *= hitbox_scale
+
+	# Apply multiplier for spacing buffer (enemies should detect each other before touching)
+	_spacing_radius = base_radius * MANUAL_SPACING_RADIUS_MULTIPLIER
+
+	Logger.debug("%s: Calculated spacing radius from HitBoxShape: %.0fpx (base: %.0fpx, scale: %.2f, multiplier: %.1fx)" % [
+		get_boss_name(), _spacing_radius, base_radius / hitbox_scale, hitbox_scale, MANUAL_SPACING_RADIUS_MULTIPLIER
+	], "spacing")
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
