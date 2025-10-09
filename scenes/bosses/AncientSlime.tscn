@@ -240,6 +240,7 @@ shape = SubResource("RectangleShape2D_hj45v")
 [node name="BossHealthBar" parent="." instance=ExtResource("2_hbar")]
 
 [node name="BossShadow" parent="." instance=ExtResource("3_shadow")]
-scale = Vector2(1.93333, 1.88571)
+position = Vector2(5.96046e-08, 3)
+scale = Vector2(3.16667, 2.9873)
 offset = Vector2(0, 0.165)
 opacity = 0.8

@@ -38,7 +38,7 @@ const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacin
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
 const MANUAL_SPACING_MIN_DISTANCE: float = 10.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = false  # Whether to skip spacing for enemies close to player (false = always apply spacing)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 5.0  # Check every 500ms (not every frame)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
 const MANUAL_SPACING_LATERAL_BIAS: float = 0.1 # Radial weight (0.0 = pure sideways, 1.0 = no bias)
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
@@ -49,14 +49,17 @@ const KNOCKBACK_DECAY: float = 5.0  # Decay rate in pixels per second (like move
 
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
+var _distance_cache_initialized: bool = false  # Guard to seed cache on first update
 var _distance_cache_timer: float = 0.0
 const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
-var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
+
+# PHYSICS-BASED POSITION UPDATES: Moved from AI to physics loop for real-time accuracy
+var _physics_position_counter: int = 0
+const PHYSICS_POSITION_UPDATE_INTERVAL: int = 2  # Update DamageService every 2 physics frames (66ms @ 30Hz)
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
-const DIRECTION_UPDATE_INTERVAL: int = 1  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
+const DIRECTION_UPDATE_INTERVAL: int = 1  # Set to 2 to enable caching (50% reduction in normalize() calls), 1 for testing
 
 # ENEMY COUNT CACHING: Cache enemy count for adaptive throttling
 var _cached_enemy_count: int = 0
@@ -215,7 +218,7 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	max_health = config.health
 	current_health = config.health
 	damage = config.damage
-	# speed = config.speed  # Use BaseBoss.gd default instead (line 21: speed = 100.0)
+	speed = config.speed  # ✅ Per-boss speed from template (e.g., BananaLord: 380-500, AncientSlime: 160-180)
 	attack_damage = config.damage
 	
 	# Set position
@@ -283,10 +286,12 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 
 	# DISTANCE CACHING: Update distance periodically (not every frame)
 	# Reduces distance_to() calls by 83% (every 6 frames vs every frame @ 30Hz)
+	# Guard: Initialize cache on first update to prevent phantom attacks at distance=0.0
 	_distance_cache_timer += dt
-	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL:
+	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL or not _distance_cache_initialized:
 		_distance_cache_timer = 0.0
 		_cached_distance_to_player = global_position.distance_to(target_position)
+		_distance_cache_initialized = true
 
 	# Use cached distance for all checks
 	if _cached_distance_to_player <= chase_range:
@@ -335,12 +340,7 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			# THROTTLED POSITION UPDATES: Update EntityTracker every 2 frames (not every frame)
-			# Reduces EntityTracker updates by 50% (15/sec vs 30/sec @ 30Hz)
-			_position_update_counter += 1
-			if _position_update_counter >= POSITION_UPDATE_INTERVAL:
-				_position_update_counter = 0
-				DamageService.update_entity_position(entity_id, global_position)
+			# NOTE: Position updates moved to _physics_process() for post-movement accuracy
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
@@ -367,6 +367,13 @@ func _physics_process(delta: float) -> void:
 	if velocity.length_squared() > 0.01:
 		# Direct position update (Node2D has no built-in physics)
 		global_position += velocity * delta
+
+	# POST-MOVEMENT POSITION UPDATES: Update DamageService with fresh position after movement
+	# Throttled to every 2 physics frames (66ms) for performance while maintaining accuracy
+	_physics_position_counter += 1
+	if _physics_position_counter >= PHYSICS_POSITION_UPDATE_INTERVAL:
+		_physics_position_counter = 0
+		DamageService.update_entity_position(entity_id, global_position)
 
 ## Base AI logic - simple every-frame updates
 ## Child classes can override or extend

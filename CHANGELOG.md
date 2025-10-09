@@ -2,6 +2,91 @@
 
 ## [Current Week - In Progress]
 
+### ⚡ FEATURE: Per-Boss Speed Variation Re-enabled (2025-10-09)
+
+**Re-enabled per-boss speed configuration from templates:**
+- **Change**: Uncommented `speed = config.speed` in `BaseBoss.setup_from_spawn_config()`
+- **Impact**: Bosses now use configured speed ranges from `.tres` files
+- **Boss Speed Ranges**:
+  - BananaLord: 380-500 px/s (very fast, aggressive)
+  - DemonOverlord: 220-240 px/s (medium-fast)
+  - DragonLord: 200-220 px/s (medium-fast)
+  - AncientLich: 190-210 px/s (medium pace)
+  - AncientSlime: 160-180 px/s (slow, tanky)
+- **Previous behavior**: All bosses used fixed 100 px/s (ignored templates)
+- **Hot-reload**: Edit `.tres` speed_range and press F5 to test values
+
+### 🔥 CRITICAL FIX: Position Staleness Chain Reaction (2025-10-09)
+
+**Fixed cascading timing bugs from staggered AI optimization that broke spacing, AoE, and damage systems:**
+
+**The Core Problem:**
+Staggered AI optimization (98% performance gain) introduced a position data staleness chain:
+1. BossUpdateManager captured positions BEFORE AI calculated velocities
+2. Positions written to EntityTracker/DamageService
+3. Bosses moved via `_physics_process()` for 20 frames (~0.66s)
+4. Systems using EntityTracker got 0.66s old coordinates
+5. Manual spacing, AoE targeting, knockback all broken
+
+**Four Critical Bugs Fixed:**
+
+1. **EntityTracker Staleness (~0.66s)**
+   - **Root cause**: Batch position capture at AI time (pre-movement)
+   - **Fix**: Moved to `BossUpdateManager._physics_process()` (post-movement)
+   - **Impact**: 0.66s → 0.033s (95% improvement)
+   - **Affected systems**: Manual spacing, AoE queries, radar
+
+2. **DamageService Throttling (1.3s)**
+   - **Root cause**: Position updates throttled by AI update frequency (40 frames)
+   - **Fix**: Moved to `BaseBoss._physics_process()` with 2-frame throttle
+   - **Impact**: 1.3s → 0.066s (95% improvement)
+   - **Affected systems**: AoE targeting, knockback, XP orb spawning
+
+3. **Manual Spacing Interval (8s)**
+   - **Root cause**: Constant misconfiguration (5.0 seconds vs 500ms in comment)
+   - **Fix**: Changed `MANUAL_SPACING_CHECK_INTERVAL = 5.0 → 0.5`
+   - **Impact**: Every 8s → Every 0.5s (16x improvement)
+   - **Affected systems**: Enemy clustering/separation behavior
+
+4. **Distance Cache Initialization**
+   - **Root cause**: Cache started at 0.0, could trigger phantom attacks
+   - **Fix**: Added guard flag to seed cache on first AI update
+   - **Impact**: Prevents edge-case bugs during first 200ms of enemy lifetime
+
+**Technical Details:**
+```
+Timeline (Before):
+Frame 0:   Capture pos (100, 100) → Write to EntityTracker
+Frames 1-19: Enemy moves to (200, 200) via _physics_process()
+Frame 20:  EntityTracker STILL shows (100, 100) ❌
+Frame 20:  New AI update captures (200, 200)
+
+Timeline (After):
+Frame 0:   AI calculates velocity
+Frame 0:   _physics_process() moves enemy
+Frame 0:   _physics_process() updates EntityTracker with fresh position ✓
+Every Frame: Real-time position tracking
+```
+
+**Performance Trade-offs:**
+- **Added**: 1000 enemies × 30 position writes/sec = 30k writes/sec
+- **Cost**: Linear O(n) batch update (PackedArray)
+- **Benefit**: Fixed broken spacing/AoE systems (correctness > micro-optimization)
+- **AI optimization**: Still 98% reduction in AI calculations (maintained)
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd` - Distance cache guard, physics position updates
+- `scripts/systems/boss/BossUpdateManager.gd` - Post-physics batch updates
+- Removed unused RingBuffer/ObjectPool infrastructure
+
+**Testing Recommendations:**
+1. Spawn 200+ enemies and observe separation behavior (should be responsive now)
+2. Test AoE abilities on fast-moving enemies (should hit accurately)
+3. Check XP orb spawn locations (should spawn at death location, not 1.3s behind)
+4. Verify knockback applies at correct positions
+
+---
+
 ### 🚨 CRITICAL FIX: Distance Cache 10x Performance Bug (2025-10-09)
 
 **Fixed 0-2 second enemy attack delay caused by incorrect cache interval:**
