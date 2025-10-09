@@ -2,6 +2,44 @@
 
 ## [Current Week - In Progress]
 
+### Spawn Timing Investigation (2025-10-09)
+
+**Investigated spawn animation timing mismatch between visual and gameplay states:**
+
+**Findings:**
+- **wake_up animations**: 0.8s duration (4 frames @ 5 FPS)
+- **Dissolve tween**: 0.5s duration (when enemy becomes targetable)
+- **Visual mismatch**: 0.3s period where enemy appears to be spawning but is actually targetable
+- **SKIP_WAKEUP_CHECK**: Attempts to switch animation at 0.5s to mitigate visual issue
+
+**Timeline:**
+```
+0.0s: Spawn begins
+├─ wake_up animation starts (0.8s total)
+└─ Dissolve effect starts (0.5s total)
+
+0.5s: Dissolve completes
+├─ Enemy becomes TARGETABLE (gameplay state)
+├─ Move from "spawning" → "targetable" group
+└─ SKIP_WAKEUP_CHECK switches to default animation
+
+0.5s-0.8s: Visual anomaly period
+├─ Gameplay: Enemy is fully targetable ✓
+└─ Visual: wake_up animation may still be playing if not switched
+```
+
+**Design Decision:**
+- Kept 0.5s spawn duration for responsive gameplay feel
+- Accepted 0.3s visual/gameplay mismatch in favor of faster enemy availability
+- Alternative (0.8s spawn) would align visual/gameplay but feel slower
+
+**Files Investigated:**
+- `scripts/domain/EnemySpawnEffect.gd` - SPAWN_DURATION constant (0.5s)
+- `scripts/systems/boss/BaseBoss.gd` - Spawn flow and SKIP_WAKEUP_CHECK logic
+- `scenes/bosses/DragonLord.tscn` - wake_up animation definition (4 frames @ 5 FPS)
+
+---
+
 ### XP Orb Drops Disabled (2025-10-09)
 
 **Disabled visual XP orb spawning in XpSystem:**
