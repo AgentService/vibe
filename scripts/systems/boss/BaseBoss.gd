@@ -54,7 +54,7 @@ const POSITION_UPDATE_INTERVAL: int = 3  # Update EntityTracker position every 3
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
-const DIRECTION_UPDATE_INTERVAL: int = 3  # Update direction every 3 frames (100ms @ 30Hz)
+const DIRECTION_UPDATE_INTERVAL: int = 2  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -281,18 +281,19 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
 			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
 
-			# DIRECTION CACHING: Update direction every 3 frames for responsive movement
+			# DIRECTION CACHING: Update direction every 2 frames for responsive movement (66ms @ 30Hz)
+			# CONSTANT INTERVAL: Does not change with enemy count - movement feel prioritized
 			# DECOUPLED from animation updates for independent control
 			var direction: Vector2
 			_direction_update_counter += 1
 
 			if _direction_update_counter >= DIRECTION_UPDATE_INTERVAL:
 				_direction_update_counter = 0
-				# Calculate fresh direction (every 3 frames = 100ms @ 30Hz)
+				# Calculate fresh direction (every 2 frames = 66ms @ 30Hz)
 				direction = (target_position - global_position).normalized()
 				current_direction = direction  # Cache for next frames
 			else:
-				# Reuse cached direction (reduces normalize() calls by 67%)
+				# Reuse cached direction (reduces normalize() calls by 50%)
 				direction = current_direction
 
 			# Move toward player using cached/fresh direction
