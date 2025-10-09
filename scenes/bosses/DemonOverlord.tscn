@@ -1,4 +1,4 @@
-[gd_scene load_steps=71 format=3 uid="uid://cj52peu3ecx4l"]
+[gd_scene load_steps=70 format=3 uid="uid://cj52peu3ecx4l"]
 
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
 [ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
@@ -303,9 +303,6 @@ animations = [{
 "speed": 1.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_byhqc"]
-radius = 8.0
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
 size = Vector2(31, 41.5)
 
@@ -318,9 +315,6 @@ script = ExtResource("1_kjm5n")
 sprite_frames = SubResource("SpriteFrames_demon")
 animation = &"scary_walk_west"
 offset = Vector2(0, -12.675)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CircleShape2D_byhqc")
 
 [node name="HitBox" type="Area2D" parent="."]
 collision_layer = 2

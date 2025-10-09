@@ -1,4 +1,4 @@
-[gd_scene load_steps=47 format=3 uid="uid://cyejk5ial4frs"]
+[gd_scene load_steps=46 format=3 uid="uid://cyejk5ial4frs"]
 
 [ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
@@ -215,10 +215,6 @@ animations = [{
 "speed": 1.0
 }]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_83bbo"]
-radius = 8.0
-height = 16.0
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hj45v"]
 size = Vector2(19, 38)
 
@@ -230,10 +226,6 @@ script = ExtResource("1_slime")
 sprite_frames = SubResource("SpriteFrames_slime")
 animation = &"walking_west"
 offset = Vector2(0, -15.585)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
-shape = SubResource("CapsuleShape2D_83bbo")
 
 [node name="HitBox" type="Area2D" parent="."]
 visible = false

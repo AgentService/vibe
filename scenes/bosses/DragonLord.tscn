@@ -1,4 +1,4 @@
-[gd_scene load_steps=20 format=3 uid="uid://c5iwguoi5ujyi"]
+[gd_scene load_steps=19 format=3 uid="uid://c5iwguoi5ujyi"]
 
 [ext_resource type="Script" uid="uid://bef3x0s8i8p08" path="res://scenes/bosses/DragonLord.gd" id="1_215q3"]
 [ext_resource type="Texture2D" uid="uid://b0sjttrbcxo2k" path="res://assets/sprites/slime_purple.png" id="2_215q3"]
@@ -107,9 +107,6 @@ animations = [{
 "speed": 1.0
 }]
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_7bior"]
-radius = 4.0
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7bior"]
 size = Vector2(16, 16)
 
@@ -121,11 +118,6 @@ script = ExtResource("1_215q3")
 sprite_frames = SubResource("SpriteFrames_lw0tx")
 animation = &"wake_up"
 offset = Vector2(0, -9.135)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-z_index = 1
-position = Vector2(0, -3)
-shape = SubResource("CircleShape2D_7bior")
 
 [node name="HitBox" type="Area2D" parent="."]
 collision_layer = 2
