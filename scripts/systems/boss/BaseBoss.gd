@@ -40,7 +40,6 @@ const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
 const MANUAL_SPACING_LATERAL_BIAS: float = 0.0  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
-const MAX_SPACING_NEIGHBORS: int = 10  # Max enemies to check per spacing calculation (reduces O(n²) → O(n×10))
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
@@ -604,12 +603,6 @@ func _apply_manual_spacing() -> void:
 	if nearby_enemy_ids.is_empty():
 		return
 
-	# PERFORMANCE: Limit to closest N neighbors to prevent O(n²) explosions in dense clusters
-	# Example: 100 enemies checking 100 neighbors = 10,000 checks
-	#          100 enemies checking 10 neighbors = 1,000 checks (90% reduction!)
-	if nearby_enemy_ids.size() > MAX_SPACING_NEIGHBORS:
-		nearby_enemy_ids = _get_closest_neighbors(nearby_enemy_ids)
-
 	# Calculate avoidance force from all nearby enemies
 	var avoidance_force = Vector2.ZERO
 	for enemy_id in nearby_enemy_ids:
@@ -670,33 +663,6 @@ func _apply_manual_spacing() -> void:
 	# This creates sharp instant separation that decays smoothly
 	if avoidance_force.length_squared() > 0.1:
 		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
-
-## SPACING OPTIMIZATION: Get closest N neighbors to limit O(n²) complexity
-func _get_closest_neighbors(enemy_ids: Array) -> Array:
-	# Build array of distance-id pairs for sorting
-	var distance_pairs: Array = []
-
-	for enemy_id in enemy_ids:
-		if enemy_id == entity_id:
-			continue  # Skip self
-
-		var enemy_data = EntityTracker.get_entity(enemy_id)
-		if not enemy_data.has("pos"):
-			continue
-
-		var distance = global_position.distance_to(enemy_data["pos"])
-		distance_pairs.append({"dist": distance, "id": enemy_id})
-
-	# Sort by distance (closest first)
-	distance_pairs.sort_custom(func(a, b): return a["dist"] < b["dist"])
-
-	# Take only the closest MAX_SPACING_NEIGHBORS
-	var result: Array = []
-	var count = min(MAX_SPACING_NEIGHBORS, distance_pairs.size())
-	for i in range(count):
-		result.append(distance_pairs[i]["id"])
-
-	return result
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:
