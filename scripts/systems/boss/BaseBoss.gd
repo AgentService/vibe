@@ -52,6 +52,10 @@ const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 fra
 var _position_update_counter: int = 0
 const POSITION_UPDATE_INTERVAL: int = 3  # Update EntityTracker position every 3 frames
 
+# DIRECTION CACHING: Separate from animation for responsive movement
+var _direction_update_counter: int = 0
+const DIRECTION_UPDATE_INTERVAL: int = 3  # Update direction every 3 frames (100ms @ 30Hz)
+
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
 const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
@@ -277,19 +281,18 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
 			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
 
-			# DIRECTION CACHING: Calculate direction only during animation updates
-			# Reuse cached direction between animation frames for velocity
+			# DIRECTION CACHING: Update direction every 3 frames for responsive movement
+			# DECOUPLED from animation updates for independent control
 			var direction: Vector2
-			_animation_update_counter += 1
-			var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive based on cached enemy_count!
+			_direction_update_counter += 1
 
-			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
-				# Calculate fresh direction + update animation
+			if _direction_update_counter >= DIRECTION_UPDATE_INTERVAL:
+				_direction_update_counter = 0
+				# Calculate fresh direction (every 3 frames = 100ms @ 30Hz)
 				direction = (target_position - global_position).normalized()
 				current_direction = direction  # Cache for next frames
-				_update_directional_animation(direction)
 			else:
-				# Reuse cached direction (eliminates normalize() calls)
+				# Reuse cached direction (reduces normalize() calls by 67%)
 				direction = current_direction
 
 			# Move toward player using cached/fresh direction
@@ -297,6 +300,15 @@ func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> voi
 
 			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
 			velocity += spacing_knockback
+
+			# ANIMATION THROTTLING: Independent from direction updates for better performance
+			# Updates every 6-12 frames (200-400ms) based on enemy count
+			_animation_update_counter += 1
+			var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive based on cached enemy_count!
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				# Update animation using current direction
+				_update_directional_animation(current_direction)
 
 			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
 			if MANUAL_SPACING_ENABLED:
