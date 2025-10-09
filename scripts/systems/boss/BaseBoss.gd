@@ -56,7 +56,7 @@ const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
-const DIRECTION_UPDATE_INTERVAL: int = 1  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
+const DIRECTION_UPDATE_INTERVAL: int = 2  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
 
 # ENEMY COUNT CACHING: Cache enemy count for adaptive throttling
 var _cached_enemy_count: int = 0
