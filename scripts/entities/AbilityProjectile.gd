@@ -188,6 +188,9 @@ func _on_combat_step(payload) -> void:
 	# Move projectile at fixed timestep (payload.dt is the fixed delta time, e.g., 0.033s for 30Hz)
 	position += direction * speed * payload.dt
 
+	# Check for ghost swarm collisions (manual distance check since ghosts are MultiMesh, not Area2D)
+	_check_ghost_collisions()
+
 	# Update lifetime
 	_remaining_lifetime -= payload.dt
 	if _remaining_lifetime <= 0.0:
@@ -273,6 +276,29 @@ func _on_area_entered(area: Area2D) -> void:
 	# Apply damage via DamageService (direct call - entity pattern)
 	_on_enemy_collision(enemy_id)
 
+
+## Check for collisions with ghost swarms (distance-based since ghosts are MultiMesh)
+func _check_ghost_collisions() -> void:
+	# Get ghost swarm spawner from arena (property access)
+	var arena = get_tree().current_scene
+	if not arena or not arena.has("ghost_swarm_spawner"):
+		return
+
+	var ghost_spawner = arena.ghost_swarm_spawner
+	if not ghost_spawner or not ghost_spawner.is_active():
+		return
+
+	# Collision radius (half of sprite size, ~16px for arrows)
+	var collision_radius = 16.0
+
+	# Check for hits using area damage (efficient for MultiMesh ghosts)
+	var hit_indices = ghost_spawner.check_hits_in_area(global_position, collision_radius, damage)
+
+	if hit_indices.size() > 0:
+		# Hit at least one ghost - consume pierce
+		_remaining_pierce -= hit_indices.size()
+		if _remaining_pierce < 0:
+			call_deferred("despawn")
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
