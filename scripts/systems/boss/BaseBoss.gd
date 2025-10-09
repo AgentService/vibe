@@ -463,24 +463,28 @@ func _on_player_died() -> void:
 
 ## MANUAL SPACING: Use EntityTracker to find nearby enemies and apply avoidance
 func _apply_manual_spacing() -> void:
-	# Query EntityTracker for nearby enemies (spatial partitioning = O(log n))
-	var nearby_enemies = EntityTracker.get_entities_in_range(
+	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
+	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
 		global_position,
 		MANUAL_SPACING_RADIUS,
 		"enemy"  # Filter for enemies only
 	)
 
-	if nearby_enemies.is_empty():
+	if nearby_enemy_ids.is_empty():
 		return
 
 	# Calculate avoidance force from all nearby enemies
 	var avoidance_force = Vector2.ZERO
-	for enemy_data in nearby_enemies:
-		var enemy_id = enemy_data.get("id", "")
+	for enemy_id in nearby_enemy_ids:
 		if enemy_id == entity_id:
 			continue  # Skip self
 
-		var enemy_pos = enemy_data.get("pos", Vector2.ZERO)
+		# Get enemy position from EntityTracker
+		var enemy_data = EntityTracker.get_entity(enemy_id)
+		if not enemy_data.has("pos"):
+			continue
+
+		var enemy_pos = enemy_data["pos"]
 		var to_other = enemy_pos - global_position
 		var distance = to_other.length()
 
