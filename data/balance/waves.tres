@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_0")
-max_enemies = 300
+max_enemies = 700
 spawn_interval = 3.0
 arena_center = Vector2(0, 0)
 enemy_speed_min = 10.0

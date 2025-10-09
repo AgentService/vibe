@@ -38,8 +38,10 @@ var velocity: Vector2 = Vector2.ZERO  # Custom velocity for Area2D movement
 # PERSONAL SPACE SYSTEM: Signal-based boss spacing via Area2D detection
 const PERSONAL_SPACE_ENABLED: bool = true  # Enable enemy spacing to prevent overlapping
 const PERSONAL_SPACE_STRENGTH: float = 30.0  # Strong spacing force comparable to chase speed (100 px/s)
+const PERSONAL_SPACE_DISABLE_DISTANCE: float = 100.0  # Disable personal space when this close to player (reduces collision pairs)
 var nearby_bosses: Array[Area2D] = []  # Bosses currently in personal space (Area2D type)
 var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
+var _personal_space_collision_shape: CollisionShape2D = null  # Cache for performance
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -286,6 +288,13 @@ func _update_ai(dt: float) -> void:
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
 
+	# COLLISION PAIR OPTIMIZATION: Disable personal space collision when near player
+	# Reduces collision pairs from 28k+ to ~2500 when enemies swarm player
+	if PERSONAL_SPACE_ENABLED and _personal_space_collision_shape:
+		var should_disable = distance_to_player < PERSONAL_SPACE_DISABLE_DISTANCE
+		if _personal_space_collision_shape.disabled != should_disable:
+			_personal_space_collision_shape.disabled = should_disable
+
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
@@ -495,6 +504,11 @@ func _setup_personal_space_area() -> void:
 	# Configure collision layers for boss-to-boss detection
 	personal_space_area.collision_layer = 0  # Don't exist on any layer
 	personal_space_area.collision_mask = 2   # Detect Layer 2 (where bosses are)
+
+	# Cache CollisionShape2D for dynamic enabling/disabling (performance optimization)
+	_personal_space_collision_shape = personal_space_area.get_node_or_null("PersonalSpaceShape") as CollisionShape2D
+	if not _personal_space_collision_shape:
+		Logger.warn("%s: PersonalSpaceShape not found - collision pair optimization disabled" % get_boss_name(), "collision")
 
 	# AREA2D: Connect to area signals for Area2D-based boss detection
 	personal_space_area.area_entered.connect(_on_boss_entered_personal_space)
