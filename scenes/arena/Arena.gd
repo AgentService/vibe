@@ -172,6 +172,11 @@ func _ready() -> void:
 	_setup_player()
 	Logger.info("Arena: Player setup complete, XP system will be injected by GameOrchestrator", "debug")
 
+	# Wire ghost swarm spawner to player's AbilityController for targeting (after player is created)
+	if player and player.ability_controller:
+		player.ability_controller.ghost_swarm_spawner = ghost_swarm_spawner
+		Logger.debug("Ghost swarm spawner connected to player AbilityController", "ghost")
+
 	# Phase 1.3: Setup EntityPool parent for projectile spawning
 	if EntityPool:
 		EntityPool.set_entity_parent(self)

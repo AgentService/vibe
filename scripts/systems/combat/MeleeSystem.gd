@@ -14,6 +14,9 @@ var attack_duration: float = 0.2  # Visual attack duration
 var auto_attack_enabled: bool = true  # Enabled by default
 var auto_attack_target: Vector2 = Vector2.ZERO
 
+# Ghost swarm reference (optional - for hitting ghost swarms)
+var ghost_swarm_spawner: GhostSwarmSpawner = null
+
 # Balance values loaded from JSON
 var damage: float
 var attack_range: float
@@ -108,15 +111,21 @@ func perform_attack(player_pos: Vector2, target_pos: Vector2, enemies: Array[Ene
 		if _is_enemy_in_cone(enemy.pos, player_pos, attack_dir, effective_cone, effective_range):
 			hit_enemies.append(enemy)
 	
-	# Use DamageService for efficient boss detection  
+	# Use DamageService for efficient boss detection
 	var hit_scene_bosses = _find_bosses_in_cone_via_damage_service(player_pos, attack_dir, effective_cone, effective_range)
-	
+
+	# Check ghost swarm hits (if active)
+	var hit_ghost_count = 0
+	if ghost_swarm_spawner and ghost_swarm_spawner.is_active():
+		# Use cone detection for ghosts
+		hit_ghost_count = _find_ghosts_in_cone(player_pos, attack_dir, effective_cone, effective_range)
+
 	# Create visual effect
 	_spawn_attack_effect(player_pos, target_pos)
-	
+
 	# Emit signals
 	melee_attack_started.emit(player_pos, target_pos)
-	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0:
+	if hit_enemies.size() > 0 or hit_scene_bosses.size() > 0 or hit_ghost_count > 0:
 		enemies_hit.emit(hit_enemies)
 	
 	# Apply damage via DamageService to all hit entities
@@ -210,15 +219,15 @@ func _is_enemy_in_cone(enemy_pos: Vector2, player_pos: Vector2, attack_dir: Vect
 ## Find bosses using DamageService spatial queries (no scene tree traversal)
 func _find_bosses_in_cone_via_damage_service(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> Array[Node]:
 	var hit_bosses: Array[Node] = []
-	
+
 	# Use DamageService for efficient boss lookup
 	var boss_entity_ids = DamageService.get_entities_in_cone(player_pos, attack_dir, cone_degrees, range_limit, ["boss"])
-	
+
 	for entity_id in boss_entity_ids:
-		# Get boss instance from entity_id 
+		# Get boss instance from entity_id
 		var instance_id_str = entity_id.replace("boss_", "")
 		var instance_id = instance_id_str.to_int()
-		
+
 		var boss_node = instance_from_id(instance_id)
 		if boss_node and is_instance_valid(boss_node):
 			hit_bosses.append(boss_node)
@@ -228,8 +237,34 @@ func _find_bosses_in_cone_via_damage_service(player_pos: Vector2, attack_dir: Ve
 			Logger.warn("V4: Boss node not found for entity_id: " + entity_id, "combat")
 			# Clean up stale entity from DamageService
 			DamageService.unregister_entity(entity_id)
-	
+
 	return hit_bosses
+
+## Find ghosts in cone and apply damage via GhostSwarmSpawner
+func _find_ghosts_in_cone(player_pos: Vector2, attack_dir: Vector2, cone_degrees: float, range_limit: float) -> int:
+	if not ghost_swarm_spawner or not ghost_swarm_spawner.is_active():
+		return 0
+
+	var final_damage = _calculate_damage()
+	var hit_count = 0
+
+	# Get all living ghost positions
+	var ghost_positions = ghost_swarm_spawner.get_living_ghost_positions()
+
+	for ghost_pos in ghost_positions:
+		if _is_enemy_in_cone(ghost_pos, player_pos, attack_dir, cone_degrees, range_limit):
+			hit_count += 1
+
+	# Apply damage to all ghosts in cone via area damage
+	if hit_count > 0:
+		# Use cone center point for area damage
+		var cone_center = player_pos + attack_dir * (range_limit / 2.0)
+		var hit_indices = ghost_swarm_spawner.check_hits_in_area(cone_center, range_limit, final_damage)
+
+		if hit_indices.size() > 0:
+			Logger.debug("Melee hit %d ghosts" % hit_indices.size(), "combat")
+
+	return hit_count
 
 
 func _calculate_damage() -> float:

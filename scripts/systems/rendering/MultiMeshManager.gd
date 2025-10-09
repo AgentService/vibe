@@ -137,19 +137,25 @@ func _setup_ghost_swarm_multimesh() -> void:
 	var ghost_mesh := _get_pooled_quadmesh(mesh_size)
 	multimesh.mesh = ghost_mesh
 
-	# Semi-transparent white ghosts for visual effect
+	# Load slime sprite for ghosts
 	if DisplayServer.get_name() != "headless":
-		var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
-		img.fill(Color(1.0, 1.0, 1.0, 0.6))  # Semi-transparent white
-		var ghost_tex := ImageTexture.create_from_image(img)
-		mm_ghost_swarm.texture = ghost_tex
+		var ghost_sprite_path = "res://assets/sprites/slime_purple.png"
+		if ResourceLoader.exists(ghost_sprite_path):
+			var ghost_tex = load(ghost_sprite_path) as Texture2D
+			mm_ghost_swarm.texture = ghost_tex
+		else:
+			# Fallback to procedural texture
+			var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
+			img.fill(Color(1.0, 1.0, 1.0, 0.6))
+			var ghost_tex := ImageTexture.create_from_image(img)
+			mm_ghost_swarm.texture = ghost_tex
 
 	mm_ghost_swarm.multimesh = multimesh
 	if DisplayServer.get_name() != "headless" and mm_ghost_swarm.texture == null:
 		mm_ghost_swarm.texture = _get_shared_dummy_texture()
 
-	# Visual styling for ghosts
-	mm_ghost_swarm.self_modulate = Color(0.8, 0.9, 1.0, 0.7)  # Slight blue tint, transparent
+	# Visual styling for ghosts - semi-transparent for ghostly effect
+	mm_ghost_swarm.self_modulate = Color(1.0, 1.0, 1.0, 0.6)  # 60% opacity
 	mm_ghost_swarm.z_index = 0  # Same layer as enemies
 
 ## Update projectile transforms (called by projectile system)
