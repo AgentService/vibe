@@ -17,6 +17,10 @@ var _boss_index: Dictionary = {} # id -> index
 var _frame_counter: int = 0
 const AI_UPDATE_GROUPS: int = 20  # Divide enemies into 20 groups (1000 enemies = 50 per frame)
 
+# Throttled position updates - balance accuracy vs performance
+var _physics_update_counter: int = 0
+const ENTITY_TRACKER_UPDATE_INTERVAL: int = 2  # Update every 2 physics frames (66ms @ 30Hz)
+
 # CENTRALIZED ENEMY COUNT CACHE: Query tree ONCE per second (not per enemy per frame)
 var _cached_enemy_count: int = 0
 var _enemy_count_update_counter: int = 0
@@ -236,15 +240,44 @@ func _process_position_updates() -> void:
 	var latest = _boss_update_queue.try_pop()
 	if not latest:
 		return
-	
+
 	# BOSS PERFORMANCE V2: Use EntityTracker batch API for zero-allocation position updates
 	var ids: PackedStringArray = latest["ids"]
 	var positions: PackedVector2Array = latest["positions"]
-	
+
 	EntityTracker.batch_update_positions(ids, positions)
-	
+
 	# Return payload to pool
 	_batched_payload_pool.release(latest)
+
+## THROTTLED POST-MOVEMENT POSITION UPDATES: Capture positions AFTER physics applies movement
+## Updates every 2 physics frames (66ms) to balance accuracy vs performance
+## This reduces EntityTracker staleness from 0.66s to 0.066s while cutting performance cost in half
+func _physics_process(_delta: float) -> void:
+	_physics_update_counter += 1
+	if _physics_update_counter < ENTITY_TRACKER_UPDATE_INTERVAL:
+		return  # Skip this frame
+
+	_physics_update_counter = 0  # Reset counter
+
+	var count: int = _boss_ids.size()
+	if count == 0:
+		return  # No bosses to update
+
+	# Clear position buffer (reuse allocations)
+	_pos_buf.resize(0)
+	_ids_buf.resize(0)
+
+	# Collect all boss positions AFTER movement has been applied
+	for i in range(count):
+		var boss := _boss_nodes[i]
+		if is_instance_valid(boss) and not boss.is_queued_for_deletion():
+			_ids_buf.push_back(_boss_ids[i])
+			_pos_buf.push_back(boss.global_position)  # Fresh position AFTER _physics_process
+
+	# Batch update EntityTracker with post-movement positions
+	if _ids_buf.size() > 0:
+		EntityTracker.batch_update_positions(_ids_buf, _pos_buf)
 
 ## Get debug info about manager state
 func get_debug_info() -> Dictionary:
