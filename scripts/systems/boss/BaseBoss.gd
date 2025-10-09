@@ -273,6 +273,7 @@ func _update_ai(dt: float) -> void:
 			if MANUAL_SPACING_ENABLED:
 				_spacing_check_timer += dt
 				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
+					Logger.debug("%s: Manual spacing timer triggered (%.2fs)" % [get_boss_name(), _spacing_check_timer], "collision")
 					_spacing_check_timer = 0.0
 					_apply_manual_spacing()
 
@@ -467,8 +468,10 @@ func _apply_manual_spacing() -> void:
 	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
 		global_position,
 		MANUAL_SPACING_RADIUS,
-		"enemy"  # Filter for enemies only
+		"boss"  # Filter for bosses (registered with type="boss")
 	)
+
+	Logger.debug("%s: Manual spacing check - found %d nearby enemies" % [get_boss_name(), nearby_enemy_ids.size()], "collision")
 
 	if nearby_enemy_ids.is_empty():
 		return
@@ -497,6 +500,7 @@ func _apply_manual_spacing() -> void:
 
 	# Apply avoidance to velocity (additive with chase velocity)
 	if avoidance_force.length_squared() > 0.1:
+		Logger.debug("%s: Applying avoidance force: %.1f" % [get_boss_name(), avoidance_force.length()], "collision")
 		velocity += avoidance_force
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
