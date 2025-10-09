@@ -4,17 +4,22 @@
 
 ### FPS Cap Increased to 144 (2025-10-09)
 
-**Updated project settings to allow higher framerate rendering:**
+**Updated FPSLimiter autoload and project settings to allow higher framerate rendering:**
 
 **Changes:**
-- ✅ **Increased FPS cap** from 60 to 144 in `project.godot`
+- ✅ **Fixed FPSLimiter default mode** - Changed from `CAP_60` to `CAP_144` in `autoload/FPSLimiter.gd:16,25`
+- ✅ **Updated project settings** - Changed `application/run/max_fps` from 60 to 144 in `project.godot:69`
 - ✅ **Removed duplicate setting** from `[application]` section (legacy/misplaced)
 - ✅ **Combat logic unaffected** - 30Hz fixed-step combat remains deterministic
+
+**Root Cause:**
+- FPSLimiter autoload was overriding project settings on startup
+- Default mode was `FPSMode.CAP_60` which programmatically limited framerate
 
 **Notes:**
 - Rendering framerate now targets 144fps for smoother visuals
 - Combat calculations still run at fixed 30Hz for deterministic gameplay
-- Consider enabling vsync if screen tearing occurs at high framerates
+- FPSLimiter provides runtime FPS control (can cycle modes with `cycle_fps_mode()`)
 
 ---
 

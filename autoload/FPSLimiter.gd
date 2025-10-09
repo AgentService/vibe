@@ -13,16 +13,16 @@ enum FPSMode {
 }
 
 # Current FPS mode
-var current_mode: FPSMode = FPSMode.CAP_60
+var current_mode: FPSMode = FPSMode.CAP_144
 
 # Frame timing
-var _target_frame_time_usec: int = 16667  # Microseconds (1/60 = 16.667ms)
+var _target_frame_time_usec: int = 6944  # Microseconds (1/144 = 6.944ms)
 var _last_frame_time: int = 0
 var _frame_start_time: int = 0
 
 func _ready() -> void:
-	# Start in CAP_60 mode by default
-	set_fps_mode(FPSMode.CAP_60)
+	# Start in CAP_144 mode by default
+	set_fps_mode(FPSMode.CAP_144)
 
 	# Process at highest priority to control frame timing
 	process_priority = 1000

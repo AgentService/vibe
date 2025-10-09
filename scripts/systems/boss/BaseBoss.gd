@@ -36,9 +36,10 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 1.5  # Push force when too close
+const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 0.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
+const MANUAL_SPACING_LATERAL_BIAS: float = 0.3  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
@@ -50,11 +51,11 @@ var _cached_distance_to_player: float = 0.0
 var _distance_cache_timer: float = 0.0
 const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 1  # Update EntityTracker position every 2 frames
+const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0
-const DIRECTION_UPDATE_INTERVAL: int = 2  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
+const DIRECTION_UPDATE_INTERVAL: int = 1  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
 
 # PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
 const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
@@ -627,9 +628,26 @@ func _apply_manual_spacing() -> void:
 		# Apply force if within spacing radius
 		if distance > 0.1 and distance < MANUAL_SPACING_RADIUS:
 			# UNIFORM FORCE: Same strength regardless of distance (no falloff)
-			var push_direction = -to_other.normalized()  # Push away
+			var push_direction = -to_other.normalized()  # Push away from other enemy
+
+			# LATERAL BIAS: Decompose force into radial (toward/away player) and tangential (sideways)
+			# This makes enemies prefer separating sideways, forming lines when approaching player
+			var to_player = (target_position - global_position).normalized()
+
+			# Radial component: projection of push onto player direction
+			var radial_strength = push_direction.dot(to_player)
+			var radial_component = to_player * radial_strength
+
+			# Tangential component: perpendicular to player direction (sideways separation)
+			var tangential_component = push_direction - radial_component
+
+			# Apply bias: radial weight × radial + (1 - radial weight) × tangential
+			# LATERAL_BIAS = 0.3 means 30% radial, 70% sideways separation
+			var biased_direction = (radial_component * MANUAL_SPACING_LATERAL_BIAS +
+			                        tangential_component * (1.0 - MANUAL_SPACING_LATERAL_BIAS)).normalized()
+
 			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
-			avoidance_force += push_direction * MANUAL_SPACING_STRENGTH
+			avoidance_force += biased_direction * MANUAL_SPACING_STRENGTH
 
 	# SET KNOCKBACK: Replace old knockback with new impulse (VS clone pattern)
 	# This creates sharp instant separation that decays smoothly
