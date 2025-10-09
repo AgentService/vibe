@@ -1,6 +1,6 @@
 [gd_resource type="BiomeConfig" script_class="BiomeConfig" load_steps=4 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/BiomeConfig.gd" id="1_1a2b3c"]
+[ext_resource type="Script" path="res://scripts/resources/world/BiomeConfig.gd" id="1_1a2b3c"]
 [ext_resource type="Script" path="res://scripts/resources/TilePatternConfig.gd" id="2_4d5e6f"]
 
 [sub_resource type="Resource" id="example_flower_circle_1"]

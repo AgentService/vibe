@@ -5,19 +5,15 @@ extends BaseBoss
 class_name DemonOverlord
 
 func _ready() -> void:
-	# Set custom demon overlord stats
-	max_health = 400.0
-	current_health = 400.0
-	damage = 45.0
-	# speed will be set by BaseBoss from SpawnConfig - no override needed
-	attack_damage = 45.0
+	# Stats are set by setup_from_spawn_config() from template data (demon_overlord.tres)
+	# Only override attack-specific values not in template
 	attack_cooldown = 1.8
 	attack_range = 90.0
-	# chase_range = 400.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "scary_walk"  # Uses scary_walk_north, scary_walk_south, etc.
-	
-	# Call parent _ready() to handle all base initialization
+
+	# Call parent _ready() to handle all base initialization (spawn effect + animation)
 	super._ready()
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
 
 func get_boss_name() -> String:
 	return "DemonOverlord"
@@ -32,10 +28,14 @@ func _perform_attack() -> void:
 		var damage_tags = ["fire", "boss", "demon"]
 		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
 
-# Custom demon overlord behavior can be added here
-func _update_ai(dt: float) -> void:
-	# Call base AI first (handles chase, movement, directional animations)
-	super._update_ai(dt)
-	
+# Override AI for DemonOverlord-specific behavior (optional)
+func _update_ai(_dt: float) -> void:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
+		return
+
+	# Call base AI (handles chase, movement, directional animations)
+	super._update_ai(_dt)
+
 	# Add any custom demon overlord AI behavior here
 	# For example: special attacks, phase changes, etc.

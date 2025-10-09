@@ -10,6 +10,9 @@ var debug_config: DebugConfig
 var scene_transition_manager: SceneTransitionManagerScript
 
 func _ready() -> void:
+	# FPS limiting now handled by FPSLimiter autoload
+	# Default is 60 FPS cap (configurable via FPSLimiter.set_fps_mode())
+
 	Logger.info("Main scene initializing with dynamic scene loading", "main")
 	_setup_scene_transition_manager()
 	_load_debug_config()

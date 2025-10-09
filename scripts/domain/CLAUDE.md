@@ -341,12 +341,57 @@ func _to_string() -> String:
     return "PayloadName(key1=%s, key2=%s)" % [property1, property2]
 ```
 
+### 🎬 **Tween Callback Patterns (Added 2025-10-07)**
+
+**Safe Tween Callbacks with Object References:**
+```gdscript
+# ❌ Wrong: Binding object references directly causes errors if object is freed
+tween.finished.connect(_on_tween_finished.bind(sprite, material))
+
+# ✅ Correct: Use instance IDs + metadata for safe object access
+var sprite_id = sprite.get_instance_id()
+sprite.set_meta("_cleanup_data", cleanup_value)
+tween.finished.connect(_on_tween_finished.bind(sprite_id))
+
+static func _on_tween_finished(sprite_id: int) -> void:
+    var sprite = instance_from_id(sprite_id) as AnimatedSprite2D
+    if sprite and is_instance_valid(sprite):
+        var cleanup_data = sprite.get_meta("_cleanup_data", null)
+        if cleanup_data != null:
+            # Safe cleanup
+            sprite.material = cleanup_data
+            sprite.remove_meta("_cleanup_data")
+```
+
+**Avoiding Lambda Capture in Tweens:**
+```gdscript
+# ❌ Wrong: Lambda captures local variables that go out of scope
+var local_material = shader_material.duplicate()
+tween.tween_method(
+    func(value: float):
+        local_material.set_shader_parameter("progress", value),
+    0.0, 1.0, duration
+)
+
+# ✅ Correct: Use tween_property() for direct shader parameter animation
+var material_instance = shader_material.duplicate()
+sprite.material = material_instance
+tween.tween_property(material_instance, "shader_parameter/progress", 1.0, duration).from(0.0)
+```
+
+**Pattern Summary:**
+- Use `tween_property()` for shader animations (no lambda needed)
+- Bind instance IDs instead of object references to callbacks
+- Store cleanup data in metadata instead of lambda capture
+- Always check `is_instance_valid()` in callbacks
+
 ### 📊 **Architecture Validation**
 
 Domain layer rules:
 - ✅ **Pure data models** - no game logic, no scene references
 - ✅ **Typed properties** - use specific types, not generic Dictionary
 - ✅ **Validation methods** - validate() returns Array[String] of errors
+- ✅ **Safe tween patterns** - use instance IDs + metadata, avoid lambda capture
 - ❌ **Must not reference:** Autoloads, systems, scenes, EventBus
 - ❌ **Must not contain:** Game logic, UI code, file I/O
 

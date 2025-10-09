@@ -14,9 +14,7 @@ func _initialize() -> void:
 	print("\nTest 1: Resource file existence")
 	var required_files := [
 		"res://data/core/character-types.tres",
-		"res://data/core/boss-scaling.tres",
-		"res://scripts/domain/CharacterType.gd",
-		"res://scripts/domain/BossScaling.gd"
+		"res://scripts/domain/CharacterType.gd"
 	]
 	
 	var all_exist := true
@@ -105,20 +103,13 @@ func _initialize() -> void:
 	test_count += 1
 	print("\nTest 5: Resource class integration")
 	var integration_success := 0
-	var integration_tests := 3
-	
+	var integration_tests := 2
+
 	# Test CharacterType integration
 	var char_type := CharacterType.new("test", "Test", "Test character", 80.0, 20.0, 1.1)
 	if char_type.get_stats()["hp"] == 80.0:
 		integration_success += 1
-	
-	# Test BossScaling integration  
-	var boss_scaling := BossScaling.new(2.0, 1.3, 0.9, 1.1)
-	var test_config := {"health": 100.0, "damage": 50.0}
-	boss_scaling.apply_scaling(test_config)
-	if test_config["health"] == 200.0 and test_config["damage"] == 65.0:
-		integration_success += 1
-	
+
 	# Test PlayerXPCurve integration
 	var xp_curve := PlayerXPCurve.new()
 	if xp_curve.get_fallback_xp() == 100.0:
@@ -164,8 +155,8 @@ func _initialize() -> void:
 	
 	print("\n=== Audit Compliance Summary ===")
 	print("✅ Character creation stats → data-driven (.tres)")
-	print("✅ XP progression fallbacks → configurable")  
-	print("✅ Boss scaling values → configurable")
+	print("✅ XP progression fallbacks → configurable")
+	print("✅ Boss stats → template-driven (.tres)")
 	print("✅ Visual feedback timing → configurable")
 	print("✅ Performance limits → configurable")
 	print("✅ Resource classes created for all domains")

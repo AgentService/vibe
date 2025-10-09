@@ -1,0 +1,13 @@
+[gd_scene load_steps=3 format=3 uid="uid://cqugxmycdkffs"]
+
+[ext_resource type="Script" uid="uid://c0nllbebgjhia" path="res://tests/visual_effects/effects/MethodA_SpriteShader.gd" id="1_rrvyv"]
+[ext_resource type="Texture2D" uid="uid://c7xh8j6c1d4lr" path="res://assets/effects/kenney_particle-pack/PNG (Transparent)/muzzle_05.png" id="2_ny635"]
+
+[node name="MethodA_SpriteShader" type="Node2D"]
+script = ExtResource("1_rrvyv")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_ny635")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+speed_scale = 3.257

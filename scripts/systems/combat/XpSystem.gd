@@ -44,8 +44,11 @@ func _on_enemy_killed(pos: Vector2, xp_value: int) -> void:
 	_spawn_xp_orb(pos, xp_value)
 
 func _spawn_xp_orb(pos: Vector2, xp_value: int) -> void:
+	# XP orb drops disabled
+	return
+
 	# Creating XP orb
-	
+
 	# Defensive checks to prevent freed instance errors
 	if not _arena_node or not is_instance_valid(_arena_node):
 		Logger.error("XpSystem: Arena node is invalid, cannot spawn XP orb", "progression")
@@ -68,7 +71,6 @@ func _spawn_xp_orb(pos: Vector2, xp_value: int) -> void:
 
 func _on_xp_collected(amount: int) -> void:
 	# XP orb collected
-	Logger.info("XpSystem: XP orb collected - %d XP" % amount, "progression")
 	# Delegate XP processing to PlayerProgression autoload
 	if PlayerProgression:
 		PlayerProgression.gain_exp(float(amount))

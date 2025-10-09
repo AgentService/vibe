@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="BaseTome" load_steps=3 format=3 uid="uid://c8rtq6m3nwp2j"]
+
+[ext_resource type="Script" uid="uid://lvycm5mu0ig5" path="res://scripts/resources/tomes/BaseTome.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://di8gr65vlgvst" path="res://assets/ui/tomes/icons/mb (3).png" id="1_lkk2f"]
+
+[resource]
+script = ExtResource("1")
+tome_id = "tome_speed"
+tome_name = "Tome of Swiftness"
+description = "Reduce ability cooldowns by 8% per stack. Stacks multiplicatively."
+icon = ExtResource("1_lkk2f")
+rarity = "common"
+stack_limit = 10
+applicable_tags = Array[String]([])
+damage_multiplier = 1.0
+cooldown_multiplier = 0.92
+projectile_count_bonus = 0
+area_multiplier = 1.0
+projectile_speed_multiplier = 1.0
+duration_multiplier = 1.0
+pierce_bonus = 0
+chain_bonus = 0
+movement_speed_multiplier = 1.0
+max_hp_bonus = 0
+luck_bonus = 0.0
+xp_gain_multiplier = 1.0
+pickup_radius_multiplier = 1.0

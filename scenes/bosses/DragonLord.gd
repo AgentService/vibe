@@ -7,17 +7,14 @@ extends BaseBoss
 class_name DragonLord
 
 func _ready() -> void:
-	# Set DragonLord specific stats (override BaseBoss defaults)
-	max_health = 300.0  # DragonLord is stronger
-	current_health = 300.0
-	damage = 35.0
-	attack_damage = 35.0
+	# Stats are set by setup_from_spawn_config() from template data (dragon_lord.tres)
+	# Only override attack-specific values not in template
 	attack_cooldown = 2.0
 	attack_range = 90.0
-	# chase_range = 400.0  # Using BaseBoss default (5500.0)
-	
-	# Call parent _ready() to handle base initialization
+
+	# Call parent _ready() to handle base initialization (spawn effect + animation)
 	super._ready()
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
 
 func get_boss_name() -> String:
 	return "DragonLord"
@@ -32,3 +29,12 @@ func _perform_attack() -> void:
 		var source_name = "boss_dragon_lord"
 		var damage_tags = ["fire", "boss"]  # Fire damage type
 		DamageService.apply_damage("player", attack_damage, source_name, damage_tags)
+
+# Override AI for DragonLord-specific behavior (optional)
+func _update_ai(_dt: float) -> void:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
+		return
+
+	# Call parent AI behavior for standard movement and attacks
+	super._update_ai(_dt)

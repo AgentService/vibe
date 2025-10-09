@@ -45,6 +45,9 @@ var _registration_in_progress: bool = false
 # Death state management
 var is_dead: bool = false
 
+# === Ability System (Phase 1.2) ===
+var ability_controller: AbilityController
+
 func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -95,7 +98,17 @@ func _ready() -> void:
 	
 	# DAMAGE V3: Register with unified damage system
 	_register_with_damage_system()
-	
+
+	# ABILITY SYSTEM: Initialize ability controller (Phase 1.2)
+	ability_controller = AbilityController.new(self)
+
+	# Auto-equip starting abilities from player_type.tres
+	if player_type and not player_type.starting_abilities.is_empty():
+		for i in range(min(player_type.starting_abilities.size(), ability_controller.ability_slots.size())):
+			var ability_id: String = player_type.starting_abilities[i]
+			equip_ability(ability_id, i)
+			Logger.info("Player: Auto-equipped %s to slot %d" % [ability_id, i], "abilities")
+
 	# CAMERA: Simple player-following camera (Godot best practice)
 	var camera = Camera2D.new()
 	camera.name = "PlayerCamera"
@@ -217,6 +230,9 @@ func _physics_process(delta: float) -> void:
 	_handle_movement(delta)
 	_handle_facing()
 
+	# Ability System (Phase 1.2) - AbilityController updates via EventBus.combat_step (30Hz)
+	# No manual update needed here - connected in AbilityController._init()
+
 func _handle_roll_input() -> void:
 	if Input.is_action_just_pressed("ui_accept") and not is_rolling and not _is_any_ability_active():
 		if _is_ability_ready("dash"):
@@ -288,6 +304,119 @@ func _handle_new_ability_inputs() -> void:
 	if Input.is_action_just_pressed("cast_spear") and not is_spear_attacking and not _is_any_ability_active():
 		if _is_ability_ready("spear_attack"):
 			_handle_spear_attack()
+
+# TODO: REMOVE AFTER TESTING - Test keybinds for tome/ability systems
+func _input(event: InputEvent) -> void:
+	if not event is InputEventKey or not event.pressed:
+		return
+
+	# Alt+0/1/2/3: Tome system testing
+	if event.alt_pressed:
+		match event.keycode:
+			KEY_0:
+				_test_clear_tomes()
+			KEY_1:
+				_test_equip_tome("tome_damage")
+			KEY_2:
+				_test_equip_tome("tome_speed")
+			KEY_3:
+				_test_equip_tome("tome_projectiles")
+
+	# Ctrl+1/2/3/4: Level up abilities in slots
+	elif event.ctrl_pressed:
+		match event.keycode:
+			KEY_1:
+				_test_level_up_ability(0)
+			KEY_2:
+				_test_level_up_ability(1)
+			KEY_3:
+				_test_level_up_ability(2)
+			KEY_4:
+				_test_level_up_ability(3)
+
+func _test_equip_tome(tome_id: String) -> void:
+	if not ability_controller:
+		Logger.warn("No ability_controller found", "debug")
+		return
+
+	var tome = TomeManager.get_definition(tome_id)
+	if not tome:
+		Logger.warn("%s not found" % tome_id, "debug")
+		return
+
+	# Equip tome via AbilityController (handles stacking and slot management)
+	ability_controller.equip_tome(tome)
+
+	# Log current state for debugging
+	_log_tome_state()
+
+func _log_tome_state() -> void:
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("Tome Slots:", "debug")
+	for i in range(ability_controller.tome_slots.size()):
+		var tome = ability_controller.tome_slots[i]
+		if tome:
+			var stacks = ability_controller.tome_stacks[i]
+			Logger.info("  [%d] %s ×%d" % [i, tome.tome_name, stacks], "debug")
+		else:
+			Logger.info("  [%d] Empty" % i, "debug")
+
+	# Show first ability stats
+	var ability = ability_controller.ability_slots[0]
+	if ability:
+		Logger.info("Ability: %s" % ability.ability_name, "debug")
+		Logger.info("  base_damage: %.2f → final_damage: %.2f (%.1f%% increase)" % [
+			ability.base_damage,
+			ability.final_damage,
+			((ability.final_damage / ability.base_damage) - 1.0) * 100.0
+		], "debug")
+		Logger.info("  base_cooldown: %.2f → final_cooldown: %.2f (%.1f%% faster)" % [
+			ability.base_cooldown,
+			ability.final_cooldown,
+			(1.0 - (ability.final_cooldown / ability.base_cooldown)) * 100.0
+		], "debug")
+		Logger.info("  projectile_count: %d" % ability.projectile_count, "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
+
+func _test_level_up_ability(slot_index: int) -> void:
+	if not ability_controller:
+		Logger.warn("No ability_controller found", "debug")
+		return
+
+	var ability = ability_controller.ability_slots[slot_index]
+	if not ability:
+		Logger.warn("No ability in slot %d" % slot_index, "debug")
+		return
+
+	# Level up via AbilityController
+	ability_controller.level_up_ability(ability.ability_id, 1)
+
+	# Log results
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("Leveled up [%d] %s → Lv%d" % [slot_index, ability.ability_name, ability.ability_level], "debug")
+	Logger.info("  base_damage: %.2f → final_damage: %.2f" % [ability.base_damage, ability.final_damage], "debug")
+	Logger.info("  base_cooldown: %.2f → final_cooldown: %.2f" % [ability.base_cooldown, ability.final_cooldown], "debug")
+	Logger.info("  projectile_count: %d" % ability.projectile_count, "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
+
+func _test_clear_tomes() -> void:
+	if not ability_controller:
+		return
+
+	# Clear all tome slots
+	for i in range(ability_controller.tome_slots.size()):
+		ability_controller.tome_slots[i] = null
+		ability_controller.tome_stacks[i] = 0
+
+	# Remove modifiers from abilities
+	for ability in ability_controller.ability_slots:
+		if ability:
+			for mod in ability.get_active_modifiers():
+				ability.remove_modifier(mod.tome_id)
+
+	Logger.info("═══════════════════════════════════════", "debug")
+	Logger.info("CLEARED ALL TOMES", "debug")
+	Logger.info("═══════════════════════════════════════", "debug")
 
 # Update new ability timers
 func _update_new_abilities(delta: float) -> void:
@@ -896,3 +1025,25 @@ func _sync_initial_equipment_animation() -> void:
 					Logger.debug("Equipment layer using fallback: " + fallback_anim, "player")
 	
 	Logger.info("Initial equipment synchronization complete", "player")
+
+
+# ============================================================================
+# ABILITY SYSTEM (Phase 1.2) - Delegation to AbilityController
+# ============================================================================
+
+## Equips an ability - delegates to AbilityController
+func equip_ability(ability_id: String, slot: int = -1) -> void:
+	if ability_controller:
+		ability_controller.equip_ability(ability_id, slot)
+
+
+## Levels up an ability - delegates to AbilityController
+func level_up_ability(ability_id: String, levels: int = 1) -> void:
+	if ability_controller:
+		ability_controller.level_up_ability(ability_id, levels)
+
+
+## Equips a tome - delegates to AbilityController
+func equip_tome(tome: BaseTome) -> void:
+	if ability_controller:
+		ability_controller.equip_tome(tome)

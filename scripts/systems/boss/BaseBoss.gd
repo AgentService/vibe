@@ -1,7 +1,8 @@
-extends CharacterBody2D
+extends Node2D
 
-## BaseBoss - Base class for all scene-based bosses
+## BaseBoss - Base class for all scene-based bosses (Node2D-based for physics-free movement)
 ## Provides unified damage integration, performance optimization, and directional animation logic
+## HitBox child handles damage detection (Area2D), root node is pure movement/positioning
 
 class_name BaseBoss
 
@@ -10,12 +11,16 @@ signal died
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 @onready var health_bar: BossHealthBar = $BossHealthBar
 
+# Entity ID for damage system integration
+var entity_id: String = ""
+
 # Boss configuration (override in child classes)
 var spawn_config: SpawnConfig
 var max_health: float = 300.0
 var current_health: float = 300.0
 var damage: float = 40.0
-var speed: float = 60.0
+var speed: float = 100.0
+var velocity: Vector2 = Vector2.ZERO  # Area2D doesn't have built-in velocity, declare manually
 var attack_damage: float = 40.0
 var attack_cooldown: float = 2.0
 var last_attack_time: float = 0.0
@@ -23,18 +28,56 @@ var last_attack_time: float = 0.0
 # AI configuration (override in child classes)
 var target_position: Vector2
 var attack_range: float = 80.0
-var chase_range: float = 5500.0
+var chase_range: float = 5555.0
 var ai_paused: bool = false
 var _is_dying: bool = false  # Flag to prevent AI updates during death/removal
+var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
-# DUAL COLLISION SYSTEM: Signal-based boss spacing via PersonalSpaceArea
-const PERSONAL_SPACE_STRENGTH: float = 175.0  # Balanced spacing force that works with chase behavior
-var nearby_bosses: Array[CharacterBody2D] = []  # Bosses currently in personal space
-var personal_space_area: Area2D = null  # Reference to PersonalSpaceArea child node
+# MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
+const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
+const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 10.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = false  # Whether to skip spacing for enemies close to player (false = always apply spacing)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 5.0  # Check every 500ms (not every frame)
+const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
+const MANUAL_SPACING_LATERAL_BIAS: float = 0.1 # Radial weight (0.0 = pure sideways, 1.0 = no bias)
+var _spacing_check_timer: float = 0.0  # Timer for spacing checks
+
+# KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
+var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
+const KNOCKBACK_DECAY: float = 5.0  # Decay rate in pixels per second (like move_toward resistance)
+
+# PERFORMANCE CACHING: Cache expensive calculations across multiple frames
+var _cached_distance_to_player: float = 0.0
+var _distance_cache_timer: float = 0.0
+const DISTANCE_CACHE_INTERVAL: float = 0.2  # Update distance every 200ms (6 frames @ 30Hz)
+var _position_update_counter: int = 0
+const POSITION_UPDATE_INTERVAL: int = 2  # Update EntityTracker position every 2 frames
+
+# DIRECTION CACHING: Separate from animation for responsive movement
+var _direction_update_counter: int = 0
+const DIRECTION_UPDATE_INTERVAL: int = 1  # Update direction every 2 frames (66ms @ 30Hz) - constant for all enemy counts
+
+# ENEMY COUNT CACHING: Cache enemy count for adaptive throttling
+var _cached_enemy_count: int = 0
+var _enemy_count_cache_timer: float = 0.0
+const ENEMY_COUNT_CACHE_INTERVAL: float = 1.0  # Update enemy count every 1 second (not every frame)
+
+# PERFORMANCE FLAGS: High enemy count optimizations (500+ enemies)
+const SKIP_SPAWN_ANIMATION: bool = false  # Skip 0.5s spawn dissolve effect (cyan edge glow)
+const SKIP_WAKEUP_CHECK: bool = false  # Skip wake_up → default animation transition check
 
 # Animation configuration
 var current_direction: Vector2 = Vector2.DOWN
 var animation_prefix: String = "walk"  # Override in child classes (e.g., "scary_walk")
+var _animation_update_counter: int = 0  # Frame counter for throttled animation updates
+var _animation_update_offset: int = 0  # Staggered offset per enemy
+
+# SPAWN/DEATH BEHAVIOR CONFIGURATION (future extensibility)
+# NOTE: Currently all enemies use "dissolve" spawn (0.5s) + no death effect
+# Future: Add EnemyType.spawn_behavior enum to customize per-enemy
+# Possible values: "immediate", "dissolve", "dramatic" (longer dissolve), "wake_up" (boss-specific)
+# Death effects: Follow same pattern as spawn with EnemyDeathEffect.gd
 
 # Child classes should override these methods
 func get_boss_name() -> String:
@@ -45,17 +88,52 @@ func _perform_attack() -> void:
 	# Child classes should implement specific attack behavior
 
 func _ready() -> void:
-	# Start default animation if available
-	if animated_sprite and animated_sprite.sprite_frames:
-		var default_anim = animation_prefix + "_south"
-		if animated_sprite.sprite_frames.has_animation(default_anim):
-			animated_sprite.play(default_anim)
-	
+	# SPAWN SYSTEM: Start in spawning group (not targetable yet)
+	add_to_group("spawning")
+	add_to_group("enemies")  # Functional group for all enemies
+
+	# NODE2D MIGRATION: Root node is now Node2D for physics-free movement
+	# HitBox child (Area2D) handles damage detection on Layer 2
+	# No collision properties needed on root node - pure positioning entity
+
+	# FUTURE EXTENSIBILITY: Customize spawn behavior per-enemy
+	# Example with spawn_config.spawn_behavior enum:
+	#   match spawn_config.spawn_behavior:
+	#       "immediate": _on_spawn_animation_complete()  # Skip effect
+	#       "dissolve": _apply_dissolve_spawn()          # Current default
+	#       "dramatic": _apply_dissolve_spawn(1.5)       # Longer duration
+	#       "wake_up": _apply_wake_up_spawn()            # Boss-specific
+
+	# SPAWN ANIMATION: Play wake_up animation during spawn if available, otherwise default
+	# This ensures consistent 0.5s spawn timing regardless of animation presence
+	# Performance: Can be disabled via SKIP_SPAWN_ANIMATION for high enemy counts
+	if not SKIP_SPAWN_ANIMATION and animated_sprite and animated_sprite.sprite_frames:
+		# Try wake_up animation first (plays during spawn dissolve)
+		if animated_sprite.sprite_frames.has_animation("wake_up"):
+			animated_sprite.play("wake_up")
+		else:
+			# Fallback to default directional animation
+			var default_anim = animation_prefix + "_south"
+			if animated_sprite.sprite_frames.has_animation(default_anim):
+				animated_sprite.play(default_anim)
+
+		# Apply spawn dissolve effect (0.5s animation) - runs alongside animation
+		var spawn_tween = EnemySpawnEffect.apply_spawn_effect(animated_sprite, get_tree())
+		if spawn_tween:
+			spawn_tween.finished.connect(_on_spawn_animation_complete)
+		else:
+			# Fallback if effect system not initialized
+			Logger.warn("EnemySpawnEffect failed for %s - immediately targetable" % get_boss_name(), "spawn")
+			_on_spawn_animation_complete()
+	else:
+		# Skip spawn animation for performance or no sprite available
+		_on_spawn_animation_complete()
+
 	# BOSS PERFORMANCE V2: Register with centralized BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
 	BossUpdateManager.register_boss(self, boss_id)
-	Logger.debug(get_boss_name() + " registered with BossUpdateManager as " + boss_id, "performance")
-	
+	# Logger.debug(get_boss_name() + " registered with BossUpdateManager as " + boss_id, "performance")
+
 	# Connect to signals
 	if EventBus:
 		# DAMAGE V3: Listen for unified damage sync events
@@ -64,9 +142,9 @@ func _ready() -> void:
 		EventBus.cheat_toggled.connect(_on_cheat_toggled)
 		# LIFECYCLE: Stop AI when player dies to prevent physics errors
 		EventBus.player_died.connect(_on_player_died)
-	
+
 	# DAMAGE V3: Register with both DamageService and EntityTracker
-	var entity_id = "boss_" + str(get_instance_id())
+	entity_id = "boss_" + str(get_instance_id())  # Store in property for external access
 	var entity_data = {
 		"id": entity_id,
 		"type": "boss",
@@ -75,40 +153,69 @@ func _ready() -> void:
 		"alive": true,
 		"pos": global_position
 	}
-	
+
 	# Register with both systems for unified damage V3
 	DamageService.register_entity(entity_id, entity_data)
 	EntityTracker.register_entity(entity_id, entity_data)
-	
+
+	# MANUAL SPACING: Stagger spacing check timers to prevent all enemies checking simultaneously
+	# Random offset between 0 and check interval spreads checks across multiple frames
+	if MANUAL_SPACING_ENABLED:
+		var spawn_rng = RNG.stream("spawn")
+		_spacing_check_timer = spawn_rng.randf() * MANUAL_SPACING_CHECK_INTERVAL
+
+	# ANIMATION THROTTLING: Stagger animation updates to prevent all enemies updating same frame
+	# Offset matches max throttle interval (12 frames @ high enemy count)
+	_animation_update_offset = randi() % 12  # Random offset 0-11 for staggered updates
+
+	# ENEMY COUNT CACHING: Initialize cache with current enemy count
+	_cached_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+	# Stagger enemy count updates similar to spacing checks
+	var spawn_rng_ec = RNG.stream("spawn")
+	_enemy_count_cache_timer = spawn_rng_ec.randf() * ENEMY_COUNT_CACHE_INTERVAL
+
 	# Initialize health bar
 	_update_health_bar()
 
-	# Setup personal space area for boss-to-boss spacing control
-	_setup_personal_space_area()
-	
 
 func _exit_tree() -> void:
 	# BOSS PERFORMANCE V2: Unregister from BossUpdateManager
 	var boss_id = "boss_" + str(get_instance_id())
+	# Logger.debug("🗑️  %s exiting tree (boss_id: %s)" % [get_boss_name(), boss_id], "performance")
 	BossUpdateManager.unregister_boss(boss_id)
-	
+
 	# Clean up signal connections
 	if EventBus and EventBus.damage_entity_sync.is_connected(_on_damage_entity_sync):
 		EventBus.damage_entity_sync.disconnect(_on_damage_entity_sync)
 	if EventBus and EventBus.cheat_toggled.is_connected(_on_cheat_toggled):
 		EventBus.cheat_toggled.disconnect(_on_cheat_toggled)
-	
+
 	# DAMAGE V3: Unregister from both systems
 	var entity_id = "boss_" + str(get_instance_id())
 	DamageService.unregister_entity(entity_id)
 	EntityTracker.unregister_entity(entity_id)
+
+## SPAWN SYSTEM: Called when spawn animation completes - makes enemy targetable and resumes AI
+func _on_spawn_animation_complete() -> void:
+	_is_spawning = false  # Resume AI
+	remove_from_group("spawning")
+	add_to_group("targetable")
+
+	# Ensure default animation is playing after spawn (in case wake_up animation was used)
+	# Performance: Can be disabled via SKIP_WAKEUP_CHECK to avoid expensive animation queries
+	if not SKIP_WAKEUP_CHECK and animated_sprite and animated_sprite.sprite_frames:
+		# If wake_up was playing, switch to default
+		if animated_sprite.animation == "wake_up":
+			var default_anim = animation_prefix + "_south"
+			if animated_sprite.sprite_frames.has_animation(default_anim):
+				animated_sprite.play(default_anim)
 
 func setup_from_spawn_config(config: SpawnConfig) -> void:
 	spawn_config = config
 	max_health = config.health
 	current_health = config.health
 	damage = config.damage
-	speed = config.speed
+	# speed = config.speed  # Use BaseBoss.gd default instead (line 21: speed = 100.0)
 	attack_damage = config.damage
 	
 	# Set position
@@ -154,16 +261,118 @@ func _notify_components_scaled(scale_factor: float) -> void:
 	
 	# Future: Add other scalable components here
 	# Example: if weapon_effect: weapon_effect.on_boss_scaled(scale_factor)
-	
+
 ## BOSS PERFORMANCE V2: Batch AI interface called by BossUpdateManager
 func _update_ai_batch(dt: float) -> void:
 	_update_ai(dt)
 	last_attack_time += dt
 
-## Base AI logic - child classes can override or extend
-func _update_ai(_dt: float) -> void:
-	# Skip AI updates if dying, paused, or being removed
-	if _is_dying or ai_paused:
+## PERFORMANCE OPTIMIZED AI: Minimal AI update with cached values from BossUpdateManager
+## Called by BossUpdateManager with cached player_pos and enemy_count
+## Implements distance caching, direction caching, and throttled updates
+func _update_ai_minimal(dt: float, player_pos: Vector2, enemy_count: int) -> void:
+	# Skip AI updates if dying, paused, spawning, or being removed
+	if _is_dying or ai_paused or _is_spawning:
+		return
+
+	# Skip if boss is being removed or not in tree
+	if not is_inside_tree() or is_queued_for_deletion():
+		return
+
+	target_position = player_pos  # Use cached player position from BossUpdateManager
+
+	# DISTANCE CACHING: Update distance periodically (not every frame)
+	# Reduces distance_to() calls by 83% (every 6 frames vs every frame @ 30Hz)
+	_distance_cache_timer += dt
+	if _distance_cache_timer >= DISTANCE_CACHE_INTERVAL:
+		_distance_cache_timer = 0.0
+		_cached_distance_to_player = global_position.distance_to(target_position)
+
+	# Use cached distance for all checks
+	if _cached_distance_to_player <= chase_range:
+		if _cached_distance_to_player > attack_range:
+			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
+			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
+
+			# DIRECTION CACHING: Update direction every 2 frames for responsive movement (66ms @ 30Hz)
+			# CONSTANT INTERVAL: Does not change with enemy count - movement feel prioritized
+			# DECOUPLED from animation updates for independent control
+			var direction: Vector2
+			_direction_update_counter += 1
+
+			if _direction_update_counter >= DIRECTION_UPDATE_INTERVAL:
+				_direction_update_counter = 0
+				# Calculate fresh direction (every 2 frames = 66ms @ 30Hz)
+				direction = (target_position - global_position).normalized()
+				current_direction = direction  # Cache for next frames
+			else:
+				# Reuse cached direction (reduces normalize() calls by 50%)
+				direction = current_direction
+
+			# Move toward player using cached/fresh direction
+			velocity = direction * speed
+
+			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
+			velocity += spacing_knockback
+
+			# ANIMATION THROTTLING: Independent from direction updates for better performance
+			# Updates every 6-12 frames (200-400ms) based on enemy count
+			_animation_update_counter += 1
+			var animation_throttle = 6 if enemy_count < 300 else 12  # Adaptive based on cached enemy_count!
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				# Update animation using current direction
+				_update_directional_animation(current_direction)
+
+			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
+			if MANUAL_SPACING_ENABLED:
+				_spacing_check_timer += dt
+				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
+					_spacing_check_timer = 0.0
+					_apply_manual_spacing()
+
+			# Safety check before physics update
+			if not is_inside_tree() or is_queued_for_deletion():
+				return
+
+			# THROTTLED POSITION UPDATES: Update EntityTracker every 2 frames (not every frame)
+			# Reduces EntityTracker updates by 50% (15/sec vs 30/sec @ 30Hz)
+			_position_update_counter += 1
+			if _position_update_counter >= POSITION_UPDATE_INTERVAL:
+				_position_update_counter = 0
+				DamageService.update_entity_position(entity_id, global_position)
+		else:
+			# In attack range - stop and attack
+			velocity = Vector2.ZERO
+
+			# Update facing direction for attacks (but don't override attack animations)
+			var direction_to_player: Vector2 = (target_position - global_position).normalized()
+			current_direction = direction_to_player
+
+			if last_attack_time >= attack_cooldown:
+				_perform_attack()
+				last_attack_time = 0.0
+
+	# Update attack cooldown
+	last_attack_time += dt
+
+## NODE2D MOVEMENT: Physics-free movement runs EVERY frame (30Hz)
+## This ensures smooth movement - AI calculates velocity every 20 frames, physics applies it every frame
+func _physics_process(delta: float) -> void:
+	# Skip physics if dying, spawning, or no velocity
+	if _is_dying or _is_spawning:
+		return
+
+	# Apply Node2D movement (physics-free, no collision resolution)
+	if velocity.length_squared() > 0.01:
+		# Direct position update (Node2D has no built-in physics)
+		global_position += velocity * delta
+
+## Base AI logic - simple every-frame updates
+## Child classes can override or extend
+func _update_ai(dt: float) -> void:
+	# Skip AI updates if dying, paused, spawning, or being removed
+	if _is_dying or ai_paused or _is_spawning:
 		return
 
 	# Skip if boss is being removed or not in tree
@@ -173,46 +382,64 @@ func _update_ai(_dt: float) -> void:
 	# Get player position from PlayerState
 	if not PlayerState.has_player_reference():
 		return
-	
+
 	target_position = PlayerState.position
 	var distance_to_player: float = global_position.distance_to(target_position)
-	
+
 	# Chase behavior when player is in range
 	if distance_to_player <= chase_range:
 		if distance_to_player > attack_range:
-			# Move toward player
+			# KNOCKBACK DECAY: Reduce knockback velocity over time (VS clone pattern)
+			# Uses move_toward() for smooth organic decay
+			spacing_knockback = spacing_knockback.move_toward(Vector2.ZERO, KNOCKBACK_DECAY * dt)
+
+			# Move toward player - simple velocity calculation
 			var direction: Vector2 = (target_position - global_position).normalized()
 			velocity = direction * speed
 
-			# DUAL COLLISION SYSTEM: Add personal space forces from nearby bosses
-			var spacing_force = apply_personal_space_forces()
-			if spacing_force.length_squared() > 0.1:  # Only log when significant spacing occurs
-				Logger.debug("%s applying personal space force: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+			# ADD KNOCKBACK: Apply knockback to velocity (additive, like VS clone)
+			# This separates enemies while maintaining chase behavior
+			velocity += spacing_knockback
 
-			# Apply personal space forces - these work with collision layers
-			velocity += spacing_force
+			# MANUAL SPACING: Check nearby enemies periodically (not every frame)
+			if MANUAL_SPACING_ENABLED:
+				_spacing_check_timer += dt
+				if _spacing_check_timer >= MANUAL_SPACING_CHECK_INTERVAL:
+					_spacing_check_timer = 0.0
+					_apply_manual_spacing()
 
-			# Safety: Check if still valid before physics update
+			# Safety check before physics update
 			if not is_inside_tree() or is_queued_for_deletion():
 				return
 
-			move_and_slide()
-			
-			# Update directional animation automatically
-			_update_directional_animation(direction)
+			# STAGGERED AI: Don't call move_and_slide() here - handled in _physics_process()
+			# This allows AI to update every 20 frames while physics runs every frame
+
+			# ENEMY COUNT CACHING: Update cache periodically (every 1 second)
+			# Reduces get_tree().get_nodes_in_group() calls from 30/sec to 1/sec per enemy
+			_enemy_count_cache_timer += dt
+			if _enemy_count_cache_timer >= ENEMY_COUNT_CACHE_INTERVAL:
+				_enemy_count_cache_timer = 0.0
+				_cached_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+
+			# THROTTLED ANIMATION: Adaptive frame-based throttling (6 frames @ low count, 12+ @ high count)
+			_animation_update_counter += 1
+			var animation_throttle = 6 if _cached_enemy_count < 300 else 12  # Use cached count!
+
+			if (_animation_update_counter + _animation_update_offset) % animation_throttle == 0:
+				_update_directional_animation(direction)
 			current_direction = direction
-			
+
 			# Update position in damage system
-			var entity_id = "boss_" + str(get_instance_id())
 			DamageService.update_entity_position(entity_id, global_position)
 		else:
 			# In attack range - stop and attack
 			velocity = Vector2.ZERO
-			
+
 			# Update facing direction for attacks (but don't override attack animations)
 			var direction_to_player: Vector2 = (target_position - global_position).normalized()
 			current_direction = direction_to_player
-			
+
 			if last_attack_time >= attack_cooldown:
 				_perform_attack()
 				last_attack_time = 0.0
@@ -225,11 +452,11 @@ func _update_ai(_dt: float) -> void:
 func _update_directional_animation(direction: Vector2) -> void:
 	if not animated_sprite or not animated_sprite.sprite_frames:
 		return
-	
-	# First, try 8-directional animations
+
+	# Try 8-directional animations
 	if _try_directional_animation(direction):
 		return
-	
+
 	# Fallback: Use basic sprite flipping for non-directional sprites
 	_apply_sprite_flipping(direction)
 
@@ -238,7 +465,7 @@ func _try_directional_animation(direction: Vector2) -> bool:
 	# Convert direction to 8-directional animation
 	var angle = direction.angle()
 	var animation_name = animation_prefix + "_"
-	
+
 	# Convert angle to 8 directions
 	if angle >= -PI/8 and angle < PI/8:
 		animation_name += "east"
@@ -256,14 +483,14 @@ func _try_directional_animation(direction: Vector2) -> bool:
 		animation_name += "north"
 	else:  # -3*PI/8 to -PI/8
 		animation_name += "north_east"
-	
+
 	# Check if the directional animation exists
 	if animated_sprite.sprite_frames.has_animation(animation_name):
 		# Only change animation if it's different
 		if animated_sprite.animation != animation_name:
 			animated_sprite.play(animation_name)
 		return true  # Return true because directional animation exists (whether we changed it or not)
-	
+
 	# Fallback: Try cardinal direction if diagonal doesn't exist (for 4-directional sprites)
 	var fallback_name = animation_prefix + "_"
 	if abs(direction.x) > abs(direction.y):
@@ -272,14 +499,14 @@ func _try_directional_animation(direction: Vector2) -> bool:
 	else:
 		# Vertical movement dominates
 		fallback_name += "south" if direction.y > 0 else "north"
-	
+
 	# Check if cardinal fallback exists
 	if animated_sprite.sprite_frames.has_animation(fallback_name):
 		# Only change animation if it's different
 		if animated_sprite.animation != fallback_name:
 			animated_sprite.play(fallback_name)
 		return true  # Return true because we found a fallback animation
-	
+
 	return false  # No directional animation exists
 
 ## Apply basic sprite flipping when directional animations aren't available
@@ -331,6 +558,15 @@ func _on_damage_entity_sync(payload: Dictionary) -> void:
 
 func _die() -> void:
 	_is_dying = true  # Prevent any further AI updates
+	# Logger.debug("💀 %s dying (entity_id: %s)" % [get_boss_name(), entity_id], "performance")
+
+	# FUTURE: Add death dissolve effect (reverse of spawn)
+	# Example: EnemyDeathEffect.apply_death_effect(animated_sprite, 0.4)
+	#   - Reverse progress: 0.0 → 1.0 (visible → invisible)
+	#   - Keep enemy alive during effect, queue_free() after tween
+	#   - Delay XP orb spawn until effect completes
+	# Current: Instant death, no effect
+
 	died.emit()
 	queue_free()
 
@@ -368,127 +604,82 @@ func _on_player_died() -> void:
 	_is_dying = true
 	Logger.debug("%s: Player died, stopping AI" % get_boss_name(), "bosses")
 
-## Setup PersonalSpaceArea for signal-based boss spacing control
-func _setup_personal_space_area() -> void:
-	personal_space_area = get_node("PersonalSpaceArea") as Area2D
-	if not personal_space_area:
-		Logger.debug("%s: No PersonalSpaceArea found - boss spacing disabled" % get_boss_name(), "collision")
+## MANUAL SPACING: Use EntityTracker to find nearby enemies and apply avoidance
+func _apply_manual_spacing() -> void:
+	# Calculate distance to player (used for min distance check and lateral bias gating)
+	var distance_to_player = global_position.distance_to(target_position)
+
+	# Skip spacing if we're very close to player (allow dense clustering around player)
+	# Can be disabled with MANUAL_SPACING_RESPECT_MIN_DISTANCE = false
+	if MANUAL_SPACING_RESPECT_MIN_DISTANCE:
+		if distance_to_player < MANUAL_SPACING_MIN_DISTANCE:
+			return
+
+	# Query EntityTracker for nearby enemy IDs (spatial partitioning = O(log n))
+	var nearby_enemy_ids = EntityTracker.get_entities_in_radius(
+		global_position,
+		MANUAL_SPACING_RADIUS,
+		"boss"  # Filter for bosses (registered with type="boss")
+	)
+
+	if nearby_enemy_ids.is_empty():
 		return
 
-	# Connect to area signals for boss detection
-	personal_space_area.body_entered.connect(_on_boss_entered_personal_space)
-	personal_space_area.body_exited.connect(_on_boss_exited_personal_space)
-	Logger.debug("%s: Personal space area configured for boss spacing" % get_boss_name(), "collision")
+	# Calculate avoidance force from all nearby enemies
+	var avoidance_force = Vector2.ZERO
+	for enemy_id in nearby_enemy_ids:
+		if enemy_id == entity_id:
+			continue  # Skip self
 
-	# Enable debug visualization if both debug mode and personal space circles are enabled
-	if DebugManager and DebugManager.debug_enabled:
-		var debug_config = load("res://config/debug.tres") as DebugConfig
-		if debug_config and debug_config.show_personal_space_circles:
-			_setup_personal_space_debug_visual()
-
-## Handle boss entering personal space - add to nearby list
-func _on_boss_entered_personal_space(body: Node2D) -> void:
-	var boss = body as CharacterBody2D
-	if boss and boss != self and boss.has_method("get_boss_name"):
-		nearby_bosses.append(boss)
-		Logger.debug("%s: %s entered personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
-
-## Handle boss leaving personal space - remove from nearby list
-func _on_boss_exited_personal_space(body: Node2D) -> void:
-	var boss = body as CharacterBody2D
-	if boss and boss != self and boss.has_method("get_boss_name"):
-		nearby_bosses.erase(boss)
-		Logger.debug("%s: %s left personal space (%d nearby)" % [get_boss_name(), boss.get_boss_name(), nearby_bosses.size()], "collision")
-
-## Calculate spacing force to maintain personal space from other bosses
-func apply_personal_space_forces() -> Vector2:
-	if nearby_bosses.is_empty():
-		return Vector2.ZERO
-
-	var spacing_force = Vector2.ZERO
-	var my_position = global_position
-	var personal_space_radius = _get_personal_space_radius()
-
-	for boss in nearby_bosses:
-		if not is_instance_valid(boss):
+		# Get enemy position from EntityTracker
+		var enemy_data = EntityTracker.get_entity(enemy_id)
+		if not enemy_data.has("pos"):
 			continue
 
-		var other_position = boss.global_position
-		var direction = (my_position - other_position)
-		var distance = direction.length()
+		var enemy_pos = enemy_data["pos"]
+		var to_other = enemy_pos - global_position
+		var distance = to_other.length()
 
-		if distance > 0.1:  # Avoid division by zero
-			# Normalize direction and apply gentle force
-			direction = direction.normalized()
-			var force_strength = PERSONAL_SPACE_STRENGTH * (1.0 - min(distance / personal_space_radius, 1.0))  # Stronger when closer
-			spacing_force += direction * force_strength
+		# Apply force if within spacing radius
+		if distance > 0.1 and distance < MANUAL_SPACING_RADIUS:
+			# UNIFORM FORCE: Same strength regardless of distance (no falloff)
+			var push_direction = -to_other.normalized()  # Push away from other enemy
 
-	return spacing_force
+			# LATERAL BIAS WITH DISTANCE GATING: Only apply lateral bias to enemies far from player
+			# Enemies close to player use pure radial separation to allow dense clustering
+			var effective_lateral_bias = MANUAL_SPACING_LATERAL_BIAS
 
-## DEBUG: Apply only personal space forces (for testing)
-func apply_only_personal_space_movement(delta: float) -> void:
-	if ai_paused:
-		return
+			# Within 2x min distance from player: use radial separation only (no lateral bias)
+			# This allows enemies to cluster naturally around the player without sideways pushing
+			# Respects MANUAL_SPACING_RESPECT_MIN_DISTANCE flag
+			if MANUAL_SPACING_RESPECT_MIN_DISTANCE:
+				if distance_to_player < (MANUAL_SPACING_MIN_DISTANCE * 2.0):
+					effective_lateral_bias = 1.0  # Pure radial (no sideways bias)
 
-	var spacing_force = apply_personal_space_forces()
-	if spacing_force.length_squared() > 0.1:
-		velocity = spacing_force
-		move_and_slide()
-		Logger.debug("%s: Pure personal space movement: %.1f px/s" % [get_boss_name(), spacing_force.length()], "collision")
+			# LATERAL BIAS: Decompose force into radial (toward/away player) and tangential (sideways)
+			# This makes enemies prefer separating sideways, forming lines when approaching player
+			var to_player = (target_position - global_position).normalized()
 
-## DEBUG: Print current personal space status
-func debug_personal_space_status() -> void:
-	Logger.info("%s Personal Space Status:" % get_boss_name(), "collision")
-	Logger.info("  - Radius: %.1f px" % _get_personal_space_radius(), "collision")
-	Logger.info("  - Nearby bosses: %d" % nearby_bosses.size(), "collision")
-	for boss in nearby_bosses:
-		if boss and is_instance_valid(boss):
-			var distance = global_position.distance_to(boss.global_position)
-			Logger.info("    * %s at %.1f px distance" % [boss.get_boss_name(), distance], "collision")
+			# Radial component: projection of push onto player direction
+			var radial_strength = push_direction.dot(to_player)
+			var radial_component = to_player * radial_strength
 
-## Get the actual radius from PersonalSpaceArea's CircleShape2D
-func _get_personal_space_radius() -> float:
-	if not personal_space_area:
-		Logger.debug("%s: No personal_space_area - using fallback 32.0" % get_boss_name(), "collision")
-		return 32.0  # Default fallback
+			# Tangential component: perpendicular to player direction (sideways separation)
+			var tangential_component = push_direction - radial_component
 
-	var collision_shape = personal_space_area.get_child(0) as CollisionShape2D
-	if not collision_shape or not collision_shape.shape:
-		Logger.debug("%s: No collision shape or shape - using fallback 32.0" % get_boss_name(), "collision")
-		return 32.0  # Default fallback
+			# Apply bias: radial weight × radial + (1 - radial weight) × tangential
+			# effective_lateral_bias = 1.0 means pure radial (close to player)
+			# effective_lateral_bias = LATERAL_BIAS means configured bias (far from player)
+			var biased_direction = (radial_component * effective_lateral_bias +
+									tangential_component * (1.0 - effective_lateral_bias)).normalized()
 
-	var circle_shape = collision_shape.shape as CircleShape2D
-	if circle_shape:
-		var radius = circle_shape.radius
-		Logger.debug("%s: PersonalSpaceArea radius from editor: %.1f" % [get_boss_name(), radius], "collision")
-		return radius
+			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
+			avoidance_force += biased_direction * MANUAL_SPACING_STRENGTH
 
-	Logger.debug("%s: Shape is not CircleShape2D - using fallback 32.0" % get_boss_name(), "collision")
-	return 32.0  # Default fallback
-
-## Setup visual debug circle for PersonalSpaceArea
-func _setup_personal_space_debug_visual() -> void:
-	if not personal_space_area:
-		return
-
-	# Create a visual circle to show the PersonalSpaceArea radius
-	var debug_circle = ColorRect.new()
-	debug_circle.name = "DebugPersonalSpaceCircle"
-	debug_circle.color = Color(1.0, 0.0, 1.0, 0.2)  # Magenta with transparency
-	debug_circle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-
-	# Get the radius for sizing
-	var radius = _get_personal_space_radius()
-	var diameter = radius * 2
-
-	# Size and position the visual circle
-	debug_circle.size = Vector2(diameter, diameter)
-	debug_circle.position = Vector2(-radius, -radius)  # Center on boss
-
-	# Add to the boss so it moves with the boss
-	add_child(debug_circle)
-
-	Logger.debug("%s: PersonalSpaceArea debug visual created (radius: %.1f)" % [get_boss_name(), radius], "collision")
+	# SET KNOCKBACK: Replace old knockback with new impulse (VS clone pattern)
+	# This creates sharp instant separation that decays smoothly
+	if avoidance_force.length_squared() > 0.1:
+		spacing_knockback = avoidance_force  # Replaces old knockback (not additive)
 
 ## SPRITE SCALING SYSTEM: Dedicated method for proper sprite scaling
 func _apply_sprite_scaling(scale_factor: float) -> void:

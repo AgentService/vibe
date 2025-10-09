@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3 uid="uid://bv75pwr8kpvud"]
+
+[ext_resource type="Script" path="res://tests/ability_system/AbilityManager_test.gd" id="1"]
+
+[node name="AbilityManagerTest" type="Node"]
+script = ExtResource("1")

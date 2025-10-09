@@ -438,21 +438,33 @@ func _is_enemy_owned_by_breach(enemy_node: Node2D, breach_id: String) -> bool:
 	return enemy_node.get_meta("breach_owner") == breach_id
 
 func _delete_breach_enemy_with_effect(enemy_node: Node2D) -> void:
-	"""Delete breach enemy with purple dissolve effect (no XP)"""
-	# Apply purple dissolve effect
-	if enemy_node.has_method("modulate"):
-		# Fade to purple then disappear
-		var tween = enemy_node.create_tween()
-		tween.tween_property(enemy_node, "modulate", Color(0.8, 0.0, 1.0, 0.0), 0.5)
-		tween.tween_callback(enemy_node.queue_free)
-	else:
+	"""Delete breach enemy instantly - direct removal without XP/loot rewards"""
+
+	# Get entity ID for proper cleanup through damage system
+	if not enemy_node.has_meta("entity_id"):
+		# Fallback: direct cleanup if no entity_id (shouldn't happen)
 		enemy_node.queue_free()
+		Logger.warn("Breach cleanup: Enemy missing entity_id, direct cleanup used", "events")
+		return
 
-	# Unregister from EntityTracker if it has an entity ID
-	if enemy_node.has_meta("entity_id"):
-		EntityTracker.unregister_entity(enemy_node.get_meta("entity_id"))
+	var entity_id: String = enemy_node.get_meta("entity_id")
 
-	Logger.debug("Breach cleanup: Enemy dissolved by shrinking circle (no XP)", "events")
+	# PERFORMANCE: Direct instant removal without damage calculation overhead
+	# This skips the entire damage pipeline (crit checks, modifiers, etc.)
+
+	# TODO: Add breach-specific death effect here when visual polish phase begins:
+	# - Option 1: Instant purple flash (modulate then queue_free)
+	# - Option 2: Spawn lightweight particle effect (pre-pooled GPUParticles2D)
+	# - Option 3: Use shader dissolve effect (most performant for 100+ enemies)
+	# Example: enemy_node.modulate = Color(0.8, 0.0, 1.0, 0.5)  # Purple tint
+
+	# Unregister from damage system (marks as dead, triggers cleanup)
+	DamageService.unregister_entity(entity_id)
+
+	# Direct scene cleanup (instant, no tween delay)
+	enemy_node.queue_free()
+
+	Logger.debug("Breach cleanup: Enemy dissolved by shrinking circle (no XP/loot)", "events")
 
 func _cleanup_completed_breaches() -> void:
 	"""Remove completed breach events and award mastery points"""

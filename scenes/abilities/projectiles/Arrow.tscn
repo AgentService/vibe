@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3 uid="uid://dnwh3g2sib1wj"]
+
+[ext_resource type="Script" uid="uid://cm6w61a2a2si5" path="res://scripts/entities/AbilityProjectile.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://b21rw2mg4mrg3" path="res://assets/effects/kenney_particle-pack/PNG (Transparent)/Rotated/muzzle_04_rotated.png" id="2_hu233"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_arrow"]
+size = Vector2(6, 3)
+
+[node name="Arrow" type="Node2D"]
+script = ExtResource("1")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+self_modulate = Color(0.403211, 0.567593, 0.653466, 1)
+scale = Vector2(0.084, 0.0542031)
+texture = ExtResource("2_hu233")
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+visible = false
+shape = SubResource("RectangleShape2D_arrow")

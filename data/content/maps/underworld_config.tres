@@ -1,6 +1,6 @@
 [gd_resource type="Resource" script_class="MapConfig" load_steps=2 format=3 uid="uid://bk74rb8j8bum0"]
 
-[ext_resource type="Script" uid="uid://8xo3r4641lup" path="res://scripts/resources/MapConfig.gd" id="1"]
+[ext_resource type="Script" uid="uid://8xo3r4641lup" path="res://scripts/resources/world/MapConfig.gd" id="1"]
 
 [resource]
 script = ExtResource("1")

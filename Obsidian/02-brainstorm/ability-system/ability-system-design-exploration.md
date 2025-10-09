@@ -531,45 +531,90 @@ func can_apply_to_ability(ability: BaseAbility) -> bool:
 
 ### Architecture Questions
 
-#### ✅ ANSWERED - Question 1: Base Class Hierarchy
-**Decision: ONE unified `BaseAbility` base class for all ability types**
+#### ✅ ANSWERED (REVISED 2025-10-06) - Question 1: Base Class Hierarchy
+**Decision: MINIMAL `BaseAbility` + `DamageAbility` intermediate class + type-specific subclasses**
 
-**Rationale:**
-- Power-ups need to work uniformly across all abilities
-- Tag system determines which properties are active (e.g., `has_tag("damage")`)
-- Unused properties are acceptable trade-off for code simplicity
-- Enables polymorphic handling: `Array[BaseAbility]` instead of separate arrays per type
+**Original Decision (DEPRECATED):**
+- ONE unified BaseAbility class with ALL optional properties (damage, cooldown, buff, AOE, orbit, etc.)
+- Unused properties acceptable for code simplicity
+- Tag system determines which properties are active
 
-**Implementation:**
+**Revised Decision (CURRENT):**
+- **BaseAbility**: TRULY minimal - only universal properties (10 total)
+- **DamageAbility**: Intermediate class for damage-dealing abilities (adds 10 damage properties)
+- **UtilityAbility**: Intermediate class for non-damage abilities (stub for future)
+- **Type-specific subclasses**: ProjectileAbility, MeleeAbility, BuffAbility, etc.
+
+**Rationale for Revision:**
+- Opening .tres files in Inspector showed 50+ properties with many irrelevant (buff_duration on projectiles)
+- Designers couldn't easily identify which properties actually matter for each ability type
+- Cluttered property inspector made iteration slower
+- Duck typing provides same cross-hierarchy modifier support without monolithic base class
+
+**New Implementation:**
 ```gdscript
-BaseAbility (ONE base class with optional properties)
-    ├─→ ProjectileAbility (adds: projectile_speed, projectile_count, pierce_count)
-    ├─→ BuffAbility (adds: buff_type, buff_strength)
-    ├─→ RadialAbility (adds: radius, tick_rate)
-    ├─→ CelestialAbility (adds: target_selection, travel_time)
-    └─→ MagicAbility (adds: effect_type, special_params)
+BaseAbility (TRULY minimal - 10 properties)
+  ├─→ DamageAbility (adds damage/cooldown/scaling - 10 properties)
+  │   ├─→ ProjectileAbility (adds projectile behavior - 9 properties)
+  │   ├─→ MeleeAbility (adds melee behavior - future)
+  │   └─→ AoEAbility (adds AOE behavior - future)
+  └─→ UtilityAbility (adds duration/cooldown - stub)
+      ├─→ BuffAbility (adds stat modifiers - stub)
+      ├─→ ShieldAbility (adds damage absorption - future)
+      └─→ MovementAbility (adds dash/teleport - future)
 
-BaseAbility properties:
-- ALWAYS used: ability_id, ability_name, ability_level, tags
-- OPTIONAL: base_damage, cooldown, duration, range
-- Tags indicate active properties: ["damage", "cooldown", "projectile", "fire"]
+BaseAbility properties (100% universal):
+- ability_id, ability_name, description, icon
+- tags, ability_level, max_level
+- visual_scene, impact_effect
+
+DamageAbility properties (100% of damage abilities):
+- base_damage, damage_type, inherent_element
+- base_cooldown, projectile_count (generic multi-hit)
+- damage_scaling_per_level, cooldown_scaling_per_level
+- level_breakpoints, breakpoint_bonuses
+- final_damage, final_cooldown (computed)
+- _active_modifiers (runtime modifier storage)
+
+ProjectileAbility properties (100% of projectile abilities):
+- fire_mode, is_homing, homing_strength
+- chains_to_enemies, chain_radius, pierce_count
+- knockback_distance, spread_angle
+- projectile_speed, projectile_lifetime
 ```
 
-**Power-Up Application Pattern:**
+**Duck Typing for Cross-Hierarchy Modifiers:**
 ```gdscript
-# Generic power-ups use tags:
-if ability.has_tag("damage"):
-    ability.base_damage *= multiplier
+# BaseTome.apply_to_ability() - defensive duck typing
+if not ability.has_method("add_modifier"):
+    push_warning("Cannot apply to non-damage ability")
+    return
 
-# Category-specific power-ups use type checks:
-if ability is ProjectileAbility:
-    ability.projectile_count += 2
+# DamageAbility._recalculate_final_stats() - flexible modifier application
+for modifier in _active_modifiers:
+    if "damage_multiplier" in modifier:
+        final_damage *= pow(modifier.damage_multiplier, modifier.stack_count)
+    if "cooldown_multiplier" in modifier:
+        final_cooldown *= pow(modifier.cooldown_multiplier, modifier.stack_count)
+    if "projectile_count_bonus" in modifier:
+        projectile_count += modifier.projectile_count_bonus * modifier.stack_count
+
+# Future ProjectileAbility override
+func _recalculate_final_stats() -> void:
+    super._recalculate_final_stats()  # Apply damage modifiers
+
+    # Apply projectile-specific modifiers
+    for modifier in _active_modifiers:
+        if "pierce_bonus" in modifier:
+            pierce_count += modifier.pierce_bonus * modifier.stack_count
 ```
 
-**Comparison to Bullet Strategy Pattern:**
-- Bullet strategy uses same approach (BaseBulletStrategy → child strategies)
-- Ability system mirrors this for consistency across codebase
-- Both systems benefit from polymorphic modifier application
+**Designer Experience Improvements:**
+- ProjectileAbility .tres files: 26 relevant properties (was 50+ with obsolete)
+- Clear property organization: BaseAbility (10) → DamageAbility (10) → ProjectileAbility (9)
+- No confusing buff_duration, aoe_radius, orbit_radius on projectile abilities
+- Ability Testing Tool shows only relevant fields (10 for ProjectileAbility, 3 for base DamageAbility)
+- Future ability types automatically work via duck typing
 
 ---
 

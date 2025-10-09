@@ -1,4 +1,4 @@
-[gd_scene load_steps=48 format=3 uid="uid://cyejk5ial4frs"]
+[gd_scene load_steps=46 format=3 uid="uid://cyejk5ial4frs"]
 
 [ext_resource type="Script" uid="uid://p2kutjo8t5e8" path="res://scenes/bosses/AncientSlime.gd" id="1_slime"]
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="2_hbar"]
@@ -65,9 +65,9 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("37_ae5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_east",
-"speed": 8.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -88,9 +88,9 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("31_an5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_north",
-"speed": 8.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -111,9 +111,9 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("25_as5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_south",
-"speed": 8.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -134,9 +134,17 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("43_aw5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_west",
-"speed": 8.0
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("4_s0")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -153,7 +161,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_east",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -170,7 +178,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_north",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -187,7 +195,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_south",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -204,34 +212,24 @@ animations = [{
 }],
 "loop": true,
 "name": &"walking_west",
-"speed": 6.0
+"speed": 5.0
 }]
-
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_83bbo"]
-radius = 8.0
-height = 16.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_hj45v"]
 size = Vector2(19, 38)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_83bbo"]
-radius = 45.0
-
-[node name="AncientSlime" type="CharacterBody2D"]
-collision_layer = 2
+[node name="AncientSlime" type="Node2D"]
 script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_slime")
-animation = &"walking_east"
+animation = &"walking_west"
 offset = Vector2(0, -15.585)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-position = Vector2(0, -4)
-shape = SubResource("CapsuleShape2D_83bbo")
 
 [node name="HitBox" type="Area2D" parent="."]
 visible = false
+collision_layer = 2
+collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
 position = Vector2(0, -16)
@@ -245,11 +243,3 @@ shape = SubResource("RectangleShape2D_hj45v")
 scale = Vector2(1.93333, 1.88571)
 offset = Vector2(0, 0.165)
 opacity = 0.8
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-collision_layer = 0
-collision_mask = 2
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-visible = false
-shape = SubResource("CircleShape2D_83bbo")

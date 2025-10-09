@@ -1,51 +1,34 @@
 extends Node
 
-## Fixed-Step Combat Timing Manager (30 Hz) - Task 04 Phase 2 Complete
-##
-## ARCHITECTURE PATTERN: Fixed-Step Game Loop with Accumulator
+## Fixed-Step Combat Timing Manager - Godot Native Implementation
 ## ============================================================
 ##
 ## PURPOSE:
 ## Ensures deterministic, frame-rate-independent combat timing by running game logic
-## at a fixed 30 Hz timestep, regardless of the display's refresh rate (60Hz, 144Hz, etc).
+## at a fixed timestep using Godot's built-in _physics_process().
 ##
 ## NOTE: Run statistics tracking has been migrated to SessionState autoload (Task 04 Phase 2).
 ##
-## WHY 30 HZ?
-## - Balance between performance and responsiveness
-## - Gives systems 33.33ms per frame to execute logic
-## - Smooth enough for top-down action gameplay
-## - Compatible with Godot's physics tick rate
+## ARCHITECTURE PATTERN: Godot Physics Process
+## ============================================
 ##
-## ACCUMULATOR PATTERN:
-## The accumulator pattern solves the "variable delta time" problem:
+## This system uses Godot's native _physics_process() for fixed-step timing instead of
+## a custom accumulator. This provides:
 ##
-##   1. Every frame: Add frame time (delta) to accumulator
-##   2. While accumulator >= COMBAT_DT (33.33ms):
-##      - Emit one combat_step signal
-##      - Subtract COMBAT_DT from accumulator
-##   3. Leftover accumulator time carries to next frame
+## - **Automatic fixed timestep**: Godot handles the timing internally (C++ optimized)
+## - **Physics interpolation**: Set physics_interpolation=true for smooth rendering
+## - **Simple implementation**: No manual accumulator management needed
+## - **Engine integration**: Works seamlessly with CharacterBody2D, RigidBody2D, etc.
 ##
-## EXAMPLE BEHAVIOR:
-##   Frame 1 (60 FPS, 16.67ms delta):
-##     _accumulator = 16.67ms
-##     16.67ms < 33.33ms → No combat step this frame
+## CONFIGURATION (project.godot):
+## - common/physics_ticks_per_second: Controls fixed timestep rate (60 Hz recommended)
+## - common/physics_interpolation: Smooths rendering between physics steps (true)
 ##
-##   Frame 2 (60 FPS, 16.67ms delta):
-##     _accumulator = 16.67 + 16.67 = 33.34ms
-##     33.34ms >= 33.33ms → Emit 1 combat step
-##     _accumulator = 33.34 - 33.33 = 0.01ms (carries forward)
-##
-##   Frame 3 (144 FPS, 6.94ms delta):
-##     _accumulator = 0.01 + 6.94 = 6.95ms
-##     6.95ms < 33.33ms → No combat step this frame
-##
-## RESULT: Combat logic runs at exactly 30 Hz, independent of frame rate.
-##
-## DETERMINISM:
-## - Fixed timestep (COMBAT_DT) ensures consistent physics
-## - RNG seeding (run_seed) makes runs reproducible
-## - Same seed + same inputs = same results (critical for replays, testing)
+## WHY GODOT NATIVE?
+## - Simpler code (no custom accumulator, no manual interpolation)
+## - Better performance (C++ implementation vs GDScript)
+## - Automatic physics interpolation (no position tracking needed)
+## - No need for deterministic replay or rollback netcode
 ##
 ## SIGNAL EMISSION:
 ## Systems connect to EventBus.combat_step to run their fixed-step logic:
@@ -54,25 +37,25 @@ extends Node
 ##   - MeleeSystem: Attack cooldowns
 ##   - Movement: Position updates
 ##
+## DETERMINISM:
+## - Fixed timestep ensures consistent physics behavior
+## - RNG seeding (run_seed) makes runs reproducible for testing
+## - Same seed + same inputs = same results
+##
 ## PAUSE INTEGRATION:
-## - process_mode = PAUSABLE stops accumulator when game paused
+## - process_mode = PAUSABLE stops physics processing when game paused
 ## - No time accumulation during pause → freeze game state
 ## - Resume from exact same state when unpaused
 ##
 ## REFERENCES:
-## - Glenn Fiedler's "Fix Your Timestep" article: https://gafferongames.com/post/fix_your_timestep/
 ## - Godot fixed timestep docs: https://docs.godotengine.org/en/stable/tutorials/scripting/idle_and_physics_processing.html
+## - Godot physics interpolation: https://docs.godotengine.org/en/stable/tutorials/physics/interpolation/physics_interpolation.html
 ## - ARCHITECTURE.md - Fixed-Step Combat Loop (Decision 5a)
-
-const COMBAT_DT: float = 1.0 / 30.0  # 30 Hz fixed step (33.33ms per step)
 
 @export var run_seed: int = 0:
 	set(value):
 		run_seed = value
 		_seed_rng()
-
-# Accumulator stores leftover frame time between combat steps
-var _accumulator: float = 0.0
 
 func _ready() -> void:
 	# RunManager should pause with the game (stops time accumulation)
@@ -83,31 +66,40 @@ func _ready() -> void:
 		run_seed = int(Time.get_unix_time_from_system())
 	_seed_rng()
 
-	Logger.info("RunManager initialized (30Hz fixed-step timing only)", "systems")
+	Logger.info("RunManager initialized (using Godot physics_process)", "systems")
 
 
-func _process(delta: float) -> void:
-	## Fixed-step accumulator loop
-	## Runs multiple combat steps if frame took longer than COMBAT_DT
-	## Runs zero steps if frame was too fast (accumulator carries forward)
+## Godot's Built-in Physics Process (ACTIVE)
+## ================================================================
+## Uses Godot's optimized _physics_process() for fixed timestep combat.
+##
+## Benefits:
+## - Engine-optimized C++ implementation (faster than GDScript accumulator)
+## - Automatic physics interpolation via physics_interpolation=true
+## - Simple, maintainable code
+## - Easy tuning via project.godot settings
+##
+## Configuration in project.godot:
+##   [physics]
+##   common/physics_ticks_per_second=30       # Physics tick rate
+##   common/physics_interpolation=true        # Smooth rendering
+##
+## Physics Interpolation:
+## - Godot automatically interpolates transforms between physics ticks
+## - Works on local transforms in 2D (preserves scene tree pivots)
+## - No manual position tracking needed
+## - Call reset_physics_interpolation() when teleporting entities
+##
+func _physics_process(delta: float) -> void:
+	# Godot's built-in fixed timestep
+	# delta is always constant (e.g., 0.033s for 30Hz)
+	# Interpolation handled automatically by engine
 
-	# Don't accumulate time when game is paused
-	if get_tree().paused:
-		return
+	# Create typed payload with Godot's fixed physics delta
+	var payload := EventBus.CombatStepPayload_Type.new(delta)
 
-	# Add frame time to accumulator
-	_accumulator += delta
-
-	# Process as many fixed steps as accumulated time allows
-	while _accumulator >= COMBAT_DT:
-		# Create typed payload with fixed timestep
-		var payload := EventBus.CombatStepPayload_Type.new(COMBAT_DT)
-
-		# Emit combat step - all systems process this at exactly 30 Hz
-		EventBus.combat_step.emit(payload)
-
-		# Subtract one fixed step from accumulator
-		_accumulator -= COMBAT_DT
+	# Emit combat step - all systems process at physics tick rate
+	EventBus.combat_step.emit(payload)
 
 ## Legacy method for compatibility - use PauseManager instead
 func pause_game(v: bool) -> void:

@@ -110,6 +110,10 @@ func _ready() -> void:
 	# Call BaseArena._ready() first to setup base functionality
 	super._ready()
 
+	# Initialize enemy spawn dissolve effect system
+	EnemySpawnEffect.initialize()
+	Logger.info("Enemy spawn dissolve effect initialized", "effects")
+
 	# Apply map configuration if available
 	if map_config:
 		_apply_map_config()
@@ -149,6 +153,12 @@ func _ready() -> void:
 	Logger.info("Arena: About to setup player", "debug")
 	_setup_player()
 	Logger.info("Arena: Player setup complete, XP system will be injected by GameOrchestrator", "debug")
+
+	# Phase 1.3: Setup EntityPool parent for projectile spawning
+	if EntityPool:
+		EntityPool.set_entity_parent(self)
+		Logger.debug("Arena: Set EntityPool parent to arena for projectile spawning", "abilities")
+
 	_setup_ui()
 	Logger.info("Arena: UI setup complete", "debug")
 	

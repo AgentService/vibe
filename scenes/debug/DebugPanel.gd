@@ -24,6 +24,7 @@ extends Control
 @onready var kill_player_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/KillPlayerButton
 @onready var clear_all_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/ClearAllButton
 @onready var reset_session_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/ResetSessionButton
+@onready var ability_testing_btn: Button = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn/AbilityTestingButton
 
 # Performance Stats UI elements (moved to left column)
 @onready var performance_info: RichTextLabel = $PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/LeftColumn/PerformanceInfo
@@ -37,6 +38,9 @@ var selected_count: int = 1
 var selected_spawn_method: String = "cursor"  # "cursor" or "player"
 var available_enemy_types: Array[String] = []
 var background_panel: PanelContainer
+
+# Ability Testing Popup
+var ability_testing_popup: Window = null
 
 # Entity Inspector state
 var inspected_entity_id: String = ""
@@ -90,6 +94,7 @@ func _ready() -> void:
 	kill_player_btn.pressed.connect(_on_kill_player_pressed)
 	clear_all_btn.pressed.connect(_on_clear_all_pressed)
 	reset_session_btn.pressed.connect(_on_reset_session_pressed)
+	ability_testing_btn.pressed.connect(_on_ability_testing_pressed)
 	
 	# Connect cheat controls signals
 	god_mode_checkbox.toggled.connect(_on_god_mode_toggled)
@@ -980,3 +985,40 @@ func _on_kill_player_pressed() -> void:
 		if was_god_mode_active and CheatSystem and not CheatSystem.is_god_mode_active():
 			CheatSystem.toggle_god_mode()
 			_update_cheat_checkboxes()
+
+
+# Ability Testing Popup Handlers
+func _on_ability_testing_pressed() -> void:
+	Logger.info("Ability Testing button pressed", "debug")
+
+	if ability_testing_popup and is_instance_valid(ability_testing_popup):
+		# Popup already exists - bring to front
+		ability_testing_popup.show()
+		ability_testing_popup.move_to_foreground()
+	else:
+		# Create popup for first time
+		_create_ability_testing_popup()
+
+
+func _create_ability_testing_popup() -> void:
+	# Load popup scene
+	var popup_scene = preload("res://scenes/debug/AbilityTestingPopup.tscn")
+	ability_testing_popup = popup_scene.instantiate()
+
+	# Add to scene tree (as child of root to be independent)
+	get_tree().root.add_child(ability_testing_popup)
+
+	# Position popup (offset from screen center)
+	ability_testing_popup.position = Vector2i(400, 150)
+
+	# Connect close signal to handle cleanup
+	ability_testing_popup.close_requested.connect(_on_ability_popup_closed)
+
+	Logger.info("Ability Testing Popup created", "debug")
+
+
+func _on_ability_popup_closed() -> void:
+	if ability_testing_popup:
+		ability_testing_popup.queue_free()
+		ability_testing_popup = null
+	Logger.debug("Ability Testing Popup closed", "debug")

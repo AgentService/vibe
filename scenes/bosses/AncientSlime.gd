@@ -5,21 +5,17 @@ extends BaseBoss
 class_name AncientSlime
 
 func _ready() -> void:
-	# Set custom ancient slime stats
-	max_health = 500.0
-	current_health = 500.0
-	damage = 40.0
-	# speed will be set by BaseBoss from SpawnConfig - no override needed
-	attack_damage = 40.0
+	# Stats are set by setup_from_spawn_config() from template data (ancient_slime.tres)
+	# Only override attack-specific values not in template
 	attack_cooldown = 2.5  # Slightly slower attacks
 	attack_range = 85.0
-	# chase_range = 320.0  # Using BaseBoss default (5500.0)
 	animation_prefix = "walking"  # Uses walking_north, walking_south, etc.
-	
+
 	# Shadow is handled by BossShadow scene instance in the .tscn file
-	
-	# Call parent _ready() to handle all base initialization (including shadow setup)
+
+	# Call parent _ready() to handle all base initialization (spawn effect + animation)
 	super._ready()
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
 
 func get_boss_name() -> String:
 	return "AncientSlime"
@@ -63,12 +59,16 @@ func _play_attack_animation() -> void:
 	if animated_sprite.sprite_frames.has_animation(attack_anim):
 		animated_sprite.play(attack_anim)
 
-# Optional: Override AI for custom slime behavior
-func _update_ai(dt: float) -> void:
-	# Call base AI first (handles chase, movement, directional animations)
-	super._update_ai(dt)
-	
+# Override AI for slime-specific behavior (optional)
+func _update_ai(_dt: float) -> void:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
+		return
+
+	# Call base AI (handles chase, movement, directional animations)
+	super._update_ai(_dt)
+
 	# Future: Add slime-specific behaviors here
 	# - Poison pools when health < 50%
-	# - Slime split ability 
+	# - Slime split ability
 	# - Slower movement when damaged

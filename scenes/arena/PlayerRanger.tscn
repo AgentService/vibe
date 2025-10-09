@@ -1,12 +1,13 @@
-[gd_scene load_steps=267 format=3 uid="uid://b6nwvsp8celtj"]
+[gd_scene load_steps=268 format=3 uid="uid://b6nwvsp8celtj"]
 
 [ext_resource type="Script" uid="uid://uougsht51b6u" path="res://scenes/arena/Player.gd" id="1_t2e43"]
-[ext_resource type="Resource" uid="uid://bqepe3g45r6ij" path="res://data/content/default_player.tres" id="2_jkhsn"]
+[ext_resource type="Resource" uid="uid://c8y7xnm2qr1vp" path="res://data/content/ranger_player.tres" id="2_jkhsn"]
 [ext_resource type="Texture2D" uid="uid://nq6bmgoorh0r" path="res://assets/sprites/Raven Fantasy - Pixelart Top Down Character - Adventurer Set/Raven Fantasy - Pixelart Top Down Character - Adventurer Set/Extras/Character Base_skin1.png" id="3_rp7yh"]
 [ext_resource type="Texture2D" uid="uid://dokffq1ex1xqw" path="res://assets/sprites/Raven Fantasy - Pixelart Top Down Character - Adventurer Set/Raven Fantasy - Pixelart Top Down Character - Adventurer Set/Extras/test.png" id="3_xyvac"]
 [ext_resource type="Texture2D" uid="uid://ca2set0jptos0" path="res://assets/sprites/shadow.png" id="4_66fk3"]
 [ext_resource type="Texture2D" uid="uid://bkg2ysqbjac1q" path="res://assets/sprites/Raven Fantasy - Pixelart Top Down Character Base 2.0/Raven Fantasy - Pixelart Top Down Character Base 2.0/Base/Full.png" id="4_rp7yh"]
 [ext_resource type="PackedScene" uid="uid://bq3h5v0wk7yam" path="res://scenes/components/BossShadow.tscn" id="5_w5r3t"]
+[ext_resource type="Script" uid="uid://c7325cjc4x2bd" path="res://scripts/ui/debug/DebugAbilityDisplay.gd" id="8_6afhd"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_c7di0"]
 atlas = ExtResource("4_rp7yh")
@@ -2170,3 +2171,11 @@ shadow_filter = 1
 shadow_filter_smooth = 1.9
 texture = ExtResource("4_66fk3")
 texture_scale = 2.77
+
+[node name="DebugAbilityDisplay" type="Label" parent="."]
+z_index = 10
+offset_left = -387.0
+offset_top = -212.0
+offset_right = -147.0
+offset_bottom = -112.0
+script = ExtResource("8_6afhd")

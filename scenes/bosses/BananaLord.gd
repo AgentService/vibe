@@ -7,38 +7,24 @@ extends BaseBoss
 class_name BananaLord
 
 # BananaLord specific properties
-var has_woken_up: bool = false
 var is_taking_damage: bool = false
-var is_aggroed: bool = false
 
 func _ready() -> void:
-	# Set BananaLord specific stats (override BaseBoss defaults)
-	max_health = 200.0
-	current_health = 200.0
-	damage = 25.0
-	# speed will be set by BaseBoss from SpawnConfig - no override needed
-	attack_damage = 25.0
+	# Stats are set by setup_from_spawn_config() from template data (banana_lord.tres)
+	# Only override attack-specific values not in template
 	attack_cooldown = 1.5
 	attack_range = 60.0
-	# chase_range = 5300.0  # Using BaseBoss default (5500.0)
-	
-	# Call parent _ready() to handle base initialization
+
+	# Call parent _ready() to handle base initialization (spawn effect + animation)
 	super._ready()
-	
-	# BananaLord specific setup after base initialization
-	_setup_banana_lord_behavior()
+	# Note: Wake-up animation (if present) plays during spawn dissolve (0.5s)
+
+	# Connect animation finished for damage animation
+	if animated_sprite:
+		animated_sprite.connect("animation_finished", _on_animation_finished)
 
 func get_boss_name() -> String:
 	return "BananaLord"
-
-# BananaLord specific setup after BaseBoss initialization
-func _setup_banana_lord_behavior() -> void:
-	# Start with wake_up animation and pause it on first frame  
-	if animated_sprite and animated_sprite.sprite_frames:
-		animated_sprite.play("wake_up")
-		animated_sprite.pause()  # Stay on first frame until aggroed
-		animated_sprite.connect("animation_finished", _on_animation_finished)
-		# BananaLord spawned in dormant state
 
 # Override _exit_tree to call parent cleanup
 func _exit_tree() -> void:
@@ -54,26 +40,10 @@ func setup_from_spawn_config(config: SpawnConfig) -> void:
 	
 	# Note: Scaling is handled by unified scaling system in parent - no additional calls needed
 
-# Override parent AI with BananaLord-specific wake-up behavior
+# Override parent AI for BananaLord-specific behavior (optional)
 func _update_ai(_dt: float) -> void:
-	# Skip AI updates if paused by debug system
-	if ai_paused:
-		return
-
-	# Get player position from PlayerState
-	if not PlayerState.has_player_reference():
-		return
-
-	target_position = PlayerState.position
-	var distance_to_player: float = global_position.distance_to(target_position)
-
-	# Trigger aggro when player gets close
-	if distance_to_player <= chase_range and not is_aggroed:
-		_aggro()
-		return
-
-	# Only move after fully waking up
-	if not has_woken_up:
+	# IMPORTANT: Check spawn state first (from BaseBoss)
+	if _is_spawning or ai_paused or _is_dying:
 		return
 
 	# Call parent AI behavior for standard movement and attacks
@@ -94,24 +64,14 @@ func _perform_attack() -> void:
 
 # BananaLord specific methods
 
-func _aggro() -> void:
-	if is_aggroed:
-		return
-	is_aggroed = true
-	# BananaLord aggroed - beginning wake up sequence
-	animated_sprite.play("wake_up")  # Resume/restart the wake up animation
-
 func _on_animation_finished() -> void:
-	if animated_sprite.animation == "wake_up":
-		has_woken_up = true
-		animated_sprite.play("default")
-		# BananaLord fully awakened
-	elif animated_sprite.animation == "damage_taken":
+	# Handle damage animation completion
+	if animated_sprite.animation == "damage_taken":
 		is_taking_damage = false
 		animated_sprite.play("default")
 
 func _trigger_damage_animation() -> void:
-	# Trigger damage animation if not already playing and boss is awake
-	if not is_taking_damage and has_woken_up:
+	# Trigger damage animation if not already playing
+	if not is_taking_damage:
 		is_taking_damage = true
 		animated_sprite.play("damage_taken")

@@ -57,3 +57,11 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 
 func has_player_reference() -> bool:
 	return _player_ref != null
+
+## Gets the current player position (real-time at 30Hz via combat_step).
+## This is the preferred method for all systems needing player position.
+## Returns Vector2.ZERO if player reference not set.
+func get_position() -> Vector2:
+	# Position is updated every combat_step (30Hz) at line 38
+	# This cached value is always current for gameplay purposes
+	return position

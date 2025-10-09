@@ -69,6 +69,11 @@ const POOL_EXHAUSTION_WARNING_COOLDOWN: float = 2.0  # Only warn every 2 seconds
 # AI pause functionality for debug interface
 var ai_paused: bool = false
 
+# STAGGERED AI UPDATES: Spread AI processing across frames to reduce per-frame load
+# At 400 enemies with batch_size=50: 50 enemies/frame × 30Hz = 1500 updates/sec (down from 12K)
+var _ai_update_offset: int = 0  # Current batch offset in enemy pool
+const AI_UPDATE_BATCH_SIZE: int = 50  # Enemies processed per frame (configurable via balance)
+
 # UNIFIED SPAWNING: Wave spawning state
 var current_run_time: float = 0.0
 var current_wave_level: int = 1
@@ -735,6 +740,11 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 	# Event spawning now handled by individual event handlers (BreachEventHandler)
 	# No strategy registration needed - events manage their own spawn logic
 
+	# SCENE-BASED ENEMY CAP: Check max_enemies limit (applies to all scene-based enemies)
+	var current_enemy_count = get_tree().get_nodes_in_group("enemies").size()
+	if current_enemy_count >= max_enemies:
+		# Silently skip spawning - pool is full
+		return null
 
 	# Try to get specific scene for this enemy type
 	var enemy_scene: PackedScene = _preloaded_boss_scenes.get(spawn_config.template_id)
@@ -759,14 +769,19 @@ func _spawn_boss_scene(spawn_config: SpawnConfig) -> Node2D:
 		enemy_instance.spawn_config = spawn_config
 		enemy_instance.setup_from_spawn_config(spawn_config)
 
-	# Apply modulation if specified (for all enemies, not just breach)
+	# Apply modulation if specified - set on sprite before spawn effect
 	if spawn_config.modulate != Color.WHITE:
-		enemy_instance.modulate = spawn_config.modulate
+		# Find AnimatedSprite2D and apply modulate so it dissolves in with color
+		var sprite = enemy_instance.get_node_or_null("AnimatedSprite2D")
+		if sprite:
+			sprite.modulate = spawn_config.modulate
+		else:
+			Logger.warn("Could not find AnimatedSprite2D on boss %s for modulate" % spawn_config.template_id, "events")
 
 	# Apply event-specific properties based on strategy
 	if spawn_config.event_id and spawn_config.event_id.begins_with("breach_"):
 		enemy_instance.set_meta("breach_spawned", true)
-	
+
 	# Use YSort_Objects container for proper Y-sorting, fallback to ArenaRoot
 	var spawn_container = _get_ysort_container_or_arena_root()
 
@@ -897,19 +912,24 @@ func _update_enemies(dt: float) -> void:
 	# Skip enemy AI updates if paused for debug
 	if ai_paused:
 		return
-	
+
 	# PERFORMANCE OPTIMIZATION: Pre-calculate values once
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
 	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
 	var update_distance_squared: float = update_distance * update_distance  # Eliminate sqrt calls
 	var target_x: float = target_pos.x
 	var target_y: float = target_pos.y
-	
+
 	# ZERO-ALLOC: Clear entity update queue for this frame
 	_entity_update_queue.clear()
-	
-	# PERFORMANCE: Direct bit-field iteration instead of get_alive_enemies() (eliminates array allocation)
-	for i in range(max_enemies):
+
+	# STAGGERED AI: Calculate batch range for this frame
+	# This spreads 400 enemies across 8 frames (400/50) = ~13ms AI budget per enemy over 8 frames
+	var batch_start: int = _ai_update_offset
+	var batch_end: int = min(_ai_update_offset + AI_UPDATE_BATCH_SIZE, max_enemies)
+
+	# PERFORMANCE: Only process enemies in current batch window
+	for i in range(batch_start, batch_end):
 		if not _is_enemy_alive_bitfield(i):
 			continue
 			
@@ -944,7 +964,7 @@ func _update_enemies(dt: float) -> void:
 				enemy.pos.y = enemy_y + enemy.vel.y * dt
 				
 				# ZERO-ALLOC: Use pooled payload instead of Dictionary allocation
-				var entity_id: String = get_enemy_entity_id(i)  # Direct index access (O(1))
+				var entity_id: String = _pre_generated_entity_ids[i]  # O(1) array access (pre-computed)
 				var update_payload = _update_payload_pool.acquire()
 				if update_payload:
 					update_payload["entity_id"] = entity_id
@@ -959,11 +979,16 @@ func _update_enemies(dt: float) -> void:
 	while not _entity_update_queue.is_empty():
 		var update_payload = _entity_update_queue.try_pop()
 		if update_payload:
+			# Only update EntityTracker - DamageService syncs via signal automatically
 			EntityTracker.update_entity_position(update_payload["entity_id"], update_payload["position"])
-			DamageService.update_entity_position(update_payload["entity_id"], update_payload["position"])
-			
+
 			# Release payload back to pool for reuse
 			_update_payload_pool.release(update_payload)
+
+	# STAGGERED AI: Advance batch offset for next frame
+	_ai_update_offset += AI_UPDATE_BATCH_SIZE
+	if _ai_update_offset >= max_enemies:
+		_ai_update_offset = 0  # Wrap around to start
 
 func _is_out_of_bounds(pos: Vector2) -> bool:
 	return abs(pos.x) > arena_bounds or abs(pos.y) > arena_bounds
@@ -1021,15 +1046,18 @@ func stop() -> void:
 func reset() -> void:
 	"""Reset WaveDirector state for clean scene transitions"""
 	Logger.info("WaveDirector: Resetting state", "waves")
-	
+
 	# Reset spawn timer
 	spawn_timer = 0.0
-	
+
 	# Clear cached alive enemies
 	_alive_enemies_cache.clear()
 	_cache_dirty = true
 	_last_free_index = 0
-	
+
+	# Reset staggered AI offset
+	_ai_update_offset = 0
+
 	# Reset AI pause state
 	ai_paused = false
 	

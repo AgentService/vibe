@@ -1,4 +1,4 @@
-[gd_scene load_steps=18 format=3 uid="uid://8e6qf7vr1fh5"]
+[gd_scene load_steps=16 format=3 uid="uid://8e6qf7vr1fh5"]
 
 [ext_resource type="Script" uid="uid://hjracmfrs5p3" path="res://scenes/bosses/BananaLord.gd" id="1_mjtd6"]
 [ext_resource type="Texture2D" uid="uid://nsm6fn3fdjvj" path="res://assets/sprites/banana_boss.png" id="3_w5q7g"]
@@ -53,9 +53,9 @@ animations = [{
 "duration": 1.0,
 "texture": SubResource("AtlasTexture_xt85e")
 }],
-"loop": true,
+"loop": false,
 "name": &"damage_taken",
-"speed": 10.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -86,35 +86,21 @@ animations = [{
 "speed": 5.0
 }]
 
-[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_w5q7g"]
-radius = 9.4
-height = 18.8
-
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_737yx"]
 size = Vector2(24, 63)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_w5q7g"]
-radius = 40.0
-
-[node name="BananaLord" type="CharacterBody2D"]
+[node name="BananaLord" type="Node2D"]
 y_sort_enabled = true
-collision_layer = 2
 script = ExtResource("1_mjtd6")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_mjtd6")
-animation = &"wake_up"
-frame = 2
-frame_progress = 1.0
 offset = Vector2(0, -25.625)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-z_index = 1
-position = Vector2(0, -6)
-shape = SubResource("CapsuleShape2D_w5q7g")
 
 [node name="HitBox" type="Area2D" parent="."]
 position = Vector2(-1.06667, -8.63333)
+collision_layer = 2
+collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
 position = Vector2(1.06667, -16.3667)
@@ -125,14 +111,7 @@ wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
 
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-visible = false
-collision_layer = 0
-collision_mask = 2
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-shape = SubResource("CircleShape2D_w5q7g")
-
 [node name="BossShadow" parent="." instance=ExtResource("4_7b065")]
+visible = false
 scale = Vector2(3.13333, 3.50883)
 offset = Vector2(0, -0.01)

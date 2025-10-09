@@ -1,4 +1,4 @@
-[gd_scene load_steps=72 format=3 uid="uid://cj52peu3ecx4l"]
+[gd_scene load_steps=70 format=3 uid="uid://cj52peu3ecx4l"]
 
 [ext_resource type="PackedScene" uid="uid://ci6ne8a3c5lro" path="res://scenes/components/BossHealthBar.tscn" id="1_861tk"]
 [ext_resource type="Script" uid="uid://1g570amni5gt" path="res://scenes/bosses/DemonOverlord.gd" id="1_kjm5n"]
@@ -97,7 +97,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_east",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -126,7 +126,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -155,7 +155,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north_east",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -184,7 +184,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north_west",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -213,7 +213,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -242,7 +242,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south_east",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -271,7 +271,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south_west",
-"speed": 6.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -300,31 +300,24 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_west",
-"speed": 6.0
+"speed": 5.0
 }]
-
-[sub_resource type="CircleShape2D" id="CircleShape2D_byhqc"]
-radius = 8.0
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
 size = Vector2(31, 41.5)
 
-[sub_resource type="CircleShape2D" id="CircleShape2D_mo2wd"]
-radius = 48.0
-
-[node name="DemonOverlord" type="CharacterBody2D"]
-collision_layer = 2
+[node name="DemonOverlord" type="Node2D"]
+y_sort_enabled = true
 script = ExtResource("1_kjm5n")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_demon")
-animation = &"scary_walk_south_west"
+animation = &"scary_walk_west"
 offset = Vector2(0, -12.675)
 
-[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
-shape = SubResource("CircleShape2D_byhqc")
-
 [node name="HitBox" type="Area2D" parent="."]
+collision_layer = 2
+collision_mask = 0
 
 [node name="HitBoxShape" type="CollisionShape2D" parent="HitBox"]
 position = Vector2(0, -12.75)
@@ -335,15 +328,6 @@ shape = SubResource("RectangleShape2D_04ech")
 [node name="BossHealthBar" parent="." instance=ExtResource("1_861tk")]
 
 [node name="BossShadow" parent="." instance=ExtResource("67_qtjdy")]
-z_as_relative = false
 scale = Vector2(2.889, 3.557)
 offset = Vector2(-0.64, 2.165)
 opacity = 0.8
-
-[node name="PersonalSpaceArea" type="Area2D" parent="."]
-visible = false
-collision_layer = 0
-collision_mask = 2
-
-[node name="PersonalSpaceShape" type="CollisionShape2D" parent="PersonalSpaceArea"]
-shape = SubResource("CircleShape2D_mo2wd")
