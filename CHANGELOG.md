@@ -2,6 +2,53 @@
 
 ## [Current Week - In Progress]
 
+### 🚨 CRITICAL FIX: Distance Cache 10x Performance Bug (2025-10-09)
+
+**Fixed 0-2 second enemy attack delay caused by incorrect cache interval:**
+
+**The Bug:**
+- **DISTANCE_CACHE_INTERVAL**: `2.0` seconds (should be `0.2` seconds) - **10x too slow!**
+- **POSITION_UPDATE_INTERVAL**: `20` frames (should be `2` frames) - **10x too slow!**
+- Comment said "200ms" but code did "2000ms"
+
+**Impact:**
+```
+Before fix:
+├─ 0.0s: Enemy spawns, player 500px away (out of range)
+├─ 0.5s: Player moves to 50px (in attack range)
+├─ Enemy STILL thinks player is 500px away! ❌
+├─ 1.0s-2.0s: Enemy continues thinking player is far
+└─ 2.0s: Cache updates, enemy realizes player is close ✓
+
+After fix:
+├─ 0.0s: Enemy spawns, player 500px away
+├─ 0.2s: Cache updates, enemy knows player position ✓
+└─ 0.4s: Cache updates again, responsive AI ✓
+```
+
+**Root Cause:**
+- Performance optimization comments said "200ms" and "2 frames"
+- But actual values were `2.0` (seconds) and `20` (frames)
+- Comment-code mismatch created 0-2 second random delay
+
+**Changes:**
+- Fix `DISTANCE_CACHE_INTERVAL: 2.0 → 0.2` (200ms as intended)
+- Fix `POSITION_UPDATE_INTERVAL: 20 → 2` (2 frames as intended)
+- Fix comments: "3 frames" → "2 frames", "67%" → "50%"
+
+**Expected Result:**
+- Enemies now react to player position within 200ms (not 2000ms)
+- **Attack delay eliminated** ✓
+- Responsive combat AI maintained
+- Performance optimization still active (6 frame cache vs every frame)
+
+**File Modified:**
+- `scripts/systems/boss/BaseBoss.gd:53` - DISTANCE_CACHE_INTERVAL constant
+- `scripts/systems/boss/BaseBoss.gd:55` - POSITION_UPDATE_INTERVAL constant
+- `scripts/systems/boss/BaseBoss.gd:327-328` - Updated comment accuracy
+
+---
+
 ### Spawn Timing Investigation (2025-10-09)
 
 **Investigated spawn animation timing mismatch between visual and gameplay states:**
