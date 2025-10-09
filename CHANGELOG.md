@@ -2,6 +2,22 @@
 
 ## [Current Week - In Progress]
 
+### FPS Cap Increased to 144 (2025-10-09)
+
+**Updated project settings to allow higher framerate rendering:**
+
+**Changes:**
+- ✅ **Increased FPS cap** from 60 to 144 in `project.godot`
+- ✅ **Removed duplicate setting** from `[application]` section (legacy/misplaced)
+- ✅ **Combat logic unaffected** - 30Hz fixed-step combat remains deterministic
+
+**Notes:**
+- Rendering framerate now targets 144fps for smoother visuals
+- Combat calculations still run at fixed 30Hz for deterministic gameplay
+- Consider enabling vsync if screen tearing occurs at high framerates
+
+---
+
 ### Boss Node2D Migration - Cleaner Architecture (2025-10-09)
 
 **Migrated bosses from Area2D to Node2D for cleaner separation of concerns:**

@@ -13,7 +13,6 @@ config_version=5
 config/name="Vibe"
 run/main_scene="res://scenes/main/Main.tscn"
 config/features=PackedStringArray("4.4", "Forward Plus")
-run/max_fps=60
 config/icon="res://icon.svg"
 
 [autoload]
@@ -67,7 +66,7 @@ window/size/initial_position_type=4
 window/size/initial_screen=1
 window/size/always_on_top=true
 window/stretch/mode="canvas_items"
-application/run/max_fps=60
+application/run/max_fps=144
 
 [editor_plugins]
 

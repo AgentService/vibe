@@ -36,14 +36,14 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_MIN_DISTANCE: float = 200.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
-const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
+const MANUAL_SPACING_STRENGTH: float = 1.5  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
 var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
-const KNOCKBACK_DECAY: float = 30.0  # Decay rate in pixels per second (like move_toward resistance)
+const KNOCKBACK_DECAY: float = 100.0  # Decay rate in pixels per second (like move_toward resistance)
 
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
@@ -626,12 +626,10 @@ func _apply_manual_spacing() -> void:
 
 		# Apply force if within spacing radius
 		if distance > 0.1 and distance < MANUAL_SPACING_RADIUS:
-			# Stronger force when closer (inverse square falloff)
-			var force_multiplier = 1.0 - (distance / MANUAL_SPACING_RADIUS)
+			# UNIFORM FORCE: Same strength regardless of distance (no falloff)
 			var push_direction = -to_other.normalized()  # Push away
 			# IMPULSE-BASED: Accumulate impulse strength (like VS clone collision)
-			var impulse_strength = MANUAL_SPACING_STRENGTH * force_multiplier
-			avoidance_force += push_direction * impulse_strength
+			avoidance_force += push_direction * MANUAL_SPACING_STRENGTH
 
 	# SET KNOCKBACK: Replace old knockback with new impulse (VS clone pattern)
 	# This creates sharp instant separation that decays smoothly
