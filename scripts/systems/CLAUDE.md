@@ -676,11 +676,15 @@ func _on_key_pressed(event: InputEventKey) -> void:
 - **Memory:** Object pooling prevents allocations during gameplay
 - **Crossover point:** Scene-based excels <1000 complex entities, MultiMesh excels >1000 simple entities
 
-**Important Notes:**
-- Ghost swarms have NO collision detection (visual only)
-- Simple chase AI with PackedVector2Array for performance
-- Static sprite rendering with color modulation only (no animation system)
-- Designed for special event waves, not standard spawning
+**Important Notes (Updated 2025-01-10):**
+- **Collision detection**: Distance-based collision for MultiMesh entities (16px radius)
+- **Health tracking**: PackedFloat32Array for efficient per-ghost HP storage
+- **Projectile integration**: Arrows/abilities now damage and kill ghosts via `check_hits_in_area()`
+- **Visual improvements**: Sprite rendering with separation forces (24px min distance)
+- **Ability targeting**: Ghosts included via Dictionary wrappers in AbilityController
+- **Performance**: Simple chase AI with PackedVector2Array for 1000+ entities
+- **Static rendering**: Color modulation only (no animation system)
+- **Use case**: Special event waves and visual pressure scenarios
 
 ## System-Specific Patterns
 

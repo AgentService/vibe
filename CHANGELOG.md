@@ -29,6 +29,43 @@
 
 **Philosophy**: Pragmatic foundation - avoid complexity, support specific high-perf needs
 
+### ✨ FEATURE: Ghost Swarm Integration Complete (2025-01-10)
+
+**Made ghost swarms fully interactive with visual improvements and collision detection:**
+
+**Visual Improvements:**
+- **Sprite rendering**: Purple slime sprite (slime_purple.png) with 60% opacity for ghostly effect
+- **Separation forces**: Added boids-like spacing (24px min distance, 50.0 force strength)
+- **Natural spread**: Randomized spawn radius (0.8-1.2x variance) prevents perfect circles
+- **Performance**: Sampled separation checks (~100 ghosts) instead of full N² comparisons
+
+**Collision System:**
+- **Distance-based detection**: Manual 16px radius collision for MultiMesh ghosts
+- **Health tracking**: PackedFloat32Array for efficient per-ghost HP storage
+- **Death handling**: Dead ghosts moved off-screen (-10000, -10000) until wave cleared
+- **Projectile integration**: Arrows now properly damage and kill ghosts
+
+**System Integration:**
+- **AbilityController**: Ghosts included in ability targeting via Dictionary wrappers
+- **Arena wiring**: ghost_swarm_spawner connected to player.ability_controller
+- **Input handling**: Fixed PathAware_Forest G key with `super._input(event)`
+- **Property checks**: Changed `arena.has()` → `"ghost_swarm_spawner" in arena` for Control compatibility
+
+**Technical Patterns:**
+- MultiMesh entities require manual collision (no Area2D nodes, just positions)
+- Duck typing for ghost wrappers: `{"global_position": Vector2, "is_ghost": true}`
+- Distance checks every physics step (30Hz) for real-time interaction
+
+**Files Modified:**
+- `scripts/systems/rendering/MultiMeshManager.gd` - Sprite texture loading
+- `scripts/systems/spawn/GhostSwarmSpawner.gd` - Separation, health, collision
+- `scripts/systems/AbilityController.gd` - Ghost targeting integration
+- `scenes/arena/Arena.gd` - Wiring ghost_swarm_spawner
+- `scripts/entities/AbilityProjectile.gd` - Distance-based collision detection
+- `scenes/arena/PathAware_Forest.gd` - Input handler inheritance
+
+**Result**: Ghost swarms are now fully playable - arrows kill ghosts, abilities target them, proper spacing maintained
+
 ### ⚡ FEATURE: Per-Boss Speed Variation Re-enabled (2025-10-09)
 
 **Re-enabled per-boss speed configuration from templates:**
