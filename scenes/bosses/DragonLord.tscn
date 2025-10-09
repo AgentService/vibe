@@ -70,7 +70,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"damage_taken",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -87,7 +87,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"default",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -104,7 +104,7 @@ animations = [{
 }],
 "loop": false,
 "name": &"wake_up",
-"speed": 1.0
+"speed": 5.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_7bior"]
@@ -116,7 +116,6 @@ script = ExtResource("1_215q3")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_lw0tx")
-animation = &"wake_up"
 offset = Vector2(0, -9.135)
 
 [node name="HitBox" type="Area2D" parent="."]

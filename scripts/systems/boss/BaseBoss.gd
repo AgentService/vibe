@@ -35,8 +35,8 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
-const MANUAL_SPACING_RADIUS: float = 999.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 50.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
+const MANUAL_SPACING_MIN_DISTANCE: float = 150.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 5.5  # Push force when too close
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks

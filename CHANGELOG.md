@@ -2,6 +2,68 @@
 
 ## [Current Week - In Progress]
 
+### Boss Node2D Migration - Cleaner Architecture (2025-10-09)
+
+**Migrated bosses from Area2D to Node2D for cleaner separation of concerns:**
+
+**Changes:**
+- ✅ **BaseBoss extends Node2D** (was Area2D)
+- ✅ **BossUpdateManager uses Array[Node2D]** (was Array[Area2D])
+- ✅ **Removed Area2D properties** from BaseBoss (collision_layer, collision_mask, monitoring, monitorable)
+- ✅ **HitBox child handles collision** - Area2D on Layer 2 for damage detection
+- ✅ **Updated all documentation** - Comments reflect Node2D architecture
+
+**Architecture Benefits:**
+- **Cleaner separation** - Movement (Node2D root) vs collision (Area2D HitBox child)
+- **Pure positioning entity** - Root node only handles movement/positioning
+- **Single responsibility** - HitBox Area2D exclusively handles damage detection
+- **No unnecessary properties** - Root node has no collision configuration
+- **Same performance** - Physics-free movement via direct position updates
+
+**Before (Area2D root):**
+```gdscript
+extends Area2D  # Root node handled both movement AND collision detection
+
+func _ready():
+    collision_layer = 2  # Collision config on root
+    collision_mask = 0
+    monitoring = false
+    monitorable = true
+    # HitBox child was redundant
+```
+
+**After (Node2D root):**
+```gdscript
+extends Node2D  # Root node handles movement only
+
+func _ready():
+    # No collision properties - pure positioning
+    # HitBox child (Area2D) handles all collision detection
+```
+
+**Scene Structure:**
+```
+[node name="Boss" type="Node2D"]  ← Movement/positioning
+├── AnimatedSprite2D              ← Visuals
+├── HitBox (Area2D)               ← Damage detection (Layer 2)
+│   └── HitBoxShape
+├── BossHealthBar
+└── BossShadow
+```
+
+**Files Modified:**
+- `scripts/systems/boss/BaseBoss.gd` - Extends Node2D, removed Area2D properties
+- `scripts/systems/boss/BossUpdateManager.gd` - Array[Node2D] type annotations
+- Boss scenes already converted by user (AncientLich, BananaLord, BossTemplate)
+
+**No Behavior Changes:**
+- Same physics-free movement (direct position updates)
+- Same damage detection (HitBox Area2D on Layer 2)
+- Same performance characteristics
+- Pure architectural cleanup
+
+---
+
 ### Hybrid Knockback System - EntityTracker + VS Clone UX (2025-10-09)
 
 **Implemented impulse-based enemy separation combining EntityTracker efficiency with Vampire Survivors knockback feel:**

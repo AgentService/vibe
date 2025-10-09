@@ -65,7 +65,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("37_ae5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_east",
 "speed": 5.0
 }, {
@@ -88,7 +88,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("31_an5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_north",
 "speed": 5.0
 }, {
@@ -111,7 +111,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("25_as5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_south",
 "speed": 5.0
 }, {
@@ -134,7 +134,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("43_aw5")
 }],
-"loop": false,
+"loop": true,
 "name": &"attack_west",
 "speed": 5.0
 }, {
@@ -142,7 +142,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("4_s0")
 }],
-"loop": false,
+"loop": true,
 "name": &"default",
 "speed": 5.0
 }, {
@@ -159,7 +159,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("15_e3")
 }],
-"loop": false,
+"loop": true,
 "name": &"walking_east",
 "speed": 5.0
 }, {
@@ -176,7 +176,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("11_n3")
 }],
-"loop": false,
+"loop": true,
 "name": &"walking_north",
 "speed": 5.0
 }, {
@@ -193,7 +193,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("7_s3")
 }],
-"loop": false,
+"loop": true,
 "name": &"walking_south",
 "speed": 5.0
 }, {
@@ -210,7 +210,7 @@ animations = [{
 "duration": 1.0,
 "texture": ExtResource("19_w3")
 }],
-"loop": false,
+"loop": true,
 "name": &"walking_west",
 "speed": 5.0
 }]
@@ -223,7 +223,7 @@ script = ExtResource("1_slime")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 sprite_frames = SubResource("SpriteFrames_slime")
-animation = &"attack_north"
+animation = &"walking_west"
 offset = Vector2(0, -15.585)
 
 [node name="HitBox" type="Area2D" parent="."]

@@ -97,7 +97,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_east",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -126,7 +126,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -155,7 +155,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north_east",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -184,7 +184,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_north_west",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -213,7 +213,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -242,7 +242,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south_east",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -271,7 +271,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_south_west",
-"speed": 1.0
+"speed": 5.0
 }, {
 "frames": [{
 "duration": 1.0,
@@ -300,7 +300,7 @@ animations = [{
 }],
 "loop": true,
 "name": &"scary_walk_west",
-"speed": 1.0
+"speed": 5.0
 }]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_04ech"]
