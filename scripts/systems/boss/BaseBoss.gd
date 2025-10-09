@@ -36,23 +36,23 @@ var _is_spawning: bool = true  # Flag to pause AI during spawn animation
 # MANUAL SPACING SYSTEM: EntityTracker-based distance checks (no Area2D collision overhead)
 const MANUAL_SPACING_ENABLED: bool = true  # Enable manual distance-based spacing
 const MANUAL_SPACING_RADIUS: float = 500.0  # Detection radius for nearby enemies
-const MANUAL_SPACING_MIN_DISTANCE: float = 100.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
+const MANUAL_SPACING_MIN_DISTANCE: float = 10.0  # Enemies within this distance to PLAYER don't space (allows dense clustering)
 const MANUAL_SPACING_RESPECT_MIN_DISTANCE: bool = false  # Whether to skip spacing for enemies close to player (false = always apply spacing)
-const MANUAL_SPACING_CHECK_INTERVAL: float = 1.5  # Check every 500ms (not every frame)
+const MANUAL_SPACING_CHECK_INTERVAL: float = 5.0  # Check every 500ms (not every frame)
 const MANUAL_SPACING_STRENGTH: float = 1.0   # Push force when too close
-const MANUAL_SPACING_LATERAL_BIAS: float = 0.33  # Radial weight (0.0 = pure sideways, 1.0 = no bias)
+const MANUAL_SPACING_LATERAL_BIAS: float = 0.1 # Radial weight (0.0 = pure sideways, 1.0 = no bias)
 var _spacing_check_timer: float = 0.0  # Timer for spacing checks
 
 # KNOCKBACK SYSTEM: Impulse-based separation (VS clone pattern)
 var spacing_knockback: Vector2 = Vector2.ZERO  # Current knockback velocity
-const KNOCKBACK_DECAY: float = 10.0  # Decay rate in pixels per second (like move_toward resistance)
+const KNOCKBACK_DECAY: float = 5.0  # Decay rate in pixels per second (like move_toward resistance)
 
 # PERFORMANCE CACHING: Cache expensive calculations across multiple frames
 var _cached_distance_to_player: float = 0.0
 var _distance_cache_timer: float = 0.0
-const DISTANCE_CACHE_INTERVAL: float = 1.0  # Update distance every 200ms (6 frames @ 30Hz)
+const DISTANCE_CACHE_INTERVAL: float = 2.0  # Update distance every 200ms (6 frames @ 30Hz)
 var _position_update_counter: int = 0
-const POSITION_UPDATE_INTERVAL: int = 10  # Update EntityTracker position every 2 frames
+const POSITION_UPDATE_INTERVAL: int = 20  # Update EntityTracker position every 2 frames
 
 # DIRECTION CACHING: Separate from animation for responsive movement
 var _direction_update_counter: int = 0

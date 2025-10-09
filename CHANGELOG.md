@@ -2,6 +2,25 @@
 
 ## [Current Week - In Progress]
 
+### XP Orb Drops Disabled (2025-10-09)
+
+**Disabled visual XP orb spawning in XpSystem:**
+
+**Changes:**
+- ✅ **Added early return** in `XpSystem._spawn_xp_orb()` to disable orb spawning (scripts/systems/combat/XpSystem.gd:47-48)
+- ✅ **Original code preserved** - Easy to re-enable by removing early return
+
+**Impact:**
+- No visual XP orbs spawn when enemies die
+- XP collection disabled (no `_on_xp_collected()` calls)
+- PlayerProgression won't gain XP
+- `enemy_killed` EventBus signal still fires normally
+
+**To Re-enable:**
+- Remove lines 47-48 (`# XP orb drops disabled` + `return`) from XpSystem.gd
+
+---
+
 ### Lateral Spacing Bias - Line-Forming Enemy Movement (2025-10-09)
 
 **Added lateral separation bias with distance gating for natural clustering and line-forming behavior:**
