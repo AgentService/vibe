@@ -2,6 +2,54 @@
 
 ## [Current Week - In Progress]
 
+### Lateral Spacing Bias - Line-Forming Enemy Movement (2025-10-09)
+
+**Added lateral separation bias to enemy spacing for natural line-forming behavior when approaching player:**
+
+**Changes:**
+- ✅ **New constant** - `MANUAL_SPACING_LATERAL_BIAS: float = 0.3` (30% radial, 70% sideways separation)
+- ✅ **Vector decomposition** - Splits spacing force into radial (toward/away player) and tangential (sideways) components
+- ✅ **Biased blending** - Applies weighted combination: `radial * 0.3 + tangential * 0.7`
+- ✅ **Line formation** - Enemies now prefer separating perpendicular to player approach direction
+
+**Algorithm (BaseBoss.gd:633-650):**
+```gdscript
+# 1. Calculate push direction from enemy collision
+var push_direction = -to_other.normalized()
+
+# 2. Get direction to player
+var to_player = (target_position - global_position).normalized()
+
+# 3. Decompose push into radial and tangential components
+var radial_strength = push_direction.dot(to_player)
+var radial_component = to_player * radial_strength
+var tangential_component = push_direction - radial_component
+
+# 4. Apply lateral bias (30% radial, 70% sideways)
+var biased_direction = (radial_component * LATERAL_BIAS +
+                        tangential_component * (1.0 - LATERAL_BIAS)).normalized()
+
+# 5. Apply biased force
+avoidance_force += biased_direction * MANUAL_SPACING_STRENGTH
+```
+
+**Behavior:**
+- **Before:** Enemies separated radially from each other (circular spread around player)
+- **After:** Enemies prefer sideways separation (form lines/arcs when approaching player)
+- **Tuning:** `LATERAL_BIAS = 0.0` = pure sideways, `1.0` = no bias (radial), `0.3` = 70% sideways preference
+
+**Performance:**
+- No additional cost - same vector operations, just different weighting
+- Replaces simple radial push with decomposed/biased push
+- Same O(n) complexity for spacing checks
+
+**Visual Result:**
+- More natural clustering behavior when enemies approach from one direction
+- Reduces overlap when multiple enemies chase from same angle
+- Creates dynamic "wave" patterns instead of circular mobs
+
+---
+
 ### FPS Cap Increased to 144 (2025-10-09)
 
 **Updated FPSLimiter autoload and project settings to allow higher framerate rendering:**
