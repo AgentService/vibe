@@ -56,6 +56,10 @@ var debug_system_controls: DebugSystemControls
 # Spawn zone management for breach events
 var _spawn_zone_areas: Array[Area2D] = []
 
+# Continuous ghost spawning (debug feature)
+var _ghost_spawn_timer: Timer = null
+var _continuous_ghost_spawning: bool = false
+
 # Death state management now handled in BaseArena
 
 @export_group("Boss Hit Feedback Settings")
@@ -166,6 +170,15 @@ func _ready() -> void:
 	add_child(ghost_swarm_spawner)
 	ghost_swarm_spawner.setup(multimesh_manager)
 	Logger.debug("GhostSwarmSpawner initialized for special waves", "ghost")
+
+	# Setup continuous ghost spawn timer (debug feature)
+	_ghost_spawn_timer = Timer.new()
+	_ghost_spawn_timer.wait_time = 5.0  # 5 second interval
+	_ghost_spawn_timer.one_shot = false
+	_ghost_spawn_timer.autostart = false
+	_ghost_spawn_timer.timeout.connect(_on_ghost_spawn_timer_timeout)
+	add_child(_ghost_spawn_timer)
+	Logger.debug("Ghost spawn timer initialized (5s interval)", "ghost")
 
 	# Create and add new systems
 	Logger.info("Arena: About to setup player", "debug")
@@ -423,20 +436,41 @@ func _return_to_hideout() -> void:
 		Logger.error("GameOrchestrator.go_to_hideout() not available", "arena")
 
 func _debug_spawn_ghost_swarm() -> void:
-	"""DEBUG: Spawn ghost swarm for testing (G key)"""
-	if not player or not ghost_swarm_spawner:
-		Logger.warn("Cannot spawn ghost swarm - player or spawner not ready", "debug")
+	"""DEBUG: Toggle additive ghost spawning (G key) - spawns ghosts every 5s when active"""
+	if not player or not ghost_swarm_spawner or not _ghost_spawn_timer:
+		Logger.warn("Cannot spawn ghost swarm - player, spawner, or timer not ready", "debug")
 		return
 
-	if ghost_swarm_spawner.is_active():
-		# Clear existing wave
-		ghost_swarm_spawner.clear_ghost_wave()
-		Logger.info("DEBUG: Ghost swarm cleared (press G again to spawn)", "debug")
+	# Toggle spawning on/off
+	if not _continuous_ghost_spawning:
+		# Start spawning
+		_continuous_ghost_spawning = true
+		_ghost_spawn_timer.start()
+		_spawn_ghost_wave_at_player()
+		Logger.info("DEBUG: Ghost spawning STARTED (spawns every 5s, accumulates without clearing)", "debug")
 	else:
-		# Spawn new wave at player position
-		var ghost_count = 1000  # Start with 1000 ghosts
-		ghost_swarm_spawner.spawn_ghost_wave(player.global_position, ghost_count)
-		Logger.info("DEBUG: Spawned %d ghost swarm (press G to clear)" % ghost_count, "debug")
+		# Stop spawning
+		_continuous_ghost_spawning = false
+		_ghost_spawn_timer.stop()
+		Logger.info("DEBUG: Ghost spawning STOPPED (%d ghosts remain)" % ghost_swarm_spawner.get_ghost_count(), "debug")
+
+
+func _on_ghost_spawn_timer_timeout() -> void:
+	"""Timer callback - spawns a new ghost wave around player every 5 seconds (additive)"""
+	if not player or not ghost_swarm_spawner:
+		return
+
+	# Spawn new wave WITHOUT clearing (additive accumulation)
+	_spawn_ghost_wave_at_player()
+
+
+func _spawn_ghost_wave_at_player() -> void:
+	"""Spawns 1000 ghosts around the player's current position"""
+	if not player or not ghost_swarm_spawner:
+		return
+
+	var ghost_count = 2000
+	ghost_swarm_spawner.spawn_ghost_wave(player.global_position, ghost_count)
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
@@ -541,14 +575,23 @@ func _exit_tree() -> void:
 func on_teardown() -> void:
 	"""Teardown contract for scene transitions - ensures clean Arena shutdown"""
 	Logger.info("Arena teardown initiated", "arena")
-	
+
+	# Stop continuous ghost spawning and clear all ghosts
+	if _ghost_spawn_timer:
+		_ghost_spawn_timer.stop()
+	_continuous_ghost_spawning = false
+
+	if ghost_swarm_spawner:
+		ghost_swarm_spawner.clear_ghost_wave()
+		Logger.debug("Ghost swarm cleared during teardown", "ghost")
+
 	# Stop and reset WaveDirector
 	if spawn_director:
 		if spawn_director.has_method("stop"):
 			spawn_director.stop()
 		if spawn_director.has_method("reset"):
 			spawn_director.reset()
-	
+
 	# Clear EntityTracker of enemy entities
 	if EntityTracker:
 		if EntityTracker.has_method("clear"):

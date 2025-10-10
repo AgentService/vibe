@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="EnemyTemplate" load_steps=2 format=3 uid="uid://cnq4j7vl8m3hs"]
+
+[ext_resource type="Script" uid="uid://dumr0pjnm2w32" path="res://scripts/domain/EnemyTemplate.gd" id="1_ghost"]
+
+[resource]
+script = ExtResource("1_ghost")
+id = &"ghost_swarm"
+parent_path = ""
+health_range = Vector2(8, 12)
+damage_range = Vector2(0, 0)
+speed_range = Vector2(80, 120)
+size_factor = 0.8
+hue_range = Vector2(0.5, 0.7)
+tags = Array[StringName]([&"ghost", &"swarm", &"special"])
+weight = 0.0
+render_tier = "swarm"
+boss_scene_path = ""
+visual_config = {}

@@ -133,18 +133,22 @@ func _setup_ghost_swarm_multimesh() -> void:
 	multimesh.use_colors = false
 	multimesh.instance_count = 0
 
-	var mesh_size = Vector2(32, 32)
+	# Match mesh size to texture size for proper rendering (scaled down in-game)
+	var mesh_size = Vector2(64, 64)  # Increased from 32x32 to better fit 1024x1024 texture
 	var ghost_mesh := _get_pooled_quadmesh(mesh_size)
 	multimesh.mesh = ghost_mesh
 
-	# Load slime sprite for ghosts
+	# Load ghost sprite
 	if DisplayServer.get_name() != "headless":
-		var ghost_sprite_path = "res://assets/sprites/slime_purple.png"
+		var ghost_sprite_path = "res://assets/sprites/ghost4.png"
+		Logger.info("GHOST TEXTURE LOADING: Attempting to load %s" % ghost_sprite_path, "rendering")
 		if ResourceLoader.exists(ghost_sprite_path):
 			var ghost_tex = load(ghost_sprite_path) as Texture2D
 			mm_ghost_swarm.texture = ghost_tex
+			Logger.info("GHOST TEXTURE LOADED: Successfully loaded ghost4.png (size: %s)" % str(ghost_tex.get_size()), "rendering")
 		else:
 			# Fallback to procedural texture
+			Logger.warn("Ghost sprite not found at: %s - using fallback" % ghost_sprite_path, "rendering")
 			var img := Image.create(32, 32, false, Image.FORMAT_RGBA8)
 			img.fill(Color(1.0, 1.0, 1.0, 0.6))
 			var ghost_tex := ImageTexture.create_from_image(img)
@@ -154,8 +158,8 @@ func _setup_ghost_swarm_multimesh() -> void:
 	if DisplayServer.get_name() != "headless" and mm_ghost_swarm.texture == null:
 		mm_ghost_swarm.texture = _get_shared_dummy_texture()
 
-	# Visual styling for ghosts - semi-transparent for ghostly effect
-	mm_ghost_swarm.self_modulate = Color(1.0, 1.0, 1.0, 0.6)  # 60% opacity
+	# No color modulation - display sprite as-is
+	mm_ghost_swarm.self_modulate = Color(1.0, 1.0, 1.0, 1.0)  # Full opacity, no tint
 	mm_ghost_swarm.z_index = 0  # Same layer as enemies
 
 ## Update projectile transforms (called by projectile system)

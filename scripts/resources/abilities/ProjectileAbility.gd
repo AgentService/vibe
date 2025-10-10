@@ -162,6 +162,7 @@ func _determine_firing_direction(player: Node2D, context: Dictionary) -> Vector2
 
 ## Gets direction to the closest enemy from context.
 ## Returns Vector2.RIGHT if no enemies available.
+## Supports both scene-based enemies (Node2D) and ghost wrappers (Dictionary).
 func _get_direction_to_closest_enemy(player: Node2D, context: Dictionary) -> Vector2:
 	if not context.has("enemies"):
 		push_warning("ProjectileAbility: CLOSEST_ENEMY mode requires 'enemies' in context")
@@ -174,25 +175,44 @@ func _get_direction_to_closest_enemy(player: Node2D, context: Dictionary) -> Vec
 	var player_pos: Vector2 = player.global_position
 	var closest_enemy = null
 	var closest_distance: float = INF
+	var closest_enemy_position: Vector2 = Vector2.ZERO
 
-	# Find closest enemy
+	# Find closest enemy (supports both Node2D and Dictionary types)
 	for enemy in enemies:
-		if not is_instance_valid(enemy):
+		# Skip null or invalid entries
+		if not enemy:
 			continue
 
-		var enemy_node := enemy as Node2D
-		if not enemy_node:
-			continue
+		# Handle scene-based enemies (Node2D)
+		if enemy is Node2D:
+			var enemy_node: Node2D = enemy as Node2D
+			if not is_instance_valid(enemy_node):
+				continue
 
-		var distance: float = player_pos.distance_squared_to(enemy_node.global_position)
-		if distance < closest_distance:
-			closest_distance = distance
-			closest_enemy = enemy_node
+			var distance: float = player_pos.distance_squared_to(enemy_node.global_position)
+			if distance < closest_distance:
+				closest_distance = distance
+				closest_enemy = enemy_node
+				closest_enemy_position = enemy_node.global_position
 
-	# Return direction to closest enemy's hitbox center
+		# Handle ghost swarm wrappers (Dictionary with "global_position" key)
+		elif enemy is Dictionary and enemy.has("global_position"):
+			var ghost_pos: Vector2 = enemy["global_position"]
+			var distance: float = player_pos.distance_squared_to(ghost_pos)
+			if distance < closest_distance:
+				closest_distance = distance
+				closest_enemy = enemy  # Store Dictionary wrapper
+				closest_enemy_position = ghost_pos
+
+	# Return direction to closest enemy
 	if closest_enemy:
-		var target_position := _get_enemy_hitbox_center(closest_enemy)
-		return (target_position - player_pos).normalized()
+		# For scene-based enemies, try to get hitbox center
+		if closest_enemy is Node2D:
+			var target_position := _get_enemy_hitbox_center(closest_enemy)
+			return (target_position - player_pos).normalized()
+		# For ghost wrappers, use stored position
+		else:
+			return (closest_enemy_position - player_pos).normalized()
 	else:
 		return Vector2.RIGHT
 

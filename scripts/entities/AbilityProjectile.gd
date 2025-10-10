@@ -279,17 +279,18 @@ func _on_area_entered(area: Area2D) -> void:
 
 ## Check for collisions with ghost swarms (distance-based since ghosts are MultiMesh)
 func _check_ghost_collisions() -> void:
-	# Get ghost swarm spawner from arena (property access)
-	var arena = get_tree().current_scene
-	if not arena or not "ghost_swarm_spawner" in arena:
+	# Find Arena node (projectiles are spawned under Arena, so we can search upward)
+	# Arena is the scene that has ghost_swarm_spawner property
+	var arena = _find_arena_node()
+	if not arena:
 		return
 
 	var ghost_spawner = arena.ghost_swarm_spawner
 	if not ghost_spawner or not ghost_spawner.is_active():
 		return
 
-	# Collision radius (half of sprite size, ~16px for arrows)
-	var collision_radius = 16.0
+	# Collision radius (increased to 48px to hit stacked ghosts on player)
+	var collision_radius = 48.0
 
 	# Check for hits using area damage (efficient for MultiMesh ghosts)
 	var hit_indices = ghost_spawner.check_hits_in_area(global_position, collision_radius, damage)
@@ -390,6 +391,33 @@ func _update_homing_direction(delta: float) -> void:
 	if sprite:
 		sprite.rotation = direction.angle()
 
+
+## Finds the Arena node by searching upward from this projectile's parent chain
+func _find_arena_node() -> Node:
+	# Strategy 1: Search upward from this node's parents (projectiles spawned under Arena)
+	var current_node = get_parent()
+	var depth = 0
+	while current_node:
+		if "ghost_swarm_spawner" in current_node:
+			return current_node
+		current_node = current_node.get_parent()
+		depth += 1
+		if depth > 10:  # Prevent infinite loops
+			break
+
+	# Strategy 2: Try common paths (fallback)
+	var arena_paths = [
+		"Main/Arena",
+		"/root/Main/Arena",
+		"Arena"
+	]
+
+	for path in arena_paths:
+		var node = get_tree().root.get_node_or_null(path)
+		if node and "ghost_swarm_spawner" in node:
+			return node
+
+	return null
 
 ## Finds the closest enemy to this projectile
 func _find_closest_enemy() -> Node2D:
