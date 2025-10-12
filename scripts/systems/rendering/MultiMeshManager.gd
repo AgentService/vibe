@@ -191,6 +191,8 @@ func update_ghost_swarm(ghost_positions: PackedVector2Array) -> void:
 
 	for i in range(count):
 		var ghost_transform := Transform2D()
+		# Flip sprite vertically by scaling Y axis to -1 (keeps position correct)
+		ghost_transform.y = Vector2(0, -1)
 		ghost_transform.origin = ghost_positions[i]
 		mm_ghost_swarm.multimesh.set_instance_transform_2d(i, ghost_transform)
 

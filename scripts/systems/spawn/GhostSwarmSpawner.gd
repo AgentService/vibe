@@ -352,6 +352,26 @@ func get_living_ghost_positions() -> PackedVector2Array:
 
 	return living_positions
 
+## Get closest ghost position to a given point (for homing projectiles)
+func get_closest_ghost_position(from_pos: Vector2) -> Vector2:
+	if not _is_active or _ghost_positions.size() == 0:
+		return Vector2.ZERO
+
+	var closest_pos = Vector2.ZERO
+	var closest_dist_sq = INF
+
+	for i in range(_ghost_positions.size()):
+		# Skip dead ghosts
+		if _ghost_healths[i] <= 0:
+			continue
+
+		var dist_sq = from_pos.distance_squared_to(_ghost_positions[i])
+		if dist_sq < closest_dist_sq:
+			closest_dist_sq = dist_sq
+			closest_pos = _ghost_positions[i]
+
+	return closest_pos
+
 ## Get ghost position and health by index (for ability queries)
 func get_ghost_at_index(index: int) -> Dictionary:
 	if index < 0 or index >= _ghost_positions.size():

@@ -151,6 +151,9 @@ const BYPASS_DAMAGE_QUEUE_FOR_TESTING: bool = true
 ## Has the projectile been initialized?
 var _initialized: bool = false
 
+## Cached dummy node for ghost targeting (reused to avoid memory leaks)
+var _ghost_target_node: Node2D = null
+
 # ============================================================================
 # NODE REFERENCES
 # ============================================================================
@@ -248,6 +251,11 @@ func reset() -> void:
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
 	visible = true
+
+	# Clean up ghost target node when returning to pool
+	if _ghost_target_node:
+		_ghost_target_node.queue_free()
+		_ghost_target_node = null
 
 
 # ============================================================================
@@ -419,15 +427,13 @@ func _find_arena_node() -> Node:
 
 	return null
 
-## Finds the closest enemy to this projectile
+## Finds the closest enemy to this projectile (includes scene-based enemies AND ghost swarm)
 func _find_closest_enemy() -> Node2D:
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	if enemies.is_empty():
-		return null
-
 	var closest: Node2D = null
 	var closest_dist: float = INF
 
+	# Check scene-based enemies
+	var enemies = get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if not is_instance_valid(enemy):
 			continue
@@ -440,6 +446,21 @@ func _find_closest_enemy() -> Node2D:
 		if dist < closest_dist:
 			closest_dist = dist
 			closest = enemy_node
+
+	# Check ghost swarm (MultiMesh ghosts don't have Node2D, use closest position)
+	var arena = _find_arena_node()
+	if arena and arena.ghost_swarm_spawner and arena.ghost_swarm_spawner.is_active():
+		var closest_ghost_pos = arena.ghost_swarm_spawner.get_closest_ghost_position(global_position)
+		if closest_ghost_pos != Vector2.ZERO:
+			var ghost_dist = global_position.distance_squared_to(closest_ghost_pos)
+			if ghost_dist < closest_dist:
+				# Use cached dummy node for ghost targeting (prevents memory leak)
+				if not _ghost_target_node:
+					_ghost_target_node = Node2D.new()
+					_ghost_target_node.name = "GhostTarget"
+				_ghost_target_node.global_position = closest_ghost_pos
+				closest = _ghost_target_node
+				closest_dist = ghost_dist
 
 	return closest
 

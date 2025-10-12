@@ -728,6 +728,101 @@ func _on_key_pressed(event: InputEventKey) -> void:
 - **Static rendering**: Color modulation only (no animation system)
 - **Use case**: Special event waves and visual pressure scenarios
 
+### 🎯 **Bridging MultiMesh with Scene-Based Systems (2025-01-10)**
+
+**Challenge:** Homing projectiles need to target both scene-based enemies AND MultiMesh ghosts, but:
+- Scene enemies exist as Node2D in "enemies" group (tree traversal)
+- MultiMesh ghosts exist only as GPU-instanced positions (no nodes)
+
+**Solution Pattern - Cached Dummy Node:**
+```gdscript
+# AbilityProjectile.gd - Homing projectile targeting
+## Cached dummy node for ghost targeting (reused to avoid memory leaks)
+var _ghost_target_node: Node2D = null
+
+func _find_closest_enemy() -> Node2D:
+    var closest: Node2D = null
+    var closest_dist: float = INF
+
+    # Check scene-based enemies (standard approach)
+    var enemies = get_tree().get_nodes_in_group("enemies")
+    for enemy in enemies:
+        if not is_instance_valid(enemy):
+            continue
+        var enemy_node := enemy as Node2D
+        if not enemy_node:
+            continue
+        var dist := global_position.distance_squared_to(enemy_node.global_position)
+        if dist < closest_dist:
+            closest_dist = dist
+            closest = enemy_node
+
+    # Check ghost swarm (MultiMesh bridge)
+    var arena = _find_arena_node()
+    if arena and arena.ghost_swarm_spawner and arena.ghost_swarm_spawner.is_active():
+        var closest_ghost_pos = arena.ghost_swarm_spawner.get_closest_ghost_position(global_position)
+        if closest_ghost_pos != Vector2.ZERO:
+            var ghost_dist = global_position.distance_squared_to(closest_ghost_pos)
+            if ghost_dist < closest_dist:
+                # Use cached dummy node for ghost targeting (prevents memory leak)
+                if not _ghost_target_node:
+                    _ghost_target_node = Node2D.new()
+                    _ghost_target_node.name = "GhostTarget"
+                _ghost_target_node.global_position = closest_ghost_pos
+                closest = _ghost_target_node
+                closest_dist = ghost_dist
+
+    return closest
+
+func reset() -> void:
+    # Clean up cached node when projectile returns to pool
+    if _ghost_target_node:
+        _ghost_target_node.queue_free()
+        _ghost_target_node = null
+```
+
+**GhostSwarmSpawner Integration:**
+```gdscript
+# GhostSwarmSpawner.gd - Position query for targeting
+## Get closest ghost position to a given point (for homing projectiles)
+func get_closest_ghost_position(from_pos: Vector2) -> Vector2:
+    if not _is_active or _ghost_positions.size() == 0:
+        return Vector2.ZERO
+
+    var closest_pos = Vector2.ZERO
+    var closest_dist_sq = INF
+
+    for i in range(_ghost_positions.size()):
+        # Skip dead ghosts
+        if _ghost_healths[i] <= 0:
+            continue
+
+        var dist_sq = from_pos.distance_squared_to(_ghost_positions[i])
+        if dist_sq < closest_dist_sq:
+            closest_dist_sq = dist_sq
+            closest_pos = _ghost_positions[i]
+
+    return closest_pos
+```
+
+**Key Design Points:**
+1. **Cached dummy node**: Prevents creating/destroying Node2D every frame (memory leak prevention)
+2. **Arena reference**: `_find_arena_node()` searches upward from projectile parent chain
+3. **Distance-squared optimization**: Avoids expensive sqrt() calls
+4. **Pool cleanup**: Node freed in `reset()` when projectile returns to pool
+5. **Unified API**: Returns Node2D for both scene and MultiMesh targets
+
+**Performance Impact:**
+- One-time Node2D allocation per projectile (reused across all homing updates)
+- O(n) ghost position scan (PackedVector2Array iteration)
+- Zero allocations during steady-state homing (cached node reused)
+
+**Use Cases:**
+- ✅ Heartseeker homing arrows targeting ghosts
+- ✅ Seeking missiles targeting closest entity (any type)
+- ✅ AoE abilities needing nearest target for spawn position
+- ✅ Auto-targeting abilities that should include MultiMesh entities
+
 ## System-Specific Patterns
 
 ### ⚔️ **MeleeSystem Cone Detection**

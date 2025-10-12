@@ -2,6 +2,51 @@
 
 ## [Current Week - In Progress]
 
+### 🎯 FEATURE: Heartseeker Homing Targets Ghost Swarms (2025-01-10)
+
+**Implemented ghost swarm targeting for homing projectiles (Heartseeker ability):**
+- **Root cause**: `_find_closest_enemy()` only searched scene-based enemies in "enemies" group
+  - Ghosts are MultiMesh instances, not scene nodes - never in group
+- **Solution**: Extended target finding to check both scene nodes AND ghost positions
+  - Added `get_closest_ghost_position()` to GhostSwarmSpawner.gd
+  - Modified `_find_closest_enemy()` in AbilityProjectile.gd
+  - Uses cached `_ghost_target_node` (Node2D) to prevent memory leaks
+- **Technical approach**:
+  - Arena reference: `_find_arena_node()` searches upward from projectile parent chain
+  - Distance checks: Uses distance_squared for performance (avoids sqrt)
+  - Cleanup: Cached node freed in `reset()` when projectile returns to pool
+- **Result**: Heartseeker arrows now target closest entity (scene enemy OR ghost position)
+
+**Files modified:**
+- `scripts/entities/AbilityProjectile.gd`: Extended homing logic
+- `scripts/systems/spawn/GhostSwarmSpawner.gd`: Added position query method
+
+### 🎨 FIX: Ghost Sprite Orientation Performance (2025-01-10)
+
+**Fixed ghosts rendering upside-down with optimal performance approach:**
+- **Evolution of fixes**:
+  1. Initial: Per-frame rotation (`ghost_transform.rotated(PI)`) → 60,000 ops/sec for 1000 ghosts
+  2. Second: One-time node rotation (`mm_ghost_swarm.rotation = PI`) → broke chase AI (inverted coordinates)
+  3. Final: Per-instance Y-axis flip (`ghost_transform.y = Vector2(0, -1)`) → essentially free (memory writes only)
+- **Technical details**:
+  - Y-axis flip mirrors sprite vertically without rotating coordinate system
+  - Position and movement remain in world space (chase AI works correctly)
+  - Performance: Just two float assignments per ghost, no trigonometry
+- **Result**: Ghosts render right-side up with correct chase behavior at optimal performance
+
+**File modified:**
+- `scripts/systems/rendering/MultiMeshManager.gd`: Lines 192-197
+
+### ⚙️ CONFIG: Ghost Speed & Size Adjustments (2025-01-10)
+
+**User-configured ghost stats for increased challenge:**
+- **Speed**: 80-120 → 150-220 (83-125% faster than before)
+- **Size**: 0.8 → 1.8 (2.25x larger sprites)
+- **Impact**: Faster, more visible ghosts increase gameplay pressure
+
+**File modified:**
+- `data/content/enemy-templates/ghost_swarm.tres`
+
 ### 🔧 TASK: MultiMesh Foundation Task Completed (2025-01-10)
 
 **Marked PERF_multimesh_foundation_ghosts_projectiles.md as ✅ COMPLETED:**
