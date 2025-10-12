@@ -430,7 +430,7 @@ func _setup_arena_multimesh() -> void:
 		
 		if mm_projectiles and mm_swarm and mm_regular and mm_elite and mm_boss:
 			# Create EnemyRenderTier helper and setup MultiMeshManager
-			var enemy_render_tier = preload("res://scripts/systems/EnemyRenderTier.gd").new()
+			var enemy_render_tier = preload("res://scripts/systems/rendering/EnemyRenderTier.gd").new()
 			multimesh_manager.setup(mm_projectiles, mm_swarm, mm_regular, mm_elite, mm_boss, enemy_render_tier)
 			print("✓ Manual MultiMeshManager setup completed")
 		else:

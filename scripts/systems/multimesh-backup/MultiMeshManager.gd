@@ -29,7 +29,7 @@ extends Node
 #
 # ═══════════════════════════════════════════════════════════════════════════════════════
 
-const EnemyRenderTier_Type := preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderTier_Type := preload("res://scripts/systems/rendering/EnemyRenderTier.gd")
 
 # MultiMesh node references (injected from Arena)
 var mm_projectiles: MultiMeshInstance2D

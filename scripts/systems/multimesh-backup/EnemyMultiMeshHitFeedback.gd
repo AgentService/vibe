@@ -25,7 +25,7 @@ var flash_effects: Dictionary = {}  # entity_id -> flash_data
 var knockback_effects: Dictionary = {}  # entity_id -> knockback_data
 
 # Enemy tier mapping for MultiMesh access !without vibe folder!!!
-const EnemyRenderTier_Type = preload("res://scripts/systems/EnemyRenderTier.gd")
+const EnemyRenderTier_Type = preload("res://scripts/systems/rendering/EnemyRenderTier.gd")
 
 func _ready() -> void:
 	# Load visual feedback configuration
