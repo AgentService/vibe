@@ -24,7 +24,7 @@ var flash_effects: Dictionary = {}
 var scale_effects: Dictionary = {}
 
 const EnemyRenderTier_Type = preload("res://scripts/systems/rendering/EnemyRenderTier.gd")
-const AlternativeVisualFeedback = preload("res://scripts/systems/rendering/multimesh/AlternativeVisualFeedback.gd")
+const AlternativeVisualFeedback = preload("res://scripts/systems/AlternativeVisualFeedback.gd")
 
 func _ready() -> void:
 	# Load enhanced visual feedback configuration

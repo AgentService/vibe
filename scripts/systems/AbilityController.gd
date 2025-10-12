@@ -29,6 +29,9 @@ class_name AbilityController
 ## Reference to the owning player
 var _player: Node2D
 
+## Optional reference to ghost swarm spawner for ghost targeting
+var ghost_swarm_spawner: GhostSwarmSpawner = null
+
 ## Ability slots (4 slots, null = empty)
 var ability_slots: Array[BaseAbility] = [null, null, null, null]
 
@@ -302,6 +305,7 @@ func _find_empty_tome_slot() -> int:
 ## Gets nearby enemies within the CURRENT ABILITY'S effective range.
 ## Uses the ability's final_range property for dynamic range detection.
 ## Falls back to 800px if ability has no range property (utility abilities).
+## INCLUDES ghost swarm enemies if active (as position wrappers).
 func _get_nearby_enemies(ability: BaseAbility) -> Array:
 	if not _player or not is_instance_valid(_player):
 		return []
@@ -321,6 +325,7 @@ func _get_nearby_enemies(ability: BaseAbility) -> Array:
 	if ability is DamageAbility:
 		detection_range = ability.final_range
 
+	# Add scene-based enemies
 	for enemy in all_enemies:
 		if not is_instance_valid(enemy):
 			continue
@@ -332,6 +337,19 @@ func _get_nearby_enemies(ability: BaseAbility) -> Array:
 		var distance := _player.global_position.distance_to(enemy_node.global_position)
 		if distance <= detection_range:
 			nearby_enemies.append(enemy_node)
+
+	# Add ghost swarm enemies (as position wrappers)
+	if ghost_swarm_spawner and ghost_swarm_spawner.is_active():
+		var ghost_positions = ghost_swarm_spawner.get_living_ghost_positions()
+		for ghost_pos in ghost_positions:
+			var distance := _player.global_position.distance_to(ghost_pos)
+			if distance <= detection_range:
+				# Create lightweight wrapper for ghost position
+				var ghost_wrapper = {
+					"global_position": ghost_pos,
+					"is_ghost": true
+				}
+				nearby_enemies.append(ghost_wrapper)
 
 	return nearby_enemies
 

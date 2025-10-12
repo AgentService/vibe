@@ -17,6 +17,8 @@ const BossSpawnManagerScript := preload("res://scripts/systems/spawn/BossSpawnMa
 const PlayerAttackHandlerScript := preload("res://scripts/systems/combat/PlayerAttackHandler.gd")
 const PlayerSpawnerScript := preload("res://scripts/systems/spawn/PlayerSpawner.gd")
 const VisualEffectsManagerScript := preload("res://scripts/systems/rendering/VisualEffectsManager.gd")
+const MultiMeshManagerScript := preload("res://scripts/systems/rendering/MultiMeshManager.gd")
+const GhostSwarmSpawnerScript := preload("res://scripts/systems/spawn/GhostSwarmSpawner.gd")
 const SystemInjectionManagerScript := preload("res://scripts/systems/SystemInjectionManager.gd")
 const ArenaInputHandlerScript := preload("res://scripts/systems/arena/ArenaInputHandler.gd")
 const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelector.gd")
@@ -30,6 +32,8 @@ const EntitySelectorScript := preload("res://scripts/systems/debug/EntitySelecto
 
 # Scene-based rendering approach
 @onready var melee_effects: Node2D = $MeleeEffects
+@onready var mm_projectiles: MultiMeshInstance2D = $MM_Projectiles
+@onready var mm_ghost_swarm: MultiMeshInstance2D = $MM_GhostSwarm
 var melee_system: MeleeSystem
 var debug_controller: DebugController
 var ui_manager: ArenaUIManager
@@ -42,6 +46,8 @@ var spawn_director: SpawnDirector
 var arena_system: ArenaSystem
 var enemy_render_tier: EnemyRenderTier
 var visual_effects_manager: VisualEffectsManager
+var multimesh_manager: MultiMeshManager
+var ghost_swarm_spawner: GhostSwarmSpawner
 var system_injection_manager: SystemInjectionManager
 var arena_input_handler: ArenaInputHandler
 var entity_selector: EntitySelector
@@ -49,6 +55,10 @@ var debug_system_controls: DebugSystemControls
 
 # Spawn zone management for breach events
 var _spawn_zone_areas: Array[Area2D] = []
+
+# Continuous ghost spawning (debug feature)
+var _ghost_spawn_timer: Timer = null
+var _continuous_ghost_spawning: bool = false
 
 # Death state management now handled in BaseArena
 
@@ -148,11 +158,37 @@ func _ready() -> void:
 	visual_effects_manager.boss_flash_intensity = boss_flash_intensity
 	add_child(visual_effects_manager)
 	visual_effects_manager.setup_hit_feedback_systems()
-	
+
+	# Setup MultiMesh rendering system (optional high-performance rendering)
+	multimesh_manager = MultiMeshManagerScript.new()
+	add_child(multimesh_manager)
+	multimesh_manager.setup(mm_projectiles, mm_ghost_swarm)
+	Logger.debug("MultiMeshManager initialized for ghost swarms and projectiles", "rendering")
+
+	# Setup Ghost Swarm Spawner for special events
+	ghost_swarm_spawner = GhostSwarmSpawnerScript.new()
+	add_child(ghost_swarm_spawner)
+	ghost_swarm_spawner.setup(multimesh_manager)
+	Logger.debug("GhostSwarmSpawner initialized for special waves", "ghost")
+
+	# Setup continuous ghost spawn timer (debug feature)
+	_ghost_spawn_timer = Timer.new()
+	_ghost_spawn_timer.wait_time = 5.0  # 5 second interval
+	_ghost_spawn_timer.one_shot = false
+	_ghost_spawn_timer.autostart = false
+	_ghost_spawn_timer.timeout.connect(_on_ghost_spawn_timer_timeout)
+	add_child(_ghost_spawn_timer)
+	Logger.debug("Ghost spawn timer initialized (5s interval)", "ghost")
+
 	# Create and add new systems
 	Logger.info("Arena: About to setup player", "debug")
 	_setup_player()
 	Logger.info("Arena: Player setup complete, XP system will be injected by GameOrchestrator", "debug")
+
+	# Wire ghost swarm spawner to player's AbilityController for targeting (after player is created)
+	if player and player.ability_controller:
+		player.ability_controller.ghost_swarm_spawner = ghost_swarm_spawner
+		Logger.debug("Ghost swarm spawner connected to player AbilityController", "ghost")
 
 	# Phase 1.3: Setup EntityPool parent for projectile spawning
 	if EntityPool:
@@ -379,21 +415,62 @@ func set_xp_system(injected_xp_system: XpSystem) -> void:
 
 func _input(event: InputEvent) -> void:
 	"""Handle arena-specific input events."""
-	
+
 	# Handle return to hideout (H key for testing)
 	if event is InputEventKey and event.pressed and event.keycode == KEY_H:
 		_return_to_hideout()
 
+	# DEBUG: Test ghost swarm with G key
+	if event is InputEventKey and event.pressed and event.keycode == KEY_G:
+		_debug_spawn_ghost_swarm()
+
 func _return_to_hideout() -> void:
 	"""Return to hideout from arena (debug/testing function)."""
-	
+
 	Logger.info("Returning to hideout from arena", "arena")
-	
+
 	# Use GameOrchestrator for proper teardown sequence
 	if GameOrchestrator and GameOrchestrator.has_method("go_to_hideout"):
 		GameOrchestrator.go_to_hideout()
 	else:
 		Logger.error("GameOrchestrator.go_to_hideout() not available", "arena")
+
+func _debug_spawn_ghost_swarm() -> void:
+	"""DEBUG: Toggle additive ghost spawning (G key) - spawns ghosts every 5s when active"""
+	if not player or not ghost_swarm_spawner or not _ghost_spawn_timer:
+		Logger.warn("Cannot spawn ghost swarm - player, spawner, or timer not ready", "debug")
+		return
+
+	# Toggle spawning on/off
+	if not _continuous_ghost_spawning:
+		# Start spawning
+		_continuous_ghost_spawning = true
+		_ghost_spawn_timer.start()
+		_spawn_ghost_wave_at_player()
+		Logger.info("DEBUG: Ghost spawning STARTED (spawns every 5s, accumulates without clearing)", "debug")
+	else:
+		# Stop spawning
+		_continuous_ghost_spawning = false
+		_ghost_spawn_timer.stop()
+		Logger.info("DEBUG: Ghost spawning STOPPED (%d ghosts remain)" % ghost_swarm_spawner.get_ghost_count(), "debug")
+
+
+func _on_ghost_spawn_timer_timeout() -> void:
+	"""Timer callback - spawns a new ghost wave around player every 5 seconds (additive)"""
+	if not player or not ghost_swarm_spawner:
+		return
+
+	# Spawn new wave WITHOUT clearing (additive accumulation)
+	_spawn_ghost_wave_at_player()
+
+
+func _spawn_ghost_wave_at_player() -> void:
+	"""Spawns 1000 ghosts around the player's current position"""
+	if not player or not ghost_swarm_spawner:
+		return
+
+	var ghost_count = 2000
+	ghost_swarm_spawner.spawn_ghost_wave(player.global_position, ghost_count)
 
 func setup_debug_controller() -> void:
 	# Create and configure DebugController with system dependencies
@@ -498,14 +575,23 @@ func _exit_tree() -> void:
 func on_teardown() -> void:
 	"""Teardown contract for scene transitions - ensures clean Arena shutdown"""
 	Logger.info("Arena teardown initiated", "arena")
-	
+
+	# Stop continuous ghost spawning and clear all ghosts
+	if _ghost_spawn_timer:
+		_ghost_spawn_timer.stop()
+	_continuous_ghost_spawning = false
+
+	if ghost_swarm_spawner:
+		ghost_swarm_spawner.clear_ghost_wave()
+		Logger.debug("Ghost swarm cleared during teardown", "ghost")
+
 	# Stop and reset WaveDirector
 	if spawn_director:
 		if spawn_director.has_method("stop"):
 			spawn_director.stop()
 		if spawn_director.has_method("reset"):
 			spawn_director.reset()
-	
+
 	# Clear EntityTracker of enemy entities
 	if EntityTracker:
 		if EntityTracker.has_method("clear"):

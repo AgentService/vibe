@@ -151,6 +151,9 @@ const BYPASS_DAMAGE_QUEUE_FOR_TESTING: bool = true
 ## Has the projectile been initialized?
 var _initialized: bool = false
 
+## Cached dummy node for ghost targeting (reused to avoid memory leaks)
+var _ghost_target_node: Node2D = null
+
 # ============================================================================
 # NODE REFERENCES
 # ============================================================================
@@ -187,6 +190,9 @@ func _on_combat_step(payload) -> void:
 
 	# Move projectile at fixed timestep (payload.dt is the fixed delta time, e.g., 0.033s for 30Hz)
 	position += direction * speed * payload.dt
+
+	# Check for ghost swarm collisions (manual distance check since ghosts are MultiMesh, not Area2D)
+	_check_ghost_collisions()
 
 	# Update lifetime
 	_remaining_lifetime -= payload.dt
@@ -246,6 +252,11 @@ func reset() -> void:
 	position = Vector2.ZERO
 	visible = true
 
+	# Clean up ghost target node when returning to pool
+	if _ghost_target_node:
+		_ghost_target_node.queue_free()
+		_ghost_target_node = null
+
 
 # ============================================================================
 # COLLISION DETECTION
@@ -273,6 +284,30 @@ func _on_area_entered(area: Area2D) -> void:
 	# Apply damage via DamageService (direct call - entity pattern)
 	_on_enemy_collision(enemy_id)
 
+
+## Check for collisions with ghost swarms (distance-based since ghosts are MultiMesh)
+func _check_ghost_collisions() -> void:
+	# Find Arena node (projectiles are spawned under Arena, so we can search upward)
+	# Arena is the scene that has ghost_swarm_spawner property
+	var arena = _find_arena_node()
+	if not arena:
+		return
+
+	var ghost_spawner = arena.ghost_swarm_spawner
+	if not ghost_spawner or not ghost_spawner.is_active():
+		return
+
+	# Collision radius (increased to 48px to hit stacked ghosts on player)
+	var collision_radius = 48.0
+
+	# Check for hits using area damage (efficient for MultiMesh ghosts)
+	var hit_indices = ghost_spawner.check_hits_in_area(global_position, collision_radius, damage)
+
+	if hit_indices.size() > 0:
+		# Hit at least one ghost - consume pierce
+		_remaining_pierce -= hit_indices.size()
+		if _remaining_pierce < 0:
+			call_deferred("despawn")
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
@@ -365,15 +400,40 @@ func _update_homing_direction(delta: float) -> void:
 		sprite.rotation = direction.angle()
 
 
-## Finds the closest enemy to this projectile
-func _find_closest_enemy() -> Node2D:
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	if enemies.is_empty():
-		return null
+## Finds the Arena node by searching upward from this projectile's parent chain
+func _find_arena_node() -> Node:
+	# Strategy 1: Search upward from this node's parents (projectiles spawned under Arena)
+	var current_node = get_parent()
+	var depth = 0
+	while current_node:
+		if "ghost_swarm_spawner" in current_node:
+			return current_node
+		current_node = current_node.get_parent()
+		depth += 1
+		if depth > 10:  # Prevent infinite loops
+			break
 
+	# Strategy 2: Try common paths (fallback)
+	var arena_paths = [
+		"Main/Arena",
+		"/root/Main/Arena",
+		"Arena"
+	]
+
+	for path in arena_paths:
+		var node = get_tree().root.get_node_or_null(path)
+		if node and "ghost_swarm_spawner" in node:
+			return node
+
+	return null
+
+## Finds the closest enemy to this projectile (includes scene-based enemies AND ghost swarm)
+func _find_closest_enemy() -> Node2D:
 	var closest: Node2D = null
 	var closest_dist: float = INF
 
+	# Check scene-based enemies
+	var enemies = get_tree().get_nodes_in_group("enemies")
 	for enemy in enemies:
 		if not is_instance_valid(enemy):
 			continue
@@ -386,6 +446,21 @@ func _find_closest_enemy() -> Node2D:
 		if dist < closest_dist:
 			closest_dist = dist
 			closest = enemy_node
+
+	# Check ghost swarm (MultiMesh ghosts don't have Node2D, use closest position)
+	var arena = _find_arena_node()
+	if arena and arena.ghost_swarm_spawner and arena.ghost_swarm_spawner.is_active():
+		var closest_ghost_pos = arena.ghost_swarm_spawner.get_closest_ghost_position(global_position)
+		if closest_ghost_pos != Vector2.ZERO:
+			var ghost_dist = global_position.distance_squared_to(closest_ghost_pos)
+			if ghost_dist < closest_dist:
+				# Use cached dummy node for ghost targeting (prevents memory leak)
+				if not _ghost_target_node:
+					_ghost_target_node = Node2D.new()
+					_ghost_target_node.name = "GhostTarget"
+				_ghost_target_node.global_position = closest_ghost_pos
+				closest = _ghost_target_node
+				closest_dist = ghost_dist
 
 	return closest
 

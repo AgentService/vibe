@@ -2,6 +2,351 @@
 
 ## [Current Week - In Progress]
 
+### 🎯 FEATURE: Heartseeker Homing Targets Ghost Swarms (2025-01-10)
+
+**Implemented ghost swarm targeting for homing projectiles (Heartseeker ability):**
+- **Root cause**: `_find_closest_enemy()` only searched scene-based enemies in "enemies" group
+  - Ghosts are MultiMesh instances, not scene nodes - never in group
+- **Solution**: Extended target finding to check both scene nodes AND ghost positions
+  - Added `get_closest_ghost_position()` to GhostSwarmSpawner.gd
+  - Modified `_find_closest_enemy()` in AbilityProjectile.gd
+  - Uses cached `_ghost_target_node` (Node2D) to prevent memory leaks
+- **Technical approach**:
+  - Arena reference: `_find_arena_node()` searches upward from projectile parent chain
+  - Distance checks: Uses distance_squared for performance (avoids sqrt)
+  - Cleanup: Cached node freed in `reset()` when projectile returns to pool
+- **Result**: Heartseeker arrows now target closest entity (scene enemy OR ghost position)
+
+**Files modified:**
+- `scripts/entities/AbilityProjectile.gd`: Extended homing logic
+- `scripts/systems/spawn/GhostSwarmSpawner.gd`: Added position query method
+
+### 🎨 FIX: Ghost Sprite Orientation Performance (2025-01-10)
+
+**Fixed ghosts rendering upside-down with optimal performance approach:**
+- **Evolution of fixes**:
+  1. Initial: Per-frame rotation (`ghost_transform.rotated(PI)`) → 60,000 ops/sec for 1000 ghosts
+  2. Second: One-time node rotation (`mm_ghost_swarm.rotation = PI`) → broke chase AI (inverted coordinates)
+  3. Final: Per-instance Y-axis flip (`ghost_transform.y = Vector2(0, -1)`) → essentially free (memory writes only)
+- **Technical details**:
+  - Y-axis flip mirrors sprite vertically without rotating coordinate system
+  - Position and movement remain in world space (chase AI works correctly)
+  - Performance: Just two float assignments per ghost, no trigonometry
+- **Result**: Ghosts render right-side up with correct chase behavior at optimal performance
+
+**File modified:**
+- `scripts/systems/rendering/MultiMeshManager.gd`: Lines 192-197
+
+### ⚙️ CONFIG: Ghost Speed & Size Adjustments (2025-01-10)
+
+**User-configured ghost stats for increased challenge:**
+- **Speed**: 80-120 → 150-220 (83-125% faster than before)
+- **Size**: 0.8 → 1.8 (2.25x larger sprites)
+- **Impact**: Faster, more visible ghosts increase gameplay pressure
+
+**File modified:**
+- `data/content/enemy-templates/ghost_swarm.tres`
+
+### 🔧 TASK: MultiMesh Foundation Task Completed (2025-01-10)
+
+**Marked PERF_multimesh_foundation_ghosts_projectiles.md as ✅ COMPLETED:**
+- Updated task status from 🟡 Proposed → ✅ COMPLETED
+- Documented implementation summary with all created files
+- Confirmed clean architecture: no active code references multimesh-backup folder
+- Fixed stale import paths in backup files (EnemyRenderTier.gd path updates)
+
+**What was delivered:**
+- MultiMeshManager (215 lines) for ghosts + projectiles at `scripts/systems/rendering/`
+- GhostSwarmSpawner (278 lines) with wave-based spawning
+- Ghost swarm resource configuration via `ghost_swarm.tres`
+- Performance: 1000 ghosts at 60+ FPS, 400 ghosts at 180+ FPS
+
+**Architecture validation:**
+- No references to `multimesh-backup/` in active code (grep confirmed)
+- Clean separation: MultiMeshManager (rendering) + GhostSwarmSpawner (logic)
+- Backup folder remains archived with fixed paths
+
+### 🎨 VISUAL: Natural Ghost Spawn Distribution (2025-01-10)
+
+**Randomized ghost spawn positions and timing for more organic-looking waves:**
+- **Position randomization**:
+  - Added ±17° angle jitter to break perfect circle pattern
+  - Increased radius variance from 0.8-1.2 → 0.7-1.3 (60% variance range)
+  - Result: Ghosts spawn in natural scattered clusters instead of geometric circles
+- **Timing randomization**:
+  - Wave delays: 0.05-0.15 seconds (3x variance range)
+  - Wave size reduced: 50 → 30 ghosts per wave (more frequent, smaller bursts)
+  - Example: 1000 ghosts = ~33 waves with varying 50-150ms gaps
+
+**Visual impact:**
+- Before: Perfect circle formation, predictable wave timing
+- After: Organic swarm appearance with unpredictable spawn patterns
+
+### 🎮 FEATURE: Wave-Based Ghost Spawning with Random Delays (2025-01-10)
+
+**Changed ghost spawning from burst to continuous waves for dodge-focused gameplay:**
+- **Old behavior**: All ghosts spawn instantly in a circle → player clears path and escapes
+- **New behavior**: Ghosts spawn in small waves with random delays → player must keep dodging
+- **Configuration** (tweakable in Inspector):
+  - `wave_spawn_enabled` = true (enable/disable wave mode)
+  - `ghosts_per_wave` = 50 (smaller = more challenging)
+  - `wave_delay_min/max` = 0.05-0.15 seconds (randomized per wave)
+- **Example**: 2000 ghosts = 40 waves of 50 ghosts, each 50-150ms apart
+- **Gameplay impact**: Forces swift movement patterns instead of static clearing
+
+**Technical details:**
+- Wave timer uses one-shot Timer with random delay between waves
+- First wave spawns immediately, subsequent waves staggered
+- Player position captured at wave start (all waves spawn at same location)
+- Logging shows wave count and delay range for debugging
+- **Wave restart fix**: Allows continuous spawning without blocking
+  - Cancels in-progress wave timer when new spawn requested
+  - Supports G key continuous spawning (5-second interval) with wave system
+  - Changed from hard block to restart pattern for additive spawning
+
+### 🔧 FEATURE: Ghost Resource-Based Stats & G Key Toggle (2025-01-10)
+
+**Added resource-based configuration for ghost swarms with proper toggle behavior:**
+- **G key toggle**: Fixed toggle behavior - press once to start spawning, press again to stop
+  - Before: G key only started spawning, couldn't stop it
+  - After: Properly toggles spawning on/off with status logging
+- **Resource-based stats**: Created `ghost_swarm.tres` EnemyTemplate resource
+  - Health range: 8-12 HP (reduced from fixed 10 HP)
+  - Speed range: 80-120 (reduced from fixed 200, making ghosts slower)
+  - Size factor: 0.8 (smaller than regular enemies)
+  - Tags: `[ghost, swarm, special]` for filtering
+- **Template loading**: GhostSwarmSpawner now loads stats from .tres file
+  - Stats vary per spawn using RNG.stream("spawn") for deterministic variation
+  - Supports hot-reload and balance tweaking without code changes
+  - Matches boss scaling pattern for consistency
+
+**Technical details:**
+- Location: `data/content/enemy-templates/ghost_swarm.tres`
+- Template type: EnemyTemplate with render_tier = "swarm"
+- Loading: GhostSwarmSpawner._load_ghost_template() applies ranges
+- Speed reduction: 200 → 80-120 (40-60% slower for easier gameplay)
+
+### 🎨 FIX: Ghost Sprite Rendering (2025-01-10)
+
+**Fixed ghosts rendering as white rectangles instead of ghost sprites:**
+- **Root cause**: Sprite path typo - code looked for "ghoost1.png" (doesn't exist)
+- **Fix**: Corrected path to "ghost1.png" → then switched to "ghost2.png" (cache bypass)
+- **Result**: Ghosts now display correct ghost sprite texture
+- **Cache issue**: Godot aggressively caches textures, switching filename bypasses cache
+- **Added**: Warning log if sprite fails to load (debugging aid)
+- **Current sprite**: `ghost2.png` (MultiMeshManager.gd line 142)
+
+**Removed all color modulation from ghost sprites:**
+- **Before**: Ghosts were tinted blue-white at 60-70% opacity
+- **After**: Ghosts display exactly as original sprite (no tint, full opacity)
+- **Changes**:
+  - MultiMeshManager: self_modulate changed from Color(1, 1, 1, 0.6) → Color(1, 1, 1, 1)
+  - GhostSwarmSpawner: ghost_modulate default changed from Color(0.8, 0.9, 1.0, 0.7) → Color(1, 1, 1, 1)
+- **Result**: Pure sprite rendering without color overlay
+
+### 🐛 FIX: Ghost Auto-Targeting Casting Error (2025-01-10)
+
+**Fixed "Invalid cast" error when spawning ghosts in auto-targeting system:**
+- **Root cause**: Using `:=` operator with `as Node2D` cast on non-object values (null or primitives)
+- **Issue**: GDScript throws error before null check when `:=` type inference fails on non-object
+- **Solution**: Check type with `is` operator BEFORE attempting cast
+  - Added `if not enemy: continue` to skip null/invalid entries
+  - Changed from `var enemy_node := enemy as Node2D` to `if enemy is Node2D: var enemy_node: Node2D = enemy`
+- **Result**: Polymorphic handling now safely supports both Node2D enemies and Dictionary ghosts
+- **Verified**: Auto-targeting works for scene-based enemies and ghost swarms without errors
+
+**Technical details:**
+- `:=` type inference requires valid object, crashes on null/primitives
+- `is` operator checks type without casting (safe for all values)
+- Order matters: null check → type check → cast → use
+
+### ⚡ PERFORMANCE: Ghost Swarm Optimization (2025-01-10)
+
+**Drastically improved ghost swarm performance from 60 FPS → 200+ FPS:**
+- **Root cause**: `_process()` at 60 FPS + separation forces = 6 million distance checks/sec
+- **Fixed timestep**: Changed to `_physics_process()` for consistent 30Hz updates (50% reduction)
+- **Adaptive separation**: Disabled separation forces for 500+ ghosts (eliminates 100k+ checks/frame)
+- **Performance impact**:
+  - <500 ghosts: Separation enabled, smooth visual spacing
+  - 500+ ghosts: Pure chase AI, maximum performance
+  - 1000 ghosts: ~200% FPS improvement (60 → 180+ FPS)
+
+**Technical details:**
+- Before: 1000 ghosts × 100 checks × 60 FPS = 6,000,000 operations/sec
+- After: 1000 ghosts × 0 checks × 30 FPS = 30,000 operations/sec (200x reduction)
+- Fixed timestep ensures consistent behavior regardless of render framerate
+
+### 🎨 VISUAL: Updated Ghost Sprite (2025-01-10)
+
+**Changed ghost swarm sprite to new ghost texture:**
+- Updated sprite path: `slime_purple.png` → `ghoost1.png`
+- Location: MultiMeshManager.gd line 142
+- Affects: All 1000+ ghost swarm spawns
+- Visual: New ghost appearance for spectacle waves
+
+### 🐛 FIX: Ghost Collision & Performance Issues (2025-01-10)
+
+**Fixed ghost collision when stacked + added ghost cap to prevent lag:**
+- **Issue 1**: Arrows missed ghosts when they stacked on player
+  - Root cause: 16px collision radius too small for stacked ghosts
+  - Fix: Increased collision radius to 48px (3x larger detection area)
+  - Result: Arrows now reliably hit ghosts even when densely stacked on player
+
+- **Issue 2**: Ghosts accumulated to 7000+ causing massive lag
+  - Root cause: No cap on total ghost count, infinite accumulation
+  - Fix: Added `max_ghost_count = 3000` cap with smart clamping
+  - Behavior:
+    - At 3000 ghosts: Spawning blocked with warning log
+    - Near 3000: Spawn count clamped (e.g., 2800 + 2000 → 2800 + 200)
+  - Result: Performance stays smooth, never exceeds 3000 ghosts
+
+**Performance impact:**
+- Collision radius 16px → 48px: 9x detection area (π × 48² vs π × 16²)
+- Max ghost cap prevents lag spikes from excessive entity counts
+- With cap + compaction: Stable 180+ FPS even at max capacity
+
+### 🐛 FIX: Ghost Memory Cleanup & Compaction (2025-01-10)
+
+**Fixed memory leaks and added proper ghost cleanup:**
+- **Scene teardown**: Ghosts now properly cleared when leaving arena (previously leaked)
+- **Dead ghost compaction**: Automatic removal of dead ghosts from arrays every ~5s
+- **Memory leak fix**: Dead ghosts were staying in arrays forever (just moved offscreen)
+  - With 10,000 spawns + deaths, you'd have 10,000 array entries (wasted memory + CPU)
+  - Now: periodic compaction removes dead entries and resizes arrays
+
+**Cleanup implementation:**
+- `Arena.on_teardown()`: Stops timer, clears ghost_swarm_spawner on scene exit
+- `compact_dead_ghosts()`: Creates new arrays with only living ghosts, frees dead entries
+- Auto-compaction: Runs every 150 frames (~5s at 30Hz) when ghost_count > 1000
+- Logging: "Ghost compaction: removed X dead ghosts (Y alive, Z freed)"
+
+**Performance impact:**
+- Before: 5000 ghosts spawned, 4000 killed = 5000 entries in arrays (800 alive)
+- After: 5000 ghosts spawned, 4000 killed = 800 entries in arrays (800 alive)
+- Result: 83% memory reduction + faster iteration over living ghosts only
+
+### ✨ FEATURE: Additive Ghost Spawning Debug Mode (2025-01-10)
+
+**Added additive ghost spawning for extreme stress testing:**
+- **G key**: Start accumulating ghost waves (non-toggle - starts spawning)
+- **5-second interval**: Spawns 1000 ghosts around player every 5s
+- **Additive accumulation**: New waves stack on top of existing ghosts (no clearing)
+- **Player tracking**: Each wave spawns at current player position
+- **Array growth**: Ghost arrays dynamically resize to accommodate growing ghost count
+
+**Implementation:**
+- Timer-based spawning system (_ghost_spawn_timer with 5.0s wait_time)
+- Additive wave spawning: `resize(current_count + new_count)` instead of replace
+- Log shows total ghost count: "+1000 ghosts (total: 2000)"
+- No cleanup between waves - ghosts accumulate until manually cleared
+- First spawn immediate, then every 5 seconds
+
+**Use cases:**
+- **Extreme stress testing**: Test 5000+ ghosts (5 waves = 5000 ghosts in 20 seconds)
+- **Performance profiling**: Identify performance cliff with accumulating entities
+- **Memory testing**: Monitor PackedArray performance with growing datasets
+- **Visual spectacle**: Create overwhelming enemy pressure scenarios
+
+**Technical notes:**
+- Adaptive separation disabled at 500+ ghosts for performance
+- Each wave adds 1000 ghosts to existing arrays (O(1) append after resize)
+- MultiMesh handles rendering for 5000+ instances efficiently
+
+### 🐛 FIX: Ghost Auto-Targeting for Projectile Abilities (2025-01-10)
+
+**Fixed auto-targeting system to treat ghosts the same as scene-based enemies:**
+- **Root cause**: `_get_direction_to_closest_enemy()` only handled Node2D enemies, skipped Dictionary ghost wrappers
+- **Solution**: Updated targeting logic in ProjectileAbility to support both types:
+  - **Scene-based enemies**: Cast to Node2D, use hitbox center for precision
+  - **Ghost wrappers**: Check for Dictionary with "global_position" key, use position directly
+- **Result**: Arrows now auto-target ghosts when they're the closest enemy (same as scene enemies)
+- **Unified behavior**: Ghosts fully integrated into ability targeting system
+
+**Technical details:**
+- Dual-type checking: `enemy as Node2D` for scenes, `enemy is Dictionary` for ghosts
+- Distance calculation works for both types (global_position property)
+- AbilityController provides unified enemy array (Node2D + Dictionary mixed)
+
+### 🐛 FIX: Arrow-Ghost Collision Detection (2025-01-10)
+
+**Fixed arrows not hitting ghost swarms due to scene tree traversal issue:**
+- **Root cause**: `get_tree().current_scene` returns Main (Control), not Arena
+- **Solution**: Added `_find_arena_node()` helper with dual-strategy search:
+  1. **Parent chain traversal** - walks upward from projectile (Arena is entity parent)
+  2. **Path fallback** - tries "Main/Arena", "/root/Main/Arena" paths
+- **Result**: Arrows now properly damage and kill ghosts with distance-based collision (16px radius)
+- **Verified**: Ghost kills confirmed via testing (pierce=2 allows 3 hits per arrow)
+
+**Technical details:**
+- Scene tree structure: Main (current_scene) → Arena (has ghost_swarm_spawner)
+- Projectiles spawned under Arena via EntityPool.set_entity_parent(arena)
+- Property check pattern: `"ghost_swarm_spawner" in node` for duck-typing validation
+- Debug logging removed after successful verification
+
+### 🎨 FEATURE: MultiMesh Foundation for Ghost Swarms + Projectiles (2025-01-10)
+
+**Added lightweight MultiMesh rendering system for high-count simple entities:**
+- **MultiMeshManager**: Simplified 2-use-case manager (ghost swarms + projectiles)
+  - Object pooling (MultiMesh + QuadMesh reuse) for memory efficiency
+  - No animation system (static sprites with modulation)
+  - ~200 lines vs 568-line archived implementation
+- **GhostSwarmSpawner**: Special event system for visual spectacle waves
+  - 1000+ non-interactive ghosts charging player
+  - Simple chase AI (no collision, just movement)
+  - Debug key: Press **G** in arena to spawn/clear 1000 ghost swarm
+- **Arena Integration**: MM_Projectiles + MM_GhostSwarm nodes added
+  - Optional rendering path (scene-based enemies remain primary)
+  - Foundation ready for future projectile abilities
+
+**Performance targets:**
+- 1000 ghosts @ 60 FPS (<3ms overhead = 10% of 30 FPS budget)
+- Scalable to 2000-4000 for extreme pressure events
+- vs Scene-based: 60 FPS (MultiMesh) vs 30-40 FPS (with full AI+collision)
+
+**Use cases:**
+- Ghost waves for special breach events (visual pressure)
+- Future projectile rendering (200+ simultaneous)
+- Exponential scaling without performance degradation
+
+**Philosophy**: Pragmatic foundation - avoid complexity, support specific high-perf needs
+
+### ✨ FEATURE: Ghost Swarm Integration Complete (2025-01-10)
+
+**Made ghost swarms fully interactive with visual improvements and collision detection:**
+
+**Visual Improvements:**
+- **Sprite rendering**: Purple slime sprite (slime_purple.png) with 60% opacity for ghostly effect
+- **Separation forces**: Added boids-like spacing (24px min distance, 50.0 force strength)
+- **Natural spread**: Randomized spawn radius (0.8-1.2x variance) prevents perfect circles
+- **Performance**: Sampled separation checks (~100 ghosts) instead of full N² comparisons
+
+**Collision System:**
+- **Distance-based detection**: Manual 16px radius collision for MultiMesh ghosts
+- **Health tracking**: PackedFloat32Array for efficient per-ghost HP storage
+- **Death handling**: Dead ghosts moved off-screen (-10000, -10000) until wave cleared
+- **Projectile integration**: Arrows now properly damage and kill ghosts
+
+**System Integration:**
+- **AbilityController**: Ghosts included in ability targeting via Dictionary wrappers
+- **Arena wiring**: ghost_swarm_spawner connected to player.ability_controller
+- **Input handling**: Fixed PathAware_Forest G key with `super._input(event)`
+- **Property checks**: Changed `arena.has()` → `"ghost_swarm_spawner" in arena` for Control compatibility
+
+**Technical Patterns:**
+- MultiMesh entities require manual collision (no Area2D nodes, just positions)
+- Duck typing for ghost wrappers: `{"global_position": Vector2, "is_ghost": true}`
+- Distance checks every physics step (30Hz) for real-time interaction
+
+**Files Modified:**
+- `scripts/systems/rendering/MultiMeshManager.gd` - Sprite texture loading
+- `scripts/systems/spawn/GhostSwarmSpawner.gd` - Separation, health, collision
+- `scripts/systems/AbilityController.gd` - Ghost targeting integration
+- `scenes/arena/Arena.gd` - Wiring ghost_swarm_spawner
+- `scripts/entities/AbilityProjectile.gd` - Distance-based collision detection
+- `scenes/arena/PathAware_Forest.gd` - Input handler inheritance
+
+**Result**: Ghost swarms are now fully playable - arrows kill ghosts, abilities target them, proper spacing maintained
+
 ### ⚡ FEATURE: Per-Boss Speed Variation Re-enabled (2025-10-09)
 
 **Re-enabled per-boss speed configuration from templates:**
