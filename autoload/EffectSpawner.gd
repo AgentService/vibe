@@ -102,11 +102,11 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 		Logger.warn("EffectSpawner: Cannot spawn explosion, no arena reference", "effects")
 		return
 
-	# Spawn visual effect (scale down for item procs - 0.4x size)
+	# Spawn visual effect (scene has base scale 10, multiply by 0.4 for item procs)
 	var explosion := EXPLOSION_SCENE.instantiate()
 	_arena.add_child(explosion)
 	explosion.global_position = position
-	explosion.scale = Vector2(0.4, 0.4)  # Smaller explosion for item procs
+	explosion.scale = Vector2(4.0, 4.0)  # 10 * 0.4 = 4.0 (smaller for item procs)
 
 	# Apply damage to enemies in radius (search for "boss" type - all enemies use BaseBoss)
 	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
@@ -169,11 +169,11 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		# Get enemy position for lightning strike
 		var enemy_pos: Vector2 = EntityTracker.get_entity(nearest_enemy).get("pos", Vector2.ZERO)
 
-		# Spawn lightning bolt striking down at enemy position
+		# Spawn lightning bolt striking down at enemy position (scene has base scale 10, multiply by 0.3)
 		var lightning := LIGHTNING_SCENE.instantiate()
 		_arena.add_child(lightning)
 		lightning.global_position = enemy_pos
-		lightning.scale = Vector2(0.3, 0.3)  # Smaller effect for item procs
+		lightning.scale = Vector2(3.0, 3.0)  # 10 * 0.3 = 3.0 (smaller for item procs)
 
 		# Apply damage to this enemy
 		DamageService._process_damage_immediate(

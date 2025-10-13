@@ -2,6 +2,23 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FIX: Effect Spawner Scale Override Bug (2025-10-13)
+
+**Fixed lightning and explosion effects being microscopic due to scale override:**
+- **Problem**: Both FireballImpact and LightningImpact invisible despite proc triggering and hitting enemies
+  - User reported: "i cant see any lightning impacts still even though its finding enemies max hit is 1 enemy"
+  - Root cause: Scene files have base `scale = Vector2(10, 10)` for visibility
+  - EffectSpawner.gd set `scale = Vector2(0.4, 0.4)` and `Vector2(0.3, 0.3)` → **REPLACES** base scale (not multiplies!)
+  - Result: Explosions = 32px * 0.4 = 12.8 pixels, Lightning = 64px * 0.3 = 19.2 pixels (microscopic!)
+- **Solution**: Multiply with base scale instead of replacing
+  - Explosion: `Vector2(4.0, 4.0)` = 10 * 0.4 → 32px * 4.0 = **128 pixels** (visible!)
+  - Lightning: `Vector2(3.0, 3.0)` = 10 * 0.3 → 64px * 3.0 = **192 pixels** (visible!)
+- **Impact**: Both item proc effects now properly visible in-game
+- **Design note**: Setting `.scale` replaces node scale, doesn't multiply with scene base scale
+
+**Files modified:**
+- `autoload/EffectSpawner.gd` - Lines 109, 176: Fixed scale calculations (0.4 → 4.0, 0.3 → 3.0)
+
 ### ✅ FIX: Thunder Mitts Lightning Bolt Strikes at Enemy Position (2025-10-13)
 
 **Fixed lightning bolt to spawn at enemy position (striking down from above):**
