@@ -183,13 +183,15 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 
 	while remaining_chains > 0:
 		# Find nearest enemy within chain range (excluding already hit)
-		var nearest_enemy := _find_nearest_enemy(current_pos, chain_range, hit_enemies)
+		# Returns {id: String, pos: Vector2} to capture position at search time
+		var nearest_enemy_data := _find_nearest_enemy(current_pos, chain_range, hit_enemies)
+		var nearest_enemy: String = nearest_enemy_data.get("id", "")
 
-		if not nearest_enemy:
+		if nearest_enemy.is_empty():
 			break  # No more valid targets
 
-		# Get enemy position for lightning strike
-		var enemy_pos: Vector2 = EntityTracker.get_entity(nearest_enemy).get("pos", Vector2.ZERO)
+		# Use enemy position captured during search (static, like explosion)
+		var enemy_pos: Vector2 = nearest_enemy_data.get("pos", Vector2.ZERO)
 
 		# Spawn lightning bolt striking down at enemy position (scene has base scale 10, multiply by 0.3)
 		var lightning := LIGHTNING_SCENE.instantiate()
@@ -224,11 +226,13 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 
 
 ## Finds nearest enemy within range, excluding already hit enemies.
-## Returns enemy_id or empty string if none found.
-func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array[String]) -> String:
+## Returns Dictionary with {id: String, pos: Vector2} or empty dict if none found.
+## Position is captured at search time to prevent movement lag.
+func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array[String]) -> Dictionary:
 	var nearby_enemies := EntityTracker.get_entities_in_radius(position, max_range, "boss")
 
 	var nearest_id := ""
+	var nearest_pos := Vector2.ZERO
 	var nearest_dist_sq := INF
 
 	for enemy_id in nearby_enemies:
@@ -240,15 +244,16 @@ func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array
 		if not DamageService.is_entity_alive(enemy_id):
 			continue
 
-		# Find closest
+		# Find closest and capture position at search time
 		var enemy_pos: Vector2 = EntityTracker.get_entity(enemy_id).get("pos", Vector2.ZERO)
 		var dist_sq := position.distance_squared_to(enemy_pos)
 
 		if dist_sq < nearest_dist_sq:
 			nearest_dist_sq = dist_sq
 			nearest_id = enemy_id
+			nearest_pos = enemy_pos
 
-	return nearest_id
+	return {"id": nearest_id, "pos": nearest_pos}
 
 
 # ============================================================================
