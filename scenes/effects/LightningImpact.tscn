@@ -71,6 +71,8 @@ script = ExtResource("1")
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
 texture_filter = 1
 material = SubResource("CanvasItemMaterial_lightning")
+position = Vector2(0, -13.8)
+scale = Vector2(0.451562, 0.43125)
 sprite_frames = SubResource("SpriteFrames_lightning")
 autoplay = "default"
 frame_progress = 0.90187

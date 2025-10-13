@@ -13,6 +13,7 @@ extends Window
 
 # Action buttons
 @onready var equip_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/EquipButton
+@onready var equip_10_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/Equip10Button
 @onready var add_10_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/Add10Button
 @onready var clear_all_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/ClearAllButton
 
@@ -43,6 +44,7 @@ func _ready() -> void:
 	# Connect signals
 	item_dropdown.item_selected.connect(_on_item_dropdown_selected)
 	equip_button.pressed.connect(_on_equip_button_pressed)
+	equip_10_button.pressed.connect(_on_equip_10_button_pressed)
 	add_10_button.pressed.connect(_on_add_10_button_pressed)
 	clear_all_button.pressed.connect(_on_clear_all_button_pressed)
 
@@ -108,6 +110,7 @@ func _on_item_dropdown_selected(item_index: int) -> void:
 		# "(Select an item to equip)" selected
 		selected_item_id = ""
 		equip_button.disabled = true
+		equip_10_button.disabled = true
 		return
 
 	# Extract item_id from metadata
@@ -115,11 +118,13 @@ func _on_item_dropdown_selected(item_index: int) -> void:
 	if item_id:
 		selected_item_id = item_id
 		equip_button.disabled = false
+		equip_10_button.disabled = false
 		Logger.debug("Selected item: %s" % item_id, "debug")
 	else:
 		# Separator selected (no metadata)
 		selected_item_id = ""
 		equip_button.disabled = true
+		equip_10_button.disabled = true
 
 
 # ============================================================================
@@ -136,6 +141,22 @@ func _on_equip_button_pressed() -> void:
 	EventBus.item_acquired.emit(selected_item_id, "debug")
 
 	Logger.info("Emitted item_acquired for: %s" % selected_item_id, "debug")
+
+	# Refresh display immediately
+	_refresh_equipped_items_display()
+
+
+## Equips 10 copies of the selected item for focused stacking tests
+func _on_equip_10_button_pressed() -> void:
+	if selected_item_id.is_empty():
+		Logger.warn("No item selected for +10", "debug")
+		return
+
+	# Emit item_acquired signal 10 times for the selected item
+	for i in range(10):
+		EventBus.item_acquired.emit(selected_item_id, "debug")
+
+	Logger.info("Equipped 10x %s" % selected_item_id, "debug")
 
 	# Refresh display immediately
 	_refresh_equipped_items_display()
