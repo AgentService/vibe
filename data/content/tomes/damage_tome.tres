@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 item_id = "damage_tome"
-display_name = "Damage Tome"
+display_name = "Tome of Power"
 description = "A tome of destructive power that increases your damage output"
 flavor_text = "Knowledge is power, and power is destruction."
 category = "tomes"

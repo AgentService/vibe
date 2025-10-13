@@ -2,6 +2,46 @@
 
 ## [Current Week - In Progress]
 
+### 🐛 FIX: Synchronized Tome System Resources - UnlockShop Now Shows All Tomes (2025-10-13)
+
+**Fixed multiple tome system issues: missing resources, name mismatches, and runtime errors:**
+- **Problem identified**:
+  - Dual-resource architecture: `ItemMetadata` (unlock shop) vs `BaseTome` (gameplay)
+  - UnlockShop had only 2 ItemMetadata files: `damage_tome.tres`, `agility_tome.tres`
+  - TomeManager had 4 BaseTome files: `tome_damage.tres`, `tome_projectiles.tres`, `tome_speed.tres`
+  - AbilityTestingPopup showed 3+ tomes, but unlock shop showed only 2
+- **Files created**:
+  - `projectiles_tome.tres` (ItemMetadata) - "Tome of Multiplication" (+1 projectile/stack, 100💎, uncommon)
+  - `speed_tome.tres` (ItemMetadata) - "Tome of Swiftness" (-8% cooldown/stack, 120💎, uncommon)
+  - `tome_agility.tres` (BaseTome) - "Tome of Agility" (+20% movement speed/stack, multiplicative)
+- **Documentation added**:
+  - Created `data/content/tomes/README.md` with dual-resource architecture guide
+  - Documented ID linking convention: `item_id` (ItemMetadata) ↔ `tome_id` (BaseTome)
+  - Added file mapping table and new tome creation guide
+  - Noted legacy mismatch: `damage_tome` (item_id) vs `tome_damage` (tome_id)
+- **Result**: Unlock shop now displays 4 tomes matching in-game availability
+- **Bugs fixed**:
+  - Fixed `BaseTome.apply_to_player()` using invalid `has()` method → changed to `"runtime_stats" in player`
+  - Error: "Invalid call. Nonexistent function 'has' in base 'CharacterBody2D (Player)'"
+  - Fixed using GDScript duck typing pattern (`in` operator) instead of non-existent `has()` method
+- **Name consistency**:
+  - Updated ItemMetadata display names to match BaseTome names
+  - "Agility Tome" → "Tome of Agility"
+  - "Damage Tome" → "Tome of Power"
+  - All 4 tomes now have matching names across both resource types
+- **UI improvements**:
+  - Fixed AbilityTestingPopup tome dropdowns showing `tome_id` instead of `tome_name`
+  - Now displays user-friendly names like "Tome of Agility" instead of "agility_tome"
+  - Uses metadata pattern (like ability dropdowns) for proper ID→Name mapping
+  - Fixed "Clear Tomes" button not resetting player movement speed/stats
+  - Now calls `player.runtime_stats.reset_modifiers()` to properly remove all tome effects
+
+**Architecture notes:**
+- UnlockShop loads ItemMetadata for discovery/unlock UI
+- TomeManager loads BaseTome for gameplay mechanics
+- AbilityTestingPopup bypasses unlock checks (debug tool)
+- Proper ID linking enables future integration (e.g., filtering available tomes by unlock status)
+
 ### ⚖️ BALANCE: Fireball Transformed to Radial Nova Ability (2025-10-13)
 
 **Redesigned fireball from single-target to 360° defensive nova ability:**
@@ -45,6 +85,26 @@
   - Impact effect scaling works correctly for both collision types
   - Helper method checks `if not impact_effect` before instantiation
 - **Impact**: Fireball explosions now appear consistently when hitting any enemy type
+
+### 🎨 FEAT: Explosion Offset Toward Enemy Center (2025-10-13)
+
+**Improved explosion visual positioning to appear inside enemies rather than at surface collision:**
+- **Problem**: Explosions spawned at exact projectile collision point (enemy surface edge)
+  - Visual feedback felt disconnected from target
+  - Explosions appeared "outside" of enemies
+  - Less satisfying impact feel
+- **Solution**: Added 16px offset toward enemy center for explosion spawn position
+  - Modified `_spawn_impact_effect()` to accept optional `enemy_position` parameter
+  - Calculates direction from collision point to enemy center
+  - Offsets spawn position by 16 pixels toward enemy center
+  - Ghost collisions pass `Vector2.ZERO` (no offset, use collision position)
+- **Implementation details**:
+  - `_on_enemy_collision()` queries `get_tree().get_nodes_in_group("enemies")` to find enemy node by entity_id
+  - Extracts `enemy_node.global_position` for offset calculation
+  - Fallback to collision position if enemy not found (e.g., already despawned)
+  - No performance impact: one-time node lookup per collision
+- **Result**: Explosions now appear visually "inside" enemies for better impact feedback
+- **Files modified**: `scripts/entities/AbilityProjectile.gd:349-453`
 
 ### 🎨 FEAT: Fireball Two-Phase Animation System (2025-10-13)
 

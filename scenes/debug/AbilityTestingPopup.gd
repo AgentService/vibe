@@ -756,7 +756,10 @@ func _populate_tome_dropdowns() -> void:
 		for tome_id in available_tomes:
 			var definition = TomeManager.get_definition(tome_id)
 			if definition:
-				dropdown.add_item(tome_id)
+				# Display tome_name (not tome_id) for readability
+				var display_name = definition.tome_name if "tome_name" in definition else tome_id
+				dropdown.add_item(display_name)
+				dropdown.set_item_metadata(dropdown.item_count - 1, tome_id)
 
 	Logger.debug("Populated tome dropdowns with %d tomes" % available_tomes.size(), "debug")
 
@@ -767,8 +770,8 @@ func _on_tome_dropdown_selected(item_index: int, slot_index: int) -> void:
 		# "(None)" selected
 		selected_tome_ids[slot_index] = ""
 	else:
-		# Extract tome_id from dropdown text
-		var tome_id = tome_dropdowns[slot_index].get_item_text(item_index)
+		# Extract tome_id from metadata (display shows tome_name)
+		var tome_id = tome_dropdowns[slot_index].get_item_metadata(item_index)
 		selected_tome_ids[slot_index] = tome_id
 
 	Logger.debug("Tome slot %d selected: %s" % [slot_index + 1, selected_tome_ids[slot_index]], "debug")
@@ -850,6 +853,11 @@ func _on_clear_tomes_button_pressed() -> void:
 		if ability and ability.has_method("_recalculate_final_stats"):
 			ability._active_modifiers.clear()
 			ability._recalculate_final_stats()
+
+	# Reset player runtime_stats (removes movement speed, pickup radius, etc.)
+	if "runtime_stats" in player and player.runtime_stats:
+		player.runtime_stats.reset_modifiers()
+		Logger.debug("Reset player runtime_stats modifiers", "debug")
 
 	# Update UI
 	_refresh_tome_stack_labels(ability_controller)

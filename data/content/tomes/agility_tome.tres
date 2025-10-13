@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1")
 item_id = "agility_tome"
-display_name = "Agility Tome"
+display_name = "Tome of Agility"
 description = "A tome of swift movement that increases your mobility"
 flavor_text = "The quickest path between two points is not always a straight line."
 category = "tomes"

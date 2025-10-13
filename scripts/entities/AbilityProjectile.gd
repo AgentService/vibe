@@ -348,12 +348,25 @@ func _check_ghost_collisions() -> void:
 
 ## Spawns the impact effect at the specified position
 ## Used by both scene-based enemy collisions and MultiMesh ghost collisions
-func _spawn_impact_effect(at_position: Vector2) -> void:
+##
+## Parameters:
+##   at_position: Projectile impact point (collision position)
+##   enemy_position: Optional enemy center position for offset calculation
+func _spawn_impact_effect(at_position: Vector2, enemy_position: Vector2 = Vector2.ZERO) -> void:
 	if not impact_effect:
 		return
 
+	var spawn_position = at_position
+
+	# If enemy position provided, offset explosion toward enemy center
+	# This makes explosions appear "inside" enemies rather than at the surface
+	if enemy_position != Vector2.ZERO:
+		var direction_to_enemy = (enemy_position - at_position).normalized()
+		var offset_distance = 36.0  # Pixels to move toward enemy center
+		spawn_position = at_position + (direction_to_enemy * offset_distance)
+
 	var effect_instance = impact_effect.instantiate()
-	effect_instance.global_position = at_position
+	effect_instance.global_position = spawn_position
 
 	# Scale effect to match AoE radius (if effect supports it)
 	if effect_instance.has_method("set_aoe_radius"):
@@ -425,8 +438,19 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if impact_aoe_radius > 0.0:
 		_apply_impact_aoe(global_position, enemy_id)
 
+	# Get enemy node for explosion offset calculation
+	var enemy_node: Node2D = null
+	var enemies = get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if "entity_id" in enemy and enemy.entity_id == enemy_id:
+			enemy_node = enemy as Node2D
+			break
+
+	var enemy_pos: Vector2 = enemy_node.global_position if enemy_node else Vector2.ZERO
+
 	# Spawn impact effect at collision position (fireball explosion visual)
-	_spawn_impact_effect(global_position)
+	# Pass enemy position for 16px offset toward enemy center
+	_spawn_impact_effect(global_position, enemy_pos)
 
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)

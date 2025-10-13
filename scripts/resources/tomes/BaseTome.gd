@@ -304,8 +304,8 @@ func apply_to_player(player: Node2D, stack_count: int) -> void:
 	if not player or stack_count <= 0:
 		return
 
-	# Verify player has runtime_stats component
-	if not player.has("runtime_stats") or not player.runtime_stats:
+	# Verify player has runtime_stats component (use duck typing with 'in' operator)
+	if not "runtime_stats" in player or not player.runtime_stats:
 		Logger.warn("Tome '%s' cannot apply to player - missing runtime_stats component" % tome_id, "tomes")
 		return
 

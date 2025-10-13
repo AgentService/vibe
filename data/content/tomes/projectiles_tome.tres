@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "tome_projectiles"
+display_name = "Tome of Multiplication"
+description = "A tome of projectile mastery that multiplies your attacks"
+flavor_text = "One becomes many, and many become unstoppable."
+category = "tomes"
+icon_path = "res://assets/ui/tomes/icons/mb (2).png"
+unlock_cost = 100
+rarity = 1
+discovery_requirement = "Fire 500 projectiles in a single run"
+stat_summary = "+1 Projectile per stack"

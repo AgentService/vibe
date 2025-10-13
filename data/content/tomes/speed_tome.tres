@@ -1,0 +1,16 @@
+[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "tome_speed"
+display_name = "Tome of Swiftness"
+description = "A tome of temporal manipulation that accelerates your abilities"
+flavor_text = "Time bends to those who know its secrets."
+category = "tomes"
+icon_path = "res://assets/ui/tomes/icons/mb (3).png"
+unlock_cost = 120
+rarity = 1
+discovery_requirement = "Cast 200 abilities in a single run"
+stat_summary = "-8% Cooldown per stack"
