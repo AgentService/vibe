@@ -438,18 +438,11 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if impact_aoe_radius > 0.0:
 		_apply_impact_aoe(global_position, enemy_id)
 
-	# Get enemy node for explosion offset calculation
-	var enemy_node: Node2D = null
-	var enemies = get_tree().get_nodes_in_group("enemies")
-	for enemy in enemies:
-		if "entity_id" in enemy and enemy.entity_id == enemy_id:
-			enemy_node = enemy as Node2D
-			break
-
-	var enemy_pos: Vector2 = enemy_node.global_position if enemy_node else Vector2.ZERO
+	# Get enemy position for explosion offset calculation (O(1) lookup via EntityTracker)
+	var enemy_pos: Vector2 = EntityTracker.get_entity_position(enemy_id) as Vector2
 
 	# Spawn impact effect at collision position (fireball explosion visual)
-	# Pass enemy position for 16px offset toward enemy center
+	# Pass enemy position for 36px offset toward enemy center
 	_spawn_impact_effect(global_position, enemy_pos)
 
 	# Emit projectile hit signal
