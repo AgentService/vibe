@@ -383,11 +383,16 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	# Release payload back to pool after emission for reuse
 	EventBus.release_damage_applied_payload(damage_payload)
 	
-	# Emit damage_dealt signal for camera shake and stats tracking
+	# Get impact position from PackedArrays (where enemy was hit)
+	var impact_position = Vector2(_entity_positions_x[index], _entity_positions_y[index])
+
+	# Emit damage_dealt signal for camera shake, stats tracking, and item procs
 	var damage_dealt_payload = EventBus.DamageDealtPayload_Type.new(
 		final_damage,
 		_map_source_for_damage_dealt(source),
-		target_id
+		target_id,
+		source_position,   # Player/ability origin (for knockback, etc.)
+		impact_position    # Enemy position (for item effect spawning)
 	)
 	EventBus.damage_dealt.emit(damage_dealt_payload)
 	

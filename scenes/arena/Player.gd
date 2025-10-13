@@ -3,11 +3,15 @@ class_name Player
 
 const AnimationConfig_Type = preload("res://scripts/domain/AnimationConfig.gd")  # allowed: pure Resource config
 const PlayerTypeScript = preload("res://scripts/domain/PlayerType.gd")  # allowed: pure Resource config
+const PlayerStatsScript = preload("res://scripts/resources/PlayerStats.gd")  # Pure runtime stat modifications
 
 ## Player character with WASD movement and collision.
 ## Serves as the center point for projectile spawning and XP collection.
 
 @export var player_type: PlayerTypeScript
+
+## Runtime stat modifications (tomes, items, buffs)
+var runtime_stats: PlayerStatsScript
 
 @onready var animated_sprite: AnimatedSprite2D = $AnimatedSprite2D
 # Equipment layers for ranger character
@@ -52,7 +56,7 @@ func _ready() -> void:
 	# Player should pause with the game
 	process_mode = Node.PROCESS_MODE_PAUSABLE
 	add_to_group("player")
-	
+
 	# Reset all state variables on scene ready (critical for restart functionality)
 	is_dead = false
 	is_rolling = false
@@ -60,12 +64,12 @@ func _ready() -> void:
 	is_attacking = false
 	is_hurt = false
 	_registration_in_progress = false
-	
+
 	# Reset new ability states
 	is_bow_attacking = false
 	is_magic_casting = false
 	is_spear_attacking = false
-	
+
 	# Reset timers
 	roll_timer = 0.0
 	attack_timer = 0.0
@@ -74,14 +78,22 @@ func _ready() -> void:
 	magic_cast_timer = 0.0
 	spear_attack_timer = 0.0
 	last_melee_attack_time = 0.0
-	
+
 	# Reset animation state
 	current_animation = "idle_down"
 	current_direction = "down"
-	
+
 	# Initialize equipment layers for ranger character
 	_setup_equipment_layers()
-	
+
+	# Initialize runtime stats and sync from player_type (MUST be before get_max_health() call)
+	runtime_stats = PlayerStatsScript.new()
+	if player_type:
+		runtime_stats.sync_from_player_type(player_type)
+		Logger.debug("Player: Initialized runtime_stats from player_type", "player")
+	else:
+		Logger.warn("Player: No player_type set, using default runtime_stats", "player")
+
 	current_health = get_max_health()
 	Logger.info("Player reset: is_dead=%s, health=%d, all state cleared" % [is_dead, current_health], "player")
 	
@@ -123,20 +135,21 @@ func _ready() -> void:
 	else:
 		Logger.error("Player: EventBus.melee_attack_started signal not found!", "player")
 
-# Getter functions that read directly from player_type resource for hot-reload support
+# Getter functions that use runtime_stats for stat modifications (tomes/items/buffs)
+# Base values auto-sync from player_type.tres for hot-reload support
 func get_move_speed() -> float:
-	if player_type:
-		return player_type.move_speed
+	if runtime_stats:
+		return runtime_stats.get_effective_move_speed()
 	return 110.0  # Fallback value
 
 func get_pickup_radius() -> float:
-	if player_type:
-		return player_type.pickup_radius
+	if runtime_stats:
+		return runtime_stats.get_effective_pickup_radius()
 	return 12.0  # Fallback value
 
 func get_max_health() -> int:
-	if player_type:
-		return player_type.max_health
+	if runtime_stats:
+		return runtime_stats.get_effective_max_health()
 	return 199  # Fallback value
 
 func get_roll_duration() -> float:

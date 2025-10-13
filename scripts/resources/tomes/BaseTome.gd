@@ -286,19 +286,27 @@ func apply_to_ability(ability: BaseAbility, stack_count: int) -> void:
 # ============================================================================
 
 ## Applies this tome's player stat modifiers with given stack count.
-## Modifies player stats in-place (movement speed, HP, luck, XP gain).
+## Modifies player.runtime_stats (PlayerStats component) for stat bonuses.
 ##
-## Expected player properties:
-##   - movement_speed: float
-##   - max_hp: int (or float)
-##   - luck: float
-##   - xp_multiplier: float
-##   - pickup_radius: float
+## PlayerStats Integration (2025-10-13):
+##   - Player.gd has runtime_stats: PlayerStats component
+##   - Base values sync from PlayerType.tres (preserves hot-reload)
+##   - Tomes/items modify runtime_stats multipliers/bonuses
+##   - Player getters (get_move_speed, get_max_health) query runtime_stats
 ##
-## Phase 1 Note: Player stat application is a stub for future phases.
-## The actual player node structure will determine exact property names.
+## Expected player structure:
+##   player.runtime_stats.movement_speed_mult: float (1.0 = no change)
+##   player.runtime_stats.max_hp_bonus: int (additive bonus)
+##   player.runtime_stats.pickup_radius_mult: float (1.0 = no change)
+##
+## Note: luck and xp_gain are NOT implemented in Player.runtime_stats yet.
 func apply_to_player(player: Node2D, stack_count: int) -> void:
 	if not player or stack_count <= 0:
+		return
+
+	# Verify player has runtime_stats component
+	if not player.has("runtime_stats") or not player.runtime_stats:
+		Logger.warn("Tome '%s' cannot apply to player - missing runtime_stats component" % tome_id, "tomes")
 		return
 
 	# Clamp to stack limit (0 = infinite)
@@ -306,22 +314,25 @@ func apply_to_player(player: Node2D, stack_count: int) -> void:
 	if stack_limit > 0:
 		effective_stacks = mini(stack_count, stack_limit)
 
-	# Apply multiplicative modifiers
-	if movement_speed_multiplier != 1.0 and player.has("movement_speed"):
-		player.movement_speed *= pow(movement_speed_multiplier, effective_stacks)
+	# Apply multiplicative modifiers to runtime_stats
+	if movement_speed_multiplier != 1.0:
+		player.runtime_stats.movement_speed_mult *= pow(movement_speed_multiplier, effective_stacks)
+		Logger.debug("Tome '%s': Applied movement_speed_mult=%.2f (stacks=%d)" % [tome_id, movement_speed_multiplier, effective_stacks], "tomes")
 
-	if xp_gain_multiplier != 1.0 and player.has("xp_multiplier"):
-		player.xp_multiplier *= pow(xp_gain_multiplier, effective_stacks)
+	if pickup_radius_multiplier != 1.0:
+		player.runtime_stats.pickup_radius_mult *= pow(pickup_radius_multiplier, effective_stacks)
+		Logger.debug("Tome '%s': Applied pickup_radius_mult=%.2f (stacks=%d)" % [tome_id, pickup_radius_multiplier, effective_stacks], "tomes")
 
-	if pickup_radius_multiplier != 1.0 and player.has("pickup_radius"):
-		player.pickup_radius *= pow(pickup_radius_multiplier, effective_stacks)
+	# Apply additive bonuses to runtime_stats
+	if max_hp_bonus != 0:
+		player.runtime_stats.max_hp_bonus += max_hp_bonus * effective_stacks
+		Logger.debug("Tome '%s': Applied max_hp_bonus=%d (stacks=%d)" % [tome_id, max_hp_bonus, effective_stacks], "tomes")
 
-	# Apply additive bonuses
-	if max_hp_bonus != 0 and player.has("max_hp"):
-		player.max_hp += max_hp_bonus * effective_stacks
-
-	if luck_bonus != 0.0 and player.has("luck"):
-		player.luck += luck_bonus * effective_stacks
+	# TODO: Implement luck and xp_gain in PlayerStats when needed
+	# if luck_bonus != 0.0:
+	#     player.runtime_stats.luck_bonus += luck_bonus * effective_stacks
+	# if xp_gain_multiplier != 1.0:
+	#     player.runtime_stats.xp_mult *= pow(xp_gain_multiplier, effective_stacks)
 
 
 # ============================================================================

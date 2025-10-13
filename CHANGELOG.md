@@ -2,6 +2,33 @@
 
 ## [Current Week - In Progress]
 
+### ⚖️ BALANCE: Fireball Transformed to Radial Nova Ability (2025-10-13)
+
+**Redesigned fireball from single-target to 360° defensive nova ability:**
+- **Projectile pattern changes**:
+  - `projectile_count`: 1 → 15 (15x projectiles)
+  - `spread_angle`: 0° → 360° (radial spread)
+  - `base_cooldown`: 0.2s → 0.8s (4x longer)
+  - Result: 5000 DPS → ~18750 DPS (3.75x effective increase)
+- **New mechanics added**:
+  - `pierce_count`: 0 → 5 (each projectile can hit 5 enemies)
+  - `is_homing`: false → true (weak homing at 0.1 strength)
+  - `homing_group_count`: 10 → 4 (grouped targeting for 15 projectiles)
+- **Resource embedding**:
+  - Fireball.tscn and FireballImpact.tscn embedded as PackedScenes
+  - Replaced ExtResource references with SubResource definitions
+- **Gameplay impact**:
+  - Creates defensive nova clearing surrounding enemies
+  - Suitable for close-range survival situations
+  - Weak homing provides moderate target tracking
+  - High pierce count allows crowd control
+
+**Technical details:**
+- Maintains scene-based projectiles (use_multimesh = false)
+- Works with existing EntityPool system (50 instances)
+- Compatible with AoE explosion effects (150px radius at 80% damage)
+- Homing uses efficient grouped targeting (4 groups share targets)
+
 ### 🐛 FIX: Fireball Explosion Missing on Ghost Swarm Hits (2025-10-13)
 
 **Fixed missing visual feedback when fireball hits MultiMesh ghost swarms:**

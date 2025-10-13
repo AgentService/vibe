@@ -29,6 +29,360 @@ Implement **property-based item system** with independent effect spawning. Items
 
 ---
 
+## 🏗️ Architecture: ItemMetadata vs BaseItem (Dual-Resource Pattern)
+
+**Critical Integration Note:** This system integrates with existing shop/quest systems and follows TomeManager patterns.
+
+### **Existing System (Keep):**
+- **ItemMetadata** (`scripts/resources/ItemMetadata.gd`) - Already used by:
+  - Shop UI (display_name, icon, unlock_cost)
+  - Admin panel (quest requirements, discovery state)
+  - MetaProgression (discovered_items, unlocked_items tracking)
+  - Quest system rewards (Task 5a: Quest completion unlocks by item_id)
+
+### **New System (Add):**
+- **BaseItem** (`scripts/resources/items/BaseItem.gd`) - Pure gameplay resource:
+  - Stat bonuses (@export max_hp_bonus, movement_speed_mult, damage_mult)
+  - Proc properties (@export on_hit_lightning, lightning_cooldown, lightning_damage_mult)
+  - Runtime state (cooldown tracking, proc counters)
+  - Zero UI concerns (no display_name, icons, descriptions)
+
+### **File Naming Convention (Coupled Suffix):**
+```
+data/content/items/
+  ├── thunder_mitts_metadata.tres    # ItemMetadata (UI/catalog)
+  └── thunder_mitts_gameplay.tres    # BaseItem (procs/stats)
+```
+
+**Suffix pattern:** `{item_id}_metadata.tres` for catalog, `{item_id}_gameplay.tres` for effects
+
+### **ItemManager Pattern (Following TomeManager):**
+```gdscript
+// autoload/ItemManager.gd (mirrors TomeManager.gd)
+class_name ItemManager extends Node
+
+# Dual registries (following TomeManager pattern)
+var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Gameplay
+var _metadata_registry: Dictionary = {}   # {item_id: ItemMetadata} - Catalog
+var _item_file_paths: Dictionary = {}     # Hot-reload support
+
+func _ready():
+    _load_all_items_from_directory("res://data/content/items/")
+
+# Gameplay query (chest drops, proc checks)
+func get_base_item(item_id: String) -> BaseItem:
+    return _item_registry.get(item_id)
+
+# Catalog query (shop UI, quest rewards display)
+func get_item_metadata(item_id: String) -> ItemMetadata:
+    return _metadata_registry.get(item_id)
+```
+
+### **Integration Flow (Quest → Shop → Chest → Gameplay):**
+
+**1. Quest Completion (Task 5a):**
+```gdscript
+// QuestConfig.tres
+reward_unlocks: ["thunder_mitts"]
+
+// QuestManager awards reward
+MetaProgression.discover_item("items", "thunder_mitts")  # Uses "items" category
+MetaProgression.unlock_item("items", "thunder_mitts")
+```
+
+**2. Shop Display (Existing):**
+```gdscript
+// UnlockShop.gd
+var metadata = ItemManager.get_item_metadata("thunder_mitts")  # Load catalog data
+shop_ui.display_item(metadata.display_name, metadata.icon, metadata.unlock_cost)
+```
+
+**3. Chest Drop (Future ChestSystem):**
+```gdscript
+// ChestSystem.gd
+func spawn_item(item_id: String):
+    // Check unlock state
+    if not MetaProgression.is_item_unlocked("items", item_id):
+        return  # Can't drop locked items
+
+    // Load gameplay resource
+    var base_item = ItemManager.get_base_item(item_id)  # Load procs/stats
+    ItemManager.equip_item(base_item)  # Apply effects
+```
+
+**4. Gameplay Effects (This Task):**
+```gdscript
+// ItemManager.gd
+func equip_item(item: BaseItem):
+    equipped_items.append(item)
+    _apply_stat_bonuses(item)  # +HP, +movement speed
+    _register_procs(item)       # Lightning, explosion, freeze
+```
+
+### **Category Consistency:**
+- **MetaProgression category:** `"items"` (matches existing `_get_unlocked_array`)
+- **Quest reward category:** `"items"` (Task 5a integration)
+- **File paths:** `res://data/content/items/`
+- **ItemManager loads from:** `data/content/items/*_gameplay.tres` and `*_metadata.tres`
+
+### **Why This Architecture:**
+1. ✅ **Preserves existing systems** - Shop, admin panel, MetaProgression unchanged
+2. ✅ **Clean separation** - UI data stays in ItemMetadata, gameplay in BaseItem
+3. ✅ **Follows TomeManager pattern** - Dual registries, hot-reload support
+4. ✅ **Quest integration ready** - Quest completion → MetaProgression → ItemManager
+5. ✅ **Performance** - Chest/gameplay only loads BaseItem (lighter than full metadata)
+6. ✅ **Filename coupling** - Suffix pattern keeps related files discoverable
+
+---
+
+## 🎯 Architecture Decision: DamageDealtPayload Position Data
+
+**Q&A Resolution (2025-10-13):** How should ItemManager get position data for spawning effects?
+
+### **Decision: Extend DamageDealtPayload with Both Positions**
+
+```gdscript
+// DamageDealtPayload.gd - Extended payload
+class_name DamageDealtPayload extends RefCounted
+
+var damage: float
+var source: String
+var target: String
+var source_position: Vector2  # NEW: Where damage originated (player/ability)
+var impact_position: Vector2  # NEW: Where damage landed (enemy position)
+
+func _init(dealt_damage: float, damage_source: String, damage_target: String,
+           src_pos: Vector2 = Vector2.ZERO, impact_pos: Vector2 = Vector2.ZERO):
+    # Backwards compatible - old code uses defaults
+```
+
+### **Rationale:**
+
+**Why extend existing payload instead of new signal:**
+1. ✅ **Simpler** - One signal contract instead of three
+2. ✅ **Better performance** - Single emission per damage event
+3. ✅ **More flexible** - Provides BOTH source (player) and impact (enemy) positions
+4. ✅ **Backwards compatible** - Default parameters preserve existing listeners
+5. ✅ **Leverages PackedArrays** - Uses DamageRegistry's efficient position storage
+6. ✅ **Only 2 files modified** - DamageDealtPayload.gd + DamageRegistry.gd
+7. ✅ **Future-proof** - Other systems can use positions (knockback, screen effects)
+
+### **Position Semantics:**
+- **source_position** - Where damage ORIGINATED (player position, ability spawn point)
+  - Use for: Knockback direction, damage lines, player-centric effects
+- **impact_position** - Where damage LANDED (enemy position at hit)
+  - Use for: Item proc spawning (lightning, explosions, poison clouds)
+
+### **Integration Pattern:**
+
+```gdscript
+// ItemManager.gd - Uses impact_position for effects
+func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type):
+    // Filter out item-generated damage to prevent recursion
+    if payload.source.begins_with("item_"):
+        return  // Items don't proc other items
+
+    // Only proc on player damage
+    if payload.source not in ["melee", "projectile", "ability", "player"]:
+        return
+
+    // Spawn effects at IMPACT position (where enemy was hit)
+    for item in equipped_items:
+        if item.on_hit_lightning and item._lightning_cooldown <= 0:
+            EffectSpawner.spawn_lightning(payload.impact_position, damage)
+
+// DamageRegistry.gd - Emission site
+func _process_damage_immediate(...):
+    var impact_position = Vector2(_entity_positions_x[index], _entity_positions_y[index])
+
+    var payload = EventBus.DamageDealtPayload_Type.new(
+        final_damage,
+        source,
+        target_id,
+        source_position,   # Player/ability origin
+        impact_position    # Enemy position (from PackedArrays)
+    )
+    EventBus.damage_dealt.emit(payload)
+```
+
+### **Recursion Prevention:**
+
+**Source Filtering Pattern:**
+```gdscript
+// Item-generated damage uses prefixed source names
+DamageService.apply_damage(
+    enemy_id,
+    explosion_damage,
+    "item_explosion",  // ← Prefix prevents recursion
+    ["physical"],
+    0.0,
+    impact_position
+)
+
+// ItemManager filters by source
+if payload.source.begins_with("item_"):
+    return  // Don't proc items on item damage
+```
+
+**Result:** Spicy Meatball explosion → hits 5 enemies → damage tracked, camera shakes, but NO cascading explosions.
+
+---
+
+## 🎯 Architecture Decision: PlayerStats Component for Mutable Properties
+
+**Q&A Resolution (2025-10-13):** How should items/tomes modify player stats when Player.gd only has read-only getters?
+
+### **Problem: Stat Modification Currently Broken**
+
+**Current Issue:**
+```gdscript
+// BaseTome.gd:310-324 attempts direct property modification
+if movement_speed_multiplier != 1.0 and player.has("movement_speed"):
+    player.movement_speed *= pow(movement_speed_multiplier, effective_stacks)
+// ❌ FAILS: player.has("movement_speed") returns false - no such property exists
+
+// Player.gd:127-160 only has read-only getters
+func get_move_speed() -> float:
+    if player_type:
+        return player_type.move_speed
+    return 110.0  // No setter, no writable property
+```
+
+**Impact:** Tomes (and future items) cannot modify player stats. All stat bonuses are no-ops.
+
+### **Decision: PlayerStats Component Pattern (Option B)**
+
+**Create dedicated resource for runtime stat modifications:**
+
+```gdscript
+// scripts/resources/PlayerStats.gd
+class_name PlayerStats extends Resource
+
+# Base values synced from PlayerType on init
+var base_movement_speed: float = 110.0
+var base_max_health: int = 199
+var base_pickup_radius: float = 12.0
+var base_damage: float = 25.0
+
+# Runtime modifiers (applied by tomes/items)
+var movement_speed_mult: float = 1.0
+var max_hp_bonus: int = 0
+var pickup_radius_mult: float = 1.0
+var damage_mult: float = 1.0
+
+# Computed effective values
+func get_effective_move_speed() -> float:
+    return base_movement_speed * movement_speed_mult
+
+func get_effective_max_health() -> int:
+    return base_max_health + max_hp_bonus
+
+func get_effective_pickup_radius() -> float:
+    return base_pickup_radius * pickup_radius_mult
+
+func get_effective_damage() -> float:
+    return base_damage * damage_mult
+
+# Sync base values from PlayerType (preserves hot-reload)
+func sync_from_player_type(player_type: PlayerType) -> void:
+    base_movement_speed = player_type.move_speed
+    base_max_health = player_type.max_health
+    base_pickup_radius = player_type.pickup_radius
+    base_damage = player_type.base_damage
+```
+
+### **Integration Pattern:**
+
+**Player.gd Changes:**
+```gdscript
+// Player.gd - Add runtime_stats component
+var runtime_stats: PlayerStats
+
+func _ready():
+    # Create and sync runtime stats from player_type
+    runtime_stats = PlayerStats.new()
+    if player_type:
+        runtime_stats.sync_from_player_type(player_type)
+
+# Update getters to use runtime_stats (preserves hot-reload)
+func get_move_speed() -> float:
+    if runtime_stats:
+        return runtime_stats.get_effective_move_speed()
+    return 110.0  # Fallback
+
+func get_max_health() -> int:
+    if runtime_stats:
+        return runtime_stats.get_effective_max_health()
+    return 199
+```
+
+**BaseTome.gd Changes:**
+```gdscript
+// BaseTome.gd - Modify runtime_stats instead of player properties
+func apply_to_player(player: Node2D, stack_count: int) -> void:
+    if not player.runtime_stats:
+        Logger.warn("Player missing runtime_stats component", "tomes")
+        return
+
+    var effective_stacks = clampi(stack_count, min_stacks, max_stacks)
+
+    # Apply multiplicative modifiers to runtime_stats
+    if movement_speed_multiplier != 1.0:
+        player.runtime_stats.movement_speed_mult *= pow(movement_speed_multiplier, effective_stacks)
+
+    if pickup_radius_multiplier != 1.0:
+        player.runtime_stats.pickup_radius_mult *= pow(pickup_radius_multiplier, effective_stacks)
+
+    # Apply additive bonuses to runtime_stats
+    if max_hp_bonus != 0:
+        player.runtime_stats.max_hp_bonus += max_hp_bonus * effective_stacks
+
+    if damage_multiplier != 1.0:
+        player.runtime_stats.damage_mult *= pow(damage_multiplier, effective_stacks)
+```
+
+**ItemManager.gd Integration (Future):**
+```gdscript
+// ItemManager.gd - Apply item stat bonuses
+func equip_item(item: BaseItem) -> void:
+    var player = _get_player_reference()
+    if not player or not player.runtime_stats:
+        Logger.warn("Cannot apply item stats - player missing runtime_stats", "items")
+        return
+
+    equipped_items.append(item)
+
+    # Apply stat bonuses to runtime_stats
+    if item.max_hp_bonus != 0:
+        player.runtime_stats.max_hp_bonus += item.max_hp_bonus
+
+    if item.movement_speed_mult != 1.0:
+        player.runtime_stats.movement_speed_mult *= item.movement_speed_mult
+
+    if item.damage_mult != 1.0:
+        player.runtime_stats.damage_mult *= item.damage_mult
+```
+
+### **Rationale:**
+
+**Why PlayerStats Component:**
+1. ✅ **Preserves hot-reload** - Base values stay in player_type.tres, runtime mods in PlayerStats
+2. ✅ **Clean architecture** - Separates configuration (PlayerType) from runtime state (PlayerStats)
+3. ✅ **Matches tome pattern** - BaseTome already uses multiplicative/additive separation
+4. ✅ **Scales well** - Future items/passives/buffs all modify runtime_stats
+5. ✅ **No breaking changes** - Player getters stay compatible, internal implementation changes
+6. ✅ **Testable** - PlayerStats can be unit tested independently
+
+**Implementation Steps:**
+1. Create `scripts/resources/PlayerStats.gd` resource class
+2. Update `Player.gd` to instantiate runtime_stats and sync from player_type
+3. Update Player getters to query runtime_stats.get_effective_*()
+4. Fix `BaseTome.apply_to_player()` to modify runtime_stats properties
+5. Test tome stat bonuses work correctly (movement speed, HP, damage)
+6. Document pattern in `scripts/domain/CLAUDE.md` for items to follow
+
+---
+
 ## 🎯 Acceptance Criteria
 
 ### Phase 1 (MVP):
@@ -199,22 +553,33 @@ func _on_damage_dealt(payload):
 ## 🔗 Related Files
 
 ### Will Create:
-- [ ] `scripts/resources/items/BaseItem.gd` (Resource with @export properties)
-- [ ] `autoload/ItemManager.gd` (Event handling + equip/unequip)
+- [ ] `scripts/resources/items/BaseItem.gd` (Pure gameplay resource - stat bonuses, procs)
+- [ ] `autoload/ItemManager.gd` (Dual registry: BaseItem + ItemMetadata, following TomeManager pattern)
 - [ ] `scripts/systems/EffectSpawner.gd` (Generic effect spawning - may be autoload)
-- [ ] `data/content/items/thunder_mitts.tres` (Example: Lightning on hit)
-- [ ] `data/content/items/spicy_meatball.tres` (Example: Explosion chance)
-- [ ] `data/content/items/frost_gloves.tres` (Example: Freeze on hit)
-- [ ] `data/content/items/health_ring.tres` (Example: Stat bonus)
-- [ ] `data/content/items/turbo_socks.tres` (Example: Movement speed)
-- [ ] 10-15 more item .tres files
+
+**BaseItem Gameplay Resources (data/content/items/*_gameplay.tres):**
+- [ ] `data/content/items/thunder_mitts_gameplay.tres` (Lightning on hit, 10s cooldown)
+- [ ] `data/content/items/spicy_meatball_gameplay.tres` (25% explosion chance)
+- [ ] `data/content/items/frost_gloves_gameplay.tres` (7.5% freeze on hit)
+- [ ] `data/content/items/health_ring_gameplay.tres` (+25 max HP stat bonus)
+- [ ] `data/content/items/turbo_socks_gameplay.tres` (+15% movement speed)
+- [ ] 10-15 more gameplay .tres files
+
+**ItemMetadata Catalog Resources (data/content/items/*_metadata.tres):**
+- [ ] `data/content/items/thunder_mitts_metadata.tres` (Display name, icon, unlock cost, quest requirement)
+- [ ] `data/content/items/spicy_meatball_metadata.tres` (Catalog UI data)
+- [ ] `data/content/items/frost_gloves_metadata.tres` (Catalog UI data)
+- [ ] `data/content/items/health_ring_metadata.tres` (Catalog UI data)
+- [ ] `data/content/items/turbo_socks_metadata.tres` (Catalog UI data)
+- [ ] 10-15 more metadata .tres files
 
 ### Will Modify:
 - [ ] `autoload/EventBus.gd` (verify damage_dealt payload has position)
 - [ ] `scripts/domain/signal_payloads/DamageDealtPayload.gd` (add target_position if missing)
-- [ ] `scripts/systems/DamageSystem.gd` (emit damage_dealt with position)
+- [ ] `scripts/systems/damage_v2/DamageRegistry.gd` (emit damage_dealt with position)
 - [ ] `scenes/arena/Player.gd` (add equipped_items integration - maybe)
-- [ ] Project autoload settings (add ItemManager, EffectSpawner)
+- [ ] `autoload/MetaProgression.gd` (verify "items" category works correctly - already exists)
+- [ ] Project autoload settings (add ItemManager to autoload list)
 
 ### Documentation:
 - [ ] `autoload/CLAUDE.md` (ItemManager patterns)
@@ -225,13 +590,61 @@ func _on_damage_dealt(payload):
 
 ## 📝 Progress Notes
 
+### 2025-10-13 - Q&A Architecture Resolutions Complete ✅
+
+**All three architectural gaps resolved via Q&A session:**
+
+#### **Q1: ItemMetadata vs BaseItem Architecture ✅**
+- ✅ **Decision:** Dual-resource pattern with filename coupling
+- ✅ **ItemMetadata preserved** - Existing shop/admin/MetaProgression/quest system unchanged
+- ✅ **BaseItem added** - Pure gameplay resource for procs/stats/runtime state
+- ✅ **Filename convention:** `{item_id}_metadata.tres` and `{item_id}_gameplay.tres`
+- ✅ **ItemManager pattern:** Dual registries following TomeManager (get_base_item, get_item_metadata)
+- ✅ **Category consistency:** Uses "items" category (MetaProgression compatible)
+- ✅ **Integration flow:** Quest → MetaProgression → Shop (metadata) → Chest (gameplay)
+
+#### **Q2: DamageDealtPayload Position Data ✅**
+- ✅ **Decision:** Extend DamageDealtPayload with both source_position and impact_position
+- ✅ **Position semantics defined:**
+  - source_position = Player/ability origin (for knockback, damage lines)
+  - impact_position = Enemy position where hit occurred (for item effect spawning)
+- ✅ **Backwards compatible:** Default parameters preserve existing listeners
+- ✅ **Recursion prevention:** Source filtering pattern (payload.source.begins_with("item_"))
+- ✅ **Simpler than alternatives:** 2 files modified vs 3 new signals
+- ✅ **Leverages PackedArrays:** Uses DamageRegistry's efficient position storage
+- ✅ **Files to modify:** DamageDealtPayload.gd + DamageRegistry.gd
+
+#### **Q3: Player Stat Mutability ✅**
+- ✅ **Decision:** PlayerStats component pattern (Option B)
+- ✅ **Problem identified:** Player.gd only has read-only getters, BaseTome.apply_to_player() is no-op
+- ✅ **Solution:** Create PlayerStats resource with base values + runtime modifiers
+- ✅ **Preserves hot-reload:** Base values sync from player_type.tres on _ready()
+- ✅ **Clean architecture:** Separates configuration (PlayerType) from runtime state (PlayerStats)
+- ✅ **Matches tome pattern:** multiplicative/additive modifier separation
+- ✅ **No breaking changes:** Player getters stay compatible, internal refactor only
+- ✅ **Files to modify:** Create PlayerStats.gd, update Player.gd + BaseTome.gd
+
+**Ready for Implementation:**
+- All architectural blockers resolved
+- Clear implementation path defined
+- Integration patterns documented
+- File modification checklist complete
+
+**Next Steps:**
+1. Create PlayerStats.gd and fix tome stat bonuses (prerequisite for items)
+2. Extend DamageDealtPayload with positions
+3. Create BaseItem.gd with proc types
+4. Create ItemManager.gd with dual registries
+5. Create EffectSpawner.gd for visual effects
+6. Create example item pairs (_metadata + _gameplay)
+7. Test item procs in-game
+
 ### 2025-01-13 - Design Complete, Ready to Implement
 - ✅ Design brainstorm completed via Q&A session
 - ✅ All 5 design questions answered and documented
 - ✅ Architecture chosen: Property-based system
 - ✅ Key patterns defined: Payload damage scaling, independent effects
 - ✅ Performance validated: <0.1ms for 50 items
-- 🟢 Ready to begin Phase 1 implementation
 
 **Design Decisions Made:**
 1. Visual effects: Items spawn independently (no ability modification)
@@ -242,9 +655,9 @@ func _on_damage_dealt(payload):
 
 **Next Steps:**
 1. Create BaseItem.gd with 3 proc types (lightning, explosion, freeze)
-2. Create ItemManager.gd with EventBus wiring
+2. Create ItemManager.gd with dual registries (TomeManager pattern)
 3. Create EffectSpawner.gd for generic effects
-4. Create 3-5 example items
+4. Create 3-5 example items (both _metadata and _gameplay files)
 5. Test and iterate
 
 ---
