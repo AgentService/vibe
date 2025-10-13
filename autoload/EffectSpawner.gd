@@ -106,7 +106,10 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 	var explosion := EXPLOSION_SCENE.instantiate()
 	_arena.add_child(explosion)
 	explosion.global_position = position
-	explosion.scale = Vector2(4.0, 4.0)  # 10 * 0.4 = 4.0 (smaller for item procs)
+
+	# Randomly flip horizontally for visual variety
+	var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
+	explosion.scale = Vector2(4.0 * flip, 4.0)  # 10 * 0.4 = 4.0 (smaller for item procs)
 
 	# Apply damage to enemies in radius (search for "boss" type - all enemies use BaseBoss)
 	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
@@ -173,7 +176,10 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		var lightning := LIGHTNING_SCENE.instantiate()
 		_arena.add_child(lightning)
 		lightning.global_position = enemy_pos
-		lightning.scale = Vector2(3.0, 3.0)  # 10 * 0.3 = 3.0 (smaller for item procs)
+
+		# Randomly flip horizontally for visual variety
+		var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
+		lightning.scale = Vector2(3.0 * flip, 3.0)  # 10 * 0.3 = 3.0 (smaller for item procs)
 
 		# Apply damage to this enemy
 		DamageService._process_damage_immediate(
