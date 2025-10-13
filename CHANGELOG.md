@@ -2,6 +2,37 @@
 
 ## [Current Week - In Progress]
 
+### 📋 TASK: Ability & Tome EventBus Signal Wiring Task Created (2025-10-13)
+
+**Created comprehensive implementation task for wiring ability/tome acquisition signals:**
+- **Parallel agent analysis completed**:
+  - Code archaeology: Located AbilityController, EventBus signals, ItemManager reference pattern
+  - Technical research: Validated Godot 4.2+ signal patterns, 30Hz combat compatibility
+  - Risk assessment: Identified moderate risk (6.5/10), AbilityManager autoload as blocking dependency
+- **Task file created**: `Obsidian/03-tasks/SYSTEMS_ability_tome_eventbus_wiring.md`
+- **Scope defined**:
+  - Phase 1: Create AbilityManager autoload (BLOCKING, 2-3 hours)
+  - Phase 2: Wire signals in AbilityController (1-2 hours)
+  - Phase 3: Integration testing with headless validation (2-3 hours)
+  - Phase 4: Debug UI updates (AbilityTestingPopup signal emission) (1-2 hours)
+  - Phase 5: Documentation updates (CLAUDE.md files) (1-2 hours)
+- **Key findings**:
+  - EventBus signals already defined but not emitted (`ability_acquired`, `tome_acquired`)
+  - ItemManager provides working reference implementation (item_acquired pattern)
+  - Performance validated: <0.2ms per event, 6-9 expected listeners
+  - Test pattern: Use .tscn scenes for autoload dependencies
+- **Files to modify**:
+  - NEW: `autoload/AbilityManager.gd` (registry + factory)
+  - `scripts/systems/AbilityController.gd` (signal wiring + emission)
+  - `scenes/debug/AbilityTestingPopup.gd` (emit signals not direct calls)
+  - NEW: `tests/ability_system/AbilityAcquisition_Integration_Test.tscn`
+- **Documentation updates needed**:
+  - `autoload/CLAUDE.md` (EventBus signal contracts)
+  - `scripts/systems/CLAUDE.md` (AbilityController event-driven patterns)
+  - `tests/CLAUDE.md` (integration test documentation)
+
+**Implementation plan ready for execution (estimated 6-10 hours total).**
+
 ### ✨ FEAT: Complete Item System with Procs and Stat Bonuses (2025-10-13)
 
 **Implemented full item system with dual-resource architecture, proc effects, and stat modifications:**

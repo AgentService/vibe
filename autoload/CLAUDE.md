@@ -182,8 +182,8 @@ var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Gameplay
 var _metadata_registry: Dictionary = {}   # {item_id: ItemMetadata} - Catalog
 var _item_file_paths: Dictionary = {}     # Hot-reload support
 
-# Equipped items tracking
-var _equipped_items: Dictionary = {}  # {item_id: BaseItem}
+# Equipped items tracking with stacking (2025-10-13)
+var _equipped_items: Dictionary = {}  # {item_id: {item: BaseItem, stack_count: int}}
 var _player: Node2D = null
 
 func _ready() -> void:
@@ -292,13 +292,14 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
     if not _arena:
         return
 
-    # Spawn visual effect
+    # Spawn visual effect (scaled down to 0.4x for item procs)
     var explosion := EXPLOSION_SCENE.instantiate()
     _arena.add_child(explosion)
     explosion.global_position = position
+    explosion.scale = Vector2(0.4, 0.4)
 
-    # Apply damage to enemies in radius
-    var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "enemy")
+    # Apply damage to enemies in radius (NOTE: "boss" type - all enemies register as "boss")
+    var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
 
     for enemy_id in nearby_enemies:
         DamageService._process_damage_immediate(
@@ -376,22 +377,71 @@ func update_cooldowns(delta_time: float) -> void:
 
 **Arena Integration:**
 ```gdscript
-# Arena.gd - Wire item system to player
+# Arena.gd - Wire item system to player and effects spawner
 func _ready() -> void:
     super._ready()
 
     if ItemManager and player:
         ItemManager.set_player(player)
         Logger.debug("ItemManager wired to player", "items")
+
+    if EffectSpawner:
+        EffectSpawner.set_arena(self)
+        Logger.debug("EffectSpawner wired to arena", "effects")
+```
+
+**Item Stacking System (2025-10-13):**
+```gdscript
+# ItemManager - Stacking structure and formulas
+func equip_item(item_id: String) -> bool:
+    var item: BaseItem = get_base_item(item_id)
+    if not item or not _player:
+        return false
+
+    # Check if item already equipped (stacking)
+    if _equipped_items.has(item_id):
+        var item_data: Dictionary = _equipped_items[item_id]
+        item_data.stack_count += 1
+        _apply_stat_bonuses(item, 1)  # Apply one additional stack
+        Logger.info("ItemManager: Stacked item '%s' (stack: %d)" % [item_id, item_data.stack_count], "items")
+        return true
+
+    # First time equipping
+    _equipped_items[item_id] = {
+        "item": item,
+        "stack_count": 1
+    }
+    item.reset_cooldowns()
+    _apply_stat_bonuses(item, 1)
+    return true
+
+func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
+    var stats = _player.runtime_stats
+
+    # Multiplicative modifiers compound exponentially
+    if item.movement_speed_mult != 1.0:
+        var stack_mult := pow(item.movement_speed_mult, stack_count)
+        stats.movement_speed_mult *= stack_mult
+
+    # Additive bonuses scale linearly
+    if item.max_hp_bonus != 0:
+        var bonus := item.max_hp_bonus * stack_count
+        stats.max_hp_bonus += bonus
+
+# Example stacking:
+# - 3x Feather (+15% speed each): 1.15^3 = 1.52x total speed
+# - 3x Cheese (+20 HP each): 20 * 3 = 60 HP total
 ```
 
 **Key Design Points:**
 1. **Dual-registry pattern**: Separates catalog (ItemMetadata) from gameplay (BaseItem)
-2. **Position-enriched events**: DamageDealtPayload provides source_position + impact_position
-3. **Deterministic RNG**: `RNG.stream("item_procs")` for consistent proc chances
-4. **Recursion prevention**: Source filtering (`source.begins_with("item_")`)
-5. **Property-based procs**: Inspector-friendly @export properties (not strategy pattern)
-6. **30Hz cooldown updates**: Subscribed to `combat_step` signal
+2. **Item stacking**: Dictionary structure `{item_id: {item, stack_count}}` with multiplicative/additive scaling
+3. **Position-enriched events**: DamageDealtPayload provides source_position + impact_position
+4. **Deterministic RNG**: `RNG.stream("item_procs")` for consistent proc chances
+5. **Recursion prevention**: Source filtering (`source.begins_with("item_")`)
+6. **Property-based procs**: Inspector-friendly @export properties (not strategy pattern)
+7. **30Hz cooldown updates**: Subscribed to `combat_step` signal
+8. **EntityTracker type convention**: Query for "boss" type (all enemies inherit from BaseBoss)
 
 **Item Categories:**
 - **Proc items**: Lightning, explosion, freeze effects triggered on damage
@@ -552,8 +602,9 @@ func spawn_projectile(projectile_data: Dictionary) -> void:
 ```gdscript
 func _check_collision(position: Vector2, projectile_index: int) -> bool:
     # Use EntityTracker spatial hash (O(1) lookup)
+    # NOTE: Use "boss" type - all enemies register as "boss" via BaseBoss
     var nearby_enemy_ids: Array[String] = EntityTracker.get_entities_in_radius(
-        position, COLLISION_RADIUS, "enemy"
+        position, COLLISION_RADIUS, "boss"
     )
 
     if nearby_enemy_ids.is_empty():
