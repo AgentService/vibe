@@ -2,6 +2,28 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FIX: Thunder Mitts Lightning Entity Type Query (2025-10-13)
+
+**Fixed Thunder Mitts lightning not hitting enemies due to entity type mismatch:**
+- **Problem**: Lightning procs triggered correctly (ItemManager cooldown working) but hit count was always 0
+  - Debug logs showed: `Lightning spawned... (damage=256.0, chains=0, hits=0)`
+  - EffectSpawner queried for `"enemy"` type entities, but all enemies register as `"boss"` type
+  - Line 201 query returned empty array despite enemies being in range
+- **Solution**: Changed `_find_nearest_enemy()` to query for `"boss"` type (matches explosion pattern on line 112)
+  - One-line fix: `EntityTracker.get_entities_in_radius(position, max_range, "boss")`
+  - Follows existing pattern from spawn_explosion() which correctly uses "boss" type
+  - Comment on line 111 explicitly documents: "search for 'boss' type - all enemies use BaseBoss"
+- **Impact**:
+  - Thunder Mitts now correctly hits enemies with lightning strikes
+  - Chain lightning properly finds and hits nearby targets
+  - Visual effect spawns at correct enemy positions
+- **Root cause**: Type mismatch between EntityTracker query and enemy registration convention
+  - All enemies inherit from BaseBoss and register as "boss" type
+  - Lightning query used incorrect "enemy" type (copy-paste from different context)
+
+**Files modified:**
+- `autoload/EffectSpawner.gd` - Line 201: Changed entity type query from "enemy" to "boss"
+
 ### ✅ FEAT: Lightning Impact Visual Effect for Thunder Mitts (2025-10-13)
 
 **Created proper lightning strike effect to replace explosion placeholder:**

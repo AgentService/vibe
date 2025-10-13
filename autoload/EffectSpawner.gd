@@ -198,7 +198,7 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 ## Finds nearest enemy within range, excluding already hit enemies.
 ## Returns enemy_id or empty string if none found.
 func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array[String]) -> String:
-	var nearby_enemies := EntityTracker.get_entities_in_radius(position, max_range, "enemy")
+	var nearby_enemies := EntityTracker.get_entities_in_radius(position, max_range, "boss")
 
 	var nearest_id := ""
 	var nearest_dist_sq := INF
