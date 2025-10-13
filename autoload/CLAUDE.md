@@ -19,6 +19,9 @@
 | **LocalLeaderboard.gd** | Personal best tracking per map/tier | `add_run()`, `get_personal_best()`, `get_leaderboard()` | None (persistence) |
 | **PlayerProgression.gd** | In-run XP & leveling (simplified) | `leveled_up`, `xp_gained` | None (session-only) |
 | **MapLevel.gd** | Time-based progression tracking | `level_increased`, `level_changed` | StateManager for run lifecycle |
+| **TomeManager.gd** | Tome definitions & registry | `get_definition()`, `get_category()` | None (foundation) |
+| **ItemManager.gd** | Item dual-registry & proc handler | `equip_item()`, `damage_dealt` consumer | EventBus, RNG, EffectSpawner |
+| **EffectSpawner.gd** | Generic item effect spawning | `spawn_explosion()`, `spawn_lightning()` | EntityTracker, DamageService |
 | **MultiMeshProjectileManager.gd** | High-performance projectile system | `combat_step` consumer, `ability_projectile_requested` | EventBus, MultiMeshManager |
 
 ## Autoload Architecture Patterns
@@ -166,6 +169,238 @@ RNG.stream("boss")    # Boss AI decisions
 var crit_roll = RNG.stream("crit").randf()
 var spawn_type = RNG.stream("waves").randi_range(0, enemy_types.size() - 1)
 ```
+
+### 🎁 **ItemManager & EffectSpawner Pattern (2025-10-13)**
+
+**Dual-Registry Item System with Proc Effects:**
+```gdscript
+# ItemManager.gd - Autoload for item gameplay and catalog
+extends Node
+
+# Dual registries (TomeManager pattern)
+var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Gameplay
+var _metadata_registry: Dictionary = {}   # {item_id: ItemMetadata} - Catalog
+var _item_file_paths: Dictionary = {}     # Hot-reload support
+
+# Equipped items tracking
+var _equipped_items: Dictionary = {}  # {item_id: BaseItem}
+var _player: Node2D = null
+
+func _ready() -> void:
+    _load_all_items()
+    _connect_to_event_bus()
+
+func _load_items_from_directory(dir_path: String) -> void:
+    # Recognizes filename suffix patterns:
+    # - {item_id}_gameplay.tres → BaseItem registry
+    # - {item_id}_metadata.tres → ItemMetadata registry
+
+    if file_name.ends_with("_gameplay.tres"):
+        _load_base_item_from_file(file_path)
+    elif file_name.ends_with("_metadata.tres"):
+        _load_item_metadata_from_file(file_path)
+
+# Public API - Dual registry access
+func get_base_item(item_id: String) -> BaseItem:
+    return _item_registry.get(item_id) as BaseItem
+
+func get_item_metadata(item_id: String):
+    return _metadata_registry.get(item_id)
+
+# Equip item and apply stat bonuses
+func equip_item(item_id: String) -> bool:
+    var item: BaseItem = get_base_item(item_id)
+    if not item or not _player:
+        return false
+
+    item.reset_cooldowns()
+    _equipped_items[item_id] = item
+    _apply_stat_bonuses(item)
+    return true
+
+# EventBus integration
+func _connect_to_event_bus() -> void:
+    EventBus.damage_dealt.connect(_on_damage_dealt)  # Proc checks
+    EventBus.combat_step.connect(_on_combat_step)    # Cooldown updates
+
+func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type) -> void:
+    # Recursion prevention
+    if payload.source.begins_with("item_"):
+        return
+
+    # Check each equipped item for proc triggers
+    for item_obj in _equipped_items.values():
+        var item: BaseItem = item_obj as BaseItem
+        if item:
+            _check_item_procs(item, payload)
+
+func _check_item_procs(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
+    # Deterministic RNG for proc chances
+    var item_rng := RNG.stream("item_procs")
+
+    # Lightning (cooldown-based)
+    if item.on_hit_lightning and item._lightning_cooldown <= 0.0:
+        _trigger_lightning_proc(item, payload)
+
+    # Explosion (chance-based)
+    if item.on_hit_explosion:
+        var roll := item_rng.randf()
+        if roll < item.explosion_chance:
+            _trigger_explosion_proc(item, payload)
+
+    # Freeze (chance-based)
+    if item.on_hit_freeze:
+        var roll := item_rng.randf()
+        if roll < item.freeze_chance:
+            _trigger_freeze_proc(item, payload)
+
+func _trigger_lightning_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
+    item._lightning_cooldown = item.lightning_cooldown
+    var lightning_damage := payload.damage * item.lightning_damage_mult
+
+    # Spawn lightning effect via EffectSpawner
+    EffectSpawner.spawn_lightning(
+        payload.impact_position,  # Where enemy was hit
+        lightning_damage,
+        item.lightning_chain_count,
+        item.lightning_chain_range
+    )
+
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+    var delta_time: float = payload.dt
+
+    # Update cooldowns for all equipped items (30Hz)
+    for item_obj in _equipped_items.values():
+        var item: BaseItem = item_obj as BaseItem
+        if item:
+            item.update_cooldowns(delta_time)
+```
+
+**EffectSpawner Integration:**
+```gdscript
+# EffectSpawner.gd - Autoload for generic item effects
+extends Node
+
+const EXPLOSION_SCENE := preload("res://scenes/effects/FireballImpact.tscn")
+
+var _arena: Node2D = null
+
+func _ready() -> void:
+    StateManager.state_changed.connect(_on_state_changed)
+
+func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
+    if not _arena:
+        return
+
+    # Spawn visual effect
+    var explosion := EXPLOSION_SCENE.instantiate()
+    _arena.add_child(explosion)
+    explosion.global_position = position
+
+    # Apply damage to enemies in radius
+    var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "enemy")
+
+    for enemy_id in nearby_enemies:
+        DamageService._process_damage_immediate(
+            enemy_id,
+            damage,
+            "item_explosion",  # Source tag for recursion prevention
+            ["fire", "aoe"],
+            0.0,
+            position
+        )
+
+func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_range: float) -> void:
+    var hit_enemies: Array[String] = []
+    var current_pos := position
+    var remaining_chains := chain_count + 1
+
+    while remaining_chains > 0:
+        var nearest_enemy := _find_nearest_enemy(current_pos, chain_range, hit_enemies)
+        if not nearest_enemy:
+            break
+
+        var enemy_pos := EntityTracker.get_entity_position(nearest_enemy) as Vector2
+
+        # Apply damage
+        DamageService._process_damage_immediate(
+            nearest_enemy,
+            damage,
+            "item_lightning",
+            ["lightning"],
+            0.0,
+            current_pos
+        )
+
+        hit_enemies.append(nearest_enemy)
+        current_pos = enemy_pos
+        remaining_chains -= 1
+```
+
+**BaseItem Resource (Property-Based Procs):**
+```gdscript
+# BaseItem.gd - Pure gameplay resource
+extends Resource
+class_name BaseItem
+
+# Stat bonuses (applied to Player.runtime_stats)
+@export var max_hp_bonus: int = 0
+@export var movement_speed_mult: float = 1.0
+@export var damage_mult: float = 1.0
+@export var pickup_radius_mult: float = 1.0
+
+# Proc type 1: Lightning (cooldown-based)
+@export var on_hit_lightning: bool = false
+@export var lightning_cooldown: float = 10.0
+@export var lightning_damage_mult: float = 0.5
+@export var lightning_chain_count: int = 0
+var _lightning_cooldown: float = 0.0
+
+# Proc type 2: Explosion (chance-based)
+@export var on_hit_explosion: bool = false
+@export var explosion_chance: float = 0.25
+@export var explosion_damage_mult: float = 0.65
+@export var explosion_radius: float = 100.0
+var _explosion_procs: int = 0
+
+# Proc type 3: Freeze (chance-based)
+@export var on_hit_freeze: bool = false
+@export var freeze_chance: float = 0.075
+@export var freeze_duration: float = 2.0
+var _freeze_procs: int = 0
+
+func update_cooldowns(delta_time: float) -> void:
+    if _lightning_cooldown > 0.0:
+        _lightning_cooldown -= delta_time
+```
+
+**Arena Integration:**
+```gdscript
+# Arena.gd - Wire item system to player
+func _ready() -> void:
+    super._ready()
+
+    if ItemManager and player:
+        ItemManager.set_player(player)
+        Logger.debug("ItemManager wired to player", "items")
+```
+
+**Key Design Points:**
+1. **Dual-registry pattern**: Separates catalog (ItemMetadata) from gameplay (BaseItem)
+2. **Position-enriched events**: DamageDealtPayload provides source_position + impact_position
+3. **Deterministic RNG**: `RNG.stream("item_procs")` for consistent proc chances
+4. **Recursion prevention**: Source filtering (`source.begins_with("item_")`)
+5. **Property-based procs**: Inspector-friendly @export properties (not strategy pattern)
+6. **30Hz cooldown updates**: Subscribed to `combat_step` signal
+
+**Item Categories:**
+- **Proc items**: Lightning, explosion, freeze effects triggered on damage
+- **Stat items**: HP, movement speed, damage, pickup radius bonuses
+- **Utility items**: Pickup radius placeholders for future luck/drop rate systems
+
+**Filename Convention:**
+- `{item_id}_metadata.tres` - Shop catalog, unlock costs, display names
+- `{item_id}_gameplay.tres` - Proc configs, stat bonuses, cooldowns
 
 ### 📊 **BalanceDB Hot-Reload Pattern**
 

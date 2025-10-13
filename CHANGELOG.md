@@ -2,6 +2,38 @@
 
 ## [Current Week - In Progress]
 
+### ✨ FEAT: Complete Item System with Procs and Stat Bonuses (2025-10-13)
+
+**Implemented full item system with dual-resource architecture, proc effects, and stat modifications:**
+- **Core systems created**:
+  - `BaseItem.gd` - Pure gameplay resource with 3 proc types (lightning, explosion, freeze) and 4 stat bonuses
+  - `ItemManager.gd` - Dual-registry autoload (BaseItem + ItemMetadata) following TomeManager pattern
+  - `EffectSpawner.gd` - Generic effect spawning with explosion, lightning chaining, and freeze placeholder
+- **Items created (8 total)**:
+  - **Proc items**: Thunder Mitts (lightning/10s), Spicy Meatball (25% explosion), Frost Glaive (7.5% freeze)
+  - **Stat items**: Cheese (+20 HP), Feather (+15% speed), Clover (+10% pickup), Lucky Coin (+15% pickup), Rabbit's Foot (+5% damage)
+- **Technical implementation**:
+  - Deterministic RNG via `RNG.stream("item_procs")` for chance-based procs
+  - EntityTracker integration using `get_entities_in_radius()` for AOE damage
+  - Recursion prevention via source filtering (`source.begins_with("item_")`)
+  - DamageDealtPayload extended with `source_position` and `impact_position` for effect spawning
+  - Player.runtime_stats integration for stat bonus application
+- **File organization**:
+  - Filename convention: `{item_id}_metadata.tres` + `{item_id}_gameplay.tres`
+  - Legacy items renamed: cheese.tres → cheese_metadata.tres (and 4 others)
+  - Dual registries enable shop catalog (metadata) vs gameplay (procs) separation
+- **Integration points**:
+  - `ItemManager.set_player(player)` - Wire player reference for stat bonuses
+  - `ItemManager.equip_item(item_id)` - Equip item, apply stats, reset cooldowns
+  - EventBus subscriptions: `damage_dealt` (proc checks), `combat_step` (cooldown updates at 30Hz)
+
+**Architecture decisions:**
+- Dual-resource pattern separates UI/catalog data from gameplay mechanics
+- Property-based procs (not strategy pattern) for Inspector-friendly configuration
+- Position-enriched damage events eliminate need for 3 additional signals
+- StateManager enum fix: `State.ARENA` (not `GameState.ARENA`)
+- CombatStepPayload property: `payload.dt` (not `payload.delta_time`)
+
 ### 🐛 FIX: Synchronized Tome System Resources - UnlockShop Now Shows All Tomes (2025-10-13)
 
 **Fixed multiple tome system issues: missing resources, name mismatches, and runtime errors:**
