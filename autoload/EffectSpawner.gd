@@ -20,9 +20,8 @@ extends Node
 ## Explosion effect scene (reuses FireballImpact)
 const EXPLOSION_SCENE := preload("res://scenes/effects/FireballImpact.tscn")
 
-## Lightning effect scene (TODO: Create proper lightning effect scene)
-## For now, uses explosion effect as placeholder
-const LIGHTNING_SCENE := EXPLOSION_SCENE
+## Lightning effect scene (Pack 5 C, row 6 - electric strike animation)
+const LIGHTNING_SCENE := preload("res://scenes/effects/LightningImpact.tscn")
 
 ## Freeze effect scene (TODO: Create proper freeze effect scene)
 ## For now, no visual effect spawned
@@ -140,7 +139,7 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 
 
 # ============================================================================
-# LIGHTNING EFFECT (Placeholder - TODO: Create proper lightning effect)
+# LIGHTNING EFFECT (LightningImpact.tscn)
 # ============================================================================
 
 ## Spawns lightning effect at position with optional chaining.
@@ -170,7 +169,7 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		# Get enemy position for next chain
 		var enemy_pos: Vector2 = EntityTracker.get_entity(nearest_enemy).get("pos", Vector2.ZERO)
 
-		# Spawn visual effect (TODO: Replace with proper lightning arc effect)
+		# Spawn lightning strike visual effect
 		var lightning := LIGHTNING_SCENE.instantiate()
 		_arena.add_child(lightning)
 		lightning.global_position = enemy_pos

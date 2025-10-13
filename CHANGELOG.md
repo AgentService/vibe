@@ -2,6 +2,31 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FEAT: Lightning Impact Visual Effect for Thunder Mitts (2025-10-13)
+
+**Created proper lightning strike effect to replace explosion placeholder:**
+- **Problem**: Thunder Mitts used FireballImpact.tscn as placeholder for lightning strikes
+  - No distinct visual identity for lightning vs fire effects
+  - Confusing gameplay feedback (lightning looked like explosions)
+- **Solution**: Created dedicated LightningImpact.tscn scene with electric strike animation
+  - Scene structure: Mirrors FireballImpact pattern (AnimatedSprite2D + AnimationPlayer + auto-despawn)
+  - Sprite: Retro Impact Effect Pack 5 C, row 6 (electric blue strike animation)
+  - Animation: 6-frame strike at 15 FPS, fades out over 0.4s
+  - Scale: 0.3x for item procs (same as before, but now with proper visual)
+- **Implementation**:
+  - `LightningImpact.gd`: Self-despawning effect script with 0.4s lifetime
+  - `LightningImpact.tscn`: AnimatedSprite2D with "strike" animation and additive blend
+  - `EffectSpawner.gd`: Replaced `LIGHTNING_SCENE := EXPLOSION_SCENE` with proper preload
+- **Thunder Mitts behavior**:
+  - 10s cooldown lightning proc now shows distinct electric strike visual
+  - Chains to nearby enemies with proper lightning effect at each hit
+  - Clear visual distinction from Spicy Meatball explosions
+
+**Files modified:**
+- `scripts/effects/LightningImpact.gd` - Created self-despawning lightning effect script
+- `scenes/effects/LightningImpact.tscn` - Created lightning strike scene with Pack 5 C animation
+- `autoload/EffectSpawner.gd` - Updated LIGHTNING_SCENE const to use LightningImpact.tscn
+
 ### ✅ FIX: Item Proc Chance Multiplicative Stacking (2025-10-13)
 
 **Fixed proc chance stacking to use explicit multiplicative formula with single roll per hit:**
