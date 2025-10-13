@@ -2,6 +2,28 @@
 
 ## [Current Week - In Progress]
 
+### 🎨 FEAT: Fireball Two-Phase Animation System (2025-10-13)
+
+**Implemented build-up → sustained loop animation pattern for fireball projectile:**
+- **Architecture**: AnimatedSprite2D with two animations ("default" build-up, "repeat" sustained)
+- **Lifecycle**:
+  1. Spawns and plays "default" animation (5 frames at 5 FPS, non-looping)
+  2. After ~1 second, animation_finished signal fires
+  3. Automatically transitions to "repeat" animation (last 2 frames at 3 FPS, looping)
+  4. Creates visual effect of charging up then pulsing/sustaining
+- **Implementation**: `AbilityProjectile.gd` connects animation_finished signal in initialize()
+  - Callback transitions from "default" to "repeat" when build-up completes
+  - Animation reset in reset() for proper pooling behavior
+- **Scene configuration**: Fireball.tscn updated with proper animation settings
+  - "default" animation: loop=false (build-up phase)
+  - "repeat" animation: loop=true (sustained pulsing phase)
+- **Impact**: Provides reusable pattern for multi-phase ability animations (charge → sustain → dissipate)
+
+**Technical details:**
+- Signal connection check prevents duplicate connections when pooling
+- Animation state reset in reset() ensures consistent animation start
+- Works correctly with EntityPool reuse (no _ready() re-calls)
+
 ### 🎯 FEAT: MultiMesh Homing System + Ability Variants (2025-01-10)
 
 **Implemented grouped + staggered homing for high-performance seeking projectiles:**

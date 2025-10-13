@@ -140,6 +140,15 @@ var source_player_id: String = "player"
 ## Knockback distance applied on hit (pixels)
 var knockback_distance: float = 100.0
 
+## Impact AoE radius (pixels) - 0.0 = no AoE
+var impact_aoe_radius: float = 0.0
+
+## Impact AoE damage multiplier - scales damage for AoE targets
+var impact_aoe_damage_mult: float = 1.0
+
+## Impact effect scene to spawn on collision
+var impact_effect: PackedScene = null
+
 ## Visual scene key for pooling
 var visual_scene_key: String = "arrow"
 
@@ -159,7 +168,7 @@ var _ghost_target_node: Node2D = null
 # ============================================================================
 
 var area_2d: Area2D = null
-var sprite: Sprite2D = null
+var sprite: Node2D = null  # Can be Sprite2D or AnimatedSprite2D
 
 # ============================================================================
 # LIFECYCLE
@@ -171,9 +180,11 @@ func _ready() -> void:
 		area_2d = get_node("Area2D")
 		area_2d.area_entered.connect(_on_area_entered)
 
-	# Get sprite reference
+	# Get sprite reference (supports both Sprite2D and AnimatedSprite2D)
 	if has_node("Sprite2D"):
 		sprite = get_node("Sprite2D")
+	elif has_node("AnimatedSprite2D"):
+		sprite = get_node("AnimatedSprite2D")
 
 	# Add to pooled projectiles group
 	add_to_group("ability_projectiles")
@@ -226,6 +237,9 @@ func initialize(projectile_data: Dictionary) -> void:
 	is_homing = projectile_data.get("is_homing", true)
 	homing_strength = projectile_data.get("homing_strength", 0.5)
 	knockback_distance = projectile_data.get("knockback_distance", 0.0)
+	impact_aoe_radius = projectile_data.get("impact_aoe_radius", 0.0)
+	impact_aoe_damage_mult = projectile_data.get("impact_aoe_damage_mult", 1.0)
+	impact_effect = projectile_data.get("impact_effect", null)
 	visual_scene_key = projectile_data.get("visual_scene_key", "arrow")
 
 	# Initialize runtime state
@@ -237,9 +251,18 @@ func initialize(projectile_data: Dictionary) -> void:
 
 	_initialized = true
 
-	# Rotate sprite to match direction
+	# Rotate sprite to match direction and start animation
 	if sprite:
 		sprite.rotation = direction.angle()
+
+		# Start animation for AnimatedSprite2D (pooled entities don't call _ready again)
+		if sprite is AnimatedSprite2D:
+			sprite.play("default")
+
+			# Connect to animation_finished for two-phase animation (build-up → loop)
+			# Check if signal is not already connected to avoid duplicate connections
+			if not sprite.animation_finished.is_connected(_on_animation_finished):
+				sprite.animation_finished.connect(_on_animation_finished)
 
 
 ## Resets projectile state for pool recycling.
@@ -251,6 +274,11 @@ func reset() -> void:
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
 	visible = true
+
+	# Reset animation to frame 0 for AnimatedSprite2D (ensures consistent animation start)
+	if sprite and sprite is AnimatedSprite2D:
+		sprite.frame = 0
+		sprite.stop()  # Stop animation, will restart on next initialize()
 
 	# Clean up ghost target node when returning to pool
 	if _ghost_target_node:
@@ -368,6 +396,21 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	else:
 		Logger.warn("  DamageService not available!", "abilities")
 
+	# Apply AoE damage if configured (fireball explosion effect)
+	if impact_aoe_radius > 0.0:
+		_apply_impact_aoe(global_position, enemy_id)
+
+	# Spawn impact effect if configured (fireball explosion visual)
+	if impact_effect:
+		var effect_instance = impact_effect.instantiate()
+		effect_instance.global_position = global_position
+
+		# Scale effect to match AoE radius (if effect supports it)
+		if effect_instance.has_method("set_aoe_radius"):
+			effect_instance.set_aoe_radius(impact_aoe_radius)
+
+		get_tree().current_scene.add_child(effect_instance)
+
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)
 
@@ -376,6 +419,90 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if _remaining_pierce < 0:
 		# Use call_deferred to avoid removing CollisionObject during physics callback
 		call_deferred("despawn")
+
+
+## Applies AoE damage to all enemies in radius (fireball explosion effect)
+## Excludes the direct hit target to prevent double-damage
+func _apply_impact_aoe(center: Vector2, direct_hit_enemy_id: String) -> void:
+	# Query EntityTracker for enemies and bosses in AoE radius
+	var nearby_enemy_ids: Array[String] = EntityTracker.get_entities_in_radius(
+		center, impact_aoe_radius, "enemy"
+	)
+	var nearby_boss_ids: Array[String] = EntityTracker.get_entities_in_radius(
+		center, impact_aoe_radius, "boss"
+	)
+
+	# Calculate AoE damage (scaled by multiplier)
+	var aoe_damage: float = damage * impact_aoe_damage_mult
+
+	# Build damage tags (same as direct hit)
+	var full_tags: Array = []
+	if damage_type:
+		full_tags.append(damage_type)
+	if element:
+		full_tags.append(element)
+	for tag in damage_tags:
+		full_tags.append(tag)
+
+	var current_player_pos: Vector2 = PlayerState.get_position() if PlayerState else center
+	var aoe_hit_count: int = 0
+
+	# Apply damage to nearby enemies (excluding direct hit target)
+	for enemy_id in nearby_enemy_ids:
+		if enemy_id == direct_hit_enemy_id:
+			continue  # Skip direct hit target to prevent double-damage
+
+		if DamageService.is_entity_alive(enemy_id):
+			if BYPASS_DAMAGE_QUEUE_FOR_TESTING:
+				DamageService._process_damage_immediate(
+					enemy_id,
+					aoe_damage,
+					source_player_id,
+					full_tags,
+					knockback_distance * 0.5,  # Reduced knockback for AoE
+					current_player_pos
+				)
+			else:
+				# Normal path (queued damage)
+				DamageService.apply_damage(
+					enemy_id,
+					aoe_damage,
+					source_player_id,
+					full_tags,
+					knockback_distance * 0.5,
+					current_player_pos
+				)
+			aoe_hit_count += 1
+
+	# Apply damage to nearby bosses (excluding direct hit target)
+	for boss_id in nearby_boss_ids:
+		if boss_id == direct_hit_enemy_id:
+			continue  # Skip direct hit target
+
+		if DamageService.is_entity_alive(boss_id):
+			if BYPASS_DAMAGE_QUEUE_FOR_TESTING:
+				DamageService._process_damage_immediate(
+					boss_id,
+					aoe_damage,
+					source_player_id,
+					full_tags,
+					knockback_distance * 0.5,  # Reduced knockback for AoE
+					current_player_pos
+				)
+			else:
+				# Normal path (queued damage)
+				DamageService.apply_damage(
+					boss_id,
+					aoe_damage,
+					source_player_id,
+					full_tags,
+					knockback_distance * 0.5,
+					current_player_pos
+				)
+			aoe_hit_count += 1
+
+	if aoe_hit_count > 0 and Logger.is_level_enabled(Logger.LogLevel.DEBUG):
+		Logger.debug("Impact AoE: hit %d additional targets (%.1f damage each)" % [aoe_hit_count, aoe_damage], "abilities")
 
 
 # ============================================================================
@@ -464,6 +591,18 @@ func _find_closest_enemy() -> Node2D:
 
 	return closest
 
+
+# ============================================================================
+# ANIMATION CALLBACKS
+# ============================================================================
+
+## Called when AnimatedSprite2D finishes an animation
+## Transitions from build-up animation to sustained loop animation
+func _on_animation_finished() -> void:
+	if sprite and sprite is AnimatedSprite2D:
+		# After initial "default" animation completes, loop the "repeat" animation
+		if sprite.animation == "default" and sprite.sprite_frames.has_animation("repeat"):
+			sprite.play("repeat")
 
 # ============================================================================
 # DESPAWN

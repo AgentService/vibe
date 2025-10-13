@@ -85,6 +85,14 @@ enum FireMode {
 ## Knockback distance applied on hit (pixels)
 @export var knockback_distance: float = 0.0
 
+## Impact AoE radius (pixels) - applies damage to all enemies in radius on hit
+## Set to 0.0 to disable AoE (single-target only)
+@export var impact_aoe_radius: float = 0.0
+
+## Impact AoE damage multiplier - scales final_damage for AoE targets
+## Example: 0.8 = 80% damage to AoE targets, 1.0 = full damage
+@export_range(0.0, 2.0) var impact_aoe_damage_mult: float = 1.0
+
 ## Spread angle in degrees for multi-projectile attacks (total cone angle)
 ## Now supports full 360° for circular volleys
 @export_range(0.0, 360.0) var spread_angle: float = 40.0
@@ -308,6 +316,8 @@ func _get_random_direction() -> Vector2:
 ##   chains_to_enemies: int - Chain count
 ##   chain_radius: float - Chain radius
 ##   pierce_count: int - Pierce count
+##   impact_aoe_radius: float - AoE radius on impact (0 = no AoE)
+##   impact_aoe_damage_mult: float - Damage multiplier for AoE targets
 ##   visual_scene: PackedScene - Projectile visual (if set)
 ##   impact_effect: PackedScene - Impact effect (if set)
 func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictionary) -> Dictionary:
@@ -337,12 +347,19 @@ func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictio
 		"chains_to_enemies": chains_to_enemies,
 		"chain_radius": chain_radius,
 		"pierce_count": pierce_count,
-		"knockback_distance": knockback_distance
+		"knockback_distance": knockback_distance,
+		"impact_aoe_radius": impact_aoe_radius,
+		"impact_aoe_damage_mult": impact_aoe_damage_mult
 	}
 
 	# Add visual references if available
 	if visual_scene:
 		data["visual_scene"] = visual_scene
+
+		# Derive visual_scene_key from ability_id (e.g., "fireball" → "fireball")
+		# EntityPool uses this key to look up pooled scenes
+		var scene_key := ability_id.to_lower().replace(" ", "_")
+		data["visual_scene_key"] = scene_key
 
 	if impact_effect:
 		data["impact_effect"] = impact_effect

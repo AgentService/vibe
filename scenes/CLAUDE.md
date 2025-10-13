@@ -395,6 +395,78 @@ func spawn_xp_orb(position: Vector2, xp_value: int) -> void:
     add_child(orb)
 ```
 
+### 🎬 **Pooled Scene Animation Patterns**
+
+**Two-Phase Animation System:**
+```gdscript
+# Fireball.tscn example - build-up → sustained loop animation
+# Used for abilities, VFX, or any pooled entity with multi-phase visuals
+
+# Scene configuration (in .tscn):
+# - "default" animation: Build-up phase (loop=false)
+# - "repeat" animation: Sustained phase (loop=true)
+
+# Implementation in AbilityProjectile.gd (or similar pooled entity):
+func initialize(data: Dictionary) -> void:
+    # ... other initialization ...
+
+    # Start animation for AnimatedSprite2D (pooled entities don't call _ready again)
+    if sprite is AnimatedSprite2D:
+        sprite.play("default")
+
+        # Connect to animation_finished for two-phase animation (build-up → loop)
+        # Check if signal is not already connected to avoid duplicate connections
+        if not sprite.animation_finished.is_connected(_on_animation_finished):
+            sprite.animation_finished.connect(_on_animation_finished)
+
+## Transitions from build-up animation to sustained loop animation
+func _on_animation_finished() -> void:
+    if sprite and sprite is AnimatedSprite2D:
+        # After initial "default" animation completes, loop the "repeat" animation
+        if sprite.animation == "default" and sprite.sprite_frames.has_animation("repeat"):
+            sprite.play("repeat")
+
+## Resets animation state for pool recycling
+func reset() -> void:
+    # ... other reset logic ...
+
+    # Reset animation to frame 0 for AnimatedSprite2D (ensures consistent animation start)
+    if sprite and sprite is AnimatedSprite2D:
+        sprite.frame = 0
+        sprite.stop()  # Stop animation, will restart on next initialize()
+```
+
+**Animation Lifecycle with Pooling:**
+```gdscript
+# Key considerations for pooled scene animations:
+# 1. Pooled entities don't call _ready() on reuse - autoplay won't trigger
+# 2. Explicitly start animations in initialize() method
+# 3. Connect signals with is_connected() check to prevent duplicates
+# 4. Reset animation state in reset() to ensure consistent start frame
+# 5. Use animation_finished signal for state machine transitions
+
+# Example: Fireball animation phases
+# Phase 1: "default" (5 frames at 5 FPS, loop=false) - charging visual
+# Phase 2: "repeat" (2 frames at 3 FPS, loop=true) - sustained pulsing
+# Result: Fireball charges up over ~1 second, then pulses until impact
+```
+
+**Reusable Multi-Phase Pattern:**
+```gdscript
+# This pattern can be applied to any pooled scene with lifecycle stages:
+# - Lightning: charge → strike → dissipate
+# - Explosion: expand → sustain → fade
+# - Poison cloud: spawn → grow → sustain
+# - Enemy spawn: materialize → idle → despawn
+
+# Implementation steps:
+# 1. Create AnimatedSprite2D with multiple named animations
+# 2. Set loop=false for transitional phases, loop=true for sustained phases
+# 3. Connect animation_finished signal in initialize()
+# 4. Transition between animations in callback
+# 5. Reset animation state in reset() for pooling
+```
+
 ## State Management Integration
 
 ### 🔄 **StateManager Flow**
