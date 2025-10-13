@@ -145,7 +145,7 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 ## Spawns lightning effect at position with optional chaining.
 ##
 ## Parameters:
-##   position: Initial strike position (where damage was dealt)
+##   position: Search origin position (where damage was dealt)
 ##   damage: Base damage per lightning strike
 ##   chain_count: Number of additional targets to chain to (0 = single target)
 ##   chain_range: Maximum distance to chain to next target
@@ -154,17 +154,10 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		Logger.warn("EffectSpawner: Cannot spawn lightning, no arena reference", "effects")
 		return
 
-	# Spawn initial lightning strike visual at impact position (always visible, like explosion)
-	var initial_lightning := LIGHTNING_SCENE.instantiate()
-	_arena.add_child(initial_lightning)
-	initial_lightning.global_position = position
-	initial_lightning.scale = Vector2(0.3, 0.3)  # Smaller effect for item procs
-
 	# Track hit enemies to prevent double-hitting
 	var hit_enemies: Array[String] = []
 	var current_pos := position
 	var remaining_chains := chain_count + 1  # +1 for initial strike
-	var hits := 0
 
 	while remaining_chains > 0:
 		# Find nearest enemy within chain range (excluding already hit)
@@ -173,8 +166,14 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		if not nearest_enemy:
 			break  # No more valid targets
 
-		# Get enemy position for next chain
+		# Get enemy position for lightning strike
 		var enemy_pos: Vector2 = EntityTracker.get_entity(nearest_enemy).get("pos", Vector2.ZERO)
+
+		# Spawn lightning bolt striking down at enemy position
+		var lightning := LIGHTNING_SCENE.instantiate()
+		_arena.add_child(lightning)
+		lightning.global_position = enemy_pos
+		lightning.scale = Vector2(0.3, 0.3)  # Smaller effect for item procs
 
 		# Apply damage to this enemy
 		DamageService._process_damage_immediate(
@@ -188,16 +187,8 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 
 		# Update state for next chain
 		hit_enemies.append(nearest_enemy)
-		hits += 1
 		current_pos = enemy_pos
 		remaining_chains -= 1
-
-		# Spawn chain lightning visual at enemy position (for 2nd+ hits only)
-		if hits > 1:
-			var chain_lightning := LIGHTNING_SCENE.instantiate()
-			_arena.add_child(chain_lightning)
-			chain_lightning.global_position = enemy_pos
-			chain_lightning.scale = Vector2(0.3, 0.3)
 
 	Logger.debug("EffectSpawner: Lightning spawned at %s (damage=%.1f, chains=%d, hits=%d)" % [
 		position, damage, chain_count, hit_enemies.size()

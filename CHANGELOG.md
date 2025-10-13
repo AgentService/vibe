@@ -2,28 +2,24 @@
 
 ## [Current Week - In Progress]
 
-### ✅ FIX: Thunder Mitts Lightning Visual Always Spawns (2025-10-13)
+### ✅ FIX: Thunder Mitts Lightning Bolt Strikes at Enemy Position (2025-10-13)
 
-**Fixed lightning visual not appearing when no enemies in range:**
-- **Problem**: Lightning visual only spawned if an enemy was found within chain_range (200px)
-  - User reported: "i cant see any lightning procs" despite proc triggering correctly
-  - Original logic: Find enemy FIRST, then spawn visual AT enemy position
-  - If no enemy found, break immediately without spawning ANY visual
-  - Explosion behavior (correct): Spawns visual FIRST, then finds enemies to damage
-- **Solution**: Spawn initial lightning visual at impact position BEFORE enemy search (matches explosion pattern)
-  - Initial visual always spawns (lines 158-161) - proc feedback
-  - Then find and damage enemies in range
-  - For chains (hits > 1), spawn additional visuals at chained enemy positions
-- **Visual behavior**:
-  - Thunder Mitts (chain_count=0): 1 visual at impact point, up to 1 enemy damaged
-  - With chains (chain_count=1): 1 initial visual + 1 chain visual at 2nd enemy = 2 visuals, 2 enemies damaged
-  - With chains (chain_count=2): 1 initial + 2 chain visuals = 3 visuals, 3 enemies damaged
-- **Design philosophy**: Separate "proc feedback" (initial visual) from "damage feedback" (chain visuals)
-  - User always sees the lightning proc regardless of enemy proximity
-  - Additional visuals show chain propagation to other enemies
+**Fixed lightning bolt to spawn at enemy position (striking down from above):**
+- **Problem**: After fixing entity type bug, visual spawning logic needed refinement
+  - User clarified: "a bolt coming from the top hitting the enemy" (not at arbitrary impact point)
+  - Lightning bolt should strike DOWN at the enemy's location
+  - Thunder Mitts has chain_count=0 (single target, not chain lightning)
+- **Solution**: Spawn lightning visual at enemy position (line 175)
+  - Find nearest enemy within chain_range (200px)
+  - Spawn lightning bolt at enemy position (visual strikes down from above)
+  - Apply damage to that enemy
+  - For Thunder Mitts (chain_count=0): 1 bolt strikes 1 enemy per proc
+- **Visual behavior**: Lightning bolt appears to strike down from above at the enemy's exact location
+- **Testing support**: Reduced cooldown from 10.0s → 0.1s for rapid testing in arena
 
 **Files modified:**
-- `autoload/EffectSpawner.gd` - Lines 157-200: Spawn initial visual before enemy search loop
+- `autoload/EffectSpawner.gd` - Lines 172-176: Spawn visual at enemy_pos (not impact_position)
+- `data/content/items/thunder_mitts_gameplay.tres` - Line 14: cooldown 10.0 → 0.1 (testing only)
 
 ### ✅ FIX: Thunder Mitts Lightning Entity Type Query (2025-10-13)
 
