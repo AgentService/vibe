@@ -6,7 +6,7 @@
 script = ExtResource("1_am23r")
 log_level = "DEBUG"
 balance = false
-combat = false
+combat = true
 waves = false
 player = false
 ui = false

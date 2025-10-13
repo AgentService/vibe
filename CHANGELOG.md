@@ -27,15 +27,19 @@
 
 ### ✅ FEAT: Freeze Effect Implementation for Frost Glaive (2025-10-13)
 
-**Implemented MVP freeze system with direct enemy speed modification:**
+**Implemented MVP freeze system with direct enemy speed modification + visual feedback:**
 - **Problem**: Frost Glaive's 7.5% freeze proc was triggering but had no gameplay effect
   - `EffectSpawner.spawn_freeze()` was a TODO stub (logged "NOT IMPLEMENTED")
   - Enemies continued moving normally when frozen
 - **Solution**: Direct speed modification with duration tracking at 30Hz
-  - `_active_freezes: Dictionary` tracks frozen enemies: `{enemy_id: {remaining_duration, slow_mult, original_speed}}`
+  - `_active_freezes: Dictionary` tracks frozen enemies: `{enemy_id: {remaining_duration, slow_mult, original_speed, original_modulate}}`
   - Connected to `EventBus.combat_step` for deterministic duration countdown
-  - Stores original speed to prevent stacking bugs when freeze refreshed
+  - Stores original speed and modulate to prevent stacking bugs when freeze refreshed
   - Duck typing: `"speed" in enemy_node` check for BaseBoss compatibility
+- **Visual feedback**: Frozen enemies modulated to icy blue tint
+  - Color: `Color(0.5, 0.7, 1.0, 1.0)` - cyan/blue tint for clear visual indicator
+  - Original modulate stored and restored when freeze expires
+  - Works with any enemy sprite color/texture
 - **Architecture decisions:**
   - MVP approach: Direct `enemy.speed` modification (not full debuff system)
   - 30Hz integration: Consistent with other item systems (cooldowns, procs)
@@ -44,12 +48,13 @@
 - **Frost Glaive behavior:**
   - 7.5% chance to freeze on hit
   - 2.0s duration with 0.0 slow multiplier (full stop)
-  - Enemies visibly stop moving, resume after duration expires
+  - Enemies visibly stop moving + turn blue, resume normal movement/color after duration expires
 
 **Files modified:**
-- `autoload/EffectSpawner.gd` - Implemented `spawn_freeze()`, `_update_freeze_effects()`, `_remove_freeze_effect()`, `_find_enemy_node()`
+- `autoload/EffectSpawner.gd` - Implemented `spawn_freeze()` with color modulation, `_update_freeze_effects()`, `_remove_freeze_effect()`, `_find_enemy_node()`
 - `autoload/EffectSpawner.gd` - Connected to `EventBus.combat_step` for 30Hz duration updates
 - `autoload/EffectSpawner.gd` - Added arena state cleanup in `_on_state_changed()`
+- `autoload/EffectSpawner.gd` - Stores and restores original modulate color for visual feedback
 
 ### ✅ FIX: Critical Strike Chance Integration for Items (2025-10-13)
 

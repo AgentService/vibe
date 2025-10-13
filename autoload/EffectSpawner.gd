@@ -229,7 +229,7 @@ func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array
 # ============================================================================
 
 ## Active freeze effects tracked per enemy
-## Structure: {enemy_id: {remaining_duration: float, slow_mult: float, original_speed: float}}
+## Structure: {enemy_id: {remaining_duration: float, slow_mult: float, original_speed: float, original_modulate: Color}}
 var _active_freezes: Dictionary = {}
 
 ## Applies freeze/slow effect to target enemy.
@@ -256,27 +256,31 @@ func spawn_freeze(target_id: String, duration: float, slow_mult: float) -> void:
 		Logger.warn("EffectSpawner: Cannot freeze, enemy has no 'speed' property: %s" % target_id, "effects")
 		return
 
-	# Store original speed if this is a new freeze (don't overwrite if already frozen)
+	# Store original values if this is a new freeze (don't overwrite if already frozen)
 	var original_speed: float = enemy_node.speed
+	var original_modulate: Color = enemy_node.modulate
 	if _active_freezes.has(target_id):
-		# Already frozen - use stored original speed
+		# Already frozen - use stored original values
 		original_speed = _active_freezes[target_id].original_speed
+		original_modulate = _active_freezes[target_id].original_modulate
 
 	# Apply slow multiplier to enemy speed
 	enemy_node.speed = original_speed * slow_mult
+
+	# Apply cyan/blue tint for frozen visual feedback
+	enemy_node.modulate = Color(0.5, 0.7, 1.0, 1.0)  # Icy blue tint
 
 	# Track freeze effect
 	_active_freezes[target_id] = {
 		"remaining_duration": duration,
 		"slow_mult": slow_mult,
-		"original_speed": original_speed
+		"original_speed": original_speed,
+		"original_modulate": original_modulate
 	}
 
 	Logger.debug("EffectSpawner: Applied freeze to %s (duration=%.1f, slow=%.2f, speed: %.0f → %.0f)" % [
 		target_id, duration, slow_mult, original_speed, enemy_node.speed
 	], "effects")
-
-	# TODO: Spawn freeze visual effect (ice particles, blue tint, etc.)
 
 
 ## Updates freeze durations and removes expired effects (called by _on_combat_step)
@@ -298,18 +302,21 @@ func _update_freeze_effects(delta: float) -> void:
 		_remove_freeze_effect(enemy_id)
 
 
-## Removes freeze effect from enemy and restores original speed
+## Removes freeze effect from enemy and restores original speed and color
 func _remove_freeze_effect(enemy_id: String) -> void:
 	if not _active_freezes.has(enemy_id):
 		return
 
 	var freeze_data: Dictionary = _active_freezes[enemy_id]
 	var original_speed: float = freeze_data.original_speed
+	var original_modulate: Color = freeze_data.original_modulate
 
-	# Find enemy and restore speed
+	# Find enemy and restore speed + color
 	var enemy_node := _find_enemy_node(enemy_id)
-	if enemy_node and "speed" in enemy_node:
-		enemy_node.speed = original_speed
+	if enemy_node:
+		if "speed" in enemy_node:
+			enemy_node.speed = original_speed
+		enemy_node.modulate = original_modulate
 		Logger.debug("EffectSpawner: Removed freeze from %s (speed restored: %.0f)" % [
 			enemy_id, original_speed
 		], "effects")

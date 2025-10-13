@@ -235,6 +235,9 @@ func _get_item_effects_summary(item: BaseItem) -> String:
 	if item.pickup_radius_mult != 1.0:
 		var percent := int((item.pickup_radius_mult - 1.0) * 100)
 		effects.append("%+d%% Pickup" % percent)
+	if item.crit_chance_bonus != 0.0:
+		var percent := int(item.crit_chance_bonus * 100)
+		effects.append("%+d%% Crit" % percent)
 
 	# Procs
 	if item.on_hit_lightning:
