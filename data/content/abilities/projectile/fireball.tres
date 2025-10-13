@@ -1,33 +1,196 @@
-[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=4 format=3 uid="uid://c3q5n4xqy7jxp"]
+[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=26 format=3]
 
-[ext_resource type="Script" uid="uid://bbdj2pp4mxnf" path="res://scripts/resources/abilities/ProjectileAbility.gd" id="1"]
-[ext_resource type="PackedScene" uid="uid://db654dxyxkakq" path="res://scenes/abilities/projectiles/Fireball.tscn" id="2"]
-[ext_resource type="PackedScene" uid="uid://c2xm7n4kq8py1" path="res://scenes/effects/FireballImpact.tscn" id="3"]
+[ext_resource type="Script" path="res://scripts/resources/abilities/ProjectileAbility.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/effects/FireballImpact.gd" id="1_i64bo"]
+[ext_resource type="Texture2D" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 3 A.png" id="2_apr53"]
+[ext_resource type="Script" path="res://scripts/entities/AbilityProjectile.gd" id="4_5rvqq"]
+[ext_resource type="Texture2D" path="res://assets/effects/abilities/effects/All_Fire_Bullet_Pixel_16x16.png" id="5_878nr"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_impact"]
+blend_mode = 1
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_agoa6"]
+atlas = ExtResource("2_apr53")
+region = Rect2(0, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_1y4jx"]
+atlas = ExtResource("2_apr53")
+region = Rect2(32, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_flpll"]
+atlas = ExtResource("2_apr53")
+region = Rect2(64, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vcl7t"]
+atlas = ExtResource("2_apr53")
+region = Rect2(96, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_rf74e"]
+atlas = ExtResource("2_apr53")
+region = Rect2(128, 32, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_uwxk4"]
+atlas = ExtResource("2_apr53")
+region = Rect2(160, 32, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_agng7"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_agoa6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_1y4jx")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_flpll")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vcl7t")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_rf74e")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_uwxk4")
+}],
+"loop": false,
+"name": &"default",
+"speed": 12.0
+}]
+
+[sub_resource type="Animation" id="Animation_explode"]
+resource_name = "explode"
+length = 0.4
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimatedSprite2D:modulate")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0, 0.3, 0.4),
+"transitions": PackedFloat32Array(1, 1, 1),
+"update": 0,
+"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_fireball"]
+_data = {
+&"explode": SubResource("Animation_explode")
+}
+
+[sub_resource type="PackedScene" id="PackedScene_mkbnq"]
+_bundled = {
+"conn_count": 0,
+"conns": PackedInt32Array(),
+"editable_instances": [],
+"names": PackedStringArray("FireballImpact", "Node2D", "scale", "script", "AnimatedSprite2D", "AnimatedSprite2D", "texture_filter", "material", "sprite_frames", "autoplay", "AnimationPlayer", "AnimationPlayer", "libraries", "autoplay"),
+"node_count": 3,
+"node_paths": [NodePath("."), NodePath(".")],
+"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 2, 2, 0, 3, 1, 0, 1073741824, 0, 5, 4, -1, 4, 6, 2, 7, 3, 8, 4, 9, 5, 0, 1073741825, 0, 11, 10, -1, 2, 12, 6, 13, 7, 0),
+"variants": [Vector2(10, 10), ExtResource("1_i64bo"), 1, SubResource("CanvasItemMaterial_impact"), SubResource("SpriteFrames_agng7"), "default", {
+&"": SubResource("AnimationLibrary_fireball")
+}, "explode"],
+"version": 3
+}
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fireball"]
+blend_mode = 1
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_pyhjo"]
+atlas = ExtResource("5_878nr")
+region = Rect2(448, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nee2n"]
+atlas = ExtResource("5_878nr")
+region = Rect2(480, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_lfw0y"]
+atlas = ExtResource("5_878nr")
+region = Rect2(512, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xiqdu"]
+atlas = ExtResource("5_878nr")
+region = Rect2(544, 192, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_8b1b1"]
+atlas = ExtResource("5_878nr")
+region = Rect2(576, 192, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fireball"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_pyhjo")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nee2n")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_lfw0y")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xiqdu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8b1b1")
+}],
+"loop": false,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xiqdu")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_8b1b1")
+}],
+"loop": true,
+"name": &"repeat",
+"speed": 3.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fireball"]
+radius = 12.0
+
+[sub_resource type="PackedScene" id="PackedScene_rrc86"]
+_bundled = {
+"conn_count": 0,
+"conns": PackedInt32Array(),
+"editable_instances": [],
+"names": PackedStringArray("Fireball", "Node2D", "scale", "script", "AnimatedSprite2D", "AnimatedSprite2D", "material", "scale", "sprite_frames", "animation", "autoplay", "Area2D", "Area2D", "collision_layer", "collision_mask", "CollisionShape2D", "CollisionShape2D", "visible", "shape"),
+"node_count": 4,
+"node_paths": [NodePath("."), NodePath("."), NodePath("./Area2D")],
+"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 2, 2, 0, 3, 1, 0, 1073741824, 0, 5, 4, -1, 5, 6, 2, 7, 3, 8, 4, 9, 5, 10, 6, 0, 1073741825, 0, 12, 11, -1, 2, 13, 7, 14, 8, 0, 1073741826, 0, 16, 15, -1, 2, 17, 9, 18, 10, 0),
+"variants": [Vector2(5, 5), ExtResource("4_5rvqq"), SubResource("CanvasItemMaterial_fireball"), Vector2(0.265625, 0.234375), SubResource("SpriteFrames_fireball"), &"repeat", "default", 4, 2, false, SubResource("CircleShape2D_fireball")],
+"version": 3
+}
 
 [resource]
 script = ExtResource("1")
 fire_mode = 0
 use_multimesh = false
-is_homing = false
+is_homing = true
 homing_mode = 0
-homing_strength = 0.0
-homing_group_count = 10
+homing_strength = 0.1
+homing_group_count = 4
 homing_update_interval = 4
 chains_to_enemies = 0
 chain_radius = 50.0
-pierce_count = 0
+pierce_count = 5
 knockback_distance = 50.0
 impact_aoe_radius = 150.0
 impact_aoe_damage_mult = 0.8
-impact_effect = ExtResource("3")
-spread_angle = 0.0
+spread_angle = 360.0
 projectile_speed = 400.0
 projectile_lifetime = 3.0
 base_damage = 5000.0
 damage_type = "physical"
 inherent_element = "fire"
-base_cooldown = 0.2
-projectile_count = 1
+base_cooldown = 0.8
+projectile_count = 15
 base_range = 900.0
 damage_scaling_per_level = 1.15
 cooldown_scaling_per_level = 0.95
@@ -39,4 +202,5 @@ description = "Fire a slow-moving fireball that explodes on impact (150px AoE, 8
 tags = Array[String](["damage", "cooldown", "projectile", "fire", "aoe"])
 ability_level = 1
 max_level = 20
-visual_scene = ExtResource("2")
+visual_scene = SubResource("PackedScene_rrc86")
+impact_effect = SubResource("PackedScene_mkbnq")
