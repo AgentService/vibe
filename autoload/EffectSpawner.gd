@@ -44,7 +44,18 @@ var _arena: Node2D = null
 func _ready() -> void:
 	# Connect to state changes to track arena
 	StateManager.state_changed.connect(_on_state_changed)
+
+	# Connect to combat_step for freeze duration updates
+	if EventBus:
+		EventBus.combat_step.connect(_on_combat_step)
+
 	Logger.debug("EffectSpawner initialized", "effects")
+
+
+## Combat step handler for updating freeze effects (30Hz fixed timestep)
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+	var delta_time: float = payload.dt
+	_update_freeze_effects(delta_time)
 
 
 ## Updates arena reference when entering/leaving ARENA state
@@ -53,6 +64,8 @@ func _on_state_changed(prev_state: StateManager.State, new_state: StateManager.S
 		_find_arena_reference()
 	else:
 		_arena = null
+		# Clear active freezes when leaving arena
+		_active_freezes.clear()
 
 
 ## Finds and caches arena reference from scene tree
@@ -212,8 +225,12 @@ func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array
 
 
 # ============================================================================
-# FREEZE EFFECT (Placeholder - TODO: Implement freeze debuff system)
+# FREEZE EFFECT (Simple MVP - Direct Speed Modification)
 # ============================================================================
+
+## Active freeze effects tracked per enemy
+## Structure: {enemy_id: {remaining_duration: float, slow_mult: float, original_speed: float}}
+var _active_freezes: Dictionary = {}
 
 ## Applies freeze/slow effect to target enemy.
 ##
@@ -222,16 +239,94 @@ func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array
 ##   duration: Freeze duration in seconds
 ##   slow_mult: Movement speed multiplier (0.0 = full freeze, 0.5 = 50% speed)
 ##
-## TODO: Implement proper debuff system for status effects
+## MVP Implementation: Directly modifies enemy speed, restores after duration
 func spawn_freeze(target_id: String, duration: float, slow_mult: float) -> void:
-	# TODO: Implement debuff system
-	# For now, just log the freeze attempt
-	Logger.debug("EffectSpawner: Freeze effect requested (target=%s, duration=%.1f, slow=%.2f) - NOT IMPLEMENTED" % [
-		target_id, duration, slow_mult
+	if not _arena:
+		Logger.warn("EffectSpawner: Cannot spawn freeze, no arena reference", "effects")
+		return
+
+	# Find enemy node in scene tree
+	var enemy_node := _find_enemy_node(target_id)
+	if not enemy_node:
+		Logger.debug("EffectSpawner: Cannot freeze, enemy node not found: %s" % target_id, "effects")
+		return
+
+	# Verify enemy has speed property (duck typing)
+	if not "speed" in enemy_node:
+		Logger.warn("EffectSpawner: Cannot freeze, enemy has no 'speed' property: %s" % target_id, "effects")
+		return
+
+	# Store original speed if this is a new freeze (don't overwrite if already frozen)
+	var original_speed: float = enemy_node.speed
+	if _active_freezes.has(target_id):
+		# Already frozen - use stored original speed
+		original_speed = _active_freezes[target_id].original_speed
+
+	# Apply slow multiplier to enemy speed
+	enemy_node.speed = original_speed * slow_mult
+
+	# Track freeze effect
+	_active_freezes[target_id] = {
+		"remaining_duration": duration,
+		"slow_mult": slow_mult,
+		"original_speed": original_speed
+	}
+
+	Logger.debug("EffectSpawner: Applied freeze to %s (duration=%.1f, slow=%.2f, speed: %.0f → %.0f)" % [
+		target_id, duration, slow_mult, original_speed, enemy_node.speed
 	], "effects")
 
-	# Future implementation:
-	# 1. Create DebuffSystem autoload
-	# 2. DebuffSystem.apply_debuff(target_id, "freeze", duration, {"slow_mult": slow_mult})
-	# 3. DebuffSystem handles movement speed reduction in combat_step
-	# 4. Spawn freeze visual effect at enemy position
+	# TODO: Spawn freeze visual effect (ice particles, blue tint, etc.)
+
+
+## Updates freeze durations and removes expired effects (called by _on_combat_step)
+func _update_freeze_effects(delta: float) -> void:
+	var expired_freezes: Array[String] = []
+
+	for enemy_id in _active_freezes.keys():
+		var freeze_data: Dictionary = _active_freezes[enemy_id]
+
+		# Decrement duration
+		freeze_data.remaining_duration -= delta
+
+		# Check if expired
+		if freeze_data.remaining_duration <= 0.0:
+			expired_freezes.append(enemy_id)
+
+	# Remove expired freezes and restore enemy speeds
+	for enemy_id in expired_freezes:
+		_remove_freeze_effect(enemy_id)
+
+
+## Removes freeze effect from enemy and restores original speed
+func _remove_freeze_effect(enemy_id: String) -> void:
+	if not _active_freezes.has(enemy_id):
+		return
+
+	var freeze_data: Dictionary = _active_freezes[enemy_id]
+	var original_speed: float = freeze_data.original_speed
+
+	# Find enemy and restore speed
+	var enemy_node := _find_enemy_node(enemy_id)
+	if enemy_node and "speed" in enemy_node:
+		enemy_node.speed = original_speed
+		Logger.debug("EffectSpawner: Removed freeze from %s (speed restored: %.0f)" % [
+			enemy_id, original_speed
+		], "effects")
+
+	# Remove from tracking
+	_active_freezes.erase(enemy_id)
+
+
+## Finds enemy node in scene tree by entity_id
+func _find_enemy_node(entity_id: String) -> Node:
+	if not _arena:
+		return null
+
+	# Search for enemy in "enemies" group
+	var enemies := _arena.get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if "entity_id" in enemy and enemy.entity_id == entity_id:
+			return enemy
+
+	return null
