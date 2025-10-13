@@ -111,20 +111,62 @@ func _setup_projectile_multimesh() -> void:
 	multimesh.transform_format = MultiMesh.TRANSFORM_2D
 	multimesh.instance_count = 0
 
-	var quad_mesh := _get_pooled_quadmesh(Vector2(8, 8))
+	# 16x8 mesh to fit arrow shape
+	var quad_mesh := _get_pooled_quadmesh(Vector2(16, 8))
 	multimesh.mesh = quad_mesh
 
-	# Basic projectile texture - skip in headless mode
+	# Create arrow-shaped texture - bright cyan for visibility
 	if DisplayServer.get_name() != "headless":
-		var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
-		img.fill(Color(1.0, 1.0, 0.0, 1.0))  # Yellow projectiles
+		var img := Image.create(16, 8, false, Image.FORMAT_RGBA8)
+		img.fill(Color(0, 0, 0, 0))  # Transparent background
+
+		var arrow_color := Color(0.0, 1.0, 1.0, 1.0)  # Bright cyan
+
+		# Arrow shaft (horizontal line, 2 pixels tall)
+		for x in range(0, 11):
+			img.set_pixel(x, 3, arrow_color)
+			img.set_pixel(x, 4, arrow_color)
+
+		# Arrow head (triangle pointing right)
+		# Row 1 (top of arrowhead)
+		img.set_pixel(11, 1, arrow_color)
+		img.set_pixel(12, 1, arrow_color)
+		# Row 2
+		img.set_pixel(11, 2, arrow_color)
+		img.set_pixel(12, 2, arrow_color)
+		img.set_pixel(13, 2, arrow_color)
+		# Row 3 (middle - widest)
+		img.set_pixel(11, 3, arrow_color)
+		img.set_pixel(12, 3, arrow_color)
+		img.set_pixel(13, 3, arrow_color)
+		img.set_pixel(14, 3, arrow_color)
+		img.set_pixel(15, 3, arrow_color)  # Arrow tip
+		# Row 4 (middle)
+		img.set_pixel(11, 4, arrow_color)
+		img.set_pixel(12, 4, arrow_color)
+		img.set_pixel(13, 4, arrow_color)
+		img.set_pixel(14, 4, arrow_color)
+		img.set_pixel(15, 4, arrow_color)  # Arrow tip
+		# Row 5
+		img.set_pixel(11, 5, arrow_color)
+		img.set_pixel(12, 5, arrow_color)
+		img.set_pixel(13, 5, arrow_color)
+		# Row 6 (bottom of arrowhead)
+		img.set_pixel(11, 6, arrow_color)
+		img.set_pixel(12, 6, arrow_color)
+
 		var tex := ImageTexture.create_from_image(img)
 		mm_projectiles.texture = tex
+
+	# Pixel-perfect rendering
+	mm_projectiles.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	mm_projectiles.z_index = 2  # Above walls
 
 	mm_projectiles.multimesh = multimesh
 	if DisplayServer.get_name() != "headless" and mm_projectiles.texture == null:
 		mm_projectiles.texture = _get_shared_dummy_texture()
+
+	Logger.info("MultiMesh projectiles: Cyan arrow texture (16x8)", "rendering")
 
 func _setup_ghost_swarm_multimesh() -> void:
 	# Simple ghost swarm setup (static sprite, no animation)
@@ -158,27 +200,34 @@ func _setup_ghost_swarm_multimesh() -> void:
 	if DisplayServer.get_name() != "headless" and mm_ghost_swarm.texture == null:
 		mm_ghost_swarm.texture = _get_shared_dummy_texture()
 
+	# Pixel-perfect rendering - prevents blurry sprites at different zoom levels
+	mm_ghost_swarm.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
 	# No color modulation - display sprite as-is
 	mm_ghost_swarm.self_modulate = Color(1.0, 1.0, 1.0, 1.0)  # Full opacity, no tint
 	mm_ghost_swarm.z_index = 0  # Same layer as enemies
 
-## Update projectile transforms (called by projectile system)
-func update_projectiles(projectile_data: Array[Dictionary]) -> void:
+## Update projectile transforms (called by MultiMeshProjectileManager)
+## Uses PackedVector2Array for zero-allocation performance (like ghost swarms)
+## @param projectile_positions: Positions of all active projectiles
+## @param projectile_velocities: Velocities for rotation calculation
+func update_projectiles(projectile_positions: PackedVector2Array, projectile_velocities: PackedVector2Array) -> void:
 	if not mm_projectiles or not mm_projectiles.multimesh:
 		return
 
-	var count := projectile_data.size()
+	var count := projectile_positions.size()
 	mm_projectiles.multimesh.instance_count = count
 
 	for i in range(count):
-		var projectile := projectile_data[i]
 		var proj_transform := Transform2D()
-		proj_transform.origin = projectile.get("pos", Vector2.ZERO)
 
-		# Optional: Add rotation for directional projectiles
-		if projectile.has("rotation"):
-			proj_transform = proj_transform.rotated(projectile["rotation"])
+		# Calculate rotation from velocity (arrow points in flight direction)
+		var velocity: Vector2 = projectile_velocities[i]
+		if velocity.length_squared() > 0.01:  # Avoid zero-length vectors
+			var angle: float = velocity.angle()
+			proj_transform = proj_transform.rotated(angle)
 
+		proj_transform.origin = projectile_positions[i]
 		mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
 
 ## Update ghost swarm transforms (called by GhostSwarmSpawner)

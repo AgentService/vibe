@@ -165,6 +165,11 @@ func _ready() -> void:
 	multimesh_manager.setup(mm_projectiles, mm_ghost_swarm)
 	Logger.debug("MultiMeshManager initialized for ghost swarms and projectiles", "rendering")
 
+	# Setup MultiMesh Projectile Manager (high-volume projectile rendering)
+	if MultiMeshProjectileManager:
+		MultiMeshProjectileManager.setup(multimesh_manager)
+		Logger.debug("MultiMeshProjectileManager wired to MultiMeshManager", "projectiles")
+
 	# Setup Ghost Swarm Spawner for special events
 	ghost_swarm_spawner = GhostSwarmSpawnerScript.new()
 	add_child(ghost_swarm_spawner)

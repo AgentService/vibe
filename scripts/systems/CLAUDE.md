@@ -728,6 +728,175 @@ func _on_key_pressed(event: InputEventKey) -> void:
 - **Static rendering**: Color modulation only (no animation system)
 - **Use case**: Special event waves and visual pressure scenarios
 
+### 🎯 **MultiMesh Projectile System (2025-01-10)**
+
+**High-Performance Projectile Rendering (200-500+ simultaneous):**
+```gdscript
+# MultiMeshProjectileManager.gd (Autoload) - Logic layer
+## Handles spawning, physics, collision detection for 200-500+ projectiles at 60 FPS
+
+const MAX_PROJECTILES := 500
+const COLLISION_RADIUS := 16.0
+
+var _projectile_positions: PackedVector2Array  # Pre-allocated to 500
+var _projectile_velocities: PackedVector2Array
+var _projectile_lifetimes: PackedFloat32Array
+var _projectile_damages: PackedFloat32Array
+
+func _on_combat_step(payload) -> void:
+    # Fixed-step 30Hz physics update
+    var dt: float = payload.dt
+    var write_index := 0
+
+    for read_index in range(_active_count):
+        # Update lifetime
+        _projectile_lifetimes[read_index] -= dt
+
+        # Skip expired projectiles
+        if _projectile_lifetimes[read_index] <= 0.0:
+            continue
+
+        # Update position
+        _projectile_positions[read_index] += _projectile_velocities[read_index] * dt
+
+        # Collision detection
+        var hit := _check_collision(_projectile_positions[read_index], read_index)
+        if hit:
+            continue  # Despawn
+
+        # Compact alive projectiles (no reallocation)
+        if write_index != read_index:
+            _projectile_positions[write_index] = _projectile_positions[read_index]
+            _projectile_velocities[write_index] = _projectile_velocities[read_index]
+            _projectile_lifetimes[write_index] = _projectile_lifetimes[read_index]
+            _projectile_damages[write_index] = _projectile_damages[read_index]
+
+        write_index += 1
+
+    _active_count = write_index
+
+    # Update rendering
+    if _multimesh_manager:
+        var active_positions := PackedVector2Array()
+        active_positions.resize(_active_count)
+        for i in range(_active_count):
+            active_positions[i] = _projectile_positions[i]
+        _multimesh_manager.update_projectiles(active_positions)
+```
+
+**MultiMeshManager Integration (Rendering Layer):**
+```gdscript
+# MultiMeshManager.gd - Rendering only
+func update_projectiles(projectile_positions: PackedVector2Array) -> void:
+    if not mm_projectiles or not mm_projectiles.multimesh:
+        return
+
+    var count := projectile_positions.size()
+    mm_projectiles.multimesh.instance_count = count
+
+    for i in range(count):
+        var proj_transform := Transform2D()
+        proj_transform.origin = projectile_positions[i]
+        mm_projectiles.multimesh.set_instance_transform_2d(i, proj_transform)
+
+func _setup_projectile_multimesh() -> void:
+    # Use pooled MultiMesh and QuadMesh
+    var multimesh := _get_pooled_multimesh()
+    var quad_mesh := _get_pooled_quadmesh(Vector2(8, 8))
+    multimesh.mesh = quad_mesh
+
+    # Procedural 8×8 yellow texture
+    var img := Image.create(8, 8, false, Image.FORMAT_RGBA8)
+    img.fill(Color(1.0, 1.0, 0.0, 1.0))
+    var tex := ImageTexture.create_from_image(img)
+    mm_projectiles.texture = tex
+
+    # Pixel-perfect rendering - prevents blurry circles
+    mm_projectiles.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+    mm_projectiles.z_index = 2  # Above walls
+
+    mm_projectiles.multimesh = multimesh
+```
+
+**Spawn Request Pattern:**
+```gdscript
+# ProjectileAbility.gd - Emit spawn request via EventBus
+EventBus.ability_projectile_requested.emit({
+    "use_multimesh": true,  # Route to MultiMeshProjectileManager
+    "source_position": player_pos,
+    "direction": direction,
+    "projectile_speed": 600.0,
+    "damage": 25.0,
+    "projectile_lifetime": 2.0,
+    "damage_type": "physical",
+    "element": "",
+    "ability_id": "volley_multimesh"
+})
+
+# MultiMeshProjectileManager listens
+func _on_ability_projectile_requested(projectile_data: Dictionary) -> void:
+    # Only handle MultiMesh projectiles
+    if not projectile_data.get("use_multimesh", false):
+        return
+
+    spawn_projectile(projectile_data)
+```
+
+**Collision Detection:**
+```gdscript
+func _check_collision(position: Vector2, projectile_index: int) -> bool:
+    # Use EntityTracker spatial hash (O(1) lookup)
+    var nearby_enemy_ids: Array[String] = EntityTracker.get_entities_in_radius(
+        position, COLLISION_RADIUS, "enemy"
+    )
+
+    if nearby_enemy_ids.is_empty():
+        return false
+
+    var enemy_id: String = nearby_enemy_ids[0]
+
+    # Overkill prevention
+    if not DamageService.is_entity_alive(enemy_id):
+        return false
+
+    # Apply damage via DamageService
+    var damage: float = _projectile_damages[projectile_index]
+    DamageService._process_damage_immediate(
+        enemy_id,
+        damage,
+        "player",
+        ["physical"],
+        0.0,  # No knockback
+        PlayerState.get_position()
+    )
+
+    return true  # Hit detected, despawn
+```
+
+**Performance Characteristics:**
+- **Target**: 200-500+ projectiles at 60 FPS (<2ms overhead)
+- **Zero allocation**: Pre-allocated PackedArrays avoid runtime allocations
+- **Compacting**: Write-index loop removes dead projectiles without reallocation
+- **Type safety**: Explicit type annotations (Vector2, float) avoid Variant inference
+- **Collision**: EntityTracker spatial hash for O(1) lookups
+- **String optimization**: Lookup tables prevent storing strings in PackedArrays
+
+**Dual Projectile System Architecture:**
+- **Scene-based**: Homing, chaining, pierce logic (100-150 projectiles)
+  - Use `use_multimesh=false` (default)
+  - Complex features, unique visuals per instance
+- **MultiMesh**: GPU batching for simple projectiles (200-500+ projectiles)
+  - Use `use_multimesh=true`
+  - High volume, simple behavior, shared visuals
+
+**When to Use:**
+- ✅ Volley abilities (50-100 arrows)
+- ✅ Barrage/missile storms (200+ projectiles)
+- ✅ Particle-like projectile effects
+- ❌ Homing projectiles (use scene-based AbilityProjectile)
+- ❌ Chaining/pierce logic (use scene-based)
+- ❌ Projectiles needing unique visuals per instance
+
 ### 🎯 **Bridging MultiMesh with Scene-Based Systems (2025-01-10)**
 
 **Challenge:** Homing projectiles need to target both scene-based enemies AND MultiMesh ghosts, but:

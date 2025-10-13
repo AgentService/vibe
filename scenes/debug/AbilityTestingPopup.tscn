@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://d3p3m3bv5jkng"]
 
-[ext_resource type="Script" uid="uid://dgxd7ltcfo221" path="res://scenes/debug/AbilityTestingPopup.gd" id="1"]
+[ext_resource type="Script" uid="uid://ds10fvqdfydj1" path="res://scenes/debug/AbilityTestingPopup.gd" id="1"]
 
 [node name="AbilityTestingPopup" type="Window"]
 title = "Ability Testing Tool"
@@ -103,7 +103,7 @@ text = "Spread °:"
 [node name="SpreadSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 180.0
+max_value = 360.0
 step = 5.0
 value = 40.0
 
@@ -157,9 +157,40 @@ text = "Homing"
 [node name="HomingStrengthSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
 layout_mode = 2
 size_flags_horizontal = 3
-max_value = 1.0
+max_value = 10.0
 step = 0.1
 value = 0.5
+allow_greater = true
+
+[node name="HomingModeLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Homing Mode:"
+
+[node name="HomingModeSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+max_value = 1.0
+
+[node name="HomingGroupLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Homing Groups:"
+
+[node name="HomingGroupSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+value = 10.0
+
+[node name="HomingIntervalLabel" type="Label" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+text = "Homing Interval:"
+
+[node name="HomingIntervalSpinner" type="SpinBox" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid"]
+layout_mode = 2
+size_flags_horizontal = 3
+min_value = 1.0
+max_value = 10.0
+value = 4.0
 
 [node name="HSeparator3" type="HSeparator" parent="PanelContainer/MarginContainer/HBoxContainer/LeftColumn"]
 layout_mode = 2

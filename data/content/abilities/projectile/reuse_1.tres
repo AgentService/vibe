@@ -22,9 +22,9 @@ _bundled = {
 
 [resource]
 script = ExtResource("1")
-ability_id = "volley"
-ability_name = "Volley"
-description = "Fire a volley of arrows in a cone pattern"
+ability_id = "reuse_1"
+ability_name = "REUSE 1"
+description = "[ARCHIVED] Scene-based volley for reference"
 tags = Array[String](["damage", "cooldown", "projectile"])
 ability_level = 1
 max_level = 20

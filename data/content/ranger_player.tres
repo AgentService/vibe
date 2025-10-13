@@ -13,4 +13,4 @@ roll_duration = 0.5
 roll_speed = 155.0
 collision_radius = 8.0
 attack_animation_duration = 0.4
-starting_abilities = Array[String](["volley"])
+starting_abilities = Array[String](["volley_multimesh"])

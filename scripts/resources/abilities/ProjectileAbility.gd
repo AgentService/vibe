@@ -51,11 +51,27 @@ enum FireMode {
 
 @export_group("Projectile Behavior")
 
+## Use MultiMesh GPU batching for high-volume projectiles (200-500+)
+## When enabled: No homing, no chaining, simple physics only
+## When disabled: Full scene-based features (homing, chaining, pierce)
+@export var use_multimesh: bool = false
+
 ## Is this a homing projectile?
 @export var is_homing: bool = false
 
-## Homing strength (0.0 = no homing, 1.0 = perfect tracking)
-@export_range(0.0, 5.0) var homing_strength: float = 0.5
+## Homing mode - how projectiles track targets
+@export_enum("TRACK_TO_DEATH:0", "HIT_EACH_ONCE:1") var homing_mode: int = 0
+
+## Homing strength (0.0 = no homing, 5.0 = instant snap to target)
+@export_range(0.0, 5.0) var homing_strength: float = 2.0
+
+## Homing group size (how many projectiles per target)
+## 10 = 10 projectiles per enemy, 1 = each projectile gets unique target
+## Example: 20 projectiles with group_count=10 → 2 groups targeting 2 enemies
+@export_range(1, 100) var homing_group_count: int = 10
+
+## Homing update interval (frames between steering updates, higher = better performance)
+@export_range(1, 10) var homing_update_interval: int = 4
 
 ## Projectile chains to nearby enemies after hitting
 @export var chains_to_enemies: int = 0
@@ -70,7 +86,8 @@ enum FireMode {
 @export var knockback_distance: float = 0.0
 
 ## Spread angle in degrees for multi-projectile attacks (total cone angle)
-@export_range(0.0, 180.0) var spread_angle: float = 40.0
+## Now supports full 360° for circular volleys
+@export_range(0.0, 360.0) var spread_angle: float = 40.0
 
 ## Projectile movement speed in pixels/second
 @export var projectile_speed: float = 800.0
@@ -294,9 +311,11 @@ func _get_random_direction() -> Vector2:
 ##   visual_scene: PackedScene - Projectile visual (if set)
 ##   impact_effect: PackedScene - Impact effect (if set)
 func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictionary) -> Dictionary:
-	# Spawn projectile at character center + offset up
-	const SPAWN_Y_OFFSET: float = -24.0  # Pixels up from character origin
-	var spawn_position := player.global_position + Vector2(0, SPAWN_Y_OFFSET)
+	# Spawn position: Offset upward from player center for visual clarity
+	# Both MultiMesh and scene-based now spawn at same height
+	var spawn_position := player.global_position
+	const SPAWN_Y_OFFSET: float = -20.0  # Pixels up from character origin
+	spawn_position += Vector2(0, SPAWN_Y_OFFSET)
 
 	var data: Dictionary = {
 		"ability_id": ability_id,
@@ -309,8 +328,12 @@ func _create_projectile_data(player: Node2D, direction: Vector2, context: Dictio
 		"projectile_count": projectile_count,
 		"projectile_speed": projectile_speed,
 		"projectile_lifetime": projectile_lifetime,
+		"use_multimesh": use_multimesh,  # Routing flag for MultiMesh vs scene-based
 		"is_homing": is_homing,
+		"homing_mode": homing_mode,
 		"homing_strength": homing_strength,
+		"homing_group_count": homing_group_count,
+		"homing_update_interval": homing_update_interval,
 		"chains_to_enemies": chains_to_enemies,
 		"chain_radius": chain_radius,
 		"pierce_count": pierce_count,
