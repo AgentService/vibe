@@ -167,19 +167,20 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 ## Spawns lightning effect at position with optional chaining.
 ##
 ## Parameters:
-##   position: Search origin position (where damage was dealt)
+##   initial_position: Exact spawn position for first bolt (payload.impact_position)
 ##   damage: Base damage per lightning strike
 ##   chain_count: Number of additional targets to chain to (0 = single target)
 ##   chain_range: Maximum distance to chain to next target
-func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_range: float) -> void:
+func spawn_lightning(initial_position: Vector2, damage: float, chain_count: int, chain_range: float) -> void:
 	if not _arena:
 		Logger.warn("EffectSpawner: Cannot spawn lightning, no arena reference", "effects")
 		return
 
 	# Track hit enemies to prevent double-hitting
 	var hit_enemies: Array[String] = []
-	var current_pos := position
+	var current_pos := initial_position
 	var remaining_chains := chain_count + 1  # +1 for initial strike
+	var is_first_bolt := true
 
 	while remaining_chains > 0:
 		# Find nearest enemy within chain range (excluding already hit)
@@ -190,16 +191,24 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		if nearest_enemy.is_empty():
 			break  # No more valid targets
 
-		# Use enemy position captured during search (static, like explosion)
-		var enemy_pos: Vector2 = nearest_enemy_data.get("pos", Vector2.ZERO)
-
-		# Spawn lightning bolt striking down at enemy position (scene has base scale 10, multiply by 0.3)
+		# Spawn lightning bolt
 		var lightning := LIGHTNING_SCENE.instantiate()
 
 		# Add to same container as enemies for proper z-ordering
 		var effects_container := _get_effects_container()
 		effects_container.add_child(lightning)
-		lightning.global_position = enemy_pos
+
+		# First bolt: Spawn at exact impact_position (where damage landed)
+		# Chain bolts: Spawn at captured enemy position from search
+		if is_first_bolt:
+			lightning.global_position = initial_position
+			is_first_bolt = false
+		else:
+			lightning.global_position = nearest_enemy_data.get("pos", Vector2.ZERO)
+
+		# Setup enemy tracking for frame-accurate positioning during animation
+		if lightning.has_method("track_enemy"):
+			lightning.track_enemy(nearest_enemy, _arena)
 
 		# Randomly flip horizontally for visual variety
 		var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
@@ -217,11 +226,11 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 
 		# Update state for next chain
 		hit_enemies.append(nearest_enemy)
-		current_pos = enemy_pos
+		current_pos = nearest_enemy_data.get("pos", Vector2.ZERO)
 		remaining_chains -= 1
 
 	Logger.debug("EffectSpawner: Lightning spawned at %s (damage=%.1f, chains=%d, hits=%d)" % [
-		position, damage, chain_count, hit_enemies.size()
+		initial_position, damage, chain_count, hit_enemies.size()
 	], "effects")
 
 

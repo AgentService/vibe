@@ -22,17 +22,38 @@
 - `scenes/debug/ItemTestingPopup.tscn` - Added Add10Button node to ActionButtons
 - `scenes/debug/ItemTestingPopup.gd` - Added `_on_add_10_button_pressed()` handler with random selection logic
 
-### ✅ FIX: Lightning Strike Position Offset (2025-10-13)
+### ✅ FEAT: Frame-Accurate Lightning Tracking for Moving Enemies (2025-10-13)
 
-**Removed sprite offset for pixel-perfect lightning strikes:**
-- **Problem**: AnimatedSprite2D had Vector2(-0.6, 0.1) position offset causing visual misalignment
-  - At scale 10x, sub-pixel offsets become visible (0.6px × 10 = 6px shift)
-  - Lightning bolts appeared slightly offset from enemy positions
-- **Solution**: Removed position property from AnimatedSprite2D node in LightningImpact.tscn
-- **Result**: Lightning now strikes exactly at enemy center position with no visual shift
+**Implemented hybrid static + dynamic positioning for lightning strikes:**
+- **Problem**: Lightning lagged behind fast-moving enemies (300 speed = 10-20px per frame)
+  - DamageRegistry captures `impact_position` at damage moment
+  - By the time lightning spawns (1-2 frames later), enemy has moved forward
+  - Previous approaches: Static capture (lagged) vs projectile offset (overshoots)
+- **Solution**: Hybrid approach with frame-accurate enemy tracking
+  - **First frame**: Spawn at exact `payload.impact_position` (zero lag, like FireballImpact)
+  - **Subsequent frames**: Track enemy node and update `global_position` each frame
+  - Tracking runs for 0.4s animation duration (~12 frames at 30Hz)
+  - Works for chain lightning - each hop tracks its target independently
+- **Implementation**:
+  1. `spawn_lightning()` spawns first bolt at `initial_position` (impact_position from payload)
+  2. Calls `lightning.track_enemy(enemy_id, arena)` to enable tracking
+  3. `LightningImpact._process()` follows `_enemy_node.global_position` every frame
+  4. Tracking stops automatically when animation completes and effect despawns
+- **Result**: Lightning bolts "stick" to enemies during animation, no lag or overshoot
+  - First frame: Exact impact location (where damage landed)
+  - Animation: Follows enemy smoothly at 60 FPS visual update
+  - Works with fast movement, direction changes, and chain hops
+
+**Technical Details:**
+- Uses `_find_enemy_node()` helper to locate enemy in "enemies" group by entity_id
+- `is_instance_valid()` check prevents crashes if enemy dies during animation
+- Chain bolts use captured position for spawn, then track their specific target
+- Zero overhead when tracking is not enabled (optional feature)
 
 **Files modified:**
-- `scenes/effects/LightningImpact.tscn` - Line 74: Removed position offset
+- `autoload/EffectSpawner.gd` - Lines 167-234: Modified spawn_lightning() for hybrid positioning
+- `scripts/effects/LightningImpact.gd` - Added track_enemy(), _process(), _find_enemy_node() methods
+- `autoload/ItemManager.gd` - Already passing correct impact_position parameter
 
 ### ✅ FIX: Effect Z-Ordering (Proper Parent Container) (2025-10-13)
 
