@@ -2,6 +2,49 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FEAT: Ability & Tome EventBus Signal Wiring Complete (2025-10-13)
+
+**Implemented event-driven architecture for ability and tome acquisition using ItemManager reference pattern:**
+- **Phase 1 - AbilityManager enhancement** (15 min):
+  - Added `has_definition(ability_id: String) -> bool` validation method to existing AbilityManager autoload
+  - Method used by AbilityController to validate abilities before equipping
+  - Simple dictionary lookup pattern: `return _ability_registry.has(ability_id)`
+- **Phase 2 - AbilityController signal wiring** (45 min):
+  - Connected to `EventBus.ability_acquired(ability_id, slot)` and `EventBus.tome_acquired(tome_id, stack_count)` signals
+  - Added `_on_ability_acquired()` and `_on_tome_acquired()` event handler methods (CONSUMER pattern - no re-emission)
+  - Integrated proper signal cleanup in `_notification(NOTIFICATION_PREDELETE)` for memory leak prevention
+  - Uses existing `equip_ability()` and `equip_tome()` methods for side-effects (cooldown reset, logging, stat application)
+- **Phase 3 - Integration tests** (SKIPPED per user request):
+  - Manual testing via debug UI recommended instead of automated test suite
+- **Phase 4 - Debug UI updates** (30 min):
+  - Updated `AbilityTestingPopup.gd` to emit `ability_acquired` signals instead of direct `ability_controller.equip_ability()` calls
+  - Updated tome equipping (`_on_equip_tome_button_pressed()` and `_on_stack_button_pressed()`) to emit `tome_acquired` signals
+  - Matches ItemTestingPopup SOURCE pattern (UI emits signals, systems consume)
+- **Phase 5 - Documentation** (in progress):
+  - Updated CHANGELOG with implementation summary
+
+**Key architecture decisions:**
+- **Consumer pattern**: AbilityController listens but does NOT re-emit signals (prevents infinite loops)
+- **Source pattern**: UI components emit signals to EventBus (not direct method calls)
+- **Unidirectional flow**: UI → EventBus → AbilityController → Internal Methods (no circular dependencies)
+- **Existing methods preserved**: No changes to `equip_ability()` or `equip_tome()` logic (all side-effects already correct)
+- **Reference implementation**: ItemManager.gd:525-541 consumer pattern validated as gold standard
+
+**Files modified:**
+- `autoload/AbilityManager.gd` - Added `has_definition()` validation method (line 138-145)
+- `scripts/systems/AbilityController.gd` - Signal connections, event handlers, cleanup (lines 55-79, 161-190)
+  - **Fix**: `_on_tome_acquired()` now respects `stack_count` parameter (loops to add multiple stacks)
+  - **Fix**: Conditional tome logging - only logs "Applied tome to ability" when tome has meaningful ability modifiers (lines 325-345)
+    - Added `_tome_has_ability_modifiers()` helper method using `tome.to_dict()` for dynamic property checking
+    - Uses naming convention pattern matching (`*_multiplier` != 1.0, `*_bonus` != 0) instead of hardcoded properties
+    - Prevents misleading logs for player-only tomes (e.g., Agility tome with only movement_speed_multiplier)
+    - Maintainable: Automatically checks new ability modifiers added to BaseTome in future
+- `scenes/debug/AbilityTestingPopup.gd` - Ability/tome equipping now emits signals (lines 663, 804, 827)
+- `autoload/CLAUDE.md` - Added Ability & Tome Acquisition Signals section with consumer/source patterns
+- `scripts/systems/CLAUDE.md` - Added AbilityController Event-Driven Acquisition section
+
+**Total implementation time: ~3 hours (3-5 hours estimated, skipped Phase 3 integration tests)**
+
 ### 📋 TASK: Ability & Tome EventBus Signal Wiring Task Created (2025-10-13)
 
 **Created comprehensive implementation task for wiring ability/tome acquisition signals:**

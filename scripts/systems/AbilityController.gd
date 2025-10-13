@@ -54,9 +54,11 @@ func _init(player: Node2D) -> void:
 	# Connect to 30Hz fixed-step combat loop
 	if EventBus:
 		EventBus.combat_step.connect(_on_combat_step)
-		Logger.debug("AbilityController connected to combat_step", "abilities")
+		EventBus.ability_acquired.connect(_on_ability_acquired)
+		EventBus.tome_acquired.connect(_on_tome_acquired)
+		Logger.debug("AbilityController connected to EventBus signals (combat_step, ability_acquired, tome_acquired)", "abilities")
 	else:
-		Logger.warn("AbilityController: EventBus not available for combat_step connection", "abilities")
+		Logger.warn("AbilityController: EventBus not available for signal connections", "abilities")
 
 
 ## Cleanup when controller is freed
@@ -64,10 +66,19 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
 		# Disconnect from EventBus to prevent memory leaks
 		if EventBus and is_instance_valid(EventBus):
-			var callable_ref = Callable(self, "_on_combat_step")
-			if EventBus.combat_step.is_connected(callable_ref):
-				EventBus.combat_step.disconnect(callable_ref)
-				Logger.debug("AbilityController disconnected from combat_step", "abilities")
+			var combat_step_ref = Callable(self, "_on_combat_step")
+			if EventBus.combat_step.is_connected(combat_step_ref):
+				EventBus.combat_step.disconnect(combat_step_ref)
+
+			var ability_acquired_ref = Callable(self, "_on_ability_acquired")
+			if EventBus.ability_acquired.is_connected(ability_acquired_ref):
+				EventBus.ability_acquired.disconnect(ability_acquired_ref)
+
+			var tome_acquired_ref = Callable(self, "_on_tome_acquired")
+			if EventBus.tome_acquired.is_connected(tome_acquired_ref):
+				EventBus.tome_acquired.disconnect(tome_acquired_ref)
+
+			Logger.debug("AbilityController disconnected from EventBus signals", "abilities")
 
 
 # ============================================================================
@@ -145,6 +156,38 @@ func _create_activation_context(ability: BaseAbility) -> Dictionary:
 		"enemies": _get_nearby_enemies(ability)
 		# Don't include "direction" - let ability use its fire_mode (CLOSEST_ENEMY, etc.)
 	}
+
+
+# ============================================================================
+# EVENT HANDLERS (EventBus Signal Listeners)
+# ============================================================================
+
+## Handles ability_acquired events from UI, debug panels, level-up system.
+## Architecture: CONSUMER ONLY - listens to signal, does NOT re-emit.
+## The existing equip_ability() method handles all side-effects (cooldown reset, logging, slot assignment).
+func _on_ability_acquired(ability_id: String, slot: int) -> void:
+	# Validate ability exists in registry
+	if not AbilityManager.has_definition(ability_id):
+		Logger.warn("Cannot acquire unknown ability: %s" % ability_id, "abilities")
+		return
+
+	# Equip via existing method (reuses slot logic and side-effects)
+	equip_ability(ability_id, slot)
+
+
+## Handles tome_acquired events from UI, debug panels, rewards.
+## Architecture: CONSUMER ONLY - listens to signal, does NOT re-emit.
+## The existing equip_tome() method handles all side-effects (stacking, tome application, logging).
+func _on_tome_acquired(tome_id: String, stack_count: int) -> void:
+	# Get tome definition from TomeManager
+	var tome = TomeManager.get_definition(tome_id)
+	if not tome:
+		Logger.warn("Cannot acquire unknown tome: %s" % tome_id, "abilities")
+		return
+
+	# Equip tome stack_count times (equip_tome adds 1 stack per call)
+	for i in range(stack_count):
+		equip_tome(tome)
 
 
 # ============================================================================
@@ -270,8 +313,36 @@ func equip_tome(tome: BaseTome) -> void:
 func _apply_tome_to_all_abilities(tome: BaseTome, stack_count: int) -> void:
 	for ability in ability_slots:
 		if ability and tome.can_apply_to_ability(ability):
+			# Only log if tome has meaningful ability modifiers (not just player stats)
+			var has_ability_mods := _tome_has_ability_modifiers(tome)
+
 			tome.apply_to_ability(ability, stack_count)
-			Logger.debug("Applied tome %s to ability %s" % [tome.tome_id, ability.ability_id], "abilities")
+
+			if has_ability_mods:
+				Logger.debug("Applied tome %s to ability %s" % [tome.tome_id, ability.ability_id], "abilities")
+
+
+## Checks if a tome has any meaningful ability modifiers (not just player stats).
+## Returns true if any ability modifier differs from identity values.
+## Uses to_dict() for maintainability - automatically includes new properties.
+func _tome_has_ability_modifiers(tome: BaseTome) -> bool:
+	var tome_data := tome.to_dict()
+	var ability_mods: Dictionary = tome_data.get("ability_modifiers", {})
+
+	for property_name in ability_mods.keys():
+		var value = ability_mods[property_name]
+
+		# Check multipliers (identity = 1.0)
+		if property_name.ends_with("_multiplier"):
+			if value != 1.0:
+				return true
+
+		# Check bonuses (identity = 0)
+		elif property_name.ends_with("_bonus"):
+			if value != 0:
+				return true
+
+	return false
 
 
 ## Applies a tome to player stats (stub for future phases).

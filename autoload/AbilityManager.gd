@@ -135,6 +135,16 @@ func get_definition(ability_id: String) -> BaseAbility:
 	return _ability_registry.get(ability_id)
 
 
+## Returns true if ability_id exists in the registry.
+## Use this to validate before calling create_ability_instance().
+##
+## Example:
+##   if AbilityManager.has_definition("ranger_arrow"):
+##       var instance = AbilityManager.create_ability_instance("ranger_arrow")
+func has_definition(ability_id: String) -> bool:
+	return _ability_registry.has(ability_id)
+
+
 ## Creates an independent instance of an ability for player use.
 ## This duplicates the definition, allowing level-up and tome modifications
 ## without affecting the registry.

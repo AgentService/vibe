@@ -19,6 +19,7 @@
 | **LocalLeaderboard.gd** | Personal best tracking per map/tier | `add_run()`, `get_personal_best()`, `get_leaderboard()` | None (persistence) |
 | **PlayerProgression.gd** | In-run XP & leveling (simplified) | `leveled_up`, `xp_gained` | None (session-only) |
 | **MapLevel.gd** | Time-based progression tracking | `level_increased`, `level_changed` | StateManager for run lifecycle |
+| **AbilityManager.gd** | Ability definitions & registry | `get_definition()`, `has_definition()`, `create_ability_instance()` | None (foundation) |
 | **TomeManager.gd** | Tome definitions & registry | `get_definition()`, `get_category()` | None (foundation) |
 | **ItemManager.gd** | Item dual-registry & proc handler | `equip_item()`, `damage_dealt` consumer | EventBus, RNG, EffectSpawner |
 | **EffectSpawner.gd** | Generic item effect spawning | `spawn_explosion()`, `spawn_lightning()` | EntityTracker, DamageService |
@@ -75,6 +76,65 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 var _damage_applied_pool: ObjectPool
 var _damage_dealt_pool: ObjectPool
 ```
+
+**Ability & Tome Acquisition Signals (2025-10-13):**
+```gdscript
+# EventBus defines signals for ability and tome acquisition
+signal ability_acquired(ability_id: String, slot: int)
+signal tome_acquired(tome_id: String, stack_count: int)
+
+# SOURCE pattern: UI components emit acquisition signals
+# Example: Debug panels, level-up UI, reward screens
+func _on_equip_button_pressed() -> void:
+    EventBus.ability_acquired.emit("ranger_arrow", 0)  # ability_id, slot
+    EventBus.tome_acquired.emit("swiftness", 1)        # tome_id, stack_count
+
+# CONSUMER pattern: AbilityController listens and equips (no re-emission)
+func _ready() -> void:
+    EventBus.ability_acquired.connect(_on_ability_acquired)
+    EventBus.tome_acquired.connect(_on_tome_acquired)
+
+func _on_ability_acquired(ability_id: String, slot: int) -> void:
+    # Validate with AbilityManager
+    if not AbilityManager.has_definition(ability_id):
+        Logger.warn("Invalid ability: %s" % ability_id, "abilities")
+        return
+
+    # Equip via existing method (handles cooldown reset, logging, slot assignment)
+    equip_ability(ability_id, slot)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+func _on_tome_acquired(tome_id: String, stack_count: int) -> void:
+    var tome = TomeManager.get_definition(tome_id)
+    if not tome:
+        Logger.warn("Invalid tome: %s" % tome_id, "abilities")
+        return
+
+    # Equip tome stack_count times (equip_tome adds 1 stack per call)
+    for i in range(stack_count):
+        equip_tome(tome)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+# Memory leak prevention (RefCounted cleanup)
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_PREDELETE:
+        if EventBus and is_instance_valid(EventBus):
+            var ability_ref = Callable(self, "_on_ability_acquired")
+            if EventBus.ability_acquired.is_connected(ability_ref):
+                EventBus.ability_acquired.disconnect(ability_ref)
+
+            var tome_ref = Callable(self, "_on_tome_acquired")
+            if EventBus.tome_acquired.is_connected(tome_ref):
+                EventBus.tome_acquired.disconnect(tome_ref)
+```
+
+**Architecture Rules:**
+- **Unidirectional flow**: UI → EventBus → AbilityController → Internal Methods
+- **Consumer pattern**: Listeners call internal methods but do NOT re-emit signals
+- **Source pattern**: UI components emit signals instead of direct method calls
+- **Validation layer**: AbilityManager.has_definition() / TomeManager.get_definition() before equipping
+- **Existing side-effects**: equip_ability() and equip_tome() handle all state changes (no duplication)
+- **Reference implementation**: ItemManager.gd:525-541 (item_acquired signal consumer)
 
 ### 🎮 **GameOrchestrator Dependency Injection**
 

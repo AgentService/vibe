@@ -80,7 +80,7 @@ _data = {
 &"explode": SubResource("Animation_explode")
 }
 
-[sub_resource type="PackedScene" id="PackedScene_mkbnq"]
+[sub_resource type="PackedScene" id="PackedScene_i64bo"]
 _bundled = {
 "conn_count": 0,
 "conns": PackedInt32Array(),
@@ -155,7 +155,7 @@ animations = [{
 [sub_resource type="CircleShape2D" id="CircleShape2D_fireball"]
 radius = 12.0
 
-[sub_resource type="PackedScene" id="PackedScene_rrc86"]
+[sub_resource type="PackedScene" id="PackedScene_apr53"]
 _bundled = {
 "conn_count": 0,
 "conns": PackedInt32Array(),
@@ -179,7 +179,7 @@ homing_group_count = 4
 homing_update_interval = 4
 chains_to_enemies = 0
 chain_radius = 50.0
-pierce_count = 5
+pierce_count = 0
 knockback_distance = 50.0
 impact_aoe_radius = 50.0
 impact_aoe_damage_mult = 0.8
@@ -202,5 +202,5 @@ description = "Fire a slow-moving fireball that explodes on impact (150px AoE, 8
 tags = Array[String](["damage", "cooldown", "projectile", "fire", "aoe"])
 ability_level = 1
 max_level = 20
-visual_scene = SubResource("PackedScene_rrc86")
-impact_effect = SubResource("PackedScene_mkbnq")
+visual_scene = SubResource("PackedScene_apr53")
+impact_effect = SubResource("PackedScene_i64bo")

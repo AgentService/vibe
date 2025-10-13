@@ -36,6 +36,7 @@ The systems layer is organized into **11 logical domain subfolders** for improve
 | **arena/** | **ArenaSystem.gd** | Arena bounds & spatial management | `arena_loaded` | Bounds configuration |
 | **arena/** | **ArenaUIManager.gd** | Arena UI coordination | UI state updates | HUD management |
 | **player/** | **CardSystem.gd** | Upgrade card selection & application | `card_selected`, `card_applied` | Player progression |
+| **player/** | **AbilityController.gd** | Player ability management & auto-casting | N/A (component class) | `combat_step`, `ability_acquired`, `tome_acquired` consumers |
 | **radar/** | **RadarSystem.gd** | Enemy position scanning for UI | `radar_data_updated` | State-gated updates |
 | **rendering/** | **VisualEffectsManager.gd** | Visual feedback coordination | Effect triggers | Impact feedback |
 | **boss/** | **BossUpdateManager.gd** | Boss AI batch processing | Boss behavior updates | Performance optimization |
@@ -1037,6 +1038,113 @@ func apply_card_effects(card_data: Dictionary) -> void:
     # Trigger system reloads
     _broadcast_stat_changes()
 ```
+
+### ⚡ **AbilityController Event-Driven Acquisition (2025-10-13)**
+
+**EventBus Signal Consumer Pattern:**
+```gdscript
+# AbilityController.gd - Component class (RefCounted, not Node)
+extends RefCounted
+class_name AbilityController
+
+var _player: Node2D
+var ability_slots: Array[BaseAbility] = [null, null, null, null]
+var tome_slots: Array[BaseTome] = [null, null, null, null]
+
+func _init(player: Node2D) -> void:
+    _player = player
+
+    # Connect to EventBus signals (consumer pattern)
+    if EventBus:
+        EventBus.combat_step.connect(_on_combat_step)
+        EventBus.ability_acquired.connect(_on_ability_acquired)  # NEW (2025-10-13)
+        EventBus.tome_acquired.connect(_on_tome_acquired)        # NEW (2025-10-13)
+        Logger.debug("AbilityController connected to EventBus signals", "abilities")
+
+# Consumer method: Validate and equip ability (no re-emission)
+func _on_ability_acquired(ability_id: String, slot: int) -> void:
+    # Validate with AbilityManager before equipping
+    if not AbilityManager.has_definition(ability_id):
+        Logger.warn("Cannot acquire unknown ability: %s" % ability_id, "abilities")
+        return
+
+    # Equip via existing method (handles all side-effects: cooldown, logging, slot assignment)
+    equip_ability(ability_id, slot)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+# Consumer method: Validate and equip tome (no re-emission)
+func _on_tome_acquired(tome_id: String, stack_count: int) -> void:
+    var tome = TomeManager.get_definition(tome_id)
+    if not tome:
+        Logger.warn("Cannot acquire unknown tome: %s" % tome_id, "abilities")
+        return
+
+    # Equip tome stack_count times (equip_tome adds 1 stack per call)
+    for i in range(stack_count):
+        equip_tome(tome)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+# Memory leak prevention for RefCounted classes
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_PREDELETE:
+        if EventBus and is_instance_valid(EventBus):
+            # Disconnect all signals to prevent memory leaks
+            var combat_step_ref = Callable(self, "_on_combat_step")
+            if EventBus.combat_step.is_connected(combat_step_ref):
+                EventBus.combat_step.disconnect(combat_step_ref)
+
+            var ability_ref = Callable(self, "_on_ability_acquired")
+            if EventBus.ability_acquired.is_connected(ability_ref):
+                EventBus.ability_acquired.disconnect(ability_ref)
+
+            var tome_ref = Callable(self, "_on_tome_acquired")
+            if EventBus.tome_acquired.is_connected(tome_ref):
+                EventBus.tome_acquired.disconnect(tome_ref)
+
+            Logger.debug("AbilityController disconnected from EventBus signals", "abilities")
+```
+
+**Debug UI Integration (SOURCE Pattern):**
+```gdscript
+# AbilityTestingPopup.gd - Debug UI emits signals (does not call methods directly)
+func _on_equip_button_pressed() -> void:
+    var player = _get_player()
+    if not player or not player.ability_controller:
+        return
+
+    for i in range(4):
+        var ability_id = selected_ability_ids[i]
+
+        if ability_id.is_empty():
+            # Empty slot - clear it directly (no signal for clearing)
+            player.ability_controller.clear_ability_slot(i)
+        else:
+            # Emit signal for ability acquisition
+            EventBus.ability_acquired.emit(ability_id, i)
+            Logger.info("Debug: Emitted ability_acquired signal for '%s' (slot %d)" % [ability_id, i], "abilities")
+
+func _on_equip_tome_button_pressed() -> void:
+    # ... validation code ...
+
+    # Emit signal for tome acquisition
+    EventBus.tome_acquired.emit(tome_id, 1)
+    Logger.info("Debug: Emitted tome_acquired signal for '%s'" % tome_id, "abilities")
+```
+
+**Architecture Notes:**
+- **Component class**: AbilityController extends `RefCounted` (not `Node`), requires manual signal cleanup
+- **Consumer pattern**: Listens to signals but does NOT re-emit (prevents infinite loops)
+- **Unidirectional flow**: UI → EventBus → AbilityController → Internal Methods
+- **Validation layer**: Uses AbilityManager.has_definition() / TomeManager.get_definition() before equipping
+- **Side-effects**: Existing equip methods handle all state changes (cooldown reset, logging, stat application)
+- **Memory safety**: Proper signal disconnection in _notification(NOTIFICATION_PREDELETE) for RefCounted classes
+- **Reference implementation**: ItemManager.gd:525-541 consumer pattern
+
+**Key Design Decisions:**
+1. **No double application**: Existing methods already handle side-effects correctly
+2. **No circular dependencies**: Consumer methods call internal logic, internal logic does NOT emit signals
+3. **Clear separation**: UI emits → EventBus routes → System consumes → Internal methods execute
+4. **Type safety**: Uses AbilityManager/TomeManager validation before equipping
 
 ### 👾 **BaseBoss Animation & Collision Patterns (Updated 2025-10-08)**
 
