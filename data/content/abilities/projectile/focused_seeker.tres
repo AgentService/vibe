@@ -4,30 +4,38 @@
 
 [resource]
 script = ExtResource("1")
+
 fire_mode = 0
 use_multimesh = true
+
 is_homing = true
 homing_mode = 0
 homing_strength = 10.0
 homing_group_count = 3
 homing_update_interval = 1
+
 chains_to_enemies = 0
 chain_radius = 50.0
 pierce_count = 2
 knockback_distance = 0.0
+
 spread_angle = 25.0
 projectile_speed = 1200.0
 projectile_lifetime = 3.0
+
 base_damage = 333.0
 damage_type = "physical"
 inherent_element = ""
+
 base_cooldown = 0.1
 projectile_count = 2
 base_range = 900.0
+
 damage_scaling_per_level = 1.15
 cooldown_scaling_per_level = 0.95
 level_breakpoints = Array[int]([])
 breakpoint_bonuses = Array[String]([])
+
 ability_id = "focused_seeker"
 ability_name = "Focused Seeker"
 description = "Fire 2 ultra-fast homing arrows (1200 speed, 333 dmg, 0.1s CD, pierce 2, homing 10.0)"
