@@ -48,7 +48,7 @@ func _ready() -> void:
 
 
 ## Updates arena reference when entering/leaving ARENA state
-func _on_state_changed(new_state: StateManager.State) -> void:
+func _on_state_changed(prev_state: StateManager.State, new_state: StateManager.State, context: Dictionary) -> void:
 	if new_state == StateManager.State.ARENA:
 		_find_arena_reference()
 	else:
