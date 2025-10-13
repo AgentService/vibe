@@ -104,6 +104,62 @@ func _get_effects_container() -> Node2D:
 
 
 # ============================================================================
+# REUSABLE EFFECT HELPERS
+# ============================================================================
+
+## Calculates spawn position with offset toward enemy center.
+## Makes explosions/impacts appear "inside" enemies rather than at the surface.
+##
+## Parameters:
+##   at_position: Impact point (collision position, damage location)
+##   enemy_position: Enemy center position for offset calculation
+##   offset_distance: Pixels to move toward enemy center (default: 36px)
+##
+## Returns:
+##   Vector2 - Final spawn position offset toward enemy center
+##
+## Usage:
+##   var spawn_pos = EffectSpawner.calculate_spawn_offset(impact_pos, enemy_pos)
+##   effect.global_position = spawn_pos
+static func calculate_spawn_offset(at_position: Vector2, enemy_position: Vector2, offset_distance: float = 36.0) -> Vector2:
+	if enemy_position == Vector2.ZERO:
+		return at_position
+
+	# Calculate direction from impact point to enemy center
+	var direction_to_enemy := (enemy_position - at_position).normalized()
+
+	# Offset spawn position toward enemy center
+	return at_position + (direction_to_enemy * offset_distance)
+
+
+## Finds enemy node in scene tree by entity_id.
+## Used by tracked effects to locate enemies for position following.
+##
+## Parameters:
+##   entity_id: Entity ID of enemy to find
+##   arena: Arena reference containing enemy nodes
+##
+## Returns:
+##   Node - Enemy node if found, null otherwise
+##
+## Usage:
+##   var enemy_node = EffectSpawner.find_enemy_node(enemy_id, arena)
+##   if enemy_node:
+##       effect.global_position = enemy_node.global_position
+static func find_enemy_node(entity_id: String, arena: Node2D) -> Node:
+	if not arena:
+		return null
+
+	# Search for enemy in "enemies" group
+	var enemies := arena.get_tree().get_nodes_in_group("enemies")
+	for enemy in enemies:
+		if "entity_id" in enemy and enemy.entity_id == entity_id:
+			return enemy
+
+	return null
+
+
+# ============================================================================
 # EXPLOSION EFFECT (Using FireballImpact.tscn)
 # ============================================================================
 

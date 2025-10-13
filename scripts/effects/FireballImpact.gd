@@ -1,17 +1,25 @@
 ## FireballImpact.gd
-## Self-despawning impact effect for fireball explosions.
+## Self-despawning impact effect for fireball explosions with optional tracking.
 ##
 ## Lifecycle:
 ## 1. Spawned at impact position
 ## 2. set_aoe_radius() scales effect to match AoE size
-## 3. AnimationPlayer plays impact animation
-## 4. Auto-despawns after animation completes (~0.5s)
+## 3. Optional: track_enemy() enables position following (via BaseTrackedEffect)
+## 4. AnimationPlayer plays impact animation
+## 5. Auto-despawns after animation completes (~0.5s)
 ##
 ## Scale Calculation:
 ## - Base reference: 350px radius = scale 10.0
 ## - Formula: scale = (radius / BASE_RADIUS) * BASE_SCALE
 ## - Example: 500px radius = (500 / 350) * 10 = 14.29 scale
-extends Node2D
+##
+## Usage:
+##   var explosion = FireballImpact_SCENE.instantiate()
+##   arena.add_child(explosion)
+##   explosion.global_position = impact_position
+##   explosion.set_aoe_radius(350.0)  # Match gameplay AoE
+##   explosion.track_enemy(enemy_id, arena)  # Optional: follow enemy
+extends "res://scripts/effects/BaseTrackedEffect.gd"
 
 @onready var animation_player: AnimationPlayer = $AnimationPlayer
 
@@ -22,6 +30,8 @@ const BASE_RADIUS: float = 350.0
 const BASE_SCALE: float = 21.875
 
 func _ready() -> void:
+	super._ready()  # Call base class if needed
+
 	# AnimationPlayer auto-plays "explode" animation
 
 	# Auto-despawn after animation completes

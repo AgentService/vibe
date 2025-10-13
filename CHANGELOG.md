@@ -2,6 +2,55 @@
 
 ## [Current Week - In Progress]
 
+### ✅ REFACTOR: Reusable Effect Helpers and Base Classes (2025-10-13)
+
+**Extracted tracking and offset logic into reusable components:**
+- **Problem**: Enemy tracking and spawn offset logic were duplicated across effects
+  - LightningImpact had 76 lines with full tracking implementation
+  - AbilityProjectile had 36px offset logic for centered explosions
+  - No easy way to add tracking to new effects (e.g., beam effects, poison clouds)
+- **Solution**: Created reusable base class and static helpers
+  - **BaseTrackedEffect.gd** - Reusable base class for any effect that needs tracking
+    - Provides `track_enemy(enemy_id, arena)` method
+    - Auto-updates `global_position` every frame via `_process()`
+    - Graceful handling of enemy death (`is_instance_valid()` check)
+    - Zero overhead when tracking not enabled (optional feature)
+  - **EffectSpawner helpers** - Static methods for common effect patterns
+    - `calculate_spawn_offset()` - Offsets effects toward enemy centers (36px default)
+    - `find_enemy_node()` - Finds enemy by entity_id in "enemies" group
+- **Refactored effects**:
+  - LightningImpact: 76 lines → 33 lines (extends BaseTrackedEffect)
+  - FireballImpact: Now extends BaseTrackedEffect for optional tracking
+- **Benefits**:
+  - Easy to add tracking to any new effect (extend BaseTrackedEffect)
+  - Consistent spawn offset behavior across all effects
+  - Single source of truth for enemy lookup logic
+  - Future effects (beams, DOTs, homing visuals) get tracking for free
+
+**Usage Examples:**
+```gdscript
+# New tracked effect (just extend the base)
+extends BaseTrackedEffect
+func _ready():
+    super._ready()
+    # Your effect logic
+
+# Use offset helper in spawn logic
+var spawn_pos = EffectSpawner.calculate_spawn_offset(impact_pos, enemy_pos, 50.0)
+explosion.global_position = spawn_pos
+
+# Find enemy for custom logic
+var enemy_node = EffectSpawner.find_enemy_node(enemy_id, arena)
+if enemy_node:
+    # Custom behavior
+```
+
+**Files modified:**
+- `scripts/effects/BaseTrackedEffect.gd` - New base class for tracked effects
+- `autoload/EffectSpawner.gd` - Added static helpers (calculate_spawn_offset, find_enemy_node)
+- `scripts/effects/LightningImpact.gd` - Refactored to extend BaseTrackedEffect (43 lines removed)
+- `scripts/effects/FireballImpact.gd` - Now extends BaseTrackedEffect for optional tracking
+
 ### ✅ FEAT: "+10 Items" Button in Item Testing Panel (2025-10-13)
 
 **Added rapid testing button for item system debugging:**
