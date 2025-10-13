@@ -332,10 +332,35 @@ func _check_ghost_collisions() -> void:
 	var hit_indices = ghost_spawner.check_hits_in_area(global_position, collision_radius, damage)
 
 	if hit_indices.size() > 0:
+		# Spawn impact effect at collision position (fireball explosion)
+		_spawn_impact_effect(global_position)
+
+		# Apply AoE damage if configured (fireball explosion effect)
+		# Pass empty string for direct_hit_enemy_id since ghosts don't have entity IDs
+		if impact_aoe_radius > 0.0:
+			_apply_impact_aoe(global_position, "")
+
 		# Hit at least one ghost - consume pierce
 		_remaining_pierce -= hit_indices.size()
 		if _remaining_pierce < 0:
 			call_deferred("despawn")
+
+
+## Spawns the impact effect at the specified position
+## Used by both scene-based enemy collisions and MultiMesh ghost collisions
+func _spawn_impact_effect(at_position: Vector2) -> void:
+	if not impact_effect:
+		return
+
+	var effect_instance = impact_effect.instantiate()
+	effect_instance.global_position = at_position
+
+	# Scale effect to match AoE radius (if effect supports it)
+	if effect_instance.has_method("set_aoe_radius"):
+		effect_instance.set_aoe_radius(impact_aoe_radius)
+
+	get_tree().current_scene.add_child(effect_instance)
+
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
@@ -400,16 +425,8 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if impact_aoe_radius > 0.0:
 		_apply_impact_aoe(global_position, enemy_id)
 
-	# Spawn impact effect if configured (fireball explosion visual)
-	if impact_effect:
-		var effect_instance = impact_effect.instantiate()
-		effect_instance.global_position = global_position
-
-		# Scale effect to match AoE radius (if effect supports it)
-		if effect_instance.has_method("set_aoe_radius"):
-			effect_instance.set_aoe_radius(impact_aoe_radius)
-
-		get_tree().current_scene.add_child(effect_instance)
+	# Spawn impact effect at collision position (fireball explosion visual)
+	_spawn_impact_effect(global_position)
 
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)
