@@ -2,6 +2,88 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FIX: Item Proc Chance Multiplicative Stacking (2025-10-13)
+
+**Fixed proc chance stacking to use explicit multiplicative formula with single roll per hit:**
+- **Problem**: Frost Glaive and Spicy Meatball rolled independently per stack (3 stacks = 3 separate rolls)
+  - Inefficient: Multiple RNG calls per damage event
+  - Unclear: Effective probability not calculated explicitly
+  - Inconsistent: Different pattern from movement_speed_mult stacking
+- **Solution**: Calculate combined proc chance using multiplicative formula, single roll per hit
+  - Formula: `effective_chance = 1 - (1 - base_chance)^stack_count`
+  - Result: Natural diminishing returns (same as independent probability, but explicit)
+  - Performance: One RNG roll instead of N rolls per hit
+- **Stacking examples:**
+  - 1× Frost Glaive (7.5% base): 7.5% effective
+  - 2× Frost Glaive: 14.4% effective (was: two 7.5% rolls)
+  - 3× Frost Glaive: 21.0% effective (was: three 7.5% rolls)
+  - 10× Frost Glaive: 56.3% effective (asymptotic approach to 100%)
+- **Logging enhancement**: Shows effective chance in debug logs
+  - Example: `"Freeze proc (stacks=3, effective_chance=21.0%)"`
+
+**Files modified:**
+- `autoload/ItemManager.gd` - Updated `_check_item_procs()` to calculate effective chance per item with stacks
+- `autoload/ItemManager.gd` - Enhanced logging in `_trigger_freeze_proc()` and `_trigger_explosion_proc()` to show stacks + effective chance
+
+### ✅ FEAT: Freeze Effect Implementation for Frost Glaive (2025-10-13)
+
+**Implemented MVP freeze system with direct enemy speed modification:**
+- **Problem**: Frost Glaive's 7.5% freeze proc was triggering but had no gameplay effect
+  - `EffectSpawner.spawn_freeze()` was a TODO stub (logged "NOT IMPLEMENTED")
+  - Enemies continued moving normally when frozen
+- **Solution**: Direct speed modification with duration tracking at 30Hz
+  - `_active_freezes: Dictionary` tracks frozen enemies: `{enemy_id: {remaining_duration, slow_mult, original_speed}}`
+  - Connected to `EventBus.combat_step` for deterministic duration countdown
+  - Stores original speed to prevent stacking bugs when freeze refreshed
+  - Duck typing: `"speed" in enemy_node` check for BaseBoss compatibility
+- **Architecture decisions:**
+  - MVP approach: Direct `enemy.speed` modification (not full debuff system)
+  - 30Hz integration: Consistent with other item systems (cooldowns, procs)
+  - Scene tree lookup: `_find_enemy_node()` searches "enemies" group by entity_id
+  - Memory safety: Arena state cleanup (`_active_freezes.clear()` on arena exit)
+- **Frost Glaive behavior:**
+  - 7.5% chance to freeze on hit
+  - 2.0s duration with 0.0 slow multiplier (full stop)
+  - Enemies visibly stop moving, resume after duration expires
+
+**Files modified:**
+- `autoload/EffectSpawner.gd` - Implemented `spawn_freeze()`, `_update_freeze_effects()`, `_remove_freeze_effect()`, `_find_enemy_node()`
+- `autoload/EffectSpawner.gd` - Connected to `EventBus.combat_step` for 30Hz duration updates
+- `autoload/EffectSpawner.gd` - Added arena state cleanup in `_on_state_changed()`
+
+### ✅ FIX: Critical Strike Chance Integration for Items (2025-10-13)
+
+**Fixed disconnect between item system and critical strike calculation - rabbit's foot items now properly increase crit chance:**
+- **Phase 1 - Property additions** (10 min):
+  - Added `crit_chance_bonus: float` property to `BaseItem.gd` (line 54) with validation (0.0-1.0 range check)
+  - Added `crit_chance_bonus: float` to `PlayerStats.gd` (line 23) with `get_effective_crit_chance()` getter method
+  - Pattern follows existing additive stat bonuses (like max_hp_bonus)
+- **Phase 2 - ItemManager integration** (10 min):
+  - Updated `ItemManager._apply_stat_bonuses()` to apply crit chance bonuses (lines 352-357)
+  - Updated `ItemManager._remove_stat_bonuses()` to remove crit chance bonuses (lines 397-402)
+  - Follows linear stacking formula: `final_crit_chance = base_crit (0.1) + (bonus × stack_count)`
+- **Phase 3 - DamageRegistry integration** (15 min):
+  - Replaced hardcoded 0.1 crit chance in `DamageRegistry._calculate_final_damage()` with player stat lookup (lines 572-588)
+  - Reads from `PlayerState.player.runtime_stats.get_effective_crit_chance()` with 0.1 fallback
+  - Uses BalanceDB crit_multiplier (2.0x) instead of hardcoded multiplier
+- **Phase 4 - Rabbit's Foot configuration** (5 min):
+  - Changed `rabbits_foot_gameplay.tres` from `damage_mult = 1.05` to `crit_chance_bonus = 0.05`
+  - Now matches metadata description: "+5% Critical Strike Chance"
+
+**Stacking behavior:**
+- 1× Rabbit's Foot: 15% crit chance (10% base + 5%)
+- 10× Rabbit's Feet: 60% crit chance (10% + 50%)
+- 30× Rabbit's Feet: 160% crit chance → effectively 100% (always crit)
+
+**Files modified:**
+- `scripts/resources/items/BaseItem.gd` - Added crit_chance_bonus property + validation
+- `scripts/resources/PlayerStats.gd` - Added crit_chance_bonus + get_effective_crit_chance()
+- `autoload/ItemManager.gd` - Applied/removed crit chance bonuses in stat methods
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Read player crit chance instead of hardcoding
+- `data/content/items/rabbits_foot_gameplay.tres` - Changed to crit_chance_bonus
+
+**Total implementation time: ~40 minutes**
+
 ### ✅ FEAT: Ability & Tome EventBus Signal Wiring Complete (2025-10-13)
 
 **Implemented event-driven architecture for ability and tome acquisition using ItemManager reference pattern:**

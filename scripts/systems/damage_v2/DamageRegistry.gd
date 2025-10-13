@@ -568,16 +568,27 @@ func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: fl
 ## Calculate final damage with modifiers
 func _calculate_final_damage(base_damage: float, _tags: Array) -> float:
 	var final_damage: float = base_damage
-	
-	# Apply crit chance (10% base crit)
-	var is_crit: bool = RNG.randf("crit") < 0.1
+
+	# Get effective crit chance from player stats (default 0.1 if no player)
+	var crit_chance: float = 0.1  # Fallback
+	if PlayerState and PlayerState.has_player_reference():
+		var player = PlayerState._player_ref
+		if player and player.runtime_stats:
+			crit_chance = player.runtime_stats.get_effective_crit_chance()
+
+	# Apply crit chance check
+	var crit_rng := RNG.stream("crit")
+	var is_crit: bool = crit_rng.randf() < crit_chance
 	if is_crit:
-		final_damage *= 2.0
+		var crit_mult: float = BalanceDB.get_combat_value("crit_multiplier") if BalanceDB else 2.0
+		final_damage *= crit_mult
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("CRITICAL HIT! Damage: %.1f → %.1f" % [base_damage, final_damage], "combat")
-	
+			Logger.debug("CRITICAL HIT! Damage: %.1f → %.1f (crit_chance: %.1f%%)" % [
+				base_damage, final_damage, crit_chance * 100.0
+			], "combat")
+
 	# TODO: Add other damage modifiers here (resistances, vulnerabilities, etc.)
-	
+
 	return final_damage
 
 ## Handle entity death (emit events, cleanup, etc.)

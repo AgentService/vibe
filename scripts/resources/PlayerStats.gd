@@ -20,6 +20,7 @@ var movement_speed_mult: float = 1.0
 var max_hp_bonus: int = 0
 var pickup_radius_mult: float = 1.0
 var damage_mult: float = 1.0
+var crit_chance_bonus: float = 0.0
 
 
 ## Sync base values from PlayerType (preserves hot-reload)
@@ -59,12 +60,19 @@ func get_effective_damage() -> float:
 	return base_damage * damage_mult
 
 
+func get_effective_crit_chance() -> float:
+	# Get base crit chance from BalanceDB (default 0.1 = 10%)
+	var base_crit: float = BalanceDB.get_combat_value("crit_chance") if BalanceDB else 0.1
+	return base_crit + crit_chance_bonus
+
+
 ## Reset all modifiers to default (for run restart)
 func reset_modifiers() -> void:
 	movement_speed_mult = 1.0
 	max_hp_bonus = 0
 	pickup_radius_mult = 1.0
 	damage_mult = 1.0
+	crit_chance_bonus = 0.0
 
 	Logger.debug("PlayerStats modifiers reset to defaults", "player")
 

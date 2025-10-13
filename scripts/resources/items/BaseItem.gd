@@ -50,6 +50,9 @@ class_name BaseItem
 ## Multiplicative pickup radius modifier (1.0 = no change)
 @export var pickup_radius_mult: float = 1.0
 
+## Additive critical strike chance bonus (0.05 = +5% crit chance)
+@export var crit_chance_bonus: float = 0.0
+
 # ============================================================================
 # PROC TYPE 1: LIGHTNING (On-Hit Effect)
 # ============================================================================
@@ -155,6 +158,9 @@ func validate() -> Array[String]:
 
 	if pickup_radius_mult < 0.0:
 		errors.append("pickup_radius_mult must be >= 0.0")
+
+	if crit_chance_bonus < 0.0 or crit_chance_bonus > 1.0:
+		errors.append("crit_chance_bonus must be 0.0-1.0")
 
 	# Lightning validation
 	if on_hit_lightning:

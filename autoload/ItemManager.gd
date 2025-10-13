@@ -349,6 +349,13 @@ func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 			item.item_id, bonus, stack_count
 		], "items")
 
+	if item.crit_chance_bonus != 0.0:
+		var bonus := item.crit_chance_bonus * stack_count
+		stats.crit_chance_bonus += bonus
+		Logger.debug("Item '%s': Applied crit_chance_bonus=%.3f (x%d stacks)" % [
+			item.item_id, bonus, stack_count
+		], "items")
+
 
 ## Removes item stat bonuses from player.runtime_stats (for stack_count stacks)
 func _remove_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
@@ -385,6 +392,13 @@ func _remove_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 		stats.max_hp_bonus -= bonus
 		Logger.debug("Item '%s': Removed max_hp_bonus=%d (x%d stacks, new value: %d)" % [
 			item.item_id, bonus, stack_count, stats.max_hp_bonus
+		], "items")
+
+	if item.crit_chance_bonus != 0.0:
+		var bonus := item.crit_chance_bonus * stack_count
+		stats.crit_chance_bonus -= bonus
+		Logger.debug("Item '%s': Removed crit_chance_bonus=%.3f (x%d stacks, new value: %.3f)" % [
+			item.item_id, bonus, stack_count, stats.crit_chance_bonus
 		], "items")
 
 
@@ -435,26 +449,38 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 # ITEM PROC LOGIC
 # ============================================================================
 
-## Checks an item for proc triggers based on damage dealt.
-## Handles lightning (cooldown-based), explosion (chance-based), freeze (chance-based).
+## Checks all equipped items for proc triggers based on damage dealt.
+## Handles lightning (per-item cooldown), explosion (stacked chance), freeze (stacked chance).
 func _check_item_procs(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
 	# Get deterministic RNG stream for item procs
 	var item_rng := RNG.stream("item_procs")
 
-	# Lightning proc (cooldown-based)
+	# Lightning proc (cooldown-based, per-item)
 	if item.on_hit_lightning and item._lightning_cooldown <= 0.0:
 		_trigger_lightning_proc(item, payload)
 
-	# Explosion proc (chance-based)
+	# Explosion proc (chance-based, per-item with stacks)
 	if item.on_hit_explosion:
+		var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+		var stack_count: int = item_data.get("stack_count", 1)
+
+		# Multiplicative stacking: effective_chance = 1 - (1 - base_chance)^stack_count
+		var effective_explosion_chance := 1.0 - pow(1.0 - item.explosion_chance, stack_count)
+
 		var roll := item_rng.randf()
-		if roll < item.explosion_chance:
+		if roll < effective_explosion_chance:
 			_trigger_explosion_proc(item, payload)
 
-	# Freeze proc (chance-based)
+	# Freeze proc (chance-based, per-item with stacks)
 	if item.on_hit_freeze:
+		var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+		var stack_count: int = item_data.get("stack_count", 1)
+
+		# Multiplicative stacking: effective_chance = 1 - (1 - base_chance)^stack_count
+		var effective_freeze_chance := 1.0 - pow(1.0 - item.freeze_chance, stack_count)
+
 		var roll := item_rng.randf()
-		if roll < item.freeze_chance:
+		if roll < effective_freeze_chance:
 			_trigger_freeze_proc(item, payload)
 
 
@@ -484,6 +510,11 @@ func _trigger_explosion_proc(item: BaseItem, payload: EventBus.DamageDealtPayloa
 	# Increment proc counter
 	item._explosion_procs += 1
 
+	# Get stack info for logging
+	var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+	var stack_count: int = item_data.get("stack_count", 1)
+	var effective_chance := 1.0 - pow(1.0 - item.explosion_chance, stack_count)
+
 	# Calculate explosion damage
 	var explosion_damage := payload.damage * item.explosion_damage_mult
 
@@ -494,8 +525,8 @@ func _trigger_explosion_proc(item: BaseItem, payload: EventBus.DamageDealtPayloa
 		item.explosion_radius
 	)
 
-	Logger.debug("Item '%s': Explosion proc (damage=%.1f, radius=%.0f)" % [
-		item.item_id, explosion_damage, item.explosion_radius
+	Logger.debug("Item '%s': Explosion proc (damage=%.1f, radius=%.0f, stacks=%d, effective_chance=%.1f%%)" % [
+		item.item_id, explosion_damage, item.explosion_radius, stack_count, effective_chance * 100.0
 	], "items")
 
 
@@ -504,6 +535,11 @@ func _trigger_freeze_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 	# Increment proc counter
 	item._freeze_procs += 1
 
+	# Get stack info for logging
+	var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+	var stack_count: int = item_data.get("stack_count", 1)
+	var effective_chance := 1.0 - pow(1.0 - item.freeze_chance, stack_count)
+
 	# Apply freeze effect to target
 	EffectSpawner.spawn_freeze(
 		payload.target,
@@ -511,8 +547,8 @@ func _trigger_freeze_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 		item.freeze_slow_mult
 	)
 
-	Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f)" % [
-		item.item_id, payload.target, item.freeze_duration
+	Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f, stacks=%d, effective_chance=%.1f%%)" % [
+		item.item_id, payload.target, item.freeze_duration, stack_count, effective_chance * 100.0
 	], "items")
 
 
