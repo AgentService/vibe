@@ -1,0 +1,25 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "rabbits_foot"
+internal_name = "Rabbit's Foot"
+max_hp_bonus = 0
+movement_speed_mult = 1.0
+damage_mult = 1.05
+pickup_radius_mult = 1.0
+on_hit_lightning = false
+lightning_cooldown = 10.0
+lightning_damage_mult = 0.5
+lightning_chain_count = 0
+lightning_chain_range = 200.0
+on_hit_explosion = false
+explosion_chance = 0.25
+explosion_damage_mult = 0.65
+explosion_radius = 100.0
+on_hit_freeze = false
+freeze_chance = 0.075
+freeze_duration = 2.0
+freeze_slow_mult = 0.0
