@@ -439,7 +439,7 @@ func _on_enemy_collision(enemy_id: String) -> void:
 		_apply_impact_aoe(global_position, enemy_id)
 
 	# Get enemy position for explosion offset calculation (O(1) lookup via EntityTracker)
-	var enemy_pos: Vector2 = EntityTracker.get_entity_position(enemy_id) as Vector2
+	var enemy_pos: Vector2 = EntityTracker.get_entity(enemy_id).get("pos", Vector2.ZERO)
 
 	# Spawn impact effect at collision position (fireball explosion visual)
 	# Pass enemy position for 36px offset toward enemy center

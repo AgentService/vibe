@@ -34,6 +34,26 @@
 - StateManager enum fix: `State.ARENA` (not `GameState.ARENA`)
 - CombatStepPayload property: `payload.dt` (not `payload.delta_time`)
 
+### 🐛 FIX: Critical Item System Bugs - EntityTracker API and Recursion Prevention (2025-10-13)
+
+**Fixed two critical bugs that prevented item procs from functioning:**
+- **Bug 1: Non-existent EntityTracker method**:
+  - `EffectSpawner.gd` (lines 140, 185) called `EntityTracker.get_entity_position()` which doesn't exist
+  - `AbilityProjectile.gd` (line 442) also called non-existent method for fireball explosion offset
+  - Fixed by using correct Dictionary API: `EntityTracker.get_entity(id).get("pos", Vector2.ZERO)`
+  - **Impact**: Lightning chains, explosions, and fireball impacts now work without "Invalid call" runtime errors
+- **Bug 2: Broken recursion prevention**:
+  - `DamageRegistry._map_source_for_damage_dealt()` mapped unknown sources to "unknown" string
+  - Item-generated damage sources like "item_lightning" and "item_explosion" were unmapped
+  - Lost "item_" prefix bypassed ItemManager's recursion guard (`source.begins_with("item_")`)
+  - Fixed by preserving "item_*" sources during signal emission (line 411-413)
+  - **Impact**: Explosions no longer trigger infinite explosion chains, lightning doesn't self-proc
+
+**Files changed:**
+- `autoload/EffectSpawner.gd` - Fixed 2 calls to non-existent get_entity_position()
+- `scripts/entities/AbilityProjectile.gd` - Fixed 1 call to non-existent get_entity_position()
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Added "item_*" source preservation in _map_source_for_damage_dealt()
+
 ### 🐛 FIX: Synchronized Tome System Resources - UnlockShop Now Shows All Tomes (2025-10-13)
 
 **Fixed multiple tome system issues: missing resources, name mismatches, and runtime errors:**
