@@ -2,6 +2,67 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FEAT: "+10 Items" Button in Item Testing Panel (2025-10-13)
+
+**Added rapid testing button for item system debugging:**
+- **Feature**: New "+10 Items" button equips 10 random items with one click
+- **Implementation**:
+  - Uses deterministic RNG (`RNG.stream("debug")`) for consistent random selection
+  - Automatically handles item stacking (duplicates stack correctly via ItemManager)
+  - Emits 10 `item_acquired` signals with random item IDs from available pool
+  - Auto-refreshes equipped items display after completion
+- **Use Cases**:
+  - Rapid item stacking testing (can stack same item multiple times)
+  - Quick item proc interaction testing (explosions + lightning + freeze combos)
+  - Stat modifier combination testing (movement speed × damage × HP bonuses)
+  - Debug session setup without tedious manual clicking
+- **Button Layout**: Positioned between "Equip Item" and "Clear All" buttons
+
+**Files modified:**
+- `scenes/debug/ItemTestingPopup.tscn` - Added Add10Button node to ActionButtons
+- `scenes/debug/ItemTestingPopup.gd` - Added `_on_add_10_button_pressed()` handler with random selection logic
+
+### ✅ FIX: Lightning Strike Position Offset (2025-10-13)
+
+**Removed sprite offset for pixel-perfect lightning strikes:**
+- **Problem**: AnimatedSprite2D had Vector2(-0.6, 0.1) position offset causing visual misalignment
+  - At scale 10x, sub-pixel offsets become visible (0.6px × 10 = 6px shift)
+  - Lightning bolts appeared slightly offset from enemy positions
+- **Solution**: Removed position property from AnimatedSprite2D node in LightningImpact.tscn
+- **Result**: Lightning now strikes exactly at enemy center position with no visual shift
+
+**Files modified:**
+- `scenes/effects/LightningImpact.tscn` - Line 74: Removed position offset
+
+### ✅ FIX: Effect Z-Ordering (Proper Parent Container) (2025-10-13)
+
+**Fixed effects rendering behind enemies despite z_index=10:**
+- **Root Cause**: Z-index only works within the same parent container
+  - Effects added to `_arena` directly
+  - Enemies added to `spawn_container` (YSort_Objects or ArenaRoot)
+  - Different parents = z_index comparison impossible
+- **Solution**: Added `_get_effects_container()` helper that returns the same container where enemies spawn
+  - Fallback hierarchy: YSort_Objects → ArenaRoot → _arena
+  - Both `spawn_explosion()` and `spawn_lightning()` now use this shared container
+- **Result**: FireballImpact and LightningImpact now properly render above enemies for visible impact feedback
+
+**Files modified:**
+- `autoload/EffectSpawner.gd` - Lines 90-103: Added `_get_effects_container()` helper
+- `autoload/EffectSpawner.gd` - Lines 109, 198: Updated to use `effects_container` instead of `_arena`
+
+### ✅ FEAT: Random Horizontal Flip for Item Proc Effects (2025-10-13)
+
+**Added visual variety to item proc effects:**
+- **Feature**: Explosion and lightning effects randomly flip horizontally for visual diversity
+- **Implementation**:
+  - Uses deterministic RNG (`RNG.stream("item_procs")`) for consistent behavior across seeded runs
+  - 50% chance to flip horizontally by negating scale.x component
+  - Applied to both explosion (line 114) and lightning (line 203) spawning
+- **Result**: Item procs feel more dynamic with varied visual angles when proc'ing frequently
+
+**Files modified:**
+- `autoload/EffectSpawner.gd` - Lines 114, 203: Added random flip logic using scale negation
+
 ### ✅ FIX: Effect Spawner Scale Override Bug (2025-10-13)
 
 **Fixed lightning and explosion effects being microscopic due to scale override:**
