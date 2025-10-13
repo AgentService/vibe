@@ -1,0 +1,55 @@
+[gd_scene load_steps=10 format=3 uid="uid://b7ja5d5puv5s3"]
+
+[ext_resource type="Script" uid="uid://buyuhhs1x7we6" path="res://scripts/entities/AbilityProjectile.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://dd7cxm0mrsvve" path="res://assets/ui/abilities/effects/FB00_nyknck/FB00_nyknck/FB001.png" id="2_frame1"]
+[ext_resource type="Texture2D" uid="uid://bvbuns5iaiq0b" path="res://assets/ui/abilities/effects/FB00_nyknck/FB00_nyknck/FB002.png" id="3_frame2"]
+[ext_resource type="Texture2D" uid="uid://c6d7kfh3lwbm2" path="res://assets/ui/abilities/effects/FB00_nyknck/FB00_nyknck/FB003.png" id="4_frame3"]
+[ext_resource type="Texture2D" uid="uid://bhbbmonagcs0b" path="res://assets/ui/abilities/effects/FB00_nyknck/FB00_nyknck/FB004.png" id="5_frame4"]
+[ext_resource type="Texture2D" uid="uid://mvx7v7lx1eg7" path="res://assets/ui/abilities/effects/FB00_nyknck/FB00_nyknck/FB005.png" id="6_frame5"]
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fireball"]
+blend_mode = 1
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_fireball"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": ExtResource("2_frame1")
+}, {
+"duration": 1.0,
+"texture": ExtResource("3_frame2")
+}, {
+"duration": 1.0,
+"texture": ExtResource("4_frame3")
+}, {
+"duration": 1.0,
+"texture": ExtResource("5_frame4")
+}, {
+"duration": 1.0,
+"texture": ExtResource("6_frame5")
+}],
+"loop": true,
+"name": &"default",
+"speed": 1.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_fireball"]
+radius = 12.0
+
+[node name="Fireball2" type="Node2D"]
+script = ExtResource("1")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+material = SubResource("CanvasItemMaterial_fireball")
+position = Vector2(0, 1.19209e-07)
+scale = Vector2(1.4625, 1.025)
+sprite_frames = SubResource("SpriteFrames_fireball")
+autoplay = "default"
+
+[node name="Area2D" type="Area2D" parent="."]
+collision_layer = 4
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Area2D"]
+visible = false
+shape = SubResource("CircleShape2D_fireball")

@@ -26,7 +26,7 @@ extends Node
 const POOLED_ENTITY_SCENES = {
 	# Projectiles
 	"arrow": preload("res://scenes/abilities/projectiles/Arrow.tscn"),
-	# "fireball": preload("res://scenes/abilities/projectiles/Fireball.tscn"),
+	"fireball": preload("res://scenes/abilities/projectiles/Fireball.tscn"),
 
 	# XP Orb (existing scene)
 	"xp_orb": preload("res://scenes/arena/XPOrb.tscn"),
