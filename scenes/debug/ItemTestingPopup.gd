@@ -13,6 +13,7 @@ extends Window
 
 # Action buttons
 @onready var equip_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/EquipButton
+@onready var add_10_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/Add10Button
 @onready var clear_all_button: Button = $PanelContainer/MarginContainer/VBoxContainer/ActionButtons/ClearAllButton
 
 # Equipped items display
@@ -42,6 +43,7 @@ func _ready() -> void:
 	# Connect signals
 	item_dropdown.item_selected.connect(_on_item_dropdown_selected)
 	equip_button.pressed.connect(_on_equip_button_pressed)
+	add_10_button.pressed.connect(_on_add_10_button_pressed)
 	clear_all_button.pressed.connect(_on_clear_all_button_pressed)
 
 	# Setup periodic refresh of equipped items list
@@ -134,6 +136,35 @@ func _on_equip_button_pressed() -> void:
 	EventBus.item_acquired.emit(selected_item_id, "debug")
 
 	Logger.info("Emitted item_acquired for: %s" % selected_item_id, "debug")
+
+	# Refresh display immediately
+	_refresh_equipped_items_display()
+
+
+## Equips 10 random items for rapid testing
+func _on_add_10_button_pressed() -> void:
+	if not ItemManager:
+		Logger.warn("ItemManager not available", "debug")
+		return
+
+	# Get all available item IDs
+	var all_item_ids: Array[String] = ItemManager.get_all_item_ids()
+	if all_item_ids.is_empty():
+		Logger.warn("No items available to equip", "debug")
+		return
+
+	# Use deterministic RNG for consistent testing
+	var item_rng := RNG.stream("debug")
+
+	# Equip 10 random items
+	for i in range(10):
+		var random_index := item_rng.randi() % all_item_ids.size()
+		var random_item_id := all_item_ids[random_index]
+
+		# Emit item_acquired signal
+		EventBus.item_acquired.emit(random_item_id, "debug")
+
+	Logger.info("Equipped 10 random items", "debug")
 
 	# Refresh display immediately
 	_refresh_equipped_items_display()

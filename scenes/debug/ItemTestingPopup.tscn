@@ -59,6 +59,12 @@ disabled = true
 text = "Equip Item"
 theme_override_font_sizes/font_size = 14
 
+[node name="Add10Button" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ActionButtons"]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "+10 Items"
+theme_override_font_sizes/font_size = 14
+
 [node name="ClearAllButton" type="Button" parent="PanelContainer/MarginContainer/VBoxContainer/ActionButtons"]
 layout_mode = 2
 size_flags_horizontal = 3
