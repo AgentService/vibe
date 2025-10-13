@@ -87,6 +87,22 @@ func set_arena(arena: Node2D) -> void:
 	Logger.debug("EffectSpawner: Arena reference set directly", "effects")
 
 
+## Returns the effects container node (same parent as enemies for proper z-ordering)
+func _get_effects_container() -> Node2D:
+	if not _arena:
+		return null
+
+	# Try to find the same container where enemies are spawned
+	# This ensures effects and enemies share the same parent for z_index to work
+	if _arena.has_node("YSort_Objects"):
+		return _arena.get_node("YSort_Objects")
+	elif _arena.has_node("ArenaRoot"):
+		return _arena.get_node("ArenaRoot")
+	else:
+		# Fallback to arena itself
+		return _arena
+
+
 # ============================================================================
 # EXPLOSION EFFECT (Using FireballImpact.tscn)
 # ============================================================================
@@ -104,7 +120,10 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 
 	# Spawn visual effect (scene has base scale 10, multiply by 0.4 for item procs)
 	var explosion := EXPLOSION_SCENE.instantiate()
-	_arena.add_child(explosion)
+
+	# Add to same container as enemies for proper z-ordering
+	var effects_container := _get_effects_container()
+	effects_container.add_child(explosion)
 	explosion.global_position = position
 
 	# Randomly flip horizontally for visual variety
@@ -174,7 +193,10 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 
 		# Spawn lightning bolt striking down at enemy position (scene has base scale 10, multiply by 0.3)
 		var lightning := LIGHTNING_SCENE.instantiate()
-		_arena.add_child(lightning)
+
+		# Add to same container as enemies for proper z-ordering
+		var effects_container := _get_effects_container()
+		effects_container.add_child(lightning)
 		lightning.global_position = enemy_pos
 
 		# Randomly flip horizontally for visual variety
