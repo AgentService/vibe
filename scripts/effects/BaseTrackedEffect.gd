@@ -27,6 +27,11 @@ var _arena: Node2D = null
 var _enemy_node: Node = null
 
 
+## Base _ready for child classes to override
+func _ready() -> void:
+	pass  # Override in child classes if needed
+
+
 ## Enables frame-accurate enemy tracking during effect animation.
 ## Call this after adding to scene tree and setting initial position.
 ##
