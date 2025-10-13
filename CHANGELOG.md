@@ -2,6 +2,283 @@
 
 ## [Current Week - In Progress]
 
+### 🎯 FEAT: MultiMesh Homing System + Ability Variants (2025-01-10)
+
+**Implemented grouped + staggered homing for high-performance seeking projectiles:**
+- **Architecture**: Grouped targeting (10 groups share targets) + staggered updates (4-frame intervals)
+- **Performance**: 75-90% reduction in entity lookups (750-300 queries/sec vs 3,000 for full homing)
+- **Two homing modes**:
+  - `TRACK_TO_DEATH` (0): Lock onto target, track until it dies, retarget after piercing
+  - `HIT_EACH_ONCE` (1): Hit each target once, immediately retarget (bouncing behavior)
+- **Configurable properties**:
+  - `homing_mode`: Which targeting behavior to use
+  - `homing_strength`: Turn rate (0.0-5.0, default 2.0)
+  - `homing_group_count`: Target spread (1-100, default 10)
+  - `homing_update_interval`: Frames between updates (1-10, default 4)
+
+**Pierce + homing integration:**
+- TRACK_TO_DEATH: After piercing through enemy, retarget new enemy (gradual homing curve)
+  - Behavior: Arrow pierces enemy A → retargets enemy B → curves toward B via homing
+- HIT_EACH_ONCE: After ANY hit, immediately retarget next closest enemy (gradual lerp)
+- When target dies in TRACK_TO_DEATH mode: Despawn projectile (no retargeting)
+
+**Tuned ability variants:**
+- `focused_seeker.tres`: 10 arrows, 1200 speed, 333 damage, 0.5s CD, pierce 1, homing 5.0 (aggressive fast seeker)
+- `seeking_volley.tres`: 20 arrows, 700 speed, 333 damage, 0.9s CD, pierce 1, homing 2.0 (spread volley)
+
+**Archived scene-based projectile abilities:**
+- `volley.tres` → `volley_REUSE_1.tres` (scene-based, for reference/reuse)
+- `heartseeker.tres` → `heartseeker_REUSE_2.tres` (scene-based homing, for reference/reuse)
+- Active abilities now use MultiMesh for superior performance (200-2000 projectiles)
+
+**Fixed projectile spawn height:**
+- **Before**: MultiMesh at center, scene-based 24px up (inconsistent)
+- **After**: Both spawn 20px above character center (consistent visual height)
+
+**EntityTracker API integration:**
+- Fixed entity position lookup: `EntityTracker.get_entity(id).get("pos")` (not `get_entity_position()`)
+- Uses spatial hash for efficient radius queries (O(1) grid cell lookups)
+
+**Fixed group assignment logic:**
+- **Bug**: Used modulo (`%`) which scattered projectiles across groups
+- **Fix**: Use integer division (`/`) to group projectiles together
+- **Example**: 20 projectiles, group_count=10 → P0-P9 target enemy A, P10-P19 target enemy B ✅
+- **Documentation**: Updated `homing_group_count` comments to clarify "projectiles per target"
+
+**Fixed homing velocity update bug (CRITICAL):**
+- **Bug**: Stale `target_id` variable used for velocity calculation (line 216)
+  - HIT_EACH_ONCE mode updated target array, but velocity calc used old local variable
+
+**Fixed homing configuration cross-contamination bug (P1 CRITICAL) - 2025-10-13:**
+- **Bug**: Global `_homing_enabled`, `_homing_mode`, `_homing_strength`, `_homing_update_interval` variables were overwritten by most recently spawned ability
+  - When two abilities fire concurrently (e.g., homing then non-homing), all active projectiles immediately adopt the new homing behavior
+  - Example: Cast `seeking_volley` (homing), then `volley_multimesh` (non-homing) → all arrows stop tracking mid-flight
+- **Root cause**: Configuration stored globally instead of per-projectile
+- **Fix**: Added per-projectile arrays (`_projectile_homing_enabled[]`, `_projectile_homing_mode[]`, `_projectile_homing_strength[]`, `_projectile_homing_update_interval[]`)
+  - Configuration extracted from `projectile_data` and stored per-projectile in `spawn_projectile()`
+  - Combat step reads per-projectile config instead of globals
+  - Compacting logic copies per-projectile homing config alongside other data
+- **Impact**: Multiple concurrent abilities with different homing settings now work correctly without cross-contamination
+  - Result: Homing steering never applied, projectiles flew straight
+- **Fix**: Re-read `current_target_id` from array before velocity lerp (line 216)
+  - Ensures retargeting logic (lines 205-208) is reflected in velocity updates
+  - Both homing modes now correctly update steering toward current target
+- **Impact**: Homing now works! Projectiles curve toward targets, track after pierce
+
+**Fixed homing strength formula (CRITICAL #2):**
+- **Bug**: Missing `5.0x` multiplier from scene-based homing reference
+  - MultiMesh used `homing_strength * dt` → lerp amount ~0.033 (3.3% per frame)
+  - Scene-based uses `homing_strength * dt * 5.0` → lerp amount ~0.165 (16.5% per frame)
+  - Result: Velocity changes of 0.12 px/sec (imperceptible, projectiles appeared straight)
+- **Fix**: Added `* 5.0` multiplier to match scene-based responsiveness (line 249)
+  - Now: `_homing_strength * dt * 5.0` → proper visible curves
+  - Debug logs confirmed: Before `vel_change=(0.123, -0.111)`, After `vel_change=(0.615, -0.557)` (~5x)
+- **Impact**: Homing now visually works! Projectiles curve dramatically toward targets ✅
+
+**Fixed velocity magnitude loss during homing (CRITICAL #3):**
+- **Bug**: Lerping between velocity vectors reduces speed (magnitude loss)
+  - `lerp((800, 0), (0, 800), 0.5)` = `(400, 400)` → magnitude 565 (NOT 800!)
+  - 90° turns lost ~30% speed, 180° turns could stop projectiles completely
+  - Result: Arrows slowed down when targeting enemies at sharp angles or after pierce
+- **Fix**: Lerp normalized directions, then scale to maintain speed (line 254-258)
+  - `new_direction = lerp(current_dir.normalized(), target_dir, strength).normalized()`
+  - `velocity = new_direction * current_speed` (speed preserved!)
+- **Impact**: Arrows maintain constant speed regardless of turn angle ✅
+  - 1200 speed arrows stay at 1200 even during 180° turns
+
+**Added debug flags for performance optimization toggles:**
+- `_use_staggered_updates`: Set to `false` to disable staggered updates (update every frame)
+  - Default: `false` (debug mode - every frame updates for maximum responsiveness)
+
+**Renamed archived scene-based abilities (2025-01-13):**
+- `volley_REUSE_1.tres` → `reuse_1.tres` (removed ability name prefix)
+- `heartseeker_REUSE_2.tres` → `reuse_2.tres` (removed ability name prefix)
+- Updated internal `ability_id` to match filename: `"reuse_1"`, `"reuse_2"`
+- Updated `ability_name` for clarity: `"REUSE 1"`, `"REUSE 2"`
+- Updated `description` to indicate archived status: `"[ARCHIVED] Scene-based X for reference"`
+
+**Fixed AbilityTestingPopup display and metadata handling:**
+- **Editor dropdown**: Now displays `ability_name` instead of `ability_id` for readability
+  - Example: Shows "Focused Seeker" instead of "focused_seeker"
+  - Stores actual `ability_id` in item metadata for correct loading
+- **Slot dropdowns**: Now display `ability_name` and use metadata for equipping
+  - Fixed selection handler to retrieve `ability_id` from metadata (not display text)
+  - Fixed prefill logic to compare metadata instead of display text
+- **Impact**: Tool now shows current ability names (not outdated IDs), properly reflects renames
+
+**Added missing homing properties to AbilityTestingPopup (2025-01-13):**
+- **New controls**: Added 3 new property rows for MultiMesh homing configuration
+  - `Homing Mode` (0-1): TRACK_TO_DEATH vs HIT_EACH_ONCE targeting behavior
+  - `Homing Groups` (1-100): Number of projectile groups sharing targets (lower = more aggressive tracking)
+  - `Homing Interval` (1-10): Frames between homing updates (lower = more responsive)
+- **Updated max values**: Increased `Homing Strength` max from 1.0 → 10.0 (allow_greater: true)
+- **Visibility logic**: All homing properties show/hide based on ability type (duck typing)
+- **Full integration**: Loading, saving, hot-reload all support new properties
+- **Impact**: Can now fully configure MultiMesh homing behavior in testing tool
+
+**Tuned focused_seeker homing (2025-01-13):**
+- Increased `homing_strength` from 1.0 → **10.0** (extreme aggressive tracking)
+- Updated description to match current stats: "2 ultra-fast homing arrows (1200 speed, 333 dmg, 0.1s CD, pierce 2, homing 10.0)"
+- Configuration: `homing_mode=0` (TRACK_TO_DEATH), `homing_group_count=3`, `homing_update_interval=1`
+- **Impact**: Arrows now curve extremely sharply toward targets (10x baseline strength)
+  - When `true`: Updates every N frames (default 4) with compensated strength multiplier
+- `_use_grouped_targeting`: Set to `false` to disable grouped targeting (unique target per projectile)
+  - Default: `false` (debug mode - each projectile gets own target)
+  - When `true`: Projectiles share targets in groups (better targeting distribution)
+
+**Removed debug logging spam:**
+- Removed per-frame homing update logs (was spamming console every frame)
+- Removed first projectile spawn logs
+- Removed homing config logs on ability activation
+- Kept only initialization log for MultiMeshProjectileManager
+
+**Increased projectile capacity:**
+- Raised MAX_PROJECTILES from 200 → 2000 (10x increase)
+- Removed capacity warning spam (silently skips beyond limit)
+- Allows 20 volleys of 100 arrows simultaneously
+
+**Files modified:**
+- `autoload/MultiMeshProjectileManager.gd`: Added grouped homing, fixed grouping logic, increased cap
+- `scripts/resources/abilities/ProjectileAbility.gd`: Added homing config properties, fixed spawn height, updated docs
+- `data/content/abilities/projectile/seeking_volley.tres`: New homing volley ability
+- `data/content/abilities/projectile/focused_seeker.tres`: New focused homing ability
+
+
+
+### 🎯 FIX: MultiMesh Projectile Pierce Mechanics (2025-01-10)
+
+**Implemented pierce re-hit prevention using entity ID tracking:**
+- **Problem**: Projectiles with `pierce_count > 0` were re-hitting the same enemy every frame
+  - At 600px/s and 30Hz, projectiles move 20px/frame
+  - With 32px collision radius, projectiles overlap same enemy for 2-3 frames
+  - All pierce hits consumed on one target instead of piercing through multiple enemies
+- **Solution**: Track last hit entity ID per projectile (not position)
+  - Only block re-hitting the **same enemy** (check `last_hit_id == target_id`)
+  - Works correctly for stacked enemies at same position
+  - Allows projectile to pierce through dense clusters
+- **Architecture**: `_projectile_last_hit_entity_ids: PackedStringArray`
+  - Pre-allocated to MAX_PROJECTILES (200) capacity
+  - Initialized to `""` on spawn (no previous hit)
+  - Updated after each collision (alive or dead enemy)
+  - Copied in compacting loop for alive projectiles
+
+**Why entity ID instead of position tracking:**
+- ✅ Handles stacked enemies (multiple enemies at same position)
+- ✅ Works in dense clusters (enemies within 48px of each other)
+- ✅ Correct behavior for boss fights (large hitboxes overlapping smaller enemies)
+- ✅ Simpler logic (one string comparison vs distance calculation)
+
+**Files modified:**
+- `autoload/MultiMeshProjectileManager.gd`: Added entity ID tracking for pierce mechanics
+
+
+
+### 🎯 FIX: MultiMesh Projectile Polish + Debug Improvements (2025-01-10)
+
+**Removed verbose debug logging:**
+- Removed all `Logger.debug()` calls from MultiMeshProjectileManager
+- Cleaned up spawn, collision, damage, and pierce log spam
+- Keeps system clean for release builds
+
+**Fixed AbilityTestingTool spread_angle limit:**
+- Updated SpreadSpinner max_value from 180° → 360° in AbilityTestingPopup.tscn
+- Debug panel now allows editing full 360° circular volleys
+- Matches ProjectileAbility.gd @export_range update
+
+**Fixed volley_multimesh.tres parse error:**
+- **Problem**: Godot's `.tres` format doesn't support comments in `[resource]` section
+- **Error**: `Parse Error: Expected value, got ''=''` on line 14 (first comment line)
+- **Solution**: Removed all inline comments from resource file
+- **Note**: Inline documentation approach abandoned - comments break resource loading
+- Ability now loads correctly in AbilityManager and appears in ability lists
+
+**Files modified:**
+- `autoload/MultiMeshProjectileManager.gd`: Removed 6 debug log calls
+- `scenes/debug/AbilityTestingPopup.tscn`: SpreadSpinner max_value=360
+- `data/content/abilities/projectile/volley_multimesh.tres`: Removed inline comments (parse fix)
+
+### 🎯 FIX: MultiMesh Projectile Collision + Visual Improvements (2025-01-10)
+
+**Fixed projectile collision detection to hit both enemies AND bosses:**
+- **Root cause**: EntityTracker collision filter only checked "enemy" type
+  - BaseBoss registers as type="boss" (line 153 of BaseBoss.gd)
+  - MultiMesh projectiles filtered for "enemy" only → never hit bosses
+- **Solution**: Check BOTH "enemy" and "boss" entity types in collision detection
+  - `get_entities_in_radius()` called twice (once per type)
+  - Combined results into unified target array
+- **Debug improvements**: Added EntityTracker.get_debug_info() logging
+  - Shows total entities, alive count, and breakdown by type
+  - Helps diagnose entity registration issues
+
+**Added arrow rotation based on velocity direction:**
+- **Problem**: All arrows pointed right (0°) regardless of flight direction
+- **Solution**: Calculate rotation angle from velocity vector
+  - MultiMeshProjectileManager passes velocities to rendering layer
+  - MultiMeshManager calculates `velocity.angle()` and applies to Transform2D
+  - Zero-length check prevents NaN from stationary projectiles
+- **Result**: Arrows now point in their flight direction (matches spread_angle)
+
+**Enabled 360° spread angle for circular volleys:**
+- **Changed**: `spread_angle` export range from 0-180° → 0-360°
+- **Spawn position**: MultiMesh projectiles now spawn at player center (no Y offset)
+  - Scene-based projectiles keep -24px Y offset for visual clarity
+  - Player-centered spawn enables hitting close enemies with 360° volleys
+- **Test ability updated**: `volley_multimesh.tres` now fires 100 arrows in full 360° circle
+- **Use case**: Defensive "nova" abilities that clear surrounding enemies
+
+**Reduced projectile capacity from 500 → 200:**
+- **Reason**: Avoided "Capacity full" warnings during high-volume volleys
+- **Performance**: Still supports 200+ simultaneous projectiles at 60 FPS
+- **Balance**: 100-arrow volley abilities stay well within capacity
+
+**Files modified:**
+- `autoload/MultiMeshProjectileManager.gd`: MAX_PROJECTILES=200, boss collision, velocity passing
+- `scripts/systems/rendering/MultiMeshManager.gd`: Rotation from velocity calculation
+- `scripts/resources/abilities/ProjectileAbility.gd`: 360° spread range, conditional spawn position
+- `data/content/abilities/projectile/volley_multimesh.tres`: 360° spread for circular barrage
+
+### 🚀 FEATURE: MultiMesh Projectile System (2025-01-10)
+
+**Implemented complete MultiMesh projectile rendering system for 200-500+ simultaneous projectiles:**
+- **Architecture**: Dual projectile system (scene-based for complex features, MultiMesh for high volume)
+  - Scene-based: Homing, chaining, pierce logic (100-150 projectiles)
+  - MultiMesh: GPU batching for simple fast projectiles (200-500+ projectiles)
+- **Performance target**: 200-500+ projectiles at 60 FPS with <2ms overhead
+- **Core components**:
+  - `MultiMeshProjectileManager.gd` (365 lines) - Autoload managing projectile logic
+  - `MultiMeshManager.update_projectiles()` - Rendering pipeline integration
+  - `ProjectileAbility.use_multimesh` flag - Routing between systems
+- **Technical patterns**:
+  - **Zero allocation**: PackedVector2Array pre-allocated to 500 max capacity
+  - **Fixed-step physics**: 30Hz via EventBus.combat_step
+  - **Collision detection**: EntityTracker.get_entities_in_radius() spatial hash (O(1))
+  - **Overkill prevention**: DamageService.is_entity_alive() checks before damage
+  - **Compacting**: Write-index loop removes expired/hit projectiles without reallocation
+- **Texture rendering**:
+  - Procedural 8×8 yellow texture for simplicity
+  - TEXTURE_FILTER_NEAREST for pixel-perfect rendering (prevents blurry circles at zoom)
+- **Test ability created**: `volley_multimesh.tres` (100 arrows, 60° spread, 600px/s)
+
+**Implementation details:**
+- **Type safety**: All variables in spawn_projectile() use explicit type annotations (Vector2, float, String)
+  - Fixed 8 Variant type inference warnings by replacing `:=` with typed declarations
+- **Collision API**: Uses correct EntityTracker.get_entities_in_radius() returning Array[String]
+  - Bypasses scene node lookups - works directly with entity IDs
+- **String optimization**: Lookup tables for damage_type, element, ability_id (avoid storing strings in PackedArrays)
+- **Arena integration**: Wired MultiMeshProjectileManager.setup(multimesh_manager) in Arena._ready()
+
+**Files created:**
+- `autoload/MultiMeshProjectileManager.gd` (365 lines) - Core projectile manager
+- `data/content/abilities/projectile/volley_multimesh.tres` - Test ability resource
+
+**Files modified:**
+- `scripts/systems/rendering/MultiMeshManager.gd`: Added TEXTURE_FILTER_NEAREST, updated update_projectiles() signature
+- `scripts/resources/abilities/ProjectileAbility.gd`: Added use_multimesh flag
+- `project.godot`: Added MultiMeshProjectileManager autoload
+- `scenes/arena/Arena.gd`: Wired projectile manager to rendering pipeline
+
+**Result**: Complete dual projectile system supporting both complex scene-based and high-performance MultiMesh projectiles
+
 ### 🎯 FEATURE: Heartseeker Homing Targets Ghost Swarms (2025-01-10)
 
 **Implemented ghost swarm targeting for homing projectiles (Heartseeker ability):**

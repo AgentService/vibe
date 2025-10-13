@@ -20,6 +20,9 @@ extends Window
 @onready var pierce_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/PierceLabel
 @onready var chain_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainLabel
 @onready var chain_radius_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainRadiusLabel
+@onready var homing_mode_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingModeLabel
+@onready var homing_group_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingGroupLabel
+@onready var homing_interval_label: Label = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingIntervalLabel
 
 # Property spinners (grid layout)
 @onready var damage_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/DamageSpinner
@@ -32,6 +35,9 @@ extends Window
 @onready var chain_radius_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/ChainRadiusSpinner
 @onready var homing_check: CheckBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingCheck
 @onready var homing_strength_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingStrengthSpinner
+@onready var homing_mode_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingModeSpinner
+@onready var homing_group_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingGroupSpinner
+@onready var homing_interval_spinner: SpinBox = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/PropertiesGrid/HomingIntervalSpinner
 
 # Editor buttons
 @onready var save_button: Button = $PanelContainer/MarginContainer/HBoxContainer/LeftColumn/EditorButtons/SaveButton
@@ -173,7 +179,10 @@ func _populate_ability_dropdown() -> void:
 	for ability_id in available_abilities:
 		var definition = AbilityManager.get_definition(ability_id)
 		if definition:
-			ability_dropdown.add_item(ability_id)
+			# Display ability_name (not ability_id) for readability
+			var display_name = definition.ability_name if "ability_name" in definition else ability_id
+			ability_dropdown.add_item(display_name)
+			ability_dropdown.set_item_metadata(ability_dropdown.item_count - 1, ability_id)
 
 			# Store file path for saving (scan content directory)
 			var file_path = _find_ability_file_path(ability_id)
@@ -225,8 +234,8 @@ func _on_ability_dropdown_selected(item_index: int) -> void:
 		_clear_editor_fields()
 		return
 
-	# Extract ability_id from dropdown text (format: "ability_id")
-	var ability_id = ability_dropdown.get_item_text(item_index)
+	# Extract ability_id from metadata (display shows ability_name)
+	var ability_id = ability_dropdown.get_item_metadata(item_index)
 	_load_ability_to_editor(ability_id)
 
 
@@ -275,6 +284,15 @@ func _load_ability_to_editor(ability_id: String) -> void:
 	if "homing_strength" in definition:
 		homing_strength_spinner.value = definition.homing_strength
 
+	if "homing_mode" in definition:
+		homing_mode_spinner.value = definition.homing_mode
+
+	if "homing_group_count" in definition:
+		homing_group_spinner.value = definition.homing_group_count
+
+	if "homing_update_interval" in definition:
+		homing_interval_spinner.value = definition.homing_update_interval
+
 	# Update tags display
 	_update_tags_display(definition)
 
@@ -304,6 +322,9 @@ func _clear_editor_fields() -> void:
 	chain_radius_spinner.value = 150.0
 	homing_check.button_pressed = false
 	homing_strength_spinner.value = 0.5
+	homing_mode_spinner.value = 0
+	homing_group_spinner.value = 10
+	homing_interval_spinner.value = 4
 
 	tags_display.text = "(No ability selected)"
 
@@ -387,6 +408,12 @@ func _configure_visible_properties(ability: BaseAbility) -> void:
 	var has_homing = "is_homing" in ability
 	homing_check.visible = has_homing
 	homing_strength_spinner.visible = has_homing
+	homing_mode_label.visible = has_homing and "homing_mode" in ability
+	homing_mode_spinner.visible = has_homing and "homing_mode" in ability
+	homing_group_label.visible = has_homing and "homing_group_count" in ability
+	homing_group_spinner.visible = has_homing and "homing_group_count" in ability
+	homing_interval_label.visible = has_homing and "homing_update_interval" in ability
+	homing_interval_spinner.visible = has_homing and "homing_update_interval" in ability
 
 	Logger.debug("Configured property visibility for %s (%s properties visible)" % [
 		ability.ability_id,
@@ -435,6 +462,15 @@ func _on_save_button_pressed() -> void:
 
 	if "homing_strength" in current_ability:
 		current_ability.homing_strength = homing_strength_spinner.value
+
+	if "homing_mode" in current_ability:
+		current_ability.homing_mode = int(homing_mode_spinner.value)
+
+	if "homing_group_count" in current_ability:
+		current_ability.homing_group_count = int(homing_group_spinner.value)
+
+	if "homing_update_interval" in current_ability:
+		current_ability.homing_update_interval = int(homing_interval_spinner.value)
 
 	# Save to .tres file
 	var save_result = ResourceSaver.save(current_ability, current_ability_file)
@@ -502,6 +538,15 @@ func _on_apply_button_pressed() -> void:
 			if "homing_strength" in updated_ability:
 				updated_ability.homing_strength = homing_strength_spinner.value
 
+			if "homing_mode" in updated_ability:
+				updated_ability.homing_mode = int(homing_mode_spinner.value)
+
+			if "homing_group_count" in updated_ability:
+				updated_ability.homing_group_count = int(homing_group_spinner.value)
+
+			if "homing_update_interval" in updated_ability:
+				updated_ability.homing_update_interval = int(homing_interval_spinner.value)
+
 			# Preserve level and tome modifiers from equipped ability
 			if equipped_ability.ability_level > 1:
 				# Manually set level and recalculate (don't use level_up, that scales base values)
@@ -544,7 +589,10 @@ func _populate_slot_dropdowns() -> void:
 		for ability_id in available_abilities:
 			var definition = AbilityManager.get_definition(ability_id)
 			if definition:
-				dropdown.add_item(ability_id)
+				# Display ability_name (not ability_id) for readability
+				var display_name = definition.ability_name if "ability_name" in definition else ability_id
+				dropdown.add_item(display_name)
+				dropdown.set_item_metadata(dropdown.item_count - 1, ability_id)
 
 
 ## Prefills slot dropdowns with currently equipped abilities
@@ -561,12 +609,13 @@ func _prefill_equipped_abilities() -> void:
 		var equipped_ability = ability_controller.ability_slots[i]
 
 		if equipped_ability:
-			# Find the dropdown item index for this ability_id
+			# Find the dropdown item index for this ability_id (check metadata, not display text)
 			var ability_id = equipped_ability.ability_id
 			var dropdown = slot_dropdowns[i]
 
 			for item_idx in range(dropdown.item_count):
-				if dropdown.get_item_text(item_idx) == ability_id:
+				var item_metadata = dropdown.get_item_metadata(item_idx)
+				if item_metadata == ability_id:
 					dropdown.selected = item_idx
 					selected_ability_ids[i] = ability_id
 					Logger.debug("Prefilled slot %d with %s" % [i + 1, ability_id], "debug")
@@ -583,8 +632,8 @@ func _on_slot_dropdown_selected(item_index: int, slot_index: int) -> void:
 		# "(None)" selected
 		selected_ability_ids[slot_index] = ""
 	else:
-		# Extract ability_id from dropdown text (format: "ability_id")
-		var ability_id = slot_dropdowns[slot_index].get_item_text(item_index)
+		# Extract ability_id from metadata (display shows ability_name)
+		var ability_id = slot_dropdowns[slot_index].get_item_metadata(item_index)
 		selected_ability_ids[slot_index] = ability_id
 
 	Logger.debug("Slot %d selected: %s" % [slot_index + 1, selected_ability_ids[slot_index]], "debug")

@@ -25,31 +25,40 @@ _bundled = {
 
 [resource]
 script = ExtResource("1")
+
 fire_mode = 0
+
 is_homing = true
 homing_strength = 1.0
+
 chains_to_enemies = 0
 chain_radius = 50.0
 pierce_count = 2
 knockback_distance = 0.0
+
 spread_angle = 40.0
 projectile_speed = 800.0
 projectile_lifetime = 2.0
+
 base_damage = 55.0
 damage_type = "physical"
 inherent_element = ""
+
 base_cooldown = 1.0
 projectile_count = 15
 base_range = 900.0
+
 damage_scaling_per_level = 1.15
 cooldown_scaling_per_level = 0.95
 level_breakpoints = Array[int]([])
 breakpoint_bonuses = Array[String]([])
-ability_id = "heartseeker"
-ability_name = "Heartseeker"
-description = "Fire a homing arrow that seeks enemies"
+
+ability_id = "reuse_2"
+ability_name = "REUSE 2"
+description = "[ARCHIVED] Scene-based homing for reference"
 icon = SubResource("CompressedTexture2D_4vjur")
 tags = Array[String](["damage", "cooldown", "projectile"])
 ability_level = 1
 max_level = 20
+
 visual_scene = SubResource("PackedScene_bilwx")

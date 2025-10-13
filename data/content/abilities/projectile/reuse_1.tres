@@ -22,30 +22,39 @@ _bundled = {
 
 [resource]
 script = ExtResource("1")
-ability_id = "volley"
-ability_name = "Volley"
-description = "Fire a volley of arrows in a cone pattern"
-tags = Array[String](["damage", "cooldown", "projectile"])
-ability_level = 1
-max_level = 20
-visual_scene = SubResource("PackedScene_shu3x")
-base_damage = 144.0
-base_cooldown = 0.6
-base_range = 900.0
-damage_type = "physical"
-inherent_element = ""
-projectile_count = 33
-damage_scaling_per_level = 1.15
-cooldown_scaling_per_level = 0.95
-level_breakpoints = Array[int]([])
-breakpoint_bonuses = Array[String]([])
+
 fire_mode = 0
+
 is_homing = false
 homing_strength = 0.0
+
 chains_to_enemies = 0
 chain_radius = 20.0
 pierce_count = 1
 knockback_distance = 1.0
+
 spread_angle = 40.0
 projectile_speed = 800.0
 projectile_lifetime = 1.0
+
+base_damage = 144.0
+damage_type = "physical"
+inherent_element = ""
+
+base_cooldown = 0.6
+projectile_count = 33
+base_range = 900.0
+
+damage_scaling_per_level = 1.15
+cooldown_scaling_per_level = 0.95
+level_breakpoints = Array[int]([])
+breakpoint_bonuses = Array[String]([])
+
+ability_id = "reuse_1"
+ability_name = "REUSE 1"
+description = "[ARCHIVED] Scene-based volley for reference"
+tags = Array[String](["damage", "cooldown", "projectile"])
+ability_level = 1
+max_level = 20
+
+visual_scene = SubResource("PackedScene_shu3x")

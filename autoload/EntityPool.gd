@@ -158,6 +158,10 @@ func set_entity_parent(parent: Node) -> void:
 
 ## Spawns a projectile entity from pool when ability requests it
 func _on_ability_projectile_requested(projectile_data: Dictionary) -> void:
+	# CRITICAL: Skip scene-based spawning if ability uses MultiMesh
+	if projectile_data.get("use_multimesh", false):
+		return  # Let MultiMeshProjectileManager handle it
+
 	var visual_key = projectile_data.get("visual_scene_key", "arrow")
 
 	# Check if we have a pool for this projectile type
