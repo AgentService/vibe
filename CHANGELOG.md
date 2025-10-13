@@ -48,6 +48,17 @@
 **Fixed homing velocity update bug (CRITICAL):**
 - **Bug**: Stale `target_id` variable used for velocity calculation (line 216)
   - HIT_EACH_ONCE mode updated target array, but velocity calc used old local variable
+
+**Fixed homing configuration cross-contamination bug (P1 CRITICAL) - 2025-10-13:**
+- **Bug**: Global `_homing_enabled`, `_homing_mode`, `_homing_strength`, `_homing_update_interval` variables were overwritten by most recently spawned ability
+  - When two abilities fire concurrently (e.g., homing then non-homing), all active projectiles immediately adopt the new homing behavior
+  - Example: Cast `seeking_volley` (homing), then `volley_multimesh` (non-homing) → all arrows stop tracking mid-flight
+- **Root cause**: Configuration stored globally instead of per-projectile
+- **Fix**: Added per-projectile arrays (`_projectile_homing_enabled[]`, `_projectile_homing_mode[]`, `_projectile_homing_strength[]`, `_projectile_homing_update_interval[]`)
+  - Configuration extracted from `projectile_data` and stored per-projectile in `spawn_projectile()`
+  - Combat step reads per-projectile config instead of globals
+  - Compacting logic copies per-projectile homing config alongside other data
+- **Impact**: Multiple concurrent abilities with different homing settings now work correctly without cross-contamination
   - Result: Homing steering never applied, projectiles flew straight
 - **Fix**: Re-read `current_target_id` from array before velocity lerp (line 216)
   - Ensures retargeting logic (lines 205-208) is reflected in velocity updates

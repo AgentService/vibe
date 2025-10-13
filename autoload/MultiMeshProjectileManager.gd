@@ -81,6 +81,12 @@ var _projectile_group_ids: PackedByteArray = []          # Group assignment (0-9
 var _projectile_homing_counters: PackedByteArray = []    # Stagger counter per projectile
 var _group_target_ids: Array[String] = []                # Shared targets per group
 
+## Per-projectile homing configuration (prevents cross-contamination between abilities)
+var _projectile_homing_enabled: PackedByteArray = []     # 0=false, 1=true
+var _projectile_homing_mode: PackedByteArray = []        # HomingMode enum value
+var _projectile_homing_strength: PackedFloat32Array = [] # Steering strength
+var _projectile_homing_update_interval: PackedByteArray = [] # Frames between updates
+
 ## Homing modes
 enum HomingMode {
 	NONE,               # No homing
@@ -88,12 +94,14 @@ enum HomingMode {
 	HIT_EACH_ONCE       # Hit each target once, immediately retarget (bouncing)
 }
 
-## Homing configuration (set per ability)
-var _homing_enabled: bool = false
-var _homing_mode: int = HomingMode.TRACK_TO_DEATH
-var _homing_strength: float = 2.0
-var _homing_group_count: int = 10
-var _homing_update_interval: int = 4  # Frames between homing updates
+## DEPRECATED: Global homing configuration (causes cross-contamination bug)
+## These are kept for backwards compatibility with grouped targeting feature
+## but are NO LONGER USED for per-projectile homing behavior
+var _homing_enabled: bool = false  # DEPRECATED: Use _projectile_homing_enabled[]
+var _homing_mode: int = HomingMode.TRACK_TO_DEATH  # DEPRECATED: Use _projectile_homing_mode[]
+var _homing_strength: float = 2.0  # DEPRECATED: Use _projectile_homing_strength[]
+var _homing_group_count: int = 10  # Still used for grouped targeting logic
+var _homing_update_interval: int = 4  # DEPRECATED: Use _projectile_homing_update_interval[]
 
 ## Debug flags (set to false to disable performance optimizations)
 var _use_staggered_updates: bool = false  # If false, update homing every frame
@@ -134,6 +142,12 @@ func _ready() -> void:
 	_projectile_group_ids.resize(MAX_PROJECTILES)
 	_projectile_homing_counters.resize(MAX_PROJECTILES)
 
+	# Pre-allocate per-projectile homing configuration arrays
+	_projectile_homing_enabled.resize(MAX_PROJECTILES)
+	_projectile_homing_mode.resize(MAX_PROJECTILES)
+	_projectile_homing_strength.resize(MAX_PROJECTILES)
+	_projectile_homing_update_interval.resize(MAX_PROJECTILES)
+
 	# Initialize group target array (10 groups by default)
 	_group_target_ids.resize(10)
 	for i in range(10):
@@ -165,15 +179,11 @@ func _on_ability_projectile_requested(projectile_data: Dictionary) -> void:
 	if not projectile_data.get("use_multimesh", false):
 		return
 
-	# Extract homing configuration (once per ability activation)
-	if projectile_data.has("is_homing"):
-		_homing_enabled = projectile_data.get("is_homing", false)
-		_homing_mode = projectile_data.get("homing_mode", HomingMode.TRACK_TO_DEATH)
-		_homing_strength = projectile_data.get("homing_strength", 2.0)
+	# Extract group targeting config (global setting)
+	if projectile_data.has("homing_group_count"):
 		_homing_group_count = projectile_data.get("homing_group_count", 10)
-		_homing_update_interval = projectile_data.get("homing_update_interval", 4)
 
-	# Spawn projectile
+	# Spawn projectile (per-projectile homing config extracted in spawn_projectile)
 	spawn_projectile(projectile_data)
 
 
@@ -195,17 +205,21 @@ func _on_combat_step(payload) -> void:
 		if _projectile_lifetimes[read_index] <= 0.0:
 			continue
 
-		# Homing logic (staggered updates for performance)
-		if _homing_enabled:
+		# Homing logic (per-projectile configuration prevents cross-contamination)
+		var is_homing: bool = (_projectile_homing_enabled[read_index] == 1)
+		if is_homing:
 			var target_id = _projectile_target_ids[read_index]
+			var proj_homing_mode: int = _projectile_homing_mode[read_index]
+			var proj_homing_strength: float = _projectile_homing_strength[read_index]
+			var proj_homing_interval: int = _projectile_homing_update_interval[read_index]
 
 			# TRACK_TO_DEATH mode: Despawn when target dies (no retargeting)
-			if _homing_mode == HomingMode.TRACK_TO_DEATH:
+			if proj_homing_mode == HomingMode.TRACK_TO_DEATH:
 				if target_id != "" and not DamageService.is_entity_alive(target_id):
 					continue  # Despawn projectile when target dies
 
 			# HIT_EACH_ONCE mode: Retarget if current target is dead
-			elif _homing_mode == HomingMode.HIT_EACH_ONCE:
+			elif proj_homing_mode == HomingMode.HIT_EACH_ONCE:
 				if target_id == "" or not DamageService.is_entity_alive(target_id):
 					# Find new target immediately
 					var new_target = _find_closest_enemy(_projectile_positions[read_index])
@@ -217,7 +231,7 @@ func _on_combat_step(payload) -> void:
 			if _use_staggered_updates:
 				# Staggered updates (every N frames for performance)
 				_projectile_homing_counters[read_index] += 1
-				if _projectile_homing_counters[read_index] >= _homing_update_interval:
+				if _projectile_homing_counters[read_index] >= proj_homing_interval:
 					_projectile_homing_counters[read_index] = 0
 					should_update_homing = true
 			else:
@@ -239,9 +253,9 @@ func _on_combat_step(payload) -> void:
 						# Lerp toward desired direction (not velocity to avoid magnitude loss)
 						# Adjust strength multiplier based on update mode
 						# NOTE: Uses 5.0x multiplier to match scene-based homing responsiveness
-						var strength_multiplier: float = _homing_strength * dt * 5.0
+						var strength_multiplier: float = proj_homing_strength * dt * 5.0
 						if _use_staggered_updates:
-							strength_multiplier *= _homing_update_interval  # Compensate for staggered updates
+							strength_multiplier *= proj_homing_interval  # Compensate for staggered updates
 
 						var current_direction = _projectile_velocities[read_index].normalized()
 
@@ -270,10 +284,16 @@ func _on_combat_step(payload) -> void:
 			_projectile_pierce_counts[write_index] = _projectile_pierce_counts[read_index]
 			_projectile_last_hit_entity_ids[write_index] = _projectile_last_hit_entity_ids[read_index]
 
-			# Copy homing data
+			# Copy homing state
 			_projectile_target_ids[write_index] = _projectile_target_ids[read_index]
 			_projectile_group_ids[write_index] = _projectile_group_ids[read_index]
 			_projectile_homing_counters[write_index] = _projectile_homing_counters[read_index]
+
+			# Copy per-projectile homing configuration (prevents cross-contamination)
+			_projectile_homing_enabled[write_index] = _projectile_homing_enabled[read_index]
+			_projectile_homing_mode[write_index] = _projectile_homing_mode[read_index]
+			_projectile_homing_strength[write_index] = _projectile_homing_strength[read_index]
+			_projectile_homing_update_interval[write_index] = _projectile_homing_update_interval[read_index]
 
 		write_index += 1
 
@@ -332,8 +352,20 @@ func spawn_projectile(projectile_data: Dictionary) -> void:
 	_projectile_pierce_counts[_active_count] = pierce_count
 	_projectile_last_hit_entity_ids[_active_count] = ""  # Empty = no previous hit
 
+	# Extract per-projectile homing configuration from projectile_data
+	var is_homing: bool = projectile_data.get("is_homing", false)
+	var homing_mode: int = projectile_data.get("homing_mode", HomingMode.TRACK_TO_DEATH)
+	var homing_strength: float = projectile_data.get("homing_strength", 2.0)
+	var homing_update_interval: int = projectile_data.get("homing_update_interval", 4)
+
+	# Store per-projectile homing configuration (prevents cross-contamination)
+	_projectile_homing_enabled[_active_count] = 1 if is_homing else 0
+	_projectile_homing_mode[_active_count] = homing_mode
+	_projectile_homing_strength[_active_count] = homing_strength
+	_projectile_homing_update_interval[_active_count] = homing_update_interval
+
 	# Initialize homing data (if homing enabled)
-	if _homing_enabled:
+	if is_homing:
 		if _use_grouped_targeting:
 			# Grouped targeting: Share targets across projectile groups
 			# Example: 20 projectiles, group_count=10 → P0-P9=group0, P10-P19=group1
@@ -357,7 +389,7 @@ func spawn_projectile(projectile_data: Dictionary) -> void:
 
 		# Random stagger offset for smooth updates (only if using staggered updates)
 		if _use_staggered_updates:
-			_projectile_homing_counters[_active_count] = randi() % _homing_update_interval
+			_projectile_homing_counters[_active_count] = randi() % homing_update_interval
 		else:
 			_projectile_homing_counters[_active_count] = 0
 	else:
@@ -423,13 +455,16 @@ func _check_collision(position: Vector2, projectile_index: int) -> bool:
 	# Update last hit entity ID after collision (prevents re-hitting same enemy)
 	_projectile_last_hit_entity_ids[projectile_index] = target_id
 
-	# Handle homing retargeting based on mode
-	if _homing_enabled:
-		if _homing_mode == HomingMode.TRACK_TO_DEATH:
+	# Handle homing retargeting based on per-projectile mode
+	var is_homing: bool = (_projectile_homing_enabled[projectile_index] == 1)
+	if is_homing:
+		var proj_homing_mode: int = _projectile_homing_mode[projectile_index]
+
+		if proj_homing_mode == HomingMode.TRACK_TO_DEATH:
 			# Only retarget after piercing through target
 			pass  # Target stays locked until pierce
 
-		elif _homing_mode == HomingMode.HIT_EACH_ONCE:
+		elif proj_homing_mode == HomingMode.HIT_EACH_ONCE:
 			# Immediately retarget after ANY hit (bouncing behavior)
 			var new_target = _find_closest_enemy(position)
 			_projectile_target_ids[projectile_index] = new_target
@@ -442,9 +477,12 @@ func _check_collision(position: Vector2, projectile_index: int) -> bool:
 		_projectile_pierce_counts[projectile_index] = pierce_count - 1
 
 		# For TRACK_TO_DEATH mode, lock onto new target after piercing
-		if _homing_enabled and _homing_mode == HomingMode.TRACK_TO_DEATH:
-			var new_target = _find_closest_enemy(position)
-			_projectile_target_ids[projectile_index] = new_target
+		var is_homing_pierce: bool = (_projectile_homing_enabled[projectile_index] == 1)
+		if is_homing_pierce:
+			var proj_mode: int = _projectile_homing_mode[projectile_index]
+			if proj_mode == HomingMode.TRACK_TO_DEATH:
+				var new_target = _find_closest_enemy(position)
+				_projectile_target_ids[projectile_index] = new_target
 
 		return false  # Continue flying
 
