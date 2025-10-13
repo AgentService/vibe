@@ -137,7 +137,7 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 			break  # No more valid targets
 
 		# Get enemy position for next chain
-		var enemy_pos := EntityTracker.get_entity_position(nearest_enemy) as Vector2
+		var enemy_pos: Vector2 = EntityTracker.get_entity(nearest_enemy).get("pos", Vector2.ZERO)
 
 		# Spawn visual effect (TODO: Replace with proper lightning arc effect)
 		var lightning := LIGHTNING_SCENE.instantiate()
@@ -182,7 +182,7 @@ func _find_nearest_enemy(position: Vector2, max_range: float, exclude_ids: Array
 			continue
 
 		# Find closest
-		var enemy_pos := EntityTracker.get_entity_position(enemy_id) as Vector2
+		var enemy_pos: Vector2 = EntityTracker.get_entity(enemy_id).get("pos", Vector2.ZERO)
 		var dist_sq := position.distance_squared_to(enemy_pos)
 
 		if dist_sq < nearest_dist_sq:

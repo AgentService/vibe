@@ -408,6 +408,9 @@ func _map_source_for_damage_dealt(source: String) -> String:
 		return "player"
 	elif source in ["enemy", "boss", "environment"]:
 		return source
+	elif source.begins_with("item_"):
+		# Preserve item-generated damage sources for recursion prevention
+		return source
 	else:
 		# Default unknown sources to "unknown"
 		return "unknown"
