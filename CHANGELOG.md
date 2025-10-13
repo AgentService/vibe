@@ -2,6 +2,23 @@
 
 ## [Current Week - In Progress]
 
+### 🐛 FIX: Fireball Explosion Missing on Ghost Swarm Hits (2025-10-13)
+
+**Fixed missing visual feedback when fireball hits MultiMesh ghost swarms:**
+- **Problem**: `_check_ghost_collisions()` applied damage but didn't spawn impact effect
+  - Ghost collisions: damage only, no explosion visual
+  - Scene-based enemies: full damage + explosion effect
+  - Result: Inconsistent visual feedback across enemy types
+- **Solution**: Extracted impact effect spawning into `_spawn_impact_effect()` helper
+  - Called from both `_check_ghost_collisions()` (MultiMesh) and `_on_enemy_collision()` (scene-based)
+  - Added AoE damage application to ghost collisions (explosion now damages nearby enemies)
+  - Follows DRY principle with shared helper method
+- **Technical details**:
+  - Ghost collisions pass empty string for `direct_hit_enemy_id` (ghosts lack entity IDs)
+  - Impact effect scaling works correctly for both collision types
+  - Helper method checks `if not impact_effect` before instantiation
+- **Impact**: Fireball explosions now appear consistently when hitting any enemy type
+
 ### 🎨 FEAT: Fireball Two-Phase Animation System (2025-10-13)
 
 **Implemented build-up → sustained loop animation pattern for fireball projectile:**
