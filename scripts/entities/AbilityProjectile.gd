@@ -251,9 +251,18 @@ func initialize(projectile_data: Dictionary) -> void:
 
 	_initialized = true
 
-	# Rotate sprite to match direction
+	# Rotate sprite to match direction and start animation
 	if sprite:
 		sprite.rotation = direction.angle()
+
+		# Start animation for AnimatedSprite2D (pooled entities don't call _ready again)
+		if sprite is AnimatedSprite2D:
+			sprite.play("default")
+
+			# Connect to animation_finished for two-phase animation (build-up → loop)
+			# Check if signal is not already connected to avoid duplicate connections
+			if not sprite.animation_finished.is_connected(_on_animation_finished):
+				sprite.animation_finished.connect(_on_animation_finished)
 
 
 ## Resets projectile state for pool recycling.
@@ -265,6 +274,11 @@ func reset() -> void:
 	direction = Vector2.RIGHT
 	position = Vector2.ZERO
 	visible = true
+
+	# Reset animation to frame 0 for AnimatedSprite2D (ensures consistent animation start)
+	if sprite and sprite is AnimatedSprite2D:
+		sprite.frame = 0
+		sprite.stop()  # Stop animation, will restart on next initialize()
 
 	# Clean up ghost target node when returning to pool
 	if _ghost_target_node:
@@ -390,6 +404,11 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if impact_effect:
 		var effect_instance = impact_effect.instantiate()
 		effect_instance.global_position = global_position
+
+		# Scale effect to match AoE radius (if effect supports it)
+		if effect_instance.has_method("set_aoe_radius"):
+			effect_instance.set_aoe_radius(impact_aoe_radius)
+
 		get_tree().current_scene.add_child(effect_instance)
 
 	# Emit projectile hit signal
@@ -572,6 +591,18 @@ func _find_closest_enemy() -> Node2D:
 
 	return closest
 
+
+# ============================================================================
+# ANIMATION CALLBACKS
+# ============================================================================
+
+## Called when AnimatedSprite2D finishes an animation
+## Transitions from build-up animation to sustained loop animation
+func _on_animation_finished() -> void:
+	if sprite and sprite is AnimatedSprite2D:
+		# After initial "default" animation completes, loop the "repeat" animation
+		if sprite.animation == "default" and sprite.sprite_frames.has_animation("repeat"):
+			sprite.play("repeat")
 
 # ============================================================================
 # DESPAWN

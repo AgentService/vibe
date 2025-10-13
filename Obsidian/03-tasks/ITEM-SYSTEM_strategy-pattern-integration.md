@@ -115,20 +115,35 @@ Base Stats → Tome Modifiers → Level Scaling → Final Stats → 🆕 Strateg
 - [ ] Test with existing projectile abilities (focused_seeker, seeking_volley)
 
 ### Phase 4: Particle Strategy Implementation (Days 13-16)
+
+**🎯 MVP Reference: Fireball Implementation (2025-01-13)**
+The current fireball ability serves as the **prototype and MVP** for ParticleStrategy:
+- ✅ **Impact effect scaling**: `FireballImpact.set_aoe_radius()` method demonstrates strategy-based visual scaling
+- ✅ **Diameter-based calibration**: BASE_SCALE = 21.875 ensures visual matches gameplay (700px diameter)
+- ✅ **Dynamic spawning**: `AbilityProjectile` spawns `impact_effect` PackedScene on collision
+- ✅ **Element-specific visuals**: FireballImpact.tscn uses fire-themed sprites (Row 2 from impact atlas)
+- ✅ **Non-looping animation**: 5 FPS, plays once to final frame (growth pattern)
+- **Key insight**: This pattern generalizes to ANY element × ANY ability combination via strategy system
+
+**Implementation Tasks:**
 - [ ] Implement ParticleStrategy dual-mode support:
   - **MultiMesh Mode**: `color_modulation: Color`, `shader_params: Dictionary`
   - **Scene Mode**: `scene_variants: Dictionary` (element → scene path)
   - `spawn_particle_effect: PackedScene` - Impact/trail particles
   - `particle_lifetime: float` - Effect duration
+  - `scales_with_aoe: bool` - Auto-scale like fireball (default: true)
+  - `base_visual_radius: float` - Calibration reference (e.g., 350.0)
 - [ ] Integrate with ProjectileAbility:
   - MultiMesh: Apply color via `MultiMeshManager.set_color_modulation()`
   - Scene-based: Load variant scene from `scene_variants` dictionary
   - Particle spawning: Instantiate particle scenes on spawn/impact
+  - **Call `effect.set_aoe_radius()` if method exists** (fireball pattern)
 - [ ] Create 6 ParticleStrategy .tres examples:
   - Fire Glow (red modulation), Ice Trail (blue modulation)
   - Poison Cloud (green particles), Lightning Arc (yellow glow)
-  - Fire Scene Variant, Cold Scene Variant
+  - Fire Scene Variant (→ FireballImpact.tscn), Cold Scene Variant (→ IceShatterImpact.tscn)
 - [ ] Test with both MultiMesh and scene-based projectiles
+- [ ] Generalize FireballImpact → BaseImpactEffect for element reuse
 
 ### Phase 5: Buff/Orbit Strategy Implementation (Days 17-20)
 - [ ] Implement BuffStrategy modifiers:
