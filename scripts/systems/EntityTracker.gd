@@ -224,7 +224,9 @@ func batch_update_positions(ids: PackedStringArray, positions: PackedVector2Arra
 ## Get all entities within radius of position
 ## @param center: Center position for search
 ## @param radius: Search radius in pixels
-## @param filter_type: Optional entity type filter (e.g., "enemy", "boss")
+## @param filter_type: Optional entity type filter (e.g., "boss", "player")
+##     NOTE: All enemies register as "boss" type (via BaseBoss), not "enemy"
+##     Use filter_type="boss" to query for enemies in radius
 ## @return Array of entity IDs within radius
 func get_entities_in_radius(center: Vector2, radius: float, filter_type: String = "") -> Array[String]:
 	var result: Array[String] = []

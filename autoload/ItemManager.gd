@@ -40,8 +40,9 @@ var _item_categories: Dictionary = {}  # {item_id: "stat_boost" | "proc" | "util
 # EQUIPPED ITEMS TRACKING
 # ============================================================================
 
-## Currently equipped items (item_id → BaseItem reference)
-var _equipped_items: Dictionary = {}  # {item_id: BaseItem}
+## Currently equipped items with stack counts
+## Structure: {item_id: {item: BaseItem, stack_count: int}}
+var _equipped_items: Dictionary = {}  # {item_id: {item: BaseItem, stack_count: int}}
 
 ## Player reference for stat bonus application
 var _player: Node2D = null
@@ -220,7 +221,7 @@ func get_items_by_category(category: String) -> Array:
 # EQUIPPED ITEMS MANAGEMENT
 # ============================================================================
 
-## Equips an item by item_id. Applies stat bonuses to player and resets cooldowns.
+## Equips an item by item_id. Stacks if already equipped, applies stat bonuses.
 ## Returns true if successful, false if item not found or player not set.
 func equip_item(item_id: String) -> bool:
 	var item: BaseItem = get_base_item(item_id)
@@ -232,41 +233,70 @@ func equip_item(item_id: String) -> bool:
 		Logger.warn("ItemManager: Cannot equip item, no player set", "items")
 		return false
 
-	# Reset cooldowns on equip
+	# Check if item already equipped (stacking)
+	if _equipped_items.has(item_id):
+		var item_data: Dictionary = _equipped_items[item_id]
+		item_data.stack_count += 1
+
+		# Apply one additional stack of stat bonuses
+		_apply_stat_bonuses(item, 1)
+
+		Logger.info("ItemManager: Stacked item '%s' (stack: %d)" % [item_id, item_data.stack_count], "items")
+		return true
+
+	# First time equipping - create new entry
+	_equipped_items[item_id] = {
+		"item": item,
+		"stack_count": 1
+	}
+
+	# Reset cooldowns on first equip
 	item.reset_cooldowns()
 
-	# Add to equipped items
-	_equipped_items[item_id] = item
-
 	# Apply stat bonuses to player
-	_apply_stat_bonuses(item)
+	_apply_stat_bonuses(item, 1)
 
-	Logger.info("ItemManager: Equipped item '%s'" % item_id, "items")
+	Logger.info("ItemManager: Equipped item '%s' (stack: 1)" % item_id, "items")
 	return true
 
 
-## Unequips an item by item_id. Removes stat bonuses from player.
+## Unequips one stack of an item. Removes stat bonuses for one stack.
 ## Returns true if successful, false if item not equipped.
 func unequip_item(item_id: String) -> bool:
 	if not _equipped_items.has(item_id):
 		Logger.warn("ItemManager: Cannot unequip item not equipped: " + item_id, "items")
 		return false
 
-	var item: BaseItem = _equipped_items[item_id] as BaseItem
-	_equipped_items.erase(item_id)
+	var item_data: Dictionary = _equipped_items[item_id]
+	var item: BaseItem = item_data.item
 
-	# Remove stat bonuses from player
-	_remove_stat_bonuses(item)
+	# Decrement stack count
+	item_data.stack_count -= 1
 
-	Logger.info("ItemManager: Unequipped item '%s'" % item_id, "items")
+	# Remove one stack of stat bonuses
+	_remove_stat_bonuses(item, 1)
+
+	# Remove from dictionary if no stacks remain
+	if item_data.stack_count <= 0:
+		_equipped_items.erase(item_id)
+		Logger.info("ItemManager: Unequipped item '%s' (removed completely)" % item_id, "items")
+	else:
+		Logger.info("ItemManager: Unequipped item '%s' (stack: %d remaining)" % [item_id, item_data.stack_count], "items")
+
 	return true
 
 
-## Returns all currently equipped items.
-func get_equipped_items() -> Array[BaseItem]:
-	var items: Array[BaseItem] = []
-	for item in _equipped_items.values():
-		items.append(item)
+## Returns all currently equipped items with stack info.
+## Returns Array of Dictionaries: [{item: BaseItem, item_id: String, stack_count: int}, ...]
+func get_equipped_items() -> Array:
+	var items: Array = []
+	for item_id in _equipped_items.keys():
+		var item_data: Dictionary = _equipped_items[item_id]
+		items.append({
+			"item": item_data.item,
+			"item_id": item_id,
+			"stack_count": item_data.stack_count
+		})
 	return items
 
 
@@ -281,53 +311,81 @@ func set_player(player: Node2D) -> void:
 # STAT BONUS APPLICATION
 # ============================================================================
 
-## Applies item stat bonuses to player.runtime_stats
-func _apply_stat_bonuses(item: BaseItem) -> void:
+## Applies item stat bonuses to player.runtime_stats (multiplied by stack_count)
+func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 	if not _player or not "runtime_stats" in _player:
 		Logger.warn("ItemManager: Cannot apply stat bonuses, player has no runtime_stats", "items")
 		return
 
 	var stats = _player.runtime_stats
 
-	# Apply multiplicative modifiers
+	# Apply multiplicative modifiers (compounded per stack)
 	if item.movement_speed_mult != 1.0:
-		stats.movement_speed_mult *= item.movement_speed_mult
-		Logger.debug("Item '%s': Applied movement_speed_mult=%.2f" % [item.item_id, item.movement_speed_mult], "items")
+		var stack_mult := pow(item.movement_speed_mult, stack_count)
+		stats.movement_speed_mult *= stack_mult
+		Logger.debug("Item '%s': Applied movement_speed_mult=%.2f (x%d stacks)" % [
+			item.item_id, stack_mult, stack_count
+		], "items")
 
 	if item.damage_mult != 1.0:
-		stats.damage_mult *= item.damage_mult
-		Logger.debug("Item '%s': Applied damage_mult=%.2f" % [item.item_id, item.damage_mult], "items")
+		var stack_mult := pow(item.damage_mult, stack_count)
+		stats.damage_mult *= stack_mult
+		Logger.debug("Item '%s': Applied damage_mult=%.2f (x%d stacks)" % [
+			item.item_id, stack_mult, stack_count
+		], "items")
 
 	if item.pickup_radius_mult != 1.0:
-		stats.pickup_radius_mult *= item.pickup_radius_mult
-		Logger.debug("Item '%s': Applied pickup_radius_mult=%.2f" % [item.item_id, item.pickup_radius_mult], "items")
+		var stack_mult := pow(item.pickup_radius_mult, stack_count)
+		stats.pickup_radius_mult *= stack_mult
+		Logger.debug("Item '%s': Applied pickup_radius_mult=%.2f (x%d stacks)" % [
+			item.item_id, stack_mult, stack_count
+		], "items")
 
-	# Apply additive bonuses
+	# Apply additive bonuses (linear per stack)
 	if item.max_hp_bonus != 0:
-		stats.max_hp_bonus += item.max_hp_bonus
-		Logger.debug("Item '%s': Applied max_hp_bonus=%d" % [item.item_id, item.max_hp_bonus], "items")
+		var bonus := item.max_hp_bonus * stack_count
+		stats.max_hp_bonus += bonus
+		Logger.debug("Item '%s': Applied max_hp_bonus=%d (x%d stacks)" % [
+			item.item_id, bonus, stack_count
+		], "items")
 
 
-## Removes item stat bonuses from player.runtime_stats
-func _remove_stat_bonuses(item: BaseItem) -> void:
+## Removes item stat bonuses from player.runtime_stats (for stack_count stacks)
+func _remove_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 	if not _player or not "runtime_stats" in _player:
 		return
 
 	var stats = _player.runtime_stats
 
-	# Remove multiplicative modifiers (divide by original multiplier)
+	# Remove multiplicative modifiers (divide by stacked multiplier)
 	if item.movement_speed_mult != 1.0:
-		stats.movement_speed_mult /= item.movement_speed_mult
+		var stack_mult := pow(item.movement_speed_mult, stack_count)
+		stats.movement_speed_mult /= stack_mult
+		Logger.debug("Item '%s': Removed movement_speed_mult=%.2f (x%d stacks, new value: %.2f)" % [
+			item.item_id, stack_mult, stack_count, stats.movement_speed_mult
+		], "items")
 
 	if item.damage_mult != 1.0:
-		stats.damage_mult /= item.damage_mult
+		var stack_mult := pow(item.damage_mult, stack_count)
+		stats.damage_mult /= stack_mult
+		Logger.debug("Item '%s': Removed damage_mult=%.2f (x%d stacks, new value: %.2f)" % [
+			item.item_id, stack_mult, stack_count, stats.damage_mult
+		], "items")
 
 	if item.pickup_radius_mult != 1.0:
-		stats.pickup_radius_mult /= item.pickup_radius_mult
+		var stack_mult := pow(item.pickup_radius_mult, stack_count)
+		stats.pickup_radius_mult /= stack_mult
+		Logger.debug("Item '%s': Removed pickup_radius_mult=%.2f (x%d stacks, new value: %.2f)" % [
+			item.item_id, stack_mult, stack_count, stats.pickup_radius_mult
+		], "items")
 
-	# Remove additive bonuses (subtract original bonus)
+	# Remove additive bonuses (subtract linear bonus)
 	if item.max_hp_bonus != 0:
-		stats.max_hp_bonus -= item.max_hp_bonus
+		var bonus := item.max_hp_bonus * stack_count
+		stats.max_hp_bonus -= bonus
+		Logger.debug("Item '%s': Removed max_hp_bonus=%d (x%d stacks, new value: %d)" % [
+			item.item_id, bonus, stack_count, stats.max_hp_bonus
+		], "items")
 
 
 # ============================================================================
@@ -342,7 +400,10 @@ func _connect_to_event_bus() -> void:
 	# Connect to combat_step for cooldown updates (30Hz fixed step)
 	EventBus.combat_step.connect(_on_combat_step)
 
-	Logger.debug("ItemManager: Connected to EventBus (damage_dealt, combat_step)", "items")
+	# Connect to item_acquired for chest/reward integration
+	EventBus.item_acquired.connect(_on_item_acquired)
+
+	Logger.debug("ItemManager: Connected to EventBus (damage_dealt, combat_step, item_acquired)", "items")
 
 
 ## Handles damage_dealt events for item proc checks.
@@ -353,8 +414,8 @@ func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type) -> void:
 		return
 
 	# Check each equipped item for proc triggers
-	for item_obj in _equipped_items.values():
-		var item: BaseItem = item_obj as BaseItem
+	for item_data in _equipped_items.values():
+		var item: BaseItem = item_data.item
 		if item:
 			_check_item_procs(item, payload)
 
@@ -364,8 +425,8 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 	var delta_time: float = payload.dt
 
 	# Update cooldowns for all equipped items
-	for item_obj in _equipped_items.values():
-		var item: BaseItem = item_obj as BaseItem
+	for item_data in _equipped_items.values():
+		var item: BaseItem = item_data.item
 		if item:
 			item.update_cooldowns(delta_time)
 
@@ -453,3 +514,27 @@ func _trigger_freeze_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 	Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f)" % [
 		item.item_id, payload.target, item.freeze_duration
 	], "items")
+
+
+# ============================================================================
+# ITEM ACQUISITION (Public API for Chests/Rewards)
+# ============================================================================
+
+## Handles item_acquired events from chests, boss drops, debug spawners, etc.
+## Automatically equips items (future: add to inventory system).
+func _on_item_acquired(item_id: String, source: String) -> void:
+	# Validate item exists
+	var item: BaseItem = get_base_item(item_id)
+	if not item:
+		Logger.warn("ItemManager: Cannot acquire unknown item: %s" % item_id, "items")
+		return
+
+	# Future: Add to inventory system, check capacity, show pickup UI
+	# For now: Auto-equip directly
+	var success := equip_item(item_id)
+
+	if success:
+		Logger.info("ItemManager: Acquired item '%s' from %s" % [item_id, source], "items")
+		# Future: Emit UI notification, play pickup sound, show item card
+	else:
+		Logger.warn("ItemManager: Failed to acquire item '%s'" % item_id, "items")

@@ -54,6 +54,138 @@
 - `scripts/entities/AbilityProjectile.gd` - Fixed 1 call to non-existent get_entity_position()
 - `scripts/systems/damage_v2/DamageRegistry.gd` - Added "item_*" source preservation in _map_source_for_damage_dealt()
 
+### ✨ FEAT: Item Testing Debug UI - Test Item Acquisition Flow (2025-10-13)
+
+**Added debug panel UI for testing item acquisition and equipping without full chest system:**
+- **EventBus Integration**:
+  - Modified existing `item_acquired(item_id: String, source: String)` signal to use `source` parameter instead of `rarity`
+  - `ItemManager` now listens to `item_acquired` events and auto-equips items (temporary until inventory system)
+- **ItemTestingPopup created**:
+  - `scenes/debug/ItemTestingPopup.tscn` - Window-based popup with dropdown, buttons, and live equipped items display
+  - `scenes/debug/ItemTestingPopup.gd` - Full item management UI with category organization (proc, stat_boost, utility)
+  - Features: Item dropdown with category separators, equip button, clear all button, live equipped items table
+  - Display shows: Item name, category (color-coded), effects summary (⚡Lightning, 💥Explosion, +10% Speed, etc.)
+  - Auto-refreshes every 0.5s to show current equipped items state
+- **DebugPanel Integration**:
+  - Added "🎁 Item Testing" button to `DebugPanel.gd` (line 28, @onready reference)
+  - Added popup variable and handler functions (_on_item_testing_pressed, _create_item_testing_popup, _on_item_popup_closed)
+  - Button added to `DebugPanel.tscn` scene (line 159-161) below Ability Testing button
+- **Type safety fixes**:
+  - Fixed type inference errors in ItemTestingPopup.gd by adding explicit String annotations
+  - Changed `var metadata :=` to `var metadata =` (Variant) and `var display_name: String =` for proper type inference
+
+**Architecture decisions:**
+- EventBus signal pattern (Option 1) chosen for maximum decoupling between item spawning and item system
+- Similar UI pattern to AbilityTestingPopup for consistency
+- Auto-equipping temporary solution until inventory system implemented
+- Category-based organization improves UX for finding items
+
+### 🐛 FIX: Arena Player Wiring - Item Equipping Now Works (2025-10-13)
+
+**Fixed missing ItemManager.set_player() call preventing item equipping:**
+- **Problem**: ItemTestingPopup UI showed items, but clicking "Equip Item" didn't work
+- **Root cause**: `Arena.gd` never called `ItemManager.set_player(player)` after player spawn
+- **Impact**: ItemManager.equip_item() failed the `if not _player:` check and returned false
+- **Fix**: Added `ItemManager.set_player(player)` after PlayerState reference is set (line 359-361)
+- **Result**: Items now properly equip, apply stat bonuses, and show in equipped items list
+
+**Files changed:**
+- `scenes/arena/Arena.gd` - Added ItemManager wiring to player after player creation
+
+### 🐛 FIX: EffectSpawner Arena Wiring - Item Procs Now Spawn Visual Effects (2025-10-13)
+
+**Fixed missing EffectSpawner.set_arena() call preventing item proc effects from spawning:**
+- **Problem**: Items triggered procs correctly, but no visual effects spawned (explosions, lightning)
+- **Error**: `EffectSpawner: Cannot spawn explosion, no arena reference`
+- **Root cause**: EffectSpawner tried to find arena via scene tree traversal (`current_scene.Arena`) but failed to locate it
+- **Impact**: ItemManager called `EffectSpawner.spawn_explosion()` but nothing happened visually (damage still applied correctly)
+- **Fix**: Added direct wiring pattern - Arena.gd now calls `EffectSpawner.set_arena(self)` after player setup
+- **Result**: Explosion and lightning effects now spawn correctly at impact positions
+
+**Files changed:**
+- `scenes/arena/Arena.gd` - Added EffectSpawner wiring to arena (lines 364-366)
+- `autoload/EffectSpawner.gd` - Added `set_arena()` method for direct wiring (lines 72-75)
+
+**Architecture note:**
+- Direct wiring pattern (like ItemManager.set_player()) is more reliable than scene tree traversal
+- Follows existing pattern: PlayerState, ItemManager, and EffectSpawner all wired during Arena._setup_player()
+
+### 🔧 IMPROVE: Item Stat Removal Debug Logging (2025-10-13)
+
+**Added debug logging to verify stat bonuses are removed when unequipping items:**
+- **Feature**: `ItemManager._remove_stat_bonuses()` now logs each stat change with old and new values
+- **Purpose**: Verify "Clear All" button properly removes stat boosts like tomes do
+- **Logging examples**:
+  - `Item 'feather': Removed movement_speed_mult=1.15 (new value: 1.00)`
+  - `Item 'cheese': Removed max_hp_bonus=20 (new value: 0)`
+- **Benefit**: Easy verification that stats are being correctly removed via console logs
+
+**Files changed:**
+- `autoload/ItemManager.gd` - Added debug logging to _remove_stat_bonuses() method
+
+### ✨ FEAT: Item Stacking System - All Items Now Stack Infinitely (2025-10-13)
+
+**Implemented full item stacking with multiplicative/additive stat scaling:**
+- **Architecture change**: `_equipped_items` now stores `{item_id: {item: BaseItem, stack_count: int}}`
+- **Stacking behavior**:
+  - Equipping the same item multiple times increments stack_count
+  - Multiplicative stats compound per stack: `pow(item.damage_mult, stack_count)`
+  - Additive stats scale linearly: `item.max_hp_bonus * stack_count`
+  - Example: 3x Feather (+15% speed each) = 1.15^3 = 1.52x speed total
+- **UI updates**:
+  - ItemTestingPopup now shows "Stack" column with **xN** indicator
+  - Table format: `Item | Stack | Category | Effects`
+- **Unequip behavior**:
+  - Single unequip removes 1 stack and its bonuses
+  - "Clear All" removes all stacks of all items
+- **Debug logging**: All stat changes log with stack multipliers
+
+**Files changed:**
+- `autoload/ItemManager.gd` - Refactored to Dictionary structure with stack tracking, updated equip/unequip/stat functions
+- `scenes/debug/ItemTestingPopup.gd` - Added stack count display and updated clear all logic
+
+**Stacking formula:**
+- **Multiplicative** (speed, damage, pickup): `new_stat = base_stat * pow(item_mult, stacks)`
+- **Additive** (max HP): `new_stat = base_stat + (item_bonus * stacks)`
+
+### 🐛 FIX: Item Proc Explosion Damage & Visual Size (2025-10-13)
+
+**Fixed explosion damage not applying and reduced visual effect size:**
+- **Damage fix**: Added overkill prevention - explosions now skip dead enemies
+- **Debug logging**: Explosions now log `found X enemies in radius Y` and `dealt damage to X/Y enemies`
+- **Visual size**: Scaled down explosion to 0.4x (from 1.0x) - much smaller and less intrusive
+- **Lightning size**: Scaled down lightning to 0.3x (from 1.0x) for consistency
+- **Purpose**: Item procs should be subtle secondary effects, not screen-filling spectacles
+
+**Why damage wasn't working:**
+- Explosions were triggering but often hitting enemies that were already dead from primary damage
+- Overkill check now prevents wasted damage application
+- Debug logs will show "Skipping dead enemy" when this happens
+
+**Files changed:**
+- `autoload/EffectSpawner.gd` - Added scale reduction (0.4x explosion, 0.3x lightning), overkill prevention, debug logging
+
+### 🐛 FIX: Item Explosion AOE Damage - EntityTracker Type Mismatch (2025-10-13)
+
+**Fixed explosions showing `hits=0` despite enemies being present:**
+- **Problem**: Console logs showed `Explosion spawned at (...) (damage=17.2, radius=100, hits=0)` - always 0 hits
+- **Root cause**: EntityTracker query used incorrect type filter
+  - EffectSpawner queried for type "enemy": `EntityTracker.get_entities_in_radius(position, radius, "enemy")`
+  - BaseBoss registers all enemies with type "boss": `entity_data["type"] = "boss"`
+  - Query returned empty array despite enemies being within radius
+- **Fix**: Changed EntityTracker query from `"enemy"` to `"boss"` in EffectSpawner.spawn_explosion()
+- **Impact**: Item proc explosions (Spicy Meatball) now correctly damage nearby enemies
+- **Documentation**: Added clarifying comment to EntityTracker.get_entities_in_radius() explaining type convention
+
+**Files changed:**
+- `autoload/EffectSpawner.gd` - Changed entity type query from "enemy" to "boss" (line 100)
+- `scripts/systems/EntityTracker.gd` - Added comment documenting "boss" as standard enemy type (lines 227-229)
+
+**Key insight:**
+- All enemies inherit from BaseBoss and register as type "boss" (not "enemy")
+- Spatial queries for enemy entities must use filter_type="boss"
+- EntityTracker comment now documents this convention to prevent future bugs
+
 ### 🐛 FIX: Synchronized Tome System Resources - UnlockShop Now Shows All Tomes (2025-10-13)
 
 **Fixed multiple tome system issues: missing resources, name mismatches, and runtime errors:**

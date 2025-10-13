@@ -69,6 +69,12 @@ func _find_arena_reference() -> void:
 		Logger.warn("EffectSpawner: Arena not found in scene tree", "effects")
 
 
+## Sets arena reference directly (called by Arena._ready())
+func set_arena(arena: Node2D) -> void:
+	_arena = arena
+	Logger.debug("EffectSpawner: Arena reference set directly", "effects")
+
+
 # ============================================================================
 # EXPLOSION EFFECT (Using FireballImpact.tscn)
 # ============================================================================
@@ -84,15 +90,26 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 		Logger.warn("EffectSpawner: Cannot spawn explosion, no arena reference", "effects")
 		return
 
-	# Spawn visual effect
+	# Spawn visual effect (scale down for item procs - 0.4x size)
 	var explosion := EXPLOSION_SCENE.instantiate()
 	_arena.add_child(explosion)
 	explosion.global_position = position
+	explosion.scale = Vector2(0.4, 0.4)  # Smaller explosion for item procs
 
-	# Apply damage to enemies in radius
-	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "enemy")
+	# Apply damage to enemies in radius (search for "boss" type - all enemies use BaseBoss)
+	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
 
+	Logger.debug("EffectSpawner: Explosion at %s - found %d enemies in radius %.0f" % [
+		position, nearby_enemies.size(), radius
+	], "effects")
+
+	var hits := 0
 	for enemy_id in nearby_enemies:
+		# Check if enemy is alive before applying damage
+		if not DamageService.is_entity_alive(enemy_id):
+			Logger.debug("EffectSpawner: Skipping dead enemy %s" % enemy_id, "effects")
+			continue
+
 		# Apply damage via DamageService with item source (for recursion prevention)
 		DamageService._process_damage_immediate(
 			enemy_id,
@@ -102,9 +119,10 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 			0.0,               # No knockback
 			position           # Source position
 		)
+		hits += 1
 
-	Logger.debug("EffectSpawner: Explosion spawned at %s (damage=%.1f, radius=%.0f, hits=%d)" % [
-		position, damage, radius, nearby_enemies.size()
+	Logger.info("EffectSpawner: Explosion dealt damage to %d/%d enemies (damage=%.1f)" % [
+		hits, nearby_enemies.size(), damage
 	], "effects")
 
 
@@ -143,6 +161,7 @@ func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_r
 		var lightning := LIGHTNING_SCENE.instantiate()
 		_arena.add_child(lightning)
 		lightning.global_position = enemy_pos
+		lightning.scale = Vector2(0.3, 0.3)  # Smaller effect for item procs
 
 		# Apply damage via DamageService with item source
 		DamageService._process_damage_immediate(

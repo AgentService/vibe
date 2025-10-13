@@ -219,9 +219,11 @@ signal chest_spawned(chest_position: Vector2, is_free: bool)
 @warning_ignore("unused_signal")
 signal chest_opened(chest_cost: int, is_free: bool)
 
-## Item acquired - emitted when player receives an item from chest/drop
+## Item acquired - emitted when player receives an item from any source
+## @param item_id: ID of the item acquired
+## @param source: Acquisition source ("chest", "boss_drop", "debug", etc.)
 @warning_ignore("unused_signal")
-signal item_acquired(item_id: String, rarity: String)
+signal item_acquired(item_id: String, source: String)
 
 ## Damage numbers requested - emitted for floating damage text display
 @warning_ignore("unused_signal")
