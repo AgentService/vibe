@@ -95,8 +95,8 @@ func _populate_item_dropdown() -> void:
 
 			# Add items in this category
 			for item_id in items_by_category[category]:
-				var metadata = ItemManager.get_item_metadata(item_id)
-				var display_name: String = metadata.display_name if metadata else item_id
+				var item := ItemManager.get_item(item_id)
+				var display_name: String = item.display_name if item else item_id
 				item_dropdown.add_item(display_name)
 				item_dropdown.set_item_metadata(item_dropdown.item_count - 1, item_id)
 				item_categories[item_id] = category
@@ -236,11 +236,10 @@ func _refresh_equipped_items_display() -> void:
 		var item_id: String = item_entry.item_id
 		var item: BaseItem = item_entry.item
 		var stack_count: int = item_entry.stack_count
-		var metadata = ItemManager.get_item_metadata(item_id)
 		var category: String = item_categories.get(item_id, "unknown")
 
-		# Item name
-		var display_name: String = metadata.display_name if metadata else item_id
+		# Item name (directly from unified BaseItem)
+		var display_name: String = item.display_name if item else item_id
 		display_text += "[cell]%s[/cell]" % display_name
 
 		# Stack count

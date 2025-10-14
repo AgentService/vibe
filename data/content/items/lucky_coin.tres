@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/items/icons/lucky-coin.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "lucky_coin"
+display_name = "Lucky Coin"
+description = "Increases item drop rate"
+icon = ExtResource("2")
+pickup_radius_mult = 1.15
+unlock_cost = 100
+discovery_requirement = "Complete a run with 3+ different item types"
+stat_summary = "+15% Item Drop Rate"
+flavor_text = "An ancient coin that seems to attract wealth."
+rarity = "rare"

@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/items/icons/cheese.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "cheese"
+display_name = "Cheese"
+description = "40% chance to poison enemies on hit. Excess chance increases poison damage."
+icon = ExtResource("2")
+on_hit_poison = true
+poison_chance = 0.4
+poison_duration = 3.0
+poison_damage_per_tick = 0.3
+unlock_cost = 50
+discovery_requirement = "Survive for 5 minutes in any run"
+stat_summary = "40% Poison (30% hit dmg/3s, overflow scaling)"
+flavor_text = "A wedge of aged cheese. The mold adds... character."
+rarity = "common"

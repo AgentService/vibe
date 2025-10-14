@@ -1,15 +1,16 @@
 ## BaseItem.gd
-## Pure gameplay resource for item procs and stat bonuses.
+## Unified item resource for gameplay and shop metadata (single source of truth).
 ##
-## Architecture Pattern (2025-10-13):
-##   - BaseItem = Pure gameplay (procs, stats, cooldowns)
-##   - ItemMetadata = UI/catalog (display_name, icon, unlock_cost)
-##   - File naming: {item_id}_gameplay.tres + {item_id}_metadata.tres
+## Architecture Pattern (2025-10-14):
+##   - Single-resource pattern (following BaseTome architecture)
+##   - BaseItem = Gameplay (procs, stats, cooldowns) + Shop metadata (UI, unlock)
+##   - File naming: {item_id}.tres (no _gameplay/_metadata suffixes)
 ##
 ## Property-Based System:
-##   - @export properties for proc types (lightning, explosion, freeze)
+##   - @export properties for proc types (lightning, explosion, freeze, poison)
 ##   - Runtime cooldown tracking (_lightning_cooldown_remaining, etc.)
 ##   - Stat bonuses applied via Player.runtime_stats
+##   - Shop metadata for UnlockShop integration (unlock_cost, flavor_text, icons)
 ##
 ## Usage Example:
 ##   var item = ItemManager.get_base_item("thunder_mitts")
@@ -21,16 +22,22 @@ extends Resource
 class_name BaseItem
 
 # ============================================================================
-# CORE IDENTITY (Minimal - most UI data in ItemMetadata)
+# CORE IDENTITY
 # ============================================================================
 
 @export_group("Core Identity")
 
-## Unique identifier matching ItemMetadata.item_id
+## Unique identifier for item (used by ItemManager and UnlockShop)
 @export var item_id: String = ""
 
-## Internal name for debugging (display_name lives in ItemMetadata)
-@export var internal_name: String = ""
+## Display name shown in UI (was in ItemMetadata, now unified)
+@export var display_name: String = ""
+
+## Description text for shop/tooltip
+@export_multiline var description: String = ""
+
+## Item icon texture (direct Texture2D reference)
+@export var icon: Texture2D = null
 
 # ============================================================================
 # STAT BONUSES (Applied to Player.runtime_stats)
@@ -147,6 +154,36 @@ var _freeze_procs: int = 0
 var _poison_procs: int = 0
 
 # ============================================================================
+# SHOP METADATA (UnlockShop Integration)
+# ============================================================================
+
+@export_group("Shop Metadata")
+
+## Rift Fragments cost to unlock in shop
+@export var unlock_cost: int = 100
+
+## Achievement requirement text for discovery (e.g., "Deal 1,000 damage")
+@export_multiline var discovery_requirement: String = ""
+
+## Stat summary for shop display (e.g., "+20 HP", "25% Explosion Chance")
+@export var stat_summary: String = ""
+
+## Flavor text for lore/immersion
+@export_multiline var flavor_text: String = ""
+
+## Item rarity (common, uncommon, rare, epic, legendary)
+@export var rarity: String = "common"
+
+# ============================================================================
+# COMPATIBILITY ALIASES (UnlockShop Integration)
+# ============================================================================
+
+## Compatibility property for UnlockShop (returns "items")
+var category: String:
+	get:
+		return "items"
+
+# ============================================================================
 # COOLDOWN MANAGEMENT
 # ============================================================================
 
@@ -174,6 +211,16 @@ func validate() -> Array[String]:
 	# Core identity validation
 	if item_id.is_empty():
 		errors.append("item_id cannot be empty")
+
+	if display_name.is_empty():
+		errors.append("display_name cannot be empty")
+
+	# Shop metadata validation (warnings only)
+	if unlock_cost <= 0:
+		errors.append("unlock_cost should be > 0 for shop items")
+
+	if stat_summary.is_empty():
+		errors.append("stat_summary recommended for shop display")
 
 	# Stat bonus validation
 	if movement_speed_mult < 0.0:

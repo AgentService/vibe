@@ -2,32 +2,29 @@ extends Node
 
 ## ItemManager - Global item registry and runtime proc handler
 ##
-## Architecture Pattern (2025-10-13):
-##   - Dual registries: BaseItem (gameplay) + ItemMetadata (catalog)
-##   - Filename convention: {item_id}_gameplay.tres + {item_id}_metadata.tres
+## Architecture Pattern (2025-10-14):
+##   - Single-resource pattern (following BaseTome architecture)
+##   - BaseItem = Gameplay (procs, stats, cooldowns) + Shop metadata (UI, unlock)
+##   - File naming: {item_id}.tres (no _gameplay/_metadata suffixes)
 ##   - TomeManager pattern: Hot-reload support, directory scanning
 ##
 ## Responsibilities:
 ##   - Load all item definitions from data/content/items/
-##   - Provide item gameplay data (BaseItem) and catalog data (ItemMetadata)
+##   - Provide unified item data (gameplay + shop metadata in BaseItem)
 ##   - Track equipped items and apply stat bonuses to Player.runtime_stats
-##   - Handle item procs on damage_dealt events (lightning, explosion, freeze)
+##   - Handle item procs on damage_dealt events (lightning, explosion, freeze, poison)
 ##   - Update item cooldowns on combat_step
 ##
 ## Usage:
-##   var gameplay = ItemManager.get_base_item("thunder_mitts")
-##   var catalog = ItemManager.get_item_metadata("thunder_mitts")
+##   var item = ItemManager.get_item("thunder_mitts")
 ##   ItemManager.equip_item("thunder_mitts")
 
 # ============================================================================
-# REGISTRIES (Following TomeManager Pattern)
+# REGISTRY (Single Source of Truth)
 # ============================================================================
 
-## Map of item_id → BaseItem (gameplay data: procs, stats, cooldowns)
+## Map of item_id → BaseItem (unified: gameplay + shop metadata)
 var _item_registry: Dictionary = {}  # {item_id: BaseItem}
-
-## Map of item_id → ItemMetadata (catalog data: display_name, icon, unlock)
-var _metadata_registry: Dictionary = {}  # {item_id: ItemMetadata}
 
 ## Map of item_id → file path for hot-reload support
 var _item_file_paths: Dictionary = {}  # {item_id: "res://..."}
@@ -58,22 +55,18 @@ func _ready() -> void:
 
 
 ## Loads all item definitions from the items content directory.
-## Populates both _item_registry and _metadata_registry with dual-resource pattern.
+## Populates _item_registry with unified BaseItem resources.
 func _load_all_items() -> void:
 	Logger.info("ItemManager: Loading items...", "items")
 
 	# Load items from main items directory
 	_load_items_from_directory("res://data/content/items/")
 
-	Logger.info("ItemManager: Loaded %d items (%d gameplay, %d metadata)" % [
-		_item_registry.size(),
-		_item_registry.size(),
-		_metadata_registry.size()
-	], "items")
+	Logger.info("ItemManager: Loaded %d items" % _item_registry.size(), "items")
 
 
-## Scans a directory for .tres files and loads them as BaseItem + ItemMetadata resources.
-## Recognizes filename suffix patterns: {item_id}_gameplay.tres and {item_id}_metadata.tres
+## Scans a directory for .tres files and loads them as unified BaseItem resources.
+## Clean single-resource pattern (no suffix checking, no dual loading).
 func _load_items_from_directory(dir_path: String) -> void:
 	var dir := DirAccess.open(dir_path)
 	if not dir:
@@ -86,31 +79,21 @@ func _load_items_from_directory(dir_path: String) -> void:
 	while file_name != "":
 		if file_name.ends_with(".tres"):
 			var file_path := dir_path + file_name
+			var item = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
 
-			# Detect file type by suffix
-			if file_name.ends_with("_gameplay.tres"):
-				_load_base_item_from_file(file_path)
-			elif file_name.ends_with("_metadata.tres"):
-				_load_item_metadata_from_file(file_path)
-			else:
-				Logger.warn("Skipping item file with unknown suffix: " + file_name, "items")
+			# Only load BaseItem resources (skip any other .tres files)
+			if item is BaseItem:
+				_register_item(item, file_path)
 
 		file_name = dir.get_next()
 
 	dir.list_dir_end()
 
 
-## Loads a single BaseItem resource from file and registers it in _item_registry.
-func _load_base_item_from_file(file_path: String) -> void:
-	# Use CACHE_MODE_IGNORE for hot-reload support
-	var item = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-
-	if not item:
-		Logger.warn("Failed to load BaseItem: " + file_path, "items")
-		return
-
+## Registers a BaseItem in the registry (single source of truth).
+func _register_item(item: BaseItem, file_path: String) -> void:
 	# Validate item has required properties
-	if not "item_id" in item or item.item_id.is_empty():
+	if item.item_id.is_empty():
 		Logger.warn("BaseItem missing item_id: " + file_path, "items")
 		return
 
@@ -123,28 +106,7 @@ func _load_base_item_from_file(file_path: String) -> void:
 	var category := _categorize_item(item)
 	_item_categories[item_id] = category
 
-	Logger.debug("Loaded BaseItem: %s (%s)" % [item_id, category], "items")
-
-
-## Loads a single ItemMetadata resource from file and registers it in _metadata_registry.
-func _load_item_metadata_from_file(file_path: String) -> void:
-	# Use CACHE_MODE_IGNORE for hot-reload support
-	var metadata = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
-
-	if not metadata:
-		Logger.warn("Failed to load ItemMetadata: " + file_path, "items")
-		return
-
-	# Validate metadata has required properties
-	if not "item_id" in metadata or metadata.item_id.is_empty():
-		Logger.warn("ItemMetadata missing item_id: " + file_path, "items")
-		return
-
-	# Register metadata
-	var item_id: String = metadata.item_id
-	_metadata_registry[item_id] = metadata
-
-	Logger.debug("Loaded ItemMetadata: %s" % item_id, "items")
+	Logger.debug("Loaded item: %s (%s)" % [item_id, category], "items")
 
 
 ## Categorizes an item based on its properties.
@@ -176,16 +138,16 @@ func _categorize_item(item) -> String:
 # ITEM ACCESS (Public API)
 # ============================================================================
 
-## Returns the BaseItem gameplay data (procs, stats, cooldowns).
+## Returns the unified BaseItem (gameplay + shop metadata).
 ## Returns null if item_id not found.
-func get_base_item(item_id: String) -> BaseItem:
+func get_item(item_id: String) -> BaseItem:
 	return _item_registry.get(item_id) as BaseItem
 
 
-## Returns the ItemMetadata catalog data (display_name, icon, unlock_cost).
+## Compatibility alias for existing code (returns same as get_item).
 ## Returns null if item_id not found.
-func get_item_metadata(item_id: String):
-	return _metadata_registry.get(item_id)
+func get_base_item(item_id: String) -> BaseItem:
+	return get_item(item_id)
 
 
 ## Returns the file path for an item (for debugging/hot-reload).

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/items/icons/rabbit-foot.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "rabbits_foot"
+display_name = "Rabbit's Foot"
+description = "Increases critical strike chance"
+icon = ExtResource("2")
+crit_chance_bonus = 0.05
+unlock_cost = 150
+discovery_requirement = "Deal 1000 critical hits"
+stat_summary = "+5% Critical Strike Chance"
+flavor_text = "A lucky charm said to bring fortune in battle."
+rarity = "epic"

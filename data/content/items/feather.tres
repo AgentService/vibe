@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/items/icons/feather.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "feather"
+display_name = "Feather"
+description = "Lightens your step"
+icon = ExtResource("2")
+movement_speed_mult = 1.15
+unlock_cost = 60
+discovery_requirement = "Reach stage 3 in any run"
+stat_summary = "+15% Movement Speed"
+flavor_text = "A soft feather that makes you feel lighter"
+rarity = "common"
