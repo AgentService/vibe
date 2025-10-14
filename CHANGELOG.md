@@ -2,6 +2,175 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FIX: Skills Tab Now Shows Combat Abilities (2025-10-14)
+
+**Fixed skills tab loading from wrong directory:**
+- **Problem**: Skills tab only showed `dash.tres` (passive skill)
+  - User expected to see combat abilities (fireball, seeking_volley, etc.)
+  - UnlockShopScene loaded from `/data/content/skills/` directory
+  - Combat abilities stored in `/data/content/abilities/projectile/`
+  - Result: 6 combat abilities invisible in shop
+- **Solution**: Updated directory structure and added recursive loading
+  - **UnlockShopScene**: Changed skills category to load from `data/content/abilities/`
+  - **Recursive loading**: Added `_load_from_directory_recursive()` to support **all subdirectories** (projectile/, melee/, aoe/, future types)
+  - **Future-proof**: Will automatically discover abilities in any new subdirectory under `/abilities/`
+  - **Shop metadata**: Added unlock costs, discovery requirements, stat summaries, and flavor text to 6 abilities:
+    - `fireball.tres` (150 fragments, uncommon) - AoE explosion ability
+    - `seeking_volley.tres` (200 fragments, rare) - 20 homing arrows
+    - `focused_seeker.tres` (250 fragments, epic) - 7 high-damage homing arrows
+    - `volley_multimesh.tres` (100 fragments, common) - GPU-batched barrage
+    - `reuse_1.tres` (50 fragments, common) - Archived test ability
+    - `reuse_2.tres` (50 fragments, common) - Archived test ability
+- **Architecture**: Skills tab now properly displays combat abilities from unified BaseAbility/ProjectileAbility resources
+
+**Files Modified:**
+- `scenes/ui/UnlockShopScene.gd` - Changed skills directory to `abilities/`, added recursive loading
+- `data/content/abilities/projectile/*.tres` - Added shop metadata to 6 ability files
+
+**Impact**: Skills tab now shows all 6 combat abilities with proper unlock requirements and descriptions.
+
+---
+
+### ✅ FEAT: Skills System Unification (Single-Resource Pattern) (2025-10-14)
+
+**Migrated skills from legacy ItemMetadata to unified BaseAbility with shop metadata:**
+- **Problem**: Skills still using legacy ItemMetadata pattern
+  - ✅ Items: Unified to BaseItem
+  - ✅ Tomes: Unified to BaseTome
+  - ✅ Abilities: Already using BaseAbility (single-resource)
+  - ❌ Skills: Legacy ItemMetadata files (inconsistent with content system architecture)
+- **Solution**: Extended BaseAbility with shop metadata, migrated skills to unified pattern
+  - **Extended BaseAbility** with shop metadata fields:
+    - `unlock_cost: int = 100` - Rift Fragments cost
+    - `discovery_requirement: String` - Achievement/quest text
+    - `stat_summary: String` - Stats for shop UI display
+    - `flavor_text: String` - Lore text
+    - `rarity: String = "common"` - Rarity tier ("common", "uncommon", "rare", "epic", "legendary")
+  - **Added compatibility aliases** for UnlockShop duck typing:
+    - `category: String` → returns "skills" (read-only alias)
+    - `display_name: String` → returns `ability_name` (read-only alias)
+    - `description_text: String` → returns `description` (read-only alias)
+  - **Migrated 1 skill**: dash.tres (ItemMetadata → BaseAbility unified resource)
+  - **Updated shop UI** with BaseAbility duck typing:
+    - UnlockShopScene: Added BaseAbility to resource loading, updated _fetch_skills_data()
+    - UnlockShop: Added BaseAbility to ID extraction logic (ability_id)
+    - ShopItemCard: Already had BaseAbility support from previous fixes
+    - ShopAdminPanel: Added BaseAbility to ID extraction logic
+- **Architecture**: Skills now follow same pattern as items/tomes (single .tres with gameplay + shop metadata)
+- **Filename convention**: `{ability_id}.tres` - Unified file with minimal properties (only non-defaults)
+
+**Files Modified:**
+- `scripts/resources/abilities/BaseAbility.gd` - Added Shop Metadata group and compatibility aliases
+- `data/content/skills/dash.tres` - Migrated from ItemMetadata to unified BaseAbility
+- `scenes/ui/UnlockShopScene.gd` - Added BaseAbility support to loading and _fetch_skills_data()
+- `scenes/ui/components/UnlockShop.gd` - Added BaseAbility to duck typing patterns (4 locations)
+- `scenes/ui/components/ShopAdminPanel.gd` - Added BaseAbility to ID extraction (2 locations)
+
+**Impact**: Skills system now consistent with items/tomes architecture. Only characters remain using legacy ItemMetadata.
+
+**Example unified skill file (dash.tres):**
+```tres
+[gd_resource type="Resource" script_class="BaseAbility" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/abilities/BaseAbility.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+ability_id = "dash"
+ability_name = "Dash"
+description = "Quickly dash in a direction, avoiding enemy attacks"
+unlock_cost = 75
+discovery_requirement = "Take damage 100 times without dying"
+stat_summary = "Ability: Short dash\nCooldown: 5s\nInvulnerable during dash"
+flavor_text = "Speed is the ultimate defense."
+rarity = "common"
+```
+
+---
+
+### ✅ FIX: UnlockShop Duck Typing for Unified Content Types (2025-10-14)
+
+**Fixed multiple type errors in UnlockShop after item system unification:**
+- **Problem 1**: Items tab empty after migration to unified BaseItem
+  - UnlockShopScene only loaded `ItemMetadata` and `BaseTome`
+  - Unified `BaseItem` files were ignored during loading
+  - 8 migrated items invisible in shop
+- **Problem 2**: ShopItemCard.setup() had strict `ItemMetadata` type signature
+  - Error: "Object-derived class of argument 1 (Resource (BaseTome)) is not a subclass of the expected argument class"
+  - Type mismatch broke tome tab selection
+- **Problem 3**: UnlockShop._selected_item typed as `ItemMetadata`
+  - Error: "Trying to assign value of type 'BaseTome.gd' to a variable of type 'ItemMetadata.gd'"
+- **Problem 4**: ShopAdminPanel entries empty
+  - Filtered to only show `ItemMetadata` types
+  - Unified `BaseItem`/`BaseTome` resources excluded from admin panel
+- **Solution**: Applied duck typing pattern across all shop UI components
+  - **UnlockShopScene loading**: Added `BaseItem` to accepted resource types
+  - **UnlockShopScene._fetch_items_data()**: Changed to untyped Array, duck typing for rarity sorting
+  - **ShopItemCard.setup()**: `ItemMetadata` → `Variant` parameter
+  - **Duck typing for ID extraction** (documented pattern):
+    - `BaseTome` → `tome_id`
+    - `BaseAbility` → `ability_id`
+    - `BaseItem` / `ItemMetadata` → `item_id`
+  - **Duck typing for icon loading**:
+    - `ItemMetadata` → `icon_path: String` (load from path)
+    - `BaseTome` / `BaseItem` / `BaseAbility` → `icon: Texture2D` (direct reference)
+  - **ShopAdminPanel**: Removed `ItemMetadata` filter, applied duck typing to all methods
+  - **UnlockShop._selected_item**: Changed to `Variant`
+- **Impact**: UnlockShop and admin tools fully support all content types (ItemMetadata, BaseTome, BaseItem, BaseAbility)
+
+**Files Modified:**
+- `scenes/ui/UnlockShopScene.gd` - Added BaseItem to loading, unified _fetch_items_data()
+- `scenes/ui/components/ShopItemCard.gd` - Applied duck typing for ID/icon extraction
+- `scenes/ui/components/UnlockShop.gd` - Changed _selected_item to Variant
+- `scenes/ui/components/ShopAdminPanel.gd` - Applied duck typing throughout
+
+### ✅ FEAT: Item System Unification (Single-Resource Pattern) (2025-10-14)
+
+**Migrated items from dual-resource to single-resource pattern (following BaseTome architecture):**
+- **Problem**: Architectural inconsistency across content systems
+  - ✅ Tomes: Single-resource (BaseTome with shop metadata) - Task 2g completed
+  - ❌ Items: Dual-resource (BaseItem_gameplay.tres + ItemMetadata_metadata.tres) - Inconsistent
+  - Dual loading paths in ItemManager (suffix checking, two registries)
+  - Extra complexity for content creators (maintain two files per item)
+- **Solution**: Clean cut migration to single unified resource per item
+  - **Extended BaseItem** with shop metadata fields:
+    - Added Core Identity group: `display_name`, `description`, `icon`
+    - Added Shop Metadata group: `unlock_cost`, `discovery_requirement`, `stat_summary`, `flavor_text`, `rarity`
+    - Added compatibility alias: `category` property returns "items" for UnlockShop
+  - **Migrated 8 items** to unified .tres files:
+    - `cheese.tres`, `thunder_mitts.tres`, `feather.tres`, `spicy_meatball.tres`
+    - `frost_glaive.tres`, `clover.tres`, `lucky_coin.tres`, `rabbits_foot.tres`
+    - Minimal .tres files (only non-default properties per user request)
+  - **Deleted 16 dual files**: Removed all `*_gameplay.tres` and `*_metadata.tres` files
+  - **Simplified ItemManager**:
+    - Removed `_metadata_registry` entirely (single source of truth)
+    - Clean loading: No suffix checking, single pass through .tres files
+    - Consolidated `_load_base_item_from_file()` + `_load_item_metadata_from_file()` → `_register_item()`
+    - Added `get_item()` as primary API, `get_base_item()` as compatibility alias
+  - **Updated ItemTestingPopup**: Fixed to use unified `get_item()` API
+  - **Updated documentation**: `autoload/CLAUDE.md` reflects single-resource pattern
+- **Verification**: All 8 items load successfully in game (headless test confirmed)
+- **Ability System Audit**: ✅ Already using single-resource pattern (no changes needed)
+
+**Files Modified:**
+- `scripts/resources/items/BaseItem.gd` - Extended with shop metadata fields
+- `autoload/ItemManager.gd` - Removed dual-registry, simplified loading
+- `scenes/debug/ItemTestingPopup.gd` - Updated to use `get_item()` API
+- `autoload/CLAUDE.md` - Updated ItemManager documentation pattern
+
+**Files Created (8 unified items):**
+- `data/content/items/cheese.tres`
+- `data/content/items/thunder_mitts.tres`
+- `data/content/items/feather.tres`
+- `data/content/items/spicy_meatball.tres`
+- `data/content/items/frost_glaive.tres`
+- `data/content/items/clover.tres`
+- `data/content/items/lucky_coin.tres`
+- `data/content/items/rabbits_foot.tres`
+
+**Files Deleted (16 dual-resource files):**
+- All `*_gameplay.tres` and `*_metadata.tres` files removed
+
 ### ✅ PERF: Combat Log Reduction (2025-10-14)
 
 **Removed excessive per-tick/per-hit combat logging:**

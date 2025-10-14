@@ -230,19 +230,18 @@ var crit_roll = RNG.stream("crit").randf()
 var spawn_type = RNG.stream("waves").randi_range(0, enemy_types.size() - 1)
 ```
 
-### 🎁 **ItemManager & EffectSpawner Pattern (2025-10-13)**
+### 🎁 **ItemManager & EffectSpawner Pattern (2025-10-14)**
 
-**Dual-Registry Item System with Proc Effects:**
+**Single-Resource Item System with Proc Effects:**
 ```gdscript
-# ItemManager.gd - Autoload for item gameplay and catalog
+# ItemManager.gd - Autoload for unified item system (gameplay + shop metadata)
 extends Node
 
-# Dual registries (TomeManager pattern)
-var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Gameplay
-var _metadata_registry: Dictionary = {}   # {item_id: ItemMetadata} - Catalog
+# Single-resource pattern (following BaseTome architecture)
+var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Unified gameplay + metadata
 var _item_file_paths: Dictionary = {}     # Hot-reload support
 
-# Equipped items tracking with stacking (2025-10-13)
+# Equipped items tracking with stacking
 var _equipped_items: Dictionary = {}  # {item_id: {item: BaseItem, stack_count: int}}
 var _player: Node2D = null
 
@@ -251,21 +250,26 @@ func _ready() -> void:
     _connect_to_event_bus()
 
 func _load_items_from_directory(dir_path: String) -> void:
-    # Recognizes filename suffix patterns:
-    # - {item_id}_gameplay.tres → BaseItem registry
-    # - {item_id}_metadata.tres → ItemMetadata registry
+    # Clean single-resource loading (no suffix checking)
+    while file_name != "":
+        if file_name.ends_with(".tres"):
+            var item = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
 
-    if file_name.ends_with("_gameplay.tres"):
-        _load_base_item_from_file(file_path)
-    elif file_name.ends_with("_metadata.tres"):
-        _load_item_metadata_from_file(file_path)
+            # Only load BaseItem resources
+            if item is BaseItem:
+                _register_item(item, file_path)
 
-# Public API - Dual registry access
-func get_base_item(item_id: String) -> BaseItem:
+func _register_item(item: BaseItem, file_path: String) -> void:
+    var item_id: String = item.item_id
+    _item_registry[item_id] = item
+    _item_file_paths[item_id] = file_path
+
+# Public API - Single unified registry
+func get_item(item_id: String) -> BaseItem:
     return _item_registry.get(item_id) as BaseItem
 
-func get_item_metadata(item_id: String):
-    return _metadata_registry.get(item_id)
+func get_base_item(item_id: String) -> BaseItem:
+    return get_item(item_id)  # Compatibility alias
 
 # Equip item and apply stat bonuses
 func equip_item(item_id: String) -> bool:
@@ -494,7 +498,7 @@ func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 ```
 
 **Key Design Points:**
-1. **Dual-registry pattern**: Separates catalog (ItemMetadata) from gameplay (BaseItem)
+1. **Single-resource pattern**: BaseItem contains both gameplay (procs, stats) and shop metadata (display names, unlock costs, rarity)
 2. **Item stacking**: Dictionary structure `{item_id: {item, stack_count}}` with multiplicative/additive scaling
 3. **Position-enriched events**: DamageDealtPayload provides source_position + impact_position
 4. **Deterministic RNG**: `RNG.stream("item_procs")` for consistent proc chances
@@ -504,13 +508,12 @@ func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 8. **EntityTracker type convention**: Query for "boss" type (all enemies inherit from BaseBoss)
 
 **Item Categories:**
-- **Proc items**: Lightning, explosion, freeze effects triggered on damage
-- **Stat items**: HP, movement speed, damage, pickup radius bonuses
-- **Utility items**: Pickup radius placeholders for future luck/drop rate systems
+- **Proc items**: Lightning, explosion, freeze, poison effects triggered on damage
+- **Stat items**: HP, movement speed, damage, pickup radius, crit chance bonuses
+- **Utility items**: Pickup radius, drop rate multipliers
 
 **Filename Convention:**
-- `{item_id}_metadata.tres` - Shop catalog, unlock costs, display names
-- `{item_id}_gameplay.tres` - Proc configs, stat bonuses, cooldowns
+- `{item_id}.tres` - Unified file with gameplay + shop metadata (minimal .tres with only non-default properties)
 
 ### 📊 **BalanceDB Hot-Reload Pattern**
 
