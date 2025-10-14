@@ -77,6 +77,46 @@ class_name BaseAbility
 ## Can be null if no impact effect needed
 @export var impact_effect: PackedScene
 
+# ============================================================================
+# SHOP METADATA (Optional - for UnlockShop integration)
+# ============================================================================
+
+@export_group("Shop Metadata")
+
+## Cost in Rift Fragments to unlock this ability (0 = default/starting ability)
+@export var unlock_cost: int = 100
+
+## Achievement/quest requirement to discover this ability
+@export_multiline var discovery_requirement: String = ""
+
+## Stat summary displayed in shop UI (e.g., "Damage: 25\nCooldown: 1.5s")
+@export var stat_summary: String = ""
+
+## Flavor text for lore/atmosphere
+@export_multiline var flavor_text: String = ""
+
+## Rarity tier for UI color coding ("common", "uncommon", "rare", "epic", "legendary")
+@export var rarity: String = "common"
+
+# ============================================================================
+# COMPATIBILITY ALIASES (for UnlockShop duck typing)
+# ============================================================================
+
+## Category for UnlockShop integration (always "skills")
+var category: String:
+	get:
+		return "skills"
+
+## Display name alias for UI consistency
+var display_name: String:
+	get:
+		return ability_name
+
+## Description alias for UI consistency
+var description_text: String:
+	get:
+		return description
+
 
 # ============================================================================
 # TAG HELPER METHODS
