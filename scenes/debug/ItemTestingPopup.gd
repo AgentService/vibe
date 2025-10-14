@@ -291,13 +291,15 @@ func _get_item_effects_summary(item: BaseItem) -> String:
 		var percent := int(item.crit_chance_bonus * 100)
 		effects.append("%+d%% Crit" % percent)
 
-	# Procs
+	# Procs (property-based proc system from refactor)
 	if item.on_hit_lightning:
 		effects.append("⚡Lightning")
 	if item.on_hit_explosion:
 		effects.append("💥Explosion")
 	if item.on_hit_freeze:
 		effects.append("❄Freeze")
+	if item.on_hit_poison:
+		effects.append("☠Poison")
 
 	return ", ".join(effects) if not effects.is_empty() else "No effects"
 
