@@ -19,7 +19,7 @@ var _is_initialized: bool = false
 var _is_selected: bool = false
 
 # Store data if setup() is called before _ready()
-var _pending_metadata: ItemMetadata = null
+var _pending_metadata: Variant = null  # Can be ItemMetadata, BaseTome, or BaseItem
 var _pending_is_discovered: bool = false
 var _pending_is_unlocked: bool = false
 var _pending_can_afford: bool = false
@@ -41,16 +41,31 @@ func _ready() -> void:
 		_apply_data(_pending_metadata, _pending_is_discovered, _pending_is_unlocked, _pending_can_afford)
 		_pending_metadata = null
 
-func setup(metadata: ItemMetadata, is_discovered: bool, is_unlocked: bool, can_afford: bool) -> void:
+func setup(metadata: Variant, is_discovered: bool, is_unlocked: bool, can_afford: bool) -> void:
 	"""Initialize the card with item metadata and state.
 
 	Args:
-		metadata: ItemMetadata resource with item data
+		metadata: ItemMetadata, BaseTome, or BaseItem resource with item data
 		is_discovered: Whether item has been discovered
 		is_unlocked: Whether item is unlocked
 		can_afford: Whether player can afford to unlock (only relevant if discovered+locked)
 	"""
-	item_id = metadata.item_id
+	# Duck typing: Get item_id from metadata
+	# Different content types use different ID property names:
+	# - BaseTome: tome_id
+	# - BaseAbility: ability_id
+	# - BaseItem: item_id
+	# - ItemMetadata: item_id
+	if metadata is BaseTome:
+		item_id = metadata.tome_id
+	elif metadata is BaseAbility:
+		item_id = metadata.ability_id
+	elif "item_id" in metadata:
+		item_id = metadata.item_id
+	else:
+		Logger.warn("ShopItemCard: Unknown metadata type: %s" % str(metadata.get_class()), "ui")
+		return
+
 	category = metadata.category
 	_is_initialized = true
 
@@ -64,15 +79,23 @@ func setup(metadata: ItemMetadata, is_discovered: bool, is_unlocked: bool, can_a
 		_pending_is_unlocked = is_unlocked
 		_pending_can_afford = can_afford
 
-func _apply_data(metadata: ItemMetadata, is_discovered: bool, is_unlocked: bool, can_afford: bool) -> void:
+func _apply_data(metadata: Variant, is_discovered: bool, is_unlocked: bool, can_afford: bool) -> void:
 	"""Apply item data and state to UI elements."""
-	# Load icon texture if available
+	# Load icon texture if available (duck typing: icon_path or icon)
 	var texture: Texture2D = null
-	if not metadata.icon_path.is_empty() and ResourceLoader.exists(metadata.icon_path):
-		texture = load(metadata.icon_path)
 
-	# Apply rarity tint to button background
-	var rarity_name = ItemMetadata.get_rarity_name(metadata.rarity)
+	if metadata is ItemMetadata and "icon_path" in metadata:
+		if not metadata.icon_path.is_empty() and ResourceLoader.exists(metadata.icon_path):
+			texture = load(metadata.icon_path)
+	elif "icon" in metadata and metadata.icon:
+		# BaseTome and BaseItem use direct icon: Texture2D reference
+		texture = metadata.icon
+
+	# Apply rarity tint to button background (duck typing: rarity is string for all types)
+	var rarity_name: String = metadata.rarity if "rarity" in metadata else "common"
+	if metadata is ItemMetadata:
+		rarity_name = ItemMetadata.get_rarity_name(metadata.rarity)
+
 	_apply_rarity_tint(rarity_name)
 
 	# State-based visual appearance
