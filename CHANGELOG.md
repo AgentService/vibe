@@ -2,6 +2,28 @@
 
 ## [Current Week - In Progress]
 
+### ✅ PERF: Combat Log Reduction (2025-10-14)
+
+**Removed excessive per-tick/per-hit combat logging:**
+- **Problem**: Console flooded with hundreds of logs per second during combat
+  - EffectSpawner logging every explosion position/damage (2 logs per proc)
+  - StatusEffectSystem logging every poison tick (1 log per tick per enemy)
+  - ItemManager logging every proc trigger (4 logs - lightning, explosion, freeze, poison)
+  - Severe performance impact from string operations in hot paths
+- **Solution**: Comment out per-tick logs while preserving for debugging
+  - **EffectSpawner.gd**: Commented out 2 explosion logs (position, damage dealt)
+  - **StatusEffectSystem.gd**: Commented out 1 poison tick log
+  - **ItemManager.gd**: Commented out 4 proc trigger logs (all item procs)
+  - Logs preserved as commented code for debugging re-enablement if needed
+- **Impact**: Eliminates console spam during high-intensity combat scenarios
+  - Before: Hundreds of logs per second with 10+ item stacks + poison DoTs
+  - After: Zero per-tick noise (initialization and error logs remain)
+
+**Files Modified:**
+- `autoload/EffectSpawner.gd` - Lines 192-194, 214-216
+- `autoload/StatusEffectSystem.gd` - Lines 231-233
+- `autoload/ItemManager.gd` - Lines 518-520, 543-545, 565-567, 603-605
+
 ### ✅ FEAT: Poison Status Effect System with Overflow Scaling (2025-10-14)
 
 **Implemented reusable DoT system with hit-scaled damage and visual feedback:**
