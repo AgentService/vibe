@@ -228,9 +228,9 @@ func _apply_effect_tick(entity_id: String, effect: StatusEffect) -> void:
 			entity_pos      # Source position
 		)
 
-		Logger.debug("StatusEffectSystem: Ticked %s on %s (dmg=%.1f)" % [
-			effect.effect_type, entity_id, effect.damage_per_tick
-		], "status")
+		# Logger.debug("StatusEffectSystem: Ticked %s on %s (dmg=%.1f)" % [
+		# 	effect.effect_type, entity_id, effect.damage_per_tick
+		# ], "status")  # Removed per-tick spam
 
 	# Apply slow effects (handled via EffectSpawner for now - future: separate slow system)
 	if effect.slow_mult < 1.0:

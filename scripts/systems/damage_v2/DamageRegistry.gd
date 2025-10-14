@@ -338,8 +338,8 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	var old_hp: float = _entity_hp[index]
 	var new_hp: float = max(0.0, old_hp - final_damage)
 	_entity_hp[index] = new_hp
-	
-	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
+
+	# Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")  # Removed per-tick spam
 	
 	# CRITICAL: Sync damage back to actual game entities via unified pipeline
 	_sync_damage_to_game_entity_packed(target_id, index, final_damage, new_hp)
@@ -637,7 +637,7 @@ func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, dam
 	# Emit damage sync event for systems to handle
 	# This removes the need for DamageRegistry to know about SpawnDirector/Boss internals
 	EventBus.damage_entity_sync.emit(sync_payload)
-	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+	# Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")  # Removed per-tick spam
 
 ## PHASE 7: PackedArray-based sync function (replaces _sync_damage_to_game_entity)
 func _sync_damage_to_game_entity_packed(entity_id: String, index: int, damage: float, new_hp: float) -> void:
@@ -654,7 +654,7 @@ func _sync_damage_to_game_entity_packed(entity_id: String, index: int, damage: f
 	
 	# Emit damage sync event for systems to handle
 	EventBus.damage_entity_sync.emit(sync_payload)
-	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+	# Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")  # Removed per-tick spam
 
 ## PHASE 7: PackedArray-based death handling (replaces _handle_entity_death)
 func _handle_entity_death_packed(entity_id: String, index: int) -> void:

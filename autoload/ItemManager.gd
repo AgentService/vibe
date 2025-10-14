@@ -515,9 +515,9 @@ func _trigger_lightning_proc(item: BaseItem, payload: EventBus.DamageDealtPayloa
 		item.lightning_chain_range
 	)
 
-	Logger.debug("Item '%s': Lightning proc (damage=%.1f, cd=%.1f)" % [
-		item.item_id, lightning_damage, item.lightning_cooldown
-	], "items")
+	# Logger.debug("Item '%s': Lightning proc (damage=%.1f, cd=%.1f)" % [
+	# 	item.item_id, lightning_damage, item.lightning_cooldown
+	# ], "items")  # Removed per-tick spam
 
 
 ## Triggers explosion proc effect at enemy position.
@@ -540,9 +540,9 @@ func _trigger_explosion_proc(item: BaseItem, payload: EventBus.DamageDealtPayloa
 		item.explosion_radius
 	)
 
-	Logger.debug("Item '%s': Explosion proc (damage=%.1f, radius=%.0f, stacks=%d, effective_chance=%.1f%%)" % [
-		item.item_id, explosion_damage, item.explosion_radius, stack_count, effective_chance * 100.0
-	], "items")
+	# Logger.debug("Item '%s': Explosion proc (damage=%.1f, radius=%.0f, stacks=%d, effective_chance=%.1f%%)" % [
+	# 	item.item_id, explosion_damage, item.explosion_radius, stack_count, effective_chance * 100.0
+	# ], "items")  # Removed per-tick spam
 
 
 ## Triggers freeze proc effect on enemy.
@@ -562,9 +562,9 @@ func _trigger_freeze_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 		item.freeze_slow_mult
 	)
 
-	Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f, stacks=%d, effective_chance=%.1f%%)" % [
-		item.item_id, payload.target, item.freeze_duration, stack_count, effective_chance * 100.0
-	], "items")
+	# Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f, stacks=%d, effective_chance=%.1f%%)" % [
+	# 	item.item_id, payload.target, item.freeze_duration, stack_count, effective_chance * 100.0
+	# ], "items")  # Removed per-tick spam
 
 
 ## Triggers poison proc effect on enemy.
@@ -600,9 +600,9 @@ func _trigger_poison_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 	# Apply poison status to target via StatusEffectSystem
 	StatusEffectSystem.apply_status(payload.target, poison_effect)
 
-	Logger.debug("Item '%s': Poison proc (target=%s, duration=%.1f, base_dmg=%.1f, mult=%.2fx, dmg/tick=%.1f, stacks=%d, chance=%.1f%%)" % [
-		item.item_id, payload.target, item.poison_duration, base_poison_damage, damage_multiplier, damage_per_tick, stack_count, effective_chance * 100.0
-	], "items")
+	# Logger.debug("Item '%s': Poison proc (target=%s, duration=%.1f, base_dmg=%.1f, mult=%.2fx, dmg/tick=%.1f, stacks=%d, chance=%.1f%%)" % [
+	# 	item.item_id, payload.target, item.poison_duration, base_poison_damage, damage_multiplier, damage_per_tick, stack_count, effective_chance * 100.0
+	# ], "items")  # Removed per-tick spam
 
 
 # ============================================================================

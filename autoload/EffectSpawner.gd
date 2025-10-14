@@ -189,9 +189,9 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 	# Apply damage to enemies in radius (search for "boss" type - all enemies use BaseBoss)
 	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
 
-	Logger.debug("EffectSpawner: Explosion at %s - found %d enemies in radius %.0f" % [
-		position, nearby_enemies.size(), radius
-	], "effects")
+	# Logger.debug("EffectSpawner: Explosion at %s - found %d enemies in radius %.0f" % [
+	# 	position, nearby_enemies.size(), radius
+	# ], "effects")  # Removed per-tick spam
 
 	var hits := 0
 	for enemy_id in nearby_enemies:
@@ -211,9 +211,9 @@ func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
 		)
 		hits += 1
 
-	Logger.info("EffectSpawner: Explosion dealt damage to %d/%d enemies (damage=%.1f)" % [
-		hits, nearby_enemies.size(), damage
-	], "effects")
+	# Logger.info("EffectSpawner: Explosion dealt damage to %d/%d enemies (damage=%.1f)" % [
+	# 	hits, nearby_enemies.size(), damage
+	# ], "effects")  # Removed per-tick spam
 
 
 # ============================================================================
