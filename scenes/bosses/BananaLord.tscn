@@ -110,6 +110,9 @@ shape = SubResource("RectangleShape2D_737yx")
 wait_time = 2.5
 
 [node name="BossHealthBar" parent="." instance=ExtResource("3_ywjq4")]
+offset_top = 0.0
+offset_bottom = 2.0
+y_offset_above_hitbox = 50.0
 
 [node name="BossShadow" parent="." instance=ExtResource("4_7b065")]
 scale = Vector2(3.13333, 3.50883)

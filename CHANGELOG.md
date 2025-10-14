@@ -2,6 +2,70 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FEAT: Poison Status Effect System with Overflow Scaling (2025-10-14)
+
+**Implemented reusable DoT system with hit-scaled damage and visual feedback:**
+- **Problem**: No status effect infrastructure for poison/burn/bleed DoTs
+  - Item effects were limited to instant damage (lightning, explosion, freeze)
+  - No way to apply damage over time based on hit damage
+  - Needed stacking mechanics that prevent infinite duration buildup
+  - Visual feedback required for active status effects
+- **Solution**: Built centralized StatusEffectSystem with event-driven architecture
+  - **StatusEffect.gd** - Pure domain model for all status effect types
+    - Factory methods: `create_poison()`, `create_burn()`, `create_chill()`
+    - StackBehavior enum: REPLACE (refresh), EXTEND (add duration), STACK_DAMAGE (independent)
+    - Tick accumulator prevents damage loss on frame hitches
+    - Dynamic tick calculation: `duration / POISON_TICK_INTERVAL` (no hardcoded values)
+  - **StatusEffectSystem.gd** - Centralized autoload for DoT management
+    - Updates at 30Hz via `combat_step` signal (fixed timestep)
+    - Applies damage via `DamageService._process_damage_immediate()`
+    - Emits `status_applied` / `status_removed` signals for event-driven UI
+    - Handles merging/stacking based on effect type and source
+  - **ItemManager poison proc** - Hit-scaled damage with overflow scaling
+    - Multiplicative stacking: `1 - (1 - 0.4)^50 = 100%` proc chance
+    - Overflow damage: Excess proc chance becomes damage multiplier (50 stacks = 20× damage)
+    - Poison damage = 30% of triggering hit × overflow multiplier ÷ 6 ticks
+  - **BossHealthBar visual feedback** - Event-driven color changes
+    - Green fill color when poisoned (direct StyleBoxFlat manipulation)
+    - Zero per-frame cost (signal-driven updates, not polling)
+    - Per-boss healthbar position via `y_offset_above_hitbox` export
+- **Architectural fixes** (from code review):
+  - Fixed tick dropping on frame hitches: `update()` now returns int (tick count) with while loop
+  - Fixed hardcoded tick count: Derived dynamically from `duration / interval` constant
+  - Added `StatusEffect.POISON_TICK_INTERVAL` constant for single source of truth
+
+**Usage Examples:**
+```gdscript
+# Apply poison status (ItemManager pattern)
+var poison_effect := StatusEffect.create_poison(3.0, 20.0, "item_poison")
+StatusEffectSystem.apply_status(enemy_id, poison_effect)
+
+# Check for status (conditional logic)
+if StatusEffectSystem.has_status(enemy_id, "poison"):
+    # Enemy is poisoned
+
+# Cheese item with 50 stacks:
+# - 100% proc chance + 20× damage multiplier
+# - 30% of hit damage = ~6 base → 120 total → 20 dmg/tick over 3s
+```
+
+**Files modified:**
+- `scripts/domain/StatusEffect.gd` - New domain model for status effects (poison, burn, bleed, chill)
+- `autoload/StatusEffectSystem.gd` - New autoload for centralized DoT management
+- `autoload/ItemManager.gd` - Added poison proc trigger with overflow scaling
+- `scripts/resources/items/BaseItem.gd` - Added poison @export properties
+- `scenes/components/BossHealthBar.gd` - Event-driven poison visual feedback
+- `data/content/items/cheese_gameplay.tres` - Configured with poison properties
+- `data/content/items/cheese_metadata.tres` - Updated description with overflow scaling
+- `scenes/bosses/BananaLord.tscn` - Adjusted healthbar position (y_offset=50px)
+- `project.godot` - Registered StatusEffectSystem as autoload
+
+**Testing:**
+- Stress tested with 50 Cheese stacks: 100% proc chance + 20× overflow multiplier
+- Verified frame hitch protection: Multiple ticks per frame on slow frames
+- Confirmed visual feedback: Green healthbar on poisoned bosses
+- Validated REPLACE behavior: Duration refreshes to 3s instead of stacking infinitely
+
 ### ✅ REFACTOR: Reusable Effect Helpers and Base Classes (2025-10-13)
 
 **Extracted tracking and offset logic into reusable components:**

@@ -122,6 +122,31 @@ var _explosion_procs: int = 0
 var _freeze_procs: int = 0
 
 # ============================================================================
+# PROC TYPE 4: POISON (On-Hit Chance)
+# ============================================================================
+
+@export_group("Poison Proc")
+
+## Enable poison proc on damage dealt
+@export var on_hit_poison: bool = false
+
+## Poison proc chance (0.0-1.0, e.g., 0.4 = 40% like Cheese)
+## Stacks multiplicatively: 1 - (1 - chance)^stacks
+## 3 items at 40% = 1 - 0.6^3 = 78.4% chance
+@export var poison_chance: float = 0.4
+
+## Poison duration in seconds
+@export var poison_duration: float = 3.0
+
+## Poison damage multiplier (% of triggering hit dealt over full duration)
+## Example: 0.3 = 30% of hit damage as poison, 0.5 = 50% of hit damage
+## Overflow stacking: >100% proc chance converts to damage multiplier
+@export var poison_damage_per_tick: float = 0.3
+
+## Runtime poison proc counter (for debugging)
+var _poison_procs: int = 0
+
+# ============================================================================
 # COOLDOWN MANAGEMENT
 # ============================================================================
 
@@ -135,6 +160,7 @@ func reset_cooldowns() -> void:
 	_lightning_cooldown = 0.0
 	_explosion_procs = 0
 	_freeze_procs = 0
+	_poison_procs = 0
 
 # ============================================================================
 # VALIDATION
@@ -195,6 +221,17 @@ func validate() -> Array[String]:
 		if freeze_slow_mult < 0.0 or freeze_slow_mult > 1.0:
 			errors.append("freeze_slow_mult must be 0.0-1.0")
 
+	# Poison validation
+	if on_hit_poison:
+		if poison_chance < 0.0 or poison_chance > 1.0:
+			errors.append("poison_chance must be 0.0-1.0")
+
+		if poison_duration <= 0.0:
+			errors.append("poison_duration must be > 0.0")
+
+		if poison_damage_per_tick < 0.0:
+			errors.append("poison_damage_per_tick must be >= 0.0")
+
 	return errors
 
 # ============================================================================
@@ -210,6 +247,8 @@ func _to_string() -> String:
 		procs.append("explosion")
 	if on_hit_freeze:
 		procs.append("freeze")
+	if on_hit_poison:
+		procs.append("poison")
 
 	var procs_str = ", ".join(procs) if not procs.is_empty() else "none"
 

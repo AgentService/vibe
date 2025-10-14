@@ -157,6 +157,8 @@ func _categorize_item(item) -> String:
 		return "proc"
 	if "on_hit_freeze" in item and item.on_hit_freeze:
 		return "proc"
+	if "on_hit_poison" in item and item.on_hit_poison:
+		return "proc"
 
 	# Check for stat bonuses
 	if "max_hp_bonus" in item and item.max_hp_bonus != 0:
@@ -483,6 +485,19 @@ func _check_item_procs(item: BaseItem, payload: EventBus.DamageDealtPayload_Type
 		if roll < effective_freeze_chance:
 			_trigger_freeze_proc(item, payload)
 
+	# Poison proc (chance-based, per-item with stacks)
+	if item.on_hit_poison:
+		var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+		var stack_count: int = item_data.get("stack_count", 1)
+
+		# Multiplicative stacking: effective_chance = 1 - (1 - base_chance)^stack_count
+		# Example: 3 items at 40% = 1 - 0.6^3 = 78.4% chance
+		var effective_poison_chance := 1.0 - pow(1.0 - item.poison_chance, stack_count)
+
+		var roll := item_rng.randf()
+		if roll < effective_poison_chance:
+			_trigger_poison_proc(item, payload)
+
 
 ## Triggers lightning proc effect at enemy position.
 func _trigger_lightning_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
@@ -549,6 +564,44 @@ func _trigger_freeze_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_T
 
 	Logger.debug("Item '%s': Freeze proc (target=%s, duration=%.1f, stacks=%d, effective_chance=%.1f%%)" % [
 		item.item_id, payload.target, item.freeze_duration, stack_count, effective_chance * 100.0
+	], "items")
+
+
+## Triggers poison proc effect on enemy.
+func _trigger_poison_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
+	# Increment proc counter
+	item._poison_procs += 1
+
+	# Get stack info for damage calculation
+	var item_data: Dictionary = _equipped_items.get(item.item_id, {})
+	var stack_count: int = item_data.get("stack_count", 1)
+	var effective_chance := 1.0 - pow(1.0 - item.poison_chance, stack_count)
+
+	# Calculate base poison damage (percentage of triggering hit)
+	var base_poison_damage: float = payload.damage * item.poison_damage_per_tick
+
+	# Overflow scaling: Convert excess proc chance into damage multiplier
+	# Multiplicative for proc chance (capped at 100%), additive for overflow damage
+	var total_chance: float = item.poison_chance * stack_count
+	var damage_multiplier: float = 1.0 + max(0.0, total_chance - 1.0)
+	var total_poison_damage: float = base_poison_damage * damage_multiplier
+
+	# Calculate damage per tick dynamically (derive tick count from duration / interval)
+	var tick_count: float = item.poison_duration / StatusEffect.POISON_TICK_INTERVAL
+	var damage_per_tick: float = total_poison_damage / tick_count
+
+	# Create poison status effect with scaled damage
+	var poison_effect := StatusEffect.create_poison(
+		item.poison_duration,
+		damage_per_tick,
+		"item_poison"  # Source tag for recursion prevention
+	)
+
+	# Apply poison status to target via StatusEffectSystem
+	StatusEffectSystem.apply_status(payload.target, poison_effect)
+
+	Logger.debug("Item '%s': Poison proc (target=%s, duration=%.1f, base_dmg=%.1f, mult=%.2fx, dmg/tick=%.1f, stacks=%d, chance=%.1f%%)" % [
+		item.item_id, payload.target, item.poison_duration, base_poison_damage, damage_multiplier, damage_per_tick, stack_count, effective_chance * 100.0
 	], "items")
 
 

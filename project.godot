@@ -19,6 +19,7 @@ config/icon="res://icon.svg"
 
 Logger="*res://autoload/Logger.gd"
 EventBus="*res://autoload/EventBus.gd"
+StatusEffectSystem="*res://autoload/StatusEffectSystem.gd"
 StateManager="*res://autoload/StateManager.gd"
 GameOrchestrator="*res://autoload/GameOrchestrator.gd"
 PauseManager="*res://autoload/PauseManager.gd"

@@ -6,11 +6,11 @@
 script = ExtResource("1")
 item_id = "cheese"
 display_name = "Cheese"
-description = "Increases max health"
-flavor_text = "A wedge of aged cheese. Good for the bones."
+description = "40% chance to poison enemies on hit. Excess chance increases poison damage."
+flavor_text = "A wedge of aged cheese. The mold adds... character."
 category = "items"
 icon_path = "res://assets/ui/items/icons/cheese.png"
 unlock_cost = 50
 rarity = 0
 discovery_requirement = "Survive for 5 minutes in any run"
-stat_summary = "+10% Max HP"
+stat_summary = "40% Poison (30% hit dmg/3s, overflow scaling)"
