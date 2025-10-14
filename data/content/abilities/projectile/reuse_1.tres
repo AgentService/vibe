@@ -56,5 +56,9 @@ description = "[ARCHIVED] Scene-based volley for reference"
 tags = Array[String](["damage", "cooldown", "projectile"])
 ability_level = 1
 max_level = 20
-
 visual_scene = SubResource("PackedScene_shu3x")
+unlock_cost = 50
+discovery_requirement = "Available from start (test ability)"
+stat_summary = "Damage: 144\nCooldown: 0.6s\nProjectiles: 33\nPierce: 1"
+flavor_text = "[Archived for testing]"
+rarity = "common"
