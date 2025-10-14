@@ -55,11 +55,14 @@ func setup(metadata: Variant, is_discovered: bool, is_unlocked: bool, can_afford
 	# - BaseTome: tome_id
 	# - BaseAbility: ability_id
 	# - BaseItem: item_id
+	# - BaseCharacter: character_id
 	# - ItemMetadata: item_id
 	if metadata is BaseTome:
 		item_id = metadata.tome_id
 	elif metadata is BaseAbility:
 		item_id = metadata.ability_id
+	elif metadata is BaseCharacter:
+		item_id = metadata.character_id
 	elif "item_id" in metadata:
 		item_id = metadata.item_id
 	else:

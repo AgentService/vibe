@@ -157,6 +157,8 @@ func _update_state_icon(icon: TextureRect, item_metadata: Variant) -> void:
 		item_id = item_metadata.tome_id
 	elif item_metadata is BaseAbility:
 		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
 	elif "item_id" in item_metadata:
 		item_id = item_metadata.item_id
 
@@ -191,6 +193,8 @@ func _on_cycle_state_pressed(item_metadata: Variant, state_icon: TextureRect) ->
 		item_id = item_metadata.tome_id
 	elif item_metadata is BaseAbility:
 		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
 	elif "item_id" in item_metadata:
 		item_id = item_metadata.item_id
 

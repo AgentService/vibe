@@ -173,7 +173,7 @@ layout_mode = 2
 text = "10 Runs"
 
 [node name="MarginContainer2" type="MarginContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3"]
-custom_minimum_size = Vector2(30, 50)
+custom_minimum_size = Vector2(370, 60)
 layout_mode = 2
 
 [node name="VBoxContainer" type="VBoxContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MarginContainer2"]
@@ -184,14 +184,15 @@ theme_override_constants/separation = 10
 
 [node name="CharacterDescription" type="Label" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MarginContainer2/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 0)
+custom_minimum_size = Vector2(370, 60)
 layout_mode = 2
 text = "He's slow, but his armor makes him prety chunky."
 autowrap_mode = 3
+clip_text = true
 
 [node name="MainAbility" type="MarginContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(30, 50)
+custom_minimum_size = Vector2(370, 80)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MainAbility"]
@@ -224,14 +225,16 @@ text = "Sword"
 
 [node name="AbilityDescription" type="Label" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MainAbility/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(300, 0)
+custom_minimum_size = Vector2(300, 40)
 layout_mode = 2
 size_flags_vertical = 6
 text = "Slashes through multiple enemies"
 autowrap_mode = 3
+clip_text = true
 
 [node name="MainPassive" type="MarginContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3"]
 unique_name_in_owner = true
+custom_minimum_size = Vector2(370, 80)
 layout_mode = 2
 
 [node name="HBoxContainer" type="HBoxContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MainPassive"]
@@ -265,11 +268,12 @@ text = "Shield"
 
 [node name="PassiveDescription" type="Label" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3/MainPassive/HBoxContainer/VBoxContainer"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(100, 0)
+custom_minimum_size = Vector2(300, 40)
 layout_mode = 2
 size_flags_vertical = 6
 text = "Gain 1% Armor per level."
 autowrap_mode = 3
+clip_text = true
 
 [node name="MarginContainer5" type="MarginContainer" parent="CharacterInfoPanel/MarginContainer/VBoxContainer3"]
 visible = false

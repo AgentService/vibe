@@ -89,8 +89,8 @@ func _load_from_directory_recursive(dir_path: String) -> void:
 		elif file_name.ends_with(".tres"):
 			var resource = load(file_path)
 
-			# Accept unified resources (BaseItem, BaseTome, BaseAbility) and legacy (ItemMetadata)
-			if resource is ItemMetadata or resource is BaseTome or resource is BaseItem or resource is BaseAbility:
+			# Accept unified resources (BaseItem, BaseTome, BaseAbility, BaseCharacter) and legacy (ItemMetadata)
+			if resource is ItemMetadata or resource is BaseTome or resource is BaseItem or resource is BaseAbility or resource is BaseCharacter:
 				# Duck typing: Extract ID from different resource types
 				var item_id_key: String = ""
 				if resource is BaseTome:
@@ -99,6 +99,8 @@ func _load_from_directory_recursive(dir_path: String) -> void:
 					item_id_key = resource.item_id
 				elif resource is BaseAbility:
 					item_id_key = resource.ability_id
+				elif resource is BaseCharacter:
+					item_id_key = resource.character_id
 				else:  # ItemMetadata
 					item_id_key = resource.item_id
 
@@ -197,22 +199,28 @@ func _fetch_skills_data() -> Array:
 
 	return category_items
 
-func _fetch_characters_data() -> Array[ItemMetadata]:
+func _fetch_characters_data() -> Array:
 	"""Callback for UnlockShop component - provides characters unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "characters" category
+		Array: Untyped array containing ItemMetadata or BaseCharacter resources for "characters" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseCharacter
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "characters":
+
+		# Check if it's a character (BaseCharacter type OR ItemMetadata with category="characters")
+		var is_character = (metadata is BaseCharacter) or (metadata.category == "characters")
+
+		if is_character:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by unlock cost (default characters first) using duck typing
+	category_items.sort_custom(func(a, b) -> bool:
+		# BaseCharacter has unlock_cost, ItemMetadata has unlock_cost
+		# Sort by unlock_cost (0 = default, comes first)
+		return a.unlock_cost < b.unlock_cost
 	)
 
 	return category_items

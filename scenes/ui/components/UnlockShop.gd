@@ -176,9 +176,9 @@ func _load_and_populate_grid(container: GridContainer, data_provider: Callable) 
 		_clear_item_details()
 		return
 
-	# Create item entry for each metadata (duck typing: ItemMetadata, BaseTome, BaseItem, or BaseAbility)
+	# Create item entry for each metadata (duck typing: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter)
 	for item_metadata in item_array:
-		if item_metadata is ItemMetadata or item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility:
+		if item_metadata is ItemMetadata or item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility or item_metadata is BaseCharacter:
 			_create_shop_item_entry(container, item_metadata)
 
 	# Auto-select first item
@@ -190,7 +190,7 @@ func _create_shop_item_entry(container: GridContainer, item_metadata: Variant) -
 
 	Args:
 		container: GridContainer to add entry to
-		item_metadata: ItemMetadata, BaseTome, BaseItem, or BaseAbility resource with item data
+		item_metadata: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter resource with item data
 	"""
 	if not MetaProgression:
 		Logger.warn("UnlockShop: MetaProgression not available", "ui")
@@ -202,6 +202,8 @@ func _create_shop_item_entry(container: GridContainer, item_metadata: Variant) -
 		item_id = item_metadata.tome_id
 	elif item_metadata is BaseAbility:
 		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
 	elif "item_id" in item_metadata:
 		item_id = item_metadata.item_id
 
@@ -259,6 +261,8 @@ func _on_item_card_clicked(clicked_item_id: String, clicked_category: String) ->
 			matches = (item_metadata.tome_id == clicked_item_id)
 		elif item_metadata is BaseAbility:
 			matches = (item_metadata.ability_id == clicked_item_id)
+		elif item_metadata is BaseCharacter:
+			matches = (item_metadata.character_id == clicked_item_id)
 		elif "item_id" in item_metadata:
 			matches = (item_metadata.item_id == clicked_item_id)
 
@@ -280,7 +284,7 @@ func _show_item_details(item_metadata: Variant) -> void:
 	"""Display item details based on discovery/unlock state.
 
 	Args:
-		item_metadata: ItemMetadata, BaseTome, BaseItem, or BaseAbility resource to display
+		item_metadata: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter resource to display
 	"""
 	if not MetaProgression:
 		return
@@ -293,6 +297,8 @@ func _show_item_details(item_metadata: Variant) -> void:
 		item_id = item_metadata.tome_id
 	elif item_metadata is BaseAbility:
 		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
 	elif "item_id" in item_metadata:
 		item_id = item_metadata.item_id
 
@@ -372,7 +378,7 @@ func _get_rarity_color_for_item(item_metadata: Variant) -> Color:
 	"""Get rarity color for all resource types (duck typing)."""
 	if item_metadata is ItemMetadata:
 		return ItemMetadata.get_rarity_color(item_metadata.rarity)
-	elif item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility:
+	elif item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility or item_metadata is BaseCharacter:
 		# Unified resources use string rarity, convert to color
 		match item_metadata.rarity:
 			"uncommon": return Color(0.3, 0.9, 0.3)  # Green
@@ -404,6 +410,8 @@ func _on_unlock_item_pressed(item_metadata: Variant) -> void:
 		item_id = item_metadata.tome_id
 	elif item_metadata is BaseAbility:
 		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
 	elif "item_id" in item_metadata:
 		item_id = item_metadata.item_id
 

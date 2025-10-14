@@ -22,6 +22,7 @@
 | **AbilityManager.gd** | Ability definitions & registry | `get_definition()`, `has_definition()`, `create_ability_instance()` | None (foundation) |
 | **TomeManager.gd** | Tome definitions & registry | `get_definition()`, `get_category()` | None (foundation) |
 | **ItemManager.gd** | Item dual-registry & proc handler | `equip_item()`, `damage_dealt` consumer | EventBus, RNG, EffectSpawner |
+| **CharacterManager.gd** | Character definitions & registry | `get_character()`, `get_default_character()`, `get_all_characters_sorted()` | None (foundation) |
 | **EffectSpawner.gd** | Generic item effect spawning | `spawn_explosion()`, `spawn_lightning()` | EntityTracker, DamageService |
 | **MultiMeshProjectileManager.gd** | High-performance projectile system | `combat_step` consumer, `ability_projectile_requested` | EventBus, MultiMeshManager |
 
@@ -515,6 +516,240 @@ func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 **Filename Convention:**
 - `{item_id}.tres` - Unified file with gameplay + shop metadata (minimal .tres with only non-default properties)
 
+### 👥 **CharacterManager Pattern (2025-10-14)**
+
+**Single-Resource Character System:**
+```gdscript
+# CharacterManager.gd - Autoload for unified character system (stats + shop metadata)
+extends Node
+
+# Single-resource pattern (following ItemManager architecture)
+var _character_registry: Dictionary = {}  # {character_id: BaseCharacter}
+var _character_file_paths: Dictionary = {}  # Hot-reload support
+
+func _ready() -> void:
+    _load_all_characters()
+
+func _load_all_characters() -> void:
+    Logger.info("CharacterManager: Loading characters...", "characters")
+    _load_characters_from_directory("res://data/content/characters/")
+    Logger.info("CharacterManager: Loaded %d characters" % _character_registry.size(), "characters")
+
+func _load_characters_from_directory(dir_path: String) -> void:
+    var dir := DirAccess.open(dir_path)
+    if not dir:
+        Logger.warn("Failed to open character directory: " + dir_path, "characters")
+        return
+
+    dir.list_dir_begin()
+    var file_name := dir.get_next()
+
+    while file_name != "":
+        if file_name.ends_with(".tres"):
+            var file_path := dir_path + file_name
+            var character = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+
+            # Only load BaseCharacter resources (clean single-resource pattern)
+            if character is BaseCharacter:
+                _register_character(character, file_path)
+
+        file_name = dir.get_next()
+
+    dir.list_dir_end()
+
+func _register_character(character: BaseCharacter, file_path: String) -> void:
+    # Validate character has required properties
+    if character.character_id.is_empty():
+        Logger.warn("BaseCharacter missing character_id: " + file_path, "characters")
+        return
+
+    # Validate character configuration
+    var errors := character.validate()
+    if not errors.is_empty():
+        Logger.warn("BaseCharacter '%s' has validation errors: %s" % [
+            character.character_id, str(errors)
+        ], "characters")
+        return
+
+    # Register character
+    var character_id: String = character.character_id
+    _character_registry[character_id] = character
+    _character_file_paths[character_id] = file_path
+
+    Logger.debug("Loaded character: %s (%s)" % [character_id, character.character_name], "characters")
+
+# Public API - Single unified registry
+func get_character(character_id: String) -> BaseCharacter:
+    return _character_registry.get(character_id) as BaseCharacter
+
+func get_all_character_ids() -> Array[String]:
+    var ids: Array[String] = []
+    for id in _character_registry.keys():
+        ids.append(id)
+    return ids
+
+func get_all_characters_sorted() -> Array:
+    var characters: Array = []
+    for character in _character_registry.values():
+        characters.append(character)
+
+    # Sort by unlock_cost (0 = default character, comes first)
+    characters.sort_custom(func(a: BaseCharacter, b: BaseCharacter) -> bool:
+        return a.unlock_cost < b.unlock_cost
+    )
+
+    return characters
+
+func get_default_character() -> BaseCharacter:
+    # Find character with unlock_cost = 0
+    for character in _character_registry.values():
+        if character.unlock_cost == 0:
+            return character
+
+    # Fallback: Return first character in registry
+    if not _character_registry.is_empty():
+        return _character_registry.values()[0]
+
+    Logger.warn("CharacterManager: No characters loaded", "characters")
+    return null
+
+# Hot-reload support
+func reload_character(character_id: String) -> bool:
+    var file_path := get_file_path(character_id)
+    if file_path.is_empty():
+        Logger.warn("CharacterManager: Cannot reload unknown character: " + character_id, "characters")
+        return false
+
+    var character = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+    if not character is BaseCharacter:
+        Logger.warn("CharacterManager: Failed to reload character: " + character_id, "characters")
+        return false
+
+    _register_character(character, file_path)
+    Logger.info("CharacterManager: Reloaded character: " + character_id, "characters")
+    return true
+```
+
+**BaseCharacter Resource:**
+```gdscript
+# BaseCharacter.gd - Unified character resource
+extends Resource
+class_name BaseCharacter
+
+# Core Identity
+@export_group("Core Identity")
+@export var character_id: String = ""
+@export var character_name: String = ""
+@export_multiline var description: String = ""
+@export var icon: Texture2D = null
+
+# Character Stats (Gameplay)
+@export_group("Character Stats")
+@export var base_max_hp: int = 100
+@export var base_movement_speed: float = 200.0
+@export var base_damage_mult: float = 1.0
+@export var base_pickup_radius: float = 50.0
+@export var starting_abilities: Array[String] = []  # ability_ids
+
+# Shop Metadata
+@export_group("Shop Metadata")
+@export var unlock_cost: int = 100
+@export_multiline var discovery_requirement: String = ""
+@export var stat_summary: String = ""
+@export_multiline var flavor_text: String = ""
+@export var rarity: String = "common"
+
+# Compatibility Aliases (for UnlockShop duck typing)
+var category: String:
+    get: return "characters"
+
+var display_name: String:
+    get: return character_name
+
+# Validation
+func validate() -> Array[String]:
+    var errors: Array[String] = []
+
+    if character_id.is_empty():
+        errors.append("character_id cannot be empty")
+    if character_name.is_empty():
+        errors.append("character_name cannot be empty")
+    if base_max_hp <= 0:
+        errors.append("base_max_hp must be > 0")
+    if base_movement_speed <= 0:
+        errors.append("base_movement_speed must be > 0")
+    if unlock_cost < 0:
+        errors.append("unlock_cost must be >= 0")
+    if not rarity in ["common", "uncommon", "rare", "epic", "legendary"]:
+        errors.append("rarity must be one of: common, uncommon, rare, epic, legendary")
+
+    return errors
+```
+
+**UI Integration (CharacterSelect.gd):**
+```gdscript
+# CharacterSelect prioritizes CharacterManager over legacy CharacterType system
+func _load_character_types() -> void:
+    # Try CharacterManager first (unified BaseCharacter system)
+    if CharacterManager:
+        var all_characters := CharacterManager.get_all_characters_sorted()
+        if not all_characters.is_empty():
+            # Build dictionary {character_id: BaseCharacter}
+            for character in all_characters:
+                if "character_id" in character:
+                    character_types[character.character_id] = character
+
+            Logger.info("Loaded %d characters from CharacterManager" % character_types.size(), "ui")
+            return
+
+    # Fallback to legacy system
+    var character_data = load("res://data/core/character-types.tres")
+    if character_data and character_data.character_types:
+        character_types = character_data.character_types
+        Logger.info("Loaded %d character types (legacy)" % character_types.size(), "ui")
+```
+
+**Key Design Points:**
+1. **Single-resource pattern**: BaseCharacter contains both gameplay (stats) and shop metadata (display, unlock)
+2. **No dual-registry**: Single `{character_id: BaseCharacter}` dictionary (simpler than ItemManager)
+3. **Validation**: `validate()` method ensures all required fields present and valid
+4. **Hot-reload**: `reload_character()` and `reload_all_characters()` with `CACHE_MODE_IGNORE`
+5. **Sorting**: `get_all_characters_sorted()` sorts by unlock_cost (defaults first)
+6. **Compatibility aliases**: `category` (returns "characters"), `display_name` (returns `character_name`)
+7. **Shop integration**: Works with UnlockShop duck typing patterns
+
+**Character Properties:**
+- **Identity**: character_id, character_name, description, icon
+- **Stats**: base_max_hp, base_movement_speed, base_damage_mult, base_pickup_radius, starting_abilities
+- **Shop**: unlock_cost, discovery_requirement, stat_summary, flavor_text, rarity
+
+**Usage:**
+- **Get character**: `CharacterManager.get_character("ranger")`
+- **List all**: `CharacterManager.get_all_characters_sorted()` (defaults first)
+- **Default character**: `CharacterManager.get_default_character()` (unlock_cost = 0)
+
+**Filename Convention:**
+- `{character_id}.tres` - Unified file with gameplay + shop metadata (minimal .tres with only non-default properties)
+
+**Example Character File (ranger.tres):**
+```tres
+[gd_resource type="Resource" script_class="BaseCharacter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/characters/BaseCharacter.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+character_id = "ranger"
+character_name = "Ranger"
+description = "Swift archer specializing in rapid projectile attacks"
+base_max_hp = 80
+base_movement_speed = 220.0
+starting_abilities = ["seeking_volley"]
+unlock_cost = 0
+stat_summary = "HP: 80\nSpeed: 220\nStarting: Seeking Volley"
+rarity = "common"
+```
+
 ### 📊 **BalanceDB Hot-Reload Pattern**
 
 **Resource Monitoring:**
@@ -782,7 +1017,7 @@ var tiers = LocalLeaderboard.get_tiers_with_entries("forest_arena")
 ```
 
 **Architecture Notes:**
-- **No CharacterManager:** Character selection handled by SessionState + MainMenu UI
+- **CharacterManager:** Character definitions stored in `/data/content/characters/*.tres` (BaseCharacter resources)
 - **No Profiles Directory:** Only two persistence files:
   - `user://meta_progression.tres` (Rift Fragments)
   - `user://local_leaderboard.tres` (Personal bests)

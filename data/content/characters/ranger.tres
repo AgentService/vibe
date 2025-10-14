@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="BaseCharacter" load_steps=2 format=3 uid="uid://c5n8w7e6d9m3b"]
+
+[ext_resource type="Script" path="res://scripts/resources/characters/BaseCharacter.gd" id="1_ranger"]
+
+[resource]
+script = ExtResource("1_ranger")
+character_id = "ranger"
+character_name = "Ranger"
+description = "Swift archer with high mobility and rapid projectile attacks."
+base_max_hp = 80
+base_movement_speed = 220.0
+base_damage_mult = 1.0
+base_pickup_radius = 50.0
+starting_abilities = ["seeking_volley"]
+unlock_cost = 0
+discovery_requirement = ""
+stat_summary = "HP: 80
+Speed: 220
+Starting: Seeking Volley"
+flavor_text = "Master of bow and arrow, the Ranger strikes from afar with deadly precision."
+rarity = "common"
+main_ability_name = "Seeking Volley"
+main_ability_description = "Fire 20 homing arrows that track enemies"
+main_ability_icon = "seeking_volley"
+main_passive_name = "Swift Feet"
+main_passive_description = "+10% movement speed"
+main_passive_icon = "speed_boost"

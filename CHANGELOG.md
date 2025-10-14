@@ -2,6 +2,97 @@
 
 ## [Current Week - In Progress]
 
+### ✅ FEAT: Character System Unification (Single-Resource Pattern) (2025-10-14)
+
+**Migrated characters to unified BaseCharacter with shop metadata:**
+- **Context**: Final step in content system unification
+  - ✅ Items: Unified to BaseItem
+  - ✅ Tomes: Unified to BaseTome
+  - ✅ Skills: Unified to BaseAbility
+  - ✅ **Characters**: Now using BaseCharacter (single-resource pattern)
+- **Implementation**: Created new character system following ItemManager pattern
+  - **Created BaseCharacter.gd** - Unified resource with Core Identity, Character Stats, and Shop Metadata
+    - Core: `character_id`, `character_name`, `description`, `icon`
+    - Stats: `base_max_hp`, `base_movement_speed`, `base_damage_mult`, `base_pickup_radius`, `starting_abilities`
+    - Shop: `unlock_cost`, `discovery_requirement`, `stat_summary`, `flavor_text`, `rarity`
+    - Compatibility aliases: `category` (returns "characters"), `display_name` (returns `character_name`)
+  - **Created CharacterManager.gd** autoload - Global character registry
+    - Single-resource pattern: `{character_id: BaseCharacter}` registry
+    - Directory scanning: `/data/content/characters/*.tres`
+    - Validation: `validate()` method checks required fields
+    - Hot-reload: `reload_character()` and `reload_all_characters()` methods
+    - Public API: `get_character()`, `get_all_characters_sorted()`, `get_default_character()`
+  - **Created 2 example characters**:
+    - `ranger.tres` (default, unlock_cost=0) - HP:80, Speed:220, Starting ability: seeking_volley
+    - `warrior.tres` (locked, unlock_cost=150) - HP:120, Speed:180, Damage:+20%, Discovery requirement
+  - **Updated shop UI** with BaseCharacter duck typing:
+    - UnlockShopScene: Added BaseCharacter to resource loading, updated `_fetch_characters_data()`
+    - Characters now sort by unlock_cost (default characters first)
+  - **Updated character selection UI** with BaseCharacter support:
+    - CharacterSelect: Prioritizes CharacterManager over legacy CharacterType system
+    - CharacterSelectButton: Duck typing for both CharacterType and BaseCharacter
+    - Character info panel: Shows stat_summary for BaseCharacter
+- **Architecture**: All content types now follow single-resource pattern (consistent, maintainable)
+- **Filename convention**: `{character_id}.tres` - Unified file with minimal properties (only non-defaults)
+
+**Files Created:**
+- `scripts/resources/characters/BaseCharacter.gd` - Unified character resource class
+- `autoload/CharacterManager.gd` - Character registry autoload (follows ItemManager pattern)
+- `data/content/characters/ranger.tres` - Default character (unlock_cost=0)
+- `data/content/characters/warrior.tres` - Locked character (unlock_cost=150)
+
+**Files Modified:**
+- `project.godot` - Added CharacterManager to autoload list (after ItemManager)
+- `scenes/ui/UnlockShopScene.gd` - Added BaseCharacter support (loading + _fetch_characters_data)
+- `scenes/ui/CharacterSelect.gd` - Prioritizes CharacterManager, duck typing for BaseCharacter
+- `scenes/ui/components/CharacterSelectButton.gd` - Duck typing for CharacterType/BaseCharacter
+
+**Impact**: Characters now integrate with UnlockShop unlock/discovery system. Content system unification complete (items, tomes, skills, characters all use single-resource pattern).
+
+### ✅ FIX: CharacterSelect UI Fixed Layout (2025-10-14)
+
+**Fixed character info panel to prevent layout shifting:**
+- **Context**: Character descriptions/abilities of varying length caused info panel to resize when switching characters
+- **Implementation**: Set fixed `custom_minimum_size` for all info sections:
+  - Character Description container: `370x60` (was dynamic)
+  - Main Ability container: `370x80` (was 30x50)
+  - Main Passive container: `370x80` (was no minimum size)
+  - Description labels: Fixed heights with `clip_text = true`
+- **Placeholder descriptions**: Shortened ability/passive text for cleaner display
+  - Ranger Ability: "Fire 20 homing arrows that track enemies"
+  - Ranger Passive: "+10% movement speed"
+  - Warrior Ability: "Spin attack dealing heavy AoE damage"
+  - Warrior Passive: "+20% damage resistance, +20 HP"
+- **Result**: Info panel maintains consistent size and position regardless of character selected
+
+**Files Modified:**
+- `scenes/ui/CharacterSelect.tscn` - Fixed container sizes and label heights
+- `data/content/characters/ranger.tres` - Shortened placeholder descriptions
+- `data/content/characters/warrior.tres` - Shortened placeholder descriptions
+
+**Impact**: CharacterSelect screen now provides smooth character switching experience without jarring layout shifts.
+
+**Example unified character file (ranger.tres):**
+```tres
+[gd_resource type="Resource" script_class="BaseCharacter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/characters/BaseCharacter.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+character_id = "ranger"
+character_name = "Ranger"
+description = "Swift archer specializing in rapid projectile attacks"
+base_max_hp = 80
+base_movement_speed = 220.0
+starting_abilities = ["seeking_volley"]
+unlock_cost = 0
+stat_summary = "HP: 80\nSpeed: 220\nStarting: Seeking Volley"
+rarity = "common"
+```
+
+---
+
 ### ✅ FIX: Skills Tab Now Shows Combat Abilities (2025-10-14)
 
 **Fixed skills tab loading from wrong directory:**

@@ -14,7 +14,7 @@ var character_id: String = ""
 var _is_initialized: bool = false
 
 # Store data if setup() is called before _ready()
-var _pending_char_type: CharacterType = null
+var _pending_char_data: Variant = null  # Duck typing: CharacterType or BaseCharacter
 var _pending_portrait: Texture2D = null
 
 func _ready() -> void:
@@ -23,27 +23,38 @@ func _ready() -> void:
 		button.pressed.connect(_on_button_pressed)
 
 	# Apply pending data if setup() was called before _ready()
-	if _pending_char_type:
-		_apply_data(_pending_char_type, _pending_portrait)
-		_pending_char_type = null
+	if _pending_char_data:
+		_apply_data(_pending_char_data, _pending_portrait)
+		_pending_char_data = null
 		_pending_portrait = null
 
-func setup(char_id: String, char_type: CharacterType, portrait_texture: Texture2D) -> void:
-	"""Initialize the button with character data."""
+func setup(char_id: String, char_data: Variant, portrait_texture: Texture2D) -> void:
+	"""Initialize the button with character data.
+
+	Args:
+		char_id: Unique character identifier
+		char_data: CharacterType (legacy) or BaseCharacter (unified) via duck typing
+		portrait_texture: Character portrait texture
+	"""
 	character_id = char_id
 	_is_initialized = true
 
 	# If nodes are ready, apply immediately
 	if name_label and portrait:
-		_apply_data(char_type, portrait_texture)
+		_apply_data(char_data, portrait_texture)
 	else:
 		# Store for later (will be applied in _ready())
-		_pending_char_type = char_type
+		_pending_char_data = char_data
 		_pending_portrait = portrait_texture
 
-func _apply_data(char_type: CharacterType, portrait_texture: Texture2D) -> void:
-	"""Apply character data to UI elements."""
-	name_label.text = char_type.display_name
+func _apply_data(char_data: Variant, portrait_texture: Texture2D) -> void:
+	"""Apply character data to UI elements.
+
+	Duck typing: Supports both CharacterType and BaseCharacter
+	- CharacterType: uses display_name
+	- BaseCharacter: uses display_name (compatibility alias for character_name)
+	"""
+	name_label.text = char_data.display_name if "display_name" in char_data else "Unknown"
 	portrait.texture = portrait_texture
 
 func _on_button_pressed() -> void:

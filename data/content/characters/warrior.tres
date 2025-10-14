@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="BaseCharacter" load_steps=2 format=3 uid="uid://b2k7m5p9x4w1c"]
+
+[ext_resource type="Script" path="res://scripts/resources/characters/BaseCharacter.gd" id="1_warrior"]
+
+[resource]
+script = ExtResource("1_warrior")
+character_id = "warrior"
+character_name = "Warrior"
+description = "Heavily armored tank with high damage and survivability."
+base_max_hp = 120
+base_movement_speed = 180.0
+base_damage_mult = 1.2
+base_pickup_radius = 50.0
+starting_abilities = []
+unlock_cost = 150
+discovery_requirement = "Reach wave 10 with any character"
+stat_summary = "HP: 120
+Speed: 180
+Damage: +20%"
+flavor_text = "Clad in steel, the Warrior charges into battle with unwavering courage."
+rarity = "uncommon"
+main_ability_name = "Whirlwind Strike"
+main_ability_description = "Spin attack dealing heavy AoE damage"
+main_ability_icon = "whirlwind"
+main_passive_name = "Iron Skin"
+main_passive_description = "+20% damage resistance, +20 HP"
+main_passive_icon = "armor"
