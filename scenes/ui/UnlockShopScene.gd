@@ -72,11 +72,19 @@ func _load_item_metadata() -> void:
 				var file_path = category_dir + file_name
 				var resource = load(file_path)
 
-				if resource is ItemMetadata:
-					item_metadata_cache[resource.item_id] = resource
-					Logger.debug("UnlockShopScene: Loaded item metadata: %s" % resource.item_id, "ui")
+				# Accept both ItemMetadata and BaseTome (single-resource pattern)
+				if resource is ItemMetadata or resource is BaseTome:
+					# Duck typing: BaseTome uses tome_id, ItemMetadata uses item_id
+					var item_id_key: String
+					if resource is BaseTome:
+						item_id_key = resource.tome_id
+					else:
+						item_id_key = resource.item_id
+
+					item_metadata_cache[item_id_key] = resource
+					Logger.debug("UnlockShopScene: Loaded item metadata: %s" % item_id_key, "ui")
 				else:
-					Logger.warn("UnlockShopScene: Invalid ItemMetadata resource: %s" % file_path, "ui")
+					Logger.warn("UnlockShopScene: Invalid item resource (not ItemMetadata or BaseTome): %s" % file_path, "ui")
 
 			file_name = dir.get_next()
 
@@ -104,25 +112,43 @@ func _fetch_items_data() -> Array[ItemMetadata]:
 
 	return category_items
 
-func _fetch_tomes_data() -> Array[ItemMetadata]:
+func _fetch_tomes_data() -> Array:
 	"""Callback for UnlockShop component - provides tomes unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "tomes" category
+		Array: Untyped array containing ItemMetadata and/or BaseTome resources for "tomes" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseTome
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "tomes":
+
+		# Check if it's a tome (BaseTome type OR ItemMetadata with category="tomes")
+		var is_tome = (metadata is BaseTome) or (metadata.category == "tomes")
+
+		if is_tome:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by rarity (Common → Legendary) using duck typing
+	category_items.sort_custom(func(a, b) -> bool:
+		return _get_rarity_value(a) < _get_rarity_value(b)
 	)
 
 	return category_items
+
+func _get_rarity_value(item) -> int:
+	"""Get numeric rarity value for sorting (handles both enum and string)."""
+	if item.rarity is int:
+		return item.rarity  # ItemMetadata.Rarity enum
+	else:
+		# BaseTome uses string: "common", "uncommon", "rare", etc.
+		match item.rarity:
+			"common": return 0
+			"uncommon": return 1
+			"rare": return 2
+			"epic": return 3
+			"legendary": return 4
+			_: return 0
 
 func _fetch_skills_data() -> Array[ItemMetadata]:
 	"""Callback for UnlockShop component - provides skills unlock data.

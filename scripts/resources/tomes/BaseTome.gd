@@ -190,6 +190,43 @@ class TomeModifier:
 @export var pickup_radius_multiplier: float = 1.0
 
 # ============================================================================
+# SHOP METADATA (Unlock System Integration)
+# ============================================================================
+
+@export_group("Shop Metadata")
+
+## Rift Fragments cost to unlock in shop
+@export var unlock_cost: int = 100
+
+## Achievement requirement text for discovery (e.g., "Deal 10,000 total damage")
+@export_multiline var discovery_requirement: String = ""
+
+## Stat summary for shop display (e.g., "+15% Damage", "+1 Projectile")
+@export var stat_summary: String = ""
+
+## Flavor text for lore/immersion
+@export_multiline var flavor_text: String = ""
+
+# ============================================================================
+# COMPATIBILITY ALIASES (UnlockShop Integration)
+# ============================================================================
+
+## Compatibility alias for UnlockShop (returns tome_id)
+var item_id: String:
+	get:
+		return tome_id
+
+## Compatibility alias for UnlockShop (returns tome_name)
+var display_name: String:
+	get:
+		return tome_name
+
+## Compatibility property for UnlockShop (returns "tomes")
+var category: String:
+	get:
+		return "tomes"
+
+# ============================================================================
 # TAG MATCHING
 # ============================================================================
 
@@ -406,5 +443,12 @@ func validate() -> Array[String]:
 
 	if projectile_speed_multiplier < 0:
 		errors.append("projectile_speed_multiplier must be >= 0")
+
+	# Shop metadata validation (optional properties - warnings only)
+	if unlock_cost <= 0:
+		errors.append("unlock_cost should be > 0 for shop items")
+
+	if stat_summary.is_empty():
+		errors.append("stat_summary recommended for shop display")
 
 	return errors
