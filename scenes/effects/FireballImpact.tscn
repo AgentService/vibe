@@ -82,7 +82,7 @@ scale = Vector2(10, 10)
 script = ExtResource("1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-self_modulate = Color(0.839216, 0.427451, 0.34902, 0.219608)
+self_modulate = Color(0.839216, 0.427451, 0.34902, 0.0980392)
 texture_filter = 1
 material = SubResource("CanvasItemMaterial_impact")
 sprite_frames = SubResource("SpriteFrames_agng7")
