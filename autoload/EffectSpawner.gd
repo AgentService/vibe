@@ -170,7 +170,8 @@ static func find_enemy_node(entity_id: String, arena: Node2D) -> Node:
 ##   damage: Base damage to apply to enemies in radius
 ##   radius: Explosion radius in pixels
 ##   custom_scene: Optional custom explosion scene (default: PoisonExplosion)
-func spawn_explosion(position: Vector2, damage: float, radius: float, custom_scene: PackedScene = null) -> void:
+##   target_id: Optional enemy ID to track (for on-hit explosions like VoodooDoll)
+func spawn_explosion(position: Vector2, damage: float, radius: float, custom_scene: PackedScene = null, target_id: String = "") -> void:
 	if not _arena:
 		Logger.warn("EffectSpawner: Cannot spawn explosion, no arena reference", "effects")
 		return
@@ -185,9 +186,20 @@ func spawn_explosion(position: Vector2, damage: float, radius: float, custom_sce
 	effects_container.add_child(explosion)
 	explosion.global_position = position
 
-	# Randomly flip horizontally for visual variety
+	# Set visual scale based on radius parameter (uses FireballImpact's set_aoe_radius method)
+	if explosion.has_method("set_aoe_radius"):
+		explosion.set_aoe_radius(radius)
+	else:
+		# Fallback for effects without dynamic scaling
+		explosion.scale = Vector2(4.0, 4.0)
+
+	# Apply random horizontal flip for visual variety
 	var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
-	explosion.scale = Vector2(4.0 * flip, 4.0)  # 10 * 0.4 = 4.0 (smaller for item procs)
+	explosion.scale.x *= flip
+
+	# Enable enemy tracking for on-hit explosions (VoodooDoll, etc.)
+	if not target_id.is_empty() and explosion.has_method("track_enemy"):
+		explosion.track_enemy(target_id, _arena)
 
 	# Apply damage to enemies in radius (search for "boss" type - all enemies use BaseBoss)
 	var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")

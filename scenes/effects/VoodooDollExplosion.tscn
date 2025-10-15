@@ -1,52 +1,52 @@
 [gd_scene load_steps=12 format=3 uid="uid://ccyd1jo420opb"]
 
-[ext_resource type="Script" uid="uid://bk0nvesebjij8" path="res://scripts/effects/FireballImpact.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://bsahue8hy47ro" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 3 A.png" id="2"]
+[ext_resource type="Script" uid="uid://cpidvkc1jbs7w" path="res://scripts/effects/ExplosionEffect.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://ddckl7ne25u4t" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 5 B.png" id="2_vpfxs"]
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_agoa6"]
-atlas = ExtResource("2")
-region = Rect2(0, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_h7d3g"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(0, 448, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_1y4jx"]
-atlas = ExtResource("2")
-region = Rect2(32, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_0avx4"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(64, 448, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_flpll"]
-atlas = ExtResource("2")
-region = Rect2(64, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_h1pga"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(128, 448, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_vcl7t"]
-atlas = ExtResource("2")
-region = Rect2(96, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_vy5kt"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(192, 448, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_rf74e"]
-atlas = ExtResource("2")
-region = Rect2(128, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_cj6nd"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(256, 448, 64, 64)
 
-[sub_resource type="AtlasTexture" id="AtlasTexture_uwxk4"]
-atlas = ExtResource("2")
-region = Rect2(160, 32, 32, 32)
+[sub_resource type="AtlasTexture" id="AtlasTexture_bkxgj"]
+atlas = ExtResource("2_vpfxs")
+region = Rect2(320, 448, 64, 64)
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_agng7"]
 animations = [{
 "frames": [{
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_agoa6")
+"texture": SubResource("AtlasTexture_h7d3g")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_1y4jx")
+"texture": SubResource("AtlasTexture_0avx4")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_flpll")
+"texture": SubResource("AtlasTexture_h1pga")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_vcl7t")
+"texture": SubResource("AtlasTexture_vy5kt")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_rf74e")
+"texture": SubResource("AtlasTexture_cj6nd")
 }, {
 "duration": 1.0,
-"texture": SubResource("AtlasTexture_uwxk4")
+"texture": SubResource("AtlasTexture_bkxgj")
 }],
 "loop": false,
 "name": &"default",
@@ -75,11 +75,10 @@ _data = {
 }
 
 [node name="VoodooDollExplosion" type="Node2D"]
-scale = Vector2(10, 10)
 script = ExtResource("1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-self_modulate = Color(0.498039, 0.0980392, 0.501961, 0.470588)
+self_modulate = Color(0.498039, 0.0980392, 0.501961, 1)
 sprite_frames = SubResource("SpriteFrames_agng7")
 autoplay = "default"
 frame = 2

@@ -353,15 +353,25 @@ var _arena: Node2D = null
 func _ready() -> void:
     StateManager.state_changed.connect(_on_state_changed)
 
-func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
+func spawn_explosion(position: Vector2, damage: float, radius: float, custom_scene: PackedScene = null) -> void:
     if not _arena:
         return
 
-    # Spawn visual effect (scaled down to 0.4x for item procs)
-    var explosion := EXPLOSION_SCENE.instantiate()
+    # Spawn visual effect with dynamic scaling based on radius parameter
+    var scene_to_use: PackedScene = custom_scene if custom_scene else EXPLOSION_SCENE
+    var explosion := scene_to_use.instantiate()
     _arena.add_child(explosion)
     explosion.global_position = position
-    explosion.scale = Vector2(0.4, 0.4)
+
+    # Set visual scale based on radius (FireballImpact's set_aoe_radius method)
+    if explosion.has_method("set_aoe_radius"):
+        explosion.set_aoe_radius(radius)  # Dynamic: radius=10 → scale=0.625, radius=100 → scale=6.25
+    else:
+        explosion.scale = Vector2(4.0, 4.0)  # Fallback for effects without dynamic scaling
+
+    # Apply random horizontal flip for visual variety
+    var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
+    explosion.scale.x *= flip
 
     # Apply damage to enemies in radius (NOTE: "boss" type - all enemies register as "boss")
     var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")

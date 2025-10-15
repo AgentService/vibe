@@ -1,6 +1,6 @@
 [gd_scene load_steps=12 format=3 uid="uid://bhlb7ou0omwgi"]
 
-[ext_resource type="Script" uid="uid://bk0nvesebjij8" path="res://scripts/effects/FireballImpact.gd" id="1"]
+[ext_resource type="Script" uid="uid://cpidvkc1jbs7w" path="res://scripts/effects/ExplosionEffect.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bsahue8hy47ro" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 3 A.png" id="2"]
 
 [sub_resource type="AtlasTexture" id="AtlasTexture_agoa6"]

@@ -2,6 +2,48 @@
 
 ## [Current Week - In Progress]
 
+### 🔧 FIX: Dynamic Explosion Scaling + Enemy Tracking + ExplosionEffect Rename (2025-10-15)
+
+**Fixed hardcoded explosion scale, added on-hit tracking, renamed generic script:**
+- **Problem #1**: EffectSpawner hardcoded all explosion scales to 4.0
+  - VoodooDollExplosion with `explosion_radius = 10.0` showed same size as `radius = 100.0`
+  - FireballImpact.gd's `set_aoe_radius()` method was ignored by item proc explosions
+  - User couldn't visually tune explosion sizes via radius parameter
+- **Problem #2**: On-hit explosions spawned at fixed positions
+  - VoodooDoll and other on-hit explosions didn't follow moving enemies
+  - During ~0.5s explosion animation, fast enemies could move significantly
+  - Visual disconnect between explosion and target
+- **Solution**: Dynamic scaling + enemy tracking
+  - EffectSpawner now calls `explosion.set_aoe_radius(radius)` instead of hardcoding scale
+  - Recalibrated FireballImpact.gd for item procs: BASE_RADIUS=100, BASE_SCALE=2.0
+  - New scale formula examples: radius=50 → scale=1.0, radius=100 → scale=2.0, radius=200 → scale=4.0
+  - Random flip now applies AFTER radius scaling for correct behavior
+  - **Added `target_id` parameter to `spawn_explosion()` for on-hit explosions**
+  - **Explosions now track hit enemies using BaseTrackedEffect pattern (like lightning)**
+  - ItemManager passes `payload.target` to EffectSpawner for on-hit explosions
+- **Rename**: FireballImpact.gd → ExplosionEffect.gd
+  - Generic script shared by: FireballImpact, VoodooDollExplosion, PoisonExplosion
+  - Updated header comments to reflect generic purpose
+  - Updated all three .tscn files with new script path
+
+**Files Modified:**
+- `autoload/EffectSpawner.gd` - Added `target_id` parameter + dynamic `set_aoe_radius()` call + enemy tracking logic
+- `autoload/ItemManager.gd` - Updated `_trigger_explosion_proc()` to pass `payload.target` for tracking
+- `scripts/effects/ExplosionEffect.gd` - Renamed from FireballImpact.gd, recalibrated scale constants
+- `scenes/effects/FireballImpact.tscn` - Updated script reference
+- `scenes/effects/VoodooDollExplosion.tscn` - Updated script reference
+- `scenes/effects/PoisonExplosion.tscn` - Updated script reference
+- `autoload/CLAUDE.md` - Updated documentation with dynamic scaling pattern
+
+**Technical Details:**
+- Old formula: `explosion.scale = Vector2(4.0 * flip, 4.0)` (hardcoded, no tracking)
+- New formula: `explosion.set_aoe_radius(radius)` → `scale = (radius / 100.0) * 2.0`
+- Recalibration: BASE_RADIUS 350→100, BASE_SCALE 21.875→2.0 (item proc optimized)
+- Enemy tracking: `explosion.track_enemy(target_id, arena)` for on-hit explosions
+- Signature change: `spawn_explosion(pos, dmg, radius, scene)` → `spawn_explosion(pos, dmg, radius, scene, target_id)`
+
+---
+
 ### 🔧 FIX: Fireball Impact Effect Now Uses External Scene (2025-10-15)
 
 **Refactored fireball ability to reference external FireballImpact.tscn:**
@@ -421,7 +463,7 @@ if enemy_node:
 - `scripts/effects/BaseTrackedEffect.gd` - New base class for tracked effects
 - `autoload/EffectSpawner.gd` - Added static helpers (calculate_spawn_offset, find_enemy_node)
 - `scripts/effects/LightningImpact.gd` - Refactored to extend BaseTrackedEffect (43 lines removed)
-- `scripts/effects/FireballImpact.gd` - Now extends BaseTrackedEffect for optional tracking
+- `scripts/effects/ExplosionEffect.gd` (renamed from FireballImpact.gd) - Generic explosion effect, extends BaseTrackedEffect
 
 ### ✅ FEAT: "+10 Items" Button in Item Testing Panel (2025-10-13)
 
