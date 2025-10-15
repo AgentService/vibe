@@ -40,7 +40,7 @@ The item system is 90% complete - all proc items (poison, lightning, explosion, 
 **Problem:** FireballImpact.tscn scene has self_modulate property but changing it has no visual effect on the explosion color.
 
 **Expected Behavior:**
-- Poison explosions (Spicy Meatball + Cheese) should be green-tinted
+- Poison explosions (Voodoo Doll + Cheese) should be green-tinted
 - Fire explosions should stay orange/red
 
 **Investigation Steps:**

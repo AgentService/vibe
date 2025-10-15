@@ -17,8 +17,8 @@ extends Node
 # EFFECT SCENES
 # ============================================================================
 
-## Explosion effect scene (reuses FireballImpact)
-const EXPLOSION_SCENE := preload("res://scenes/effects/FireballImpact.tscn")
+## Explosion effect scene (green poison variant for item procs)
+const EXPLOSION_SCENE := preload("res://scenes/effects/PoisonExplosion.tscn")
 
 ## Lightning effect scene (Pack 5 C, row 6 - electric strike animation)
 const LIGHTNING_SCENE := preload("res://scenes/effects/LightningImpact.tscn")
@@ -169,13 +169,16 @@ static func find_enemy_node(entity_id: String, arena: Node2D) -> Node:
 ##   position: World position to spawn explosion
 ##   damage: Base damage to apply to enemies in radius
 ##   radius: Explosion radius in pixels
-func spawn_explosion(position: Vector2, damage: float, radius: float) -> void:
+##   custom_scene: Optional custom explosion scene (default: PoisonExplosion)
+func spawn_explosion(position: Vector2, damage: float, radius: float, custom_scene: PackedScene = null) -> void:
 	if not _arena:
 		Logger.warn("EffectSpawner: Cannot spawn explosion, no arena reference", "effects")
 		return
 
 	# Spawn visual effect (scene has base scale 10, multiply by 0.4 for item procs)
-	var explosion := EXPLOSION_SCENE.instantiate()
+	# Use custom scene if provided, otherwise default to PoisonExplosion
+	var scene_to_use: PackedScene = custom_scene if custom_scene else EXPLOSION_SCENE
+	var explosion := scene_to_use.instantiate()
 
 	# Add to same container as enemies for proper z-ordering
 	var effects_container := _get_effects_container()

@@ -495,11 +495,12 @@ func _trigger_explosion_proc(item: BaseItem, payload: EventBus.DamageDealtPayloa
 	# Calculate explosion damage
 	var explosion_damage := payload.damage * item.explosion_damage_mult
 
-	# Spawn explosion effect at impact position
+	# Spawn explosion effect at impact position (uses item's custom scene or PoisonExplosion default)
 	EffectSpawner.spawn_explosion(
 		payload.impact_position,
 		explosion_damage,
-		item.explosion_radius
+		item.explosion_radius,
+		item.explosion_scene  # Custom scene (VoodooDollExplosion, FrostExplosion, etc.)
 	)
 
 	# Logger.debug("Item '%s': Explosion proc (damage=%.1f, radius=%.0f, stacks=%d, effective_chance=%.1f%%)" % [

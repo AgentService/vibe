@@ -289,7 +289,7 @@ crit_chance_bonus = 0.1 * 3 = 0.3 (30% crit chance)
 
 **Proc Chance Stacking (Multiplicative Probability):**
 ```gdscript
-# Example: 3x Spicy Meatball (25% explosion chance each)
+# Example: 3x Voodoo Doll (25% explosion chance each)
 effective_chance = 1 - pow(1 - 0.25, 3) = 57.8%
 
 # Example: 50x Cheese (40% poison chance each)
@@ -328,7 +328,7 @@ ItemManager.equip_item("thunder_mitts")  # Loads BaseItem, applies stats/procs
 
 **Proc Items (On-Hit Effects):**
 - Thunder Mitts (lightning chains)
-- Spicy Meatball (explosion AOE)
+- Voodoo Doll (explosion AOE)
 - Frost Glaive (freeze slow)
 - Cheese (poison DoT with overflow)
 

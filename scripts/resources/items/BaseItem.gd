@@ -94,7 +94,7 @@ var _lightning_cooldown: float = 0.0
 ## Enable explosion proc on damage dealt
 @export var on_hit_explosion: bool = false
 
-## Explosion proc chance (0.0-1.0, e.g., 0.25 = 25% like Spicy Meatball)
+## Explosion proc chance (0.0-1.0, e.g., 0.25 = 25% like Voodoo Doll)
 @export var explosion_chance: float = 0.25
 
 ## Explosion damage multiplier (applied to payload.damage)
@@ -103,6 +103,11 @@ var _lightning_cooldown: float = 0.0
 
 ## Explosion radius in pixels
 @export var explosion_radius: float = 100.0
+
+## Explosion scene to spawn (allows custom explosion visuals per item)
+## Default: null = use PoisonExplosion.tscn
+## Examples: VoodooDollExplosion.tscn (dark purple), FrostExplosion.tscn (blue)
+@export var explosion_scene: PackedScene = null
 
 ## Runtime explosion proc counter (for debugging)
 var _explosion_procs: int = 0

@@ -2,6 +2,32 @@
 
 ## [Current Week - In Progress]
 
+### 🔧 FIX: Fireball Impact Effect Now Uses External Scene (2025-10-15)
+
+**Refactored fireball ability to reference external FireballImpact.tscn:**
+- **Problem**: Fireball ability used embedded PackedScene copy of impact effect
+  - Editing `FireballImpact.tscn` in Godot editor had no effect on fireball explosions
+  - Impact effect was duplicated in `fireball.tres` (lines 9-96, 11 subresources)
+  - Changes to external scene file were ignored at runtime
+- **Solution**: Converted to external resource reference
+  - Removed embedded PackedScene and all 11 subresources (AtlasTextures, SpriteFrames, Animation, AnimationLibrary)
+  - Added ExtResource reference to `res://scenes/effects/FireballImpact.tscn` with UID
+  - Updated `impact_effect` property from `SubResource("PackedScene_i64bo")` to `ExtResource("3_impact")`
+  - Reduced `load_steps` from 26 to 16 (cleaner resource file)
+- **Impact**: Fireball explosions now reflect any changes made to `FireballImpact.tscn`
+  - Artists can edit explosion color via `self_modulate` in scene editor
+  - Animation timing changes apply immediately after F5 hot-reload
+  - Consistent with item explosion system (PoisonExplosion, VoodooDollExplosion)
+
+**Files Modified:**
+- `data/content/abilities/projectile/fireball.tres` - Replaced embedded scene with external resource reference
+
+**Technical Details:**
+- External scene reference: `ExtResource("3_impact")` → `res://scenes/effects/FireballImpact.tscn` (UID: uid://bhlb7ou0omwgi)
+- Resource reduction: 26 → 16 load_steps (removed 11 embedded subresources, added 1 external reference)
+
+---
+
 ### ✅ FEAT: Character System Unification (Single-Resource Pattern) (2025-10-14)
 
 **Migrated characters to unified BaseCharacter with shop metadata:**
@@ -229,7 +255,7 @@ rarity = "common"
     - Added Shop Metadata group: `unlock_cost`, `discovery_requirement`, `stat_summary`, `flavor_text`, `rarity`
     - Added compatibility alias: `category` property returns "items" for UnlockShop
   - **Migrated 8 items** to unified .tres files:
-    - `cheese.tres`, `thunder_mitts.tres`, `feather.tres`, `spicy_meatball.tres`
+    - `cheese.tres`, `thunder_mitts.tres`, `feather.tres`, `voodoo_doll.tres`
     - `frost_glaive.tres`, `clover.tres`, `lucky_coin.tres`, `rabbits_foot.tres`
     - Minimal .tres files (only non-default properties per user request)
   - **Deleted 16 dual files**: Removed all `*_gameplay.tres` and `*_metadata.tres` files
@@ -253,7 +279,7 @@ rarity = "common"
 - `data/content/items/cheese.tres`
 - `data/content/items/thunder_mitts.tres`
 - `data/content/items/feather.tres`
-- `data/content/items/spicy_meatball.tres`
+- `data/content/items/voodoo_doll.tres`
 - `data/content/items/frost_glaive.tres`
 - `data/content/items/clover.tres`
 - `data/content/items/lucky_coin.tres`
@@ -555,7 +581,7 @@ if enemy_node:
 - **Thunder Mitts behavior**:
   - 10s cooldown lightning proc now shows distinct electric strike visual
   - Chains to nearby enemies with proper lightning effect at each hit
-  - Clear visual distinction from Spicy Meatball explosions
+  - Clear visual distinction from Voodoo Doll explosions
 
 **Files modified:**
 - `scripts/effects/LightningImpact.gd` - Created self-despawning lightning effect script
@@ -565,7 +591,7 @@ if enemy_node:
 ### ✅ FIX: Item Proc Chance Multiplicative Stacking (2025-10-13)
 
 **Fixed proc chance stacking to use explicit multiplicative formula with single roll per hit:**
-- **Problem**: Frost Glaive and Spicy Meatball rolled independently per stack (3 stacks = 3 separate rolls)
+- **Problem**: Frost Glaive and Voodoo Doll rolled independently per stack (3 stacks = 3 separate rolls)
   - Inefficient: Multiple RNG calls per damage event
   - Unclear: Effective probability not calculated explicitly
   - Inconsistent: Different pattern from movement_speed_mult stacking
@@ -731,7 +757,7 @@ if enemy_node:
   - `ItemManager.gd` - Dual-registry autoload (BaseItem + ItemMetadata) following TomeManager pattern
   - `EffectSpawner.gd` - Generic effect spawning with explosion, lightning chaining, and freeze placeholder
 - **Items created (8 total)**:
-  - **Proc items**: Thunder Mitts (lightning/10s), Spicy Meatball (25% explosion), Frost Glaive (7.5% freeze)
+  - **Proc items**: Thunder Mitts (lightning/10s), Voodoo Doll (25% explosion), Frost Glaive (7.5% freeze)
   - **Stat items**: Cheese (+20 HP), Feather (+15% speed), Clover (+10% pickup), Lucky Coin (+15% pickup), Rabbit's Foot (+5% damage)
 - **Technical implementation**:
   - Deterministic RNG via `RNG.stream("item_procs")` for chance-based procs
@@ -895,7 +921,7 @@ if enemy_node:
   - BaseBoss registers all enemies with type "boss": `entity_data["type"] = "boss"`
   - Query returned empty array despite enemies being within radius
 - **Fix**: Changed EntityTracker query from `"enemy"` to `"boss"` in EffectSpawner.spawn_explosion()
-- **Impact**: Item proc explosions (Spicy Meatball) now correctly damage nearby enemies
+- **Impact**: Item proc explosions (Voodoo Doll) now correctly damage nearby enemies
 - **Documentation**: Added clarifying comment to EntityTracker.get_entities_in_radius() explaining type convention
 
 **Files changed:**

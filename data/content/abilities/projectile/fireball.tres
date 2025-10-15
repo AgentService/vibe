@@ -1,99 +1,10 @@
-[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=26 format=3]
+[gd_resource type="Resource" script_class="ProjectileAbility" load_steps=16 format=3]
 
 [ext_resource type="Script" path="res://scripts/resources/abilities/ProjectileAbility.gd" id="1"]
-[ext_resource type="Script" path="res://scripts/effects/FireballImpact.gd" id="1_i64bo"]
 [ext_resource type="Texture2D" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 3 A.png" id="2_apr53"]
+[ext_resource type="PackedScene" uid="uid://bhlb7ou0omwgi" path="res://scenes/effects/FireballImpact.tscn" id="3_impact"]
 [ext_resource type="Script" path="res://scripts/entities/AbilityProjectile.gd" id="4_5rvqq"]
 [ext_resource type="Texture2D" path="res://assets/effects/abilities/effects/All_Fire_Bullet_Pixel_16x16.png" id="5_878nr"]
-
-[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_impact"]
-blend_mode = 1
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_agoa6"]
-atlas = ExtResource("2_apr53")
-region = Rect2(0, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_1y4jx"]
-atlas = ExtResource("2_apr53")
-region = Rect2(32, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_flpll"]
-atlas = ExtResource("2_apr53")
-region = Rect2(64, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_vcl7t"]
-atlas = ExtResource("2_apr53")
-region = Rect2(96, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_rf74e"]
-atlas = ExtResource("2_apr53")
-region = Rect2(128, 32, 32, 32)
-
-[sub_resource type="AtlasTexture" id="AtlasTexture_uwxk4"]
-atlas = ExtResource("2_apr53")
-region = Rect2(160, 32, 32, 32)
-
-[sub_resource type="SpriteFrames" id="SpriteFrames_agng7"]
-animations = [{
-"frames": [{
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_agoa6")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_1y4jx")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_flpll")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_vcl7t")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_rf74e")
-}, {
-"duration": 1.0,
-"texture": SubResource("AtlasTexture_uwxk4")
-}],
-"loop": false,
-"name": &"default",
-"speed": 12.0
-}]
-
-[sub_resource type="Animation" id="Animation_explode"]
-resource_name = "explode"
-length = 0.4
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath("AnimatedSprite2D:modulate")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0, 0.3, 0.4),
-"transitions": PackedFloat32Array(1, 1, 1),
-"update": 0,
-"values": [Color(1, 1, 1, 1), Color(1, 1, 1, 0.8), Color(1, 1, 1, 0)]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_fireball"]
-_data = {
-&"explode": SubResource("Animation_explode")
-}
-
-[sub_resource type="PackedScene" id="PackedScene_i64bo"]
-_bundled = {
-"conn_count": 0,
-"conns": PackedInt32Array(),
-"editable_instances": [],
-"names": PackedStringArray("FireballImpact", "Node2D", "scale", "script", "AnimatedSprite2D", "AnimatedSprite2D", "texture_filter", "material", "sprite_frames", "autoplay", "AnimationPlayer", "AnimationPlayer", "libraries", "autoplay"),
-"node_count": 3,
-"node_paths": [NodePath("."), NodePath(".")],
-"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 2, 2, 0, 3, 1, 0, 1073741824, 0, 5, 4, -1, 4, 6, 2, 7, 3, 8, 4, 9, 5, 0, 1073741825, 0, 11, 10, -1, 2, 12, 6, 13, 7, 0),
-"variants": [Vector2(10, 10), ExtResource("1_i64bo"), 1, SubResource("CanvasItemMaterial_impact"), SubResource("SpriteFrames_agng7"), "default", {
-&"": SubResource("AnimationLibrary_fireball")
-}, "explode"],
-"version": 3
-}
 
 [sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_fireball"]
 blend_mode = 1
@@ -203,7 +114,7 @@ tags = Array[String](["damage", "cooldown", "projectile", "fire", "aoe"])
 ability_level = 1
 max_level = 20
 visual_scene = SubResource("PackedScene_apr53")
-impact_effect = SubResource("PackedScene_i64bo")
+impact_effect = ExtResource("3_impact")
 unlock_cost = 150
 discovery_requirement = "Deal 1000 fire damage in a single run"
 stat_summary = "Damage: 20\nCooldown: 0.3s\nProjectiles: 6\nAoE: 150px (80% dmg)"

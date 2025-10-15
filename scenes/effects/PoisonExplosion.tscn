@@ -1,4 +1,4 @@
-[gd_scene load_steps=12 format=3 uid="uid://bhlb7ou0omwgi"]
+[gd_scene load_steps=12 format=3 uid="uid://c5w8qf3h2jlam"]
 
 [ext_resource type="Script" uid="uid://bk0nvesebjij8" path="res://scripts/effects/FireballImpact.gd" id="1"]
 [ext_resource type="Texture2D" uid="uid://bsahue8hy47ro" path="res://assets/effects/abilities/impact/Retro Impact Effect Pack ALL/Retro Impact Effect Pack 3 A.png" id="2"]
@@ -74,12 +74,12 @@ _data = {
 &"explode": SubResource("Animation_explode")
 }
 
-[node name="FireballImpact" type="Node2D"]
+[node name="PoisonExplosion" type="Node2D"]
 scale = Vector2(10, 10)
 script = ExtResource("1")
 
 [node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
-self_modulate = Color(0.705882, 0.705882, 0.705882, 0.866667)
+self_modulate = Color(0.5, 1, 0.5, 1)
 sprite_frames = SubResource("SpriteFrames_agng7")
 autoplay = "default"
 frame = 2
