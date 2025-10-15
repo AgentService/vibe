@@ -2,8 +2,10 @@
 
 **Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 2g (Foundation Cleanup - Merge Shop + Gameplay Tomes)
-**Status:** 📋 Not Started
-**Estimated Time:** 60 minutes
+**Status:** ✅ Complete (2025-10-14)
+**Estimated Time:** 60 minutes (actual: ~55 minutes)
+
+> **2025-10-14 COMPLETION:** Single-resource pattern implemented for tomes. BaseTome extended with shop metadata, UnlockShop updated with duck typing, 4 tome files migrated, 4 duplicate files deleted. TomeManager validation shows all 4 tomes load correctly. Commit: d99967f
 
 ---
 

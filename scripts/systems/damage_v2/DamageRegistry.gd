@@ -338,8 +338,8 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	var old_hp: float = _entity_hp[index]
 	var new_hp: float = max(0.0, old_hp - final_damage)
 	_entity_hp[index] = new_hp
-	
-	Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")
+
+	# Logger.info("Entity %s: %.1f → %.1f HP (took %.1f damage from %s)" % [target_id, old_hp, new_hp, final_damage, source], "combat")  # Removed per-tick spam
 	
 	# CRITICAL: Sync damage back to actual game entities via unified pipeline
 	_sync_damage_to_game_entity_packed(target_id, index, final_damage, new_hp)
@@ -383,11 +383,16 @@ func _process_damage_immediate(target_id: String, amount: float, source: String,
 	# Release payload back to pool after emission for reuse
 	EventBus.release_damage_applied_payload(damage_payload)
 	
-	# Emit damage_dealt signal for camera shake and stats tracking
+	# Get impact position from PackedArrays (where enemy was hit)
+	var impact_position = Vector2(_entity_positions_x[index], _entity_positions_y[index])
+
+	# Emit damage_dealt signal for camera shake, stats tracking, and item procs
 	var damage_dealt_payload = EventBus.DamageDealtPayload_Type.new(
 		final_damage,
 		_map_source_for_damage_dealt(source),
-		target_id
+		target_id,
+		source_position,   # Player/ability origin (for knockback, etc.)
+		impact_position    # Enemy position (for item effect spawning)
 	)
 	EventBus.damage_dealt.emit(damage_dealt_payload)
 	
@@ -402,6 +407,9 @@ func _map_source_for_damage_dealt(source: String) -> String:
 	if source in ["melee", "projectile", "ability", "player"]:
 		return "player"
 	elif source in ["enemy", "boss", "environment"]:
+		return source
+	elif source.begins_with("item_"):
+		# Preserve item-generated damage sources for recursion prevention
 		return source
 	else:
 		# Default unknown sources to "unknown"
@@ -560,16 +568,27 @@ func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: fl
 ## Calculate final damage with modifiers
 func _calculate_final_damage(base_damage: float, _tags: Array) -> float:
 	var final_damage: float = base_damage
-	
-	# Apply crit chance (10% base crit)
-	var is_crit: bool = RNG.randf("crit") < 0.1
+
+	# Get effective crit chance from player stats (default 0.1 if no player)
+	var crit_chance: float = 0.1  # Fallback
+	if PlayerState and PlayerState.has_player_reference():
+		var player = PlayerState._player_ref
+		if player and player.runtime_stats:
+			crit_chance = player.runtime_stats.get_effective_crit_chance()
+
+	# Apply crit chance check
+	var crit_rng := RNG.stream("crit")
+	var is_crit: bool = crit_rng.randf() < crit_chance
 	if is_crit:
-		final_damage *= 2.0
+		var crit_mult: float = BalanceDB.get_combat_value("crit_multiplier") if BalanceDB else 2.0
+		final_damage *= crit_mult
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
-			Logger.debug("CRITICAL HIT! Damage: %.1f → %.1f" % [base_damage, final_damage], "combat")
-	
+			Logger.debug("CRITICAL HIT! Damage: %.1f → %.1f (crit_chance: %.1f%%)" % [
+				base_damage, final_damage, crit_chance * 100.0
+			], "combat")
+
 	# TODO: Add other damage modifiers here (resistances, vulnerabilities, etc.)
-	
+
 	return final_damage
 
 ## Handle entity death (emit events, cleanup, etc.)
@@ -618,7 +637,7 @@ func _sync_damage_to_game_entity(entity_id: String, entity_data: Dictionary, dam
 	# Emit damage sync event for systems to handle
 	# This removes the need for DamageRegistry to know about SpawnDirector/Boss internals
 	EventBus.damage_entity_sync.emit(sync_payload)
-	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+	# Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")  # Removed per-tick spam
 
 ## PHASE 7: PackedArray-based sync function (replaces _sync_damage_to_game_entity)
 func _sync_damage_to_game_entity_packed(entity_id: String, index: int, damage: float, new_hp: float) -> void:
@@ -635,7 +654,7 @@ func _sync_damage_to_game_entity_packed(entity_id: String, index: int, damage: f
 	
 	# Emit damage sync event for systems to handle
 	EventBus.damage_entity_sync.emit(sync_payload)
-	Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")
+	# Logger.debug("Emitted damage sync for %s (HP: %.1f)" % [entity_id, new_hp], "combat")  # Removed per-tick spam
 
 ## PHASE 7: PackedArray-based death handling (replaces _handle_entity_death)
 func _handle_entity_death_packed(entity_id: String, index: int) -> void:

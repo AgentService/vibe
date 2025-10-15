@@ -2,9 +2,16 @@
 
 **Parent Task:** `2_ABILITIES_system_implementation.md`
 **Phase:** 2 of 4
-**Status:** 📋 Not Started
+**Status:** ✅ Complete (Code Verified 2025-10-14)
 **Estimated Time:** 3-4 hours
-**Depends On:** Phase 1.1 (Foundation) must be complete
+**Depends On:** Phase 1.1 (Foundation) ✅ Complete
+
+> **2025-10-14 CODE INSPECTION:** Phase 1.2 integration verified as complete:
+> - AbilityController.gd: Component class (RefCounted) with 4 ability slots + 4 tome slots
+> - EventBus signal consumers: ability_acquired, tome_acquired connected in _ready()
+> - Auto-casting at 30Hz via combat_step signal
+> - Memory leak prevention with proper signal cleanup in _notification(NOTIFICATION_PREDELETE)
+> - Located at: scripts/systems/AbilityController.gd (434 lines)
 
 ---
 

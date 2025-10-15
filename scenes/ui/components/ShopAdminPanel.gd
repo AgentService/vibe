@@ -91,15 +91,14 @@ func _load_category_items(category: String) -> void:
 	# Get items from data provider
 	var items_array: Array = data_provider.call()
 
-	# Create entry for each item
+	# Create entry for each item (support all resource types)
 	for item_metadata in items_array:
-		if item_metadata is ItemMetadata:
-			_create_admin_item_entry(target_list, item_metadata)
+		_create_admin_item_entry(target_list, item_metadata)
 
 	# Show the target list
 	target_list.visible = true
 
-func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetadata) -> void:
+func _create_admin_item_entry(container: VBoxContainer, item_metadata: Variant) -> void:
 	"""Create an admin entry for a single item with state cycling button."""
 	if not MetaProgression:
 		Logger.warn("ShopAdminPanel: MetaProgression not available", "ui")
@@ -115,11 +114,13 @@ func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetad
 	icon_texture.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	icon_texture.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 
-	# Load icon from item metadata
-	if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
-		icon_texture.texture = load(item_metadata.icon_path)
-	else:
-		Logger.debug("ShopAdminPanel: Icon not found or empty: %s" % item_metadata.icon_path, "ui")
+	# Load icon from item metadata (duck typing: icon_path or icon)
+	if item_metadata is ItemMetadata and "icon_path" in item_metadata:
+		if not item_metadata.icon_path.is_empty() and ResourceLoader.exists(item_metadata.icon_path):
+			icon_texture.texture = load(item_metadata.icon_path)
+	elif "icon" in item_metadata and item_metadata.icon:
+		# BaseItem, BaseTome use direct icon reference
+		icon_texture.texture = item_metadata.icon
 
 	row.add_child(icon_texture)
 
@@ -148,10 +149,23 @@ func _create_admin_item_entry(container: VBoxContainer, item_metadata: ItemMetad
 
 	container.add_child(row)
 
-func _update_state_icon(icon: TextureRect, item_metadata: ItemMetadata) -> void:
+func _update_state_icon(icon: TextureRect, item_metadata: Variant) -> void:
 	"""Update the state icon to reflect current item state."""
-	var is_discovered := MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
-	var is_unlocked := MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	# Duck typing: Extract item_id and category
+	var item_id: String = ""
+	if item_metadata is BaseTome:
+		item_id = item_metadata.tome_id
+	elif item_metadata is BaseAbility:
+		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
+	elif "item_id" in item_metadata:
+		item_id = item_metadata.item_id
+
+	var category: String = item_metadata.category
+
+	var is_discovered := MetaProgression.is_item_discovered(category, item_id)
+	var is_unlocked := MetaProgression.is_item_unlocked(category, item_id)
 
 	# Use colored squares to indicate state
 	# Create a simple colored texture
@@ -168,35 +182,48 @@ func _update_state_icon(icon: TextureRect, item_metadata: ItemMetadata) -> void:
 
 	icon.modulate = color
 
-func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_icon: TextureRect) -> void:
+func _on_cycle_state_pressed(item_metadata: Variant, state_icon: TextureRect) -> void:
 	"""Cycle item through states: Undiscovered → Discovered → Unlocked → Undiscovered."""
 	if not MetaProgression:
 		return
 
-	var is_discovered := MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
-	var is_unlocked := MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	# Duck typing: Extract item_id and category
+	var item_id: String = ""
+	if item_metadata is BaseTome:
+		item_id = item_metadata.tome_id
+	elif item_metadata is BaseAbility:
+		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
+	elif "item_id" in item_metadata:
+		item_id = item_metadata.item_id
+
+	var category: String = item_metadata.category
+
+	var is_discovered := MetaProgression.is_item_discovered(category, item_id)
+	var is_unlocked := MetaProgression.is_item_unlocked(category, item_id)
 
 	var new_state: String = ""
 
 	# State machine: Undiscovered → Discovered → Unlocked → Undiscovered
 	if not is_discovered and not is_unlocked:
 		# Undiscovered → Discovered
-		MetaProgression.discover_item(item_metadata.category, item_metadata.item_id)
+		MetaProgression.discover_item(category, item_id)
 		new_state = "discovered"
-		Logger.info("ShopAdminPanel: Set %s to DISCOVERED" % item_metadata.item_id, "ui")
+		Logger.info("ShopAdminPanel: Set %s to DISCOVERED" % item_id, "ui")
 
 	elif is_discovered and not is_unlocked:
 		# Discovered → Unlocked
-		MetaProgression.unlock_item(item_metadata.category, item_metadata.item_id)
+		MetaProgression.unlock_item(category, item_id)
 		new_state = "unlocked"
-		Logger.info("ShopAdminPanel: Set %s to UNLOCKED" % item_metadata.item_id, "ui")
+		Logger.info("ShopAdminPanel: Set %s to UNLOCKED" % item_id, "ui")
 
 	else:  # unlocked
 		# Unlocked → Undiscovered (remove from both arrays)
-		MetaProgression._remove_item_from_discovered(item_metadata.category, item_metadata.item_id)
-		MetaProgression._remove_item_from_unlocked(item_metadata.category, item_metadata.item_id)
+		MetaProgression._remove_item_from_discovered(category, item_id)
+		MetaProgression._remove_item_from_unlocked(category, item_id)
 		new_state = "undiscovered"
-		Logger.info("ShopAdminPanel: Set %s to UNDISCOVERED" % item_metadata.item_id, "ui")
+		Logger.info("ShopAdminPanel: Set %s to UNDISCOVERED" % item_id, "ui")
 
 	# Save changes
 	MetaProgression.save()
@@ -205,7 +232,7 @@ func _on_cycle_state_pressed(item_metadata: ItemMetadata, state_icon: TextureRec
 	_update_state_icon(state_icon, item_metadata)
 
 	# Emit signal for shop to refresh
-	admin_state_changed.emit(item_metadata.item_id, item_metadata.category, new_state)
+	admin_state_changed.emit(item_id, category, new_state)
 
 func refresh_current_tab() -> void:
 	"""Refresh the currently visible tab."""

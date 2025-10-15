@@ -332,10 +332,48 @@ func _check_ghost_collisions() -> void:
 	var hit_indices = ghost_spawner.check_hits_in_area(global_position, collision_radius, damage)
 
 	if hit_indices.size() > 0:
+		# Spawn impact effect at collision position (fireball explosion)
+		_spawn_impact_effect(global_position)
+
+		# Apply AoE damage if configured (fireball explosion effect)
+		# Pass empty string for direct_hit_enemy_id since ghosts don't have entity IDs
+		if impact_aoe_radius > 0.0:
+			_apply_impact_aoe(global_position, "")
+
 		# Hit at least one ghost - consume pierce
 		_remaining_pierce -= hit_indices.size()
 		if _remaining_pierce < 0:
 			call_deferred("despawn")
+
+
+## Spawns the impact effect at the specified position
+## Used by both scene-based enemy collisions and MultiMesh ghost collisions
+##
+## Parameters:
+##   at_position: Projectile impact point (collision position)
+##   enemy_position: Optional enemy center position for offset calculation
+func _spawn_impact_effect(at_position: Vector2, enemy_position: Vector2 = Vector2.ZERO) -> void:
+	if not impact_effect:
+		return
+
+	var spawn_position = at_position
+
+	# If enemy position provided, offset explosion toward enemy center
+	# This makes explosions appear "inside" enemies rather than at the surface
+	if enemy_position != Vector2.ZERO:
+		var direction_to_enemy = (enemy_position - at_position).normalized()
+		var offset_distance = 36.0  # Pixels to move toward enemy center
+		spawn_position = at_position + (direction_to_enemy * offset_distance)
+
+	var effect_instance = impact_effect.instantiate()
+	effect_instance.global_position = spawn_position
+
+	# Scale effect to match AoE radius (if effect supports it)
+	if effect_instance.has_method("set_aoe_radius"):
+		effect_instance.set_aoe_radius(impact_aoe_radius)
+
+	get_tree().current_scene.add_child(effect_instance)
+
 
 ## Handles enemy collision and damage application
 func _on_enemy_collision(enemy_id: String) -> void:
@@ -400,16 +438,12 @@ func _on_enemy_collision(enemy_id: String) -> void:
 	if impact_aoe_radius > 0.0:
 		_apply_impact_aoe(global_position, enemy_id)
 
-	# Spawn impact effect if configured (fireball explosion visual)
-	if impact_effect:
-		var effect_instance = impact_effect.instantiate()
-		effect_instance.global_position = global_position
+	# Get enemy position for explosion offset calculation (O(1) lookup via EntityTracker)
+	var enemy_pos: Vector2 = EntityTracker.get_entity(enemy_id).get("pos", Vector2.ZERO)
 
-		# Scale effect to match AoE radius (if effect supports it)
-		if effect_instance.has_method("set_aoe_radius"):
-			effect_instance.set_aoe_radius(impact_aoe_radius)
-
-		get_tree().current_scene.add_child(effect_instance)
+	# Spawn impact effect at collision position (fireball explosion visual)
+	# Pass enemy position for 36px offset toward enemy center
+	_spawn_impact_effect(global_position, enemy_pos)
 
 	# Emit projectile hit signal
 	projectile_hit.emit(enemy_id, damage)

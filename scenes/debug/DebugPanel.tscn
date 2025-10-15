@@ -156,6 +156,10 @@ text = "Kill Player"
 layout_mode = 2
 text = "🎯 Ability Testing"
 
+[node name="ItemTestingButton" type="Button" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
+layout_mode = 2
+text = "🎁 Item Testing"
+
 [node name="RadarDisabledCheckBox" type="CheckBox" parent="PanelContainer/MarginContainer/MainVBoxContainer/MainHBoxContainer/RightColumn"]
 layout_mode = 2
 text = "Disable Radar"

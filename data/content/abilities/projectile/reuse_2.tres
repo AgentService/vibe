@@ -60,5 +60,9 @@ icon = SubResource("CompressedTexture2D_4vjur")
 tags = Array[String](["damage", "cooldown", "projectile"])
 ability_level = 1
 max_level = 20
-
 visual_scene = SubResource("PackedScene_bilwx")
+unlock_cost = 50
+discovery_requirement = "Available from start (test ability)"
+stat_summary = "Damage: 55\nCooldown: 1.0s\nProjectiles: 15\nPierce: 2\nHoming: 1.0"
+flavor_text = "[Archived for testing]"
+rarity = "common"

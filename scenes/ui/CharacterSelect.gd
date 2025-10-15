@@ -39,7 +39,8 @@ const CharacterButtonScene = preload("res://scenes/ui/components/CharacterSelect
 # Selection state
 var selected_character: String = ""
 
-# Character data (loaded from data/core/character-types.tres)
+# Character data (loaded from CharacterManager autoload via duck typing)
+# Supports both CharacterType (legacy) and BaseCharacter (unified)
 var character_types: Dictionary = {}
 
 # Texture cache to avoid redundant loading
@@ -72,13 +73,31 @@ func _ready() -> void:
 	Logger.info("CharacterSelect loaded with %d characters" % character_types.size(), "ui")
 
 func _load_character_types() -> void:
-	"""Load character types from data file."""
+	"""Load character types from CharacterManager autoload or legacy data file.
+
+	Priority:
+	1. CharacterManager (if available and has characters) - unified BaseCharacter system
+	2. Fallback to legacy character-types.tres file
+	"""
+	# Try CharacterManager first (unified BaseCharacter system)
+	if CharacterManager:
+		var all_characters := CharacterManager.get_all_characters_sorted()
+		if not all_characters.is_empty():
+			# Build dictionary {character_id: BaseCharacter}
+			for character in all_characters:
+				if "character_id" in character:
+					character_types[character.character_id] = character
+
+			Logger.info("Loaded %d characters from CharacterManager" % character_types.size(), "ui")
+			return
+
+	# Fallback to legacy system
 	var character_data = load("res://data/core/character-types.tres")
 	if character_data and character_data.character_types:
 		character_types = character_data.character_types
-		Logger.info("Loaded %d character types" % character_types.size(), "ui")
+		Logger.info("Loaded %d character types (legacy)" % character_types.size(), "ui")
 	else:
-		Logger.error("Failed to load character-types.tres", "ui")
+		Logger.error("Failed to load characters from CharacterManager or legacy file", "ui")
 
 func _populate_character_grid() -> void:
 	"""Dynamically create character buttons from character_types data."""
@@ -92,21 +111,38 @@ func _populate_character_grid() -> void:
 		var button = _create_character_button(char_id, char_type)
 		character_grid.add_child(button)
 
-func _create_character_button(char_id: String, char_type: CharacterType) -> CharacterSelectButton:
-	"""Create a character selection button from template scene."""
+func _create_character_button(char_id: String, char_data: Variant) -> CharacterSelectButton:
+	"""Create a character selection button from template scene.
+
+	Args:
+		char_id: Unique character identifier
+		char_data: CharacterType (legacy) or BaseCharacter (unified) via duck typing
+
+	Returns:
+		CharacterSelectButton instance
+	"""
 	# Instantiate the template scene
 	var button_instance: CharacterSelectButton = CharacterButtonScene.instantiate()
 	button_instance.name = char_id.capitalize()
 
-	# Load portrait texture
-	var portrait_texture = _load_texture_from_filename(
-		char_type.portrait_icon,
-		PORTRAIT_PATH,
-		FALLBACK_PORTRAIT
-	)
+	# Load portrait texture (duck typing for icon source)
+	var portrait_texture: Texture2D
+	if "icon" in char_data and char_data.icon is Texture2D:
+		# BaseCharacter: Direct Texture2D reference
+		portrait_texture = char_data.icon if char_data.icon else load(FALLBACK_PORTRAIT)
+	elif "portrait_icon" in char_data:
+		# CharacterType: Filename-based loading
+		portrait_texture = _load_texture_from_filename(
+			char_data.portrait_icon,
+			PORTRAIT_PATH,
+			FALLBACK_PORTRAIT
+		)
+	else:
+		# Fallback if neither property exists
+		portrait_texture = load(FALLBACK_PORTRAIT)
 
 	# Setup the button with character data
-	button_instance.setup(char_id, char_type, portrait_texture)
+	button_instance.setup(char_id, char_data, portrait_texture)
 
 	# Connect to character selection signal
 	button_instance.character_selected.connect(_on_character_selected)
@@ -167,30 +203,52 @@ func _show_error_ui() -> void:
 	_clear_passive_info()
 	confirm_button.disabled = true
 
-func _show_character_info(char_type: CharacterType) -> void:
-	"""Display full character information for selected character."""
-	# Character info
+func _show_character_info(char_data: Variant) -> void:
+	"""Display full character information for selected character.
+
+	Duck typing: Supports both CharacterType (legacy) and BaseCharacter (unified)
+	"""
+	# Character info (compatible across both types)
+	var display_name: String = char_data.display_name if "display_name" in char_data else "Unknown"
+	var description: String = char_data.description if "description" in char_data else ""
+
 	_set_character_info(
-		char_type.display_name,
+		display_name,
 		"Rank 1",  # TODO(UI-phase2): Load character rank from MetaProgression autoload
 		"0 Runs",  # TODO(UI-phase2): Load run count from LocalLeaderboard for this character
-		char_type.description
+		description
 	)
 	_update_character_icon(selected_character)
 
-	# Ability info
-	_set_ability_info(
-		char_type.main_ability_name,
-		char_type.main_ability_description,
-		_load_texture_from_filename(char_type.main_ability_icon, ABILITY_ICON_PATH, FALLBACK_ICON)
-	)
+	# Ability/Passive info (duck typing for different formats)
+	if "main_ability_name" in char_data:
+		# CharacterType: Detailed ability/passive system
+		_set_ability_info(
+			char_data.main_ability_name,
+			char_data.main_ability_description,
+			_load_texture_from_filename(char_data.main_ability_icon, ABILITY_ICON_PATH, FALLBACK_ICON)
+		)
 
-	# Passive info
-	_set_passive_info(
-		char_type.main_passive_name,
-		char_type.main_passive_description,
-		_load_texture_from_filename(char_type.main_passive_icon, PASSIVE_ICON_PATH, FALLBACK_ICON)
-	)
+		_set_passive_info(
+			char_data.main_passive_name,
+			char_data.main_passive_description,
+			_load_texture_from_filename(char_data.main_passive_icon, PASSIVE_ICON_PATH, FALLBACK_ICON)
+		)
+	elif "stat_summary" in char_data:
+		# BaseCharacter: Stat-based display (unified system)
+		var stat_summary: String = char_data.stat_summary if char_data.stat_summary else "No stats available"
+
+		# Show stat summary in ability section, clear passive section
+		_set_ability_info(
+			"Character Stats",
+			stat_summary,
+			null
+		)
+		_clear_passive_info()
+	else:
+		# Fallback: Clear both sections if no data available
+		_clear_ability_info()
+		_clear_passive_info()
 
 	confirm_button.disabled = false
 
@@ -262,17 +320,28 @@ func _load_texture_from_filename(filename: String, base_path: String, fallback: 
 	return load(fallback) as Texture2D
 
 func _update_character_icon(character_id: String) -> void:
-	"""Update character portrait icon in the info panel."""
+	"""Update character portrait icon in the info panel.
+
+	Duck typing: Supports both CharacterType and BaseCharacter
+	"""
 	if not character_types.has(character_id):
 		return
 
-	var char_type = character_types[character_id]
-	if not char_type.portrait_icon.is_empty():
+	var char_data = character_types[character_id]
+
+	# BaseCharacter: Direct Texture2D property
+	if "icon" in char_data and char_data.icon is Texture2D:
+		character_icon.texture = char_data.icon if char_data.icon else load(FALLBACK_PORTRAIT)
+	# CharacterType: Filename-based loading
+	elif "portrait_icon" in char_data and not char_data.portrait_icon.is_empty():
 		character_icon.texture = _load_texture_from_filename(
-			char_type.portrait_icon,
+			char_data.portrait_icon,
 			PORTRAIT_PATH,
 			FALLBACK_PORTRAIT
 		)
+	else:
+		# Fallback
+		character_icon.texture = load(FALLBACK_PORTRAIT)
 
 func _on_confirm_pressed() -> void:
 	"""Proceed to map selection after character is chosen."""

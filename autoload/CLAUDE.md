@@ -19,6 +19,11 @@
 | **LocalLeaderboard.gd** | Personal best tracking per map/tier | `add_run()`, `get_personal_best()`, `get_leaderboard()` | None (persistence) |
 | **PlayerProgression.gd** | In-run XP & leveling (simplified) | `leveled_up`, `xp_gained` | None (session-only) |
 | **MapLevel.gd** | Time-based progression tracking | `level_increased`, `level_changed` | StateManager for run lifecycle |
+| **AbilityManager.gd** | Ability definitions & registry | `get_definition()`, `has_definition()`, `create_ability_instance()` | None (foundation) |
+| **TomeManager.gd** | Tome definitions & registry | `get_definition()`, `get_category()` | None (foundation) |
+| **ItemManager.gd** | Item dual-registry & proc handler | `equip_item()`, `damage_dealt` consumer | EventBus, RNG, EffectSpawner |
+| **CharacterManager.gd** | Character definitions & registry | `get_character()`, `get_default_character()`, `get_all_characters_sorted()` | None (foundation) |
+| **EffectSpawner.gd** | Generic item effect spawning | `spawn_explosion()`, `spawn_lightning()` | EntityTracker, DamageService |
 | **MultiMeshProjectileManager.gd** | High-performance projectile system | `combat_step` consumer, `ability_projectile_requested` | EventBus, MultiMeshManager |
 
 ## Autoload Architecture Patterns
@@ -72,6 +77,65 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 var _damage_applied_pool: ObjectPool
 var _damage_dealt_pool: ObjectPool
 ```
+
+**Ability & Tome Acquisition Signals (2025-10-13):**
+```gdscript
+# EventBus defines signals for ability and tome acquisition
+signal ability_acquired(ability_id: String, slot: int)
+signal tome_acquired(tome_id: String, stack_count: int)
+
+# SOURCE pattern: UI components emit acquisition signals
+# Example: Debug panels, level-up UI, reward screens
+func _on_equip_button_pressed() -> void:
+    EventBus.ability_acquired.emit("ranger_arrow", 0)  # ability_id, slot
+    EventBus.tome_acquired.emit("swiftness", 1)        # tome_id, stack_count
+
+# CONSUMER pattern: AbilityController listens and equips (no re-emission)
+func _ready() -> void:
+    EventBus.ability_acquired.connect(_on_ability_acquired)
+    EventBus.tome_acquired.connect(_on_tome_acquired)
+
+func _on_ability_acquired(ability_id: String, slot: int) -> void:
+    # Validate with AbilityManager
+    if not AbilityManager.has_definition(ability_id):
+        Logger.warn("Invalid ability: %s" % ability_id, "abilities")
+        return
+
+    # Equip via existing method (handles cooldown reset, logging, slot assignment)
+    equip_ability(ability_id, slot)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+func _on_tome_acquired(tome_id: String, stack_count: int) -> void:
+    var tome = TomeManager.get_definition(tome_id)
+    if not tome:
+        Logger.warn("Invalid tome: %s" % tome_id, "abilities")
+        return
+
+    # Equip tome stack_count times (equip_tome adds 1 stack per call)
+    for i in range(stack_count):
+        equip_tome(tome)
+    # ❌ IMPORTANT: Do NOT re-emit signal here (prevents infinite loops)
+
+# Memory leak prevention (RefCounted cleanup)
+func _notification(what: int) -> void:
+    if what == NOTIFICATION_PREDELETE:
+        if EventBus and is_instance_valid(EventBus):
+            var ability_ref = Callable(self, "_on_ability_acquired")
+            if EventBus.ability_acquired.is_connected(ability_ref):
+                EventBus.ability_acquired.disconnect(ability_ref)
+
+            var tome_ref = Callable(self, "_on_tome_acquired")
+            if EventBus.tome_acquired.is_connected(tome_ref):
+                EventBus.tome_acquired.disconnect(tome_ref)
+```
+
+**Architecture Rules:**
+- **Unidirectional flow**: UI → EventBus → AbilityController → Internal Methods
+- **Consumer pattern**: Listeners call internal methods but do NOT re-emit signals
+- **Source pattern**: UI components emit signals instead of direct method calls
+- **Validation layer**: AbilityManager.has_definition() / TomeManager.get_definition() before equipping
+- **Existing side-effects**: equip_ability() and equip_tome() handle all state changes (no duplication)
+- **Reference implementation**: ItemManager.gd:525-541 (item_acquired signal consumer)
 
 ### 🎮 **GameOrchestrator Dependency Injection**
 
@@ -165,6 +229,535 @@ RNG.stream("boss")    # Boss AI decisions
 # Usage in systems
 var crit_roll = RNG.stream("crit").randf()
 var spawn_type = RNG.stream("waves").randi_range(0, enemy_types.size() - 1)
+```
+
+### 🎁 **ItemManager & EffectSpawner Pattern (2025-10-14)**
+
+**Single-Resource Item System with Proc Effects:**
+```gdscript
+# ItemManager.gd - Autoload for unified item system (gameplay + shop metadata)
+extends Node
+
+# Single-resource pattern (following BaseTome architecture)
+var _item_registry: Dictionary = {}       # {item_id: BaseItem} - Unified gameplay + metadata
+var _item_file_paths: Dictionary = {}     # Hot-reload support
+
+# Equipped items tracking with stacking
+var _equipped_items: Dictionary = {}  # {item_id: {item: BaseItem, stack_count: int}}
+var _player: Node2D = null
+
+func _ready() -> void:
+    _load_all_items()
+    _connect_to_event_bus()
+
+func _load_items_from_directory(dir_path: String) -> void:
+    # Clean single-resource loading (no suffix checking)
+    while file_name != "":
+        if file_name.ends_with(".tres"):
+            var item = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+
+            # Only load BaseItem resources
+            if item is BaseItem:
+                _register_item(item, file_path)
+
+func _register_item(item: BaseItem, file_path: String) -> void:
+    var item_id: String = item.item_id
+    _item_registry[item_id] = item
+    _item_file_paths[item_id] = file_path
+
+# Public API - Single unified registry
+func get_item(item_id: String) -> BaseItem:
+    return _item_registry.get(item_id) as BaseItem
+
+func get_base_item(item_id: String) -> BaseItem:
+    return get_item(item_id)  # Compatibility alias
+
+# Equip item and apply stat bonuses
+func equip_item(item_id: String) -> bool:
+    var item: BaseItem = get_base_item(item_id)
+    if not item or not _player:
+        return false
+
+    item.reset_cooldowns()
+    _equipped_items[item_id] = item
+    _apply_stat_bonuses(item)
+    return true
+
+# EventBus integration
+func _connect_to_event_bus() -> void:
+    EventBus.damage_dealt.connect(_on_damage_dealt)  # Proc checks
+    EventBus.combat_step.connect(_on_combat_step)    # Cooldown updates
+
+func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type) -> void:
+    # Recursion prevention
+    if payload.source.begins_with("item_"):
+        return
+
+    # Check each equipped item for proc triggers
+    for item_obj in _equipped_items.values():
+        var item: BaseItem = item_obj as BaseItem
+        if item:
+            _check_item_procs(item, payload)
+
+func _check_item_procs(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
+    # Deterministic RNG for proc chances
+    var item_rng := RNG.stream("item_procs")
+
+    # Lightning (cooldown-based)
+    if item.on_hit_lightning and item._lightning_cooldown <= 0.0:
+        _trigger_lightning_proc(item, payload)
+
+    # Explosion (chance-based)
+    if item.on_hit_explosion:
+        var roll := item_rng.randf()
+        if roll < item.explosion_chance:
+            _trigger_explosion_proc(item, payload)
+
+    # Freeze (chance-based)
+    if item.on_hit_freeze:
+        var roll := item_rng.randf()
+        if roll < item.freeze_chance:
+            _trigger_freeze_proc(item, payload)
+
+func _trigger_lightning_proc(item: BaseItem, payload: EventBus.DamageDealtPayload_Type) -> void:
+    item._lightning_cooldown = item.lightning_cooldown
+    var lightning_damage := payload.damage * item.lightning_damage_mult
+
+    # Spawn lightning effect via EffectSpawner
+    EffectSpawner.spawn_lightning(
+        payload.impact_position,  # Where enemy was hit
+        lightning_damage,
+        item.lightning_chain_count,
+        item.lightning_chain_range
+    )
+
+func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
+    var delta_time: float = payload.dt
+
+    # Update cooldowns for all equipped items (30Hz)
+    for item_obj in _equipped_items.values():
+        var item: BaseItem = item_obj as BaseItem
+        if item:
+            item.update_cooldowns(delta_time)
+```
+
+**EffectSpawner Integration:**
+```gdscript
+# EffectSpawner.gd - Autoload for generic item effects
+extends Node
+
+const EXPLOSION_SCENE := preload("res://scenes/effects/FireballImpact.tscn")
+
+var _arena: Node2D = null
+
+func _ready() -> void:
+    StateManager.state_changed.connect(_on_state_changed)
+
+func spawn_explosion(position: Vector2, damage: float, radius: float, custom_scene: PackedScene = null) -> void:
+    if not _arena:
+        return
+
+    # Spawn visual effect with dynamic scaling based on radius parameter
+    var scene_to_use: PackedScene = custom_scene if custom_scene else EXPLOSION_SCENE
+    var explosion := scene_to_use.instantiate()
+    _arena.add_child(explosion)
+    explosion.global_position = position
+
+    # Set visual scale based on radius (FireballImpact's set_aoe_radius method)
+    if explosion.has_method("set_aoe_radius"):
+        explosion.set_aoe_radius(radius)  # Dynamic: radius=10 → scale=0.625, radius=100 → scale=6.25
+    else:
+        explosion.scale = Vector2(4.0, 4.0)  # Fallback for effects without dynamic scaling
+
+    # Apply random horizontal flip for visual variety
+    var flip := 1.0 if RNG.stream("item_procs").randf() < 0.5 else -1.0
+    explosion.scale.x *= flip
+
+    # Apply damage to enemies in radius (NOTE: "boss" type - all enemies register as "boss")
+    var nearby_enemies := EntityTracker.get_entities_in_radius(position, radius, "boss")
+
+    for enemy_id in nearby_enemies:
+        DamageService._process_damage_immediate(
+            enemy_id,
+            damage,
+            "item_explosion",  # Source tag for recursion prevention
+            ["fire", "aoe"],
+            0.0,
+            position
+        )
+
+func spawn_lightning(position: Vector2, damage: float, chain_count: int, chain_range: float) -> void:
+    var hit_enemies: Array[String] = []
+    var current_pos := position
+    var remaining_chains := chain_count + 1
+
+    while remaining_chains > 0:
+        var nearest_enemy := _find_nearest_enemy(current_pos, chain_range, hit_enemies)
+        if not nearest_enemy:
+            break
+
+        var enemy_pos := EntityTracker.get_entity_position(nearest_enemy) as Vector2
+
+        # Apply damage
+        DamageService._process_damage_immediate(
+            nearest_enemy,
+            damage,
+            "item_lightning",
+            ["lightning"],
+            0.0,
+            current_pos
+        )
+
+        hit_enemies.append(nearest_enemy)
+        current_pos = enemy_pos
+        remaining_chains -= 1
+```
+
+**BaseItem Resource (Property-Based Procs):**
+```gdscript
+# BaseItem.gd - Pure gameplay resource
+extends Resource
+class_name BaseItem
+
+# Stat bonuses (applied to Player.runtime_stats)
+@export var max_hp_bonus: int = 0
+@export var movement_speed_mult: float = 1.0
+@export var damage_mult: float = 1.0
+@export var pickup_radius_mult: float = 1.0
+
+# Proc type 1: Lightning (cooldown-based)
+@export var on_hit_lightning: bool = false
+@export var lightning_cooldown: float = 10.0
+@export var lightning_damage_mult: float = 0.5
+@export var lightning_chain_count: int = 0
+var _lightning_cooldown: float = 0.0
+
+# Proc type 2: Explosion (chance-based)
+@export var on_hit_explosion: bool = false
+@export var explosion_chance: float = 0.25
+@export var explosion_damage_mult: float = 0.65
+@export var explosion_radius: float = 100.0
+var _explosion_procs: int = 0
+
+# Proc type 3: Freeze (chance-based)
+@export var on_hit_freeze: bool = false
+@export var freeze_chance: float = 0.075
+@export var freeze_duration: float = 2.0
+var _freeze_procs: int = 0
+
+func update_cooldowns(delta_time: float) -> void:
+    if _lightning_cooldown > 0.0:
+        _lightning_cooldown -= delta_time
+```
+
+**Arena Integration:**
+```gdscript
+# Arena.gd - Wire item system to player and effects spawner
+func _ready() -> void:
+    super._ready()
+
+    if ItemManager and player:
+        ItemManager.set_player(player)
+        Logger.debug("ItemManager wired to player", "items")
+
+    if EffectSpawner:
+        EffectSpawner.set_arena(self)
+        Logger.debug("EffectSpawner wired to arena", "effects")
+```
+
+**Item Stacking System (2025-10-13):**
+```gdscript
+# ItemManager - Stacking structure and formulas
+func equip_item(item_id: String) -> bool:
+    var item: BaseItem = get_base_item(item_id)
+    if not item or not _player:
+        return false
+
+    # Check if item already equipped (stacking)
+    if _equipped_items.has(item_id):
+        var item_data: Dictionary = _equipped_items[item_id]
+        item_data.stack_count += 1
+        _apply_stat_bonuses(item, 1)  # Apply one additional stack
+        Logger.info("ItemManager: Stacked item '%s' (stack: %d)" % [item_id, item_data.stack_count], "items")
+        return true
+
+    # First time equipping
+    _equipped_items[item_id] = {
+        "item": item,
+        "stack_count": 1
+    }
+    item.reset_cooldowns()
+    _apply_stat_bonuses(item, 1)
+    return true
+
+func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
+    var stats = _player.runtime_stats
+
+    # Multiplicative modifiers compound exponentially
+    if item.movement_speed_mult != 1.0:
+        var stack_mult := pow(item.movement_speed_mult, stack_count)
+        stats.movement_speed_mult *= stack_mult
+
+    # Additive bonuses scale linearly
+    if item.max_hp_bonus != 0:
+        var bonus := item.max_hp_bonus * stack_count
+        stats.max_hp_bonus += bonus
+
+# Example stacking:
+# - 3x Feather (+15% speed each): 1.15^3 = 1.52x total speed
+# - 3x Cheese (+20 HP each): 20 * 3 = 60 HP total
+```
+
+**Key Design Points:**
+1. **Single-resource pattern**: BaseItem contains both gameplay (procs, stats) and shop metadata (display names, unlock costs, rarity)
+2. **Item stacking**: Dictionary structure `{item_id: {item, stack_count}}` with multiplicative/additive scaling
+3. **Position-enriched events**: DamageDealtPayload provides source_position + impact_position
+4. **Deterministic RNG**: `RNG.stream("item_procs")` for consistent proc chances
+5. **Recursion prevention**: Source filtering (`source.begins_with("item_")`)
+6. **Property-based procs**: Inspector-friendly @export properties (not strategy pattern)
+7. **30Hz cooldown updates**: Subscribed to `combat_step` signal
+8. **EntityTracker type convention**: Query for "boss" type (all enemies inherit from BaseBoss)
+
+**Item Categories:**
+- **Proc items**: Lightning, explosion, freeze, poison effects triggered on damage
+- **Stat items**: HP, movement speed, damage, pickup radius, crit chance bonuses
+- **Utility items**: Pickup radius, drop rate multipliers
+
+**Filename Convention:**
+- `{item_id}.tres` - Unified file with gameplay + shop metadata (minimal .tres with only non-default properties)
+
+### 👥 **CharacterManager Pattern (2025-10-14)**
+
+**Single-Resource Character System:**
+```gdscript
+# CharacterManager.gd - Autoload for unified character system (stats + shop metadata)
+extends Node
+
+# Single-resource pattern (following ItemManager architecture)
+var _character_registry: Dictionary = {}  # {character_id: BaseCharacter}
+var _character_file_paths: Dictionary = {}  # Hot-reload support
+
+func _ready() -> void:
+    _load_all_characters()
+
+func _load_all_characters() -> void:
+    Logger.info("CharacterManager: Loading characters...", "characters")
+    _load_characters_from_directory("res://data/content/characters/")
+    Logger.info("CharacterManager: Loaded %d characters" % _character_registry.size(), "characters")
+
+func _load_characters_from_directory(dir_path: String) -> void:
+    var dir := DirAccess.open(dir_path)
+    if not dir:
+        Logger.warn("Failed to open character directory: " + dir_path, "characters")
+        return
+
+    dir.list_dir_begin()
+    var file_name := dir.get_next()
+
+    while file_name != "":
+        if file_name.ends_with(".tres"):
+            var file_path := dir_path + file_name
+            var character = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+
+            # Only load BaseCharacter resources (clean single-resource pattern)
+            if character is BaseCharacter:
+                _register_character(character, file_path)
+
+        file_name = dir.get_next()
+
+    dir.list_dir_end()
+
+func _register_character(character: BaseCharacter, file_path: String) -> void:
+    # Validate character has required properties
+    if character.character_id.is_empty():
+        Logger.warn("BaseCharacter missing character_id: " + file_path, "characters")
+        return
+
+    # Validate character configuration
+    var errors := character.validate()
+    if not errors.is_empty():
+        Logger.warn("BaseCharacter '%s' has validation errors: %s" % [
+            character.character_id, str(errors)
+        ], "characters")
+        return
+
+    # Register character
+    var character_id: String = character.character_id
+    _character_registry[character_id] = character
+    _character_file_paths[character_id] = file_path
+
+    Logger.debug("Loaded character: %s (%s)" % [character_id, character.character_name], "characters")
+
+# Public API - Single unified registry
+func get_character(character_id: String) -> BaseCharacter:
+    return _character_registry.get(character_id) as BaseCharacter
+
+func get_all_character_ids() -> Array[String]:
+    var ids: Array[String] = []
+    for id in _character_registry.keys():
+        ids.append(id)
+    return ids
+
+func get_all_characters_sorted() -> Array:
+    var characters: Array = []
+    for character in _character_registry.values():
+        characters.append(character)
+
+    # Sort by unlock_cost (0 = default character, comes first)
+    characters.sort_custom(func(a: BaseCharacter, b: BaseCharacter) -> bool:
+        return a.unlock_cost < b.unlock_cost
+    )
+
+    return characters
+
+func get_default_character() -> BaseCharacter:
+    # Find character with unlock_cost = 0
+    for character in _character_registry.values():
+        if character.unlock_cost == 0:
+            return character
+
+    # Fallback: Return first character in registry
+    if not _character_registry.is_empty():
+        return _character_registry.values()[0]
+
+    Logger.warn("CharacterManager: No characters loaded", "characters")
+    return null
+
+# Hot-reload support
+func reload_character(character_id: String) -> bool:
+    var file_path := get_file_path(character_id)
+    if file_path.is_empty():
+        Logger.warn("CharacterManager: Cannot reload unknown character: " + character_id, "characters")
+        return false
+
+    var character = ResourceLoader.load(file_path, "", ResourceLoader.CACHE_MODE_IGNORE)
+    if not character is BaseCharacter:
+        Logger.warn("CharacterManager: Failed to reload character: " + character_id, "characters")
+        return false
+
+    _register_character(character, file_path)
+    Logger.info("CharacterManager: Reloaded character: " + character_id, "characters")
+    return true
+```
+
+**BaseCharacter Resource:**
+```gdscript
+# BaseCharacter.gd - Unified character resource
+extends Resource
+class_name BaseCharacter
+
+# Core Identity
+@export_group("Core Identity")
+@export var character_id: String = ""
+@export var character_name: String = ""
+@export_multiline var description: String = ""
+@export var icon: Texture2D = null
+
+# Character Stats (Gameplay)
+@export_group("Character Stats")
+@export var base_max_hp: int = 100
+@export var base_movement_speed: float = 200.0
+@export var base_damage_mult: float = 1.0
+@export var base_pickup_radius: float = 50.0
+@export var starting_abilities: Array[String] = []  # ability_ids
+
+# Shop Metadata
+@export_group("Shop Metadata")
+@export var unlock_cost: int = 100
+@export_multiline var discovery_requirement: String = ""
+@export var stat_summary: String = ""
+@export_multiline var flavor_text: String = ""
+@export var rarity: String = "common"
+
+# Compatibility Aliases (for UnlockShop duck typing)
+var category: String:
+    get: return "characters"
+
+var display_name: String:
+    get: return character_name
+
+# Validation
+func validate() -> Array[String]:
+    var errors: Array[String] = []
+
+    if character_id.is_empty():
+        errors.append("character_id cannot be empty")
+    if character_name.is_empty():
+        errors.append("character_name cannot be empty")
+    if base_max_hp <= 0:
+        errors.append("base_max_hp must be > 0")
+    if base_movement_speed <= 0:
+        errors.append("base_movement_speed must be > 0")
+    if unlock_cost < 0:
+        errors.append("unlock_cost must be >= 0")
+    if not rarity in ["common", "uncommon", "rare", "epic", "legendary"]:
+        errors.append("rarity must be one of: common, uncommon, rare, epic, legendary")
+
+    return errors
+```
+
+**UI Integration (CharacterSelect.gd):**
+```gdscript
+# CharacterSelect prioritizes CharacterManager over legacy CharacterType system
+func _load_character_types() -> void:
+    # Try CharacterManager first (unified BaseCharacter system)
+    if CharacterManager:
+        var all_characters := CharacterManager.get_all_characters_sorted()
+        if not all_characters.is_empty():
+            # Build dictionary {character_id: BaseCharacter}
+            for character in all_characters:
+                if "character_id" in character:
+                    character_types[character.character_id] = character
+
+            Logger.info("Loaded %d characters from CharacterManager" % character_types.size(), "ui")
+            return
+
+    # Fallback to legacy system
+    var character_data = load("res://data/core/character-types.tres")
+    if character_data and character_data.character_types:
+        character_types = character_data.character_types
+        Logger.info("Loaded %d character types (legacy)" % character_types.size(), "ui")
+```
+
+**Key Design Points:**
+1. **Single-resource pattern**: BaseCharacter contains both gameplay (stats) and shop metadata (display, unlock)
+2. **No dual-registry**: Single `{character_id: BaseCharacter}` dictionary (simpler than ItemManager)
+3. **Validation**: `validate()` method ensures all required fields present and valid
+4. **Hot-reload**: `reload_character()` and `reload_all_characters()` with `CACHE_MODE_IGNORE`
+5. **Sorting**: `get_all_characters_sorted()` sorts by unlock_cost (defaults first)
+6. **Compatibility aliases**: `category` (returns "characters"), `display_name` (returns `character_name`)
+7. **Shop integration**: Works with UnlockShop duck typing patterns
+
+**Character Properties:**
+- **Identity**: character_id, character_name, description, icon
+- **Stats**: base_max_hp, base_movement_speed, base_damage_mult, base_pickup_radius, starting_abilities
+- **Shop**: unlock_cost, discovery_requirement, stat_summary, flavor_text, rarity
+
+**Usage:**
+- **Get character**: `CharacterManager.get_character("ranger")`
+- **List all**: `CharacterManager.get_all_characters_sorted()` (defaults first)
+- **Default character**: `CharacterManager.get_default_character()` (unlock_cost = 0)
+
+**Filename Convention:**
+- `{character_id}.tres` - Unified file with gameplay + shop metadata (minimal .tres with only non-default properties)
+
+**Example Character File (ranger.tres):**
+```tres
+[gd_resource type="Resource" script_class="BaseCharacter" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/characters/BaseCharacter.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+character_id = "ranger"
+character_name = "Ranger"
+description = "Swift archer specializing in rapid projectile attacks"
+base_max_hp = 80
+base_movement_speed = 220.0
+starting_abilities = ["seeking_volley"]
+unlock_cost = 0
+stat_summary = "HP: 80\nSpeed: 220\nStarting: Seeking Volley"
+rarity = "common"
 ```
 
 ### 📊 **BalanceDB Hot-Reload Pattern**
@@ -317,8 +910,9 @@ func spawn_projectile(projectile_data: Dictionary) -> void:
 ```gdscript
 func _check_collision(position: Vector2, projectile_index: int) -> bool:
     # Use EntityTracker spatial hash (O(1) lookup)
+    # NOTE: Use "boss" type - all enemies register as "boss" via BaseBoss
     var nearby_enemy_ids: Array[String] = EntityTracker.get_entities_in_radius(
-        position, COLLISION_RADIUS, "enemy"
+        position, COLLISION_RADIUS, "boss"
     )
 
     if nearby_enemy_ids.is_empty():
@@ -433,7 +1027,7 @@ var tiers = LocalLeaderboard.get_tiers_with_entries("forest_arena")
 ```
 
 **Architecture Notes:**
-- **No CharacterManager:** Character selection handled by SessionState + MainMenu UI
+- **CharacterManager:** Character definitions stored in `/data/content/characters/*.tres` (BaseCharacter resources)
 - **No Profiles Directory:** Only two persistence files:
   - `user://meta_progression.tres` (Rift Fragments)
   - `user://local_leaderboard.tres` (Personal bests)

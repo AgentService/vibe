@@ -639,7 +639,7 @@ func _on_slot_dropdown_selected(item_index: int, slot_index: int) -> void:
 	Logger.debug("Slot %d selected: %s" % [slot_index + 1, selected_ability_ids[slot_index]], "debug")
 
 
-## Equips selected abilities to player
+## Equips selected abilities to player via EventBus signals
 func _on_equip_button_pressed() -> void:
 	var player = _get_player()
 	if not player:
@@ -651,18 +651,19 @@ func _on_equip_button_pressed() -> void:
 
 	var ability_controller = player.ability_controller
 
-	# Equip abilities to slots
+	# Equip abilities to slots via EventBus signals
 	for i in range(4):
 		var ability_id = selected_ability_ids[i]
 
 		if ability_id.is_empty():
-			# Empty slot - clear it
+			# Empty slot - clear it directly (no signal for clearing)
 			ability_controller.clear_ability_slot(i)
 		else:
-			# Equip ability to slot
-			ability_controller.equip_ability(ability_id, i)
+			# Emit signal for ability acquisition (matches ItemTestingPopup pattern)
+			EventBus.ability_acquired.emit(ability_id, i)
+			Logger.info("Debug: Emitted ability_acquired signal for '%s' (slot %d)" % [ability_id, i], "abilities")
 
-		Logger.info("Equipped slot %d: %s" % [i, ability_id if not ability_id.is_empty() else "(None)"], "debug")
+		Logger.info("Processed slot %d: %s" % [i, ability_id if not ability_id.is_empty() else "(None)"], "debug")
 
 
 ## Level up ability in specific slot
@@ -756,7 +757,10 @@ func _populate_tome_dropdowns() -> void:
 		for tome_id in available_tomes:
 			var definition = TomeManager.get_definition(tome_id)
 			if definition:
-				dropdown.add_item(tome_id)
+				# Display tome_name (not tome_id) for readability
+				var display_name = definition.tome_name if "tome_name" in definition else tome_id
+				dropdown.add_item(display_name)
+				dropdown.set_item_metadata(dropdown.item_count - 1, tome_id)
 
 	Logger.debug("Populated tome dropdowns with %d tomes" % available_tomes.size(), "debug")
 
@@ -767,8 +771,8 @@ func _on_tome_dropdown_selected(item_index: int, slot_index: int) -> void:
 		# "(None)" selected
 		selected_tome_ids[slot_index] = ""
 	else:
-		# Extract tome_id from dropdown text
-		var tome_id = tome_dropdowns[slot_index].get_item_text(item_index)
+		# Extract tome_id from metadata (display shows tome_name)
+		var tome_id = tome_dropdowns[slot_index].get_item_metadata(item_index)
 		selected_tome_ids[slot_index] = tome_id
 
 	Logger.debug("Tome slot %d selected: %s" % [slot_index + 1, selected_tome_ids[slot_index]], "debug")
@@ -796,14 +800,9 @@ func _on_equip_tome_button_pressed() -> void:
 		Logger.warn("No tome selected for equip", "debug")
 		return
 
-	# Load tome definition and equip it
-	var tome_definition = TomeManager.get_definition(tome_id)
-	if not tome_definition:
-		Logger.error("Failed to load tome: %s" % tome_id, "debug")
-		return
-
-	# Equip tome (AbilityController will handle stacking if already equipped)
-	ability_controller.equip_tome(tome_definition)
+	# Emit signal for tome acquisition (matches ItemTestingPopup pattern)
+	EventBus.tome_acquired.emit(tome_id, 1)
+	Logger.info("Debug: Emitted tome_acquired signal for '%s'" % tome_id, "abilities")
 
 	# Update stack label
 	_refresh_tome_stack_labels(ability_controller)
@@ -824,12 +823,10 @@ func _on_stack_button_pressed(slot_index: int) -> void:
 		Logger.warn("No tome selected in slot %d" % (slot_index + 1), "debug")
 		return
 
-	# Load and equip tome (increments stack if already equipped)
-	var tome_definition = TomeManager.get_definition(tome_id)
-	if tome_definition:
-		ability_controller.equip_tome(tome_definition)
-		_refresh_tome_stack_labels(ability_controller)
-		Logger.info("Increased stack for tome: %s" % tome_id, "debug")
+	# Emit signal for tome stack increase (matches ItemTestingPopup pattern)
+	EventBus.tome_acquired.emit(tome_id, 1)
+	_refresh_tome_stack_labels(ability_controller)
+	Logger.info("Debug: Emitted tome_acquired signal for stack increase: '%s'" % tome_id, "abilities")
 
 
 ## Clears all equipped tomes
@@ -850,6 +847,11 @@ func _on_clear_tomes_button_pressed() -> void:
 		if ability and ability.has_method("_recalculate_final_stats"):
 			ability._active_modifiers.clear()
 			ability._recalculate_final_stats()
+
+	# Reset player runtime_stats (removes movement speed, pickup radius, etc.)
+	if "runtime_stats" in player and player.runtime_stats:
+		player.runtime_stats.reset_modifiers()
+		Logger.debug("Reset player runtime_stats modifiers", "debug")
 
 	# Update UI
 	_refresh_tome_stack_labels(ability_controller)

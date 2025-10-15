@@ -355,6 +355,16 @@ func _setup_player() -> void:
 		PlayerState.set_player_reference(player)
 		Logger.debug("PlayerState reference set immediately after player creation", "arena")
 
+		# Wire ItemManager to player for stat bonus application
+		if ItemManager:
+			ItemManager.set_player(player)
+			Logger.debug("ItemManager wired to player for item stat bonuses", "items")
+
+		# Wire EffectSpawner to arena for item proc effects
+		if EffectSpawner:
+			EffectSpawner.set_arena(self)
+			Logger.debug("EffectSpawner wired to arena for item effects", "effects")
+
 	# Camera setup now handled in injection method
 
 # DEPRECATED: XP system setup moved to GameOrchestrator injection

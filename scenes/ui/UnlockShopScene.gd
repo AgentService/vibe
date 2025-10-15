@@ -53,113 +53,174 @@ func _ready() -> void:
 		Logger.warn("UnlockShopScene: Admin panel not found", "ui")
 
 func _load_item_metadata() -> void:
-	"""Load item metadata from /data/content/{items,tomes,skills,characters}/*.tres"""
-	var categories = ["items", "tomes", "skills", "characters"]
+	"""Load item metadata from /data/content/{items,tomes,abilities,characters}/*.tres"""
+	var categories = [
+		"res://data/content/items/",
+		"res://data/content/tomes/",
+		"res://data/content/abilities/",  # Combat abilities for skills tab
+		"res://data/content/characters/"
+	]
 
-	for category in categories:
-		var category_dir = "res://data/content/%s/" % category
-		var dir = DirAccess.open(category_dir)
-
-		if not dir:
-			Logger.warn("UnlockShopScene: Category directory not found: %s" % category_dir, "ui")
-			continue
-
-		dir.list_dir_begin()
-		var file_name = dir.get_next()
-
-		while file_name != "":
-			if file_name.ends_with(".tres"):
-				var file_path = category_dir + file_name
-				var resource = load(file_path)
-
-				if resource is ItemMetadata:
-					item_metadata_cache[resource.item_id] = resource
-					Logger.debug("UnlockShopScene: Loaded item metadata: %s" % resource.item_id, "ui")
-				else:
-					Logger.warn("UnlockShopScene: Invalid ItemMetadata resource: %s" % file_path, "ui")
-
-			file_name = dir.get_next()
-
-		dir.list_dir_end()
+	for category_dir in categories:
+		_load_from_directory_recursive(category_dir)
 
 	Logger.info("UnlockShopScene: Loaded %d items from data files" % item_metadata_cache.size(), "ui")
 
-func _fetch_items_data() -> Array[ItemMetadata]:
+func _load_from_directory_recursive(dir_path: String) -> void:
+	"""Recursively load .tres files from directory and subdirectories."""
+	var dir = DirAccess.open(dir_path)
+	if not dir:
+		Logger.warn("UnlockShopScene: Directory not found: %s" % dir_path, "ui")
+		return
+
+	dir.list_dir_begin()
+	var file_name = dir.get_next()
+
+	while file_name != "":
+		if file_name == "." or file_name == "..":
+			file_name = dir.get_next()
+			continue
+
+		var file_path = dir_path + file_name
+
+		# Recursively load subdirectories
+		if dir.current_is_dir():
+			_load_from_directory_recursive(file_path + "/")
+		elif file_name.ends_with(".tres"):
+			var resource = load(file_path)
+
+			# Accept unified resources (BaseItem, BaseTome, BaseAbility, BaseCharacter) and legacy (ItemMetadata)
+			if resource is ItemMetadata or resource is BaseTome or resource is BaseItem or resource is BaseAbility or resource is BaseCharacter:
+				# Duck typing: Extract ID from different resource types
+				var item_id_key: String = ""
+				if resource is BaseTome:
+					item_id_key = resource.tome_id
+				elif resource is BaseItem:
+					item_id_key = resource.item_id
+				elif resource is BaseAbility:
+					item_id_key = resource.ability_id
+				elif resource is BaseCharacter:
+					item_id_key = resource.character_id
+				else:  # ItemMetadata
+					item_id_key = resource.item_id
+
+				item_metadata_cache[item_id_key] = resource
+				Logger.debug("UnlockShopScene: Loaded item metadata: %s (%s)" % [item_id_key, resource.get_class()], "ui")
+			else:
+				Logger.debug("UnlockShopScene: Skipped non-shop resource: %s" % file_path, "ui")
+
+		file_name = dir.get_next()
+
+	dir.list_dir_end()
+
+func _fetch_items_data() -> Array:
 	"""Callback for UnlockShop component - provides items unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "items" category
+		Array: Untyped array containing ItemMetadata or BaseItem resources for "items" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseItem
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "items":
+
+		# Check if it's an item (BaseItem type OR ItemMetadata with category="items")
+		var is_item = (metadata is BaseItem) or (metadata.category == "items")
+
+		if is_item:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by rarity using duck typing (handles both enum and string)
+	category_items.sort_custom(func(a, b) -> bool:
+		return _get_rarity_value(a) < _get_rarity_value(b)
 	)
 
 	return category_items
 
-func _fetch_tomes_data() -> Array[ItemMetadata]:
+func _fetch_tomes_data() -> Array:
 	"""Callback for UnlockShop component - provides tomes unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "tomes" category
+		Array: Untyped array containing ItemMetadata and/or BaseTome resources for "tomes" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseTome
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "tomes":
+
+		# Check if it's a tome (BaseTome type OR ItemMetadata with category="tomes")
+		var is_tome = (metadata is BaseTome) or (metadata.category == "tomes")
+
+		if is_tome:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by rarity (Common → Legendary) using duck typing
+	category_items.sort_custom(func(a, b) -> bool:
+		return _get_rarity_value(a) < _get_rarity_value(b)
 	)
 
 	return category_items
 
-func _fetch_skills_data() -> Array[ItemMetadata]:
+func _get_rarity_value(item) -> int:
+	"""Get numeric rarity value for sorting (handles both enum and string)."""
+	if item.rarity is int:
+		return item.rarity  # ItemMetadata.Rarity enum
+	else:
+		# BaseTome uses string: "common", "uncommon", "rare", etc.
+		match item.rarity:
+			"common": return 0
+			"uncommon": return 1
+			"rare": return 2
+			"epic": return 3
+			"legendary": return 4
+			_: return 0
+
+func _fetch_skills_data() -> Array:
 	"""Callback for UnlockShop component - provides skills unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "skills" category
+		Array: Untyped array containing ItemMetadata or BaseAbility resources for "skills" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseAbility
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "skills":
+
+		# Check if it's a skill (BaseAbility type OR ItemMetadata with category="skills")
+		var is_skill = (metadata is BaseAbility) or (metadata.category == "skills")
+
+		if is_skill:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by rarity using duck typing (handles both enum and string)
+	category_items.sort_custom(func(a, b) -> bool:
+		return _get_rarity_value(a) < _get_rarity_value(b)
 	)
 
 	return category_items
 
-func _fetch_characters_data() -> Array[ItemMetadata]:
+func _fetch_characters_data() -> Array:
 	"""Callback for UnlockShop component - provides characters unlock data.
 
 	Returns:
-		Array[ItemMetadata]: Item metadata resources for "characters" category
+		Array: Untyped array containing ItemMetadata or BaseCharacter resources for "characters" category
 	"""
-	var category_items: Array[ItemMetadata] = []
+	var category_items: Array = []  # Untyped to hold both ItemMetadata and BaseCharacter
 
 	for item_id in item_metadata_cache.keys():
 		var metadata = item_metadata_cache[item_id]
-		if metadata.category == "characters":
+
+		# Check if it's a character (BaseCharacter type OR ItemMetadata with category="characters")
+		var is_character = (metadata is BaseCharacter) or (metadata.category == "characters")
+
+		if is_character:
 			category_items.append(metadata)
 
-	# Sort by rarity (Common → Legendary)
-	category_items.sort_custom(func(a: ItemMetadata, b: ItemMetadata) -> bool:
-		return a.rarity < b.rarity
+	# Sort by unlock cost (default characters first) using duck typing
+	category_items.sort_custom(func(a, b) -> bool:
+		# BaseCharacter has unlock_cost, ItemMetadata has unlock_cost
+		# Sort by unlock_cost (0 = default, comes first)
+		return a.unlock_cost < b.unlock_cost
 	)
 
 	return category_items

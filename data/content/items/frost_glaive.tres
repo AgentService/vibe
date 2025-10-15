@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+item_id = "frost_glaive"
+display_name = "Frost Glaive"
+description = "Your attacks have a 7.5% chance to freeze enemies for 2 seconds."
+on_hit_freeze = true
+freeze_chance = 0.075
+freeze_duration = 2.0
+freeze_slow_mult = 0.0
+unlock_cost = 300
+discovery_requirement = "Deal 15000 cold damage"
+stat_summary = "7.5% chance to freeze (2s duration, full freeze)"
+flavor_text = "Winter's embrace."
+rarity = "epic"

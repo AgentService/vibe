@@ -31,8 +31,8 @@ var _tomes_data_provider: Callable
 var _skills_data_provider: Callable
 var _characters_data_provider: Callable
 
-# Currently selected item
-var _selected_item: ItemMetadata = null
+# Currently selected item (can be ItemMetadata, BaseTome, or BaseItem)
+var _selected_item: Variant = null
 
 func _ready() -> void:
 	# Load notification icon and scale to half size
@@ -176,29 +176,42 @@ func _load_and_populate_grid(container: GridContainer, data_provider: Callable) 
 		_clear_item_details()
 		return
 
-	# Create item entry for each metadata
+	# Create item entry for each metadata (duck typing: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter)
 	for item_metadata in item_array:
-		if item_metadata is ItemMetadata:
+		if item_metadata is ItemMetadata or item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility or item_metadata is BaseCharacter:
 			_create_shop_item_entry(container, item_metadata)
 
 	# Auto-select first item
-	if not item_array.is_empty() and item_array[0] is ItemMetadata:
+	if not item_array.is_empty():
 		_show_item_details(item_array[0])
 
-func _create_shop_item_entry(container: GridContainer, item_metadata: ItemMetadata) -> void:
+func _create_shop_item_entry(container: GridContainer, item_metadata: Variant) -> void:
 	"""Create shop item card using ShopItemCard component.
 
 	Args:
 		container: GridContainer to add entry to
-		item_metadata: ItemMetadata resource with item data
+		item_metadata: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter resource with item data
 	"""
 	if not MetaProgression:
 		Logger.warn("UnlockShop: MetaProgression not available", "ui")
 		return
 
+	# Duck typing: Get item_id and category
+	var item_id: String = ""
+	if item_metadata is BaseTome:
+		item_id = item_metadata.tome_id
+	elif item_metadata is BaseAbility:
+		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
+	elif "item_id" in item_metadata:
+		item_id = item_metadata.item_id
+
+	var category: String = item_metadata.category  # All have .category (alias or property)
+
 	# Determine item state
-	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
-	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	var is_discovered = MetaProgression.is_item_discovered(category, item_id)
+	var is_unlocked = MetaProgression.is_item_unlocked(category, item_id)
 	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
 	# Instantiate card component
@@ -240,10 +253,20 @@ func _on_item_card_clicked(clicked_item_id: String, clicked_category: String) ->
 	if not data_provider.is_valid():
 		return
 
-	# Find matching metadata
+	# Find matching metadata (duck typing: check all resource types)
 	var item_array: Array = data_provider.call()
 	for item_metadata in item_array:
-		if item_metadata is ItemMetadata and item_metadata.item_id == clicked_item_id:
+		var matches = false
+		if item_metadata is BaseTome:
+			matches = (item_metadata.tome_id == clicked_item_id)
+		elif item_metadata is BaseAbility:
+			matches = (item_metadata.ability_id == clicked_item_id)
+		elif item_metadata is BaseCharacter:
+			matches = (item_metadata.character_id == clicked_item_id)
+		elif "item_id" in item_metadata:
+			matches = (item_metadata.item_id == clicked_item_id)
+
+		if matches:
 			_show_item_details(item_metadata)
 			break
 
@@ -257,19 +280,32 @@ func _on_item_card_hovered(hovered_item_id: String, hovered_category: String) ->
 	# Currently unused - placeholder for future hover preview feature
 	pass
 
-func _show_item_details(item_metadata: ItemMetadata) -> void:
+func _show_item_details(item_metadata: Variant) -> void:
 	"""Display item details based on discovery/unlock state.
 
 	Args:
-		item_metadata: ItemMetadata resource to display
+		item_metadata: ItemMetadata, BaseTome, BaseItem, BaseAbility, or BaseCharacter resource to display
 	"""
 	if not MetaProgression:
 		return
 
 	_selected_item = item_metadata
 
-	var is_discovered = MetaProgression.is_item_discovered(item_metadata.category, item_metadata.item_id)
-	var is_unlocked = MetaProgression.is_item_unlocked(item_metadata.category, item_metadata.item_id)
+	# Duck typing: Get item_id and category
+	var item_id: String = ""
+	if item_metadata is BaseTome:
+		item_id = item_metadata.tome_id
+	elif item_metadata is BaseAbility:
+		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
+	elif "item_id" in item_metadata:
+		item_id = item_metadata.item_id
+
+	var category: String = item_metadata.category
+
+	var is_discovered = MetaProgression.is_item_discovered(category, item_id)
+	var is_unlocked = MetaProgression.is_item_unlocked(category, item_id)
 	var can_afford = MetaProgression.can_afford(item_metadata.unlock_cost)
 
 	# UNDISCOVERED + LOCKED: Show only quest requirement
@@ -291,16 +327,17 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	# DISCOVERED + LOCKED: Show full details with unlock button
 	elif is_discovered and not is_unlocked:
+		# Duck typing: Both types have .display_name (BaseTome via alias)
 		item_name_label.text = item_metadata.display_name
-		item_name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+		item_name_label.modulate = _get_rarity_color_for_item(item_metadata)
 
 		item_description_label.text = item_metadata.description
 		item_description_label.modulate = Color.WHITE
 
-		item_stats_label.text = item_metadata.stat_summary
+		item_stats_label.text = item_metadata.stat_summary if "stat_summary" in item_metadata else ""
 		item_stats_label.modulate = Color(0.6, 1.0, 0.6)
 
-		item_flavor_label.text = "\"" + item_metadata.flavor_text + "\"" if not item_metadata.flavor_text.is_empty() else ""
+		item_flavor_label.text = "\"" + item_metadata.flavor_text + "\"" if ("flavor_text" in item_metadata and not item_metadata.flavor_text.is_empty()) else ""
 		item_flavor_label.modulate = Color(0.7, 0.7, 0.8)
 
 		quest_progress_label.text = "Cost: %d 💎" % item_metadata.unlock_cost
@@ -318,16 +355,17 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 	# UNLOCKED: Show full details
 	else:
+		# Duck typing: Both types have .display_name (BaseTome via alias)
 		item_name_label.text = item_metadata.display_name
-		item_name_label.modulate = ItemMetadata.get_rarity_color(item_metadata.rarity)
+		item_name_label.modulate = _get_rarity_color_for_item(item_metadata)
 
 		item_description_label.text = item_metadata.description
 		item_description_label.modulate = Color.WHITE
 
-		item_stats_label.text = item_metadata.stat_summary
+		item_stats_label.text = item_metadata.stat_summary if "stat_summary" in item_metadata else ""
 		item_stats_label.modulate = Color(0.6, 1.0, 0.6)
 
-		item_flavor_label.text = "\"" + item_metadata.flavor_text + "\"" if not item_metadata.flavor_text.is_empty() else ""
+		item_flavor_label.text = "\"" + item_metadata.flavor_text + "\"" if ("flavor_text" in item_metadata and not item_metadata.flavor_text.is_empty()) else ""
 		item_flavor_label.modulate = Color(0.7, 0.7, 0.8)
 
 		quest_progress_label.text = "[UNLOCKED]"
@@ -336,11 +374,26 @@ func _show_item_details(item_metadata: ItemMetadata) -> void:
 
 		unlock_button.visible = false
 
-func _on_unlock_item_pressed(item_metadata: ItemMetadata) -> void:
+func _get_rarity_color_for_item(item_metadata: Variant) -> Color:
+	"""Get rarity color for all resource types (duck typing)."""
+	if item_metadata is ItemMetadata:
+		return ItemMetadata.get_rarity_color(item_metadata.rarity)
+	elif item_metadata is BaseTome or item_metadata is BaseItem or item_metadata is BaseAbility or item_metadata is BaseCharacter:
+		# Unified resources use string rarity, convert to color
+		match item_metadata.rarity:
+			"uncommon": return Color(0.3, 0.9, 0.3)  # Green
+			"rare": return Color(0.3, 0.5, 1.0)  # Blue
+			"epic": return Color(0.7, 0.3, 1.0)  # Purple
+			"legendary": return Color(1.0, 0.8, 0.2)  # Gold
+			_: return Color(0.6, 0.6, 0.6)  # Common (grey)
+	else:
+		return Color.WHITE
+
+func _on_unlock_item_pressed(item_metadata: Variant) -> void:
 	"""Handle unlock button press - purchase selected item.
 
 	Args:
-		item_metadata: ItemMetadata resource to unlock
+		item_metadata: ItemMetadata, BaseTome, BaseItem, or BaseAbility resource to unlock
 	"""
 	if not MetaProgression:
 		Logger.error("UnlockShop: MetaProgression not available", "ui")
@@ -351,9 +404,22 @@ func _on_unlock_item_pressed(item_metadata: ItemMetadata) -> void:
 		Logger.warn("UnlockShop: Cannot afford item: %s" % item_metadata.display_name, "ui")
 		return
 
+	# Duck typing: Get item_id and category
+	var item_id: String = ""
+	if item_metadata is BaseTome:
+		item_id = item_metadata.tome_id
+	elif item_metadata is BaseAbility:
+		item_id = item_metadata.ability_id
+	elif item_metadata is BaseCharacter:
+		item_id = item_metadata.character_id
+	elif "item_id" in item_metadata:
+		item_id = item_metadata.item_id
+
+	var category: String = item_metadata.category
+
 	# Spend Rift Fragments and unlock
 	if MetaProgression.spend_rift_fragments(item_metadata.unlock_cost):
-		MetaProgression.unlock_item(item_metadata.category, item_metadata.item_id)
+		MetaProgression.unlock_item(category, item_id)
 
 		Logger.info("UnlockShop: Unlocked %s for %d Rift Fragments" % [
 			item_metadata.display_name, item_metadata.unlock_cost

@@ -1,16 +1,14 @@
-[gd_resource type="Resource" script_class="ItemMetadata" load_steps=2 format=3]
+[gd_resource type="Resource" script_class="BaseAbility" load_steps=2 format=3]
 
-[ext_resource type="Script" path="res://scripts/resources/ItemMetadata.gd" id="1"]
+[ext_resource type="Script" path="res://scripts/resources/abilities/BaseAbility.gd" id="1"]
 
 [resource]
 script = ExtResource("1")
-item_id = "dash"
-display_name = "Dash"
+ability_id = "dash"
+ability_name = "Dash"
 description = "Quickly dash in a direction, avoiding enemy attacks"
-flavor_text = "Speed is the ultimate defense."
-category = "skills"
-icon_path = ""
 unlock_cost = 75
-rarity = 0
 discovery_requirement = "Take damage 100 times without dying"
 stat_summary = "Ability: Short dash\nCooldown: 5s\nInvulnerable during dash"
+flavor_text = "Speed is the ultimate defense."
+rarity = "common"

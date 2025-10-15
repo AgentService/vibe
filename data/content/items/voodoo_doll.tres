@@ -1,0 +1,20 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="PackedScene" uid="uid://dwk3n8f4h2qax" path="res://scenes/effects/VoodooDollExplosion.tscn" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "voodoo_doll"
+display_name = "Voodoo Doll"
+description = "Your attacks have a 25% chance to trigger a dark curse explosion."
+on_hit_explosion = true
+explosion_chance = 0.25
+explosion_damage_mult = 0.65
+explosion_radius = 100.0
+explosion_scene = ExtResource("2")
+unlock_cost = 200
+discovery_requirement = "Deal 10000 fire damage"
+stat_summary = "25% chance for dark curse explosions (65% weapon damage, 100px radius)"
+flavor_text = "A cursed doll that channels your pain into dark magic."
+rarity = "rare"

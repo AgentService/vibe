@@ -1,12 +1,14 @@
 # 2a: Combat Timing Foundation
 
 **Created:** 2025-09-29
-**Updated:** 2025-10-03 (Renamed from `2_COMBAT_map_level_difficulty_scaling_integration.md`)
-**Status:** 🟡 Planning - Ready to Start
+**Updated:** 2025-10-14 (Code inspection - partial implementation exists)
+**Status:** 🟡 Planning - Partial Foundation Exists
 **Priority:** High
 **Estimated Effort:** 1-2 weeks (Phases 1-3 only)
 **Category:** ⚔️ Combat System Enhancement - Technical Foundation
 **Dependent Tasks:** [Task 4 - Stage Progression Flow](4_COMBAT_stage_progression_flow.md) ← **DO THIS NEXT**
+
+> **2025-10-14 CODE INSPECTION:** Basic MapLevel autoload exists with 10s-per-level progression and StateManager integration. MEGABONK-specific features (7-minute timer, difficulty coefficient, boss spawn timing, Final Swarm) are NOT implemented.
 
 > ⚠️ **Scope:** This task implements the **timing and difficulty scaling foundation** only (Phases 1-3). For the full progression flow (portal, stage transitions, rewards), see **Task 5**.
 
@@ -28,13 +30,20 @@ Implement the **timing and difficulty scaling foundation** for MEGABONK-style ar
 
 **Key Philosophy:** Reward players for taking risks and staying longer, with voluntary difficulty control and mathematical scaling limits (from MEGABONK).
 
-**Current State Analysis:**
-- ✅ MapLevel autoload system exists (10s per level for testing)
-- ✅ SpawnDirector already uses `MapLevel.get_pack_size_scaling()` for pack spawning
-- ✅ EnemyFactory has stat variation system within template ranges
-- ⚠️ Regular enemy spawning doesn't scale with MapLevel
-- ⚠️ Individual enemy stats don't scale with MapLevel
-- ⚠️ Boss spawning isn't connected to difficulty progression
+**Current State Analysis (2025-10-14 Code Inspection):**
+- ✅ MapLevel autoload system exists at `autoload/MapLevel.gd` (class_name: MapLevelManager)
+- ✅ Basic level progression: `seconds_per_level: float = 10.0` (testing value)
+- ✅ StateManager integration: `run_started`, `run_ended`, `state_changed` signals connected
+- ✅ Core API exists: `current_level: int`, `get_level_progress()`, `get_level_time_remaining()`
+- ✅ Lifecycle methods: `start_progression()`, `stop_progression()`, `reset_progression()`
+- ❌ **NO 7-minute stage timer** (currently 10s per level, not 420s)
+- ❌ **NO difficulty coefficient tracking** (no `get_difficulty_coefficient()` method)
+- ❌ **NO boss spawn timing** (no 2:00 elapsed / 5:00 remaining system)
+- ❌ **NO Final Swarm trigger** (no `is_timer_expired()` or Final Swarm state)
+- ❌ **NO enemy stat scaling** (no `get_enemy_stat_scaling(coeff)` method)
+- ❌ **NO combat_step integration** (uses _process() instead of EventBus.combat_step)
+- ⚠️ SpawnDirector has `get_pack_size_scaling()` reference but not implemented
+- ⚠️ EnemyFactory has stat variation within template ranges only
 
 **MEGABONK System Integration Requirements:**
 - ⚠️ MapLevel needs to support **difficulty coefficient** concept (MEGABONK-style time scaling)
