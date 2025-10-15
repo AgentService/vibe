@@ -2,6 +2,47 @@
 
 ## [Current Week - In Progress]
 
+### 🔧 REFACTOR: Migrated BaseTome to Use ScalingCalculator (2025-10-16)
+
+**Unified tome stacking with ItemManager's configurable scaling system:**
+- **Problem**: BaseTome used hardcoded `pow()` for player stat application (EXPONENTIAL only)
+  - ItemManager already supported LINEAR/EXPONENTIAL/HYPERBOLIC scaling via ScalingCalculator
+  - Tomes couldn't use LINEAR scaling for additive effects
+  - Inconsistency between items and tomes
+- **Solution**: Migrated BaseTome.apply_to_player() to use ScalingCalculator
+  - Added scaling configuration properties: `movement_speed_scaling_type`, `hp_scaling_type`, etc.
+  - Default: EXPONENTIAL for multipliers (backward compatible), LINEAR for flat bonuses
+  - Enables designer control over tome stacking behavior
+- **Benefits**:
+  - **Consistency**: Tomes now use same scaling formulas as items
+  - **Flexibility**: Tome designers can choose LINEAR for additive bonuses (+10% HP per stack)
+  - **Balance control**: HYPERBOLIC scaling prevents runaway tome stacking (max 3x at infinite stacks)
+  - **Unified API**: Same ScalingCalculator patterns across items and tomes
+
+**Example Tome Scaling:**
+```gdscript
+# Tome: "Swiftness" with movement_speed_multiplier = 1.15
+# EXPONENTIAL (default, backward compatible): 3 stacks = 1.52x speed (compound)
+# LINEAR: 3 stacks = 1.45x speed (additive)
+# HYPERBOLIC: Approaches max 2.0x speed at infinite stacks
+
+# Tome: "Vitality" with max_hp_bonus = 20
+# LINEAR (default): 3 stacks = 60 HP
+# HYPERBOLIC: Approaches 200 HP cap at infinite stacks
+```
+
+**Files Modified:**
+- `scripts/resources/tomes/BaseTome.gd` - Replaced hardcoded `pow()` with ScalingCalculator
+  - Added @export_group("Player Stat Scaling") with 9 scaling properties
+  - Updated `apply_to_player()` to use `ScalingCalculator.calculate_multiplier()` and `calculate_flat()`
+  - Updated header documentation to reflect ScalingCalculator integration
+
+**Backward Compatibility:**
+- Existing tomes default to EXPONENTIAL scaling (same as hardcoded `pow()` behavior)
+- No .tres file migration needed - defaults preserve existing behavior
+
+---
+
 ### 🔧 REFACTOR: Migrated BalanceDB to Type-Safe Property Access API (2025-10-16)
 
 **Modernized BalanceDB API from string-based lookups to direct property access:**

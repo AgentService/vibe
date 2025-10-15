@@ -6,9 +6,10 @@
 ## - Modify player stats (movement speed, HP, luck, XP gain)
 ## - Apply globally or to specific ability tags
 ##
-## Stacking System:
-## - Multiplicative for multipliers: stat * pow(multiplier, stack_count)
-## - Additive for flat bonuses: stat + (bonus * stack_count)
+## Stacking System (uses ScalingCalculator for configurable scaling):
+## - Multiplicative modifiers: Configurable LINEAR/EXPONENTIAL/HYPERBOLIC (default: EXPONENTIAL)
+## - Flat bonuses: Configurable LINEAR/HYPERBOLIC (default: LINEAR)
+## - Backward compatible: Existing tomes use EXPONENTIAL (pow behavior)
 ##
 ## Tag Matching (Applicability):
 ## - Empty applicable_tags = global modifier (applies to ALL abilities)
@@ -17,8 +18,9 @@
 ## Example:
 ##   Tome: "Fire Mastery" - applicable_tags: [AbilityTags.FIRE]
 ##   - Applies to any ability with FIRE tag
-##   - damage_multiplier: 1.25 (25% more damage per stack)
-##   - 3 stacks = damage * pow(1.25, 3) = 1.953x damage
+##   - damage_multiplier: 1.25 (per_stack = 0.25)
+##   - EXPONENTIAL scaling (default): 3 stacks = 1.953x damage (compound)
+##   - LINEAR scaling: 3 stacks = 1.75x damage (additive)
 ##
 ## Usage:
 ##   var tome: BaseTome = load("res://data/content/tomes/fire_mastery.tres")
@@ -190,6 +192,36 @@ class TomeModifier:
 @export var pickup_radius_multiplier: float = 1.0
 
 # ============================================================================
+# PLAYER STAT SCALING CONFIGURATION (2025-10-16)
+# ============================================================================
+
+@export_group("Player Stat Scaling")
+
+## Movement speed scaling type (default: EXPONENTIAL for backward compatibility)
+@export var movement_speed_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+## Movement speed hyperbolic cap (for HYPERBOLIC scaling only)
+@export var speed_hyperbolic_cap: float = 0.0
+
+## Movement speed hyperbolic k (half-cap point, for HYPERBOLIC scaling only)
+@export var speed_hyperbolic_k: float = 1.0
+
+## Pickup radius scaling type (default: EXPONENTIAL)
+@export var pickup_radius_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+## Max HP scaling type (default: LINEAR for flat bonuses)
+@export var hp_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
+
+## Max HP hyperbolic cap (for HYPERBOLIC scaling only)
+@export var hp_hyperbolic_cap: float = 0.0
+
+## Max HP hyperbolic k (half-cap point, for HYPERBOLIC scaling only)
+@export var hp_hyperbolic_k: float = 1.0
+
+## XP gain scaling type (default: EXPONENTIAL) - not yet implemented in PlayerStats
+@export var xp_gain_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+# ============================================================================
 # SHOP METADATA (Unlock System Integration)
 # ============================================================================
 
@@ -351,19 +383,51 @@ func apply_to_player(player: Node2D, stack_count: int) -> void:
 	if stack_limit > 0:
 		effective_stacks = mini(stack_count, stack_limit)
 
-	# Apply multiplicative modifiers to runtime_stats
+	# Apply multiplicative modifiers using ScalingCalculator
 	if movement_speed_multiplier != 1.0:
-		player.runtime_stats.movement_speed_mult *= pow(movement_speed_multiplier, effective_stacks)
-		Logger.debug("Tome '%s': Applied movement_speed_mult=%.2f (stacks=%d)" % [tome_id, movement_speed_multiplier, effective_stacks], "tomes")
+		# Auto-derive per_stack from multiplier (backward compatible)
+		var per_stack := movement_speed_multiplier - 1.0
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			effective_stacks,
+			movement_speed_scaling_type,
+			speed_hyperbolic_cap,
+			speed_hyperbolic_k
+		)
+		player.runtime_stats.movement_speed_mult *= stack_mult
+		Logger.debug("Tome '%s': Applied movement_speed_mult=%.2f (x%d stacks, %s)" % [
+			tome_id, stack_mult, effective_stacks, ScalingCalculator.ScalingType.keys()[movement_speed_scaling_type]
+		], "tomes")
 
 	if pickup_radius_multiplier != 1.0:
-		player.runtime_stats.pickup_radius_mult *= pow(pickup_radius_multiplier, effective_stacks)
-		Logger.debug("Tome '%s': Applied pickup_radius_mult=%.2f (stacks=%d)" % [tome_id, pickup_radius_multiplier, effective_stacks], "tomes")
+		var per_stack := pickup_radius_multiplier - 1.0
 
-	# Apply additive bonuses to runtime_stats
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			effective_stacks,
+			pickup_radius_scaling_type,
+			0.0,  # No hyperbolic cap for pickup radius (typically EXPONENTIAL)
+			1.0
+		)
+		player.runtime_stats.pickup_radius_mult *= stack_mult
+		Logger.debug("Tome '%s': Applied pickup_radius_mult=%.2f (x%d stacks, %s)" % [
+			tome_id, stack_mult, effective_stacks, ScalingCalculator.ScalingType.keys()[pickup_radius_scaling_type]
+		], "tomes")
+
+	# Apply flat bonuses using ScalingCalculator
 	if max_hp_bonus != 0:
-		player.runtime_stats.max_hp_bonus += max_hp_bonus * effective_stacks
-		Logger.debug("Tome '%s': Applied max_hp_bonus=%d (stacks=%d)" % [tome_id, max_hp_bonus, effective_stacks], "tomes")
+		var bonus := int(ScalingCalculator.calculate_flat(
+			float(max_hp_bonus),
+			effective_stacks,
+			hp_scaling_type,
+			hp_hyperbolic_cap,
+			hp_hyperbolic_k
+		))
+		player.runtime_stats.max_hp_bonus += bonus
+		Logger.debug("Tome '%s': Applied max_hp_bonus=%d (x%d stacks, %s)" % [
+			tome_id, bonus, effective_stacks, ScalingCalculator.ScalingType.keys()[hp_scaling_type]
+		], "tomes")
 
 	# TODO: Implement luck and xp_gain in PlayerStats when needed
 	# if luck_bonus != 0.0:
