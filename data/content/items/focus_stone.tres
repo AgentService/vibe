@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="BaseItem" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/resources/items/BaseItem.gd" id="1"]
+[ext_resource type="Texture2D" path="res://assets/ui/items/icons/four-leaf.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+item_id = "focus_stone"
+display_name = "Focus Stone"
+description = "Increase damage to enemies within 13m by 20% (+20% per stack)"
+icon = ExtResource("2")
+conditional_damage_enabled = true
+conditional_damage_bonus = 0.2
+conditional_damage_range = 416.0
+conditional_damage_per_stack = 0.2
+conditional_damage_scaling_type = 0
+unlock_cost = 75
+discovery_requirement = "Defeat 100 enemies in a single run"
+stat_summary = "+20% Damage within 13m (linear: 1.2x, 1.4x, 1.6x...)"
+flavor_text = "A crystalline focus that channels your power against nearby foes"
+rarity = "uncommon"

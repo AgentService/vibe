@@ -2,6 +2,202 @@
 
 ## [Current Week - In Progress]
 
+### 🔧 REFACTOR: Migrated BalanceDB to Type-Safe Property Access API (2025-10-16)
+
+**Modernized BalanceDB API from string-based lookups to direct property access:**
+- **Context**: Legacy string-based API (`BalanceDB.get_combat_value("property")`) used switch statements and lacked compile-time safety
+  - No autocomplete support in IDE
+  - Runtime errors for typos in property names
+  - ~120 lines of boilerplate switch statement code
+- **Migration**: Converted all 23+ production usages to modern type-safe API
+  - **Old pattern**: `BalanceDB.get_combat_value("crit_chance")` (string lookup)
+  - **New pattern**: `BalanceDB.combat.crit_chance` (direct property access)
+  - **Files migrated**:
+    - DamageSystem.gd (2 usages: projectile_radius, enemy_radius)
+    - DamageRegistry.gd (2 usages: damage_queue_max_per_tick, crit_multiplier)
+    - PlayerStats.gd (1 usage: crit_chance)
+    - Arena.gd (2 usages: enemy_transform_cache_size, enemy_viewport_cull_margin)
+    - BossUpdateManager.gd (1 usage: enemy_viewport_cull_margin)
+    - SpawnDirector.gd (10 usages: max_enemies, spawn_interval, arena_center, etc.)
+    - SessionState.gd (4 usages: player modifiers)
+    - Player.gd (1 usage: attack_speed)
+    - MeleeSystem.gd (5 usages: damage, attack_range, cone_angle, attack_speed, knockback_distance)
+  - **Cleanup**: Removed 4 deprecated functions (~120 lines of boilerplate)
+    - `get_combat_value()`, `get_waves_value()`, `get_player_value()`, `get_melee_value()`
+    - `_get_waves_fallback_value()` helper function
+- **Result**: Type-safe API with IDE autocomplete and compile-time checking
+  - Editor autocomplete shows all available properties
+  - Typos caught at parse time instead of runtime
+  - Direct property access (no switch statement indirection)
+  - Reduced BalanceDB.gd from ~353 lines to ~243 lines
+
+**Files Modified:**
+- `autoload/BalanceDB.gd` - Removed deprecated string-based API functions
+- `scripts/systems/combat/DamageSystem.gd` - Migrated to type-safe API
+- `scripts/systems/damage_v2/DamageRegistry.gd` - Migrated to type-safe API
+- `scripts/resources/PlayerStats.gd` - Migrated to type-safe API
+- `scenes/arena/Arena.gd` - Migrated to type-safe API
+- `scripts/systems/boss/BossUpdateManager.gd` - Migrated to type-safe API
+- `scripts/systems/spawn/SpawnDirector.gd` - Migrated to type-safe API
+- `autoload/SessionState.gd` - Migrated to type-safe API
+- `scenes/arena/Player.gd` - Migrated to type-safe API
+- `scripts/systems/combat/MeleeSystem.gd` - Migrated to type-safe API
+
+**Technical Details:**
+- **Modern API**: Uses Godot's `get:` property pattern for readonly public accessors
+- **Private storage**: `_combat_balance`, `_melee_balance`, `_player_balance`, `_waves_balance`
+- **Public accessors**: `combat`, `melee`, `player`, `waves` (type-safe, readonly)
+- **Benefits**: Autocomplete, compile-time checking, reduced code duplication
+- **Breaking change**: Old string-based API removed (no longer available in production)
+
+---
+
+### ✅ FEAT: Conditional Damage System for Range-Based Item Effects (2025-10-16)
+
+**Implemented range-based conditional damage for positional item bonuses:**
+- **Context**: Focus Stone needs "damage to enemies within 13m" mechanic (not global damage)
+  - User reported: "i think the 19% damage to near enemies is not working"
+  - Root cause: Focus Stone was applying global damage_mult instead of conditional bonus
+  - Design goal: Enable positional play where damage varies based on distance to enemy
+- **Implementation**: Created conditional damage framework with distance checking
+  - **Added conditional damage properties to BaseItem.gd**:
+    - `conditional_damage_enabled` - Enable/disable conditional bonus
+    - `conditional_damage_bonus` - Base bonus percentage (0.2 = 20%)
+    - `conditional_damage_range` - Range in pixels (416.0 = 13 tiles @ 32px/tile)
+    - `conditional_damage_per_stack` - Per-stack bonus (auto-derived if 0.0)
+    - `conditional_damage_scaling_type` - ScalingCalculator type (LINEAR/EXPONENTIAL/HYPERBOLIC)
+  - **Updated ItemManager.gd** - Added distance-based damage bonus checking:
+    - `_check_conditional_damage()` - New method called on every damage_dealt event
+    - Calculates distance between source_position and impact_position from DamageDealtPayload
+    - Applies bonus damage via DamageService._process_damage_immediate() if within range
+    - Uses ScalingCalculator for proper stack scaling (linear/exponential/hyperbolic)
+    - Source tag: "item_conditional_{item_id}" for tracking and recursion prevention
+  - **Updated Focus Stone configuration** (data/content/items/focus_stone.tres):
+    - Removed global damage_mult (was 1.2, now 1.0)
+    - Added conditional_damage_enabled = true
+    - Added conditional_damage_bonus = 0.2 (20%)
+    - Added conditional_damage_range = 416.0 (13 tiles = 13m)
+    - Added conditional_damage_per_stack = 0.2 for LINEAR stacking
+- **Result**: Focus Stone now correctly applies +20% damage ONLY to enemies within 13m
+  - 1 stack: +20% damage within 13m (1.2x)
+  - 2 stacks: +40% damage within 13m (1.4x)
+  - 3 stacks: +60% damage within 13m (1.6x)
+  - Outside 13m: No bonus damage (0% bonus)
+
+**Files Modified:**
+- `scripts/resources/items/BaseItem.gd` - Added conditional damage properties
+- `autoload/ItemManager.gd` - Added `_check_conditional_damage()` method
+- `data/content/items/focus_stone.tres` - Converted from global to conditional damage
+- `tests/test_conditional_damage.gd` - Created comprehensive test suite
+- `data/README.md` - Documented conditional damage system and future extensibility
+
+**Technical Details:**
+- **Distance calculation**: `source_position.distance_to(impact_position)` from DamageDealtPayload
+- **Bonus calculation**: `bonus_damage = original_damage * (bonus_mult - 1.0)`
+- **Integration**: Called BEFORE item procs in `_on_damage_dealt()` event handler
+- **Extensibility**: Framework supports future conditionals (health-based, enemy-type, movement-based, etc.)
+- **Performance**: O(n) loop over equipped items, no spatial queries needed
+
+**Future Conditional Types:**
+- Health-based: "Damage to low-health enemies" (if enemy.hp < 30%)
+- Enemy-type: "Damage to bosses" (if enemy.is_boss)
+- Movement-based: "Damage while moving" (if player.velocity.length() > threshold)
+- Cooldown-based: "First hit every N seconds" (time-gated conditional)
+- Combo-based: "Damage after 3 consecutive hits" (streak tracking)
+
+---
+
+### 🔧 FIX: Item Stacking Now Works for LINEAR/HYPERBOLIC Scaling (2025-10-15)
+
+**Fixed stacking logic to recalculate total bonuses instead of incremental multiplication:**
+- **Problem**: Stacking only worked correctly for EXPONENTIAL scaling
+  - Focus Stone (LINEAR +20% per stack): 1 stack = 1.2x ✓, 2 stacks = 1.44x ✗ (should be 1.4x)
+  - Old logic: `stats.damage_mult *= 1.2` incrementally (exponential behavior)
+  - Root cause: Incremental multiplication doesn't work for additive/hyperbolic formulas
+- **Solution**: Recalculate total bonuses based on ALL stacks
+  - `equip_item()` stacking: Remove old total → Apply new total with incremented stack count
+  - `unequip_item()`: Remove old total → Apply new total with decremented stack count
+  - ScalingCalculator receives TOTAL stack count, not incremental
+- **Result**: All three scaling types now work correctly:
+  - LINEAR: 1.2x, 1.4x, 1.6x, 1.8x (additive stacking) ✓
+  - EXPONENTIAL: 1.2x, 1.44x, 1.728x (compound growth) ✓
+  - HYPERBOLIC: 1.33x, 2.0x, 2.33x → approaches cap ✓
+
+**Files Modified:**
+- `autoload/ItemManager.gd` - Fixed `equip_item()` and `unequip_item()` stacking logic
+
+**Technical Details:**
+- Old stacking: `_apply_stat_bonuses(item, 1)` for each stack (incremental, EXPONENTIAL only)
+- New stacking: Remove ALL old bonuses, recalculate with new total stack count
+- Formula: `ScalingCalculator.calculate_multiplier(per_stack, TOTAL_STACKS, type, cap, k)`
+
+---
+
+### ✅ FEAT: Unified Scaling System with LINEAR/EXPONENTIAL/HYPERBOLIC Formulas (2025-10-15)
+
+**Implemented data-driven scaling system for predictable item/enemy/map progression:**
+- **Context**: Needed flexible scaling for different item types and game systems
+  - Linear scaling for HP bonuses (Rump Steak: 25, 50, 75, 100 HP)
+  - Exponential scaling for multiplicative stats (backward compatible with existing items)
+  - Hyperbolic scaling for capped growth (prevent runaway scaling, approaches max asymptotically)
+- **Implementation**: Created ScalingCalculator utility + BaseItem scaling configuration
+  - **Created ScalingCalculator.gd** - Static utility class with three scaling types
+    - `calculate_flat()` - For additive stats (HP, crit chance)
+    - `calculate_multiplier()` - For multiplicative stats (damage, speed)
+    - Scaling types: LINEAR (per_stack × stacks), EXPONENTIAL ((1+per_stack)^stacks), HYPERBOLIC (approaches cap)
+    - Helper functions: `get_formula_description()`, `preview_scaling()`, `validate_parameters()`
+  - **Updated BaseItem.gd** - Added scaling configuration properties
+    - Per-stat scaling type: damage_scaling_type, hp_scaling_type, speed_scaling_type, etc.
+    - Per-stack parameters: damage_per_stack, hp_per_stack (auto-derived if 0)
+    - Hyperbolic parameters: damage_hyperbolic_cap, damage_hyperbolic_k (half-cap point)
+    - Defaults: EXPONENTIAL for multiplicative (backward compatible), LINEAR for additive
+  - **Updated ItemManager.gd** - Replaced hardcoded scaling with ScalingCalculator
+    - `_apply_stat_bonuses()` uses `ScalingCalculator.calculate_multiplier()` and `calculate_flat()`
+    - Auto-derivation: `per_stack = mult - 1.0` if not explicitly set (backward compatible)
+    - Same logic in `_remove_stat_bonuses()` for symmetric removal
+  - **Configured items** with new scaling system:
+    - **Focus Stone**: LINEAR damage scaling (1.2x, 1.4x, 1.6x, 1.8x...)
+      - `damage_scaling_type = 0`, `damage_per_stack = 0.2`
+    - **Rump Steak**: LINEAR HP scaling (25, 50, 75, 100...)
+      - `hp_scaling_type = 0`, `hp_per_stack = 25`
+  - **Created test_scaling_calculator.gd** - Comprehensive validation
+    - Tests all three scaling types (LINEAR, EXPONENTIAL, HYPERBOLIC)
+    - Validates flat and multiplier formulas
+    - Tests helper functions (descriptions, preview, validation)
+    - Run with: `../Godot_v4.4.1-stable_win64_console.exe --headless --script tests/test_scaling_calculator.gd`
+- **Documentation**: Updated data/README.md with Scaling System section
+  - Formula examples for all three scaling types
+  - Usage patterns for items and enemies
+  - Item configuration examples (Focus Stone, Rump Steak, Feather)
+  - Default scaling behaviors and backward compatibility notes
+  - Helper function examples for tooltips and testing
+
+**Files Created:**
+- `scripts/utils/ScalingCalculator.gd` - Unified scaling system utility
+- `tests/test_scaling_calculator.gd` - Scaling formula validation tests
+
+**Files Modified:**
+- `scripts/resources/items/BaseItem.gd` - Added Scaling Configuration group with per-stat scaling types
+- `autoload/ItemManager.gd` - Replaced hardcoded scaling with ScalingCalculator in `_apply_stat_bonuses()` and `_remove_stat_bonuses()`
+- `data/content/items/focus_stone.tres` - Configured LINEAR damage scaling (+20% per stack)
+- `data/content/items/rump_steak.tres` - Configured LINEAR HP scaling (+25 per stack)
+- `data/README.md` - Added comprehensive Scaling System documentation section
+
+**Technical Details:**
+- Backward compatibility: EXPONENTIAL remains default for multiplicative stats (matches pre-2025-10-15 behavior)
+- Auto-derivation: `per_stack = 0.0` triggers auto-derivation from base values
+- Hyperbolic formula: `1 + (cap - 1) * (stacks / (stacks + k))` where k is half-cap point
+- Inspector-friendly: Enum dropdowns and tooltips for scaling configuration
+- Hot-reloadable: All scaling parameters in .tres files (F5 reload works)
+
+**Design Goals:**
+1. **Predictability**: Players can calculate exact values for build planning
+2. **Balance Control**: Designers can prevent runaway scaling with HYPERBOLIC caps
+3. **Flexibility**: Different items can use different scaling curves
+4. **Harmonization**: Same formulas for items, enemies, map scaling
+
+---
+
 ### 🔧 FIX: Dynamic Explosion Scaling + Enemy Tracking + ExplosionEffect Rename (2025-10-15)
 
 **Fixed hardcoded explosion scale, added on-hit tracking, renamed generic script:**

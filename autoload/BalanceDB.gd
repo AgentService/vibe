@@ -5,11 +5,24 @@ extends Node
 
 signal balance_reloaded()
 
+# Private balance resource storage
 var _combat_balance: CombatBalance
-  
 var _melee_balance: MeleeBalance
 var _player_balance: PlayerBalance
 var _waves_balance: WavesBalance
+
+# Public type-safe property accessors (modern API)
+var combat: CombatBalance:
+	get: return _combat_balance
+
+var melee: MeleeBalance:
+	get: return _melee_balance
+
+var player: PlayerBalance:
+	get: return _player_balance
+
+var waves: WavesBalance:
+	get: return _waves_balance
 
 var _data: Dictionary = {}  # Still needed for UI files
 var _fallback_data: Dictionary = {}
@@ -210,74 +223,6 @@ func _create_fallback_resource(key: String) -> Resource:
 			return null
 
 
-func get_combat_value(key: String) -> Variant:
-	if _combat_balance == null:
-		return _get_fallback_value("combat", key)
-	
-	match key:
-		"projectile_radius":
-			return _combat_balance.projectile_radius
-		"enemy_radius":
-			return _combat_balance.enemy_radius
-		"base_damage":
-			return _combat_balance.base_damage
-		"crit_chance":
-			return _combat_balance.crit_chance
-		"crit_multiplier":
-			return _combat_balance.crit_multiplier
-		"use_zero_alloc_damage_queue":
-			return _combat_balance.use_zero_alloc_damage_queue
-		"damage_queue_capacity":
-			return _combat_balance.damage_queue_capacity
-		"damage_pool_size":
-			return _combat_balance.damage_pool_size
-		"damage_queue_max_per_tick":
-			return _combat_balance.damage_queue_max_per_tick
-		"damage_queue_tick_rate_hz":
-			return _combat_balance.damage_queue_tick_rate_hz
-		_:
-			Logger.error("Unknown combat balance key: " + key, "balance")
-			return _get_fallback_value("combat", key)
-
-
-func get_waves_value(key: String) -> Variant:
-	if _waves_balance == null:
-		return _get_fallback_value("waves", key)
-	
-	match key:
-		"max_enemies":
-			return _waves_balance.max_enemies
-		"spawn_interval":
-			return _waves_balance.spawn_interval
-		"arena_center":
-			return _waves_balance.arena_center
-		# spawn_radius getters removed - use ArenaSystem instead
-		"enemy_speed_min":
-			return _waves_balance.enemy_speed_min
-		"enemy_speed_max":
-			return _waves_balance.enemy_speed_max
-		"spawn_count_min":
-			return _waves_balance.spawn_count_min
-		"spawn_count_max":
-			return _waves_balance.spawn_count_max
-		"arena_bounds":
-			return _waves_balance.arena_bounds
-		"target_distance":
-			return _waves_balance.target_distance
-		"enemy_culling_distance":
-			return _waves_balance.enemy_culling_distance
-		"enemy_transform_cache_size":
-			return _waves_balance.enemy_transform_cache_size
-		"enemy_viewport_cull_margin":
-			return _waves_balance.enemy_viewport_cull_margin
-		"enemy_update_distance":
-			return _waves_balance.enemy_update_distance
-		"camera_min_zoom":
-			return _waves_balance.camera_min_zoom
-		_:
-			Logger.error("Unknown waves balance key: " + key, "balance")
-			return _get_fallback_value("waves", key)
-
 ## Enemy V2 System Configuration
 func get_use_enemy_v2_system() -> bool:
 	if _waves_balance == null:
@@ -294,50 +239,6 @@ var use_enemy_v2_system: bool:
 	get:
 		return get_use_enemy_v2_system()
 
-func _get_waves_fallback_value(key: String):
-	# Continue with fallback case
-	match key:
-		_:
-			Logger.error("Unknown waves balance key: " + key, "balance")
-			return _get_fallback_value("waves", key)
-
-func get_player_value(key: String) -> Variant:
-	if _player_balance == null:
-		return _get_fallback_value("player", key)
-	
-	match key:
-		"projectile_count_add":
-			return _player_balance.projectile_count_add
-		"projectile_speed_mult":
-			return _player_balance.projectile_speed_mult
-		"fire_rate_mult":
-			return _player_balance.fire_rate_mult
-		"damage_mult":
-			return _player_balance.damage_mult
-		_:
-			Logger.error("Unknown player balance key: " + key, "balance")
-			return _get_fallback_value("player", key)
-
-func get_melee_value(key: String) -> Variant:
-	if _melee_balance == null:
-		return _get_fallback_value("melee", key)
-	
-	match key:
-		"damage":
-			return _melee_balance.damage
-		"range":
-			return _melee_balance.attack_range
-		"cone_angle":
-			return _melee_balance.cone_angle
-		"attack_speed":
-			return _melee_balance.attack_speed
-		"visual_effect_duration":
-			return _melee_balance.visual_effect_duration
-		"knockback_distance":
-			return _melee_balance.knockback_distance
-		_:
-			Logger.error("Unknown melee balance key: " + key, "balance")
-			return _get_fallback_value("melee", key)
 
 func get_ui_value(key: String) -> Variant:
 	return _get_value("ui", key)

@@ -5,13 +5,15 @@
 
 [resource]
 script = ExtResource("1")
-item_id = "lucky_coin"
-display_name = "Lucky Coin"
-description = "Increases item drop rate"
+item_id = "rump_steak"
+display_name = "Rump Steak"
+description = "Increases maximum health by 25 (+25 per stack)"
 icon = ExtResource("2")
-pickup_radius_mult = 1.15
+max_hp_bonus = 25
+hp_scaling_type = 0
+hp_per_stack = 25
 unlock_cost = 100
 discovery_requirement = "Complete a run with 3+ different item types"
-stat_summary = "+15% Item Drop Rate"
-flavor_text = "An ancient coin that seems to attract wealth."
+stat_summary = "+25 HP (linear: 25, 50, 75, 100...)"
+flavor_text = "A hearty meal that fortifies your constitution."
 rarity = "rare"

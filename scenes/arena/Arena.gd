@@ -303,7 +303,7 @@ func _initialize_spawn_zones() -> void:
 		Logger.debug("SpawnZones container not found at root level - using data-driven spawn zones", "arena")
 
 func _setup_enemy_transforms() -> void:
-	var cache_size: int = BalanceDB.get_waves_value("enemy_transform_cache_size")
+	var cache_size: int = BalanceDB.waves.enemy_transform_cache_size
 	_enemy_transforms.resize(cache_size)
 	for i in range(cache_size):
 		_enemy_transforms[i] = Transform2D()
@@ -555,8 +555,8 @@ func _get_visible_world_rect() -> Rect2:
 			zoom = player_camera.zoom.x
 			camera_pos = player_camera.global_position
 
-	var margin: float = BalanceDB.get_waves_value("enemy_viewport_cull_margin")
-	
+	var margin: float = BalanceDB.waves.enemy_viewport_cull_margin
+
 	var half_size := (viewport_size / zoom) * 0.5 + Vector2(margin, margin)
 	return Rect2(camera_pos - half_size, half_size * 2)
 

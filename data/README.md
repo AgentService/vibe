@@ -339,3 +339,353 @@ ItemManager.equip_item("thunder_mitts")  # Loads BaseItem, applies stats/procs
 - Clover (+30% pickup radius)
 - Rabbits Foot (+10% crit chance)
 - Lucky Coin (luck/drop rate - TBD)
+
+### Scaling System (2025-10-15)
+
+The game uses a **unified scaling system** for predictable, data-driven stat progression across items, enemies, and map difficulty.
+
+#### Scaling Types
+
+**LINEAR (Additive Stacking):**
+```gdscript
+# Formula: per_stack * stacks
+# Example: Rump Steak (+25 HP per stack)
+1 stack:  25 HP
+3 stacks: 75 HP
+10 stacks: 250 HP
+
+# Use for: HP bonuses, flat damage, crit chance
+```
+
+**EXPONENTIAL (Compound Growth):**
+```gdscript
+# Formula: (1 + per_stack)^stacks
+# Example: Feather (+15% speed per stack)
+1 stack:  1.15x (15% faster)
+3 stacks: 1.52x (52% faster)
+10 stacks: 4.05x (305% faster)
+
+# Use for: Damage multipliers, speed multipliers (default for backward compatibility)
+```
+
+**HYPERBOLIC (Diminishing Returns):**
+```gdscript
+# Formula: 1 + (cap - 1) * (stacks / (stacks + k))
+# Example: Capped damage (cap=3.0x, k=5)
+1 stack:  1.33x damage
+5 stacks: 2.0x damage (half-cap)
+10 stacks: 2.33x damage
+100 stacks: 2.90x damage (approaching 3.0x cap)
+
+# Use for: Preventing runaway scaling, proc items, boss health
+```
+
+#### ScalingCalculator Utility
+
+**Location:** `res://scripts/utils/ScalingCalculator.gd`
+
+**Usage in Items:**
+```gdscript
+# BaseItem.gd - Scaling configuration
+@export var damage_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+@export var damage_per_stack: float = 0.2  # 20% per stack
+@export var damage_hyperbolic_cap: float = 3.0  # For HYPERBOLIC only
+@export var damage_hyperbolic_k: float = 5.0  # Half-cap point
+
+# ItemManager.gd - Automatic calculation
+var stack_mult = ScalingCalculator.calculate_multiplier(
+    per_stack, stack_count, scaling_type, cap, k
+)
+```
+
+**Usage in Enemy Scaling:**
+```gdscript
+# Calculate enemy HP for wave 10 with hyperbolic cap
+var hp = ScalingCalculator.calculate_flat(
+    50.0,  # per_wave HP bonus
+    10,    # wave number
+    ScalingCalculator.ScalingType.HYPERBOLIC,
+    500.0, # max HP cap
+    5.0    # half-cap at wave 5
+)
+# Result: 333 HP (approaching 500 HP cap)
+```
+
+#### Item Scaling Configuration
+
+**Focus Stone (LINEAR Damage):**
+```tres
+[resource]
+item_id = "focus_stone"
+display_name = "Focus Stone"
+damage_mult = 1.2
+damage_scaling_type = 0  # LINEAR
+damage_per_stack = 0.2   # +20% per stack
+stat_summary = "+20% Damage (linear: 1.2x, 1.4x, 1.6x...)"
+```
+
+**Rump Steak (LINEAR HP):**
+```tres
+[resource]
+item_id = "rump_steak"
+display_name = "Rump Steak"
+max_hp_bonus = 25
+hp_scaling_type = 0  # LINEAR
+hp_per_stack = 25    # +25 HP per stack
+stat_summary = "+25 HP (linear: 25, 50, 75, 100...)"
+```
+
+**Feather (EXPONENTIAL Speed, Backward Compatible):**
+```tres
+[resource]
+item_id = "feather"
+movement_speed_mult = 1.15
+speed_scaling_type = 1  # EXPONENTIAL (default)
+# speed_per_stack auto-derived: 0.15
+stat_summary = "+15% Speed (exponential: 1.15x, 1.52x, 2.07x...)"
+```
+
+#### Default Scaling Behaviors
+
+**Multiplicative Stats** (damage_mult, movement_speed_mult, pickup_radius_mult):
+- Default: `EXPONENTIAL` (compound growth, matches pre-2025-10-15 behavior)
+- Auto-derive per_stack if not set: `per_stack = mult - 1.0`
+
+**Additive Stats** (max_hp_bonus, crit_chance_bonus):
+- Default: `LINEAR` (simple additive stacking)
+- Auto-derive per_stack if not set: `per_stack = bonus value`
+
+#### Backward Compatibility
+
+The scaling system maintains **100% backward compatibility** with existing items:
+
+**Before (Hardcoded Exponential):**
+```gdscript
+# ItemManager.gd (old)
+var stack_mult := pow(item.damage_mult, stack_count)  # Exponential
+stats.damage_mult *= stack_mult
+```
+
+**After (Explicit Scaling):**
+```gdscript
+# ItemManager.gd (new)
+var stack_mult := ScalingCalculator.calculate_multiplier(
+    per_stack, stack_count, EXPONENTIAL, cap, k
+)
+stats.damage_mult *= stack_mult
+```
+
+**Result:** Identical behavior for existing items, with opt-in LINEAR/HYPERBOLIC for new items.
+
+#### Testing & Validation
+
+**Test File:** `tests/test_scaling_calculator.gd`
+
+**Run Tests:**
+```bash
+../Godot_v4.4.1-stable_win64_console.exe --headless --script tests/test_scaling_calculator.gd
+```
+
+**Validated Scenarios:**
+- LINEAR flat scaling (HP, crit chance)
+- LINEAR multiplier scaling (damage, speed)
+- EXPONENTIAL multiplier scaling (compound growth)
+- HYPERBOLIC flat scaling (capped HP)
+- HYPERBOLIC multiplier scaling (capped damage)
+- Formula descriptions (tooltip generation)
+- Parameter validation (common mistakes)
+
+#### Helper Functions
+
+**Formula Descriptions (For Tooltips):**
+```gdscript
+# Generate human-readable scaling description
+var desc = ScalingCalculator.get_formula_description(
+    ScalingCalculator.ScalingType.LINEAR,
+    0.2,   # per_stack
+    true,  # is_multiplier
+    0.0,   # cap (unused for LINEAR)
+    1.0    # k (unused for LINEAR)
+)
+# Result: "+20% per stack (linear)"
+```
+
+**Preview Scaling (For Testing):**
+```gdscript
+# Preview value at specific stack count
+var preview = ScalingCalculator.preview_scaling(
+    0.2,   # per_stack
+    10,    # stack_count
+    ScalingCalculator.ScalingType.EXPONENTIAL,
+    true,  # is_multiplier
+    0.0,   # cap
+    1.0    # k
+)
+# Result: "10 stacks: 6.19x"
+```
+
+**Parameter Validation:**
+```gdscript
+# Validate scaling parameters for common errors
+var warnings = ScalingCalculator.validate_parameters(
+    ScalingCalculator.ScalingType.HYPERBOLIC,
+    0.2,   # per_stack
+    3.0,   # cap
+    5.0    # k
+)
+# Result: [] (empty = valid)
+```
+
+#### Design Goals
+
+1. **Predictability:** Players can calculate exact values for build planning
+2. **Balance Control:** Designers can prevent runaway scaling with HYPERBOLIC caps
+3. **Flexibility:** Different items can use different scaling curves
+4. **Hot-Reloadable:** All scaling parameters live in .tres files (F5 reload)
+5. **Inspector-Friendly:** Enum dropdowns and tooltips in Godot Inspector
+6. **Harmonization:** Same formulas used for items, enemies, map scaling
+
+### Conditional Damage System (2025-10-16)
+
+The game supports **range-based conditional damage** for items that apply bonuses only when specific conditions are met (e.g., "damage to nearby enemies").
+
+#### How It Works
+
+**Position-Based Distance Check:**
+```gdscript
+# DamageDealtPayload provides source and impact positions
+var distance = source_position.distance_to(impact_position)
+
+# ItemManager checks if distance <= item.conditional_damage_range
+if distance <= conditional_damage_range:
+    apply_bonus_damage()
+```
+
+**Bonus Damage Application:**
+```gdscript
+# Calculate bonus damage using ScalingCalculator
+var bonus_mult = ScalingCalculator.calculate_multiplier(
+    per_stack, stack_count, scaling_type, cap, k
+)
+var bonus_damage = original_damage * (bonus_mult - 1.0)
+
+# Apply via DamageService (separate from global damage_mult)
+DamageService._process_damage_immediate(target, bonus_damage, source_tag, ["conditional"])
+```
+
+#### BaseItem Schema Extensions
+
+**Conditional Damage Properties:**
+```gdscript
+@export var conditional_damage_enabled: bool = false         # Enable conditional bonus
+@export var conditional_damage_bonus: float = 0.0            # Base bonus (0.2 = 20%)
+@export var conditional_damage_range: float = 0.0            # Range in pixels (416.0 = 13 tiles)
+@export var conditional_damage_per_stack: float = 0.0        # Per-stack bonus (auto-derived if 0.0)
+@export var conditional_damage_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
+```
+
+#### Example: Focus Stone (Range-Based Damage)
+
+**Item Configuration:**
+```tres
+[resource]
+item_id = "focus_stone"
+display_name = "Focus Stone"
+description = "Increase damage to enemies within 13m by 20% (+20% per stack)"
+conditional_damage_enabled = true
+conditional_damage_bonus = 0.2           # 20% base bonus
+conditional_damage_range = 416.0         # 13 tiles × 32 pixels/tile
+conditional_damage_per_stack = 0.2       # +20% per stack
+conditional_damage_scaling_type = 0      # LINEAR
+stat_summary = "+20% Damage within 13m (linear: 1.2x, 1.4x, 1.6x...)"
+```
+
+**Stacking Behavior (LINEAR):**
+```
+1 stack:  +20% damage within 13m (1.2x)
+2 stacks: +40% damage within 13m (1.4x)
+3 stacks: +60% damage within 13m (1.6x)
+5 stacks: +100% damage within 13m (2.0x)
+
+Outside 13m: No bonus damage applied
+```
+
+#### Conditional vs Global Damage
+
+**Global Damage (Applied to All Attacks):**
+```gdscript
+# Traditional approach: Adds to player.runtime_stats
+damage_mult = 1.2  # +20% to ALL damage
+```
+
+**Conditional Damage (Applied When Condition Met):**
+```gdscript
+# New approach: Checked on each damage event
+if distance <= conditional_damage_range:
+    apply_bonus_damage(original_damage * conditional_damage_bonus)
+```
+
+**Key Difference:** Conditional damage is NOT added to runtime_stats—it's calculated per-hit based on enemy position.
+
+#### Integration Pattern
+
+**ItemManager Integration:**
+```gdscript
+# _on_damage_dealt() checks conditional damage BEFORE procs
+func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type) -> void:
+    # 1. Check conditional damage (Focus Stone range check)
+    _check_conditional_damage(payload)
+
+    # 2. Check item procs (lightning, explosion, freeze)
+    for item in _equipped_items.values():
+        _check_item_procs(item, payload)
+```
+
+**Distance Calculation:**
+```gdscript
+# Uses DamageDealtPayload position fields
+var distance = payload.source_position.distance_to(payload.impact_position)
+
+# source_position: Player/ability origin
+# impact_position: Enemy hit location
+```
+
+#### Future Conditional Mechanics
+
+**Potential Conditional Types:**
+- **Health-based:** "Damage to low-health enemies" (if enemy.hp < 30%)
+- **Enemy-type:** "Damage to bosses" (if enemy.is_boss)
+- **Movement-based:** "Damage while moving" (if player.velocity.length() > threshold)
+- **Cooldown-based:** "First hit every N seconds" (time-gated conditional)
+- **Combo-based:** "Damage after 3 consecutive hits" (streak tracking)
+
+**Extensibility:** All conditionals follow the same pattern:
+1. Add properties to BaseItem
+2. Check condition in ItemManager._check_conditional_damage()
+3. Apply bonus damage via DamageService if condition met
+
+#### Testing
+
+**Test File:** `tests/test_conditional_damage.gd`
+
+**Validated Scenarios:**
+- Conditional damage disabled (no bonus applied)
+- Within range check (bonus applied)
+- Outside range check (no bonus applied)
+- LINEAR stacking behavior (1x, 2x, 3x, 5x)
+- Scaling type support (LINEAR, EXPONENTIAL, HYPERBOLIC)
+
+**Debug Logging:**
+```gdscript
+Logger.debug("Item '%s': Conditional damage bonus %.1f (distance: %.0f/%.0f, mult: %.2fx, stacks: %d)" % [
+    item_id, bonus_damage, distance, range, bonus_mult, stack_count
+], "items")
+```
+
+#### Design Benefits
+
+1. **Positional Play:** Encourages players to position carefully for maximum damage
+2. **Build Variety:** Enables range-based items (melee bonuses, ranged penalties, etc.)
+3. **Scalability:** Framework supports future conditional mechanics beyond distance
+4. **Transparency:** Distance check happens per-hit, visible in damage numbers
+5. **Performance:** O(n) loop over equipped items, no spatial queries needed

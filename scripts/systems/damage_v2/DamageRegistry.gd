@@ -60,19 +60,19 @@ func _ready() -> void:
 ## Setup zero-allocation damage queue if enabled by config
 func _setup_queue_if_enabled() -> void:
 	# Check config for zero-allocation damage queue
-	_queue_enabled = BalanceDB.get_combat_value("use_zero_alloc_damage_queue")
+	_queue_enabled = BalanceDB.combat.use_zero_alloc_damage_queue
 	Logger.info("Zero-allocation damage queue: %s" % ("ENABLED" if _queue_enabled else "DISABLED"), "combat")
-	
+
 	if not _queue_enabled:
 		return
-		
+
 	# Initialize queue components
 	_damage_queue = RingBufferUtil.new()
-	_damage_queue.setup(BalanceDB.get_combat_value("damage_queue_capacity"))
-	
+	_damage_queue.setup(BalanceDB.combat.damage_queue_capacity)
+
 	_payload_pool = ObjectPoolUtil.new()
 	_payload_pool.setup(
-		BalanceDB.get_combat_value("damage_pool_size"),
+		BalanceDB.combat.damage_pool_size,
 		PayloadResetUtil.create_damage_payload,
 		PayloadResetUtil.clear_damage_payload
 	)
@@ -87,7 +87,7 @@ func _setup_queue_if_enabled() -> void:
 	# Setup 30Hz processor timer
 	_processor_timer = Timer.new()
 	_processor_timer.one_shot = false
-	_processor_timer.wait_time = 1.0 / BalanceDB.get_combat_value("damage_queue_tick_rate_hz")
+	_processor_timer.wait_time = 1.0 / BalanceDB.combat.damage_queue_tick_rate_hz
 	add_child(_processor_timer)
 	_processor_timer.timeout.connect(_process_damage_queue_tick)
 	
@@ -421,7 +421,7 @@ func _process_damage_queue_tick() -> void:
 		return
 		
 	var start_time = Time.get_ticks_msec()
-	var max_per_tick = BalanceDB.get_combat_value("damage_queue_max_per_tick")
+	var max_per_tick = BalanceDB.combat.damage_queue_max_per_tick
 	var processed = 0
 	
 	while processed < max_per_tick:
@@ -569,18 +569,23 @@ func get_entities_in_cone(origin: Vector2, direction: Vector2, angle_degrees: fl
 func _calculate_final_damage(base_damage: float, _tags: Array) -> float:
 	var final_damage: float = base_damage
 
-	# Get effective crit chance from player stats (default 0.1 if no player)
+	# Apply player damage multiplier from items/buffs
+	var damage_mult: float = 1.0
 	var crit_chance: float = 0.1  # Fallback
 	if PlayerState and PlayerState.has_player_reference():
 		var player = PlayerState._player_ref
 		if player and player.runtime_stats:
+			damage_mult = player.runtime_stats.damage_mult
 			crit_chance = player.runtime_stats.get_effective_crit_chance()
+
+	# Apply damage multiplier first
+	final_damage *= damage_mult
 
 	# Apply crit chance check
 	var crit_rng := RNG.stream("crit")
 	var is_crit: bool = crit_rng.randf() < crit_chance
 	if is_crit:
-		var crit_mult: float = BalanceDB.get_combat_value("crit_multiplier") if BalanceDB else 2.0
+		var crit_mult: float = BalanceDB.combat.crit_multiplier if BalanceDB else 2.0
 		final_damage *= crit_mult
 		if Logger.is_level_enabled(Logger.LogLevel.DEBUG):
 			Logger.debug("CRITICAL HIT! Damage: %.1f → %.1f (crit_chance: %.1f%%)" % [

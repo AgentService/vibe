@@ -200,10 +200,16 @@ func equip_item(item_id: String) -> bool:
 	# Check if item already equipped (stacking)
 	if _equipped_items.has(item_id):
 		var item_data: Dictionary = _equipped_items[item_id]
+		var old_stack_count: int = item_data.stack_count
+
+		# Remove old stack bonuses (total from all previous stacks)
+		_remove_stat_bonuses(item, old_stack_count)
+
+		# Increment stack count
 		item_data.stack_count += 1
 
-		# Apply one additional stack of stat bonuses
-		_apply_stat_bonuses(item, 1)
+		# Apply new stack bonuses (total from all stacks including new one)
+		_apply_stat_bonuses(item, item_data.stack_count)
 
 		Logger.info("ItemManager: Stacked item '%s' (stack: %d)" % [item_id, item_data.stack_count], "items")
 		return true
@@ -233,19 +239,22 @@ func unequip_item(item_id: String) -> bool:
 
 	var item_data: Dictionary = _equipped_items[item_id]
 	var item: BaseItem = item_data.item
+	var old_stack_count: int = item_data.stack_count
+
+	# Remove old stack bonuses (total from all current stacks)
+	_remove_stat_bonuses(item, old_stack_count)
 
 	# Decrement stack count
 	item_data.stack_count -= 1
 
-	# Remove one stack of stat bonuses
-	_remove_stat_bonuses(item, 1)
-
-	# Remove from dictionary if no stacks remain
-	if item_data.stack_count <= 0:
+	# Reapply bonuses if stacks remain
+	if item_data.stack_count > 0:
+		_apply_stat_bonuses(item, item_data.stack_count)
+		Logger.info("ItemManager: Unequipped item '%s' (stack: %d remaining)" % [item_id, item_data.stack_count], "items")
+	else:
+		# Remove from dictionary if no stacks remain
 		_equipped_items.erase(item_id)
 		Logger.info("ItemManager: Unequipped item '%s' (removed completely)" % item_id, "items")
-	else:
-		Logger.info("ItemManager: Unequipped item '%s' (stack: %d remaining)" % [item_id, item_data.stack_count], "items")
 
 	return true
 
@@ -275,7 +284,7 @@ func set_player(player: Node2D) -> void:
 # STAT BONUS APPLICATION
 # ============================================================================
 
-## Applies item stat bonuses to player.runtime_stats (multiplied by stack_count)
+## Applies item stat bonuses to player.runtime_stats (using ScalingCalculator)
 func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 	if not _player or not "runtime_stats" in _player:
 		Logger.warn("ItemManager: Cannot apply stat bonuses, player has no runtime_stats", "items")
@@ -283,83 +292,171 @@ func _apply_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 
 	var stats = _player.runtime_stats
 
-	# Apply multiplicative modifiers (compounded per stack)
-	if item.movement_speed_mult != 1.0:
-		var stack_mult := pow(item.movement_speed_mult, stack_count)
-		stats.movement_speed_mult *= stack_mult
-		Logger.debug("Item '%s': Applied movement_speed_mult=%.2f (x%d stacks)" % [
-			item.item_id, stack_mult, stack_count
-		], "items")
-
+	# Damage multiplier (uses ScalingCalculator)
 	if item.damage_mult != 1.0:
-		var stack_mult := pow(item.damage_mult, stack_count)
+		# Auto-derive per_stack if not explicitly set
+		var per_stack := item.damage_per_stack if item.damage_per_stack != 0.0 else (item.damage_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.damage_scaling_type,
+			item.damage_hyperbolic_cap,
+			item.damage_hyperbolic_k
+		)
 		stats.damage_mult *= stack_mult
-		Logger.debug("Item '%s': Applied damage_mult=%.2f (x%d stacks)" % [
-			item.item_id, stack_mult, stack_count
+		Logger.debug("Item '%s': Applied damage_mult=%.2f (x%d stacks, %s)" % [
+			item.item_id, stack_mult, stack_count, ScalingCalculator.ScalingType.keys()[item.damage_scaling_type]
 		], "items")
 
+	# Movement speed multiplier (uses ScalingCalculator)
+	if item.movement_speed_mult != 1.0:
+		var per_stack := item.speed_per_stack if item.speed_per_stack != 0.0 else (item.movement_speed_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.speed_scaling_type,
+			item.speed_hyperbolic_cap,
+			item.speed_hyperbolic_k
+		)
+		stats.movement_speed_mult *= stack_mult
+		Logger.debug("Item '%s': Applied movement_speed_mult=%.2f (x%d stacks, %s)" % [
+			item.item_id, stack_mult, stack_count, ScalingCalculator.ScalingType.keys()[item.speed_scaling_type]
+		], "items")
+
+	# Pickup radius multiplier (uses ScalingCalculator)
 	if item.pickup_radius_mult != 1.0:
-		var stack_mult := pow(item.pickup_radius_mult, stack_count)
+		var per_stack := item.pickup_radius_per_stack if item.pickup_radius_per_stack != 0.0 else (item.pickup_radius_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.pickup_radius_scaling_type,
+			0.0,  # No hyperbolic cap for pickup radius (use default EXPONENTIAL)
+			1.0
+		)
 		stats.pickup_radius_mult *= stack_mult
-		Logger.debug("Item '%s': Applied pickup_radius_mult=%.2f (x%d stacks)" % [
-			item.item_id, stack_mult, stack_count
+		Logger.debug("Item '%s': Applied pickup_radius_mult=%.2f (x%d stacks, %s)" % [
+			item.item_id, stack_mult, stack_count, ScalingCalculator.ScalingType.keys()[item.pickup_radius_scaling_type]
 		], "items")
 
-	# Apply additive bonuses (linear per stack)
+	# HP bonus (uses ScalingCalculator for flat scaling)
 	if item.max_hp_bonus != 0:
-		var bonus := item.max_hp_bonus * stack_count
+		# Auto-derive per_stack if not explicitly set
+		var per_stack := float(item.hp_per_stack) if item.hp_per_stack != 0 else float(item.max_hp_bonus)
+
+		var bonus := int(ScalingCalculator.calculate_flat(
+			per_stack,
+			stack_count,
+			item.hp_scaling_type,
+			item.hp_hyperbolic_cap,
+			item.hp_hyperbolic_k
+		))
 		stats.max_hp_bonus += bonus
-		Logger.debug("Item '%s': Applied max_hp_bonus=%d (x%d stacks)" % [
-			item.item_id, bonus, stack_count
+		Logger.debug("Item '%s': Applied max_hp_bonus=%d (x%d stacks, %s)" % [
+			item.item_id, bonus, stack_count, ScalingCalculator.ScalingType.keys()[item.hp_scaling_type]
 		], "items")
 
+	# Crit chance bonus (uses ScalingCalculator for flat scaling)
 	if item.crit_chance_bonus != 0.0:
-		var bonus := item.crit_chance_bonus * stack_count
+		var per_stack := item.crit_per_stack if item.crit_per_stack != 0.0 else item.crit_chance_bonus
+
+		var bonus := ScalingCalculator.calculate_flat(
+			per_stack,
+			stack_count,
+			item.crit_scaling_type,
+			0.0,  # No hyperbolic cap for crit (typically capped at 1.0 by game logic)
+			1.0
+		)
 		stats.crit_chance_bonus += bonus
-		Logger.debug("Item '%s': Applied crit_chance_bonus=%.3f (x%d stacks)" % [
-			item.item_id, bonus, stack_count
+		Logger.debug("Item '%s': Applied crit_chance_bonus=%.3f (x%d stacks, %s)" % [
+			item.item_id, bonus, stack_count, ScalingCalculator.ScalingType.keys()[item.crit_scaling_type]
 		], "items")
 
 
-## Removes item stat bonuses from player.runtime_stats (for stack_count stacks)
+## Removes item stat bonuses from player.runtime_stats (using ScalingCalculator)
 func _remove_stat_bonuses(item: BaseItem, stack_count: int = 1) -> void:
 	if not _player or not "runtime_stats" in _player:
 		return
 
 	var stats = _player.runtime_stats
 
-	# Remove multiplicative modifiers (divide by stacked multiplier)
-	if item.movement_speed_mult != 1.0:
-		var stack_mult := pow(item.movement_speed_mult, stack_count)
-		stats.movement_speed_mult /= stack_mult
-		Logger.debug("Item '%s': Removed movement_speed_mult=%.2f (x%d stacks, new value: %.2f)" % [
-			item.item_id, stack_mult, stack_count, stats.movement_speed_mult
-		], "items")
-
+	# Damage multiplier (divide by calculated stack_mult)
 	if item.damage_mult != 1.0:
-		var stack_mult := pow(item.damage_mult, stack_count)
+		var per_stack := item.damage_per_stack if item.damage_per_stack != 0.0 else (item.damage_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.damage_scaling_type,
+			item.damage_hyperbolic_cap,
+			item.damage_hyperbolic_k
+		)
 		stats.damage_mult /= stack_mult
 		Logger.debug("Item '%s': Removed damage_mult=%.2f (x%d stacks, new value: %.2f)" % [
 			item.item_id, stack_mult, stack_count, stats.damage_mult
 		], "items")
 
+	# Movement speed multiplier (divide by calculated stack_mult)
+	if item.movement_speed_mult != 1.0:
+		var per_stack := item.speed_per_stack if item.speed_per_stack != 0.0 else (item.movement_speed_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.speed_scaling_type,
+			item.speed_hyperbolic_cap,
+			item.speed_hyperbolic_k
+		)
+		stats.movement_speed_mult /= stack_mult
+		Logger.debug("Item '%s': Removed movement_speed_mult=%.2f (x%d stacks, new value: %.2f)" % [
+			item.item_id, stack_mult, stack_count, stats.movement_speed_mult
+		], "items")
+
+	# Pickup radius multiplier (divide by calculated stack_mult)
 	if item.pickup_radius_mult != 1.0:
-		var stack_mult := pow(item.pickup_radius_mult, stack_count)
+		var per_stack := item.pickup_radius_per_stack if item.pickup_radius_per_stack != 0.0 else (item.pickup_radius_mult - 1.0)
+
+		var stack_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.pickup_radius_scaling_type,
+			0.0,
+			1.0
+		)
 		stats.pickup_radius_mult /= stack_mult
 		Logger.debug("Item '%s': Removed pickup_radius_mult=%.2f (x%d stacks, new value: %.2f)" % [
 			item.item_id, stack_mult, stack_count, stats.pickup_radius_mult
 		], "items")
 
-	# Remove additive bonuses (subtract linear bonus)
+	# HP bonus (subtract calculated flat value)
 	if item.max_hp_bonus != 0:
-		var bonus := item.max_hp_bonus * stack_count
+		var per_stack := float(item.hp_per_stack) if item.hp_per_stack != 0 else float(item.max_hp_bonus)
+
+		var bonus := int(ScalingCalculator.calculate_flat(
+			per_stack,
+			stack_count,
+			item.hp_scaling_type,
+			item.hp_hyperbolic_cap,
+			item.hp_hyperbolic_k
+		))
 		stats.max_hp_bonus -= bonus
 		Logger.debug("Item '%s': Removed max_hp_bonus=%d (x%d stacks, new value: %d)" % [
 			item.item_id, bonus, stack_count, stats.max_hp_bonus
 		], "items")
 
+	# Crit chance bonus (subtract calculated flat value)
 	if item.crit_chance_bonus != 0.0:
-		var bonus := item.crit_chance_bonus * stack_count
+		var per_stack := item.crit_per_stack if item.crit_per_stack != 0.0 else item.crit_chance_bonus
+
+		var bonus := ScalingCalculator.calculate_flat(
+			per_stack,
+			stack_count,
+			item.crit_scaling_type,
+			0.0,
+			1.0
+		)
 		stats.crit_chance_bonus -= bonus
 		Logger.debug("Item '%s': Removed crit_chance_bonus=%.3f (x%d stacks, new value: %.3f)" % [
 			item.item_id, bonus, stack_count, stats.crit_chance_bonus
@@ -384,14 +481,17 @@ func _connect_to_event_bus() -> void:
 	Logger.debug("ItemManager: Connected to EventBus (damage_dealt, combat_step, item_acquired)", "items")
 
 
-## Handles damage_dealt events for item proc checks.
-## Checks all equipped items for proc triggers (lightning, explosion, freeze).
+## Handles damage_dealt events for item proc checks and conditional damage bonuses.
+## Checks all equipped items for proc triggers (lightning, explosion, freeze) and conditional effects.
 func _on_damage_dealt(payload: EventBus.DamageDealtPayload_Type) -> void:
 	# Recursion prevention: Don't proc on item-generated damage
 	if payload.source.begins_with("item_"):
 		return
 
-	# Check each equipped item for proc triggers
+	# Check each equipped item for conditional damage bonuses FIRST
+	_check_conditional_damage(payload)
+
+	# Then check each equipped item for proc triggers
 	for item_data in _equipped_items.values():
 		var item: BaseItem = item_data.item
 		if item:
@@ -407,6 +507,62 @@ func _on_combat_step(payload: EventBus.CombatStepPayload_Type) -> void:
 		var item: BaseItem = item_data.item
 		if item:
 			item.update_cooldowns(delta_time)
+
+
+# ============================================================================
+# CONDITIONAL DAMAGE LOGIC (2025-10-16)
+# ============================================================================
+
+## Checks equipped items for conditional damage bonuses and applies additional damage if conditions met.
+## Example: Focus Stone gives +20% damage to enemies within 13m.
+func _check_conditional_damage(payload: EventBus.DamageDealtPayload_Type) -> void:
+	# Skip if no position data available
+	if payload.source_position == Vector2.ZERO or payload.impact_position == Vector2.ZERO:
+		return
+
+	# Calculate distance between source and impact
+	var distance := payload.source_position.distance_to(payload.impact_position)
+
+	# Check each equipped item for conditional damage
+	for item_data in _equipped_items.values():
+		var item: BaseItem = item_data.item
+		if not item or not item.conditional_damage_enabled:
+			continue
+
+		var stack_count: int = item_data.get("stack_count", 1)
+
+		# Check if within range
+		if distance > item.conditional_damage_range:
+			continue
+
+		# Calculate conditional damage bonus with scaling
+		var per_stack := item.conditional_damage_per_stack if item.conditional_damage_per_stack != 0.0 else item.conditional_damage_bonus
+
+		var bonus_mult := ScalingCalculator.calculate_multiplier(
+			per_stack,
+			stack_count,
+			item.conditional_damage_scaling_type,
+			0.0,  # No hyperbolic cap for conditional damage
+			1.0
+		)
+
+		# Calculate additional damage (bonus is multiplicative: 1.2x = +20% damage)
+		var bonus_damage := payload.damage * (bonus_mult - 1.0)
+
+		# Apply bonus damage via DamageService
+		if bonus_damage > 0.0:
+			DamageService._process_damage_immediate(
+				payload.target,
+				bonus_damage,
+				"item_conditional_%s" % item.item_id,  # Source tag for tracking
+				["conditional"],
+				0.0,  # No knockback
+				payload.source_position
+			)
+
+			Logger.debug("Item '%s': Conditional damage bonus %.1f (distance: %.0f/%.0f, mult: %.2fx, stacks: %d)" % [
+				item.item_id, bonus_damage, distance, item.conditional_damage_range, bonus_mult, stack_count
+			], "items")
 
 
 # ============================================================================

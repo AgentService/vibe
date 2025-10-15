@@ -62,7 +62,7 @@ func get_effective_damage() -> float:
 
 func get_effective_crit_chance() -> float:
 	# Get base crit chance from BalanceDB (default 0.1 = 10%)
-	var base_crit: float = BalanceDB.get_combat_value("crit_chance") if BalanceDB else 0.1
+	var base_crit: float = BalanceDB.combat.crit_chance if BalanceDB else 0.1
 	return base_crit + crit_chance_bonus
 
 

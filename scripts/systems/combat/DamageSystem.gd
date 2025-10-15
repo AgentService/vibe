@@ -19,8 +19,8 @@ func _ready() -> void:
 		BalanceDB.balance_reloaded.connect(_load_balance_values)
 
 func _load_balance_values() -> void:
-	projectile_radius = BalanceDB.get_combat_value("projectile_radius")
-	enemy_radius = BalanceDB.get_combat_value("enemy_radius")
+	projectile_radius = BalanceDB.combat.projectile_radius
+	enemy_radius = BalanceDB.combat.enemy_radius
 	Logger.info("Reloaded combat balance values", "combat")
 
 func _on_combat_step(_payload) -> void:
@@ -64,7 +64,7 @@ func _on_combat_step(_payload) -> void:
 #		return
 #	
 #	# Apply damage directly via DamageService
-#	var base_damage: float = BalanceDB.get_combat_value("base_damage")
+#	var base_damage: float = BalanceDB.combat.base_damage
 #	var entity_id = "enemy_" + str(actual_enemy_idx)
 #	
 #	# AUTO-REGISTER: Register enemy if not already registered

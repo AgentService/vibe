@@ -99,10 +99,10 @@ func _try_load_player_modifiers() -> void:
 func _load_player_modifiers() -> void:
 	"""Load player stat modifiers from BalanceDB"""
 	player_modifiers = {
-		"projectile_count_add": BalanceDB.get_player_value("projectile_count_add"),
-		"projectile_speed_mult": BalanceDB.get_player_value("projectile_speed_mult"),
-		"fire_rate_mult": BalanceDB.get_player_value("fire_rate_mult"),
-		"damage_mult": BalanceDB.get_player_value("damage_mult"),
+		"projectile_count_add": BalanceDB.player.projectile_count_add,
+		"projectile_speed_mult": BalanceDB.player.projectile_speed_mult,
+		"fire_rate_mult": BalanceDB.player.fire_rate_mult,
+		"damage_mult": BalanceDB.player.damage_mult,
 		"has_projectiles": false,
 		"melee_damage_add": 0.0,
 		"melee_damage_mult": 1.0,

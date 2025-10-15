@@ -61,6 +61,87 @@ class_name BaseItem
 @export var crit_chance_bonus: float = 0.0
 
 # ============================================================================
+# SCALING CONFIGURATION (2025-10-15)
+# ============================================================================
+
+@export_group("Scaling Configuration")
+
+## Damage multiplier scaling type (default: EXPONENTIAL for backward compatibility)
+## - LINEAR: 1.2x, 1.4x, 1.6x, 1.8x (additive stacking)
+## - EXPONENTIAL: 1.2x, 1.44x, 1.728x, 2.07x (compound growth, CURRENT DEFAULT)
+## - HYPERBOLIC: Approaches cap asymptotically (prevents runaway scaling)
+@export var damage_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+## Per-stack damage bonus (0.0 = auto-derive from damage_mult - 1.0)
+## Example: damage_mult = 1.2, per_stack = 0.2 (20% per stack)
+@export var damage_per_stack: float = 0.0
+
+## Maximum damage multiplier at infinite stacks (HYPERBOLIC only)
+## Example: cap = 3.0 means damage approaches 3.0x at high stacks
+@export var damage_hyperbolic_cap: float = 3.0
+
+## Half-cap point for hyperbolic scaling (HYPERBOLIC only)
+## Example: k = 5.0 means at 5 stacks, you reach halfway between 1.0x and cap
+@export var damage_hyperbolic_k: float = 5.0
+
+## HP bonus scaling type (default: LINEAR for simple additive stacking)
+@export var hp_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
+
+## Per-stack HP bonus (0 = uses max_hp_bonus directly)
+@export var hp_per_stack: int = 0
+
+## HP hyperbolic cap (HYPERBOLIC only)
+@export var hp_hyperbolic_cap: float = 500.0
+
+## HP hyperbolic k parameter (HYPERBOLIC only)
+@export var hp_hyperbolic_k: float = 5.0
+
+## Movement speed scaling type (default: EXPONENTIAL for compound growth)
+@export var speed_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+## Per-stack speed bonus (0.0 = auto-derive from movement_speed_mult - 1.0)
+@export var speed_per_stack: float = 0.0
+
+## Speed hyperbolic cap (HYPERBOLIC only)
+@export var speed_hyperbolic_cap: float = 2.5
+
+## Speed hyperbolic k parameter (HYPERBOLIC only)
+@export var speed_hyperbolic_k: float = 5.0
+
+## Pickup radius scaling type (default: EXPONENTIAL)
+@export var pickup_radius_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+
+## Per-stack pickup radius bonus (0.0 = auto-derive from pickup_radius_mult - 1.0)
+@export var pickup_radius_per_stack: float = 0.0
+
+## Crit chance scaling type (default: LINEAR for simple additive)
+@export var crit_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
+
+## Per-stack crit chance bonus (0.0 = uses crit_chance_bonus directly)
+@export var crit_per_stack: float = 0.0
+
+# ============================================================================
+# CONDITIONAL DAMAGE (Range-Based Bonuses - 2025-10-16)
+# ============================================================================
+
+@export_group("Conditional Damage")
+
+## Enable conditional damage bonus (e.g., "damage to nearby enemies")
+@export var conditional_damage_enabled: bool = false
+
+## Damage bonus percentage when condition met (0.2 = 20% bonus damage)
+@export var conditional_damage_bonus: float = 0.0
+
+## Range in pixels for conditional damage (416.0 = 13 tiles @ 32px/tile)
+@export var conditional_damage_range: float = 0.0
+
+## Per-stack conditional damage bonus (0.0 = uses conditional_damage_bonus directly)
+@export var conditional_damage_per_stack: float = 0.0
+
+## Conditional damage scaling type (default: LINEAR for additive stacking)
+@export var conditional_damage_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
+
+# ============================================================================
 # PROC TYPE 1: LIGHTNING (On-Hit Effect)
 # ============================================================================
 

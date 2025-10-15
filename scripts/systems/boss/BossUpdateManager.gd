@@ -128,7 +128,7 @@ func _get_visible_world_rect() -> Rect2:
 		zoom = _player_camera.zoom.x
 		camera_pos = _player_camera.global_position
 
-	var margin: float = BalanceDB.get_waves_value("enemy_viewport_cull_margin")
+	var margin: float = BalanceDB.waves.enemy_viewport_cull_margin
 	var half_size := (viewport_size / zoom) * 0.5 + Vector2(margin, margin)
 	return Rect2(camera_pos - half_size, half_size * 2)
 

@@ -39,11 +39,11 @@ func _ready() -> void:
 		BalanceDB.balance_reloaded.connect(_on_balance_reloaded)
 
 func _load_balance_values() -> void:
-	damage = BalanceDB.get_melee_value("damage")
-	attack_range = BalanceDB.get_melee_value("range")
-	cone_angle = BalanceDB.get_melee_value("cone_angle")
-	attack_speed = BalanceDB.get_melee_value("attack_speed")
-	knockback_distance = BalanceDB.get_melee_value("knockback_distance")
+	damage = BalanceDB.melee.damage
+	attack_range = BalanceDB.melee.attack_range
+	cone_angle = BalanceDB.melee.cone_angle
+	attack_speed = BalanceDB.melee.attack_speed
+	knockback_distance = BalanceDB.melee.knockback_distance
 
 func _exit_tree() -> void:
 	# Cleanup signal connections

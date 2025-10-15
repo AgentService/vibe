@@ -135,16 +135,16 @@ func set_arena_system(injected_arena_system) -> void:
 	Logger.info("ArenaSystem injected into WaveDirector", "waves")
 
 func _load_balance_values() -> void:
-	max_enemies = BalanceDB.get_waves_value("max_enemies")
-	spawn_interval = BalanceDB.get_waves_value("spawn_interval")
-	arena_center = BalanceDB.get_waves_value("arena_center")
+	max_enemies = BalanceDB.waves.max_enemies
+	spawn_interval = BalanceDB.waves.spawn_interval
+	arena_center = BalanceDB.waves.arena_center
 	# spawn_radius now comes from ArenaSystem, set via dependency injection
-	enemy_speed_min = BalanceDB.get_waves_value("enemy_speed_min")
-	enemy_speed_max = BalanceDB.get_waves_value("enemy_speed_max")
-	spawn_count_min = BalanceDB.get_waves_value("spawn_count_min")
-	spawn_count_max = BalanceDB.get_waves_value("spawn_count_max")
-	arena_bounds = BalanceDB.get_waves_value("arena_bounds")
-	target_distance = BalanceDB.get_waves_value("target_distance")
+	enemy_speed_min = BalanceDB.waves.enemy_speed_min
+	enemy_speed_max = BalanceDB.waves.enemy_speed_max
+	spawn_count_min = BalanceDB.waves.spawn_count_min
+	spawn_count_max = BalanceDB.waves.spawn_count_max
+	arena_bounds = BalanceDB.waves.arena_bounds
+	target_distance = BalanceDB.waves.target_distance
 
 func _exit_tree() -> void:
 	# Cleanup signal connections
@@ -915,7 +915,7 @@ func _update_enemies(dt: float) -> void:
 
 	# PERFORMANCE OPTIMIZATION: Pre-calculate values once
 	var target_pos: Vector2 = PlayerState.position if PlayerState.has_player_reference() else arena_center
-	var update_distance: float = BalanceDB.get_waves_value("enemy_update_distance")
+	var update_distance: float = BalanceDB.waves.enemy_update_distance
 	var update_distance_squared: float = update_distance * update_distance  # Eliminate sqrt calls
 	var target_x: float = target_pos.x
 	var target_y: float = target_pos.y

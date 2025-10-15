@@ -185,7 +185,7 @@ func get_spear_attack_duration() -> float:
 # Attack speed system functions
 func get_melee_attack_interval() -> float:
 	"""Get the time interval between melee attacks based on balance config."""
-	var attacks_per_second: int = BalanceDB.get_melee_value("attack_speed") as int
+	var attacks_per_second: int = BalanceDB.melee.attack_speed as int
 	if attacks_per_second <= 0:
 		Logger.warn("Invalid attack_speed in balance config, using fallback", "player")
 		return 0.5  # Fallback to 2 attacks per second
