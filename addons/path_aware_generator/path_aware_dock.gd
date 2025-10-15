@@ -36,20 +36,20 @@ func _init():
 	size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	size_flags_vertical = Control.SIZE_EXPAND_FILL
 
-	# Set minimum size to ensure content is visible
-	set_custom_minimum_size(Vector2(280, 400))
+	# Allow narrow resizing - no minimum width constraint
+	set_custom_minimum_size(Vector2(0, 400))
 
-	# Create scrollable container that fills the dock
+	# Create scrollable container with horizontal scrolling enabled
 	var scroll_container = ScrollContainer.new()
 	scroll_container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_container.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_container.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	scroll_container.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	add_child(scroll_container)
 
-	# Main content container
+	# Main content container - don't force expansion
 	var vbox = VBoxContainer.new()
-	vbox.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	vbox.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	vbox.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	scroll_container.add_child(vbox)
 
 	# Title

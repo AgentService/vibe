@@ -52,9 +52,9 @@ var path_config
 var tree_config
 
 func _init():
-	# Set dock name and minimum size (smaller since we now have scrolling)
+	# Set dock name and minimum size (allow narrow resizing)
 	name = "Path Generator"
-	custom_minimum_size = Vector2(480, 600)
+	custom_minimum_size = Vector2(0, 600)
 	
 	_build_ui()
 	_load_default_configs()
