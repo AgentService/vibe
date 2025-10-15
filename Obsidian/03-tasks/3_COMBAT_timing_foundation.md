@@ -209,6 +209,19 @@ Implement the **timing and difficulty scaling foundation** for MEGABONK-style ar
 - **Scaling Formula:** HP = 1.0 + (coeff * 0.3), DMG = 1.0 + (coeff * 0.2)
 - **Caps:** Max 10x multiplier to prevent extreme values
 
+**⚠️ IMPLEMENTATION NOTE - ScalingCalculator Integration:**
+When implementing enemy stat scaling, use `ScalingCalculator` for unified scaling formulas:
+- See `scripts/utils/ScalingCalculator.gd` for reference implementation
+- Already used by ItemManager and BaseTome for consistent behavior
+- Supports LINEAR/EXPONENTIAL/HYPERBOLIC scaling types
+- Consider LINEAR for predictable progression (prevents runaway scaling)
+
+**Future ScalingCalculator Integration Reminder:**
+These systems should use ScalingCalculator when implemented:
+- **Enemy Scaling** (this system - Phase 3) - Use for HP/damage/speed multipliers
+- **Card Bonuses** (future system) - Use for card effect stacking formulas
+- **Map Difficulty** (future system) - Use for difficulty progression curves
+
 **Implementation:**
 - [ ] Add `get_enemy_stat_scaling(coefficient: float) -> Dictionary` method to MapLevel:
   - [ ] Returns: `{"hp": float, "damage": float, "speed": float}`
@@ -216,6 +229,7 @@ Implement the **timing and difficulty scaling foundation** for MEGABONK-style ar
   - [ ] Damage multiplier: `1.0 + (coefficient * 0.2)` (20% per coefficient point)
   - [ ] Speed multiplier: `1.0 + (coefficient * 0.1)` (10% per coefficient point)
   - [ ] Cap all multipliers at 10.0 max
+  - [ ] **IMPORTANT:** Use `ScalingCalculator.calculate_multiplier()` instead of hardcoded formulas
 - [ ] Modify EnemyFactory to apply MapLevel stat multipliers:
   - [ ] Get current coefficient: `var coeff = MapLevel.get_difficulty_coefficient()`
   - [ ] Get scaling multipliers: `var scaling = MapLevel.get_enemy_stat_scaling(coeff)`

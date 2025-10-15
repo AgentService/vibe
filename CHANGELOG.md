@@ -45,6 +45,26 @@
 
 ---
 
+### 📝 DOCS: Added ScalingCalculator Integration Reminders to Task Docs (2025-10-16)
+
+**Added future system integration reminders to avoid forgetting ScalingCalculator usage:**
+- **Location**: `Obsidian/03-tasks/3_COMBAT_timing_foundation.md` Phase 3 (Enemy Stat Scaling)
+- **Purpose**: Document systems that should use ScalingCalculator when implemented
+- **Integration Points Documented**:
+  - **Enemy Scaling** (Task 3 Phase 3) - HP/damage/speed multipliers with difficulty coefficient
+  - **Card Bonuses** (future system) - Card effect stacking formulas
+  - **Map Difficulty** (future system) - Difficulty progression curves
+- **Rationale**:
+  - ItemManager and BaseTome now use ScalingCalculator for unified scaling
+  - Future systems should follow same pattern for consistency
+  - Prevents implementing hardcoded scaling formulas again
+  - Ensures LINEAR/EXPONENTIAL/HYPERBOLIC options available to designers
+
+**Files Modified:**
+- `Obsidian/03-tasks/3_COMBAT_timing_foundation.md` - Added integration reminder before Phase 3 implementation checklist
+
+---
+
 ### 🔧 REFACTOR: Migrated BalanceDB to Type-Safe Property Access API (2025-10-16)
 
 **Modernized BalanceDB API from string-based lookups to direct property access:**
