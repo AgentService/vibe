@@ -7,9 +7,9 @@
 ## - Apply globally or to specific ability tags
 ##
 ## Stacking System (uses ScalingCalculator for configurable scaling):
-## - Multiplicative modifiers: Configurable LINEAR/EXPONENTIAL/HYPERBOLIC (default: EXPONENTIAL)
+## - Multiplicative modifiers: Configurable LINEAR/EXPONENTIAL/HYPERBOLIC (default: LINEAR)
 ## - Flat bonuses: Configurable LINEAR/HYPERBOLIC (default: LINEAR)
-## - Backward compatible: Existing tomes use EXPONENTIAL (pow behavior)
+## - LINEAR = additive stacking (predictable, no runaway scaling)
 ##
 ## Tag Matching (Applicability):
 ## - Empty applicable_tags = global modifier (applies to ALL abilities)
@@ -19,8 +19,8 @@
 ##   Tome: "Fire Mastery" - applicable_tags: [AbilityTags.FIRE]
 ##   - Applies to any ability with FIRE tag
 ##   - damage_multiplier: 1.25 (per_stack = 0.25)
-##   - EXPONENTIAL scaling (default): 3 stacks = 1.953x damage (compound)
-##   - LINEAR scaling: 3 stacks = 1.75x damage (additive)
+##   - LINEAR scaling (default): 3 stacks = 1.75x damage (additive: 1 + 0.25×3)
+##   - EXPONENTIAL scaling: 3 stacks = 1.953x damage (compound: 1.25³)
 ##
 ## Usage:
 ##   var tome: BaseTome = load("res://data/content/tomes/fire_mastery.tres")
@@ -197,8 +197,8 @@ class TomeModifier:
 
 @export_group("Player Stat Scaling")
 
-## Movement speed scaling type (default: EXPONENTIAL for backward compatibility)
-@export var movement_speed_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+## Movement speed scaling type (default: LINEAR for predictable additive stacking)
+@export var movement_speed_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
 
 ## Movement speed hyperbolic cap (for HYPERBOLIC scaling only)
 @export var speed_hyperbolic_cap: float = 0.0
@@ -206,8 +206,8 @@ class TomeModifier:
 ## Movement speed hyperbolic k (half-cap point, for HYPERBOLIC scaling only)
 @export var speed_hyperbolic_k: float = 1.0
 
-## Pickup radius scaling type (default: EXPONENTIAL)
-@export var pickup_radius_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.EXPONENTIAL
+## Pickup radius scaling type (default: LINEAR for predictable additive stacking)
+@export var pickup_radius_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR
 
 ## Max HP scaling type (default: LINEAR for flat bonuses)
 @export var hp_scaling_type: ScalingCalculator.ScalingType = ScalingCalculator.ScalingType.LINEAR

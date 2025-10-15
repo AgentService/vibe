@@ -11,8 +11,8 @@
   - Inconsistency between items and tomes
 - **Solution**: Migrated BaseTome.apply_to_player() to use ScalingCalculator
   - Added scaling configuration properties: `movement_speed_scaling_type`, `hp_scaling_type`, etc.
-  - Default: EXPONENTIAL for multipliers (backward compatible), LINEAR for flat bonuses
-  - Enables designer control over tome stacking behavior
+  - **Default changed to LINEAR** for predictable additive stacking (prevents runaway scaling)
+  - Enables designer control over tome stacking behavior (can override to EXPONENTIAL)
 - **Benefits**:
   - **Consistency**: Tomes now use same scaling formulas as items
   - **Flexibility**: Tome designers can choose LINEAR for additive bonuses (+10% HP per stack)
@@ -21,25 +21,27 @@
 
 **Example Tome Scaling:**
 ```gdscript
-# Tome: "Swiftness" with movement_speed_multiplier = 1.15
-# EXPONENTIAL (default, backward compatible): 3 stacks = 1.52x speed (compound)
-# LINEAR: 3 stacks = 1.45x speed (additive)
+# Tome: "Swiftness" with movement_speed_multiplier = 1.15 (per_stack = 0.15)
+# LINEAR (default): 3 stacks = 1.45x speed (additive: 1 + 0.15×3)
+# EXPONENTIAL: 3 stacks = 1.52x speed (compound: 1.15³)
 # HYPERBOLIC: Approaches max 2.0x speed at infinite stacks
 
 # Tome: "Vitality" with max_hp_bonus = 20
-# LINEAR (default): 3 stacks = 60 HP
+# LINEAR (default): 3 stacks = 60 HP (additive: 20×3)
 # HYPERBOLIC: Approaches 200 HP cap at infinite stacks
 ```
+
+**Design Decision:**
+- **Changed default from EXPONENTIAL → LINEAR** for predictable, additive stacking
+- LINEAR prevents runaway scaling (3 tomes = 3× bonus, not compound growth)
+- Designers can override to EXPONENTIAL in .tres if compound scaling desired
 
 **Files Modified:**
 - `scripts/resources/tomes/BaseTome.gd` - Replaced hardcoded `pow()` with ScalingCalculator
   - Added @export_group("Player Stat Scaling") with 9 scaling properties
   - Updated `apply_to_player()` to use `ScalingCalculator.calculate_multiplier()` and `calculate_flat()`
-  - Updated header documentation to reflect ScalingCalculator integration
-
-**Backward Compatibility:**
-- Existing tomes default to EXPONENTIAL scaling (same as hardcoded `pow()` behavior)
-- No .tres file migration needed - defaults preserve existing behavior
+  - Changed defaults: `movement_speed_scaling_type = LINEAR`, `pickup_radius_scaling_type = LINEAR`
+  - Updated header documentation to reflect LINEAR defaults
 
 ---
 
